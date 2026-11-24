@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1795511211216-taq2ib",
+    "runId": "wf-1795516744605-6dpa59",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-24T09:09:46.328Z",
+    "createdAt": "2026-11-24T10:42:41.771Z",
     "attribution": {
       "outputs": [
         {
@@ -14,7 +14,7 @@
         }
       ]
     },
-    "elapsedMs": 174804,
+    "elapsedMs": 216780,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
@@ -34,9 +34,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 3,
-        "contentHash": "fe0535562ed92f45be41ae6406022e00c84fae5398a71b80d32732837fb1f392",
-        "at": "2026-11-24T09:09:46.455Z",
+        "number": 4,
+        "contentHash": "97c97567bc80acfa1e4e870ebff621f1354cbc6193ebdf4bb2109f779aab2881",
+        "at": "2026-11-24T10:42:41.916Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -45,25 +45,25 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 3,
+        "revision": 4,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-24T09:15:50.636Z"
+        "at": "2026-11-24T10:45:50.171Z"
       }
     },
-    "revision": 3,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
-    }
+    },
+    "revision": 4
   },
   "body": {
     "summary": {
-      "prose": "Development installation resolves the chosen repository/branch to an accepted commit, builds it with verified private tooling and publishes a complete immutable release. The existing manager retains operation ownership and the shared terminal retains prompts/TUI handoff. This revision specifies the S1 integration seams, durable source checkout, receipt reopening and explicit pre-publication recovery exposed by the completed foundation. [[c1]] [[c3]]",
+      "prose": "Development installation resolves the chosen repository/branch to an accepted commit, builds it with verified private tooling and publishes a complete immutable release. The existing manager retains operation ownership and the shared terminal retains prompts/TUI handoff. This revision specifies the S1 integration seams, durable source checkout, receipt reopening and explicit pre-publication recovery exposed by the completed foundation. [[c1]] [[c3]] This revision records the user's explicit owned/cooperating actor cleanup boundary; it does not promise arbitrary descendant containment.",
       "audience": "technical"
     },
     "hldContextSlice": {
@@ -357,13 +357,14 @@
           "preconditions": [
             "Proposed dev adapter implementation is src/installer/dev.ts; helper names there are private, not new public IPC APIs. Compose it as peers.dev in src/installer/production-peers.ts. All S1 required sibling-capability admission remains in force. [[c4]] [[c6]] [[c14]]",
             "The manager alone writes its protected dev-preparation checkpoint through validated context callbacks. Adapter/worker cannot commit controller.json, migration journals, lifecycle receipts or selection. [[c4]] [[c6]] [[c14]]",
-            "PreparationContext is proposed private structure { operationId, signal?, readCheckpoint(), checkpoint(record) }; callbacks enforce installation/operation/source/attempt identity, bounded records, original lease and current revision. Bundle preparation ignores dev checkpoints and otherwise retains behavior. [[c4]] [[c6]] [[c14]]"
+            "PreparationContext is proposed private structure { operationId, signal?, readCheckpoint(), checkpoint(record) }; callbacks enforce installation/operation/source/attempt identity, bounded records, original lease and current revision. Bundle preparation ignores dev checkpoints and otherwise retains behavior. [[c4]] [[c6]] [[c14]]",
+            "Cleanup is guaranteed for installer-admitted command actors, retained owned process groups and cooperating registered descendants. Arbitrary unregistered detached processes are outside this guarantee; it is an ownership contract, not process isolation. Known held/unknown owned actors, missing or mismatched registered-actor journals and unsupported tracked-actor disposal evidence remain preparation-uncertain and block publication, retry and cleanup. [[c19]] [[c20]]"
           ],
           "postconditions": [
             "Dev open/verify consume only stored receipt/inventory/runtime bytes; ordinary start/restart/TUI/recovery never fetch, npm-install or rebuild. [[c4]] [[c6]] [[c14]]",
             "For dev offers, manager compares candidate receipt sourceSha256, releaseId, commit, target, runtime and recipe against the accepted source offer; it does not compare a source-offer digest to the post-build descriptor digest. Bundle candidates keep descriptor equality with their offer. [[c4]] [[c6]] [[c14]]",
             "resumePreparation is used only by explicit same-operation retry-migration while the durable phase is preparing and no candidate/admission exists. It reuses the accepted source offer, never resolves the moving branch again. Once candidate identity is recorded, existing S1 same-candidate recovery applies. [[c4]] [[c6]] [[c14]]",
-            "Cancellation reaches the owned preparation worker and its process scope, not merely a check before/after an awaited build. Publication and subsequent lifecycle handoff require confirmed closure of all preparation actors. [[c4]] [[c6]] [[c14]]"
+            "Cancellation reaches the owned preparation worker and its process scope, not merely a check before/after an awaited build. Publication and subsequent lifecycle handoff require confirmed closure of all actors within the owned/cooperating boundary. [[c4]] [[c6]] [[c14]]"
           ]
         },
         {
@@ -394,7 +395,8 @@
           "preconditions": [
             "Final root is <home>/releases/<releaseId>, published from owned <home>/install/staging through the existing manager-held lease. Existing roots are reused only after full verification; different bytes never replace them. [[c5]] [[c7]] [[c8]]",
             "Dev inventory.json describes complete runtime files. .dev-release.json is canonical {schemaVersion:1,mode:'dev',sourceOffer,manifest,inventorySha256,checkoutRelativePath}; bounded to the existing descriptor limit. Its manifest.payloadSha256 equals the canonical inventory-byte digest in dev mode. descriptorSha256 hashes receipt bytes; receipt and inventory are excluded from their own inventory. [[c5]] [[c7]] [[c8]]",
-            "No bundle publication:'qualified' descriptor is synthesized for local dev artifacts. Existing .release.json bundle receipt/validation remains unchanged. Full verification rejects special files, escapes, collisions, missing/extra files, changed modes/digests and changed private runtime, reusing S1 bounded inventory/path primitives. [[c5]] [[c7]] [[c8]]"
+            "No bundle publication:'qualified' descriptor is synthesized for local dev artifacts. Existing .release.json bundle receipt/validation remains unchanged. Full verification rejects special files, escapes, collisions, missing/extra files, changed modes/digests and changed private runtime, reusing S1 bounded inventory/path primitives. [[c5]] [[c7]] [[c8]]",
+            "Before a worker emits prepared, verify every inventoried file's membership, bytes, mode and digest; reject missing, changed, linked, escaped, extra or opposite-mode receipt files. Selected entrypoint presence alone is insufficient. [[c21]]"
           ],
           "postconditions": [
             "Candidate payload includes out/ daemon/TUI/MCP/assets, production/workspace/native dependency closure, bootstrap.mjs, manager.mjs, native/control.node and tools/node with exact runtime/npm/headers policy. Use S1 control bundling, collection and native/runtime probes from the accepted checkout; do not run the qualified GitHub publisher or fake qualification. [[c5]] [[c7]] [[c8]]",
@@ -505,7 +507,7 @@
       {
         "entity": "Preparation completion and explicit retry",
         "change": "new",
-        "details": "The private preparation worker uses the existing coordinator/process ownership pattern and writes a bounded nonce/source/attempt/run-bound result only after its command actors are confirmed closed; it has no publication callback or controller handle. A matching result, confirmed cleanup and released coordinator/worker ownership together permit manager verification/publication; a free operation lock, absent endpoint, PID/age, log line or result projection alone does not. Parent abort or terminal EOF cancels worker work and drains retained preparation actors within the configured budget. If the manager exits, a surviving worker may finish/dispose and persist its private result, but cannot publish/select/activate. Explicit same-operation retry-migration in preparing first checks checkpoint identities and prior actor closure. It can verify/finalize an already prepared stage, or create a new serial attempt for the same accepted source after a confirmed failed/cancelled attempt. A source ref is never re-resolved during recovery. Missing/contradictory evidence remains preparation-uncertain with retained diagnostics; no duplicate worker, automatic stage deletion, automatic retry loop or predecessor restart. The narrow window with an admitted worker but no positive outcome remains uncertain rather than guessed. Once publication is verified, the manager persists the usual candidate record; post-publication recovery continues through S1's existing exact-candidate path. Worker launch input and cancel frames are bounded/versioned and bind the operation/attempt/nonce; EOF is cancellation. Result/cleanup/child-close journal paths are derived from validated checkpoint IDs under the owned checkout, never accepted as arbitrary paths from output. A result is usable only with matching source/run identity, cleanup digest, confirmedClosed=true, observed close entries for all admitted command actors and released coordinator/worker ownership; status strings or exit-code projection alone are insufficient. Worker control/result schema is private preparation plumbing, not an IDE or daemon protocol. No workload or payload writes are admitted after a finalized result. [[c1]] [[c6]] [[c13]] The manager retains blocked/interrupted-preparing plus the checkpoint when child cleanup is unconfirmed, even though the daemon was never quiesced; it must not take the ordinary pre-disruption error path that clears the operation. Confirmed failed/cancelled preparation can finish without changing predecessor selection or its prior ready/stopped result. Explicit recovery requires the same operation ID; normal start/upgrade remains denied while ownership is uncertain. [[c6]] [[c13]]",
+        "details": "Cleanup is guaranteed for installer-admitted command actors, retained owned process groups and cooperating registered descendants. Arbitrary unregistered detached processes are outside this guarantee; it is an ownership contract, not process isolation. Known held/unknown owned actors, missing or mismatched registered-actor journals and unsupported tracked-actor disposal evidence remain preparation-uncertain and block publication, retry and cleanup. User decision: guarantee owned-process cleanup only. The private preparation worker uses the existing coordinator/process ownership pattern and writes a bounded nonce/source/attempt/run-bound result only after its command actors are confirmed closed; it has no publication callback or controller handle. A matching result, confirmed cleanup and released coordinator/worker ownership together permit manager verification/publication; a free operation lock, absent endpoint, PID/age, log line or result projection alone does not. Parent abort or terminal EOF cancels worker work and drains retained preparation actors within the configured budget. If the manager exits, a surviving worker may finish/dispose and persist its private result, but cannot publish/select/activate. Explicit same-operation retry-migration in preparing first checks checkpoint identities and prior actor closure. It can verify/finalize an already prepared stage, or create a new serial attempt for the same accepted source after a confirmed failed/cancelled attempt. A source ref is never re-resolved during recovery. Missing/contradictory evidence remains preparation-uncertain with retained diagnostics; no duplicate worker, automatic stage deletion, automatic retry loop or predecessor restart. The narrow window with an admitted worker but no positive outcome remains uncertain rather than guessed. Once publication is verified, the manager persists the usual candidate record; post-publication recovery continues through S1's existing exact-candidate path. Worker launch input and cancel frames are bounded/versioned and bind the operation/attempt/nonce; EOF is cancellation. Result/cleanup/child-close journal paths are derived from validated checkpoint IDs under the owned checkout, never accepted as arbitrary paths from output. A result is usable only with matching source/run identity, cleanup digest, confirmedClosed=true, observed close entries for all admitted command actors and released coordinator/worker ownership; status strings or exit-code projection alone are insufficient. Worker control/result schema is private preparation plumbing, not an IDE or daemon protocol. No workload or payload writes are admitted after a finalized result. [[c1]] [[c6]] [[c13]] The manager retains blocked/interrupted-preparing plus the checkpoint when child cleanup is unconfirmed, even though the daemon was never quiesced; it must not take the ordinary pre-disruption error path that clears the operation. Confirmed failed/cancelled preparation can finish without changing predecessor selection or its prior ready/stopped result. Explicit recovery requires the same operation ID; normal start/upgrade remains denied while ownership is uncertain. [[c6]] [[c13]]",
         "callSites": [
           "src/installer/manager.ts",
           "scripts/test-harness/context.mjs",
@@ -669,6 +671,10 @@
         {
           "input": "A worker is admitted but no positive completion/cleanup evidence survives",
           "expected": "Remain preparation-uncertain and retain diagnostics; neither a free OS lock nor PID absence authorizes deletion or another worker."
+        },
+        {
+          "input": "An arbitrary build-script descendant starts a new session/group and never registers with the installer/coordinator.",
+          "expected": "This process is outside the guaranteed ownership boundary. Do not describe empty tracked groups as proof of universal process-tree containment. Scope-boundary test fixtures must explicitly release and confirm their own detached process; known unresolved installer-owned or registered actors remain blocking. User decision limits the guarantee to the owned/cooperating boundary. [[c19]]"
         }
       ],
       "invariantsToPreserve": [
@@ -691,11 +697,15 @@
         {
           "text": "DEF E20261123c3d71313:S002:FR001 and ac1-ac3 apply unchanged. S8 owns real UTM/OrbStack/Windows qualification; local/fixture passes never imply supported production publication.",
           "source": "c3"
+        },
+        {
+          "text": "Cleanup is guaranteed for installer-admitted command actors, retained owned process groups and cooperating registered descendants. Arbitrary unregistered detached processes are outside this guarantee; it is an ownership contract, not process isolation. Known held/unknown owned actors, missing or mismatched registered-actor journals and unsupported tracked-actor disposal evidence remain preparation-uncertain and block publication, retry and cleanup.",
+          "source": "c19"
         }
       ]
     },
     "testStrategy": {
-      "testFramework": "node:test + node:assert/strict with co-located *.test.ts through the canonical coordinator. Owned subprocess fixtures self-exit/control their own lifetimes; host v2 daemon and app stores are untouched. Surrounding tests run per task; the combined installer regression runs after S2 tasks. S2 fixture/local evidence and S8 live platform qualification stay distinct.",
+      "testFramework": "node:test + node:assert/strict with co-located *.test.ts through the canonical coordinator. Owned subprocess fixtures self-exit/control their own lifetimes; host v2 daemon and app stores are untouched. Surrounding tests run per task; the combined installer regression runs after S2 tasks. S2 fixture/local evidence and S8 live platform qualification stay distinct. Cleanup evidence and tests guarantee only installer-admitted actors, retained owned groups and cooperating registered descendants. An unregistered detached process is an explicitly documented scope-boundary fixture, never claimed contained; the fixture must terminate itself and confirm its own teardown.",
       "testLevels": [
         {
           "level": "unit",
@@ -725,7 +735,7 @@
         },
         {
           "level": "integration",
-          "purpose": "Exercise real local Git and owned private-tooling preparation, source preservation, failure and recovery.",
+          "purpose": "Exercise real local Git and owned private-tooling preparation, source preservation, failure and recovery. Ownership assertions use the explicit owned/cooperating scope; full staged-file inventory validation is mandatory before prepared.",
           "subjects": [
             "selected-repo-branch-exact-commit-and-unrelated-branch-never-selected",
             "dirty-conflicting-missing-or-foreign-selected-checkout-preserved",
@@ -739,7 +749,9 @@
           "fixturesNeeded": [
             "Two local Git remotes, exact recorded commits, isolated explicit homes/checkouts/stages and nonce-bound worker results.",
             "Owned-process fixtures for manager self-exit, a surviving preparation worker, bounded cancel and confirmed cleanup; missing/foreign cleanup evidence stays blocked.",
-            "Command fixtures for unavailable compilers and hostile host Node/npm; fixture success is not target qualification."
+            "Command fixtures for unavailable compilers and hostile host Node/npm; fixture success is not target qualification.",
+            "Owned/cooperating actor boundary fixture distinguishes tracked held/unknown actors (blocking) from an arbitrary unregistered detached process (outside guarantee); test code releases and confirms its detached fixture before removing temporary data.",
+            "Attempt actual foreign-checkpoint admission, retry/cleanup closure guards and retained-data assertions. Missing or tampered non-entrypoint inventory files cannot yield prepared. Full manager retry/deletion integration remains t7."
           ]
         },
         {
@@ -799,7 +811,7 @@
         "id": "a1",
         "name": "Source offer plus isolated retained checkout",
         "oneLineSummary": "Resolve a source identity without building, then prepare and publish one verified payload under the existing manager.",
-        "approach": "Use a private dev-source offer alongside the existing bundle offer, preserving public sc1/sc2 wire records. Under the manager lease, persist accepted source identity before starting an isolated checkout/build. Keep the completed checkout outside immutable payloads as the managed source for later dirty/conflict preflight. Publish a mode-specific dev receipt and complete payload through S1 preparation ownership; reopen without fetch/build. Reuse S1 packaging, runtime and coordinator capabilities with explicit narrow composition edits.",
+        "approach": "Use a private dev-source offer alongside the existing bundle offer, preserving public sc1/sc2 wire records. Under the manager lease, persist accepted source identity before starting an isolated checkout/build. Keep the completed checkout outside immutable payloads as the managed source for later dirty/conflict preflight. Publish a mode-specific dev receipt and complete payload through S1 preparation ownership; reopen without fetch/build. Reuse S1 packaging, runtime and coordinator capabilities with explicit narrow composition edits. The guaranteed cleanup boundary is installer-admitted command actors, retained owned process groups and cooperating registered descendants. Arbitrary unregistered detached processes are outside the guarantee. Known unresolved owned actors remain blocking.",
         "pros": [
           "Smallest shape that separates accepted source identity from post-build bytes and preserves read-only checks.",
           "One per-attempt checkout, one receipt and existing controller ownership; no bare cache/worktree registry.",
@@ -825,14 +837,14 @@
           "More interruption states and shared mutable source state without a correctness requirement for caching."
         ],
         "costEstimate": "L",
-        "reasonRejected": "Can meet the public contracts, but ac3 requires additional cache/worktree ownership detail and L effort without a requested correctness benefit."
+        "reasonRejected": "The prior alternative adds source preparation machinery unnecessary for the existing S2 mechanics or the user-selected owned/cooperating actor scope; a1 satisfies ac1-ac3 and all consumed shared contracts."
       }
     ],
     "chosenAlternative": "a1",
     "openQuestions": [],
     "erDefinition": {
       "id": "s2-dev-preparation-ownership",
-      "narrative": "Shows source intent, serial build attempts and immutable artifacts as distinct records. The manager owns controller/checkpoint writes; each prepared dev release links to its retained mutable checkout without placing that checkout in the runtime inventory.",
+      "narrative": "Shows source intent, serial build attempts and immutable artifacts as distinct records. The manager owns controller/checkpoint writes; each prepared dev release links to its retained mutable checkout without placing that checkout in the runtime inventory. Worker lifetime guarantees apply to installer-admitted and cooperating registered actors; arbitrary unregistered detached processes are outside the ownership model.",
       "classes": {
         "DevOperation": {
           "description": "One existing controller operation that alone coordinates S2 preparation under S1 ownership.",
@@ -943,7 +955,7 @@
     },
     "sequenceDefinition": {
       "id": "s2-source-offer-to-immutable-release",
-      "narrative": "Separates a read-only source offer from post-consent build output and shows that only the existing manager may publish/controller-record the candidate. The worker's confirmed actor cleanup precedes publication; S1's terminal retains readiness-to-TUI handoff.",
+      "narrative": "Separates a read-only source offer from post-consent build output and shows that only the existing manager may publish/controller-record the candidate. The worker's confirmed actor cleanup precedes publication; S1's terminal retains readiness-to-TUI handoff. Cleanup covers installer-admitted command actors, retained owned groups and cooperating registered descendants; no arbitrary descendant isolation is implied.",
       "participants": [
         {
           "id": "terminal",
@@ -968,7 +980,7 @@
         {
           "id": "worker",
           "label": "Owned preparation worker (S2)",
-          "description": "Owns its private checkout/staging and coordinated private-tooling commands; cannot publish or activate."
+          "description": "Owns its private checkout/staging and coordinated private-tooling commands; cannot publish or activate. Its cleanup guarantee covers owned/cooperating actors, not arbitrary unregistered detached processes."
         },
         {
           "id": "store",
@@ -1073,7 +1085,7 @@
           "to": "worker",
           "label": "drain actors; persist nonce/run-bound result + cleanup",
           "kind": "recurse",
-          "description": "Final outcome is written after all preparation commands close; EOF/abort takes the cancellation path."
+          "description": "Final outcome follows confirmed closure of installer-admitted actors, retained owned groups and cooperating registered descendants. Known unknown ownership blocks; EOF/abort cancels. Unregistered detached processes are outside this guarantee."
         },
         {
           "from": "worker",
@@ -1235,6 +1247,22 @@
       "id": "c18",
       "kind": "code",
       "ref": "scripts/test-harness/context.mjs"
+    },
+    {
+      "id": "c19",
+      "kind": "doc",
+      "ref": "docs/plans/s2-dev-preparation-ownership-blocker-2026-11-24.md",
+      "quotedText": "The user explicitly selected the first guarantee in chat: \"limit it to the first as guranteed\"."
+    },
+    {
+      "id": "c20",
+      "kind": "code",
+      "ref": "src/installer/dev-worker.ts"
+    },
+    {
+      "id": "c21",
+      "kind": "code",
+      "ref": "src/installer/safe-zip.ts"
     }
   ]
 }

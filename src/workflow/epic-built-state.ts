@@ -256,11 +256,23 @@ function fit(forStory: string, epicHash: string, input: readonly EpicBuiltStory[
 		if (text.length <= totalChars || stories.length <= 1) break;
 		stories = stories.filter(s => s.storyId !== old.storyId); omitted++; text = render(stories, omitted);
 	}
-	return { stories, omitted, text: text.length <= totalChars ? text : `${text.slice(0, Math.max(0, totalChars - 1)).trimEnd()}…` };
+	return { stories, omitted, text: text.length <= totalChars ? text : totalChars < 1 ? '' : `${text.slice(0, totalChars - 1).trimEnd()}…` };
 }
 
 /** The block placed above the Story detail; one line for a null digest. Pure and deterministic; a cap given here narrows the digest further. */
 export function renderEpicBuiltStateDigest(digest: EpicBuiltStateDigest | null, opts: Pick<EpicDigestOptions, 'perStoryChars' | 'totalChars'> = {}): string {
 	if (digest === null) return EPIC_IMPACT_NOT_APPLICABLE;
 	return fit(digest.forStory, digest.epicHash, digest.stories, Math.min(opts.perStoryChars ?? digest.caps.perStoryChars, digest.caps.perStoryChars), Math.min(opts.totalChars ?? digest.caps.totalChars, digest.caps.totalChars), digest.truncated?.omittedStories ?? 0).text;
+}
+
+/**
+ * What the first step of design.story and plan adds for a Story: for a later Story of an Epic the instruction (`first`, to lead the
+ * system prompt) and the rendered digest (`digest`, for the user turn above the Story detail or the LLD handoff); for a first or
+ * standalone Story no instruction and the one-line "does not apply". One place, so both stages match.
+ */
+export function epicImpactPromptParts(repoPath: string, epicHash: string, storyId: string): { readonly first: string[]; readonly digest: string[] } {
+	const digest = buildEpicBuiltStateDigest(repoPath, epicHash, storyId);
+	return digest === null
+		? { first: [], digest: [renderEpicBuiltStateDigest(null), ''] }
+		: { first: [EPIC_IMPACT_FIRST_ACTION, ''], digest: [renderEpicBuiltStateDigest(digest), ''] };
 }

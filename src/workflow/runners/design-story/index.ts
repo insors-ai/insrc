@@ -34,6 +34,7 @@ import { SEQUENCE_CONTENT_GATE_RULE } from '../../artifacts/companion/sequence-s
 import { COMPONENT_CONTENT_GATE_RULE } from '../../artifacts/companion/component-schema.js';
 import { isStandaloneParams, standaloneStoryContext, type StandaloneStoryContext } from './standalone.js';
 import { assertEpicHash } from '../../hash.js';
+import { epicImpactPromptParts } from '../../epic-built-state.js';
 import { scopeAnalyzeCachePath } from '../../storage.js';
 import type { StepRunner, StepRunnerContext } from '../../types.js';
 import {
@@ -140,8 +141,10 @@ const contextAssemble = llmPauseRunner({
 	id: 'context.assemble',
 	buildPrompt: (ctx) => {
 		const { flavor, story, hldSlice } = readUpstream(ctx);
+		const impact = epicImpactPromptParts(ctx.intent.repoPath, epicHashFrom(ctx), story.id);   // ISSUE-1b3caadf04023d33
 		return {
 			prompt: [
+				...impact.first,
 				'You are running the `context.assemble` step of the `design.story` (LLD) workflow.',
 				'',
 				'HARD RULES:',
@@ -157,12 +160,13 @@ const contextAssemble = llmPauseRunner({
 				'  4. Run `search.text` on distinctive constants / strings the Story deals with.',
 				'  5. Run `test.locate` on the Story subject so the test strategy extends existing patterns.',
 				'',
-				'Emit an LldContext JSON with one `analyzeBundles[]` entry per call.',
+				'Emit an LldContext JSON with one `analyzeBundles[]` entry per call' + (impact.first.length > 0 ? ', and the `epicImpact` analysis.' : '.'),
 			].join('\n'),
 			userTurn: [
 				`Focus: ${ctx.intent.focus}`,
 				`Epic hash: ${epicHashFrom(ctx)}   Story: ${story.id} — ${story.title}`,
 				'',
+				...impact.digest,
 				'Epic flavor (informs migration in s7):',
 				flavor,
 				'',

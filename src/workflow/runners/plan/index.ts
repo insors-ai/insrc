@@ -23,6 +23,7 @@ import { registerRunner } from '../../executor.js';
 import { readPlanUpstream } from '../../gates.js';
 import { ANTI_OVERREACH_RULE } from '../scope-prompts.js';
 import { assertEpicHash } from '../../hash.js';
+import { epicImpactPromptParts } from '../../epic-built-state.js';
 import type { StepRunner, StepRunnerContext } from '../../types.js';
 import {
 	planChecklistSchema,
@@ -87,8 +88,10 @@ const contextAssemble = llmPauseRunner({
 	id: 'context.assemble',
 	buildPrompt: (ctx) => {
 		const { lld, hldSlice, storyDependsOn } = upstream(ctx);
+		const impact = epicImpactPromptParts(ctx.intent.repoPath, epicHashFrom(ctx), storyIdFrom(ctx));   // ISSUE-1b3caadf04023d33
 		return {
 			prompt: [
+				...impact.first,
 				'You are running the `context.assemble` step of the `plan` workflow.',
 				'',
 				'The `plan` stage breaks ONE approved Story LLD into N ordered, sized,',
@@ -101,7 +104,7 @@ const contextAssemble = llmPauseRunner({
 				'HARD RULES:',
 				ANTI_OVERREACH_RULE,
 				'',
-				'Emit a PlanContext JSON with one `analyzeBundles[]` entry per grounding pass.',
+				'Emit a PlanContext JSON with one `analyzeBundles[]` entry per grounding pass' + (impact.first.length > 0 ? ', and the `epicImpact` analysis.' : '.'),
 			].join('\n'),
 			userTurn: [
 				`Focus: ${ctx.intent.focus}`,
@@ -115,6 +118,7 @@ const contextAssemble = llmPauseRunner({
 				...(hldSlice !== null
 					? ['HLD context slice (for cross-cutting context):', '```json', JSON.stringify(hldSlice, null, 2), '```', '']
 					: []),
+				...impact.digest,
 				'Approved LLD handoff (what to break down):',
 				'```json',
 				JSON.stringify(lld.body, null, 2),

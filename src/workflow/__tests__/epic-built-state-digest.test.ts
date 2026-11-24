@@ -119,7 +119,7 @@ test('epic-built-state-digest.test.ts: the newest Stories are in full and older 
 		const tiny = buildEpicBuiltStateDigest(repo, HASH, 's6', { totalChars: 700 });
 		assert.ok(tiny && tiny.truncated !== null && tiny.truncated.omittedStories > 0 && tiny.stories.length < 5, 'older Stories are left out and counted');
 		assert.match(renderEpicBuiltStateDigest(tiny), /more left out to stay within the size cap/, 'the render still says Stories were left out');
-		for (const cap of [400, 900, 3000]) {
+		for (const cap of [0, 1, 400, 900, 3000]) {
 			const t = renderEpicBuiltStateDigest(d, { totalChars: cap });
 			assert.ok(t.length <= cap, `cap ${cap}: ${t.length}`);
 		}

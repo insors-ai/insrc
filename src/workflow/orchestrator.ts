@@ -157,6 +157,8 @@ import {
 import { assertEpicHash, computeEpicHash } from './hash.js';
 import { SIZE_CLASSES, isIssueKind, type SizeClass } from './triage/types.js';
 import { isStandaloneParams, standaloneStoryContext } from './runners/design-story/standalone.js';
+import { resolveEpicImpact } from './epic-impact-gate.js';
+import { epicImpactSchema } from './runners/epic-impact-schema.js';
 import { deriveSlug } from './slug.js';
 import { PATH_FORM_RULE } from './runners/scope-prompts.js';
 
@@ -2028,6 +2030,7 @@ function designStorySynthesizer(
 			: '`body.migration` MUST be verbatim from s7.'}`,
 		'- `body.alternativesConsidered` MUST list every alternative from s2 by `id`, with losers carrying `reasonRejected` pulled from s3. The daemon fills every other field from s2, so they need not be repeated.',
 		'- `body.chosenAlternative` MUST equal s3.winnerId.',
+		'- `body.epicImpact` MUST be carried verbatim from s1.epicImpact when s1 emitted one (the Epic impact analysis of a Story whose Epic already has built Stories). Omit it when s1 has none.',
 		'- `body.openQuestions` collects `missed`/`ambiguous` verdicts from s8 (except sbdry1-5 which hard-fail).',
 		ER_CONTENT_GATE_RULE,
 		UX_CONTENT_GATE_RULE,
@@ -2092,6 +2095,7 @@ function designStorySynthesizer(
 					alternativesConsidered: { type: 'array', minItems: 2, items: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, reasonRejected: { type: 'string' } } } },
 					chosenAlternative:     { type: 'string', pattern: '^a\\d+$' },
 					openQuestions:         { type: 'array', items: { type: 'string' } },
+					epicImpact:            epicImpactSchema,
 					erDefinition:          ER_DEFINITION_PROPERTY_SCHEMA,
 					companions:            COMPANIONS_PROPERTY_SCHEMA,
 					uxDefinition:          UX_DEFINITION_PROPERTY_SCHEMA,
@@ -2219,7 +2223,11 @@ async function finalizeDesignStory(
 	// ISSUE-36cbeeac485c0af7: both paths store the alternatives step's content, not the author's copy.
 	const alternatives = applyStepAlternatives(rawBody.alternativesConsidered, stepOutputs);
 	if (!alternatives.ok) return { ok: false, failure: alternatives.failure };
-	const body: LldBody = { ...rawBody, alternativesConsidered: alternatives.value };
+	// ISSUE-1b3caadf04023d33: a later Story of an Epic carries the Epic impact analysis from the first step, verbatim.
+	const epicImpact = resolveEpicImpact(intent.repoPath, intent.params['epicHash'], intent.params['storyId'], stepOutputs, rawBody.epicImpact);
+	if (!epicImpact.ok) return { ok: false, failure: schemaFailure(`Epic impact analysis: ${epicImpact.reason}`) };
+	const { epicImpact: _authoredImpact, ...rawBodyRest } = rawBody;
+	const body: LldBody = { ...rawBodyRest, alternativesConsidered: alternatives.value, ...(epicImpact.epicImpact !== undefined ? { epicImpact: epicImpact.epicImpact } : {}) };
 
 	// Standalone LLD (triage-routed non-Epic feature) — no parent Epic/HLD to
 	// validate against. Skip the HLD cross-artifact checks + amendment back-flow
@@ -2633,6 +2641,7 @@ function planSynthesizer(
 		'HARD RULES:',
 		'- `body.tasks` MUST be the s5 tasks verbatim (each with its `tests[]` filled).',
 		'- `body.testStrategyCoverage` MUST be the s5 testStrategyCoverage verbatim.',
+		'- `body.epicImpact` MUST be carried verbatim from s1.epicImpact when s1 emitted one (the Epic impact analysis of a Story whose Epic already has built Stories). Omit it when s1 has none.',
 		'- `body.summary` MUST be carried verbatim from s5.summary when s5 emitted one (a `{ prose, audience? }` object). Omit it when s5 has none.',
 		'- `citations[]` define the `derivedFrom` grounding ids (c1, c2, ...). Every id used in any Task\'s `derivedFrom` MUST appear in `citations[]`, and every citation MUST be referenced by at least one Task (no dead citations). Each citation grounds an LLD handoff item — cite it as { kind: "prior-artifact", ref: "LLD <storyId> <handoff item>" } or an analyze bundle from s1.',
 		PATH_FORM_RULE,
@@ -2667,6 +2676,7 @@ function planSynthesizer(
 					},
 					tasks:                { type: 'array', minItems: 1 },
 					testStrategyCoverage: { type: 'array' },
+					epicImpact:           epicImpactSchema,
 				},
 			},
 			citations: {
@@ -2692,7 +2702,7 @@ function planSynthesizer(
 
 function finalizePlan(
 	intent:      WorkflowIntent,
-	_stepOutputs: Readonly<Record<string, unknown>>,
+	stepOutputs: Readonly<Record<string, unknown>>,
 	runId:       string,
 	elapsedMs:   number,
 	llmResponse: Record<string, unknown>,
@@ -2702,9 +2712,9 @@ function finalizePlan(
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
 		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
 	}
-	const body      = (llmResponse as { body?: unknown }).body;
+	const authoredBody = (llmResponse as { body?: unknown }).body;
 	const citations = (llmResponse as { citations?: unknown }).citations;
-	if (!isPlanBody(body)) {
+	if (!isPlanBody(authoredBody)) {
 		return { ok: false, failure: schemaFailure(`body does not match PlanBody shape`) };
 	}
 	if (!isPlanCitationArray(citations)) {
@@ -2716,6 +2726,11 @@ function finalizePlan(
 	const epicHash = requireEpicHash(intent);
 	const storyId  = requireStoryId(intent);
 	const lld = requireApprovedLld(intent.repoPath, epicHash, storyId);
+	// ISSUE-1b3caadf04023d33: a later Story of an Epic carries the Epic impact analysis from the first step, verbatim.
+	const epicImpact = resolveEpicImpact(intent.repoPath, epicHash, storyId, stepOutputs, authoredBody.epicImpact);
+	if (!epicImpact.ok) return { ok: false, failure: schemaFailure(`Epic impact analysis: ${epicImpact.reason}`) };
+	const { epicImpact: _authoredImpact, ...planBodyRest } = authoredBody;
+	const body: PlanBody = { ...planBodyRest, ...(epicImpact.epicImpact !== undefined ? { epicImpact: epicImpact.epicImpact } : {}) };
 	// ISSUE-3a98d279 — the LABEL comes from the work item's DEFINITION HEAD, not
 	// from the LLD. It previously read `lld.meta.epicSlug`, so an LLD that had
 	// re-derived its own slug named the plan's folder, and a work item whose

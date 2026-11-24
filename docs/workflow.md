@@ -221,12 +221,15 @@ already built (ISSUE-1b3caadf04023d33). The daemon helps in three places:
   `sources`). Synthesize carries it verbatim into the LLD and the PLAN, which show
   it as an "Epic impact analysis" section, and refuses a later Story's LLD or PLAN
   that has none (or one that does not apply, names no Story, has no findings or
-  cites no source).
+  cites no source). Applicability is decided at synthesize against the current
+  records, so an analysis that said it does not apply before a sibling Story's
+  BUILD was approved can be replaced by a current one in the synthesized body.
 - **The BUILD check.** The BUILD summary (the `summary` of the last validate call)
   must open a paragraph with `Epic impact:`, at least 80 characters long, naming
   each Story the LLD's analysis covered. Approving a later Story's BUILD without it
   is refused: the result's `skipped[]` carries the reason and the kind
-  `epic-impact-missing`, and nothing is written. An explicit `overrideReview`
+  `epic-impact-missing`, and nothing is written (a BUILD with no record yet gets
+  none created). An explicit `overrideReview`
   passes it. The check does not apply when the Story has no approved LLD, its LLD
   has no `epicImpact`, or the analysis says it does not apply; a record that cannot
   be read also makes it not apply.

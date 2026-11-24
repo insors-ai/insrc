@@ -47,7 +47,9 @@ test('epic-impact-doc.test.ts: docs/workflow.md describes the Epic impact analys
 	assert.match(text, /Approving a later Story's BUILD without it is refused/);
 	assert.match(text, /An explicit `overrideReview` passes it\./);
 	assert.match(text, /does not apply when the Story has no approved LLD, its LLD has no `epicImpact`, or the analysis says it does not apply/);
-	assert.match(text, /refuses a later Story's LLD or PLAN that has none/);
+	assert.match(text, /refuses a later Story's LLD or PLAN that has none \(or one that does not apply, names no Story, has no findings or cites no source\)/);
+	assert.match(text, /can be replaced by a current one in the synthesized body/);
+	assert.match(text, /and nothing is written \(a BUILD with no record yet gets none created\)/);
 	assert.match(text, /the controller reads the digest against the Story|controller reads the digest against the Story/);
 	// the section sits in the walkthrough between the LLD step and the GitHub push
 	assert.ok(doc.indexOf('### 4. Design LLDs') < doc.indexOf('### Epic impact analysis') && doc.indexOf('### Epic impact analysis') < doc.indexOf('### 5. Push to GitHub'));

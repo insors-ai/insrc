@@ -26,6 +26,9 @@ const log = getLogger('workflow:epic-impact-build-check');
 /** The shortest labelled paragraph that counts (characters, label included): enough to say something beyond the label and the ids. */
 export const EPIC_IMPACT_MIN_PARAGRAPH_CHARS = 80;
 
+/** The `kind` of the `skipped[]` entry that refuses the approval; docs/workflow.md names it and its test reads it from here. */
+export const EPIC_IMPACT_MISSING_KIND = 'epic-impact-missing' as const;
+
 export type BuildEpicImpactCheck =
 	| { readonly applies: false }
 	| { readonly applies: true; readonly ok: true }

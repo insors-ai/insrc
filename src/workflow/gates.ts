@@ -72,7 +72,7 @@ import { ensureBuildRecordOnCompletion } from './runners/build/completion-record
 import { authorizeApproval } from './team/approval-gate.js';
 import { TeamGateRefusedError } from './team/gate.js';
 import { signoffHoldsCompletion } from './team/signoff.js';
-import { checkBuildEpicImpact } from './epic-impact-build-check.js';
+import { checkBuildEpicImpact, EPIC_IMPACT_MISSING_KIND } from './epic-impact-build-check.js';
 
 // ---------------------------------------------------------------------------
 // Read + require-approved helpers
@@ -1047,7 +1047,7 @@ export async function approveWorkflowTarget(
 		if (req.overrideReview === undefined) {
 			const impact = checkBuildEpicImpact(req.repoPath, jsonPath);
 			if (impact.applies && !impact.ok) {
-				skipped.push({ path: jsonPath, reason: impact.reason, ...(req.skipKinds === true ? { kind: 'epic-impact-missing' as const } : {}) });
+				skipped.push({ path: jsonPath, reason: impact.reason, ...(req.skipKinds === true ? { kind: EPIC_IMPACT_MISSING_KIND } : {}) });
 				return;
 			}
 		}

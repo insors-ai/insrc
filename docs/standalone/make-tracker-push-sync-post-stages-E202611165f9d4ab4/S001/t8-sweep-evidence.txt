@@ -1,6 +1,22 @@
-# t8 sweep evidence (2026-11-24, Node v22.22.1, npx tsx --test-force-exit per file)
+# t8 sweep evidence (2026-11-24, Node v22.22.1, per-file `npx tsx --test-force-exit <file>`)
 
-## src/workflow (408 files)
+Baseline: clean HEAD 6c0d3a0af839d1fcf06e59bfbed8714bc9268449 (git stash -u) — /tmp/wf-baseline-sweep.txt
+Current:  working tree with t1-t8 — /tmp/wf-final-sweep.txt, /tmp/mcp-final-sweep.txt
+
+## Failure diff (baseline vs current) — files whose result changed:
+```
+file | baseline(HEAD 6c0d3a0af) | current
+TOTAL | <absent> | TOTAL pass=2505 fail=5
+```
+
+## Totals
+- workflow baseline: see /tmp/wf-baseline-sweep.txt (fails: 5)
+- workflow current: 2505 pass / 5 fail (all 5 identical to baseline)
+- MCP current: 105 pass / 0 fail (27/27 files)
+
+## Full current per-file results
+### src/workflow (408 files)
+```
 src/workflow/amendments/__tests__/applier.test.ts pass=21 fail=0
 src/workflow/amendments/__tests__/effective-and-staleness.test.ts pass=7 fail=0
 src/workflow/amendments/__tests__/next-amendment-id.test.ts pass=1 fail=0
@@ -410,8 +426,9 @@ src/workflow/usage/__tests__/source-capabilities.test.ts pass=3 fail=0
 src/workflow/usage/__tests__/transfer-state.test.ts pass=4 fail=0
 src/workflow/usage/__tests__/validation.test.ts pass=3 fail=0
 TOTAL pass=2505 fail=5
-
-## src/mcp (27 files)
+```
+### src/mcp (27 files)
+```
 src/mcp/deploy-step/__tests__/deploy-step-types.test.ts pass=2 fail=0
 src/mcp/docgen/__tests__/handler.test.ts pass=6 fail=0
 src/mcp/__tests__/analyze-request-forward.test.ts pass=1 fail=0
@@ -440,3 +457,4 @@ src/mcp/__tests__/structural-schema.test.ts pass=3 fail=0
 src/mcp/__tests__/workflow-approve-dispatch.test.ts pass=6 fail=0
 src/mcp/__tests__/workflow-run-dispatch.test.ts pass=8 fail=0
 MCP TOTAL pass=105 fail=0
+```

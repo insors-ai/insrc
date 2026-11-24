@@ -238,11 +238,12 @@ test('issue-anchored-route.test.ts: chain report for the seeded ISSUE repo retur
 		assert.equal(draft.stories[0]!.hasLld, true);
 		assert.equal(draft.nextAction.kind, 'approve-lld');
 
-		// Once the LLD is approved the chain is complete.
+		// Once the LLD is approved the chain reaches the tracker steps
+		// (ISSUE-5f9d4ab4c90c0b4c s1/t5): unpushed -> push-tracker.
 		markApprovedSync(json);
 		const done = buildChainReport(s.repo, HASH);
 		assert.equal(done.stories[0]!.approved, true);
-		assert.equal(done.nextAction.kind, 'chain-complete');
+		assert.equal(done.nextAction.kind, 'push-tracker', JSON.stringify(done.nextAction));
 		const path = done.stories[0]!.path;
 		assert.ok(path !== undefined && path.includes('/docs/standalone/') && path.includes(SLUG), `the standalone story path, got ${path}`);
 	} finally { s.cleanup(); }

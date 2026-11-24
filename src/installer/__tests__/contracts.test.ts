@@ -65,10 +65,24 @@ test('foundation reports and snapshots validate identity without inventing readi
 
 test('terminal launch preserves explicit home and successful handoff contract', () => {
   const location = resolveInstallationLocation('home', { home: '/tmp/insrc' });
-  const launch = { operationId: 'op', installationId: 'home', home: location.home, platform: 'posix', scriptPath: '/tmp/install script.sh', scriptVersion: '1', scriptSha256: digest, arguments: ['--home', location.home], terminalName: 'Insrc Installation', onInstallSuccess: 'launch-tui' };
+  const launch = { operationId: 'op', installationId: 'home', home: location.home, platform: 'posix', scriptPath: '/tmp/install script.sh', scriptVersion: '1', scriptSha256: digest, arguments: ['--home', location.home, '--installation-id', 'home', '--operation-id', 'op'], terminalName: 'Insrc Installation', onInstallSuccess: 'launch-tui' };
   assert.deepEqual(parseTerminalLaunch(launch, location), launch);
   assert.throws(() => parseTerminalLaunch({ ...launch, home: '/tmp/other' }, location));
   assert.throws(() => parseTerminalLaunch({ ...launch, installationId: 'other' }, location));
   assert.throws(() => parseTerminalLaunch({ ...launch, scriptPath: '../install.sh' }, location));
   assert.throws(() => parseTerminalLaunch({ ...launch, onInstallSuccess: 'idle-shell' }, location));
+});
+
+test('terminal invocation binds actual arguments to metadata and Windows drive aliases', () => {
+  const location = resolveInstallationLocation('home', { home: '/tmp/insrc', os: 'linux' });
+  const launch = { operationId: 'op', installationId: 'home', home: location.home, platform: 'posix', scriptPath: '/tmp/install.sh', scriptVersion: '1', scriptSha256: digest, arguments: ['--home', location.home, '--installation-id', 'home', '--operation-id', 'op'], terminalName: 'Insrc Installation', onInstallSuccess: 'launch-tui' };
+  for (const args of [[], ['--home', location.home], ['--home', '/tmp/other', '--installation-id', 'home', '--operation-id', 'op'], ['--home', location.home, '--installation-id', 'other', '--operation-id', 'op'], ['--home', location.home, '--installation-id', 'home', '--operation-id', 'other'], ['--home', location.home, '--home', location.home, '--operation-id', 'op'], ['--home', location.home, '--installation-id', 'home', '--install-ollama', 'yes']]) {
+    assert.throws(() => parseTerminalLaunch({ ...launch, arguments: args }, location));
+  }
+  assert.equal(parseTerminalLaunch({ ...launch, arguments: ['--operation-id', 'op', '--home', location.home, '--installation-id', 'home'] }, location).operationId, 'op');
+  const windows = resolveInstallationLocation('home', { os: 'win32', home: 'C:\\Users\\person\\.insrc', userSid: 'S-1-5-21-123' });
+  const alias = 'c:\\Users\\person\\.insrc';
+  const ps = { ...launch, platform: 'powershell', home: alias, scriptPath: 'C:\\install.ps1', arguments: ['-HomeDirectory', alias, '-InstallationId', 'home', '-OperationId', 'op'] };
+  assert.equal(parseTerminalLaunch(ps, windows).home, alias);
+  assert.throws(() => parseTerminalLaunch({ ...ps, arguments: ['-HomeDirectory', alias, '-InstallationId', 'home', '-OperationId', 'other'] }, windows), { code: 'identity-mismatch' });
 });

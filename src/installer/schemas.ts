@@ -3,7 +3,7 @@ import type { ValidateFunction } from 'ajv';
 import { posix } from 'node:path';
 import { InstallerError, MAX_BRIDGE_BYTES, MAX_CONTROL_BYTES, PRIVATE_NODE_VERSION } from './contracts.js';
 import type * as C from './contracts.js';
-import { assertRelativeFile, normalizeHome } from './location.js';
+import { assertRelativeFile, normalizeHome, sameInstallationHome } from './location.js';
 
 const text = (maxLength = 4096) => ({ type: 'string', minLength: 1, maxLength, pattern: '^[^\\u0000-\\u001f\\u007f]+$' });
 const token = { ...text(128), pattern: '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$' };
@@ -158,7 +158,19 @@ export function parseManagerRequest(input: unknown): C.ManagerRequest {
 export function parseTerminalLaunch(input: unknown, location: C.InstallationLocation): C.TerminalInstallLaunch {
   const launch = parseInstaller('terminalLaunch', input);
   const os = launch.platform === 'powershell' ? 'win32' : 'linux';
-  if (launch.installationId !== location.installationId || normalizeHome(launch.home, os) !== location.home) throw new InstallerError('identity-mismatch', 'Terminal launch targets another installation');
+  if (launch.installationId !== location.installationId || !sameInstallationHome(launch.home, location.home, os)) throw new InstallerError('identity-mismatch', 'Terminal launch targets another installation');
   normalizeHome(launch.scriptPath, os);
+  const homeFlag = os === 'win32' ? '-homedirectory' : '--home';
+  const expected: Record<string, string> = os === 'win32'
+    ? { '-homedirectory': launch.home, '-installationid': launch.installationId, '-operationid': launch.operationId }
+    : { '--home': launch.home, '--installation-id': launch.installationId, '--operation-id': launch.operationId };
+  if (launch.arguments.length !== 6) throw new InstallerError('schema-invalid', 'Canonical terminal arguments must carry all three identity fields');
+  const seen = new Set<string>();
+  for (let index = 0; index < launch.arguments.length; index += 2) {
+    const raw = launch.arguments[index]!, flag = os === 'win32' ? raw.toLowerCase() : raw, value = launch.arguments[index + 1]!;
+    if (!Object.hasOwn(expected, flag) || seen.has(flag)) throw new InstallerError('schema-invalid', 'Unknown or duplicate terminal identity argument');
+    seen.add(flag);
+    if (flag === homeFlag ? !sameInstallationHome(value, launch.home, os) : value !== expected[flag]) throw new InstallerError('identity-mismatch', 'Terminal arguments target another installation or operation');
+  }
   return launch;
 }

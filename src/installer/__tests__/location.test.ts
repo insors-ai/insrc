@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { assertLocalControlRoot, isSupportedControlFilesystem, resolveInstallationLocation } from '../location.js';
+import { assertLocalControlRoot, isSupportedControlFilesystem, resolveInstallationLocation, sameInstallationHome } from '../location.js';
 import { parseInstaller } from '../schemas.js';
 
 test('explicit home endpoint and terminal launch identity remain consistent', () => {
@@ -26,6 +26,7 @@ test('explicit home endpoint and terminal launch identity remain consistent', ()
   const windows = resolveInstallationLocation('home', options);
   parseInstaller('location', windows);
   assert.equal(windows.daemonEndpoint.kind, 'named-pipe');
+  assert.deepEqual(resolveInstallationLocation('home', { ...options, home: 'c:' + options.home.slice(2) }), windows);
   assert.equal(windows.daemonEndpoint.address, resolveInstallationLocation('home', { ...options, home: options.home.toUpperCase() }).daemonEndpoint.address);
   assert.notEqual(windows.daemonEndpoint.address, resolveInstallationLocation('other', options).daemonEndpoint.address);
   assert.notEqual(windows.daemonEndpoint.address, resolveInstallationLocation('home', { ...options, userSid: 'S-1-5-21-456' }).daemonEndpoint.address);
@@ -56,4 +57,14 @@ test('unknown and network filesystem families fail closed until qualified', () =
     assert.equal(isSupportedControlFilesystem('darwin', type), false);
   }
   assert.equal(isSupportedControlFilesystem('win32', 0), false);
+});
+
+test('canonical drive-letter comparison preserves stored spelling and Unix identity', () => {
+  const legacy = 'c:\\Users\\person\\.insrc', canonical = 'C:\\Users\\person\\.insrc';
+  assert.equal(sameInstallationHome(legacy, canonical, 'win32'), true);
+  assert.equal(sameInstallationHome('C:/Users/person/.insrc/', canonical, 'win32'), true);
+  assert.equal(legacy[0], 'c', 'comparison does not rewrite a persisted record');
+  assert.equal(sameInstallationHome('D:\\Users\\person\\.insrc', canonical, 'win32'), false);
+  assert.equal(sameInstallationHome('/tmp/A', '/tmp/a', 'linux'), false);
+  assert.equal(sameInstallationHome('/tmp/A', '/tmp/A/', 'linux'), true);
 });

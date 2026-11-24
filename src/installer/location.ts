@@ -27,8 +27,13 @@ export function normalizeHome(home: string, os: Target['os']): string {
     const tail = home.slice(3).replaceAll('\\', '/').replace(/\/+$/, '');
     if (tail) assertRelativeFile(tail);
   }
-  const normalized = path.normalize(home);
+  const normalized = path.normalize(os === 'win32' ? home[0]!.toUpperCase() + home.slice(1) : home);
   return normalized.length === path.parse(normalized).root.length ? normalized : normalized.replace(os === 'win32' ? /[\\/]+$/ : /\/+$/, '');
+}
+
+/** Canonicalize guaranteed drive-letter aliases without folding filesystem names. */
+export function sameInstallationHome(left: string, right: string, os: Target['os']): boolean {
+  return normalizeHome(left, os) === normalizeHome(right, os);
 }
 
 /** Pure resolver. The caller obtains a SID from the qualified platform binding. */

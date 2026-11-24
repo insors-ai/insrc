@@ -4,10 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * LIVE check of the read-only read-only session against the real `claude` and
- * `codex` binaries (LLD-f2f08ccf89f8ab25-S001, test T14): the session can read
- * a file, can call insrc analyze, cannot write a file, and returns an answer
- * matching the schema.
+ * LIVE check of the read-only read-only session against the real `claude`,
+ * `codex` and `vibe` binaries (LLD-f2f08ccf89f8ab25-S001, test T14): the
+ * session can read a file, can call insrc analyze, cannot write a file, and
+ * returns an answer matching the schema.
  *
  * Gate behind INSRC_LIVE_TESTS=1 -- each call costs real billed tokens, and the
  * insrc MCP server must be registered with the CLI under test.
@@ -37,7 +37,7 @@ const SCHEMA = {
 
 interface Probe { readOk: boolean; line: string; analyzeCalled: boolean; writeRefused: boolean; note: string }
 
-for (const kind of ['claude', 'codex'] as const) {
+for (const kind of ['claude', 'codex', 'vibe'] as const) {
 	test(`T14 a ${kind} read-only session reads, calls insrc analyze, cannot write, and answers to the schema`, { skip: !GATE }, async () => {
 		const scratch = mkdtempSync(join(tmpdir(), 'insrc-review-live-'));
 		const target = join(scratch, 'SHOULD_NOT_EXIST.txt');

@@ -111,6 +111,12 @@ export const READ_ONLY_SESSION_READ_TOOLS: readonly string[] = ['Read', 'Grep', 
 /** The insrc analyze tools a read-only session may call for drill-down. */
 export const READ_ONLY_SESSION_ANALYZE_TOOLS: readonly string[] = ['mcp__insrc__insrc_analyze', 'mcp__insrc__insrc_analyze_step'];
 
+/** The vibe-native tool names a read-only session may use: reading (vibe's
+ *  own `read_file` and `grep`) plus the insrc analyze tools, under the
+ *  `<server>_<remote tool>` display-name convention vibe's own MCP naming
+ *  harness computes (`mistralai_vibe_local_harness/vibe/_mcp_naming.py`). */
+export const READ_ONLY_SESSION_VIBE_TOOL_NAMES: readonly string[] = ['read_file', 'grep', 'insrc_insrc_analyze', 'insrc_insrc_analyze_step'];
+
 /** Read-only sessions expose file reads and analysis tools only. */
 export function claudeReadOnlySessionArgs(schema: StructuredSchema, modelArgs: readonly string[]): string[] {
  return ['--print', '--output-format', 'json', '--json-schema', JSON.stringify(schema),
@@ -574,7 +580,7 @@ export class CliProvider implements LLMProvider {
 			// tool, and programmatic mode denies any call that would need an
 			// approval, so no write/execute tool exists in the session at all.
 			// The insrc analyze MCP tools stay reachable for drill-down.
-			const args = vibeArgs('json', ['--enabled-tools', 'read_file', '--enabled-tools', 'mcp_insrc_*']);
+			const args = vibeArgs('json', READ_ONLY_SESSION_VIBE_TOOL_NAMES.flatMap(tool => ['--enabled-tools', tool]));
 			const schemaNote = outputContractNote(schema);
 			let errors: readonly string[] = [];
 			for (let attempt = 1; attempt <= 2; attempt++) {
@@ -667,7 +673,7 @@ export class CliProvider implements LLMProvider {
 		if (this.defaultModel || this.effort !== undefined) {
 			const start = Date.now();
 			const output = vibeAssistantOutput();
-			const allowed = args.includes('--enabled-tools') ? ['read_file', 'mcp_insrc_*'] : undefined;
+			const allowed = args.includes('--enabled-tools') ? [...READ_ONLY_SESSION_VIBE_TOOL_NAMES] : undefined;
 			const registry = getModelRegistry();
 			const rejected = new Set(registry.rejected('cli-vibe'));
 			const result = await runVerifiedVibeTurn({
@@ -687,10 +693,17 @@ export class CliProvider implements LLMProvider {
 				},
 				verifyRuntime: allowed === undefined ? undefined : runtime => {
 					const tools = runtime['tools'];
-					if (runtime['bypassToolPermissions'] !== false || !Array.isArray(tools) || tools.some(tool => {
-						const name = isRecord(tool) ? tool['name'] : undefined;
-						return typeof name !== 'string' || (name !== 'read_file' && !name.startsWith('mcp_insrc_'));
-					})) throw new Error('Vibe app server did not verify the read-only tool policy');
+					if (runtime['bypassToolPermissions'] !== false || !Array.isArray(tools)) {
+						throw new Error('Vibe app server did not verify the read-only tool policy');
+					}
+					const names = tools.map(tool => (isRecord(tool) ? tool['name'] : undefined));
+					if (names.some(name => typeof name !== 'string' || !READ_ONLY_SESSION_VIBE_TOOL_NAMES.includes(name))) {
+						throw new Error('Vibe app server did not verify the read-only tool policy');
+					}
+					const requiredAnalyzeTools = READ_ONLY_SESSION_VIBE_TOOL_NAMES.filter(name => name.startsWith('insrc_'));
+					if (requiredAnalyzeTools.some(required => !names.includes(required))) {
+						throw new Error('Vibe app server did not verify the read-only tool policy');
+					}
 				},
 				prompt,
 				onHistory: output.accept,

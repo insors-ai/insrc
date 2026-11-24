@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1795455305020-ws5bwm",
+    "runId": "wf-1795511211216-taq2ib",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-23T17:35:06.863Z",
+    "createdAt": "2026-11-24T09:09:46.328Z",
     "attribution": {
       "outputs": [
         {
@@ -14,7 +14,7 @@
         }
       ]
     },
-    "elapsedMs": 1521,
+    "elapsedMs": 174804,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
@@ -32,22 +32,40 @@
     "storyTitle": "Install and upgrade development checkouts",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
-        "number": 2,
-        "contentHash": "aeca00c5d3dae6417f6c5d2b16924fb5fd2f127c4830d4cf072c2a154013ef80",
-        "at": "2026-11-23T17:35:06.955Z",
+        "number": 3,
+        "contentHash": "fe0535562ed92f45be41ae6406022e00c84fae5398a71b80d32732837fb1f392",
+        "at": "2026-11-24T09:09:46.455Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T09:15:50.636Z"
+      }
     },
-    "revision": 2
+    "revision": 3,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
   },
   "body": {
+    "summary": {
+      "prose": "Development installation resolves the chosen repository/branch to an accepted commit, builds it with verified private tooling and publishes a complete immutable release. The existing manager retains operation ownership and the shared terminal retains prompts/TUI handoff. This revision specifies the S1 integration seams, durable source checkout, receipt reopening and explicit pre-publication recovery exposed by the completed foundation. [[c1]] [[c3]]",
+      "audience": "technical"
+    },
     "hldContextSlice": {
       "frameworkSummary": "Choose a1: one shared user-level installer/manager with bundle and dev delivery adapters. Install launched from either IDE runs the same public platform installer script interactively in a visible terminal; the script owns prompts and output. IDE-specific installation wizards and hidden background installs are excluded. Lifecycle, migration, runtime and privilege constraints remain shared and unchanged. Successful interactive installation hands the same terminal directly to the installed insrc TUI after daemon readiness; it does not finish at an idle shell.",
       "ownedContracts": [],
@@ -252,222 +270,490 @@
         "durability": "OS-backed mutation exclusivity plus atomic versioned controller records. Prepared payloads immutable; candidate data mutation is daemon-owned only. Record hook run-started before execution and require test before completion; failures/interruption retain blocked startup. Retry never substitutes a different candidate or starts the predecessor after data changes automatically. Installation completion and lock release precede the interactive TUI session. TUI exit/launch failure cannot roll back the completed installation or keep an installation lock held."
       }
     },
-    "summary": {
-      "prose": "Developers can prepare a selected repository and branch as a new immutable installation candidate using private Node and npm. Dirty source and failed builds leave the active installation intact. The shared installer still owns activation, terminal prompts and the TUI handoff.",
-      "audience": "technical"
-    },
     "contractDetails": {
       "surfaceLevel": "internal-shared",
       "api": [
         {
-          "name": "Delivery",
-          "signature": "type Delivery = { mode: 'bundle'; repository: string; channel: string } | { mode: 'dev'; repository: string; branch: string };",
+          "name": "PreparedReleaseOffer",
+          "signature": "type PreparedReleaseOffer = BundleReleaseOffer | DevSourceOffer;\ninterface BundleReleaseOffer { kind: 'bundle'; manifest: ReleaseManifest; descriptorSha256: string }\ninterface DevSourceOffer { kind: 'dev-source'; delivery: Extract<Delivery, { mode: 'dev' }>; sourceCommit: string; target: Target; runtime: RuntimeIdentity; recipeVersion: 'dev-v1'; releaseId: string; sourceSha256: string }",
           "parameters": [
             {
-              "name": "input",
-              "type": "unknown",
-              "purpose": "Validated configured development source.; untrusted wire input is schema-validated before use.",
+              "name": "delivery",
+              "type": "Delivery",
+              "purpose": "Explicit validated repository/branch; no inferred source or mode.",
               "optional": false
             }
           ],
           "returns": {
-            "type": "Delivery",
-            "meaning": "Validated configured development source."
+            "type": "PreparedReleaseOffer",
+            "meaning": "Private adapter offer: bundle metadata is complete; a dev offer binds source/build intent before output bytes exist. Public UpgradeOffer remains unchanged."
           },
-          "preconditions": [
-            "Dev mode explicitly chosen; validate repository scheme/path and branch with Git ref rules.",
-            "No option-like repository/ref arguments, credential logging or shell interpolation."
-          ],
-          "postconditions": [
-            "Resolve configured branch once; persist exact commit before build.",
-            "No implicit default branch or bundle fallback."
-          ],
           "errors": [
             {
               "type": "source-invalid",
-              "condition": "Invalid repository/ref or unavailable exact branch."
+              "condition": "Invalid scheme/path/ref, option-like argument, unsupported object format or mismatched configured source."
+            },
+            {
+              "type": "source-fetch-failed",
+              "condition": "Selected branch has no unique commit or Git authentication/deadline fails."
+            },
+            {
+              "type": "offer-stale",
+              "condition": "The branch resolves to a different source identity when acceptance is rechecked."
             }
+          ],
+          "preconditions": [
+            "This is an explicit private integration change to src/installer/peer-contracts.ts and src/installer/manager.ts, not a change to HLD sc1/sc2 wire records. Bundle behavior retains its existing descriptor integrity checks. [[c4]] [[c6]]",
+            "Dev resolve uses bounded git ls-remote for refs/heads/<branch>. It performs no clone, fetch, npm, compilation, source mutation or persisted offer allocation. Credentials are delegated to ordinary Git configuration and never logged. [[c4]] [[c6]]"
+          ],
+          "postconditions": [
+            "sourceSha256 is SHA-256 of canonical {kind,delivery,sourceCommit,target,runtime,recipeVersion}, excluding sourceSha256/releaseId. releaseId is dev- plus its first 48 hex characters; these identify the source recipe, not compiled bytes. [[c4]] [[c6]]",
+            "Public offerId keeps the current installation/location/predecessor/delivery binding, using descriptorSha256 for bundle and sourceSha256 for dev. A changed branch between check and locked acceptance requires a new offer; no silent substitution. [[c4]] [[c6]]",
+            "After locked acceptance persist the full dev-source offer before fetch/build. During preparation fetch only the configured branch, checkout the accepted SHA detached, and compare actual Git object identity. If that object cannot be obtained after branch movement, fail; never replace it with the new tip. [[c4]] [[c6]]",
+            "No fabricated manifest/payload hash is used during a dev source check. The final ReleaseManifest and artifact descriptor hash exist only after compilation and inventory generation. [[c4]] [[c6]]"
           ]
         },
         {
-          "name": "ReleaseManifest",
-          "signature": "interface ReleaseManifest { schemaVersion: 1; releaseId: string; sourceCommit: string; target: Target; runtime: RuntimeIdentity; payloadSha256: string; daemonEntry: string; managerEntry: string; tuiEntry: string; protocolVersion: 1; compatiblePredecessors: string[]; migrations: HookReference[] }",
+          "name": "DeliveryPort",
+          "signature": "interface DeliveryPort {\n  resolve(delivery: Delivery): Promise<PreparedReleaseOffer>;\n  prepare(store: PreparationLease, offer: PreparedReleaseOffer, context: PreparationContext): Promise<PreparedCandidate>;\n  resumePreparation?(store: PreparationLease, context: PreparationContext): Promise<PreparedCandidate>;\n  open(location: InstallationLocation, releaseId: string): Promise<PreparedCandidate>;\n  verify(candidate: PreparedCandidate, location: InstallationLocation): Promise<void>;\n}",
           "parameters": [
             {
-              "name": "input",
-              "type": "unknown",
-              "purpose": "Immutable prepared dev candidate with common target/runtime identity.; untrusted wire input is schema-validated before use.",
+              "name": "store",
+              "type": "PreparationLease",
+              "purpose": "Existing restricted location/assertHeld/inspect/publishCandidate capability; never exposes controller commit or unrestricted operation writes.",
+              "optional": false
+            },
+            {
+              "name": "offer",
+              "type": "PreparedReleaseOffer",
+              "purpose": "Exact accepted private source/bundle offer.",
+              "optional": false
+            },
+            {
+              "name": "context",
+              "type": "PreparationContext",
+              "purpose": "Manager-bound operation ID, AbortSignal and typed checkpoint read/write callbacks for this operation only.",
               "optional": false
             }
           ],
           "returns": {
-            "type": "ReleaseManifest",
-            "meaning": "Immutable prepared dev candidate with common target/runtime identity."
+            "type": "PreparedCandidate",
+            "meaning": "The existing common immutable candidate only after full artifact validation and publication."
           },
+          "errors": [
+            {
+              "type": "source-dirty",
+              "condition": "Selected managed source has user changes, conflicts or changed identity."
+            },
+            {
+              "type": "source-build-failed",
+              "condition": "Private npm/build/packaging/native probe failed."
+            },
+            {
+              "type": "preparation-uncertain",
+              "condition": "Previous preparation actor closure or checkpoint identity cannot be positively established."
+            }
+          ],
           "preconditions": [
-            "Private Node 22.22.1/matching npm verified; required compiler/native prerequisites available without elevation."
+            "Proposed dev adapter implementation is src/installer/dev.ts; helper names there are private, not new public IPC APIs. Compose it as peers.dev in src/installer/production-peers.ts. All S1 required sibling-capability admission remains in force. [[c4]] [[c6]] [[c14]]",
+            "The manager alone writes its protected dev-preparation checkpoint through validated context callbacks. Adapter/worker cannot commit controller.json, migration journals, lifecycle receipts or selection. [[c4]] [[c6]] [[c14]]",
+            "PreparationContext is proposed private structure { operationId, signal?, readCheckpoint(), checkpoint(record) }; callbacks enforce installation/operation/source/attempt identity, bounded records, original lease and current revision. Bundle preparation ignores dev checkpoints and otherwise retains behavior. [[c4]] [[c6]] [[c14]]"
           ],
           "postconditions": [
-            "Source commit and compiled/dependency inventory digest bind the candidate.",
-            "Common controller receives preparation result; s2 never stops daemon, runs migrations or starts TUI independently."
-          ],
-          "errors": []
+            "Dev open/verify consume only stored receipt/inventory/runtime bytes; ordinary start/restart/TUI/recovery never fetch, npm-install or rebuild. [[c4]] [[c6]] [[c14]]",
+            "For dev offers, manager compares candidate receipt sourceSha256, releaseId, commit, target, runtime and recipe against the accepted source offer; it does not compare a source-offer digest to the post-build descriptor digest. Bundle candidates keep descriptor equality with their offer. [[c4]] [[c6]] [[c14]]",
+            "resumePreparation is used only by explicit same-operation retry-migration while the durable phase is preparing and no candidate/admission exists. It reuses the accepted source offer, never resolves the moving branch again. Once candidate identity is recorded, existing S1 same-candidate recovery applies. [[c4]] [[c6]] [[c14]]",
+            "Cancellation reaches the owned preparation worker and its process scope, not merely a check before/after an awaited build. Publication and subsequent lifecycle handoff require confirmed closure of all preparation actors. [[c4]] [[c6]] [[c14]]"
+          ]
         },
         {
-          "name": "ManagerRequest",
-          "signature": "interface ManagerRequest { protocolVersion: 1; operationId: string; action: ManagerAction; installationId: string; shutdownMode?: 'graceful' | 'immediate'; acceptedOfferId?: string; installOllama?: boolean }",
+          "name": "PreparedCandidate",
+          "signature": "interface PreparedCandidate { releaseId: string; directory: string; manifest: ReleaseManifest; descriptorSha256: string; payloadSha256: string; inventorySha256: string }",
           "parameters": [
             {
               "name": "input",
               "type": "unknown",
-              "purpose": "Existing manager selection of dev preparation, not a second install protocol.; untrusted wire input is schema-validated before use.",
+              "purpose": "Bounded dev receipt and complete inventory read from its immutable release root.",
               "optional": false
             }
           ],
           "returns": {
-            "type": "ManagerRequest",
-            "meaning": "Existing manager selection of dev preparation, not a second install protocol."
+            "type": "PreparedCandidate",
+            "meaning": "Same S1 final identity regardless of delivery mode; dev-specific provenance stays in its private receipt."
           },
+          "errors": [
+            {
+              "type": "candidate-conflict",
+              "condition": "Stored bytes, source identity, target, runtime, root or descriptor/inventory digest differs."
+            },
+            {
+              "type": "source-incompatible",
+              "condition": "Unsupported source recipe/protocol, predecessor provenance or source ancestry."
+            }
+          ],
           "preconditions": [
-            "Terminal-only install remains enforced by s1; upgrade binds exact accepted offer."
+            "Final root is <home>/releases/<releaseId>, published from owned <home>/install/staging through the existing manager-held lease. Existing roots are reused only after full verification; different bytes never replace them. [[c5]] [[c7]] [[c8]]",
+            "Dev inventory.json describes complete runtime files. .dev-release.json is canonical {schemaVersion:1,mode:'dev',sourceOffer,manifest,inventorySha256,checkoutRelativePath}; bounded to the existing descriptor limit. Its manifest.payloadSha256 equals the canonical inventory-byte digest in dev mode. descriptorSha256 hashes receipt bytes; receipt and inventory are excluded from their own inventory. [[c5]] [[c7]] [[c8]]",
+            "No bundle publication:'qualified' descriptor is synthesized for local dev artifacts. Existing .release.json bundle receipt/validation remains unchanged. Full verification rejects special files, escapes, collisions, missing/extra files, changed modes/digests and changed private runtime, reusing S1 bounded inventory/path primitives. [[c5]] [[c7]] [[c8]]"
           ],
           "postconditions": [
-            "Reuse foundation state/locks/errors; no new IDE-facing install path.",
-            "Missing sibling execution capability is explicit before disruption."
+            "Candidate payload includes out/ daemon/TUI/MCP/assets, production/workspace/native dependency closure, bootstrap.mjs, manager.mjs, native/control.node and tools/node with exact runtime/npm/headers policy. Use S1 control bundling, collection and native/runtime probes from the accepted checkout; do not run the qualified GitHub publisher or fake qualification. [[c5]] [[c7]] [[c8]]",
+            "Release identity is fixed before build; first verified publication fixes actual bytes in that installation. A later same-source request reopens the existing verified candidate instead of rebuilding different bytes under the same ID. An invalid existing release is a conflict, never an overwrite. [[c5]] [[c7]] [[c8]]",
+            "Before publication derive compatiblePredecessors as [] for fresh install or [selected release ID] only after verifying a dev receipt for the same configured source/target/protocol/recipe and Git ancestry of its commit. Different/unknown provenance, non-forward history or bundle/legacy adoption is diagnosed; no implicit mode conversion. [[c5]] [[c7]] [[c8]]",
+            "Ordered migration references are read from the accepted commit's optional package.json insrcInstaller object {schemaVersion:1,migrations:HookReference[]}; absence means an empty list. Reject unknown fields/invalid references, preserve order and bind the source commit. S5 alone decides/checks/runs/tests applicable migration work. [[c5]] [[c7]] [[c8]]"
+          ]
+        },
+        {
+          "name": "managerMain",
+          "signature": "managerMain(args?: string[]): Promise<void>",
+          "parameters": [
+            {
+              "name": "args",
+              "type": "string[]",
+              "purpose": "Existing ordinary manager arguments and unchanged bounded ManagerRequest input.",
+              "optional": true
+            }
           ],
-          "errors": []
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Ordinary installed manager can inspect/control either receipt mode using the shared controller."
+          },
+          "errors": [
+            {
+              "type": "candidate-conflict",
+              "condition": "Both receipt types exist, mode conflicts with controller delivery, or selected identity is inconsistent."
+            },
+            {
+              "type": "schema-invalid",
+              "condition": "Unknown receipt version, malformed/oversized input or unknown fields."
+            }
+          ],
+          "preconditions": [
+            "Replace only private receipt loading in src/installer/manager-entry.ts with a mode dispatcher: exactly one .release.json or .dev-release.json at the installed release root. Validate embedded target against the bundled build target/current runtime before composing peers; never guess from environment or fabricate a bundle descriptor. [[c7]] [[c11]] [[c12]]",
+            "Ordinary install rejection, terminal capability, current ManagerRequest/UpgradeOffer/ManagerEvent and application IPC stay unchanged. Preserve startup boot guards and required real sibling ports. [[c7]] [[c11]] [[c12]]"
+          ],
+          "postconditions": [
+            "Fresh manager processes can reopen and verify a dev candidate without adapter memory caches or build tools on PATH. [[c7]] [[c11]] [[c12]]",
+            "Installed TUI publication/retry selects the new candidate's own bootstrap/private runtime pair, as S1 now enforces. Successful readiness/selection and release of manager ownership still precede the shared terminal's TUI handoff. S2 does not implement that handoff again. [[c7]] [[c11]] [[c12]]"
+          ]
+        },
+        {
+          "name": "buildStages",
+          "signature": "buildStages(run: BuildRun, options?: { npmCli?: string }): string[][]",
+          "parameters": [
+            {
+              "name": "run",
+              "type": "BuildRun",
+              "purpose": "Existing accepted-checkout coordinator context under verified private Node.",
+              "optional": false
+            },
+            {
+              "name": "options.npmCli",
+              "type": "string",
+              "purpose": "Proposed optional absolute verified matching npm CLI override for dev preparation; ordinary development defaults remain unchanged.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "string[][]",
+            "meaning": "Existing coordinated build stages with private npm CLI passed as a script to the selected absolute Node."
+          },
+          "errors": [
+            {
+              "type": "runtime-invalid",
+              "condition": "Node/npm/header identity or target differs from release policy."
+            },
+            {
+              "type": "source-prerequisite-missing",
+              "condition": "Git/compiler/extraction/verified native-header prerequisite is unavailable without elevation."
+            }
+          ],
+          "preconditions": [
+            "S2's private worker uses absolute Node 22.22.1 and npm 10.9.4 CLI paths verified against S1 runtime policy. npm ci uses the accepted lockfile with optional native dependencies included; production closure is collected afterward. [[c9]] [[c10]]",
+            "Use privateRuntimeEnvironment, prepend private Node's directory to child PATH, and supply absolute npmCli explicitly to buildStages/prepareBuild. Do not assume private bin/npm exists: bootstrap runtime extraction may expose only npm-cli.js. Preserve ordinary coordinator defaults outside this explicit dev call. [[c9]] [[c10]]",
+            "Clear inherited Node injection and parent test-coordinator identity from the new source worker; retain needed ordinary Git/registry credentials without capturing/logging them. Override runtime-altering npm/node-gyp settings with selected pinned policy and verified headers; unavailable verified headers are a prerequisite error, never a host-version fallback. [[c9]] [[c10]]",
+            "Set CUDA skip only if absent, preserve explicit inherited values and record the effective value. No global PATH, npm config, HOME, service or privilege changes. [[c9]] [[c10]]"
+          ],
+          "postconditions": [
+            "All source worker children and coordinator stages use private Node/matching npm, including package scripts reached through PATH. No app DB/model/workflow boot is imported for preparation. [[c9]] [[c10]]",
+            "Run canonical build/withRun ownership for the isolated checkout; call existing prepareBuild with explicit private-npm stages. Resolve source checkout helpers/dev dependencies from that checkout, not the invoking installer's ROOT. Any tiny packaging root/npm override needed is explicit S2 integration, not a second build pipeline. [[c9]] [[c10]]",
+            "Retain and confirm closure of every spawned preparation process through the existing owned-process/coordinator machinery; no daemon PID/signal control is introduced. Native/payload probes are fixture/local evidence until S8 supplies actual target/live qualification. [[c9]] [[c10]]"
+          ]
         }
       ]
     },
     "dataModelChanges": [
       {
-        "entity": "Development preparation record",
+        "entity": "Dev source offer and accepted preparation checkpoint",
         "change": "new",
-        "details": "New private s2 record binds operation id, configured repository/branch, once-resolved commit, private runtime and staging root. Fetch configured refs/heads/<branch> into a new operation-owned repository and checkout detached at FETCH_HEAD. Verify remote/source identity and avoid changing global Git settings or user credentials. Git subprocesses use argument arrays, bounded output/deadlines and disabled repository hooks/fsmonitor where untrusted preparation could trigger them. Proposed implementation boundary: src/installer/dev.ts; existing build coordinator is inspected input, not an instruction to rewrite it.",
-        "callSites": []
+        "details": "Proposed source files: src/installer/dev.ts and src/installer/dev-worker.ts; these are new implementation locations, while callSites below are existing composition boundaries. One installation owns at most one unfinished controller operation; that operation owns exactly one accepted source offer and zero or more serial preparation attempts. Manager-owned dev-preparation metadata is stored under install/operations/<operationId>, with schema version, exact source offer, predecessor, attemptId/nonce, checkoutRelativePath, stageRelativePath, coordinator run identity and outcome. Persist accepted identity before launch admission. Candidate ID is not an assertion of publication. A preparation worker owns only its checkout/stage/results and never a controller writer or application data lease. No new public Phase/ManagerAction is added. [[c1]] [[c6]] [[c13]]",
+        "schemaDiff": "interface PreparationContext { operationId: string; signal?: AbortSignal; readCheckpoint(): DevPreparationRecord | undefined; checkpoint(record: DevPreparationRecord): void }\ninterface DevPreparationRecord { schemaVersion: 1; installationId: string; operationId: string; sourceOffer: DevSourceOffer; predecessorId?: string; attemptId: string; workerNonce: string; checkoutRelativePath: string; stageRelativePath: string; coordinatorRunId?: string; stage: 'accepted' | 'building' | 'prepared' | 'failed' | 'cancelled'; resultRelativePath?: string }",
+        "callSites": [
+          "src/installer/peer-contracts.ts",
+          "src/installer/manager.ts"
+        ]
       },
       {
-        "entity": "Source preservation and build result",
+        "entity": "Retained managed source checkout",
         "change": "new",
-        "details": "Detect dirty/conflicting managed source before upgrade and refuse with an actionable message; never reset/clean user trees. Build only the isolated checkout using its lockfile and absolute private Node/npm; optional native dependencies are retained. Set ONNXRUNTIME_NODE_INSTALL_CUDA=skip only when absent, preserving and recording an explicit inherited value. Run the repository's documented build through the existing coordinator, capture source/build fingerprints and copy only validated runtime dependency closure. Untrusted dev source executes only after explicit source selection; no elevated install of Git/compiler/system libraries.",
-        "callSites": []
+        "details": "Each attempt allocates a new private checkout at <home>/dev/checkouts/<attemptId>; payload staging stays in <home>/install/staging/<operationId>-<attemptId>. The selected dev receipt points to exactly one managed checkout through a bounded contained relative path; the checkout belongs to that source preparation and is outside the immutable payload/inventory. At later dev upgrade, inspect that exact checkout: expected origin, detached HEAD/source commit, clean tracked/untracked/conflict state, and build-input fingerprint recorded after successful preparation. Build-generated ignored outputs are excluded using the accepted source's normal Git rules, not blanket exclusion of user files. A configured local source path is also inspected for dirty/conflicting work before fetch. Never reset/clean/modify the selected checkout; use a fresh attempt. Dirty/missing/foreign source gives an actionable error. After activation the new receipt chooses its retained checkout; former checkouts are preserved with no automatic GC. Failed/cancelled attempts delete only their proven-owned pristine staging after all actors close; changed or ownership-uncertain checkout data is retained for the user. [[c1]] [[c6]] [[c13]]",
+        "callSites": [
+          "src/installer/manager.ts",
+          "scripts/test-harness/build.mjs"
+        ]
       },
       {
-        "entity": "Prepared dev payload",
+        "entity": "Preparation completion and explicit retry",
         "change": "new",
-        "details": "Canonical inventory digest identifies the prepared dev payload; payloadSha256 denotes this immutable inventory digest in dev mode, while the bundle adapter owns archive-digest semantics. Mode/sourceCommit/target remain explicit. Candidate files are operation-owned until validation/publish; common s1 controller owns atomic selection and subsequent sibling handoff. Failed prepare cleans only its own staging and never changes running/stopped intent. Installed TUI/assets remain part of the selected payload.",
-        "callSites": []
+        "details": "The private preparation worker uses the existing coordinator/process ownership pattern and writes a bounded nonce/source/attempt/run-bound result only after its command actors are confirmed closed; it has no publication callback or controller handle. A matching result, confirmed cleanup and released coordinator/worker ownership together permit manager verification/publication; a free operation lock, absent endpoint, PID/age, log line or result projection alone does not. Parent abort or terminal EOF cancels worker work and drains retained preparation actors within the configured budget. If the manager exits, a surviving worker may finish/dispose and persist its private result, but cannot publish/select/activate. Explicit same-operation retry-migration in preparing first checks checkpoint identities and prior actor closure. It can verify/finalize an already prepared stage, or create a new serial attempt for the same accepted source after a confirmed failed/cancelled attempt. A source ref is never re-resolved during recovery. Missing/contradictory evidence remains preparation-uncertain with retained diagnostics; no duplicate worker, automatic stage deletion, automatic retry loop or predecessor restart. The narrow window with an admitted worker but no positive outcome remains uncertain rather than guessed. Once publication is verified, the manager persists the usual candidate record; post-publication recovery continues through S1's existing exact-candidate path. Worker launch input and cancel frames are bounded/versioned and bind the operation/attempt/nonce; EOF is cancellation. Result/cleanup/child-close journal paths are derived from validated checkpoint IDs under the owned checkout, never accepted as arbitrary paths from output. A result is usable only with matching source/run identity, cleanup digest, confirmedClosed=true, observed close entries for all admitted command actors and released coordinator/worker ownership; status strings or exit-code projection alone are insufficient. Worker control/result schema is private preparation plumbing, not an IDE or daemon protocol. No workload or payload writes are admitted after a finalized result. [[c1]] [[c6]] [[c13]] The manager retains blocked/interrupted-preparing plus the checkpoint when child cleanup is unconfirmed, even though the daemon was never quiesced; it must not take the ordinary pre-disruption error path that clears the operation. Confirmed failed/cancelled preparation can finish without changing predecessor selection or its prior ready/stopped result. Explicit recovery requires the same operation ID; normal start/upgrade remains denied while ownership is uncertain. [[c6]] [[c13]]",
+        "callSites": [
+          "src/installer/manager.ts",
+          "scripts/test-harness/context.mjs",
+          "scripts/test-harness/process.mjs"
+        ],
+        "schemaDiff": "interface DevPreparationResult { schemaVersion: 1; installationId: string; operationId: string; attemptId: string; workerNonce: string; sourceSha256: string; coordinatorRunId: string; outcome: 'prepared' | 'failed' | 'cancelled'; cleanupSha256: string; inputFingerprint: string; outputFingerprint?: string | undefined; inventorySha256?: string | undefined }\ninterface DevWorkerCancel { schemaVersion: 1; operationId: string; attemptId: string; workerNonce: string; kind: 'cancel' }"
+      },
+      {
+        "entity": "Dev receipt and immutable payload identity",
+        "change": "new",
+        "details": "One immutable release has exactly one receipt mode: qualified bundle .release.json or local .dev-release.json. A dev receipt binds one accepted source offer, one final sc1 manifest, one inventory and one managed checkout pointer; it is not a qualification record or migration journal. Receipt canonical bytes determine descriptorSha256, inventory bytes determine inventorySha256 and dev payloadSha256, and neither record hashes itself. Publication excludes both metadata files from inventory self-membership and rejects any extra receipt. Reopening validates full payload/runtime and actual manifest/offer identity independently in a new process. S1 bundle descriptors, archive-digest semantics and all external sc1/sc2 shapes are preserved. [[c1]] [[c6]] [[c13]]",
+        "callSites": [
+          "src/installer/bundle.ts",
+          "src/installer/manager-entry.ts",
+          "src/installer/installed-launcher.ts"
+        ]
+      },
+      {
+        "entity": "Complete payload assembly and explicit integration files",
+        "change": "invariant-change",
+        "details": "Reuse source-checkout scripts/package-installer.mjs bundleControlEntrypoint, collectProductionPayload and probePayload plus scripts/installer-payload.mjs containment/closure/inventory helpers, factoring only bundle-agnostic helpers if necessary. Required roots include bootstrap.mjs, manager.mjs, native/control.node, tools/node and compiled out/ resources/native bindings. Preserve bounded entries/bytes and no linked files in published runtime closure. Proposed private receipt/worker modules live in src/installer/dev.ts, src/installer/dev-worker.ts and src/installer/dev-receipt.ts. Explicit existing-file edits are limited to private delivery offer/context types and dispatch in src/installer/peer-contracts.ts, src/installer/manager.ts, src/installer/production-peers.ts, src/installer/manager-entry.ts; cancellation plumbing in src/installer/terminal-entry.ts and src/installer/terminal-install.ts; reusable receipt-independent inventory checks in src/installer/safe-zip.ts if needed; and explicit private npm/root selection in scripts/test-harness/build.mjs and scripts/package-installer.mjs. Update affected fixture offers/composition/tests for the private discriminant; preserve bundle records and required sibling admission. This consumes S1 ownership, does not relocate it or reopen S1 task accounting. If a public HLD contract change proves necessary, back-flow before build instead of silently changing it. [[c1]] [[c6]] [[c13]]",
+        "callSites": [
+          "src/installer/peer-contracts.ts",
+          "src/installer/manager.ts",
+          "src/installer/production-peers.ts",
+          "src/installer/manager-entry.ts",
+          "src/installer/terminal-entry.ts",
+          "src/installer/terminal-install.ts",
+          "scripts/package-installer.mjs",
+          "scripts/installer-payload.mjs",
+          "scripts/test-harness/build.mjs"
+        ]
       }
     ],
     "interactionWithShared": [
       {
         "contractId": "sc1",
         "role": "consumes",
-        "howDetails": "Validate and return common prepared identity; never change delivery mode implicitly."
+        "howDetails": "Keep Delivery/Installation/ReleaseManifest/Target/RuntimeIdentity unchanged. Private source offers precede final manifests; dev receipt binds final inventory identity. Publish through S1 lease; no new selection writer or implicit mode/source switch. [[c1]]"
       },
       {
         "contractId": "sc2",
         "role": "consumes",
-        "howDetails": "Use foundation operation/lock/candidate admission; install remains script-only."
+        "howDetails": "Existing manager owns read-only checks, accepted offer, preparing checkpoint/candidate publication and subsequent sibling handoff. Existing retry-migration explicitly reconciles pre-publication dev preparation; no new public action/phase. Terminal install restriction, protected same-operation escalation and all required sibling adapter admission stay intact. [[c1]]"
       },
       {
         "contractId": "sc3",
         "role": "consumes",
-        "howDetails": "Consume prerequisite/dependency result; do not implement detection/install."
+        "howDetails": "Use owning dependency reports/consent and shared pinned runtime policy; S2 only diagnoses its source build prerequisites. Missing S3/S4/S5 ports remain capability-unavailable; fixture peers are test-only. [[c1]]"
       },
       {
         "contractId": "sc5",
         "role": "consumes",
-        "howDetails": "Carry ordered hook references unchanged; execution belongs to s5."
+        "howDetails": "Carry commit-bound ordered hook references into final manifest without executing hooks or allocating app DB leases. S5 owns applicability, migration-only boot, journals/test/retry policy; S4 owns shutdown/readiness completion. [[c1]]"
       },
       {
         "contractId": "sc6",
         "role": "consumes",
-        "howDetails": "Use explicit shared home/target/endpoint resolution."
+        "howDetails": "Use shared explicit home, user-scoped endpoint and canonical drive-letter identity. Child paths/environment use the same chosen home. No new application transport or IDE bridge behavior. [[c1]]"
       }
     ],
     "errorPaths": {
       "errorCases": [
         {
-          "scenario": "Dirty/conflicting managed source",
-          "detection": "Git status/conflict markers and configured source identity fail preflight.",
-          "response": "source-dirty; refuse before disruption without reset/clean.",
-          "userImpact": "User keeps all changes.",
+          "scenario": "Configured source/ref or accepted offer changes",
+          "detection": "Parse repository form and git check-ref-format before argument-array execution; ls-remote returns one exact branch SHA, and locked re-resolution/offer digest comparison differs from the accepted ID.",
+          "response": "source-invalid/source-fetch-failed/offer-stale; require fresh explicit acceptance. After acceptance fetch only the pinned commit or report it unavailable; never use a replacement branch tip.",
+          "userImpact": "No source execution or incumbent disruption for an unaccepted revision.",
           "recoverable": true
         },
         {
-          "scenario": "Fetch/auth/ref failure",
-          "detection": "Git exit/deadline and exact ref validation fail.",
-          "response": "source-fetch-failed with redacted diagnostics; discard only owned staging.",
-          "userImpact": "Active release remains usable.",
+          "scenario": "Dirty, conflicting, missing or foreign managed source",
+          "detection": "Resolve the selected dev receipt's contained checkout path, compare origin/HEAD/fingerprint and inspect porcelain status/unmerged entries, including untracked user files. Also inspect an explicitly selected local source working tree.",
+          "response": "source-dirty/source-conflict/source-identity-mismatch with the preserved checkout location; never reset, clean, switch branch or silently allocate a replacement for a missing selected tree.",
+          "userImpact": "All user edits and incumbent runtime remain usable and unchanged.",
           "recoverable": true
         },
         {
-          "scenario": "Private toolchain/native build failure",
-          "detection": "Verified executable identity, npm/build exit or inventory probes fail.",
-          "response": "source-build-failed; no candidate activation or source-mode switch.",
-          "userImpact": "Install/upgrade is not falsely successful.",
+          "scenario": "Missing or mismatched private build toolchain",
+          "detection": "Verified Node/npm/header identity/target differs from release policy, required source-build helpers/lockfile are absent, or compiler/Git/extraction probe fails.",
+          "response": "runtime-invalid/source-prerequisite-missing/source-incompatible before lifecycle handoff; provide concrete user-level prerequisites, never elevation or host Node/npm fallback.",
+          "userImpact": "No false install/upgrade success or privileged modification.",
           "recoverable": true
         },
         {
-          "scenario": "Source moved during preparation",
-          "detection": "Recorded fetched commit differs from later branch observations.",
-          "response": "Continue only the already accepted exact commit, or require a new offer for a new candidate.",
-          "userImpact": "No silent revision substitution.",
+          "scenario": "npm/build/native/payload validation fails",
+          "detection": "Owned command exits nonzero, reaches deadline, changes source fingerprints or produces incomplete/unsafe payload bytes or failed target-native probes.",
+          "response": "source-build-failed; drain owned actors, persist exact attempt diagnostics, clean only proven-owned pristine staging, preserve selected source/release and report no activation.",
+          "userImpact": "Incumbent keeps serving; failed preparation does not select a partial release.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Terminal cancellation or manager exits before candidate publication",
+          "detection": "AbortSignal/worker-control cancel or owner stdin EOF requests cancellation; manager restart sees a preparing checkpoint without ordinary candidate metadata.",
+          "response": "Propagate cancellation into owned process scope and await bounded confirmed child closure. Explicit retry-migration reconciles the same accepted source/attempt result, then finalizes verified prepared bytes or begins one fresh serial attempt. Missing cleanup, mismatched nonce or held/unknown actor ownership returns preparation-uncertain; no duplicate workers or automatic retries.",
+          "userImpact": "Cancellation prevents later publication/TUI handoff; interrupted work retains useful diagnostics and explicit recovery rather than guessing completion.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Manager exits around publication/checkpoint commit",
+          "detection": "Recovered checkpoint names the expected release but the candidate record is missing, or a published directory exists without its matching durable operation projection.",
+          "response": "After prior actor closure, open and fully verify the exact dev receipt/source/bytes and reconcile it under the same manager lease. Record the existing candidate once and resume S1 recovery; a mismatching/incomplete root is candidate-conflict and is never overwritten.",
+          "userImpact": "A completed private publication can be recovered without rebuilding or silently changing identity.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Installed receipt or immutable files are corrupt/ambiguous",
+          "detection": "Bounded receipt parsing finds unknown schema, both receipt modes, mismatched controller delivery/target/source, different inventory/descriptor hash, escaped paths, special files or changed Node/native/control files.",
+          "response": "candidate-conflict/schema-invalid; fail before executing candidate code or quiescing an incumbent. Do not reinterpret a dev receipt as a qualified bundle or rebuild during open/verify.",
+          "userImpact": "Tampering/corruption is visible and does not cause mixed-release execution.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unsupported predecessor provenance or branch history",
+          "detection": "Selected dev receipt does not match configured source/target/protocol/recipe, or Git ancestry check fails for a requested forward dev upgrade.",
+          "response": "source-incompatible before publication/cutover. No implicit bundle/legacy adoption, branch switch or invented compatibility list.",
+          "userImpact": "Unsupported source transitions require deliberate source-specific handling without data loss.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Required sibling ports or target qualification unavailable",
+          "detection": "Shared manager admission finds missing actual dependency/lifecycle/migration methods, or requested production publication lacks target/native/live qualification.",
+          "response": "Preserve capability-unavailable/target-unqualified. Preparation fixtures may exercise handoff but cannot certify missing owning behavior or enable a platform.",
+          "userImpact": "S2 does not falsely report full live installation, readiness or platform support.",
           "recoverable": true
         }
       ],
       "edgeCases": [
         {
-          "input": "Remote branch advances after fetch",
-          "expected": "Build the recorded commit; next check may offer another commit."
+          "input": "Branch moves between read-only check and locked acceptance",
+          "expected": "offer-stale; no build or state mutation. User accepts a new exact offer explicitly."
         },
         {
-          "input": "Repository/branch/home contains spaces or Unicode",
-          "expected": "Argument arrays and validated ref/path handling preserve identity."
+          "input": "Branch moves after accepted source is durably recorded",
+          "expected": "Continue only the recorded commit if obtainable; fetch failure leaves incumbent serving. Recovery never re-resolves the branch."
         },
         {
-          "input": "Explicit CUDA install env value exists",
-          "expected": "Preserve it; set skip only when absent and record effective value."
+          "input": "Same source offer already has a verified published release",
+          "expected": "Reuse it after full identity/inventory/runtime verification. Never rebuild or overwrite different bytes under that release ID."
+        },
+        {
+          "input": "Source contains an ordered hook list or no hook metadata",
+          "expected": "Validate accepted package.json insrcInstaller metadata, preserve hook order unchanged; absence means zero hooks and does not replace S5's validation."
+        },
+        {
+          "input": "A failed checkout acquires user edits while diagnostics are retained",
+          "expected": "Retain it and report its location; automated cleanup never deletes edited or ownership-uncertain source."
+        },
+        {
+          "input": "Home/local repository contains spaces or Unicode; Windows drive letter uses another case",
+          "expected": "Use argument arrays, contained portable relative receipt paths and shared canonical location comparisons. Valid Unicode Git refs are accepted; spaces or other forbidden ref characters are rejected by Git rules."
+        },
+        {
+          "input": "Explicit CUDA setting is empty or another value",
+          "expected": "Preserve it exactly; default skip only when the variable is absent and record effective value."
+        },
+        {
+          "input": "No npm wrapper exists beside the verified Node executable",
+          "expected": "Use the absolute matching npm-cli.js for npm ci and coordinator stages; no PATH npm fallback."
+        },
+        {
+          "input": "A worker is admitted but no positive completion/cleanup evidence survives",
+          "expected": "Remain preparation-uncertain and retain diagnostics; neither a free OS lock nor PID absence authorizes deletion or another worker."
         }
       ],
       "invariantsToPreserve": [
         {
-          "text": "Remain inside s2 boundary; no elevated commands, PID/kill daemon fallback, direct cloud LLM REST, or host v2 daemon mutation.",
+          "text": "HLD public sc1/sc2/sc3/sc5/sc6 wire records and owner boundaries remain unchanged; narrow private S1 composition adaptations are explicit S2 integration work.",
           "source": "c1"
         },
         {
-          "text": "Approved HLD shared contracts, terminal-only install and success-to-TUI handoff remain unchanged.",
+          "text": "S1 remains the sole controller/selection writer. S2 workers do not stop/start daemons, run migration hooks, open app DBs or implement IDE transports.",
+          "source": "c1"
+        },
+        {
+          "text": "Terminal-only install, exact accepted offer, immutable candidate verification and selected release bootstrap/runtime TUI handoff remain enforced; all required sibling adapters remain mandatory.",
+          "source": "c1"
+        },
+        {
+          "text": "No elevated commands, implicit source/mode switch, daemon PID/signal/kill controls, direct cloud LLM REST or host v2 daemon mutation.",
           "source": "c2"
         },
         {
-          "text": "DEF E20261123c3d71313:S002:FR001 and this story acceptance criteria apply unchanged.",
+          "text": "DEF E20261123c3d71313:S002:FR001 and ac1-ac3 apply unchanged. S8 owns real UTM/OrbStack/Windows qualification; local/fixture passes never imply supported production publication.",
           "source": "c3"
         }
       ]
     },
     "testStrategy": {
-      "testFramework": "node:test + node:assert/strict; canonical *.test.ts coordinator. Real platform/IDE qualification is recorded separately and not inferred from fakes.",
+      "testFramework": "node:test + node:assert/strict with co-located *.test.ts through the canonical coordinator. Owned subprocess fixtures self-exit/control their own lifetimes; host v2 daemon and app stores are untouched. Surrounding tests run per task; the combined installer regression runs after S2 tasks. S2 fixture/local evidence and S8 live platform qualification stay distinct.",
       "testLevels": [
         {
-          "level": "integration",
-          "purpose": "Prove source preservation and exact private build behavior with local Git remotes and process fixtures.",
+          "level": "unit",
+          "purpose": "Strict source/receipt validation and noncircular, mode-specific identity without execution side effects.",
           "subjects": [
-            "branch movement/dirty checkout/auth errors",
-            "wrong/no host Node and npm",
-            "build failure leaves incumbent unchanged"
+            "dev-source-offer-binds-repo-branch-commit-target-runtime-recipe-without-payload-hash",
+            "dev-receipt-binds-final-manifest-inventory-and-contained-checkout-without-self-hash",
+            "invalid-option-like-ref-source-and-ambiguous-receipts-rejected"
           ],
           "fixturesNeeded": [
-            "Two local repositories and operation-owned temp homes; no real daemon socket."
+            "Canonical source-offer/dev-receipt vectors; malformed/oversized/unknown-version records; Linux/macOS/Windows path vectors including C:/c: aliases."
           ]
         },
         {
           "level": "contract",
-          "purpose": "Verify identical prepared-candidate contracts and terminal ownership.",
+          "purpose": "Preserve S1 offer/lease/controller/terminal ownership while adding only private dev composition.",
           "subjects": [
-            "mode/source/runtime/inventory identity",
-            "missing sibling capabilities fail explicitly",
-            "shared script success-to-TUI path is consumed, not reimplemented"
+            "read-only-dev-check-never-fetches-builds-or-writes-install-state",
+            "offer-moves-before-acceptance-is-stale-after-acceptance-remains-pinned",
+            "dev-open-verify-and-fresh-manager-reopen-never-fetch-or-build",
+            "bundle-offer-receipt-and-required-sibling-admission-regressions-preserved",
+            "dev-common-handoff-selects-candidate-bootstrap-runtime-and-retains-mode"
+          ],
+          "fixturesNeeded": [
+            "Existing manager/controller/terminal fixtures, typed dev adapter, actual ordinary manager subprocess and isolated controller homes; no substitute production sibling implementations."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise real local Git and owned private-tooling preparation, source preservation, failure and recovery.",
+          "subjects": [
+            "selected-repo-branch-exact-commit-and-unrelated-branch-never-selected",
+            "dirty-conflicting-missing-or-foreign-selected-checkout-preserved",
+            "npm-build-fetch-and-native-probe-failure-preserve-incumbent",
+            "cancel-or-terminal-eof-drains-owned-preparation-actors-before-return",
+            "manager-self-exit-before-candidate-recovers-same-source-with-no-duplicate-worker",
+            "held-unknown-or-mismatched-preparation-result-blocks-retry-and-cleanup",
+            "published-release-before-candidate-record-reconciles-without-rebuild",
+            "immutable-dev-payload-tamper-or-existing-id-conflict-refuses-before-shutdown"
+          ],
+          "fixturesNeeded": [
+            "Two local Git remotes, exact recorded commits, isolated explicit homes/checkouts/stages and nonce-bound worker results.",
+            "Owned-process fixtures for manager self-exit, a surviving preparation worker, bounded cancel and confirmed cleanup; missing/foreign cleanup evidence stays blocked.",
+            "Command fixtures for unavailable compilers and hostile host Node/npm; fixture success is not target qualification."
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Probe the implemented private-toolchain and complete payload on the native host, without starting app services or certifying other platforms.",
+          "subjects": [
+            "dev-private-node-and-explicit-npm-cli-work-with-no-host-npm-wrapper",
+            "dev-build-children-ignore-host-node-npm-and-preserve-explicit-cuda-setting",
+            "dev-complete-payload-native-probe-and-fresh-installed-manager-inspect"
+          ],
+          "fixturesNeeded": [
+            "Verified official Node 22.22.1/npm 10.9.4; source checkout helpers run under canonical ownership and explicit npmCli override.",
+            "Actual complete payload collection/control bundling/runtime/native probe followed by ordinary manager inspect from a fresh process; publication stays local dev.",
+            "Actual UTM macOS/OrbStack Linux/native Windows install/upgrade/migration/IDE acceptance is S8 evidence, not an S2 reported smoke pass."
           ]
         }
       ],
@@ -475,24 +761,35 @@
         {
           "criterionId": "ac1",
           "provingTests": [
-            "dev-private-runtime-and-target-build",
-            "missing-prerequisite-no-elevation",
-            "selected-repo-branch-exact-commit"
+            "selected-repo-branch-exact-commit-and-unrelated-branch-never-selected",
+            "dev-private-node-and-explicit-npm-cli-work-with-no-host-npm-wrapper",
+            "dev-build-children-ignore-host-node-npm-and-preserve-explicit-cuda-setting",
+            "dev-complete-payload-native-probe-and-fresh-installed-manager-inspect",
+            "dev-common-handoff-selects-candidate-bootstrap-runtime-and-retains-mode",
+            "npm-build-fetch-and-native-probe-failure-preserve-incumbent"
           ]
         },
         {
           "criterionId": "ac2",
           "provingTests": [
-            "branch-movement-pinned-candidate",
-            "unrelated-branch-never-selected",
-            "dev-mode-survives-common-activation"
+            "read-only-dev-check-never-fetches-builds-or-writes-install-state",
+            "offer-moves-before-acceptance-is-stale-after-acceptance-remains-pinned",
+            "selected-repo-branch-exact-commit-and-unrelated-branch-never-selected",
+            "dev-open-verify-and-fresh-manager-reopen-never-fetch-or-build",
+            "dev-common-handoff-selects-candidate-bootstrap-runtime-and-retains-mode",
+            "bundle-offer-receipt-and-required-sibling-admission-regressions-preserved"
           ]
         },
         {
           "criterionId": "ac3",
           "provingTests": [
-            "dirty-and-conflicting-source-preserved",
-            "npm/build/fetch-failure-incumbent-unchanged"
+            "dirty-conflicting-missing-or-foreign-selected-checkout-preserved",
+            "npm-build-fetch-and-native-probe-failure-preserve-incumbent",
+            "cancel-or-terminal-eof-drains-owned-preparation-actors-before-return",
+            "manager-self-exit-before-candidate-recovers-same-source-with-no-duplicate-worker",
+            "held-unknown-or-mismatched-preparation-result-blocks-retry-and-cleanup",
+            "published-release-before-candidate-record-reconciles-without-rebuild",
+            "immutable-dev-payload-tamper-or-existing-id-conflict-refuses-before-shutdown"
           ]
         }
       ]
@@ -500,46 +797,364 @@
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Isolated exact-commit checkout",
-        "oneLineSummary": "Prepare a fresh operation-owned checkout and publish an immutable built candidate.",
-        "approach": "Fetch only the configured branch into an isolated preparation root, resolve FETCH_HEAD once and build that exact commit. The selected installed checkout and user changes are never reset.\n\nReturn the same validated candidate manifest as bundle preparation; common controller, lifecycle, migration and terminal behavior stays with its owner.",
+        "name": "Source offer plus isolated retained checkout",
+        "oneLineSummary": "Resolve a source identity without building, then prepare and publish one verified payload under the existing manager.",
+        "approach": "Use a private dev-source offer alongside the existing bundle offer, preserving public sc1/sc2 wire records. Under the manager lease, persist accepted source identity before starting an isolated checkout/build. Keep the completed checkout outside immutable payloads as the managed source for later dirty/conflict preflight. Publish a mode-specific dev receipt and complete payload through S1 preparation ownership; reopen without fetch/build. Reuse S1 packaging, runtime and coordinator capabilities with explicit narrow composition edits.",
         "pros": [
-          "Preparation cannot overwrite the active source tree.",
-          "One resolved commit is stable even if the remote branch advances during build."
+          "Smallest shape that separates accepted source identity from post-build bytes and preserves read-only checks.",
+          "One per-attempt checkout, one receipt and existing controller ownership; no bare cache/worktree registry.",
+          "Supports explicit pre-publication recovery and independent immutable payload verification."
         ],
         "cons": [
-          "A clean checkout can download more bytes than a shared worktree cache."
+          "Repeated source fetches and retained checkout disk space.",
+          "Requires precise private offer/context and installed receipt dispatch integration in existing S1 files."
         ],
         "costEstimate": "M"
       },
       {
         "id": "a2",
-        "name": "Shared bare cache and linked worktrees",
-        "oneLineSummary": "Cache Git objects and prepare operation-specific worktrees.",
-        "approach": "Keep a controlled bare repository per configured source and allocate a separate detached worktree at the fetched commit. Build outputs remain candidate-local.\n\nCommon candidate contracts remain unchanged, but cache lock, worktree cleanup and repository ownership become extra internal state.",
+        "name": "Source offer plus shared bare cache and worktrees",
+        "oneLineSummary": "Keep the same offer/receipt contract but allocate builds from a shared source cache.",
+        "approach": "Resolve and persist the same source-only offer, use a source-scoped bare Git cache and allocate detached per-operation worktrees, then publish the same complete immutable candidate and dev receipt. Track worktree/cache ownership separately from manager/controller and keep mutable selected sources outside payloads. Lifecycle and migration still use shared owner ports.",
         "pros": [
-          "Repeated builds can reuse downloaded Git objects."
+          "Can reuse Git objects across repeated upgrades.",
+          "Still preserves source acceptance versus prepared artifact identity and immutable publication."
         ],
         "cons": [
-          "Adds cache/worktree cleanup and corruption recovery without a requested user capability."
+          "Adds cache exclusion, linked-worktree path validation and independent cleanup/reference accounting.",
+          "More interruption states and shared mutable source state without a correctness requirement for caching."
         ],
-        "costEstimate": "M",
-        "reasonRejected": "Shared object caching is optional optimization; its ownership and cleanup states add complexity without improving correctness."
+        "costEstimate": "L",
+        "reasonRejected": "Can meet the public contracts, but ac3 requires additional cache/worktree ownership detail and L effort without a requested correctness benefit."
       }
     ],
     "chosenAlternative": "a1",
-    "openQuestions": []
+    "openQuestions": [],
+    "erDefinition": {
+      "id": "s2-dev-preparation-ownership",
+      "narrative": "Shows source intent, serial build attempts and immutable artifacts as distinct records. The manager owns controller/checkpoint writes; each prepared dev release links to its retained mutable checkout without placing that checkout in the runtime inventory.",
+      "classes": {
+        "DevOperation": {
+          "description": "One existing controller operation that alone coordinates S2 preparation under S1 ownership.",
+          "attributes": {
+            "operationId": {
+              "description": "Existing installation-scoped operation identity.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "acceptedSource": {
+              "description": "Exactly one accepted source offer; retries cannot replace it.",
+              "range": "DevSourceOffer",
+              "required": true
+            },
+            "attempts": {
+              "description": "Zero or more serial owned attempts; never concurrent recovery workers.",
+              "range": "DevAttempt",
+              "multivalued": true
+            },
+            "candidate": {
+              "description": "Zero or one verified published candidate for this operation.",
+              "range": "DevRelease",
+              "maximum_cardinality": 1
+            }
+          }
+        },
+        "DevSourceOffer": {
+          "description": "Source identity accepted before output bytes exist.",
+          "attributes": {
+            "sourceSha256": {
+              "description": "Canonical source/build-recipe digest, independent of compiled bytes.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "sourceCommit": {
+              "description": "Exact accepted Git commit.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "DevAttempt": {
+          "description": "One operation-owned source/build lifetime.",
+          "attributes": {
+            "attemptId": {
+              "description": "Unique nonce-bound attempt identity.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "checkout": {
+              "description": "Exactly one retained checkout, outside immutable payload.",
+              "range": "ManagedCheckout",
+              "required": true
+            },
+            "stageRelativePath": {
+              "description": "Contained private payload staging directory.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "DevRelease": {
+          "description": "Immutable local dev artifact, verified independently of worker state.",
+          "attributes": {
+            "releaseId": {
+              "description": "Prospective source-based release identity fixed before build.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "source": {
+              "description": "Exactly one accepted source offer bound by its receipt.",
+              "range": "DevSourceOffer",
+              "required": true
+            },
+            "managedCheckout": {
+              "description": "One retained checkout selected by this receipt; code/runtime bytes remain separately inventoried.",
+              "range": "ManagedCheckout",
+              "required": true
+            },
+            "descriptorSha256": {
+              "description": "Digest of canonical dev receipt bytes.",
+              "range": "string",
+              "required": true
+            },
+            "inventorySha256": {
+              "description": "Digest of canonical immutable inventory bytes.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "ManagedCheckout": {
+          "description": "Mutable source tree retained for exact dirty/conflict preflight; never an installed runtime.",
+          "attributes": {
+            "relativePath": {
+              "description": "Contained home-relative checkout directory.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            }
+          }
+        }
+      }
+    },
+    "sequenceDefinition": {
+      "id": "s2-source-offer-to-immutable-release",
+      "narrative": "Separates a read-only source offer from post-consent build output and shows that only the existing manager may publish/controller-record the candidate. The worker's confirmed actor cleanup precedes publication; S1's terminal retains readiness-to-TUI handoff.",
+      "participants": [
+        {
+          "id": "terminal",
+          "label": "Shared terminal installer (S1)",
+          "description": "Owns explicit consent and the existing selected-runtime TUI handoff."
+        },
+        {
+          "id": "manager",
+          "label": "Manager owner (S1)",
+          "description": "Owns installation lock, accepted offer, protected checkpoints, candidate state and sibling handoff."
+        },
+        {
+          "id": "adapter",
+          "label": "Dev adapter (S2)",
+          "description": "Resolves exact source and implements preparation/open/verification behind the existing delivery seam."
+        },
+        {
+          "id": "remote",
+          "label": "Configured Git source",
+          "description": "Only the selected repository/ref is consulted; branch changes do not authorize another commit."
+        },
+        {
+          "id": "worker",
+          "label": "Owned preparation worker (S2)",
+          "description": "Owns its private checkout/staging and coordinated private-tooling commands; cannot publish or activate."
+        },
+        {
+          "id": "store",
+          "label": "Manager-held ControllerStore (S1)",
+          "description": "Existing sole-owner publication/checkpoint/controller persistence boundary."
+        }
+      ],
+      "messages": [
+        {
+          "from": "terminal",
+          "to": "manager",
+          "label": "check-upgrade",
+          "kind": "call",
+          "description": "Read-only discovery performs no install/source mutation or compilation."
+        },
+        {
+          "from": "manager",
+          "to": "adapter",
+          "label": "resolve configured dev source",
+          "kind": "call",
+          "description": "Uses the source-offer variant, not a fabricated built manifest."
+        },
+        {
+          "from": "adapter",
+          "to": "remote",
+          "label": "ls-remote exact branch",
+          "kind": "call",
+          "description": "Bounded argument-array Git discovery only."
+        },
+        {
+          "from": "remote",
+          "to": "adapter",
+          "label": "exact commit",
+          "kind": "return",
+          "description": "Commit is part of canonical source recipe identity."
+        },
+        {
+          "from": "adapter",
+          "to": "manager",
+          "label": "DevSourceOffer and source digest",
+          "kind": "return",
+          "description": "Carries source/target/runtime/recipe and prospective release ID; no payload digest exists yet."
+        },
+        {
+          "from": "manager",
+          "to": "terminal",
+          "label": "existing UpgradeOffer",
+          "kind": "return",
+          "description": "Public offer ID binds installation/predecessor/delivery and the source digest."
+        },
+        {
+          "from": "terminal",
+          "to": "manager",
+          "label": "accept exact offer",
+          "kind": "call",
+          "description": "Consent remains in the shared terminal; no preanswered IDE install protocol."
+        },
+        {
+          "from": "manager",
+          "to": "adapter",
+          "label": "recheck source and selected checkout",
+          "kind": "call",
+          "description": "Changed offer or dirty/foreign checkout refuses before preparation and disruption."
+        },
+        {
+          "from": "manager",
+          "to": "store",
+          "label": "persist accepted source + preparing checkpoint",
+          "kind": "call",
+          "description": "Owner records exact source/attempt/nonce before worker admission."
+        },
+        {
+          "from": "manager",
+          "to": "adapter",
+          "label": "prepare with restricted lease + signal/context",
+          "kind": "call",
+          "description": "Typed callbacks cannot expose a second controller writer."
+        },
+        {
+          "from": "adapter",
+          "to": "worker",
+          "label": "start one owned attempt",
+          "kind": "call",
+          "description": "A fresh contained checkout/stage receives the pinned source and private toolchain."
+        },
+        {
+          "from": "worker",
+          "to": "remote",
+          "label": "fetch configured source; checkout accepted commit",
+          "kind": "call",
+          "description": "A moved or missing branch never substitutes an unaccepted commit."
+        },
+        {
+          "from": "worker",
+          "to": "worker",
+          "label": "private npm ci; coordinated build; complete payload probes",
+          "kind": "recurse",
+          "description": "Explicit npm CLI and private Node are used throughout; source fingerprints and all required runtime assets are checked."
+        },
+        {
+          "from": "worker",
+          "to": "worker",
+          "label": "drain actors; persist nonce/run-bound result + cleanup",
+          "kind": "recurse",
+          "description": "Final outcome is written after all preparation commands close; EOF/abort takes the cancellation path."
+        },
+        {
+          "from": "worker",
+          "to": "adapter",
+          "label": "prepared stage and confirmed cleanup evidence",
+          "kind": "return",
+          "description": "The worker can finish after manager exit but has no publication or activation authority."
+        },
+        {
+          "from": "adapter",
+          "to": "store",
+          "label": "publish via original manager-held lease",
+          "kind": "call",
+          "description": "Full dev receipt/inventory/runtime verification precedes immutable publication; this callback uses existing owner authority."
+        },
+        {
+          "from": "adapter",
+          "to": "manager",
+          "label": "common PreparedCandidate",
+          "kind": "return",
+          "description": "Source and final artifact digests are distinct and both validated."
+        },
+        {
+          "from": "manager",
+          "to": "store",
+          "label": "persist ordinary candidate record",
+          "kind": "call",
+          "description": "Subsequent retries now use S1's exact published-candidate recovery path."
+        },
+        {
+          "from": "manager",
+          "to": "manager",
+          "label": "consume existing sibling ports and exact readiness",
+          "kind": "recurse",
+          "description": "S3/S4/S5 behavior remains with its owners; absent ports fail explicitly."
+        },
+        {
+          "from": "manager",
+          "to": "terminal",
+          "label": "ready result after selection + lock release",
+          "kind": "return",
+          "description": "S1 terminal then launches the selected release's own bootstrap/runtime/TUI; S2 adds no duplicate handoff."
+        }
+      ],
+      "truncations": [
+        {
+          "atParticipant": "manager",
+          "note": "Lifecycle/migration internals are consumed, not expanded. Cancellation, uncertain cleanup and explicit pre-publication recovery are specified in the LLD error paths."
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "diagram-er",
+        "diagram-sequence",
+        "functional-coverage"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S002/er-model.html",
+        "title": "ER model"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S002/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
   },
   "citations": [
     {
       "id": "c1",
-      "kind": "doc",
-      "ref": "AGENTS.md"
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md"
     },
     {
       "id": "c2",
-      "kind": "prior-artifact",
-      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md"
+      "kind": "doc",
+      "ref": "AGENTS.md"
     },
     {
       "id": "c3",
@@ -548,38 +1163,78 @@
     },
     {
       "id": "c4",
-      "kind": "analyze-bundle",
-      "ref": "scripts/test-harness/build.mjs"
+      "kind": "code",
+      "ref": "src/installer/peer-contracts.ts"
     },
     {
       "id": "c5",
-      "kind": "analyze-bundle",
-      "ref": "copy-assets.mjs"
+      "kind": "code",
+      "ref": "src/installer/bundle.ts"
     },
     {
       "id": "c6",
       "kind": "code",
-      "ref": ".npmrc"
+      "ref": "src/installer/manager.ts"
     },
     {
       "id": "c7",
-      "kind": "prior-artifact",
-      "ref": ".insrc/artifacts/AMD-c3d71313f34bce71-1.json"
+      "kind": "code",
+      "ref": "src/installer/manager-entry.ts"
     },
     {
       "id": "c8",
-      "kind": "prior-artifact",
-      "ref": ".insrc/artifacts/AMD-c3d71313f34bce71-2.json"
+      "kind": "code",
+      "ref": "scripts/package-installer.mjs"
     },
     {
       "id": "c9",
-      "kind": "prior-artifact",
-      "ref": ".insrc/artifacts/AMD-c3d71313f34bce71-3.json"
+      "kind": "code",
+      "ref": "scripts/test-harness/build.mjs"
     },
     {
       "id": "c10",
+      "kind": "code",
+      "ref": "src/installer/runtime-policy.ts"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/installer/production-peers.ts"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/installer/installed-launcher.ts"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "scripts/test-harness/process.mjs"
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "src/installer/controller-store.ts"
+    },
+    {
+      "id": "c15",
       "kind": "prior-artifact",
-      "ref": ".insrc/artifacts/AMD-c3d71313f34bce71-4.json"
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/LLD.md"
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "src/installer/terminal-install.ts"
+    },
+    {
+      "id": "c17",
+      "kind": "code",
+      "ref": "scripts/installer-payload.mjs"
+    },
+    {
+      "id": "c18",
+      "kind": "code",
+      "ref": "scripts/test-harness/context.mjs"
     }
   ]
 }

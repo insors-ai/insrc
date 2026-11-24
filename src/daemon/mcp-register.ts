@@ -148,6 +148,33 @@ function defaultVibeProjectConfigText(repoPath: string): string | undefined {
 }
 
 /**
+ * The dot-separated components of a TOML table name, quotes stripped: a dot
+ * inside a quoted component does not split (`["mcp_servers.env"]` is ONE root
+ * component named `mcp_servers.env`, while `["mcp_servers".env]` is the
+ * two-component sub-table form).
+ */
+function headerComponents(name: string): string[] {
+	const parts: string[] = [];
+	let cur = '';
+	let quote: string | undefined;
+	for (const ch of name) {
+		if (quote !== undefined) {
+			if (ch === quote) quote = undefined;
+			else cur += ch;
+		} else if (ch === '"' || ch === "'") {
+			quote = ch;
+		} else if (ch === '.') {
+			parts.push(cur.trim());
+			cur = '';
+		} else {
+			cur += ch;
+		}
+	}
+	parts.push(cur.trim());
+	return parts;
+}
+
+/**
  * Is this header line a `[mcp_servers.<sub>]` table — a sub-table of an
  * [[mcp_servers]] entry? The removed entry owns its sub-tables (TOML attaches
  * them to the last array element), so they are dropped with the entry; kept,
@@ -156,9 +183,8 @@ function defaultVibeProjectConfigText(repoPath: string): string | undefined {
 function isMcpServersSubtable(headerLine: string): boolean {
 	const h = headerLine.replace(/\r$/, '').replace(/#.*$/, '').trim();
 	if (!h.startsWith('[') || h.startsWith('[[') || !h.endsWith(']')) return false;
-	const name = h.slice(1, -1).trim();
-	const first = name.split('.')[0]!.trim().replace(/^["']|["']$/g, '');
-	return name.includes('.') && first === 'mcp_servers';
+	const components = headerComponents(h.slice(1, -1).trim());
+	return components.length > 1 && components[0] === 'mcp_servers';
 }
 
 /**

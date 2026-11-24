@@ -618,6 +618,29 @@ test('removeVibeProjectServer keeps sub-table-free unrelated tables after a mixe
 	assert.equal(removed.length, 0);
 });
 
+test('removeVibeProjectServer keeps a quoted root table whose name merely contains a dot', async () => {
+	const { removeVibeProjectServer } = await import('../mcp-register.js');
+	// ["mcp_servers.env"] is ONE root component named `mcp_servers.env` — an
+	// unrelated table, NOT the removed entry's sub-table.
+	const files = new Map([['/r', '[[mcp_servers]]\nname = "insrc"\ncommand = "node"\nargs = ["/mac/path"]\n["mcp_servers.env"]\nfoo = 1\n']]);
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.equal(removeVibeProjectServer('/r', deps), 'removed');
+	assert.equal(files.get('/r'), '["mcp_servers.env"]\nfoo = 1\n', 'the quoted root table survives; the entry is dropped');
+	assert.equal(removed.length, 0, 'the file is rewritten, not deleted');
+});
+
+test('removeVibeProjectServer drops the entry\'s sub-table when its first component is quoted', async () => {
+	const { removeVibeProjectServer } = await import('../mcp-register.js');
+	// ["mcp_servers".env] IS the two-component sub-table form — it belongs to
+	// the removed entry and goes with it.
+	const files = new Map([['/r', '[[mcp_servers]]\nname = "insrc"\ncommand = "node"\n["mcp_servers".env]\nX = "1"\n']]);
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.equal(removeVibeProjectServer('/r', deps), 'removed');
+	assert.deepEqual(removed, ['/r'], 'the file held only the entry and its quoted sub-table — deleted');
+});
+
 test('removeVibeProjectServer leaves a config it cannot normalize untouched and reports the failure', async () => {
 	const { removeVibeProjectServer } = await import('../mcp-register.js');
 	let wrote = false;

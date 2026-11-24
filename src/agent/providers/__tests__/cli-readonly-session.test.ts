@@ -246,19 +246,19 @@ test("readOnlySessionOnce re-throws the original, unmodified error when runCodex
 	const f = fakeCli([{ fail: 'unknown option --sandbox', code: 1 }]);
 	try {
 		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
-		await assert.rejects(
-			p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, internalRetry: false }),
-			(e: unknown) => !(e instanceof CodexMcpServerOverrideUnsafeError) && e instanceof Error && /unknown option --sandbox/.test(e.message),
-		);
+		const err = await p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, internalRetry: false }).then(() => null, (e: unknown) => e);
+		assert.ok(!(err instanceof CodexMcpServerOverrideUnsafeError), 'not translated into the new error');
+		assert.equal((err as Error).name, 'CliExitError', 'the same error type runCodex already threw');
+		assert.equal((err as Error).message, 'codex exited with 1. stderr=unknown option --sandbox stdout=', 'byte-identical to the untranslated message');
 	} finally { f.cleanup(); }
-	// The existing "no agent_message item" case also keeps re-throwing unchanged.
+	// The existing "no agent_message item" case also keeps re-throwing unchanged (it is thrown
+	// AFTER the new try/catch, so it was never a candidate for translation in the first place).
 	const noText = fakeCli([{ out: '' }]);
 	try {
 		const p = new CliProvider({ kind: 'codex', binPath: noText.bin });
-		await assert.rejects(
-			p.runReadOnlySession('P', SCHEMA, { cwd: noText.dir, deadlineMs: 20_000, internalRetry: false }),
-			(e: unknown) => !(e instanceof CodexMcpServerOverrideUnsafeError) && e instanceof Error && /no agent_message item/.test(e.message),
-		);
+		const err = await p.runReadOnlySession('P', SCHEMA, { cwd: noText.dir, deadlineMs: 20_000, internalRetry: false }).then(() => null, (e: unknown) => e);
+		assert.ok(!(err instanceof CodexMcpServerOverrideUnsafeError), 'not translated into the new error');
+		assert.equal((err as Error).message, 'codex read-only session emitted no agent_message item', 'byte-identical to today');
 	} finally { noText.cleanup(); }
 });
 

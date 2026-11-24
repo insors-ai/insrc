@@ -51,6 +51,17 @@
           "revision": 3,
           "at": "2026-11-24T09:21:01.458Z",
           "externalId": "7127290521"
+        },
+        {
+          "target": {
+            "entityId": "PLAN-c3d71313f34bce71-s2",
+            "type": "PLAN",
+            "relation": "documents",
+            "fragment": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S002/PLAN.md"
+          },
+          "revision": 1,
+          "at": "2026-11-24T09:39:20.735Z",
+          "externalId": "7127707331"
         }
       ],
       "binding": {

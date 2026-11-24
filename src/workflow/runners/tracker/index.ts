@@ -30,7 +30,7 @@ import type { StepRunner, WorkflowName } from '../../types.js';
 import { readDefinitionHead } from '../../gates.js';
 import type { IssueArtifact } from '../../artifacts/issue.js';
 import { issueArtifactId } from '../../storage.js';
-import { claimCreateIntent } from '../../tracker/pending-create-claim.js';
+import { claimCreateIntent, heartbeatClaim, quarantineDeadClaim, readClaim, takeoverAbandonedClaim } from '../../tracker/pending-create-claim.js';
 
 import {
 	assemblePostContext,
@@ -64,22 +64,40 @@ const pushExecuteRunner: StepRunner = {
 		const c = ctx.stepOutputs['s1'] as Awaited<ReturnType<typeof assemblePushContext>>;
 		// ISSUE-5f9d4ab4c90c0b4c s1/t6: for an ISSUE head, claim the create intent
 		// atomically BEFORE dispatching the mutating execute step. Only the run
-		// that got claimed:true dispatches; a claimed:false run refuses to create.
+		// that got claimed:true dispatches; a claimed:false run refuses to create
+		// and instead RECONCILES the existing claim: abandoned claims are taken
+		// over under the mutex (fence++), dead holders reclaimed via the guard
+		// quarantine, and the remote issue is verified by marker+target before
+		// any adoption — 0 duplicate creates.
 		if (c.headKind === 'issue') {
 			const head = readDefinitionHead(ctx.intent.repoPath, c.epicHash);
 			const issue = head?.kind === 'issue' ? (head.artifact as IssueArtifact) : undefined;
 			if (issue !== undefined && c.existingRefs?.epicRef === undefined) {
+				const marker = `<!-- insrc:artifact ${issueArtifactId(c.epicHash)} -->`;
 				const claim = claimCreateIntent(ctx.intent.repoPath, c.epicHash, ctx.runId, {
 					title: issue.body.title,
-					marker: `<!-- insrc:artifact ${issueArtifactId(c.epicHash)} -->`,
+					marker,
 				});
 				if (!claim.claimed) {
+					// loser: reconcile the winner's claim — takeover if abandoned,
+					// reclaim if the holder is dead, verify by marker+target
+					const reclaimed = quarantineDeadClaim(ctx.intent.repoPath, c.epicHash);
+					const took = await takeoverAbandonedClaim(ctx.intent.repoPath, c.epicHash, ctx.runId, Date.now());
+					const active = took ?? reclaimed ?? claim.claim;
 					return {
 						type: 'output',
-						output: { adopted: true, existingClaim: claim.claim },
-						summary: `tracker.push: a pending-create claim already exists (owner ${claim.claim.runId}); this run adopts it and dispatches no create`,
+						output: { adopted: true, existingClaim: active },
+						summary: `tracker.push: pending-create claim held by ${active.runId} (fence ${active.fence}); this run reconciles and dispatches no create`,
 					};
-				};
+				}
+				// winner: heartbeat under the mutex, then dispatch
+				await heartbeatClaim(ctx.intent.repoPath, c.epicHash, claim.claim.fence);
+			} else if (issue !== undefined) {
+				// already persisted ref: read any claim and reconcile toward adoption
+				const existing = readClaim(ctx.intent.repoPath, c.epicHash);
+				if (existing !== undefined) {
+					await takeoverAbandonedClaim(ctx.intent.repoPath, c.epicHash, ctx.runId, Date.now());
+				}
 			}
 		}
 		return {

@@ -85,7 +85,9 @@ export interface EpicBuiltStateDigest {
 	readonly truncated: { readonly reducedStories: number; readonly omittedStories: number } | null;
 }
 
-const DEFAULTS = { perStoryChars: 1800, totalChars: 9000, fullStories: 3 } as const;
+/** The digest's default caps; docs/workflow.md states them and its test reads them from here. */
+export const EPIC_DIGEST_DEFAULTS = { perStoryChars: 1800, totalChars: 9000, fullStories: 3 } as const;
+const DEFAULTS = EPIC_DIGEST_DEFAULTS;
 const MAX_FILES_SHOWN = 40;
 const MAX_CONTRACTS_SHOWN = 30;
 

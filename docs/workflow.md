@@ -201,6 +201,36 @@ skips for `new-capability`) → checklist.verify.
 
 Output: `docs/designs/LLD-<h16>-s1.md`. Approve.
 
+### Epic impact analysis (a later Story of an Epic)
+
+When an Epic already has a built Story, the first activity of the next Story's
+design.story, plan and build is a complete impact analysis of what the Epic has
+already built (ISSUE-1b3caadf04023d33). The daemon helps in three places:
+
+- **The digest.** The first step of design.story and plan, and the implement
+  prompt of build, carry an *Epic built-state digest*: for each other Story of the
+  Epic with an approved BUILD, its BUILD summary, per-Task verdicts, test result,
+  the files its build changed and the contracts its LLD names. It is read from the
+  records, in the Define's order, and bounded: the newest 3 Stories are shown in
+  full (each at most 1800 characters), older ones as one line and the path of their
+  records, and the whole digest at most 9000 characters (older Stories are left out
+  last). A Story that is the Epic's first, a standalone Story, or an Epic with no
+  other approved BUILD gets one line saying the analysis does not apply.
+- **The analysis.** At the first step the controller reads the digest against the
+  Story and emits `epicImpact` (`applies`, `storiesCovered`, `findings`,
+  `sources`). Synthesize carries it verbatim into the LLD and the PLAN, which show
+  it as an "Epic impact analysis" section, and refuses a later Story's LLD or PLAN
+  that has none (or one that does not apply, names no Story, has no findings or
+  cites no source).
+- **The BUILD check.** The BUILD summary (the `summary` of the last validate call)
+  must open a paragraph with `Epic impact:`, at least 80 characters long, naming
+  each Story the LLD's analysis covered. Approving a later Story's BUILD without it
+  is refused: the result's `skipped[]` carries the reason and the kind
+  `epic-impact-missing`, and nothing is written. An explicit `overrideReview`
+  passes it. The check does not apply when the Story has no approved LLD, its LLD
+  has no `epicImpact`, or the analysis says it does not apply; a record that cannot
+  be read also makes it not apply.
+
 ### 5. Push to GitHub (optional)
 
 **The tracker is opt-in.** When `~/.insrc/repo-config.json` is absent or

@@ -262,11 +262,15 @@ export type DefinitionHead =
 	| { readonly kind: 'def';   readonly artifact: DefineArtifact }
 	| { readonly kind: 'issue'; readonly artifact: IssueArtifact };
 
-/** Read one head file if it PARSES; null when absent or unreadable — the
- *  first-READABLE-wins primitive behind {@link definitionHeadJsonPath} and
- *  {@link requireApprovedDefinition}. Never throws. */
-function readReadableHead(jsonPath: string): Record<string, unknown> | null {
+/** Read one head file if it PARSES into a decodable artifact head (meta+body
+ *  shape checked via the shared decoder); null when absent, unparseable, or
+ *  shape-invalid — the first-READABLE-wins primitive behind
+ *  {@link definitionHeadJsonPath} and {@link requireApprovedDefinition}. A
+ *  parseable-but-malformed head does NOT win selection; selection falls
+ *  through to the next candidate. Never throws. */
+function readReadableHead(id: string, jsonPath: string): Record<string, unknown> | null {
 	try {
+		decodeArtifactHead(id, readFileSync(jsonPath, 'utf8'));
 		return JSON.parse(readFileSync(jsonPath, 'utf8')) as Record<string, unknown>;
 	} catch {
 		return null;
@@ -280,9 +284,9 @@ function readReadableHead(jsonPath: string): Record<string, unknown> | null {
  *  {@link ArtifactMissingError} naming the ISSUE id when neither parses — the
  *  advice names the issue stage, never define, for a bugfix work item. */
 export function definitionHeadJsonPath(repoPath: string, epicHash: string): string {
-	for (const [id] of [[defineArtifactId(epicHash)], [issueArtifactId(epicHash)]] as const) {
+	for (const id of [defineArtifactId(epicHash), issueArtifactId(epicHash)] as const) {
 		const jsonPath = artifactJsonPath(repoPath, id);
-		if (readReadableHead(jsonPath) !== null) return jsonPath;
+		if (readReadableHead(id, jsonPath) !== null) return jsonPath;
 	}
 	throw new ArtifactMissingError(
 		`No readable definition head for ${epicHash} (neither DEF-${epicHash}.json nor ` +
@@ -297,9 +301,8 @@ export function definitionHeadJsonPath(repoPath: string, epicHash: string): stri
 export function readDefinitionHead(repoPath: string, epicHash: string): DefinitionHead | undefined {
 	for (const [kind, id] of [['def', defineArtifactId(epicHash)], ['issue', issueArtifactId(epicHash)]] as const) {
 		const jsonPath = artifactJsonPath(repoPath, id);
-		const raw = readReadableHead(jsonPath);
-		if (raw === null) continue;
-		const head = decodeArtifactHead(id, JSON.stringify(raw)).head;
+		if (readReadableHead(id, jsonPath) === null) continue;
+		const head = decodeArtifactHead(id, readFileSync(jsonPath, 'utf8')).head;
 		if (kind === 'def') return { kind, artifact: head as unknown as DefineArtifact };
 		return { kind, artifact: head as unknown as IssueArtifact };
 	}
@@ -318,20 +321,20 @@ export function requireApprovedDefinition(repoPath: string, epicHash: string): {
 		throw new ArtifactMissingError(`No readable definition head at ${jsonPath}`);
 	}
 	const label = (head.artifact.meta as { epicSlug?: string }).epicSlug ?? epicHash;
+	const anchor = workItemAnchorCreatedAt(head.artifact.meta);
+	const kind_ = workItemKindOf(head.artifact.meta);
+	const slug = (head.artifact.meta as { epicSlug?: string }).epicSlug;
+	const md = head.kind === 'def'
+		? defineArtifactPaths(repoPath, epicHash, anchor, kind_, slug).md
+		: issueArtifactPaths(repoPath, epicHash, anchor, kind_, slug).md;
 	const state = approvalStateOf(head.artifact.meta);
 	if (state === 'rejected') {
 		throw new ArtifactNotApprovedError(
-			`Work item '${label}' (${epicHash}) was rejected. ` +
+			`Work item '${label}' (${epicHash}) was rejected (${md}). ` +
 			(head.kind === 'issue' ? `Re-run the issue stage with --reopen first.` : `Re-run define with --reopen first.`),
 		);
 	}
 	if (state !== 'approved') {
-		const anchor = workItemAnchorCreatedAt(head.artifact.meta);
-		const kind_ = workItemKindOf(head.artifact.meta);
-		const slug = (head.artifact.meta as { epicSlug?: string }).epicSlug;
-		const md = head.kind === 'def'
-			? defineArtifactPaths(repoPath, epicHash, anchor, kind_, slug).md
-			: issueArtifactPaths(repoPath, epicHash, anchor, kind_, slug).md;
 		throw new ArtifactNotApprovedError(
 			`Work item '${label}' (${epicHash}) is not approved. ` +
 			`Run \`insrc workflow approve ${md}\` first.`,

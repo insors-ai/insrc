@@ -554,6 +554,9 @@ test('definitionHeadJsonPath: DEF wins when both parse; corrupt DEF falls throug
 		// corrupt the DEF: the ISSUE must win, not the corrupt DEF file
 		writeFileSync(join(repo, '.insrc', 'artifacts', `DEF-${HEAD_HASH}.json`), '{ not json');
 		assert.equal(definitionHeadJsonPath(repo, HEAD_HASH), join(repo, '.insrc', 'artifacts', `ISSUE-${HEAD_HASH}.json`));
+		// parseable but shape-invalid DEF (no meta/body): still falls through to the ISSUE
+		writeFileSync(join(repo, '.insrc', 'artifacts', `DEF-${HEAD_HASH}.json`), '{"noMeta":true}');
+		assert.equal(definitionHeadJsonPath(repo, HEAD_HASH), join(repo, '.insrc', 'artifacts', `ISSUE-${HEAD_HASH}.json`));
 	} finally { cleanup(); }
 });
 
@@ -578,18 +581,21 @@ test('requireApprovedDefinition: ISSUE head approved -> kind issue + jsonPath; d
 		assert.equal(head.kind, 'issue');
 		assert.equal(head.jsonPath, json);
 		assert.equal((head.artifact as { meta: { epicSlug?: string } }).meta.epicSlug, HEAD_SLUG);
-		// rejected: refused with the rejected-specific message
+		// rejected: refused with the rejected-specific message AND the head's md path
 		const head2 = JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown> };
 		writeFileSync(json, JSON.stringify({ ...head2, meta: { ...head2.meta, ...rejectedMeta() } }, null, 2) + '\n');
 		assert.throws(() => requireApprovedDefinition(repo, HEAD_HASH), (e: unknown) =>
-			e instanceof ArtifactNotApprovedError && /rejected/.test((e as Error).message));
+			e instanceof ArtifactNotApprovedError && /rejected/.test((e as Error).message) && /ISSUE\.md/.test((e as Error).message));
 	} finally { cleanup(); }
 });
 
-test('requireApprovedDefinition: DEF head approved -> kind def; DEF-only repo keeps requireApprovedEpic working', () => {
+test('requireApprovedDefinition: DEF head approved -> kind def; draft DEF -> ArtifactNotApprovedError naming the DEF md; DEF-only repo keeps requireApprovedEpic working', () => {
 	const { repo, cleanup } = headRepo();
 	try {
 		const json = writeHeadFixture(repo, 'def');
+		// draft DEF: refused with the DEF md path named
+		assert.throws(() => requireApprovedDefinition(repo, HEAD_HASH), (e: unknown) =>
+			e instanceof ArtifactNotApprovedError && /DEF\.md/.test((e as Error).message));
 		markApprovedSync(json);
 		const head = requireApprovedDefinition(repo, HEAD_HASH);
 		assert.equal(head.kind, 'def');

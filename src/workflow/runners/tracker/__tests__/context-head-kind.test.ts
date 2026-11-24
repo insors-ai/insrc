@@ -78,19 +78,35 @@ function ctx(fx: Fx, workflow: string, params: Record<string, unknown> = {}): St
 }
 
 test('src/workflow/runners/tracker/context.ts assemblers — kind branches: DEF context byte-identical to pre-change baseline, ISSUE context carries headKind + prerendered epicBodyMd', async () => {
-	// DEF head only: the push context has NO headKind key, the DEF body fields,
-	// and the story list from the DEF — exactly the pre-change shape.
+	// DEF head only: the push context must be BYTE-IDENTICAL to the pre-change
+	// assembler's output — a full deep-equal against the expected pre-change
+	// object, not just selected fields.
 	{
 		const fx = seed();
 		try {
 			const c = await assemblePushContext(ctx(fx, 'tracker.push'));
-			assert.equal('headKind' in c, false, 'DEF push context must not carry headKind');
-			assert.equal(c.epicTitle, 'DEF heads keep their exact pre-change context.');
-			assert.ok(c.epicBodyMd.includes('## Problem'));
-			assert.deepEqual(c.stories.map(s => s.id), ['s1']);
-			assert.ok(c.stories[0]!.bodyMd.includes('## Acceptance criteria'));
-			assert.equal(c.epicSlug, SLUG);
-			assert.equal(c.force, false);
+			const seg = 'E20261116' + HASH.slice(0, 8);
+			const expectedEpicBodyMd = [
+				'## Problem', '', 'DEF heads keep their exact pre-change context. Second sentence stays.', '',
+				'## Stories', '', '- [ ] s1: DEF story one', '',
+				'## Design references', '',
+				`- HLD: \`docs/epics/${SLUG}-${seg}/HLD.md\``,
+				`- Define: \`docs/epics/${SLUG}-${seg}/DEF.md\``, '',
+				`_epic slug: ${SLUG}_`,
+			].join('\n');
+			assert.deepEqual(c, {
+				kind: 'push',
+				epicHash: HASH,
+				epicSlug: SLUG,
+				gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' },
+				epicTitle: 'DEF heads keep their exact pre-change context.',
+				epicBodyMd: expectedEpicBodyMd,
+				stories: [{
+					id: 's1', title: 'DEF story one',
+					bodyMd: ['## User value', 'uv', '', '## Acceptance criteria', '- **ac1:** Given g, when w, then t.'].join('\n'),
+				}],
+				force: false,
+			}, 'DEF push context must deep-equal the pre-change shape (no headKind key, DEF-rendered body)');
 		} finally { fx.cleanup(); }
 	}
 	// ISSUE head only (no DEF file): headKind 'issue', prerendered ISSUE body,
@@ -133,16 +149,27 @@ test('src/workflow/runners/tracker/context.ts assemblers — kind branches: DEF 
 			await assert.rejects(() => assemblePostContext(ctx(fx, 'tracker.post', { target: { kind: 'lld', storyId: 's9' } })), /only the implied story/);
 		} finally { fx.cleanup(); }
 	}
-	// DEF context for sync carries no headKind and reads refs from the EPIC head
-	// binding only — byte-identical to the pre-change path.
+	// DEF sync + post contexts are also byte-identical to the pre-change shape:
+	// full deep-equal, no headKind key, refs from the EPIC/STORY head bindings.
 	{
 		const fx = seed();
 		try {
-			writeFileSync(artifactJsonPath(fx.repo, ArtifactIds.make({ kind: 'EPIC', epicHash: HASH })!), JSON.stringify({ meta: { repoPath: fx.repo, epicHash: HASH, epicSlug: SLUG, createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1 }, body: {}, citations: [] }, null, 2) + '\n');
+			for (const [id, story] of [[ArtifactIds.make({ kind: 'EPIC', epicHash: HASH }), undefined], [ArtifactIds.make({ kind: 'STORY', epicHash: HASH, story: 's1' }), 's1']] as const) {
+				writeFileSync(artifactJsonPath(fx.repo, id!), JSON.stringify({ meta: { repoPath: fx.repo, epicHash: HASH, epicSlug: SLUG, createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1, ...(story !== undefined ? { storyId: story } : {}) }, body: {}, citations: [] }, null, 2) + '\n');
+			}
 			assert.ok(bindArtifact(fx.repo, ArtifactIds.make({ kind: 'EPIC', epicHash: HASH }), 'acme/demo#7').ok);
+			assert.ok(bindArtifact(fx.repo, ArtifactIds.make({ kind: 'STORY', epicHash: HASH, story: 's1' }), 'acme/demo#8').ok);
 			const s = await assembleSyncContext(ctx(fx, 'tracker.sync'));
-			assert.equal('headKind' in s, false);
-			assert.equal(s.refs.epicRef, 'acme/demo#7');
+			assert.deepEqual(s, {
+				kind: 'sync', epicHash: HASH, epicSlug: SLUG,
+				gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', useMilestones: false },
+				refs: { epicRef: 'acme/demo#7', storyRefs: { s1: 'acme/demo#8' } },
+			}, 'DEF sync context must deep-equal the pre-change shape');
+			const p = await assemblePostContext(ctx(fx, 'tracker.post', { target: { kind: 'lld', storyId: 's1' } }));
+			assert.equal('headKind' in p, false, 'DEF post context must not carry headKind');
+			assert.equal(p.target.kind, 'lld');
+			assert.equal(p.target.issueRef, 'acme/demo#8');
+			assert.ok(p.target.summaryMd.startsWith('## LLD — Story s1'));
 		} finally { fx.cleanup(); }
 	}
 });

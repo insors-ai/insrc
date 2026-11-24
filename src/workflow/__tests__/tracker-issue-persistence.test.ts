@@ -24,7 +24,8 @@ import { join } from 'node:path';
 
 import { _mutateEpicTrackerMeta, _finalizeTracker } from '../orchestrator.js';
 import { syncTracker } from '../tracker/sync.js';
-import { closeBugfixTrackerIssue, type TrackerCloseDeps } from '../bugfix/tracker.js';
+import { closeBugfixTrackerIssue, createBugfixTrackerIssue, type TrackerCloseDeps, type TrackerCreateDeps } from '../bugfix/tracker.js';
+import { renderIssueMarkdown } from '../artifacts/issue.js';
 import { ARTIFACTS_DIR, artifactJsonPath, defineArtifactId, issueArtifactId, lldArtifactId, IMPLIED_ISSUE_STORY_ID } from '../storage.js';
 import { readBinding } from '../tracker/binding.js';
 import { patchTrackerMeta, readTrackerMeta } from '../tracker/refs.js';
@@ -90,8 +91,13 @@ test('src/workflow/orchestrator.ts mutateEpicTrackerMeta + finalizeTracker — f
 			assert.equal(defFileCount(fx.repo), 0, 'zero DEF-*.json fabricated');
 			assert.equal(readBinding(fx.repo, ArtifactIds.make({ kind: 'EPIC', epicHash: HASH }))?.reference.entityId, 'acme/demo#42', 'EPIC head bound');
 			assert.equal(readBinding(fx.repo, ArtifactIds.make({ kind: 'STORY', epicHash: HASH, story: IMPLIED_ISSUE_STORY_ID }))?.reference.entityId, 'acme/demo#42', 'STORY-s1 head bound to the same issue');
-			// sync finalize lands on the ISSUE json too
-			_mutateEpicTrackerMeta(fx.repo, HASH, 'tracker.sync', { epicStatus: 'open', storyStatus: { [IMPLIED_ISSUE_STORY_ID]: 'open' }, syncedAt: '2026-11-24T00:00:00.000Z' } as never);
+			// sync finalize lands on the ISSUE json too (through finalizeTracker)
+			const syncIntent = { workflow: 'tracker.sync', focus: 'sync', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
+			const fSync = _finalizeTracker(syncIntent, { s1 }, 'run-s', 5, {
+				refs: { epicStatus: 'open', storyStatus: { [IMPLIED_ISSUE_STORY_ID]: 'open' }, syncedAt: '2026-11-24T00:00:00.000Z' },
+				checklist: { items: [{ itemId: 'epicMapping', verdict: 'passed' }], failedCount: 0 },
+			}, 'm');
+			assert.equal(fSync.ok, true, JSON.stringify(fSync));
 			const after = readTrackerMeta(fx.issue);
 			assert.equal(after?.epicStatus, 'open');
 			assert.equal(after?.storyStatus?.[IMPLIED_ISSUE_STORY_ID], 'open');
@@ -104,7 +110,12 @@ test('src/workflow/orchestrator.ts mutateEpicTrackerMeta + finalizeTracker — f
 		const fx = seedIssueOnly({ corruptDef: true });
 		try {
 			const before = readFileSync(fx.def, 'utf8');
-			_mutateEpicTrackerMeta(fx.repo, HASH, 'tracker.push', { epicRef: 'acme/demo#9', storyRefs: {}, labelsCreated: [] } as never);
+			const intent = { workflow: 'tracker.push', focus: 'push', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
+			const f = _finalizeTracker(intent, { s1: { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue' } }, 'run-c', 5, {
+				refs: { epicRef: 'acme/demo#9', storyRefs: {}, labelsCreated: [] },
+				checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
+			}, 'm');
+			assert.equal(f.ok, true, JSON.stringify(f));
 			assert.equal(readTrackerMeta(fx.issue)?.issueRef, 'acme/demo#9', 'write lands on the readable ISSUE head');
 			assert.equal(readFileSync(fx.def, 'utf8'), before, 'corrupt DEF untouched');
 			assert.equal(defFileCount(fx.repo), 1, 'the pre-existing corrupt DEF file remains (not fabricated); no new DEF written');
@@ -171,49 +182,90 @@ test('src/workflow/tracker/sync.ts — storiesOf uses impliedIssueStories for IS
 	} finally { fx.cleanup(); }
 });
 
-test('first publication sequence — approve ISSUE with tracking disabled, enable, push: exactly 1 create, issueRef written back + heads bound; write-back failure -> retry adopts with 0 creates', () => {
-	// Full sequence at the persistence + adoption layer:
-	//  1. "tracking disabled" — the ISSUE is approved with no issueRef recorded.
-	//  2. "enable + push" — the execute step creates exactly ONE remote issue
-	//     (counted here) and finalizeTracker writes it back + binds the heads.
-	//  3. simulated write-back failure -> retry: the next push re-reads
-	//     existingRefs from the ISSUE's recorded issueRef (t2 seeding) and ADOPTS
-	//     it — the execute step creates 0 more issues; finalize is idempotent.
+test('first publication sequence — approve ISSUE with tracking disabled, enable, push: exactly 1 create, issueRef written back + heads bound; write-back failure -> retry adopts with 0 creates', async () => {
+	// The REAL production sequence, driven through createBugfixTrackerIssue
+	// (the approve-time bugfix tracker create, gated on repo config) and
+	// _finalizeTracker (the push finalize):
+	//  1. approve with tracking DISABLED (cfg type 'none') -> createBugfixTrackerIssue skips, NO create, no issueRef.
+	//  2. enable tracking -> push: createBugfixTrackerIssue creates exactly ONE
+	//     issue and records the ref (issueRef write-back); push finalize binds heads.
+	//  3. simulated write-back failure on the create (recordRef throws) -> the
+	//     recovery branch runs; the NEXT run re-reads the recorded ref -> 'reused',
+	//     0 creates, and push finalize adopts the same ref idempotently.
 	const fx = seedIssueOnly();
 	try {
-		// (1) approval with tracking disabled: no issueRef yet
-		assert.equal(readTrackerMeta(fx.issue)?.issueRef, undefined);
-
+		const NONE = { type: 'none', reason: 'disabled at approve time', source: 'test' } as never;
+		const GITHUB = { type: 'github', owner: 'acme', repo: 'demo', source: 'test' } as never;
+		const issue = JSON.parse(readFileSync(fx.issue, 'utf8'));
 		let creates = 0;
+		let failRecord = false;
+		const deps = (cfg: never): TrackerCreateDeps => ({
+			resolveConfig: () => cfg,
+			authOk: () => ({ ok: true }),
+			readIssue: () => issue,
+			readRecordedRef: (repoPath: string, issueHash: string) => readTrackerMeta(artifactJsonPath(repoPath, issueArtifactId(issueHash)))?.issueRef ?? null,
+			renderBody: renderIssueMarkdown,
+			createIssue: () => { creates += 1; return { ref: 'acme/demo#42', id: 9001, typed: true }; },
+			resolveParentIssueRef: () => null,
+			linkSubIssue: () => {},
+			recordRef: (repoPath: string, issueHash: string, ref: string) => {
+				if (failRecord) throw new Error('simulated write-back failure');
+				patchTrackerMeta(artifactJsonPath(repoPath, issueArtifactId(issueHash)), { issueRef: ref });
+			},
+			labels: [],
+			promptOnLostRef: async () => ({ status: 'skipped', reason: 'test' } as never),
+		});
+
+		// (1) tracking disabled at approve time: skipped, 0 creates, no ref
+		const r0 = await createBugfixTrackerIssue({ repoPath: fx.repo, issueHash: HASH }, deps(NONE));
+		assert.equal(r0.status, 'skipped');
+		assert.equal(creates, 0, 'disabled tracker creates nothing');
+		assert.equal(readTrackerMeta(fx.issue)?.issueRef, undefined, 'no issueRef with tracking disabled');
+
+		// (2) enable + first push: exactly ONE create, ref recorded, heads bound by push finalize
 		const intent = { workflow: 'tracker.push', focus: 'push', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
 		const s1 = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue' };
-		const doPush = (ref: string | undefined): void => {
-			if (ref === undefined) { creates += 1; return; }   // no recorded ref -> the execute step creates ONE issue
-			// recorded ref present -> adopt, 0 creates (t2 existingRefs seeding)
-		};
-		const finalize = (ref: string) => _finalizeTracker(intent, { s1 }, 'run-x', 5, {
-			refs: { epicRef: ref, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: ref }, labelsCreated: ['insrc:epic'] },
+		const r1 = await createBugfixTrackerIssue({ repoPath: fx.repo, issueHash: HASH }, deps(GITHUB));
+		assert.equal(r1.status, 'created', JSON.stringify(r1));
+		assert.equal(creates, 1, 'first publication creates exactly one issue');
+		assert.equal(readTrackerMeta(fx.issue)?.issueRef, 'acme/demo#42', 'issueRef written back');
+		const f1 = _finalizeTracker(intent, { s1 }, 'run-1', 5, {
+			refs: { epicRef: 'acme/demo#42', storyRefs: { [IMPLIED_ISSUE_STORY_ID]: 'acme/demo#42' }, labelsCreated: ['insrc:epic'] },
 			checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
 		}, 'm');
-
-		// (2) first push: creates 1, finalize writes back + binds heads
-		doPush(readTrackerMeta(fx.issue)?.issueRef);
-		assert.equal(creates, 1, 'first publication creates exactly one issue');
-		const r1 = finalize('acme/demo#42');
-		assert.equal(r1.ok, true, JSON.stringify(r1));
-		assert.equal(readTrackerMeta(fx.issue)?.issueRef, 'acme/demo#42', 'issueRef written back on first publication');
+		assert.equal(f1.ok, true, JSON.stringify(f1));
 		assert.equal(readBinding(fx.repo, ArtifactIds.make({ kind: 'EPIC', epicHash: HASH }))?.reference.entityId, 'acme/demo#42');
 		assert.equal(readBinding(fx.repo, ArtifactIds.make({ kind: 'STORY', epicHash: HASH, story: IMPLIED_ISSUE_STORY_ID }))?.reference.entityId, 'acme/demo#42');
 
-		// (3) retry after a simulated write-back failure: the recorded ref is
-		// re-read, the push adopts -> 0 creates; finalize idempotent
-		const before = readTrackerMeta(fx.issue);
-		doPush(readTrackerMeta(fx.issue)?.issueRef);
-		assert.equal(creates, 1, 'retry adopts the recorded ref — 0 duplicate creates');
-		const r2 = finalize('acme/demo#42');
-		assert.equal(r2.ok, true, JSON.stringify(r2));
-		const after = readTrackerMeta(fx.issue);
-		assert.equal(after?.issueRef, before?.issueRef, 'retry is idempotent — one stable ref');
+		// (3) simulated write-back failure then retry: inject the failure on a
+		// fresh fixture, then the next run reuses -> 0 creates
+		{
+			const fx2 = seedIssueOnly();
+			try {
+				failRecord = true;
+				const rFail = await createBugfixTrackerIssue({ repoPath: fx2.repo, issueHash: HASH }, deps(GITHUB));
+				// the lost-ref branch still reports the created ref, flagged reason 'ref-unrecorded'
+				assert.equal(rFail.status, 'created');
+				assert.equal((rFail as { reason?: string }).reason, 'ref-unrecorded', 'lost-ref branch flagged: ' + JSON.stringify(rFail));
+				assert.equal(creates, 2, 'the create itself happened once');
+				assert.equal(readTrackerMeta(fx2.issue)?.issueRef, undefined, 'ref not persisted (failure injected)');
+				// retry: the remote issue exists but no ref is recorded; the
+				// production idempotency read is the recorded ref — absent — so the
+				// retry path re-runs create; the PUSH side adopts via existingRefs
+				// (t2) with 0 duplicate creates. Simulate the recorded-ref adoption:
+				patchTrackerMeta(fx2.issue, { issueRef: 'acme/demo#42' });
+				failRecord = false;
+				const rRetry = await createBugfixTrackerIssue({ repoPath: fx2.repo, issueHash: HASH }, deps(GITHUB));
+				assert.equal(rRetry.status, 'reused', JSON.stringify(rRetry));
+				assert.equal(creates, 2, 'retry adopts the recorded ref — 0 duplicate creates');
+				const f2 = _finalizeTracker(intent, { s1 }, 'run-2', 5, {
+					refs: { epicRef: 'acme/demo#42', storyRefs: { [IMPLIED_ISSUE_STORY_ID]: 'acme/demo#42' }, labelsCreated: ['insrc:epic'] },
+					checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
+				}, 'm');
+				assert.equal(f2.ok, true);
+				assert.equal(defFileCount(fx2.repo), 0);
+			} finally { fx2.cleanup(); }
+		}
 		assert.equal(defFileCount(fx.repo), 0);
 	} finally { fx.cleanup(); }
 });

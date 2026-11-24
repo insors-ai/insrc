@@ -57,6 +57,14 @@ if (process.argv[2] === '--nested') {
       } else if (scenario === 'held') {
         const done = join(run.root, 'descendant-closed'), quote = value => "'" + value.replaceAll("'", "'\\''") + "'";
         assert.equal((await scope.start('sh', ['-c', `(sleep 7; printf closed > ${quote(done)}) >/dev/null 2>&1 & exit 0`])).code, 0);
+      } else if (scenario === 'unregistered-detached') {
+        const folder = devWorkerPaths(home, launch.checkpoint).privateRoot;
+        const ready = join(folder, 'fixture-detached-ready'), release = join(folder, 'fixture-detached-release'), ended = join(folder, 'fixture-detached-ended');
+        // This process intentionally never registers. Its own release protocol
+        // and deadline belong to this boundary fixture, not installer cleanup.
+        const descendant = `const fs=require('node:fs');fs.writeFileSync(${JSON.stringify(ready)},'ready');const deadline=Date.now()+15000;const t=setInterval(()=>{if(fs.existsSync(${JSON.stringify(release)})||Date.now()>deadline){clearInterval(t);fs.writeFileSync(${JSON.stringify(ended)},'ended');}},10);`;
+        const command = `const cp=require('node:child_process'),fs=require('node:fs');const child=cp.spawn(process.execPath,['-e',${JSON.stringify(descendant)}],{detached:true,stdio:'ignore'});child.unref();const deadline=Date.now()+5000;const t=setInterval(()=>{if(fs.existsSync(${JSON.stringify(ready)})){clearInterval(t);}else if(Date.now()>deadline){clearInterval(t);process.exitCode=1;}},10);`;
+        assert.equal((await scope.start(process.execPath, ['-e', command])).code, 0);
       } else {
         assert.equal((await scope.start(process.execPath, ['-e', '0'])).code, 0);
       }
@@ -83,7 +91,7 @@ if (process.argv[2] === '--nested') {
   const parent = createRun(parentRoot, { mode: 'build' }), controller = new AbortController(), input = new PassThrough();
   const env = { ...parent.environment(), INSRC_BUILD_CONFIRM_CLOSURE: '1', INSRC_DEV_WORKER_FIXTURE_MODE: ['abort', 'eof'].includes(scenario) ? 'wait' : scenario };
   const owned = { ...parent, environment: () => env };
-  await withRun(owned, async scope => {
+  try { await withRun(owned, async scope => {
     const launchOptions = { entrypoint: process.argv[1], signal: controller.signal, ownerInput: input, environment: env };
     if (scenario === 'foreign') {
       await assert.rejects(launchDevWorker(scope, location, { ...record, installationId: 'foreign' }, launchOptions), { code: 'preparation-uncertain' });
@@ -111,6 +119,12 @@ if (process.argv[2] === '--nested') {
     const admissionFile = join(paths.workspace, 'child-admissions.jsonl');
     const admissions = existsSync(admissionFile) ? readFileSync(admissionFile, 'utf8').trim().split('\n') : [];
     if (scenario === 'nested') assert.equal(admissions.length, 2);
+    if (scenario === 'unregistered-detached') {
+      assert.equal(admissions.length, 1);
+      assert.equal(existsSync(join(paths.privateRoot, 'fixture-detached-ready')), true);
+      assert.equal(existsSync(join(paths.privateRoot, 'fixture-detached-ended')), false);
+      assert.equal(JSON.parse(readFileSync(join(paths.workspace, 'cleanup.json'), 'utf8')).closureMode, 'owned-groups');
+    }
     if (scenario === 'tamper') {
       const handle = controlBinding().acquire(paths.lock);
       try {
@@ -138,5 +152,10 @@ if (process.argv[2] === '--nested') {
     }
     assert.ok(readdirSync(home).every(name => ['dev', 'install'].includes(name)));
     assert.equal(existsSync(join(home, 'install/controller.json')), false);
-  });
+  }); } finally {
+    if (scenario === 'unregistered-detached' && existsSync(join(paths.privateRoot, 'fixture-detached-ready'))) {
+      writeFileSync(join(paths.privateRoot, 'fixture-detached-release'), 'release');
+      await until(() => existsSync(join(paths.privateRoot, 'fixture-detached-ended')));
+    }
+  }
 }

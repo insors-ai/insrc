@@ -120,7 +120,9 @@ function journal(workspace: string, name: string): { raw: string; rows: Array<Re
   if (rows.length > 4096 || rows.some(row => !row || typeof row !== 'object' || Array.isArray(row))) throw uncertain('Preparation journal is malformed or oversized');
   return { raw, rows };
 }
-/** Positive run-bound evidence, not a status/PID projection or a free-lock guess. */
+/** Positive run-bound evidence for admitted actors, retained owned groups and
+ * cooperating registered descendants. It does not certify arbitrary unregistered
+ * detached work. See the explicitly approved S2 ownership boundary. */
 function closureEvidence(record: DevPreparationRecord, paths: ReturnType<typeof devWorkerPaths>) {
   const cleanupBytes = bytes(join(paths.workspace, 'cleanup.json'));
   const cleanup = JSON.parse(cleanupBytes) as Record<string, unknown>;

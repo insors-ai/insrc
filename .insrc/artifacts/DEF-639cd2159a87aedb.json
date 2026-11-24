@@ -23,7 +23,7 @@
     "seededFromSpec": "74e8a0cf59d3f57d",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 1,
         "contentHash": "31d9cd94bb6e3d5da3a8de1d2e83ecb5df9ac742bfaa9bb4d238a792d8be08ae",
@@ -34,7 +34,16 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T13:05:40.518Z"
+      }
     },
     "revision": 1,
     "questionResolutions": {
@@ -45,6 +54,17 @@
         "rationale": "Settled in the approved brainstorm (SPEC-74e8a0cf59d3f57d decision 2): the unproven narrow-authorization assumption is gated, not relied on — live qualification with fail-closed behavior. Confirmed by the user in chat.",
         "resolvedAt": "2026-11-24T12:56:08.607Z"
       }
+    },
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "tracker": {
+      "adapter": "github",
+      "epicStatus": "open",
+      "storyStatus": {},
+      "lastSyncedAt": "2026-11-24T14:03:09.964Z"
     }
   },
   "body": {

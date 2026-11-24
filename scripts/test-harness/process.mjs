@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
+import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readdirSync, unlinkSync, writeFileSync, writeSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { harnessError, participantContext } from './context.mjs';
@@ -61,13 +61,14 @@ export function processScope(run, { includeForeignActors = true } = {}) {
 			} catch (error) { evidenceErrors.push(error.code); }
 		}
 	}
-	async function start(command, args, { cwd = run.root, env = run.environment(), budgetMs = run.budgets.fileMs, stdout, stderr, logPath, ownerChannel } = {}) {
+	async function start(command, args, { cwd = run.root, env = run.environment(), budgetMs = run.budgets.fileMs, stdout, stderr, logPath, ownerChannel, outputLimitBytes } = {}) {
 		if (stopped) throw harnessError('interrupted', 'Harness admission stopped.');
+		if (outputLimitBytes !== undefined && (!Number.isSafeInteger(outputLimitBytes) || outputLimitBytes <= 0 || stdout !== undefined || stderr !== undefined)) throw harnessError('context-invalid', 'Bounded capture needs a positive byte limit and owned stdout/stderr.');
 		run.assertOwner();
 		const childId = randomUUID();
 		const log = logPath ?? join(run.workspace, `child-${childId}.log`);
 		const fd = stdout === undefined && stderr === undefined ? openSync(log, 'wx', 0o600) : undefined;
-		const child = spawn(command, args, { cwd, env, detached: process.platform !== 'win32', stdio: [ownerChannel ? 'pipe' : 'ignore', stdout ?? fd, stderr ?? fd] });
+		const child = spawn(command, args, { cwd, env, detached: process.platform !== 'win32', stdio: [ownerChannel ? 'pipe' : 'ignore', outputLimitBytes ? 'pipe' : stdout ?? fd, outputLimitBytes ? 'pipe' : stderr ?? fd] });
 		registerChild(child, run);
 		ownedMarkers.add(markers.get(child));
 		const entry = { child, childId, ended: undefined, closed: false, disposed: false };
@@ -79,6 +80,15 @@ export function processScope(run, { includeForeignActors = true } = {}) {
 		}
 		let disconnect;
 		let timedOut = false, launchError;
+		if (outputLimitBytes !== undefined) {
+			let written = 0;
+			const capture = chunk => {
+				const remaining = Math.max(0, outputLimitBytes - written), take = Math.min(remaining, chunk.length);
+				if (take) { try { writeSync(fd, chunk.subarray(0, take)); written += take; } catch (error) { evidenceErrors.push(error.code); cancel(child, 'SIGTERM'); } }
+				if (take < chunk.length) { launchError = 'command-output-limit'; cancel(child, 'SIGTERM'); }
+			};
+			child.stdout.on('data', capture); child.stderr.on('data', capture);
+		}
 		let timer;
 		const timeout = new Promise(accept => { timer = setTimeout(() => { timedOut = true; cancel(child, 'SIGTERM'); accept({ code: null, signal: null, timedOut: true }); }, budgetMs); });
 		entry.ended = new Promise(accept => {

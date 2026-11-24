@@ -230,7 +230,7 @@ export async function executeDevWorker(home: string, input: DevWorkerLaunch, opt
   } finally { controlBinding().close(handle); }
 }
 
-export async function readVerifiedDevResult(home: string, record: DevPreparationRecord): Promise<DevPreparationResult> {
+async function readDevResult(home: string, record: DevPreparationRecord, verifyStage: boolean): Promise<DevPreparationResult> {
   const expected = parseDevPreparation(record), paths = devWorkerPaths(home, expected);
   try {
     assertLocalControlRoot(paths.home, process.platform === 'win32' ? path => controlBinding().localVolume(path) : undefined);
@@ -244,13 +244,22 @@ export async function readVerifiedDevResult(home: string, record: DevPreparation
       if (canonicalJson(closure) !== closureBytes || digest(closureBytes) !== result.cleanupSha256) throw uncertain('Worker cleanup digest differs');
       if (inputFingerprint(paths.checkout) !== result.inputFingerprint) throw uncertain('Prepared source inputs changed after worker completion');
       if (result.outcome === 'prepared') {
-        if (!closure.commandsSucceeded || closure.admittedCommands === 0 || fingerprint(paths.checkout, ['out', 'packages/project-memory/dist']) !== result.outputFingerprint) throw uncertain('Prepared output/command evidence differs');
-        await verifyStagedMetadata(expected, paths, result.inventorySha256!);
+        if (!closure.commandsSucceeded || closure.admittedCommands === 0) throw uncertain('Prepared command evidence differs');
+        if (verifyStage) {
+          if (fingerprint(paths.checkout, ['out', 'packages/project-memory/dist']) !== result.outputFingerprint) throw uncertain('Prepared output evidence differs');
+          await verifyStagedMetadata(expected, paths, result.inventorySha256!);
+        }
       }
       return result;
     } finally { controlBinding().close(handle); }
   } catch (cause) { throw uncertain('Preparation result/ownership could not be confirmed; retain this attempt', cause); }
 }
+
+export function readVerifiedDevResult(home: string, record: DevPreparationRecord): Promise<DevPreparationResult> { return readDevResult(home, record, true); }
+/** Selected-source preflight checks closed provenance and build inputs, not old
+ * ignored build outputs or a stage already moved to releases. The caller must
+ * verify the selected immutable release independently through delivery.open. */
+export function readVerifiedDevSourceResult(home: string, record: DevPreparationRecord): Promise<DevPreparationResult> { return readDevResult(home, record, false); }
 
 /** Required closure guard for later retry/cleanup callers. Cleanup also needs
  * its separate pristine-data/path checks; this grants no deletion capability. */

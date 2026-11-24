@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "b0ad162c5544e74beb564bf180abf154c5ac0ea88cfe99d07819aa0ca609c765",
+        "at": "2026-11-24T15:06:36.556Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T15:26:27.977Z",
+        "override": {
+          "reason": "Self-review by the controller. The daemon validate judge could not run for an environmental reason: the globally-registered codex MCP server 'cua_repl' cannot be safely excluded from the read-only judge session (codex's own bootstrap rejects the partial override — CodexMcpServerOverrideUnsafeError), a correct fail-closed refusal unrelated to this change. Self-check evidence: tsc --noEmit clean; 221/221 companion+format tests pass including regressions for both live failure shapes (parenthesized edge labels double-quoted; sibling-relative ./<file> links for diagram and ux-mock slots; no unquoted edge-label token remains); six renderer tests that pinned the old link form updated. Automated code-review endpoints are unavailable (being rewritten). User approved in chat."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-c7b0ce5b-78f9-43f6-8f1c-760791e06409",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T15:06:36.371Z",
+    "epicCreatedAt": "2026-11-24T14:02:48.029Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a3d8c9e9f195e620",
+    "storyId": "s1",
+    "revision": 1,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "epicSlug": "companion-mermaid-edge-labels-render-unquoted"
+  },
+  "body": {
+    "focus": "Companion mermaid edge labels render unquoted and companion links resolve against the wrong base. Root cause: (1) componentDependencyDefinitionToPage emits edge labels as `|${mermaidFlowText(d.label)}|` — an unquoted token; mermaidFlowText is safe only inside a quoted label context, so labels containing parentheses (e.g. 'one subprocess per turn (k6)') break flowchart parsing — observed live as 'Syntax error in text' with zero rendered components; node labels on the same page are correctly double-quoted. (2) companionRef computes relPath as toRepoRelative(destPath, repoPath) — repo-relative — but companionBodyLines embeds it verbatim as a markdown link inside the artifact .md, which sits in the SAME directory as the companion; the link resolves to a doubled path and 404s. Fix intent: quote edge labels in the mermaid output (the same double-quoted form the node labels already use), compute the companion ref's link path relative to the artifact's own directory (the companion is a sibling file), cover both with regression tests (a parenthesized edge label produces a parseable flowchart; the emitted link resolves from the artifact's directory), and regenerate the affected companions so the reviewed HLD's diagram renders and its link works.",
+    "producesLld": false,
+    "commit": "5b06d0e50"
+  },
+  "citations": []
+}

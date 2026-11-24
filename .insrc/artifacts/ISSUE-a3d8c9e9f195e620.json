@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795528929753-tt28io",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T14:02:48.029Z",
+    "epicCreatedAt": "2026-11-24T14:02:48.029Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 38275,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "a3d8c9e9f195e620",
+    "epicSlug": "companion-mermaid-edge-labels-render-unquoted",
+    "standalone": true,
+    "magnitude": "small",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c1bf24b310a3b3ac538b84157024d204a8262f00e5122759fe16ad08725912cd",
+        "at": "2026-11-24T14:02:48.037Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T15:06:19.586Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "a3d8c9e9f195e620",
+      "slug": "EPIC-a3d8c9e9f195e620"
+    }
+  },
+  "body": {
+    "fixIntent": "Quote edge labels in the component companion's mermaid output — the same double-quoted form the node labels already use — so labels containing parentheses and other special characters parse. Compute the companion ref's link path relative to the artifact's own directory (the companion is a sibling file), so markdown links resolve correctly. Cover both with regression tests: a parenthesized edge label produces a parseable flowchart, and the emitted link resolves from the artifact's directory. Regenerate the affected companions so the reviewed HLD's diagram renders and its link works.",
+    "reproduction": "1. Generate a component-dependency companion whose definition carries an edge label containing parentheses (e.g. 'one subprocess per turn (k6)' or 'REMOVED by s1 (mechanical re-home) / s3 (full migration)') — as the HLD-639cd2159a87aedb component-dependency definition does.\n2. Open the generated page in Chrome. Observed: mermaid reports 'Syntax error in text' and renders zero component nodes — the whole diagram is missing (live observation on docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/component-dependency.html, 11 components, 13 edges). Expected: all components and edges render. Quoting the edge labels in a hand-edited copy of the page made all 11 components render, confirming the diagnosis.\n3. Separately, open the artifact markdown that links the companion. Observed: HLD.md line 36 links 'docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/component-dependency.html', which resolves relative to the artifact's own directory to docs/epics/<epic>/docs/epics/<epic>/component-dependency.html — a 404. Expected: './component-dependency.html', the companion being a sibling file of the .md.",
+    "rootCause": "Two independent defects in the companion rendering layer. (1) componentDependencyDefinitionToPage emits edge labels as `|${mermaidFlowText(d.label)}|` — an UNQUOTED label token. mermaidFlowText prepares text for a QUOTED label context (it strips pipes and encodes angle brackets but leaves parentheses untouched), and mermaid's unquoted `|...|` edge-label form fails to parse when the label contains parentheses. The node labels on the same page are correctly double-quoted, which is why the boxes' text was safe while the edges broke the whole chart. (2) companionRef computes the ref's relPath with toRepoRelative — a path relative to the repository root — but the only markdown consumer (companionBodyLines) embeds it verbatim in a link inside the artifact .md, which sits in the SAME directory as the companion file (the renderer always writes companions beside the source markdown). A repo-relative path inside a document-relative link resolves incorrectly and 404s.",
+    "title": "Companion mermaid edge labels render unquoted and companion links resolve against the wrong base"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "quotedText": "const label = d.label !== undefined && d.label.length > 0 ? `|${mermaidFlowText(d.label)}|` : '';",
+      "ref": "src/workflow/artifacts/companion/component.ts:156-160"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "quotedText": "mermaidFlowText: text for a quoted flowchart node label or an edge label",
+      "ref": "src/workflow/artifacts/companion/mermaid-text.ts:43-47"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "quotedText": "relPath: toRepoRelative(destPath, opts.repoPath)",
+      "ref": "src/workflow/artifacts/companion/render.ts:86-91"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "quotedText": "companionBodyLines embeds relPath verbatim as a markdown link",
+      "ref": "src/workflow/artifacts/format/bindings.ts:46-55"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "quotedText": "the observed live failure: 11 components, 13 edges, Chrome renders 'Syntax error in text' with zero component nodes",
+      "ref": "docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/component-dependency.html"
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "quotedText": "line 36 links the companion with a repo-relative path that 404s from the artifact's directory",
+      "ref": "docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/HLD.md:36"
+    },
+    {
+      "id": "c7",
+      "kind": "stakeholder",
+      "quotedText": "HLD review finding: the component companion fails to render; correct the generation/escaping, regenerate the companion, and change the link to ./component-dependency.html",
+      "ref": "user review verdict on HLD-639cd2159a87aedb, 2026-11-24"
+    }
+  ]
+}

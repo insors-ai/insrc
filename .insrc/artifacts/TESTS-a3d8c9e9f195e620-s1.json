@@ -1,0 +1,215 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "24c2dd3446034079d846a2df291b8363829e19d770200f0e512f1b90314cbcb3",
+        "at": "2026-11-24T15:12:25.411Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "a3d8c9e9f195e620",
+    "storyId": "s1",
+    "createdAt": "2026-11-24T15:12:25.327Z",
+    "updatedAt": "2026-11-24T15:12:25.327Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-24T14:02:48.029Z",
+    "epicSlug": "companion-mermaid-edge-labels-render-unquoted",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "3830e8b34",
+        "ranAt": "2026-11-24T15:12:25.327Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/artifacts/companion/__tests__/ux-body-fields.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/artifacts/companion/__tests__/ux-body-fields.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/artifacts/companion/__tests__/ux-integration.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/artifacts/companion/__tests__/ux-integration.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/artifacts/format/__tests__/bindings.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/artifacts/format/__tests__/bindings.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 428,
+            "titles": [
+              {
+                "title": "d9f85b3c t6 — the sequenceDiagram is autonumbered, labels every message, dashes returns and keeps the notes",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t6 — the participants and messages tables, in call order with kind tags",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t6 — awkward participant ids are aliased; no truncations block when there are none",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t6 — the component flowchart has one box per component and one arrow per dependency",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t6 — the components table lists path, depends-on and description, null when absent",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t6 — component labels with quotes, pipes or markup cannot break the flowchart",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-a3d8c9e9f195e620 — an edge label containing parentheses is emitted double-quoted, so the flowchart parses",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/ux-body-fields.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 796,
+            "titles": [
+              {
+                "title": "isHldBody / isLldBody: pass with NEITHER new field and WITH uxDefinition + adherence",
+                "result": "pass"
+              },
+              {
+                "title": "renderLldMarkdown: uxDefinition + adherence present but NO ux-mock companion → byte-identical (omit-slot)",
+                "result": "pass"
+              },
+              {
+                "title": "renderLldMarkdown: a ux-mock companion renders the UX section as a LINK (never inlined)",
+                "result": "pass"
+              },
+              {
+                "title": "renderLldMarkdown: an ER + a UX companion render in their OWN slots",
+                "result": "pass"
+              },
+              {
+                "title": "ADHERENCE_PROPERTY_SCHEMA: validates a recorded selection against the AdherenceDimension set",
+                "result": "pass"
+              },
+              {
+                "title": "isAdherenceDimension: only the five selectable members",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — design.story and design.epic synth schemas admit a UX card narrative and described elements",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/ux-integration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 775,
+            "titles": [
+              {
+                "title": "finalize seam: a valid uxDefinition → sibling ux-mock HTML + a UX section LINK in the markdown (never inlined)",
+                "result": "pass"
+              },
+              {
+                "title": "finalize seam: a body with BOTH an ER and a UX definition emits BOTH companions in their own slots",
+                "result": "pass"
+              },
+              {
+                "title": "HLD: a valid uxDefinition → sibling ux-mock HTML + a UX section LINK in the markdown (never inlined)",
+                "result": "pass"
+              },
+              {
+                "title": "HLD: a body with BOTH an ER and a UX definition emits BOTH companions in their own slots",
+                "result": "pass"
+              },
+              {
+                "title": "HLD: a body with NO ux-mock companion renders no UX section at all (absent-safe, byte-identical)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifacts/format/__tests__/bindings.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 430,
+            "titles": [
+              {
+                "title": "changeLogBodyLines: absent → []",
+                "result": "pass"
+              },
+              {
+                "title": "changeLogBodyLines: empty → []",
+                "result": "pass"
+              },
+              {
+                "title": "changeLogBodyLines: present → one bullet per entry with target file/author/timestamp (+ optional segment + summary)",
+                "result": "pass"
+              },
+              {
+                "title": "companionBodyLines: a repo-relative relPath links ./<file name> — the sibling companion, not the repo-relative path",
+                "result": "pass"
+              },
+              {
+                "title": "companionBodyLines: the section suffix is preserved on the sibling-relative link",
+                "result": "pass"
+              },
+              {
+                "title": "uxCompanionBodyLines: the UX mock links its sibling file too",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

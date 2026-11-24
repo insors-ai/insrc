@@ -165,3 +165,34 @@ test('epic-impact-artifacts.test.ts: design.story and plan synthesize reject a l
 		if (carried.ok) assert.deepEqual((carried.finalized.artifact as { body: { epicImpact?: unknown } }).body.epicImpact, ANALYSIS);
 	} finally { rmSync(later, { recursive: true, force: true }); rmSync(alone, { recursive: true, force: true }); }
 });
+
+test('epic-impact-artifacts.test.ts: a first-step analysis made before a sibling Story was built can be replaced by a current one at synthesize, and without one the refusal says so', async () => {
+	const repo = synthRepo(false);   // context assembly: nothing built yet, so the analysis validly says it does not apply
+	try {
+		const none: EpicImpactAnalysis = { applies: false, reason: 'nothing built yet', storiesCovered: [], findings: '', sources: [] };
+		const stepOutputs = { s1: { epicImpact: none } };
+		const planEmit = { body: planFixture().body, citations: planFixture().citations };
+		// still nothing built: the first-step analysis is carried
+		const early = await finalizeArtifact(intentFor('plan', repo), stepOutputs, 'run', 1, planEmit, 'client');
+		assert.equal(early.ok, true, messageOf(early));
+
+		// another session approves a sibling BUILD between context assembly and synthesize
+		writeHead(repo, buildArtifactId(EH, 's1'), {
+			meta: { workflow: 'build', epicHash: EH, createdAt: STAMP, ...approvedMeta() },
+			body: { summary: 'built s1', tasks: [{ id: 't1', passed: true }], changeLog: [{ target: { file: 'src/s1.ts' } }] },
+			citations: [],
+		});
+		for (const [workflow, emit] of [['plan', planEmit], ['design.story', { body: lldFixture().body, citations: lldFixture().citations }]] as const) {
+			const stuck = await finalizeArtifact(intentFor(workflow, repo), stepOutputs, 'run', 1, emit, 'client');
+			assert.equal(stuck.ok, false, `${workflow}: the stale analysis is refused`);
+			assert.match(messageOf(stuck), /does not apply, but the Epic has a built Story now: supply a current analysis in body\.epicImpact/);
+		}
+		// supplying a current analysis in the synthesized body recovers the run
+		const retried = await finalizeArtifact(intentFor('plan', repo), stepOutputs, 'run', 1, { ...planEmit, body: { ...planEmit.body, epicImpact: ANALYSIS } }, 'client');
+		assert.equal(retried.ok, true, messageOf(retried));
+		if (retried.ok) assert.deepEqual((retried.finalized.artifact as { body: { epicImpact?: unknown } }).body.epicImpact, ANALYSIS);
+		// an authored analysis that is itself not acceptable does not recover it
+		const bad = await finalizeArtifact(intentFor('plan', repo), stepOutputs, 'run', 1, { ...planEmit, body: { ...planEmit.body, epicImpact: { ...ANALYSIS, sources: [] } } }, 'client');
+		assert.match(messageOf(bad), /cites no source/);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});

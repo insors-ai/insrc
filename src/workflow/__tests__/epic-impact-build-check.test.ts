@@ -143,3 +143,17 @@ test("epic-impact-build-check.test.ts: approveWorkflowTarget over a later Story'
 		assert.doesNotMatch(rec.skipped[0]!.reason, /Epic impact/);
 	} finally { clean(...repos); }
 });
+
+test('epic-impact-build-check.test.ts: a refused approval of a BUILD with no record yet leaves the BUILD record and its log absent, and an override still creates it', async () => {
+	const repo = repoWith({ epicImpact: ANALYSIS }, 'x'); 
+	try {
+		rmSync(buildPath(repo), { force: true });
+		const dir = join(repo, ARTIFACTS_DIR);
+		const before = readdirSync(dir).sort();
+		const out = await approveTarget({ repoPath: repo, artifactPath: buildPath(repo), skipKinds: true });
+		assert.equal(out.approved.length, 0);
+		assert.equal(out.skipped[0]?.kind, 'epic-impact-missing');
+		assert.deepEqual(readdirSync(dir).sort(), before, 'no BUILD record and no log were created');
+		assert.equal(readdirSync(dir).some(n => n.startsWith('BUILD-')), false);
+	} finally { clean(repo); }
+});

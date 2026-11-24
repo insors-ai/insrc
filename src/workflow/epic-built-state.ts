@@ -70,6 +70,8 @@ export interface EpicBuiltStory {
 	readonly contractNames?: readonly string[] | undefined;
 	/** What could not be read or is not recorded for this Story. */
 	readonly note?: string | undefined;
+	/** When the BUILD was last written; orders which Stories are newest. */
+	readonly builtAt?: string | undefined;
 }
 
 export interface EpicBuiltStateDigest {
@@ -77,7 +79,8 @@ export interface EpicBuiltStateDigest {
 	readonly forStory:  string;
 	readonly stories:   readonly EpicBuiltStory[];
 	/** Set when Stories were reduced to a line or left out to stay within the cap. */
-	readonly truncated: { readonly reducedStories: number } | null;
+	/** Set when Stories were reduced to a line (`reducedStories`, which includes the omitted) or left out (`omittedStories`) to stay within the caps. */
+	readonly truncated: { readonly reducedStories: number; readonly omittedStories: number } | null;
 }
 
 const DEFAULTS = { perStoryChars: 1800, totalChars: 9000, fullStories: 3 } as const;
@@ -104,7 +107,9 @@ function readStory(repoPath: string, epicHash: string, id: string, title: string
 	} catch (e) {
 		return { builtAt: '', story: { storyId: id, title, detail: 'full', buildPath, note: `BUILD record unreadable: ${e instanceof Error ? e.message : String(e)}` } };
 	}
-	if (!isObj(build) || approvalStateOf(build['meta']) !== 'approved') return undefined;   // not built (or not approved) yet
+	if (build === undefined) return undefined;   // no BUILD record: not built yet
+	if (!isObj(build)) return { builtAt: '', story: { storyId: id, title, detail: 'full', buildPath, note: 'BUILD record unreadable: it is not a record object' } };
+	if (approvalStateOf(build['meta']) !== 'approved') return undefined;   // not approved yet
 	const meta = isObj(build['meta']) ? build['meta'] : {};
 	const body = isObj(build['body']) ? build['body'] : {};
 	const notes: string[] = [];
@@ -130,7 +135,7 @@ function readStory(repoPath: string, epicHash: string, id: string, title: string
 			const passed = rows.filter(r => r['testsPassed'] === true).length;
 			testsResult = `${passed} of ${rows.length} task test run(s) passed`;
 			testsPath = testsRel;
-		} else if (testsRel === undefined) notes.push('no test record');
+		} else notes.push(tests === undefined ? 'TESTS record missing' : 'TESTS record unreadable: it has no task list');
 	} catch (e) {
 		notes.push(`TESTS record unreadable: ${e instanceof Error ? e.message : String(e)}`);
 	}
@@ -150,7 +155,7 @@ function readStory(repoPath: string, epicHash: string, id: string, title: string
 	return {
 		builtAt,
 		story: {
-			storyId: id, title, detail: 'full', buildPath,
+			storyId: id, title, detail: 'full', buildPath, builtAt,
 			...(summary.length > 0 ? { buildSummary: clip(summary, perStoryChars) } : {}),
 			taskVerdicts,
 			...(testsResult !== undefined ? { testsResult } : {}),
@@ -179,16 +184,18 @@ export function buildEpicBuiltStateDigest(repoPath: string, epicHash: string, st
 			return null;   // a standalone Story or an unreadable Define: the stage's own gates report the latter
 		}
 
+		if (stories[0]?.id === storyId) return null;   // the Epic's first Story has no earlier Story to analyse
 		const read_ = stories.filter(s => s.id !== storyId)
 			.map(s => readStory(repoPath, epicHash, s.id, s.title, read, perStoryChars))
 			.filter((r): r is StoryRead => r !== undefined);
 		if (read_.length === 0) return null;
 
-		// the newest `fullStories` stay in full, the rest are reduced to a line; the output stays in the Define's order
+		// the newest `fullStories` stay in full, the rest are lines; then the whole is fitted to the total cap (output in the Define's order)
 		const newest = new Set([...read_].sort((a, b) => b.builtAt.localeCompare(a.builtAt) || b.story.storyId.localeCompare(a.story.storyId)).slice(0, fullStories).map(r => r.story.storyId));
 		const shaped = read_.map(r => (newest.has(r.story.storyId) ? r.story : { ...r.story, detail: 'line' as const }));
-		const reduced = shaped.filter(s => s.detail === 'line').length;
-		return { epicHash, forStory: storyId, stories: shaped, truncated: reduced > 0 ? { reducedStories: reduced } : null };
+		const fitted = fit(storyId, epicHash, shaped, perStoryChars, opts.totalChars ?? DEFAULTS.totalChars);
+		const reduced = fitted.stories.filter(x => x.detail === 'line').length + fitted.omitted;
+		return { epicHash, forStory: storyId, stories: fitted.stories, truncated: reduced > 0 ? { reducedStories: reduced, omittedStories: fitted.omitted } : null };
 	} catch (e) {
 		log.warn({ err: e instanceof Error ? e.message : String(e) }, 'the Epic built-state digest could not be built');
 		return null;
@@ -210,7 +217,7 @@ function fullLines(s: EpicBuiltStory, perStoryChars: number): string[] {
 	if (s.buildSummary !== undefined) lines.push('- BUILD summary (including any deviations it discloses):', ...s.buildSummary.split('\n').map(l => `  > ${l}`));
 	if (s.note !== undefined) lines.push(`- Not available: ${s.note}`);
 	const text = lines.join('\n');
-	return text.length <= perStoryChars * 2 ? lines : [clip(text, perStoryChars * 2)];
+	return text.length <= perStoryChars ? lines : [clip(text, perStoryChars)];
 }
 
 function lineOf(s: EpicBuiltStory): string {
@@ -218,30 +225,39 @@ function lineOf(s: EpicBuiltStory): string {
 	return `- ${s.storyId} — ${s.title}: ${first.length > 0 ? clip(first, 160) : 'no BUILD summary'} (records: \`${s.buildPath}\`)${s.note !== undefined ? ` — not available: ${s.note}` : ''}`;
 }
 
-/** The block placed above the Story detail; one line for a null digest. Pure and deterministic. */
-export function renderEpicBuiltStateDigest(digest: EpicBuiltStateDigest | null, opts: Pick<EpicDigestOptions, 'perStoryChars' | 'totalChars'> = {}): string {
-	if (digest === null) return EPIC_IMPACT_NOT_APPLICABLE;
-	const perStoryChars = opts.perStoryChars ?? DEFAULTS.perStoryChars;
-	const totalChars = opts.totalChars ?? DEFAULTS.totalChars;
-	const head = [`## Epic built-state digest (Epic ${digest.epicHash}; for Story ${digest.forStory})`, '', 'What this Epic\'s other Stories have already built, from their approved BUILD, TESTS and LLD records.', ''];
+interface Fitted { readonly stories: readonly EpicBuiltStory[]; readonly omitted: number; readonly text: string }
 
-	const render = (stories: readonly EpicBuiltStory[], dropped: number): string => {
+/** Reduces the oldest full Stories to lines, then leaves out the oldest lines, until the text fits `totalChars`. Output stays in the Define's order. */
+function fit(forStory: string, epicHash: string, input: readonly EpicBuiltStory[], perStoryChars: number, totalChars: number): Fitted {
+	const head = [`## Epic built-state digest (Epic ${epicHash}; for Story ${forStory})`, '', 'What this Epic\'s other Stories have already built, from their approved BUILD, TESTS and LLD records.', ''];
+	const render = (stories: readonly EpicBuiltStory[], omitted: number): string => {
 		const body: string[] = [];
 		for (const s of stories) body.push(...(s.detail === 'full' ? fullLines(s, perStoryChars) : [lineOf(s)]), '');
 		const lined = stories.filter(s => s.detail === 'line').length;
-		const tail = lined > 0 || dropped > 0
-			? [`(${lined} Stor${lined === 1 ? 'y' : 'ies'} shown as a line only${dropped > 0 ? `, ${dropped} more left out to stay within the size cap` : ''}; open their records for the rest.)`]
+		const tail = lined > 0 || omitted > 0
+			? [`(${lined} Stor${lined === 1 ? 'y' : 'ies'} shown as a line only${omitted > 0 ? `, ${omitted} more left out to stay within the size cap` : ''}; open their records for the rest.)`]
 			: [];
 		return [...head, ...body, ...tail].join('\n').trimEnd();
 	};
+	const oldestFirst = (list: readonly EpicBuiltStory[]): EpicBuiltStory[] =>
+		[...list].sort((a, b) => (a.builtAt ?? '').localeCompare(b.builtAt ?? '') || a.storyId.localeCompare(b.storyId));
 
-	// reduce the oldest full Stories to lines, then drop the oldest lines, until the text fits
-	let stories = [...digest.stories];
+	let stories = [...input];
 	let text = render(stories, 0);
-	for (let i = 0; i < stories.length && text.length > totalChars; i++) {
-		if (stories[i]!.detail === 'full') { stories = stories.map((s, j) => (j === i ? { ...s, detail: 'line' as const } : s)); text = render(stories, 0); }
+	for (const old of oldestFirst(input)) {
+		if (text.length <= totalChars) break;
+		if (old.detail === 'full') { stories = stories.map(s => (s.storyId === old.storyId ? { ...s, detail: 'line' as const } : s)); text = render(stories, 0); }
 	}
-	let dropped = 0;
-	while (text.length > totalChars && stories.length > 1) { stories = stories.slice(1); dropped++; text = render(stories, dropped); }
-	return text.length <= totalChars ? text : `${text.slice(0, totalChars - 1).trimEnd()}…`;
+	let omitted = 0;
+	for (const old of oldestFirst(input)) {
+		if (text.length <= totalChars || stories.length <= 1) break;
+		stories = stories.filter(s => s.storyId !== old.storyId); omitted++; text = render(stories, omitted);
+	}
+	return { stories, omitted, text: text.length <= totalChars ? text : `${text.slice(0, Math.max(0, totalChars - 1)).trimEnd()}…` };
+}
+
+/** The block placed above the Story detail; one line for a null digest. Pure and deterministic; a cap given here narrows the digest further. */
+export function renderEpicBuiltStateDigest(digest: EpicBuiltStateDigest | null, opts: Pick<EpicDigestOptions, 'perStoryChars' | 'totalChars'> = {}): string {
+	if (digest === null) return EPIC_IMPACT_NOT_APPLICABLE;
+	return fit(digest.forStory, digest.epicHash, digest.stories, opts.perStoryChars ?? DEFAULTS.perStoryChars, opts.totalChars ?? DEFAULTS.totalChars).text;
 }

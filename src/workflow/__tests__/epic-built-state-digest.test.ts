@@ -67,6 +67,7 @@ test('epic-built-state-digest.test.ts: buildEpicBuiltStateDigest returns null fo
 		build(repo, 's2', { approved: false });
 		assert.equal(buildEpicBuiltStateDigest(repo, HASH, 's1'), null, 'an unapproved BUILD does not count');
 		build(repo, 's3'); build(repo, 's2'); build(repo, 's1');
+		assert.equal(buildEpicBuiltStateDigest(repo, HASH, 's1'), null, "the Define's first Story is never given a digest, even when later Stories are built");
 		const d = buildEpicBuiltStateDigest(repo, HASH, 's2');
 		assert.ok(d);
 		assert.deepEqual(d.stories.map(s => s.storyId), ['s1', 's3'], "the Define's order, without the Story at hand");
@@ -82,11 +83,13 @@ test('epic-built-state-digest.test.ts: a Story whose BUILD or TESTS record is mi
 		writeFileSync(join(repo, ARTIFACTS_DIR, `TESTS-${HASH}-s2.json`), '{ not json');
 		writeFileSync(artifactJsonPath(repo, buildArtifactId(HASH, 's3')), '{ not json');
 		build(repo, 's4', { files: [] });
+		writeFileSync(artifactJsonPath(repo, buildArtifactId(HASH, 's3')), '[1]');   // parses, but is not a record
 		const d = buildEpicBuiltStateDigest(repo, HASH, 's9');
 		assert.ok(d);
 		const byId = Object.fromEntries(d.stories.map(s => [s.storyId, s]));
 		assert.match(byId['s2']!.note ?? '', /TESTS record unreadable/);
 		assert.match(byId['s3']!.note ?? '', /BUILD record unreadable/);
+		assert.match(byId['s1']!.note ?? '', /TESTS record missing/);
 		assert.match(byId['s4']!.note ?? '', /files this Story changed are not recorded/);
 		assert.equal(byId['s1']!.buildSummary, 'built s1', 'the others are still digested');
 		// a reader that always throws still does not throw out of the builder
@@ -102,11 +105,16 @@ test('epic-built-state-digest.test.ts: the newest Stories are in full and older 
 		lld(repo, 's5', ['Alpha', 'Beta']);
 		const d = buildEpicBuiltStateDigest(repo, HASH, 's6', { fullStories: 2 });
 		assert.ok(d);
-		assert.equal(d.truncated?.reducedStories, 3);
+		assert.deepEqual(d.truncated, { reducedStories: 3, omittedStories: 0 });
 		assert.deepEqual(d.stories.filter(s => s.detail === 'full').map(s => s.storyId), ['s4', 's5'], 'the newest are in full');
 		const text = renderEpicBuiltStateDigest(d);
 		assert.match(text, /- s1 — Title s1: summary of s1 \(records: `[^`]*BUILD-/);
 		assert.match(text, /Contracts its LLD names: `Alpha`, `Beta`/);
+		const capped = buildEpicBuiltStateDigest(repo, HASH, 's6', { fullStories: 5, totalChars: 900 });
+		assert.ok(capped && capped.truncated !== null && capped.truncated.reducedStories >= 3, 'the builder reports reductions made to fit the total cap');
+		assert.ok(renderEpicBuiltStateDigest(capped).length <= 900);
+		const tiny = buildEpicBuiltStateDigest(repo, HASH, 's6', { totalChars: 700 });
+		assert.ok(tiny && tiny.truncated !== null && tiny.truncated.omittedStories > 0 && tiny.stories.length < 5, 'older Stories are left out and counted');
 		for (const cap of [400, 900, 3000]) {
 			const t = renderEpicBuiltStateDigest(d, { totalChars: cap });
 			assert.ok(t.length <= cap, `cap ${cap}: ${t.length}`);

@@ -11,7 +11,8 @@ test('combined-s1-s2-installer-regression-has-complete-coverage-and-confirmed-cl
   const expected = [...readdirSync(join(root, directory))
     .filter(name => name.endsWith('.test.ts'))
     .map(name => `${directory}/${name}`), 'src/shared/__tests__/installation-home.test.ts',
-    'scripts/__tests__/build-script.test.ts', 'scripts/__tests__/forbidden-spawn-scan.test.ts'].sort();
+    'scripts/__tests__/build-script.test.ts', 'scripts/__tests__/forbidden-spawn-scan.test.ts',
+    'scripts/__tests__/test-harness-coordinator.test.ts'].sort();
   const pointer = JSON.parse(readFileSync(join(root, '.insrc/tmp/s2-final-regression.json'), 'utf8'));
   assert.match(pointer.runId, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   const workspace = join(root, '.insrc/tmp/test-harness/runs', pointer.runId);
@@ -53,12 +54,15 @@ test('combined-s1-s2-installer-regression-has-complete-coverage-and-confirmed-cl
   assert.deepEqual(cleanup.cancellationErrors, []); assert.deepEqual(cleanup.evidenceErrors, []);
   if (existsSync(join(workspace, 'actors'))) assert.deepEqual(readdirSync(join(workspace, 'actors')), []);
   const journal = (name: string): Array<{ runId: string; childId: string }> => readFileSync(join(workspace, name), 'utf8').trim().split('\n').map(line => JSON.parse(line));
-  const admitted = journal('child-admissions.jsonl'), closed = journal('child-results.jsonl');
+  const admitted = journal('child-admissions.jsonl'), closed = journal('child-results.jsonl'), disposed = journal('child-disposals.jsonl');
   assert.ok(admitted.length > expected.length);
-  for (const entry of [...admitted, ...closed]) assert.equal(entry.runId, pointer.runId);
+  for (const entry of [...admitted, ...closed, ...disposed]) assert.equal(entry.runId, pointer.runId);
   assert.equal(new Set(admitted.map(entry => entry.childId)).size, admitted.length);
   assert.equal(new Set(closed.map(entry => entry.childId)).size, closed.length);
+  assert.equal(new Set(disposed.map(entry => entry.childId)).size, disposed.length);
   assert.deepEqual(closed.map(entry => entry.childId).sort(), admitted.map(entry => entry.childId).sort());
+  assert.deepEqual(disposed.map(entry => entry.childId).sort(), admitted.map(entry => entry.childId).sort());
+  for (const entry of disposed) assert.ok('state' in entry && ['closed', 'not-started'].includes(String(entry.state)));
   const active = join(root, '.insrc/tmp/test-harness/active/run.json');
   if (existsSync(active)) assert.notEqual(JSON.parse(readFileSync(active, 'utf8')).runId, pointer.runId);
   process.stdout.write(`# completed regression ${pointer.runId}: ${expected.length} files; ${JSON.stringify(totals)}\n`);

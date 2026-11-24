@@ -357,6 +357,21 @@ function computeNextAction(epicHash: string, s: NextActionInput): NextAction {
 				};
 			}
 		}
+		// ISSUE-5f9d4ab4c90c0b4c s1/t5: with the LLD approved, an ISSUE head
+		// falls through to the DEF tracker steps — push-tracker, sync-tracker,
+		// chain-complete — and never hld/amendment/stale (it has none).
+		if (!s.tracker.pushed) {
+			return {
+				kind: 'push-tracker',
+				command: `insrc_workflow_step phase=start workflow=tracker.push focus="push ${epicHash} to GitHub" params={"epicHash":"${epicHash}"}`,
+			};
+		}
+		if (s.tracker.lastSyncedAt === undefined) {
+			return {
+				kind: 'sync-tracker',
+				command: `insrc workflow sync ${epicHash}`,
+			};
+		}
 		return { kind: 'chain-complete' };
 	}
 	// 1. Define isn't done or approved.

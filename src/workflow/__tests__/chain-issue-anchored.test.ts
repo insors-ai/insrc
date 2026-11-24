@@ -169,7 +169,7 @@ test('rejected ISSUE yields run-define that reruns the issue stage', () => {
 	} finally { s.cleanup(); }
 });
 
-test('next actions follow run-lld, approve-lld, chain-complete and never name an HLD, amendment, stale or tracker step', () => {
+test('next actions follow run-lld, approve-lld then the tracker steps and never name an HLD, amendment or stale step (ISSUE-5f9d4ab4c90c0b4c s1/t5 moved tracker steps into the ISSUE branch)', () => {
 	// approved ISSUE, no LLD yet
 	const noLld = seedIssueRepo({ approved: true });
 	try {
@@ -190,11 +190,11 @@ test('next actions follow run-lld, approve-lld, chain-complete and never name an
 		if (r.nextAction.kind === 'approve-lld') assert.equal(r.nextAction.storyId, 's1');
 	} finally { unapprovedLld.cleanup(); }
 
-	// approved ISSUE + approved LLD
+	// approved ISSUE + approved LLD, unpushed -> push-tracker (ISSUE-5f9d4ab4c90c0b4c s1/t5)
 	const done = seedIssueRepo({ approved: true, lld: true, lldApproved: true });
 	try {
 		const r = buildChainReport(done.repo, HASH);
-		assert.equal(r.nextAction.kind, 'chain-complete');
+		assert.equal(r.nextAction.kind, 'push-tracker', JSON.stringify(r.nextAction));
 	} finally { done.cleanup(); }
 
 	// the forbidden kinds never appear for an ISSUE head at any stage
@@ -203,8 +203,8 @@ test('next actions follow run-lld, approve-lld, chain-complete and never name an
 		try {
 			const r = buildChainReport(s.repo, HASH);
 			assert.ok(
-				!['run-hld', 'approve-hld', 'review-amendment', 'refresh-stale', 'push-tracker', 'sync-tracker'].includes(r.nextAction.kind),
-				`ISSUE head must never yield ${r.nextAction.kind}`,
+				!['run-hld', 'approve-hld', 'review-amendment', 'refresh-stale'].includes(r.nextAction.kind),
+				`ISSUE head must never yield ${r.nextAction.kind} (tracker steps ARE allowed since ISSUE-5f9d4ab4c90c0b4c s1/t5)`,
 			);
 		} finally { s.cleanup(); }
 	}

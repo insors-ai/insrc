@@ -33,6 +33,8 @@ import { assertEpicHash } from '../../hash.js';
 import { taskIssueRefsOf } from '../../tasks/lookup.js';
 import { unitIssueOf } from '../../tracker/unit-head.js';
 import { readTrackerMeta } from '../../tracker/refs.js';
+import { createGithubTracker } from '../../tracker/github-adapter.js';
+import { ArtifactIds } from '../../artifact-ids.js';
 import type { StepRunnerContext } from '../../types.js';
 import type { PostContext, PushContext, PushTaskInfo, SyncContext } from './schemas.js';
 
@@ -117,6 +119,24 @@ export async function assemblePushContext(ctx: StepRunnerContext): Promise<PushC
 		}
 	}
 
+	// ISSUE-5f9d4ab4c90c0b4c s1/t6: surface remote candidates matching the ISSUE
+	// body title so a run that finds a pending-create claim can reconcile by
+	// marker+target (verifyRecoveryCandidate) without injecting anything.
+	let remoteCandidates: PushContext['remoteCandidates'];
+	if (headKind === 'issue') {
+		try {
+			const port = createGithubTracker(gh.owner, gh.repo, { repoPath: ctx.intent.repoPath });
+			const byTitle = await port.findIssuesByTitleToken(`${ArtifactIds.make({ kind: 'ISSUE', epicHash })}`);
+			if (byTitle.ok) {
+				const bodies = await Promise.all(byTitle.value.map(async ref => {
+					const b = await port.issueOps.readBody(ref);
+					return { ref, body: b.ok ? b.value : '' };
+				}));
+				remoteCandidates = bodies.map(b => ({ title: issue!.body.title, body: b.body, target: ctx.intent.repoPath, ref: b.ref }));
+			}
+		} catch { remoteCandidates = undefined; }
+	}
+
 	return {
 		kind: 'push',
 		epicHash,
@@ -129,6 +149,7 @@ export async function assemblePushContext(ctx: StepRunnerContext): Promise<PushC
 		...(plans.length > 0 ? { plans } : {}),
 		force,
 		...(Object.keys(existing).length > 0 ? { existingRefs: existing } : {}),
+		...(remoteCandidates !== undefined ? { remoteCandidates } : {}),
 	};
 }
 

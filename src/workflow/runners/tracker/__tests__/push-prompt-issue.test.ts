@@ -134,16 +134,19 @@ test('src/workflow/runners/tracker/index.ts pushPrompt/pushVerifyPrompt — head
 	assert.ok(iss.includes('PRERENDERED ISSUE BODY (use verbatim):'));
 	assert.ok(iss.includes('# ISSUE title verbatim\n\n## Reproduction\n\nsteps'), 'body embedded verbatim');
 	assert.ok(iss.includes('`insrc:epic`, `epic:issue-item`'), 'labels are epicLabel + epic:<slug> only');
-	// the ORDER OF OPERATIONS label step must not include the story label
-	const orderBlock = iss.slice(iss.indexOf('ORDER OF OPERATIONS'), iss.indexOf('PRERENDERED ISSUE BODY'));
-	assert.ok(!orderBlock.includes('insrc:story'), `label step has no story label: ${orderBlock}`);
+	// the WHOLE ISSUE execute prompt must carry no active DEF-hierarchy
+	// instruction: no story label, no task-list, no back-ref, no sub-issues,
+	// no 'error unless' — the ISSUE conventions block retracts them explicitly.
+	for (const banned of ['`insrc:story`', 'Task-list linkage', '## Stories` section', 'Back-reference: every Story body', 'Create ONE Story issue', 'error unless']) {
+		assert.ok(!iss.includes(banned), `ISSUE prompt must not contain DEF-hierarchy '${banned}'`);
+	}
+	// the retraction lines themselves name the concepts with a NO prefix — assert on those
+	assert.ok(iss.includes('NO `## Stories` task-list rewrite and NO `**Epic:**` back-reference'), 'retraction line present');
+	assert.ok(iss.includes('NO `<storyLabel>`'), 'story label retracted');
+	// and the raw DEF convention lines must be absent (only the NO-prefixed retraction may mention them)
+	assert.ok(!iss.includes('     - `<storyLabel>` on every Story issue'), 'DEF story-label convention line absent');
 	// the NOT-USED list names the DEF-only pieces
 	assert.ok(iss.includes('Story sub-issues, story labels'), 'names story labels as not used');
-	assert.ok(!orderBlock.includes('Create ONE Story issue'), 'no story sub-issue creation step');
-	assert.ok(!orderBlock.includes('task list'), `no task-list rewrite in ORDER OF OPERATIONS: ${orderBlock}`);
-	// the NOT-USED list is allowed to NAME the DEF-only concepts; the OPERATIONS must not instruct them
-	assert.ok(!orderBlock.includes('**Epic:**'), 'no back-reference in operations');
-	assert.ok(iss.includes('`**Epic:**` back-references'), 'back-reference named as not used');
 	assert.ok(!iss.includes('error unless'), 'the existing-refs error rule does NOT apply');
 	assert.ok(!def.includes('ADOPT the existing issue'));
 	// adoption variant: existing epicRef present -> adopt without --force

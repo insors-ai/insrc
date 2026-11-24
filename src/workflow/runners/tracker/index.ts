@@ -264,6 +264,41 @@ const CONVENTIONS_BLOCK = [
 	'  - The framework writes the doc→issue links locally after you return the refs — you don\'t.',
 ].join('\n');
 
+/** ISSUE-5f9d4ab4c90c0b4c s1/t3: the conventions block for an ISSUE-anchored
+ *  work item. The DEF hierarchy rules (story labels, `## Stories` task-list
+ *  linkage, `**Epic:**` back-reference) do NOT apply — the single issue is
+ *  its own root, so those instructions are explicitly retracted here instead
+ *  of being left in a shared block the LLM could follow. */
+const ISSUE_CONVENTIONS_BLOCK = [
+	'SINGLE-ISSUE WORK ITEM (an ISSUE-anchored bugfix) — NO Epic/Story hierarchy:',
+	'  1. Labels identify the work item:',
+	'     - `<epicLabel>` on the single issue (default: `insrc:epic`)',
+	'     - `epic:<slug>` on the single issue',
+	'     - NO `<storyLabel>`: there are no Story issues.',
+	'  2. NO `## Stories` task-list rewrite and NO `**Epic:**` back-reference —',
+	'     the DEF hierarchy rules do not apply; they would self-reference this one issue.',
+	'  3. The issue body is pre-rendered for you in `epicBodyMd` — use it verbatim.',
+	'  4. Optional milestone: when `useMilestones=true`, create a milestone named',
+	'     `<epic-slug>` and attach the issue to it.',
+	'',
+	'STATUS MAPPING (sync only):',
+	'  - open + no status labels        → open',
+	'  - open + `insrc:in-progress`     → in-progress',
+	'  - open + `insrc:blocked`         → blocked',
+	'  - closed (any labels)            → closed',
+	'',
+	'TOOLS: use YOUR GitHub tools — the `gh` CLI, a GitHub MCP server, whatever you',
+	'have. The framework does NOT run them for you. If you use `gh`, preflight with',
+	'`gh auth status` and abort cleanly if unauthenticated.',
+	'',
+	'HARD RULES:',
+	'  - Never delete or rename existing labels or milestones you did not create.',
+	'  - Never fabricate issue numbers. Every ref you return must come from a real GitHub response.',
+	'  - Reference issues in the shape `<owner>/<repo>#<N>`.',
+	'  - Do not commit to files or open PRs. GitHub issues/labels/milestones are your only surface.',
+	'  - The framework writes the doc→issue links locally after you return the refs — you don\'t.',
+].join('\n');
+
 /** ISSUE-5f9d4ab4c90c0b4c s1/t3: the single-issue push prompt for an
  *  ISSUE-anchored work item (headKind 'issue'). ONE issue, the prerendered
  *  ISSUE markdown as the single authoritative body, labels epicLabel +
@@ -279,7 +314,7 @@ function pushPromptIssue(c: Awaited<ReturnType<typeof assemblePushContext>>): st
 		'',
 		`Push the SINGLE issue \`${c.epicSlug}\` (${c.epicHash}) to \`${c.gh.owner}/${c.gh.repo}\`.`,
 		'',
-		CONVENTIONS_BLOCK,
+		ISSUE_CONVENTIONS_BLOCK,
 		'',
 		'ORDER OF OPERATIONS:',
 		`  1. Ensure the labels \`${c.gh.epicLabel}\` and \`epic:${c.epicSlug}\` exist (create missing ones idempotently, e.g. \`gh label create --force\`).`,

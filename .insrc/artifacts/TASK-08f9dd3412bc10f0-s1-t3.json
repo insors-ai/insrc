@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e99e99bb-1fcf-4c30-a1f0-27216aad301a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T11:32:01.164Z",
+    "epicCreatedAt": "2026-11-24T10:27:23.098Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "08f9dd3412bc10f0",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Live-test the refusal and success paths against the real codex binary",
+      "parent": {
+        "entityId": "STORY-08f9dd3412bc10f0-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-08f9dd3412bc10f0-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-08f9dd3412bc10f0-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "125b7774cb3c0e25748cff8076c59b977e95f095677bf929a2be90c3a70b5172",
+        "at": "2026-11-24T11:32:01.164Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T11:32:01.165Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Live-test the refusal and success paths against the real codex binary",
+    "summary": "Add INSRC_LIVE_TESTS=1-gated live tests: a real runReadOnlySession call whose discovered servers include codex_app or cua_repl throws CodexMcpServerOverrideUnsafeError naming that server and never starts a session (no tool from any server reachable); a real call whose discovered servers include node_repl (and insrc) succeeds and starts a restricted session as today; confirm the previously-covered misregistration, budget/cancellation, and project-config-refusal live tests remain unaffected.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "live: codex_app or cua_repl in the discovered servers list throws CodexMcpServerOverrideUnsafeError naming that server, no session starts",
+      "live: node_repl in the discovered servers list starts a restricted session successfully, as today",
+      "live: existing misregistration / budget-cancellation / project-config-refusal tests still pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "codex: a real runReadOnlySession call whose discovered servers include codex_app or cua_repl throws CodexMcpServerOverrideUnsafeError naming that server, and no tool from any server was reachable (the session never started)"
+      },
+      {
+        "level": "live",
+        "name": "codex: a real runReadOnlySession call whose discovered servers include only node_repl (and insrc) succeeds and starts a restricted session as today"
+      },
+      {
+        "level": "live",
+        "name": "codex: the previously-covered misregistration, budget/cancellation, and project-config-refusal tests remain unaffected by this Story's change"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

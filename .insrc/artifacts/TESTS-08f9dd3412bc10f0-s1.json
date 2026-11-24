@@ -1,0 +1,493 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 6,
+        "contentHash": "d2adf8a20ebf13b46747a280c0919f05a80580dc5b46618449748561370af53b",
+        "at": "2026-11-24T12:38:55.448Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "08f9dd3412bc10f0",
+    "storyId": "s1",
+    "createdAt": "2026-11-24T11:36:42.876Z",
+    "updatedAt": "2026-11-24T12:38:55.223Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-24T10:27:23.098Z",
+    "epicSlug": "codexreadonlysessionargs-blanket-per-server-disable-override",
+    "revision": 6
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "2cc8f88f4",
+        "ranAt": "2026-11-24T11:36:42.876Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('codex_app') when runCodex's failure message matches codex's live-confirmed bootstrap-rejection wording naming codex_app",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-readonly-session.test.ts",
+                "title": "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('codex_app') when runCodex's failure message matches codex's live-confirmed bootstrap-rejection wording naming codex_app",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-readonly-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 41049,
+            "titles": [
+              {
+                "title": "claude reviewer-session arguments allow reading and insrc analyze only",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments use a read-only sandbox and a native per-server allowlist",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments throw when insrc is not registered, with no argv constructed",
+                "result": "pass"
+              },
+              {
+                "title": "a claude read-only session runs in the repo with the session arguments and returns the checked answer",
+                "result": "pass"
+              },
+              {
+                "title": "a codex read-only session takes the LAST message as the answer",
+                "result": "pass"
+              },
+              {
+                "title": "a session with no checked answer fails",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce throws CodexProjectMcpServersUnexcludableError and calls neither discoverCodexMcpServers nor runCodex when walkProjectMcpConfigLayers returns true",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce throws ReadOnlySessionTimeoutError and never calls runCodex when discovery consumes the entire remaining budget",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce calls runCodex with the recomputed remaining timeoutMs, not the original, after discovery consumes part of the budget",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('codex_app') when runCodex's failure message matches codex's live-confirmed bootstrap-rejection wording naming codex_app",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is retried once",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is never retried more than once",
+                "result": "pass"
+              },
+              {
+                "title": "an error that is not transient is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "a session is stopped at its deadline and that is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "the retry gets only the time that remains",
+                "result": "pass"
+              },
+              {
+                "title": "no attempt starts once the deadline has passed",
+                "result": "pass"
+              },
+              {
+                "title": "one-shot calls and the edit session build the same arguments as before",
+                "result": "pass"
+              },
+              {
+                "title": "a codex read-only session that produces no model output is killed early and retried once as a fresh run",
+                "result": "pass"
+              },
+              {
+                "title": "a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "only the read-only session is watched: a one-shot codex call that is silent at first is not cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints no output and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed",
+                "result": "pass"
+              },
+              {
+                "title": "claude ignores stallMs and read-only sessions keep the first-output watchdog",
+                "result": "pass"
+              },
+              {
+                "title": "a codex read-only session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a codex read-only session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is",
+                "result": "pass"
+              },
+              {
+                "title": "with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions",
+                "result": "pass"
+              },
+              {
+                "title": "without effort every argv is byte-identical to today's",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "653041108",
+        "ranAt": "2026-11-24T11:45:39.856Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('codex_app') when runCodex's failure message matches codex's live-confirmed bootstrap-rejection wording naming codex_app",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-readonly-session.test.ts",
+                "title": "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('codex_app') when runCodex's failure message matches codex's live-confirmed bootstrap-rejection wording naming codex_app",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('cua_repl') when runCodex's failure message matches the same wording naming cua_repl",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-readonly-session.test.ts",
+                "title": "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('cua_repl') when runCodex's failure message matches the same wording naming cua_repl",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "readOnlySessionOnce proceeds normally (no new error) when the servers list includes node_repl and runCodex succeeds, exactly as today",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-readonly-session.test.ts",
+                "title": "readOnlySessionOnce proceeds normally (no new error) when the servers list includes node_repl and runCodex succeeds, exactly as today",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "readOnlySessionOnce re-throws the original, unmodified error when runCodex fails for a reason that does NOT match the bootstrap-rejection wording (e.g. a generic non-zero exit, or the existing 'no agent_message item' case)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-readonly-session.test.ts",
+                "title": "readOnlySessionOnce re-throws the original, unmodified error when runCodex fails for a reason that does NOT match the bootstrap-rejection wording (e.g. a generic non-zero exit, or the existing 'no agent_message item' case)",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts",
+                "title": "a codex read-only session sends the strict form of a non-strict schema and leaves the caller's schema unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1610,
+            "titles": [
+              {
+                "title": "a codex structured completion sends the strict form of a non-strict schema and leaves the caller's schema unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "a codex read-only session sends the strict form of a non-strict schema and leaves the caller's schema unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "the codex copy of a schema keeps only the keywords codex was probed to accept, leaves out every format but date-time, and leaves the caller's schema unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "the analyzer bundle schema reaches codex without uniqueItems or any other refused keyword",
+                "result": "pass"
+              },
+              {
+                "title": "a codex structured completion rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reply that breaks the caller's schema throws ModelResponseShapeError carrying the validation reasons",
+                "result": "pass"
+              },
+              {
+                "title": "a codex read-only session rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them",
+                "result": "pass"
+              },
+              {
+                "title": "a schema with a format the reply check cannot enforce, anywhere including a branch the copy leaves out, is refused before codex is called; the same word as data or as a property name is not",
+                "result": "pass"
+              },
+              {
+                "title": "a schema whose $ref points into a part the codex copy leaves out or renames (also under a property named like a data keyword) is refused before codex is called; a $ref into a kept part is sent",
+                "result": "pass"
+              },
+              {
+                "title": "Codex wire schemas omit string lengths recursively but preserve original host validation and other constraints",
+                "result": "pass"
+              },
+              {
+                "title": "Codex structured and bounded reviewer responses use the shared optional-null decoder",
+                "result": "pass"
+              },
+              {
+                "title": "a codex schema rejection names the keywords that were sent and where a list is empty, and stays a call failure",
+                "result": "pass"
+              },
+              {
+                "title": "the keyword summary of a rejected schema counts schema keywords only: data under const, enum, default and examples is not read as keywords",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/cli-readonly-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 41266,
+            "titles": [
+              {
+                "title": "claude reviewer-session arguments allow reading and insrc analyze only",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments use a read-only sandbox and a native per-server allowlist",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments throw when insrc is not registered, with no argv constructed",
+                "result": "pass"
+              },
+              {
+                "title": "a claude read-only session runs in the repo with the session arguments and returns the checked answer",
+                "result": "pass"
+              },
+              {
+                "title": "a codex read-only session takes the LAST message as the answer",
+                "result": "pass"
+              },
+              {
+                "title": "a session with no checked answer fails",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce throws CodexProjectMcpServersUnexcludableError and calls neither discoverCodexMcpServers nor runCodex when walkProjectMcpConfigLayers returns true",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce throws ReadOnlySessionTimeoutError and never calls runCodex when discovery consumes the entire remaining budget",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce calls runCodex with the recomputed remaining timeoutMs, not the original, after discovery consumes part of the budget",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('codex_app') when runCodex's failure message matches codex's live-confirmed bootstrap-rejection wording naming codex_app",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('cua_repl') when runCodex's failure message matches the same wording naming cua_repl",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce proceeds normally (no new error) when the servers list includes node_repl and runCodex succeeds, exactly as today",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce re-throws the original, unmodified error when runCodex fails for a reason that does NOT match the bootstrap-rejection wording (e.g. a generic non-zero exit, or the existing 'no agent_message item' case)",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is retried once",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is never retried more than once",
+                "result": "pass"
+              },
+              {
+                "title": "an error that is not transient is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "a session is stopped at its deadline and that is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "the retry gets only the time that remains",
+                "result": "pass"
+              },
+              {
+                "title": "no attempt starts once the deadline has passed",
+                "result": "pass"
+              },
+              {
+                "title": "one-shot calls and the edit session build the same arguments as before",
+                "result": "pass"
+              },
+              {
+                "title": "a codex read-only session that produces no model output is killed early and retried once as a fresh run",
+                "result": "pass"
+              },
+              {
+                "title": "a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "only the read-only session is watched: a one-shot codex call that is silent at first is not cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints no output and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed",
+                "result": "pass"
+              },
+              {
+                "title": "claude ignores stallMs and read-only sessions keep the first-output watchdog",
+                "result": "pass"
+              },
+              {
+                "title": "a codex read-only session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a codex read-only session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is",
+                "result": "pass"
+              },
+              {
+                "title": "with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions",
+                "result": "pass"
+              },
+              {
+                "title": "without effort every argv is byte-identical to today's",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "b5ac726da",
+        "ranAt": "2026-11-24T12:38:55.223Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "codex: a real runReadOnlySession call whose discovered servers include codex_app or cua_repl throws CodexMcpServerOverrideUnsafeError naming that server, and no tool from any server was reachable (the session never started)",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "INSRC_LIVE_TESTS=1 npx tsx --test src/agent/providers/__tests__/cli-readonly-session.live.test.ts, test 'T3a codex: when a real session has an unsafe server registered alongside insrc, it throws CodexMcpServerOverrideUnsafeError naming a real discovered server, and never starts' -- passed against the real codex binary (serverName: 'codex_app', the actual server discovered live on this machine). The test was generalized per explicit user feedback not to hardcode vendor-specific server names (codex_app/cua_repl/node_repl are ChatGPT-desktop-app-bundled servers, not something insrc should know by name): it now discovers whatever is actually registered and asserts generically that the thrown error names one of those real discovered servers, rather than checking for these three names specifically (commit b5ac726da)."
+            }
+          },
+          {
+            "name": "codex: a real runReadOnlySession call whose discovered servers include only node_repl (and insrc) succeeds and starts a restricted session as today",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "fail",
+              "evidence": "test 'T3b' in cli-readonly-session.live.test.ts (generalized, same commit b5ac726da): this real machine has multiple other MCP servers globally registered alongside insrc, and codexReadOnlySessionArgs disables all of them in one invocation, so codex's bootstrap rejects the first unsafe one before an all-accepted scenario can ever be reached here -- this acceptance criterion is environmentally unreachable on this machine, not an implementation defect. The test detects this via the real discovery result and skips with the reason recorded. The all-accepted-overrides behavior IS proven synthetically by the t2 unit test 'readOnlySessionOnce proceeds normally (no new error) when the servers list includes an ordinary server whose override codex accepts, and runCodex succeeds, exactly as today' in cli-readonly-session.test.ts, which passed."
+            }
+          },
+          {
+            "name": "codex: the previously-covered misregistration, budget/cancellation, and project-config-refusal tests remain unaffected by this Story's change",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "npx tsx --test src/agent/providers/__tests__/cli-readonly-session.test.ts: all 32 tests pass unchanged after the t3 generalization commit, including the CodexProjectMcpServersUnexcludableError, ReadOnlySessionTimeoutError, and CodexMcpServerNotRegisteredError tests -- none of t3's changes touched that behavior (only comments, test fixture names, and the live test file changed)."
+            }
+          }
+        ],
+        "files": [],
+        "note": "no test files to run; reported as failed by the builder: codex: a real runReadOnlySession call whose discovered servers include only node_repl (and insrc) succeeds and starts a restricted session as today"
+      }
+    ]
+  },
+  "citations": []
+}

@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 6,
+        "contentHash": "216cbe8b34c85618ffe70b2ad8eb60af91cef894bcbbc2e0c34d95592c1fccce",
+        "at": "2026-11-24T12:39:39.558Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 6,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T13:00:23.624Z",
+        "override": {
+          "reason": "Automated code review is unavailable (being rewritten per project policy); self-reviewed and presented in chat instead. Carrying the known environmental gap per the user's explicit instruction: t3's \"all other registered servers' overrides accepted\" live scenario cannot occur on this development machine (another unsafe server is always globally registered alongside insrc here), so it is proven synthetically by a unit test instead; the refusal live test passes for real against the real codex binary. Full packet at /tmp/.insrc/review-packet-08f9dd3412bc10f0-s1.md."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-b20cbefe-3923-465e-9ee3-50ddc079466e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T11:36:42.876Z",
+    "epicCreatedAt": "2026-11-24T10:27:23.098Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "08f9dd3412bc10f0",
+    "storyId": "s1",
+    "revision": 6,
+    "updatedAt": "2026-11-24T12:38:55.223Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "codexreadonlysessionargs-blanket-per-server-disable-override"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": false
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/codexreadonlysessionargs-blanket-per-server-disable-override-E2026112408f9dd34/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-readonly-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T12:38:55.223Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T12:38:55.223Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-readonly-session.live.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T12:38:55.223Z"
+      }
+    ],
+    "commit": "b5ac726da"
+  },
+  "citations": []
+}

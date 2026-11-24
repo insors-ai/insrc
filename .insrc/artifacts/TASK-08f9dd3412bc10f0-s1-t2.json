@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a3b1c29e-577b-4341-af6d-ae47d2f75eff",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T11:32:01.162Z",
+    "epicCreatedAt": "2026-11-24T10:27:23.098Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "08f9dd3412bc10f0",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Unit test the new failure-translation path with a scripted fake codex binary",
+      "parent": {
+        "entityId": "STORY-08f9dd3412bc10f0-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-08f9dd3412bc10f0-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-08f9dd3412bc10f0-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "c8a76de15ec3438d6166bc2f1feb4b0d8c0ac8c213dfa602539eff2cc16faba1",
+        "at": "2026-11-24T11:32:01.162Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T11:32:01.163Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Unit test the new failure-translation path with a scripted fake codex binary",
+    "summary": "Extend the existing fake-codex test harness (cli-readonly-session.test.ts) to script a non-zero exit whose stderr is the exact live-confirmed bootstrap-rejection text naming a given server, and add unit tests: readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('codex_app') and CodexMcpServerOverrideUnsafeError('cua_repl') on the matching message; proceeds normally (no new error) when the servers list includes node_repl and runCodex succeeds; re-throws the original, unmodified error when the failure does not match the pattern (e.g. a generic non-zero exit or the existing 'no agent_message item' case).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "ac1's two unit tests (codex_app, cua_repl) pass against the fake codex harness",
+      "ac2's unit test (node_repl success, unaffected) passes",
+      "ac3's unit test (non-matching failure re-thrown unchanged, same type and message) passes",
+      "no existing test in cli-readonly-session.test.ts or cli-codex-strict-schema.test.ts regresses"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('codex_app') when runCodex's failure message matches codex's live-confirmed bootstrap-rejection wording naming codex_app"
+      },
+      {
+        "level": "unit",
+        "name": "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('cua_repl') when runCodex's failure message matches the same wording naming cua_repl"
+      },
+      {
+        "level": "unit",
+        "name": "readOnlySessionOnce proceeds normally (no new error) when the servers list includes node_repl and runCodex succeeds, exactly as today"
+      },
+      {
+        "level": "unit",
+        "name": "readOnlySessionOnce re-throws the original, unmodified error when runCodex fails for a reason that does NOT match the bootstrap-rejection wording (e.g. a generic non-zero exit, or the existing 'no agent_message item' case)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

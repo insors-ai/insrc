@@ -1,0 +1,411 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795509785519-4kdrds",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T08:48:27.028Z",
+    "epicCreatedAt": "2026-11-16T07:14:04.399Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 315027,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5f9d4ab4c90c0b4c",
+    "epicSlug": "make-tracker-push-sync-post-stages",
+    "storyId": "s1",
+    "lldRunId": "wf-1795498420280-h8ye0z",
+    "lldEffectiveHash": "3759c9a350cfdbede377fcaef9a55a3ee77fec2ba1feb1a3a1ab590740e929a8",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "31ec11c888edac2dadeb63cbb14988f6cd78e1e5c00c32102eeb0255c86ff637",
+        "at": "2026-11-24T08:48:29.242Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T08:50:10.597Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "49a5b883256079c1c20972a717065a54309d1202"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building this story makes tracker.push/sync/post fully kind-aware for ISSUE-anchored work items across six layers — head resolution, contexts/prompts, persistence, chain, the atomic pending-create claim with fencing, and doc linkage — proven by unit (prompt-text, head-rule), integration (finalize, chain, claim races/crash/recovery, authority boundary), and smoke (typecheck + baseline-diff) tests."
+    },
+    "tasks": [
+      {
+        "acceptanceChecks": [
+          "unit tests: DEF-wins when both parse; corrupt DEF falls through to ISSUE (readArtifactCore first-READABLE-wins); missing both -> ArtifactMissingError naming ISSUE id; approval gating (rejected/not-approved -> ArtifactNotApprovedError with head md path)"
+        ],
+        "dependsOn": [],
+        "derivedFrom": [
+          "c1"
+        ],
+        "id": "t1",
+        "order": 1,
+        "size": "S",
+        "summary": "gates.ts: add requireApprovedDefinition + definitionHeadJsonPath using readArtifactCore first-READABLE-wins (DEF then ISSUE), approval-gated like requireApprovedEpic",
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/gates.ts new helpers — requireApprovedDefinition + definitionHeadJsonPath head order (DEF-wins / corrupt-DEF->ISSUE / missing), approval gating, refuse messages, head md paths"
+          }
+        ],
+        "title": "Readable-head helpers in gates.ts"
+      },
+      {
+        "acceptanceChecks": [
+          "schemas carry optional headKind; assemblers branch on kind: DEF byte-identical, ISSUE via impliedIssueStories + renderIssueEpicBody",
+          "unit test: DEF context byte-identical; ISSUE context carries headKind + prerendered body"
+        ],
+        "dependsOn": [
+          "t1"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "id": "t2",
+        "order": 2,
+        "size": "M",
+        "summary": "headKind on tracker context schemas + kind-aware assemblers in context.ts + renderIssueEpicBody in conventions.ts",
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/runners/tracker/context.ts assemblers — kind branches: DEF context byte-identical to pre-change baseline, ISSUE context carries headKind + prerendered epicBodyMd"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/tracker/conventions.ts renderIssueEpicBody — renders ISSUE body sections without DEF-only fields"
+          }
+        ],
+        "title": "headKind on tracker contexts + kind-aware assemblers + renderIssueEpicBody"
+      },
+      {
+        "acceptanceChecks": [
+          "prompt-string unit tests: headKind 'issue' prompt has ISSUE block (one issue, body=epicBodyMd, labels epicLabel+epic:<slug>, adopt without --force via singular --add-label mapping issue.ts:234/273, no task-list/backRef/sub-issues, not 'error unless'); 'def' byte-identical; ISSUE verify = issueLabelled+bodyMatches+singleIssue"
+        ],
+        "dependsOn": [
+          "t2"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "id": "t3",
+        "order": 3,
+        "size": "M",
+        "summary": "ISSUE block in pushPrompt/pushVerifyPrompt keyed on headKind (runners/tracker/index.ts), DEF prompts byte-identical",
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/runners/tracker/index.ts pushPrompt/pushVerifyPrompt — headKind 'issue' contains ISSUE block, NOT 'error unless'/task-list/backRef/sub-issue; headKind 'def' byte-identical to baseline"
+          },
+          {
+            "level": "unit",
+            "name": "gh_issue_edit through the typed tool executor with a stubbed gh asserts the singular --add-label argv mapping (issue.ts:234/273) — tool-boundary, not prompt-string"
+          }
+        ],
+        "title": "ISSUE execute/verify prompt block in tracker runner"
+      },
+      {
+        "acceptanceChecks": [
+          "integration: finalize push+sync on ISSUE-only fixture writes meta.tracker onto ISSUE json, binds EPIC/STORY-s1 heads, readdir zero DEF files; corrupt-DEF/valid-ISSUE finalize lands on ISSUE json; ISSUE push writes meta.tracker.issueRef back on first publication; sync storiesOf uses impliedIssueStories for ISSUE heads"
+        ],
+        "dependsOn": [
+          "t1"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "id": "t4",
+        "order": 4,
+        "size": "M",
+        "summary": "mutateEpicTrackerMeta + sync.ts persist to definitionHeadJsonPath (readable-head rule); issueRef write-back on first publication",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/orchestrator.ts mutateEpicTrackerMeta + finalizeTracker — finalize push+sync on ISSUE-only seed repo: ISSUE meta.tracker written, EPIC/STORY-s1 heads bound, readdir zero DEF-*.json; corrupt-DEF/valid-ISSUE finalize lands on ISSUE json; issueRef write-back on first publication"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/tracker/sync.ts — storiesOf uses impliedIssueStories for ISSUE heads; patchTrackerMeta writes onto the resolved head; closeBugfixTrackerIssue closes via readRecordedRef (stubbed)"
+          },
+          {
+            "level": "integration",
+            "name": "first publication sequence — approve ISSUE with tracking disabled, enable, push: exactly 1 create, issueRef written back + heads bound; write-back failure -> retry adopts with 0 creates"
+          }
+        ],
+        "title": "Kind-aware tracker persistence + issueRef write-back"
+      },
+      {
+        "acceptanceChecks": [
+          "integration: chain four-state sequence on ISSUE fixture — push-tracker -> sync-tracker -> chain-complete, never hld/amendment/stale"
+        ],
+        "dependsOn": [
+          "t4"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "id": "t5",
+        "order": 5,
+        "size": "S",
+        "summary": "chain.ts computeNextAction ISSUE branch falls through to DEF tracker steps",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/chain.ts computeNextAction + readTrackerMeta — buildChainReport four-state sequence on an ISSUE-anchored fixture: push-tracker -> sync-tracker -> chain-complete, never hld/amendment/stale"
+          }
+        ],
+        "title": "Chain ISSUE branch tracker next-actions"
+      },
+      {
+        "acceptanceChecks": [
+          "integration: two-run race -> 1 create, winner runId, loser claimed:false never mutates; interleaving takeover -> ClaimOwnershipError + fenced; two reconcilers -> one takeover; SIGKILL holder -> quarantine reclaims, 0 new creates, live holder undisturbed; lost execute response -> 'pending' reconciled 0 creates; duplicate/unrelated titles refuse via marker+target; authority-boundary: mutex key ISSUE-<hash> through real withArtifactWriteAuthority handler, PENDING-CREATE-<hash> rejected by ArtifactIds.parse"
+        ],
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "id": "t6",
+        "order": 6,
+        "size": "L",
+        "summary": "claimCreateIntent 'wx' create-if-absent + claim mutex keyed ISSUE-<hash> via write-authority + guard-directory lock (quarantineDeadGuard) + fence token + heartbeat liveness + ownership checks + verifyRecoveryCandidate reconciliation",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "deterministic two-run race — barrier after context assembly, released toward claimCreateIntent; exactly 1 createIssue, claim runId == winner, loser claimed:false never updates/deletes"
+          },
+          {
+            "level": "integration",
+            "name": "interleaving takeover race — pause A after ownership read, B takes over under mutex (fence++), resume A -> ClaimOwnershipError, no overwrite/delete, A fenced from later persistence"
+          },
+          {
+            "level": "integration",
+            "name": "two simultaneous abandoned-claim reconcilers — mutex serializes, exactly one takeover"
+          },
+          {
+            "level": "integration",
+            "name": "crash recovery — SIGKILL holder inside critical section; guard remains; fresh run reclaims via quarantineDeadGuard, recovers original claim, 0 new creates, live holder undisturbed"
+          },
+          {
+            "level": "integration",
+            "name": "lost execute response — claim stays 'pending' with owner runId; fresh invocation (nothing injected) reconciles via title+marker, 0 additional creates, persists issueRef + bindings"
+          },
+          {
+            "level": "integration",
+            "name": "identity refusal — duplicate titles / single unrelated title match refuse via ISSUE-<hash> marker + target verification, no label mutation, no create"
+          },
+          {
+            "level": "integration",
+            "name": "authority boundary — claim mutex acquired with key ISSUE-<hash> through the real withArtifactWriteAuthority/daemon handler; ArtifactIds.parse rejects PENDING-CREATE-<hash>; lock ordering claim-before-artifact-writes"
+          }
+        ],
+        "title": "Atomic pending-create claim + mutex + fencing + recovery"
+      },
+      {
+        "acceptanceChecks": [
+          "integration: linkDocsToIssues ISSUE head rewrites docs/standalone ISSUE.md via renderIssueMarkdownWithTracker (marker + canonical body + **Tracker:** line) + S001/LLD.md; no docs/epics entry; no ref -> byte-identical to renderIssueMarkdown; post lld+s1 to adopted ref, hld/amendment/non-s1 refuse"
+        ],
+        "dependsOn": [
+          "t4"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "id": "t7",
+        "order": 7,
+        "size": "M",
+        "summary": "linkDocsToIssues headKind + renderIssueMarkdownWithTracker (artifacts/issue.ts) for ISSUE.md; post-target rules",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/tracker/link.ts linkDocsToIssues — docs/standalone ISSUE.md contains marker + canonical body bytes + **Tracker:** line after push, byte-identical to renderIssueMarkdown without a ref; S001/LLD.md relinked; no docs/epics entry"
+          },
+          {
+            "level": "integration",
+            "name": "tracker.post on pushed ISSUE fixture — lld+s1 posts to adopted story ref; hld/amendment/non-s1 refuse"
+          }
+        ],
+        "title": "Kind-aware doc linkage + ISSUE.md tracker link renderer"
+      },
+      {
+        "acceptanceChecks": [
+          "smoke: tsc clean; workflow+MCP subsets no new failures vs baseline (36/10/11/16, 6/26, 4 gates pre-existing); all t1-t7 tests pass"
+        ],
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t7"
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "id": "t8",
+        "order": 8,
+        "size": "S",
+        "summary": "Build all of t1-t7, run named tests + typecheck + baseline-diff sweep",
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "npx tsc --noEmit — clean typecheck"
+          },
+          {
+            "level": "smoke",
+            "name": "npx tsx --test 'src/workflow/**/*.test.ts' 'src/mcp/**/*.test.ts' — diff-identical to the recorded HEAD baseline (36/10/11/16 workflow chunks, 6/26 MCP, 4 gates)"
+          }
+        ],
+        "title": "Verification sweep + baseline parity"
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "coveredByTaskIds": [
+          "t1"
+        ],
+        "lldStrategyItem": "src/workflow/gates.ts new helpers"
+      },
+      {
+        "coveredByTaskIds": [
+          "t2"
+        ],
+        "lldStrategyItem": "src/workflow/tracker/conventions.ts renderIssueEpicBody"
+      },
+      {
+        "coveredByTaskIds": [
+          "t3"
+        ],
+        "lldStrategyItem": "src/workflow/runners/tracker/index.ts pushPrompt/pushVerifyPrompt"
+      },
+      {
+        "coveredByTaskIds": [
+          "t4"
+        ],
+        "lldStrategyItem": "src/workflow/orchestrator.ts mutateEpicTrackerMeta + finalizeTracker"
+      },
+      {
+        "coveredByTaskIds": [
+          "t4"
+        ],
+        "lldStrategyItem": "src/workflow/tracker/sync.ts"
+      },
+      {
+        "coveredByTaskIds": [
+          "t5"
+        ],
+        "lldStrategyItem": "src/workflow/chain.ts computeNextAction + readTrackerMeta"
+      },
+      {
+        "coveredByTaskIds": [
+          "t7"
+        ],
+        "lldStrategyItem": "src/workflow/tracker/link.ts linkDocsToIssues"
+      },
+      {
+        "coveredByTaskIds": [
+          "t2"
+        ],
+        "lldStrategyItem": "src/workflow/runners/tracker/context.ts assemblers"
+      },
+      {
+        "coveredByTaskIds": [
+          "t8"
+        ],
+        "lldStrategyItem": "npx tsc --noEmit"
+      },
+      {
+        "coveredByTaskIds": [
+          "t8"
+        ],
+        "lldStrategyItem": "npx tsx --test 'src/workflow/**/*.test.ts' 'src/mcp/**/*.test.ts'"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "quotedText": "One readable-head rule — readArtifactCore first-READABLE-wins, DEF then ISSUE, same as storage.ts readEpicDefinitionCore — backs the helpers and every persistence site.",
+      "ref": "LLD-5f9d4ab4c90c0b4c-s1: readable-head rule (requireApprovedDefinition, definitionHeadJsonPath, first-READABLE-wins)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "quotedText": "Context schemas gain optional headKind; pushPrompt/pushVerifyPrompt emit an ISSUE block for headKind 'issue' — ONE issue, authoritative body, labels epicLabel+epic:<slug>, adopt without --force, no self-references.",
+      "ref": "LLD-5f9d4ab4c90c0b4c-s1: headKind contexts + ISSUE prompt block + renderIssueEpicBody/renderIssueMarkdownWithTracker"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "quotedText": "mutateEpicTrackerMeta persists to definitionHeadJsonPath (readable-head rule); ISSUE push writes meta.tracker.issueRef back on first publication and binds EPIC/STORY-s1 heads.",
+      "ref": "LLD-5f9d4ab4c90c0b4c-s1: kind-aware persistence + issueRef write-back (mutateEpicTrackerMeta, sync.ts)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "quotedText": "First publication with no issueRef (approved while tracking disabled): the ISSUE prompt creates exactly ONE remote issue, finalize writes the ref back ... so closeBugfixTrackerIssue can close at completion.",
+      "ref": "LLD-5f9d4ab4c90c0b4c-s1: first publication flow (approve without tracking -> enable -> push -> close)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "quotedText": "The chain's ISSUE branch routes approved ISSUE items through push-tracker, sync-tracker, chain-complete like DEF items while still skipping HLD/amendment/stale gates.",
+      "ref": "LLD-5f9d4ab4c90c0b4c-s1: chain ISSUE branch tracker steps (chain.ts computeNextAction)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "quotedText": "claimCreateIntent does an atomic create-if-absent ('wx') under a claim mutex keyed ISSUE-<hash> via withArtifactWriteAuthority; lock-directory guard with quarantineDeadGuard reclaims dead owners; fence token rejects stale owners before any write and fences them from later persistence.",
+      "ref": "LLD-5f9d4ab4c90c0b4c-s1: atomic pending-create claim + mutex + fencing + quarantine recovery + verifyRecoveryCandidate"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "quotedText": "linkDocsToIssues places docs by head kind; ISSUE heads relink ISSUE.md via renderIssueMarkdownWithTracker (adds the **Tracker:** line; body bytes canonical) and the standalone LLD.md.",
+      "ref": "LLD-5f9d4ab4c90c0b4c-s1: linkDocsToIssues headKind + ISSUE.md tracker link renderer"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "quotedText": "Test framework: node:test via npx tsx --test; fixtures = seeded temp .insrc/artifacts dirs (seedIssueRepo) + stubbed tracker port counting createIssue; smoke = tsc + workflow/MCP subsets vs the recorded HEAD baseline.",
+      "ref": "LLD-5f9d4ab4c90c0b4c-s1: test strategy (unit prompt-text/head-rule, integration finalize/chain/claim/recovery/boundary, smoke baseline)"
+    }
+  ]
+}

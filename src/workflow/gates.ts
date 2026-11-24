@@ -53,6 +53,7 @@ import {
 	hldArtifactId,
 	hldArtifactPaths,
 	issueArtifactId,
+	issueArtifactPaths,
 	lldArtifactId,
 	lldArtifactPaths,
 	planArtifactId,
@@ -66,6 +67,7 @@ import {
 	writeArtifact,
 	writeAtomic,
 } from './storage.js';
+import type { IssueArtifact } from './artifacts/issue.js';
 import { ensureBuildRecordOnCompletion } from './runners/build/completion-record.js';
 import { authorizeApproval } from './team/approval-gate.js';
 import { TeamGateRefusedError } from './team/gate.js';
@@ -251,6 +253,91 @@ export function requireApprovedEpic(repoPath: string, epicHash: string): DefineA
 		);
 	}
 	return define;
+}
+
+/** The work item's head artifact plus which kind answered: `DEF-<hash>.json`
+ *  first, then `ISSUE-<hash>.json` — the same order `readEpicDefinitionCore`
+ *  (storage.ts) uses. */
+export type DefinitionHead =
+	| { readonly kind: 'def';   readonly artifact: DefineArtifact }
+	| { readonly kind: 'issue'; readonly artifact: IssueArtifact };
+
+/** Read one head file if it PARSES; null when absent or unreadable — the
+ *  first-READABLE-wins primitive behind {@link definitionHeadJsonPath} and
+ *  {@link requireApprovedDefinition}. Never throws. */
+function readReadableHead(jsonPath: string): Record<string, unknown> | null {
+	try {
+		return JSON.parse(readFileSync(jsonPath, 'utf8')) as Record<string, unknown>;
+	} catch {
+		return null;
+	}
+}
+
+/** The JSON path of the work item's readable head: the first of
+ *  `DEF-<hash>.json`, `ISSUE-<hash>.json` that parses. A corrupt DEF does NOT
+ *  win over a valid ISSUE (first-READABLE-wins, matching
+ *  `readEpicDefinitionCore` / `readEpicDefinition`). Throws
+ *  {@link ArtifactMissingError} naming the ISSUE id when neither parses — the
+ *  advice names the issue stage, never define, for a bugfix work item. */
+export function definitionHeadJsonPath(repoPath: string, epicHash: string): string {
+	for (const [id] of [[defineArtifactId(epicHash)], [issueArtifactId(epicHash)]] as const) {
+		const jsonPath = artifactJsonPath(repoPath, id);
+		if (readReadableHead(jsonPath) !== null) return jsonPath;
+	}
+	throw new ArtifactMissingError(
+		`No readable definition head for ${epicHash} (neither DEF-${epicHash}.json nor ` +
+		`ISSUE-${epicHash}.json parses). Run \`insrc_workflow_step workflow=issue\` first ` +
+		`— a bugfix work item is headed by an ISSUE, never a Define.`,
+	);
+}
+
+/** Read the work item's definition head (DEF then ISSUE, first parseable wins)
+ *  without the approval gate. Never throws for a missing/unparseable head —
+ *  callers branch on `kind`. */
+export function readDefinitionHead(repoPath: string, epicHash: string): DefinitionHead | undefined {
+	for (const [kind, id] of [['def', defineArtifactId(epicHash)], ['issue', issueArtifactId(epicHash)]] as const) {
+		const jsonPath = artifactJsonPath(repoPath, id);
+		const raw = readReadableHead(jsonPath);
+		if (raw === null) continue;
+		const head = decodeArtifactHead(id, JSON.stringify(raw)).head;
+		if (kind === 'def') return { kind, artifact: head as unknown as DefineArtifact };
+		return { kind, artifact: head as unknown as IssueArtifact };
+	}
+	return undefined;
+}
+
+/** {@link readDefinitionHead} plus the same approval gate as
+ *  {@link requireApprovedEpic}: the readable head must be approved, and the
+ *  not-approved error names the head's own md path (Define or Issue). Callers
+ *  that need kind-aware tracker behavior use this instead of the DEF-only
+ *  `requireApprovedEpic`. */
+export function requireApprovedDefinition(repoPath: string, epicHash: string): { readonly kind: 'def' | 'issue'; readonly artifact: DefineArtifact | IssueArtifact; readonly jsonPath: string } {
+	const jsonPath = definitionHeadJsonPath(repoPath, epicHash);
+	const head = readDefinitionHead(repoPath, epicHash);
+	if (head === undefined) {
+		throw new ArtifactMissingError(`No readable definition head at ${jsonPath}`);
+	}
+	const label = (head.artifact.meta as { epicSlug?: string }).epicSlug ?? epicHash;
+	const state = approvalStateOf(head.artifact.meta);
+	if (state === 'rejected') {
+		throw new ArtifactNotApprovedError(
+			`Work item '${label}' (${epicHash}) was rejected. ` +
+			(head.kind === 'issue' ? `Re-run the issue stage with --reopen first.` : `Re-run define with --reopen first.`),
+		);
+	}
+	if (state !== 'approved') {
+		const anchor = workItemAnchorCreatedAt(head.artifact.meta);
+		const kind_ = workItemKindOf(head.artifact.meta);
+		const slug = (head.artifact.meta as { epicSlug?: string }).epicSlug;
+		const md = head.kind === 'def'
+			? defineArtifactPaths(repoPath, epicHash, anchor, kind_, slug).md
+			: issueArtifactPaths(repoPath, epicHash, anchor, kind_, slug).md;
+		throw new ArtifactNotApprovedError(
+			`Work item '${label}' (${epicHash}) is not approved. ` +
+			`Run \`insrc workflow approve ${md}\` first.`,
+		);
+	}
+	return { kind: head.kind, artifact: head.artifact, jsonPath };
 }
 
 /** Read the canonical HLD JSON from disk. */

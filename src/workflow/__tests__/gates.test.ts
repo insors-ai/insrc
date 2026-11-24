@@ -20,12 +20,15 @@ import { basename, dirname, join } from 'node:path';
 import {
 	ArtifactMissingError,
 	ArtifactNotApprovedError,
+	definitionHeadJsonPath,
 	jsonPathForMd,
 	readDefineArtifact,
+	requireApprovedDefinition,
 	requireApprovedEpic,
 } from '../gates.js';
 import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
 import { defineArtifactPaths } from '../storage.js';
+import { markApprovedSync, rejectedMeta } from './lifecycle-fixtures.js';
 import { approveJson, rejectJson } from './helpers/approve.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
 import { approvalStateOf } from '../artifact-core/approval-view.js';
@@ -503,4 +506,94 @@ test('t5: rangeBase SURVIVES a write-read-write round trip', async () => {
 		assert.equal(second['rangeBase'], first['rangeBase'], 'same HEAD, same base, not dropped by the re-write');
 		assert.equal(second['epicHash'], HASH, 'and unrelated meta is untouched');
 	} finally { s.cleanup(); }
+});
+
+// ---------------------------------------------------------------------------
+// ISSUE-5f9d4ab4c90c0b4c s1/t1 — kind-aware readable-head helpers
+// ---------------------------------------------------------------------------
+
+const HEAD_HASH = 'c9e1a2b3d4f50617';
+const HEAD_SLUG = 'head-fixture';
+const HEAD_CREATED = '2026-11-24T00:00:00.000Z';
+
+function writeHeadFixture(repo: string, kind: 'def' | 'issue', metaExtra: Record<string, unknown> = {}): string {
+	const isDef = kind === 'def';
+	const id = isDef ? `DEF-${HEAD_HASH}` : `ISSUE-${HEAD_HASH}`;
+	const paths = isDef
+		? defineArtifactPaths(repo, HEAD_HASH, HEAD_CREATED, 'epic', HEAD_SLUG)
+		: { json: join(repo, '.insrc', 'artifacts', `${id}.json`), md: join(repo, 'docs', 'standalone', `${HEAD_SLUG}-E20261124${HEAD_HASH.slice(0, 8)}`, `${id}.md`) };
+	mkdirSync(dirname(paths.json), { recursive: true });
+	const body = isDef
+		? { flavor: 'new-capability', problem: 'x', nonGoals: [], assumptions: [], constraints: [], stories: [], openQuestions: [] }
+		: { title: 't', reproduction: 'x', rootCause: 'y', fixIntent: 'z' };
+	writeFileSync(paths.json, JSON.stringify({
+		meta: {
+			workflow: isDef ? 'define' : 'issue', runId: 'r1', repoPath: repo, schemaVersion: 1,
+			epicHash: HEAD_HASH, epicSlug: HEAD_SLUG, createdAt: HEAD_CREATED, epicCreatedAt: HEAD_CREATED,
+			...(isDef ? {} : { issueHash: HEAD_HASH, standalone: true }),
+			...metaExtra,
+		},
+		body,
+		citations: [],
+	}, null, 2));
+	return paths.json;
+}
+
+function headRepo(): { repo: string; cleanup: () => void } {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-head-'));
+	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+	return { repo, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+}
+
+test('definitionHeadJsonPath: DEF wins when both parse; corrupt DEF falls through to a valid ISSUE (first-READABLE-wins)', () => {
+	const { repo, cleanup } = headRepo();
+	try {
+		writeHeadFixture(repo, 'def');
+		writeHeadFixture(repo, 'issue');
+		assert.equal(definitionHeadJsonPath(repo, HEAD_HASH), join(repo, '.insrc', 'artifacts', `DEF-${HEAD_HASH}.json`));
+		// corrupt the DEF: the ISSUE must win, not the corrupt DEF file
+		writeFileSync(join(repo, '.insrc', 'artifacts', `DEF-${HEAD_HASH}.json`), '{ not json');
+		assert.equal(definitionHeadJsonPath(repo, HEAD_HASH), join(repo, '.insrc', 'artifacts', `ISSUE-${HEAD_HASH}.json`));
+	} finally { cleanup(); }
+});
+
+test('definitionHeadJsonPath + requireApprovedDefinition: missing both -> ArtifactMissingError naming the ISSUE id', () => {
+	const { repo, cleanup } = headRepo();
+	try {
+		assert.throws(() => definitionHeadJsonPath(repo, HEAD_HASH), (e: unknown) =>
+			e instanceof ArtifactMissingError && /ISSUE-c9e1a2b3d4f50617\.json/.test((e as Error).message));
+		assert.throws(() => requireApprovedDefinition(repo, HEAD_HASH), ArtifactMissingError);
+	} finally { cleanup(); }
+});
+
+test('requireApprovedDefinition: ISSUE head approved -> kind issue + jsonPath; draft -> ArtifactNotApprovedError naming the ISSUE md; rejected -> rejected message', () => {
+	const { repo, cleanup } = headRepo();
+	try {
+		const json = writeHeadFixture(repo, 'issue');
+		// draft: refused, and the error names the ISSUE document's md path (slug folder + ISSUE.md)
+		assert.throws(() => requireApprovedDefinition(repo, HEAD_HASH), (e: unknown) =>
+			e instanceof ArtifactNotApprovedError && /head-fixture/.test((e as Error).message) && /ISSUE\.md/.test((e as Error).message));
+		markApprovedSync(json);
+		const head = requireApprovedDefinition(repo, HEAD_HASH);
+		assert.equal(head.kind, 'issue');
+		assert.equal(head.jsonPath, json);
+		assert.equal((head.artifact as { meta: { epicSlug?: string } }).meta.epicSlug, HEAD_SLUG);
+		// rejected: refused with the rejected-specific message
+		const head2 = JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown> };
+		writeFileSync(json, JSON.stringify({ ...head2, meta: { ...head2.meta, ...rejectedMeta() } }, null, 2) + '\n');
+		assert.throws(() => requireApprovedDefinition(repo, HEAD_HASH), (e: unknown) =>
+			e instanceof ArtifactNotApprovedError && /rejected/.test((e as Error).message));
+	} finally { cleanup(); }
+});
+
+test('requireApprovedDefinition: DEF head approved -> kind def; DEF-only repo keeps requireApprovedEpic working', () => {
+	const { repo, cleanup } = headRepo();
+	try {
+		const json = writeHeadFixture(repo, 'def');
+		markApprovedSync(json);
+		const head = requireApprovedDefinition(repo, HEAD_HASH);
+		assert.equal(head.kind, 'def');
+		assert.equal(head.jsonPath, json);
+		assert.doesNotThrow(() => requireApprovedEpic(repo, HEAD_HASH));
+	} finally { cleanup(); }
 });

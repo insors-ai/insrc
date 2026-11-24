@@ -1,0 +1,776 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1795524658087-3sbh8p",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T12:53:27.196Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 149107,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "epicSlug": "unify-vibe-one-plain-cli-adapter",
+    "seededFromSpec": "74e8a0cf59d3f57d",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "31d9cd94bb6e3d5da3a8de1d2e83ecb5df9ac742bfaa9bb4d238a792d8be08ae",
+        "at": "2026-11-24T12:53:27.205Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1,
+    "questionResolutions": {
+      "q2ec31c0d": {
+        "question": "Item a2: the low-confidence assumption that a custom policy or agent can authorize exactly the insrc analysis tools without a blanket bypass has no open-question record (the s2 schema carries none); it is carried structurally by constraint k1 and the s2 qualification story — the design stage should confirm the fail-closed gate is the agreed resolution or raise the question explicitly.",
+        "status": "resolved",
+        "choice": "Resolve: the fail-closed qualification gate is the agreed resolution — brainstorm decision 2 (qualify narrow authorization; fail closed) settled that the low-confidence narrow-authorization assumption is never relied on; constraint k1 and story s2 carry it structurally",
+        "rationale": "Settled in the approved brainstorm (SPEC-74e8a0cf59d3f57d decision 2): the unproven narrow-authorization assumption is gated, not relied on — live qualification with fail-closed behavior. Confirmed by the user in chat.",
+        "resolvedAt": "2026-11-24T12:56:08.607Z"
+      }
+    }
+  },
+  "body": {
+    "assumptions": [
+      {
+        "confidence": "high",
+        "source": "c13",
+        "text": "The installed Vibe 3.1.4 headless flag surface (model alias selection, thinking level, approval policy, custom agents, tool enable/disable lists, prompt and system-prompt files, budget guards, and structured exit evidence) is sufficient to serve every backend request type the current session transport serves, so a shared plain-CLI adapter can replace it."
+      },
+      {
+        "confidence": "low",
+        "source": "c5",
+        "text": "A custom policy or agent can authorize exactly the insrc analysis tools while leaving every other tool blocked, without a blanket approval bypass — unproven, which is why the Epic carries a fail-closed qualification gate rather than assuming success."
+      },
+      {
+        "confidence": "med",
+        "source": "c4",
+        "text": "The plugin chat's streaming UX, resume handles and attachments survive being routed through the shared adapter unchanged in behavior."
+      },
+      {
+        "confidence": "med",
+        "source": "c7",
+        "text": "The chat prompt-transport defect recorded in the ledger is already fixed by the current explicit prompt binding and needs verification and closure, not rework."
+      },
+      {
+        "confidence": "high",
+        "source": "c6",
+        "text": "A real TOML parser is already a project dependency and its parse covers the grammar needs of all three hand-written Vibe config readers, so adoption is a replacement, not new machinery."
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "source": "c4",
+        "text": "Read-only analysis authorization ships only on successful live qualification that proves every non-allowed tool stays blocked without a blanket permission bypass; on failure the session fails closed and analysis stays unavailable.",
+        "type": "invariant"
+      },
+      {
+        "id": "k2",
+        "source": "c4",
+        "text": "One shared plain-CLI execution adapter serves both the backend provider and the plugin chat; the session-based transport is not retained in any form — not as a fallback, not as a verification layer.",
+        "type": "stakeholder"
+      },
+      {
+        "id": "k3",
+        "source": "c13",
+        "text": "Model, effort, prompt transport, safety handling and the exact MCP tool naming are qualified against the installed CLI and aligned by construction across both surfaces.",
+        "type": "contract"
+      },
+      {
+        "id": "k4",
+        "source": "c6",
+        "text": "Vibe configuration files are parsed with a real TOML parser for understanding, and edits are surgical: unrelated user settings survive registration and cleanup byte-for-byte; a config that cannot be changed safely is left untouched with the failure reported.",
+        "type": "contract"
+      },
+      {
+        "id": "k5",
+        "source": "c12",
+        "text": "Review integration is out of scope until the review rewrite establishes its replacement; the review-dependent issues are recorded as deferred dependencies on it, not closed.",
+        "type": "stakeholder"
+      },
+      {
+        "id": "k6",
+        "source": "c14",
+        "text": "All model work happens through the locally-installed CLI binary's own session (auth, quota, subprocess); no direct cloud REST is introduced.",
+        "type": "convention"
+      },
+      {
+        "id": "k7",
+        "source": "c4",
+        "text": "Issues close only with supporting evidence; no speculative closures.",
+        "type": "invariant"
+      }
+    ],
+    "flavor": "enhancement",
+    "nonGoals": [
+      {
+        "rationale": "Settled decision: the plain CLI path now covers what the session transport existed for; keeping it in any role preserves the split and its maintenance. [[c4]]",
+        "text": "Retain the session-based transport as a backend transport, a fallback, or a verification layer in any form."
+      },
+      {
+        "rationale": "The read-only safety invariant is absolute; enabling analysis by approving everything is the exact failure mode the qualification gate exists to prevent. [[c4]] [[c5]]",
+        "text": "Allow a blanket permission bypass to enable read-only analysis tools."
+      },
+      {
+        "rationale": "The review machinery was removed from the codebase and is being rewritten; Vibe review support awaits the replacement and is recorded as a deferred dependency instead. [[c12]] [[c8]] [[c9]]",
+        "text": "Restore or rebuild the removed review-activity or streaming-review machinery, or wire Vibe into reviews in this Epic."
+      },
+      {
+        "rationale": "Settled decision; the plugin chat worker and mapper become consumers of the shared adapter while keeping their UX surface. [[c4]]",
+        "text": "Split the launch path per surface — backend-only alignment, or plugin chat keeping its own launch mechanism."
+      },
+      {
+        "rationale": "Settled decision: partial parser replacement leaves the known misreading class in place wherever it remains. [[c6]]",
+        "text": "Replace TOML parsing only where the adapter needs it, or defer the parser replacement to separate work."
+      },
+      {
+        "rationale": "Settled decision: the ledger must reflect reality after this Epic, with closures backed by evidence. [[c4]]",
+        "text": "Reconcile only the directly implemented issues, or merely document how the others relate without closing or deferring them."
+      }
+    ],
+    "openQuestions": [
+      "Item a2: the low-confidence assumption that a custom policy or agent can authorize exactly the insrc analysis tools without a blanket bypass has no open-question record (the s2 schema carries none); it is carried structurally by constraint k1 and the s2 qualification story — the design stage should confirm the fail-closed gate is the agreed resolution or raise the question explicitly."
+    ],
+    "problem": "Mistral Vibe is wired into the system through three mechanisms that disagree with each other. Backend model requests take one path for the default model but switch to a separate session-based transport whenever a model or thinking level is chosen — a split that no longer reflects the installed tool's capabilities — while the VS Code chat launches the same tool a third way and pins models through an environment variable. The mechanisms disagree on safety: a read-only session can read files but cannot call the insrc analysis tools at all, because the tool allowlist it relies on does not govern the tool's separate approval gate, so the sessions cannot do the analysis work they exist for. They disagree on tool naming, with the backend and the plugin assuming two different spellings for the same tools. Configuration files are read through hand-written approximations of TOML that have repeatedly misread valid user settings — most recently forcing nine rounds of validation hardening on a single cleanup function — and the integration's issue ledger has drifted: one record appears fixed by other work, and two more are predicated on review machinery that has since been removed from the codebase. The net effect is an integration that is over-complex where the claude and codex clients need one mechanism, unsafe where it matters most, and untrustworthy in its configuration handling and its own records.",
+    "stories": [
+      {
+        "acceptanceCriteria": [
+          {
+            "given": "a backend Vibe request with no explicit model selection",
+            "id": "ac1",
+            "operationalizes": [
+              "k2",
+              "k3"
+            ],
+            "then": "it executes through the same plain-CLI invocation path as every other backend Vibe request, with the prompt delivered through the tool's programmatic input contract",
+            "when": "the request is issued"
+          },
+          {
+            "given": "a backend Vibe request with an explicit model and thinking level",
+            "id": "ac2",
+            "operationalizes": [
+              "k3",
+              "k6"
+            ],
+            "then": "the selection rides the same plain invocation and is honored exactly as the installed tool's real catalog defines it — an unknown model or level fails before any model call, reporting the supported choices",
+            "when": "the request is issued"
+          },
+          {
+            "given": "the codebase after this Story",
+            "id": "ac3",
+            "operationalizes": [
+              "k2"
+            ],
+            "then": "no session-based Vibe transport is reachable, referenced or importable anywhere in production code",
+            "when": "any backend Vibe request executes"
+          },
+          {
+            "given": "a structured-output Vibe request",
+            "id": "ac4",
+            "operationalizes": [
+              "k3"
+            ],
+            "then": "the answer is validated locally against the requested schema and retried on invalid output, since the tool enforces no native schema flag",
+            "when": "the answer returns"
+          },
+          {
+            "given": "a Vibe request that fails with a transient upstream error mid-response",
+            "id": "ac5",
+            "operationalizes": [
+              "k3"
+            ],
+            "then": "it is retried with the same bounded semantics as the claude and codex clients — a fresh invocation, bounded attempts, deterministic failures re-thrown at once",
+            "when": "the provider handles the failure"
+          }
+        ],
+        "existingCapabilityRefs": [
+          "c13",
+          "c2"
+        ],
+        "functionalRequirements": [
+          {
+            "rationale": "One launch path for every backend request; the session transport is deleted, not demoted. [[c4]]",
+            "statement": "Every backend Vibe request — plain completion, structured output and read-only session alike — executes through one plain-CLI launch path."
+          },
+          {
+            "rationale": "The split existed only because the older tool could not select models headlessly; the installed tool can. [[c13]]",
+            "statement": "Explicit model and thinking-level selection rides the plain invocation, with selection failures reported before any model call."
+          },
+          {
+            "rationale": "Schema-in-prompt with local validation and bounded retry is the tool-accurate equivalent of the other clients' native schema flags. [[c13]]",
+            "statement": "Structured-output requests are validated locally against the requested schema with bounded retry."
+          }
+        ],
+        "id": "s1",
+        "sizeEstimate": "L",
+        "title": "One shared plain-CLI launch path serves every backend Vibe request",
+        "userValue": "Model work served by Vibe behaves exactly like the claude and codex clients — one launch path, explicit model selection that works, and no hidden second runtime to maintain or mistrust."
+      },
+      {
+        "acceptanceCriteria": [
+          {
+            "given": "a live-qualified narrow authorization that allows exactly the insrc analysis tools",
+            "id": "ac1",
+            "operationalizes": [
+              "k1"
+            ],
+            "then": "the call executes and its result reaches the session's answer",
+            "when": "a read-only session calls an allowed analysis tool"
+          },
+          {
+            "given": "a read-only session running under the narrow authorization",
+            "id": "ac2",
+            "operationalizes": [
+              "k1"
+            ],
+            "then": "it is denied or unavailable — and no mode that approves every tool is enabled anywhere in the session",
+            "when": "any tool outside the allowed set is attempted"
+          },
+          {
+            "given": "qualification that cannot establish the narrow authorization without a blanket bypass",
+            "id": "ac3",
+            "operationalizes": [
+              "k1"
+            ],
+            "then": "analysis is reported unavailable with a clear reason, and the session still refuses the bypass",
+            "when": "a read-only session requests analysis"
+          },
+          {
+            "given": "a completed read-only session, verified live against the installed tool",
+            "id": "ac4",
+            "operationalizes": [
+              "k1"
+            ],
+            "then": "no file write, command execution or other mutating capability has run",
+            "when": "its effects are checked"
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c5",
+          "c13"
+        ],
+        "functionalRequirements": [
+          {
+            "rationale": "The allowlist alone does not govern the tool's approval gate; the qualification must prove both directions live. [[c5]]",
+            "statement": "Read-only analysis is enabled only by an authorization proven live to allow exactly the analysis tools and block everything else."
+          },
+          {
+            "rationale": "The safety invariant is not negotiable; an honest 'unavailable' beats a dangerous 'enabled'. [[c4]]",
+            "statement": "When the narrow authorization cannot be established without a blanket bypass, read-only sessions report analysis unavailable instead."
+          }
+        ],
+        "id": "s2",
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "source": "c13",
+            "text": "The narrow-authorization qualification runs against the real installed binary through the gated live suites; mock-based qualification is not sufficient to enable analysis.",
+            "type": "invariant"
+          }
+        ],
+        "sizeEstimate": "M",
+        "title": "Read-only Vibe sessions run the insrc analysis tools, or honestly report them unavailable",
+        "userValue": "Read-only Vibe sessions become genuinely useful for grounded analysis — they can drill into the repository through insrc's analyzer without ever trading away the guarantee that nothing else can run."
+      },
+      {
+        "acceptanceCriteria": [
+          {
+            "given": "a user sends a Vibe chat turn with a selected model and thinking level",
+            "id": "ac1",
+            "operationalizes": [
+              "k2",
+              "k3"
+            ],
+            "then": "it launches through the shared adapter — no separate plugin launch path and no environment-variable model pinning remain",
+            "when": "the turn executes"
+          },
+          {
+            "given": "a streaming Vibe chat turn",
+            "id": "ac2",
+            "operationalizes": [
+              "k3"
+            ],
+            "then": "the transcript renders streaming assistant text, tool activity and completion exactly as before the change",
+            "when": "output events arrive during the turn"
+          },
+          {
+            "given": "an earlier Vibe chat session",
+            "id": "ac3",
+            "operationalizes": [
+              "k3"
+            ],
+            "then": "the resumed turn runs through the shared adapter with the session's context intact",
+            "when": "the user resumes it and sends a follow-up"
+          },
+          {
+            "given": "the MCP tool naming established once against the installed tool",
+            "id": "ac4",
+            "operationalizes": [
+              "k3"
+            ],
+            "then": "the names the chat parses are exactly the names the backend allowlist uses — one spelling everywhere",
+            "when": "the chat surfaces insrc tool activity"
+          },
+          {
+            "given": "a prompt with multiline text or text that looks like a command-line option, verified live against the installed tool",
+            "id": "ac5",
+            "operationalizes": [
+              "k3",
+              "k7"
+            ],
+            "then": "the tool receives the complete prompt through its programmatic contract, and the verification outcome is recorded on the ledger",
+            "when": "the chat sends it"
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c10",
+          "c1"
+        ],
+        "functionalRequirements": [
+          {
+            "rationale": "One adapter, two consumers; the chat keeps its UX surface but loses its private launch mechanism. [[c4]]",
+            "statement": "Chat Vibe turns launch through the same shared plain-CLI adapter as backend requests, with model selection carried by the adapter."
+          },
+          {
+            "rationale": "The migration must be invisible to the chat user except where it fixes real defects. [[c4]]",
+            "statement": "Streaming output, resume behavior and attachments are preserved unchanged in behavior through the shared adapter."
+          },
+          {
+            "rationale": "Two spellings for the same tools cannot both be right; one qualification settles it. [[c10]]",
+            "statement": "The chat and the backend use one MCP tool-naming convention, established against the installed tool."
+          }
+        ],
+        "id": "s3",
+        "localConstraints": [
+          {
+            "id": "lc2",
+            "source": "c10",
+            "text": "The chat's transcript rendering, worker lifecycle and attachment surface keep their existing behavior; only the launch path and tool naming change.",
+            "type": "stakeholder"
+          }
+        ],
+        "sizeEstimate": "L",
+        "title": "VS Code chat runs Vibe through the shared adapter with streaming preserved",
+        "userValue": "Chat users keep the Vibe experience they know — streaming, resume, attachments — while the chat and the backend finally agree on how Vibe is launched and what its tools are called."
+      },
+      {
+        "acceptanceCriteria": [
+          {
+            "given": "a Vibe configuration holding quoted table names, inline tables, multiline strings or comments",
+            "id": "ac1",
+            "operationalizes": [
+              "k4"
+            ],
+            "then": "every reader answers from the same real parse — what the file actually says — not from line or bracket heuristics",
+            "when": "any config question is answered (does it declare the insrc server, what entries exist)"
+          },
+          {
+            "given": "a configuration holding unrelated servers, settings and comments",
+            "id": "ac2",
+            "operationalizes": [
+              "k4"
+            ],
+            "then": "every unrelated server, setting and comment survives byte-for-byte",
+            "when": "insrc registers its server or removes a legacy entry"
+          },
+          {
+            "given": "a configuration that cannot be changed safely",
+            "id": "ac3",
+            "operationalizes": [
+              "k4"
+            ],
+            "then": "the file is left untouched and the failure is reported with the reason",
+            "when": "a registration or cleanup write is attempted"
+          },
+          {
+            "given": "the daemon's registration checks, the cleanup path and the plugin's config writer",
+            "id": "ac4",
+            "operationalizes": [
+              "k4"
+            ],
+            "then": "no hand-written Vibe TOML reader remains in production code",
+            "when": "they read or edit a configuration after this Story"
+          }
+        ],
+        "existingCapabilityRefs": [
+          "c11",
+          "c6"
+        ],
+        "functionalRequirements": [
+          {
+            "rationale": "Three sites currently approximate the grammar and have each misread valid files. [[c6]]",
+            "statement": "All Vibe configuration reading goes through one real TOML parse shared by the daemon and the plugin."
+          },
+          {
+            "rationale": "Users' unrelated settings are not ours to reformat or lose. [[c6]]",
+            "statement": "Registration and cleanup edits preserve every unrelated server, setting and comment byte-for-byte, and refuse rather than touch a file they cannot change safely."
+          }
+        ],
+        "id": "s4",
+        "localConstraints": [
+          {
+            "id": "lc3",
+            "source": "c6",
+            "text": "The real TOML parser is one already in the project's dependency tree; no new dependency is introduced for this Story.",
+            "type": "convention"
+          }
+        ],
+        "sizeEstimate": "M",
+        "title": "Vibe configuration files are read with a real TOML parse and edited surgically",
+        "userValue": "Users' Vibe configurations stop being corrupted or misread: insrc understands the file as written and touches only its own entry."
+      },
+      {
+        "acceptanceCriteria": [
+          {
+            "given": "the shared plain-CLI launch path from s1",
+            "id": "ac1",
+            "operationalizes": [
+              "k3"
+            ],
+            "then": "every advertised model and thinking level is one the launch path actually honors, verified against the installed tool's catalog",
+            "when": "the Vibe model-family records are built"
+          },
+          {
+            "given": "a user selecting a Vibe model and thinking level in settings",
+            "id": "ac2",
+            "operationalizes": [
+              "k3",
+              "k6"
+            ],
+            "then": "the selection is delivered through the plain invocation and honored — never silently ignored or substituted",
+            "when": "the daemon runs a tier's work on it"
+          },
+          {
+            "given": "a selection the launch path cannot honor",
+            "id": "ac3",
+            "operationalizes": [
+              "k3"
+            ],
+            "then": "it fails before dispatch with an error naming the supported models and levels",
+            "when": "the selection is made"
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c13"
+        ],
+        "functionalRequirements": [
+          {
+            "rationale": "The launch-path change must not leave advertised records the path will not honor; settings must not lie. [[c13]]",
+            "statement": "The Vibe model family's advertised models and thinking levels are exactly those the plain-CLI launch path honors, verified against the installed catalog."
+          }
+        ],
+        "id": "s5",
+        "sizeEstimate": "M",
+        "title": "The Vibe model family advertises exactly what the new launch path honors",
+        "userValue": "Settings tell the truth: what a user picks for Vibe is what runs, and what is offered is what works."
+      },
+      {
+        "acceptanceCriteria": [
+          {
+            "given": "the chat prompt-transport record",
+            "id": "ac1",
+            "operationalizes": [
+              "k7"
+            ],
+            "then": "the record is closed referencing the live verification evidence — or, if the verification fails, reopened with the failure recorded",
+            "when": "its fix is verified live against the installed tool as part of s3"
+          },
+          {
+            "given": "the surviving versioned-model catalog-coverage concern",
+            "id": "ac2",
+            "operationalizes": [
+              "k7"
+            ],
+            "then": "any gap between the advertised records and the installed catalog is fixed or recorded, with evidence",
+            "when": "the installed catalog is checked against the family records"
+          },
+          {
+            "given": "the two review-dependent records",
+            "id": "ac3",
+            "operationalizes": [
+              "k5",
+              "k7"
+            ],
+            "then": "each carries an explicit deferred dependency on the review rewrite instead of an open claim against machinery that no longer exists",
+            "when": "the reconciliation completes"
+          },
+          {
+            "given": "the read-only authorization and TOML-parsing records, implemented by this Epic",
+            "id": "ac4",
+            "operationalizes": [
+              "k7"
+            ],
+            "then": "they close referencing the built evidence and their stories' validation records",
+            "when": "those stories complete"
+          }
+        ],
+        "dependsOn": [
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "existingCapabilityRefs": [
+          "c7",
+          "c8"
+        ],
+        "functionalRequirements": [
+          {
+            "rationale": "A ledger that misstates reality is worse than no ledger; reconciliation is evidence-driven. [[c4]]",
+            "statement": "Every open Vibe-integration record is closed, fixed, or explicitly deferred with a recorded dependency — none left silently stale."
+          }
+        ],
+        "id": "s6",
+        "sizeEstimate": "S",
+        "title": "The Vibe issue ledger reflects reality, with evidence",
+        "userValue": "Anyone reading the Vibe integration's records can trust them: what is fixed is closed with proof, what is deferred says so, and nothing describes machinery that no longer exists."
+      }
+    ],
+    "summary": {
+      "audience": "product",
+      "prose": "This Epic makes Mistral Vibe a fully-supported model client, equal to the claude and codex clients: one launch path serves both the backend and the VS Code chat, model selection works through the tool's own supported interface, and the redundant session machinery goes away. Read-only sessions either gain the ability to run insrc's analysis tools with everything else provably blocked, or honestly report that analysis is unavailable — they never trade safety for capability. Configuration files are read with a real parser so users' unrelated settings survive every edit, the tool naming is established once against the installed tool, and the issue ledger is brought back in line with reality: what is fixed is closed, what is deferred says so."
+    },
+    "title": "Unify Vibe on one plain-CLI adapter",
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E20261124639cd215:FR001",
+          "statement": "Every backend Vibe request and every VS Code chat Vibe turn executes through one shared plain-CLI launch path, and the session-based transport no longer exists in the codebase.",
+          "scope": "doc",
+          "rationale": "Removes the three-mechanism split and its double maintenance; the claude and codex clients already work this way. [[c4]] [[c3]]"
+        },
+        {
+          "id": "E20261124639cd215:FR002",
+          "statement": "Explicit model and thinking-level selection for Vibe rides the plain headless invocation and is honored exactly as the installed CLI's real catalog defines it, with selection failures reported before any model call.",
+          "scope": "doc",
+          "rationale": "Restores parity with the other CLI clients, whose model selection rides the same one-shot invocation. [[c13]]"
+        },
+        {
+          "id": "E20261124639cd215:FR003",
+          "statement": "A read-only Vibe session either runs exactly the allowed insrc analysis tools with every other tool provably blocked, or reports analysis as unavailable — never enables tools by approving everything.",
+          "scope": "doc",
+          "rationale": "The current allowlist cannot call the analysis tools at all; the invariant forbids buying them back with a blanket bypass. [[c5]] [[c4]]"
+        },
+        {
+          "id": "E20261124639cd215:FR004",
+          "statement": "Vibe configuration files are read through a real TOML parse, and registration or cleanup edits preserve every unrelated server, setting and comment the file already had.",
+          "scope": "doc",
+          "rationale": "Hand-written readers have repeatedly misread valid user settings across three sites. [[c6]]"
+        },
+        {
+          "id": "E20261124639cd215:FR005",
+          "statement": "The exact MCP tool naming for Vibe is established once against the installed CLI and used identically by the backend and the plugin.",
+          "scope": "doc",
+          "rationale": "The backend and the plugin currently assume two different spellings for the same tools; at most one matches the installed CLI. [[c10]] [[c3]]"
+        },
+        {
+          "id": "E20261124639cd215:FR006",
+          "statement": "The Vibe issue ledger is reconciled with evidence: verified fixes are closed, remaining gaps are recorded, and review-dependent items carry an explicit deferred dependency on the review rewrite.",
+          "scope": "doc",
+          "rationale": "The issue ledger for this integration contains stale, fixed-by-other-work and removed-machinery records that misrepresent the current state. [[c7]] [[c8]] [[c9]]"
+        },
+        {
+          "id": "E20261124639cd215:FR007",
+          "statement": "Vibe's model-family records remain coherent with the new launch path — the models and thinking levels advertised to users and settings are exactly those the plain-CLI path honors.",
+          "scope": "doc",
+          "rationale": "The model family is woven through 77 references; the launch-path change must not leave advertised models or efforts that the new path will not honor. [[c1]]"
+        },
+        {
+          "id": "E20261124639cd215:S001:FR001",
+          "statement": "Every backend Vibe request — plain completion, structured output and read-only session alike — executes through one plain-CLI launch path.",
+          "scope": "item",
+          "itemRef": "s1",
+          "rationale": "One launch path for every backend request; the session transport is deleted, not demoted. [[c4]]"
+        },
+        {
+          "id": "E20261124639cd215:S001:FR002",
+          "statement": "Explicit model and thinking-level selection rides the plain invocation, with selection failures reported before any model call.",
+          "scope": "item",
+          "itemRef": "s1",
+          "rationale": "The split existed only because the older tool could not select models headlessly; the installed tool can. [[c13]]"
+        },
+        {
+          "id": "E20261124639cd215:S001:FR003",
+          "statement": "Structured-output requests are validated locally against the requested schema with bounded retry.",
+          "scope": "item",
+          "itemRef": "s1",
+          "rationale": "Schema-in-prompt with local validation and bounded retry is the tool-accurate equivalent of the other clients' native schema flags. [[c13]]"
+        },
+        {
+          "id": "E20261124639cd215:S002:FR001",
+          "statement": "Read-only analysis is enabled only by an authorization proven live to allow exactly the analysis tools and block everything else.",
+          "scope": "item",
+          "itemRef": "s2",
+          "rationale": "The allowlist alone does not govern the tool's approval gate; the qualification must prove both directions live. [[c5]]"
+        },
+        {
+          "id": "E20261124639cd215:S002:FR002",
+          "statement": "When the narrow authorization cannot be established without a blanket bypass, read-only sessions report analysis unavailable instead.",
+          "scope": "item",
+          "itemRef": "s2",
+          "rationale": "The safety invariant is not negotiable; an honest 'unavailable' beats a dangerous 'enabled'. [[c4]]"
+        },
+        {
+          "id": "E20261124639cd215:S003:FR001",
+          "statement": "Chat Vibe turns launch through the same shared plain-CLI adapter as backend requests, with model selection carried by the adapter.",
+          "scope": "item",
+          "itemRef": "s3",
+          "rationale": "One adapter, two consumers; the chat keeps its UX surface but loses its private launch mechanism. [[c4]]"
+        },
+        {
+          "id": "E20261124639cd215:S003:FR002",
+          "statement": "Streaming output, resume behavior and attachments are preserved unchanged in behavior through the shared adapter.",
+          "scope": "item",
+          "itemRef": "s3",
+          "rationale": "The migration must be invisible to the chat user except where it fixes real defects. [[c4]]"
+        },
+        {
+          "id": "E20261124639cd215:S003:FR003",
+          "statement": "The chat and the backend use one MCP tool-naming convention, established against the installed tool.",
+          "scope": "item",
+          "itemRef": "s3",
+          "rationale": "Two spellings for the same tools cannot both be right; one qualification settles it. [[c10]]"
+        },
+        {
+          "id": "E20261124639cd215:S004:FR001",
+          "statement": "All Vibe configuration reading goes through one real TOML parse shared by the daemon and the plugin.",
+          "scope": "item",
+          "itemRef": "s4",
+          "rationale": "Three sites currently approximate the grammar and have each misread valid files. [[c6]]"
+        },
+        {
+          "id": "E20261124639cd215:S004:FR002",
+          "statement": "Registration and cleanup edits preserve every unrelated server, setting and comment byte-for-byte, and refuse rather than touch a file they cannot change safely.",
+          "scope": "item",
+          "itemRef": "s4",
+          "rationale": "Users' unrelated settings are not ours to reformat or lose. [[c6]]"
+        },
+        {
+          "id": "E20261124639cd215:S005:FR001",
+          "statement": "The Vibe model family's advertised models and thinking levels are exactly those the plain-CLI launch path honors, verified against the installed catalog.",
+          "scope": "item",
+          "itemRef": "s5",
+          "rationale": "The launch-path change must not leave advertised records the path will not honor; settings must not lie. [[c13]]"
+        },
+        {
+          "id": "E20261124639cd215:S006:FR001",
+          "statement": "Every open Vibe-integration record is closed, fixed, or explicitly deferred with a recorded dependency — none left silently stale.",
+          "scope": "item",
+          "itemRef": "s6",
+          "rationale": "A ledger that misstates reality is worse than no ledger; reconciliation is evidence-driven. [[c4]]"
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "quotedText": "the session transport consumed by both the backend provider and the plugin chat worker (runVerifiedVibeTurn callers)",
+      "ref": "src/shared/vibe-session.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "quotedText": "BOUNDED_CLI_ADAPTERS — Vibe sits beside claude/codex in the provider but with a divergent transport",
+      "ref": "src/agent/providers/cli-provider.ts:354"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "quotedText": "SPEC-74e8a0cf59d3f57d — five settled decisions incl. one shared execution adapter and fail-closed read-only authorization",
+      "ref": "docs/standalone/unify-vibe-one-plain-cli-execution-E2026112474e8a0cf/SPEC.md"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "quotedText": "--enabled-tools does not bypass vibe's separate agent-approval gate; read-only sessions cannot call the insrc analyze tools headlessly",
+      "ref": "docs/standalone/vibe-s-read-only-session-cannot-E20261124d3e72fe7/ISSUE.md"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "quotedText": "Read Vibe configs with a real TOML parser — three heuristic parsing areas; nine validation rounds hardening a hand-written lexer",
+      "ref": "docs/standalone/read-vibe-configs-real-toml-parser-E202611090b3114f8/ISSUE.md"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "quotedText": "Pass Vibe chat prompts correctly in programmatic mode — appears already fixed by the explicit prompt binding",
+      "ref": "docs/standalone/pass-vibe-chat-prompts-correctly-programmatic-E20261105910fce32/ISSUE.md"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "quotedText": "activity-supervised reviews through the Vibe CLI — predicated on removed review machinery",
+      "ref": "docs/standalone/support-activity-supervised-reviews-through-mistral-E2026110430962d0f/ISSUE.md"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "quotedText": "streaming reviews — review portion depends on removed machinery; the versioned-model catalog-coverage sub-point survives",
+      "ref": "docs/standalone/preserve-ollama-routing-claude-streaming-reviews-E20261110738d62b8/ISSUE.md"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "quotedText": "plugin chat vibe mapper: explicit prompt binding, environment-variable model pinning, and an MCP tool-name parser that disagrees with the backend allowlist",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "quotedText": "registration checks read the config file with hand-rolled [[-split and name-regex heuristics",
+      "ref": "src/daemon/mcp-register.ts"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "quotedText": "the review-implementation removal — the review machinery the two review-dependent issues cite no longer exists in src/",
+      "ref": "docs/standalone/remove-design-code-review-implementations-while-E20261116dae67bfc/S001/BUILD.md"
+    },
+    {
+      "id": "c13",
+      "kind": "analyze-bundle",
+      "quotedText": "live qualification 2026-11-24: headless model-alias selection honored (bogus alias fails fast listing the real catalog); approval policies, custom agents, tool lists, prompt files, budget guards and structured exit evidence all present in --help",
+      "ref": "s1"
+    },
+    {
+      "id": "c14",
+      "kind": "convention",
+      "quotedText": "No direct cloud REST calls from our process — cloud access through the locally-installed CLI binaries; accuracy is primary",
+      "ref": "CLAUDE.md"
+    }
+  ]
+}

@@ -299,6 +299,15 @@ export function removeVibeProjectServer(
 			const headers = [...restM.matchAll(TABLE_HEADER)];
 			for (let s = 0; s < headers.length; s++) {
 				if (isMcpServersSubtable(headers[s]![1]!, headers[s]![2]!)) continue;
+				if (headers[s]![1] === '[[') {
+					// An [[...]] header inside the chunk (e.g. an INDENTED
+					// [[mcp_servers]] element — headers may carry leading
+					// whitespace) is a preserved element: its own sub-tables
+					// belong to IT, so keep everything from here to the end of
+					// the chunk verbatim.
+					cleaned += restO.slice(headers[s]!.index!);
+					break;
+				}
 				cleaned += restO.slice(headers[s]!.index!, s + 1 < headers.length ? headers[s + 1]!.index! : restO.length);
 			}
 		}

@@ -737,6 +737,25 @@ test('removeVibeProjectServer ignores a line-continuation backslash inside a mul
 	assert.equal(files.get('/r'), input, 'the config is untouched');
 });
 
+test('removeVibeProjectServer keeps an indented [[mcp_servers]] element inside the removed chunk, sub-tables included', async () => {
+	const { removeVibeProjectServer, vibeConfigHasServer: has } = await import('../mcp-register.js');
+	// Table headers may carry leading whitespace, so an indented [[mcp_servers]]
+	// element lives INSIDE the previous chunk. Its [mcp_servers.env] belongs to
+	// THAT element, not to the removed insrc entry.
+	const input = '[[mcp_servers]]\nname = "insrc"\ncommand = "node"\nargs = ["/mac/path"]\n  [[mcp_servers]]\nname = "docs"\ncommand = "d"\n  [mcp_servers.env]\nX = "1"\n';
+	const files = new Map([['/r', input]]);
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.equal(removeVibeProjectServer('/r', deps), 'removed');
+	const text = files.get('/r') ?? '';
+	assert.equal(text, '  [[mcp_servers]]\nname = "docs"\ncommand = "d"\n  [mcp_servers.env]\nX = "1"\n', 'the indented docs element and its env sub-table survive');
+	assert.ok(!has(text, 'insrc'));
+	// NOTE: has(text, 'docs') is deliberately NOT asserted — vibeConfigHasServer
+	// (the pre-existing column-0 idempotency heuristic this fix keeps) cannot
+	// see indented headers; the byte-exact equality above proves preservation.
+	assert.equal(removed.length, 0);
+});
+
 test('removeVibeProjectServer leaves a config it cannot normalize untouched and reports the failure', async () => {
 	const { removeVibeProjectServer } = await import('../mcp-register.js');
 	let wrote = false;

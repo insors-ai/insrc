@@ -91,6 +91,8 @@ test('invalid-option-like-ref-source-and-ambiguous-receipts-rejected', () => {
     'https://user:secret@example.test/repo', 'https://user@example.test/repo', 'https://example.test/repo#bad', 'https://example.test/repo?bad',
     'ssh://user:secret@example.test/repo', 'ssh://git@example.test', 'ssh://git@example.test/',
     'git@bad host:org/repo.git', 'bad user@example.test:org/repo.git', 'git@-host:org/repo.git',
+    'ssh://git@-host/org/repo.git', 'ssh://-host/org/repo.git', 'ssh://git@%2dhost/org/repo.git',
+    'ssh://-user@example.test/org/repo.git', 'ssh://bad%20user@example.test/org/repo.git',
     '/tmp/../repo', 'C:\\repo\\..\\other', 'x\ny']) {
     assert.throws(() => parseDevDelivery({ ...delivery, repository }), repository);
   }

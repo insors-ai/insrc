@@ -89,6 +89,12 @@ export function parseDevDelivery(input: unknown): Extract<Delivery, { mode: 'dev
     try { url = new URL(repository); } catch { throw new InstallerError('source-invalid', 'Git source must be an absolute local path, HTTPS or SSH'); }
     if (!['https:', 'ssh:'].includes(url.protocol) || !url.hostname || url.password || url.hash || url.search
       || (url.protocol === 'https:' && url.username) || url.pathname.length <= 1) throw new InstallerError('source-invalid', 'Unsupported Git source URL');
+    let host: string, user: string;
+    try { host = decodeURIComponent(url.hostname); user = decodeURIComponent(url.username); }
+    catch { throw new InstallerError('source-invalid', 'Malformed Git source authority'); }
+    if (host.startsWith('-') || user.startsWith('-') || /[\s\u0000-\u001f\u007f/@\\]/.test(host + user)) {
+      throw new InstallerError('source-invalid', 'Malformed or option-like Git source authority');
+    }
   }
   if (branch.startsWith('-') || branch.startsWith('/') || branch.endsWith('/') || branch.endsWith('.')
     || /[\u0000-\u0020\u007f~^:?*\[\\]/.test(branch) || branch.includes('..') || branch.includes('@{') || branch.includes('//')

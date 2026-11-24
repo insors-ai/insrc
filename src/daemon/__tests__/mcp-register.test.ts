@@ -531,6 +531,31 @@ test('removeVibeProjectServer drops a config holding both forms (empty inline li
 	assert.deepEqual(removed, ['/r'], 'only the insrc entry remained after normalizing → file deleted');
 });
 
+test('removeVibeProjectServer keeps an unrelated single-table section that follows the insrc entry', async () => {
+	const { removeVibeProjectServer, vibeConfigHasServer: has } = await import('../mcp-register.js');
+	const files = new Map([['/r', '[[mcp_servers]]\nname = "insrc"\ntransport = "stdio"\ncommand = "node"\nargs = ["/mac/path"]\n[tools]\nfoo = 1\n']]);
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.equal(removeVibeProjectServer('/r', deps), 'removed');
+	const text = files.get('/r') ?? '';
+	assert.equal(text, '[tools]\nfoo = 1\n', 'the [tools] table after the entry survives, entry fields dropped');
+	assert.ok(!has(text, 'insrc'));
+	assert.equal(removed.length, 0, 'the file is rewritten, not deleted');
+});
+
+test('removeVibeProjectServer keeps later [[mcp_servers]] tables when a single-table section follows the removed entry', async () => {
+	const { removeVibeProjectServer, vibeConfigHasServer: has } = await import('../mcp-register.js');
+	const files = new Map([['/r', '[[mcp_servers]]\nname = "insrc"\ncommand = "node"\n[tools]\nfoo = 1\n\n[[mcp_servers]]\nname = "docs"\ncommand = "d"\n']]);
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.equal(removeVibeProjectServer('/r', deps), 'removed');
+	const text = files.get('/r') ?? '';
+	assert.equal(text, '[tools]\nfoo = 1\n\n[[mcp_servers]]\nname = "docs"\ncommand = "d"\n');
+	assert.ok(!has(text, 'insrc'));
+	assert.ok(has(text, 'docs'));
+	assert.equal(removed.length, 0);
+});
+
 test('removeVibeProjectServer leaves a config it cannot normalize untouched and reports the failure', async () => {
 	const { removeVibeProjectServer } = await import('../mcp-register.js');
 	let wrote = false;

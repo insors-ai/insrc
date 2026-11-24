@@ -167,8 +167,23 @@ export function removeVibeProjectServer(
 	if (!vibeConfigHasServer(text, 'insrc')) return 'absent';
 	const chunks = text.split(/^\[\[/m);
 	const nameLine = new RegExp(`^\\s*(?:name|"name"|'name')\\s*=\\s*["']insrc["']`, 'm');
-	const kept = chunks.filter((chunk, i) => i === 0 || !(chunk.startsWith('mcp_servers]]') && nameLine.test(chunk)));
-	const cleaned = kept[0] + kept.slice(1).map(c => '[[' + c).join('');
+	// A table header of ANY kind (single [t] or double [[t]]): the insrc entry's
+	// own fields end at the next one, and whatever follows inside the chunk is an
+	// unrelated table that must survive the removal (e.g. `[tools]` after the
+	// legacy entry — dropping the whole chunk would delete it with the entry).
+	const anyHeader = /^[ \t]*\[\[?[ \t]*[^\]\n#]+?[ \t]*\]\]?[ \t]*(?:#.*)?\r?$/m;
+	let cleaned = '';
+	chunks.forEach((chunk, i) => {
+		if (i === 0) { cleaned += chunk; return; }
+		if (!(chunk.startsWith('mcp_servers]]') && nameLine.test(chunk))) {
+			cleaned += '[[' + chunk;
+			return;
+		}
+		// An insrc [[mcp_servers]] chunk: drop only the entry's own fields,
+		// keeping any unrelated table that follows it in the same chunk.
+		const nextHeader = chunk.search(anyHeader);
+		if (nextHeader > 0) cleaned += chunk.slice(nextHeader);
+	});
 	if (cleaned.trim() === '') {
 		const removeFile = deps.removeVibeProjectConfig ?? ((p: string) => rmSync(vibeProjectConfigPath(p)));
 		removeFile(repoPath);

@@ -9,6 +9,7 @@
  * Kept as data so the runner file stays readable.
  */
 
+import { epicImpactSchema } from '../epic-impact-schema.js';
 import { PATH_FORM_RULE } from '../scope-prompts.js';
 
 // A PlanTask without its tests[] (enumerate / critique / finalize). The
@@ -69,6 +70,7 @@ export const planContextSchema = {
 			},
 		},
 		notes: { type: 'string' },
+		epicImpact: epicImpactSchema,
 	},
 } as const;
 

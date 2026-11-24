@@ -35,6 +35,8 @@ import type { ArtifactMetaBase, Citation } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
 import { renderFunctionalRequirementsSection } from './functional-definition.js';
 import type { DocumentSummary } from './format/types.js';
+import { epicImpactBodyLines } from './epic-impact.js';
+import type { EpicImpactAnalysis } from './epic-impact.js';
 import { renderFromFormat, type SectionBindings, type SectionItem } from './format/engine.js';
 import { citationBodyLines, epicLabelLine, frBodyLines } from './format/bindings.js';
 import { resolveDocumentFormat } from './format/template-loader.js';
@@ -92,6 +94,8 @@ export interface PlanBody {
 	readonly functionalDefinition?: FunctionalDefinition | undefined;
 	/** sc3 (S002): plain-language, Story-scoped Summary/abstract. Additive + absent-safe. */
 	readonly summary?: DocumentSummary | undefined;
+	/** ISSUE-1b3caadf04023d33: the Epic impact analysis of a later Story, carried from the LLD's first step. Additive + absent-safe. */
+	readonly epicImpact?: EpicImpactAnalysis | undefined;
 }
 
 export interface PlanArtifact {
@@ -156,6 +160,7 @@ export function renderPlanMarkdown(artifact: PlanArtifact): string {
 
 	const bindings: SectionBindings = {
 		summary:    () => ({ lines: summaryLines() }),
+		epicImpact: () => body.epicImpact !== undefined ? { lines: epicImpactBodyLines(body.epicImpact) } : { omit: true },
 		fr:         () => { const f = frBodyLines(body.functionalDefinition); return f.length > 0 ? { lines: f } : { omit: true }; },
 		tasks:      () => ({ lines: taskTable(), items: ordered.map(taskItem) }),
 		coverage:   () => body.testStrategyCoverage.length > 0 ? { lines: coverageLines() } : { omit: true },

@@ -26,6 +26,8 @@ import type { ArtifactMetaBase, Citation, WorkflowArtifact } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
 import { renderFunctionalRequirementsSection } from './functional-definition.js';
 import type { DocumentSummary, SharedContextRef } from './format/types.js';
+import { epicImpactBodyLines } from './epic-impact.js';
+import type { EpicImpactAnalysis } from './epic-impact.js';
 import { renderFromFormat, deriveHldContextRef, type SectionBindings, type SectionItem } from './format/engine.js';
 import { citationBodyLines, epicLabelLine, frBodyLines, companionBodyLines, uxCompanionBodyLines } from './format/bindings.js';
 import { unitIssueOf } from '../tracker/unit-head.js';
@@ -155,6 +157,9 @@ export interface LldBody {
 	readonly functionalDefinition?: FunctionalDefinition | undefined;
 	/** sc3 (S002): plain-language, Story-scoped Summary/abstract. Additive + absent-safe. */
 	readonly summary?: DocumentSummary | undefined;
+	/** ISSUE-1b3caadf04023d33: the Epic impact analysis of a later Story (what the Epic's built Stories changed, against
+	 *  this Story). Additive + absent-safe: absent bodies render and validate exactly as before. */
+	readonly epicImpact?: EpicImpactAnalysis | undefined;
 	/** sc3 (S002): references to upstream shared context (the HLD-context de-dup, ac2).
 	 *  Absent → the renderer uses deriveHldContextRef(epicHash). */
 	readonly contextRefs?: readonly SharedContextRef[] | undefined;
@@ -455,6 +460,7 @@ export function renderLldMarkdown(artifact: LldArtifact): string {
 
 	const bindings: SectionBindings = {
 		summary:     () => ({ lines: summaryLines() }),
+		epicImpact:  () => body.epicImpact !== undefined ? { lines: epicImpactBodyLines(body.epicImpact) } : { omit: true },
 		hldContext:  () => hldContextContent(),
 		fr:          () => { const f = frBodyLines(body.functionalDefinition); return f.length > 0 ? { lines: f } : { omit: true }; },
 		contract:    () => ({ lines: [`**Surface level:** ${body.contractDetails.surfaceLevel}`], items: body.contractDetails.api.map(apiItem) }),

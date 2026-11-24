@@ -8,6 +8,7 @@
  * outer LLM. One schema per step (s1..s8).
  */
 
+import { epicImpactSchema } from '../epic-impact-schema.js';
 import { ER_DEFINITION_PROPERTY_SCHEMA } from '../../artifacts/companion/er-schema.js';
 import { PATH_FORM_RULE } from '../scope-prompts.js';
 
@@ -36,6 +37,7 @@ export const lldContextSchema = {
 			},
 		},
 		backFlowNotes: { type: 'string' },
+		epicImpact: epicImpactSchema,
 	},
 } as const;
 

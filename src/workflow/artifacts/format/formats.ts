@@ -73,6 +73,7 @@ export const LLD_FORMAT: DocumentFormat = {
 	h1: 'LLD: <story id — title>',
 	summary: summaryProduct('Story'),
 	sections: [
+		S({ id: 'epicImpact',  heading: 'Epic impact analysis', contentGuidance: 'What the Epic\'s already-built Stories changed, set against this Story; omitted for a first or standalone Story.' }),
 		S({ id: 'hldContext',  heading: 'HLD context', source: 'shared-ref', required: true, contentGuidance: 'Reference the HLD framework-summary (de-dup, ac2); never copy it.' }),
 		S({ id: 'fr',          heading: 'Functional requirements', source: 'fr' }),
 		S({ id: 'contract',    heading: 'Contract details', required: true }),
@@ -94,6 +95,7 @@ export const PLAN_FORMAT: DocumentFormat = {
 	h1: 'Plan: <story id>',
 	summary: summaryProduct('Story'),
 	sections: [
+		S({ id: 'epicImpact',  heading: 'Epic impact analysis', contentGuidance: 'What the Epic\'s already-built Stories changed, set against this Story; omitted for a first or standalone Story.' }),
 		S({ id: 'fr',          heading: 'Functional requirements', source: 'fr' }),
 		S({ id: 'tasks',       heading: 'Tasks', required: true, contentGuidance: 'Per-task sub-template: size, depends-on, acceptance checks, tests.' }),
 		S({ id: 'coverage',    heading: 'Test-strategy coverage' }),

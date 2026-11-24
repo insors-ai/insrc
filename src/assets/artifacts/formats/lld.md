@@ -7,6 +7,11 @@
 
 Lead with one plain-language sentence — the outcome THIS Story delivers, in reviewer terms — then the technical detail.
 
+<!-- insrc:section id=epicImpact source=body numbered -->
+## Epic impact analysis
+
+What the Epic's already-built Stories changed, set against this Story; omitted for a first or standalone Story.
+
 <!-- insrc:section id=hldContext source=shared-ref required numbered -->
 ## HLD context
 

@@ -89,7 +89,9 @@ test('invalid-option-like-ref-source-and-ambiguous-receipts-rejected', () => {
   }
   for (const repository of ['-upload-pack=bad', 'relative/repo', 'ext::helper', 'http://example.test/repo', 'ftp://example.test/repo',
     'https://user:secret@example.test/repo', 'https://user@example.test/repo', 'https://example.test/repo#bad', 'https://example.test/repo?bad',
-    'ssh://user:secret@example.test/repo', '/tmp/../repo', 'C:\\repo\\..\\other', 'x\ny']) {
+    'ssh://user:secret@example.test/repo', 'ssh://git@example.test', 'ssh://git@example.test/',
+    'git@bad host:org/repo.git', 'bad user@example.test:org/repo.git', 'git@-host:org/repo.git',
+    '/tmp/../repo', 'C:\\repo\\..\\other', 'x\ny']) {
     assert.throws(() => parseDevDelivery({ ...delivery, repository }), repository);
   }
   for (const repository of ['/tmp/source with spaces/源', 'C:\\Users\\source repo', 'git@example.test:org/repo.git', 'ssh://git@example.test/org/repo.git']) {

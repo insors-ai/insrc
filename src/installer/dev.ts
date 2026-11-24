@@ -81,14 +81,14 @@ export function parseDevDelivery(input: unknown): Extract<Delivery, { mode: 'dev
   if (/^[\s-]|[\u0000-\u001f\u007f]/.test(repository) || repository.includes('::')) throw new InstallerError('source-invalid', 'Unsupported Git source');
   if (/^[a-z]:[\\/]/i.test(repository) || repository.startsWith('/')) {
     delivery.repository = normalizeHome(repository, /^[a-z]:/i.test(repository) ? 'win32' : 'linux');
-  } else if (/^[^/@:]+@[^/:]+:[^\s]+$/.test(repository)) {
+  } else if (/^[^\s/@:]+@[^\s/:-][^\s/:]*:[^\s]+$/.test(repository)) {
     // Ordinary scp-style SSH Git source. Credentials remain with Git/SSH.
   } else {
     if (/\s/.test(repository)) throw new InstallerError('source-invalid', 'Unsupported Git source');
     let url: URL;
     try { url = new URL(repository); } catch { throw new InstallerError('source-invalid', 'Git source must be an absolute local path, HTTPS or SSH'); }
     if (!['https:', 'ssh:'].includes(url.protocol) || !url.hostname || url.password || url.hash || url.search
-      || (url.protocol === 'https:' && url.username) || url.pathname === '/') throw new InstallerError('source-invalid', 'Unsupported Git source URL');
+      || (url.protocol === 'https:' && url.username) || url.pathname.length <= 1) throw new InstallerError('source-invalid', 'Unsupported Git source URL');
   }
   if (branch.startsWith('-') || branch.startsWith('/') || branch.endsWith('/') || branch.endsWith('.')
     || /[\u0000-\u0020\u007f~^:?*\[\\]/.test(branch) || branch.includes('..') || branch.includes('@{') || branch.includes('//')

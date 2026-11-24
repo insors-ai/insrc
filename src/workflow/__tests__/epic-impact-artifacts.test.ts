@@ -22,6 +22,14 @@ import { renderLldMarkdown } from '../artifacts/lld.js';
 import { renderPlanMarkdown } from '../artifacts/plan.js';
 import { epicImpactBodyLines, epicImpactProblem, isEpicImpactAnalysis } from '../artifacts/epic-impact.js';
 import type { EpicImpactAnalysis } from '../artifacts/epic-impact.js';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { finalizeArtifact } from '../orchestrator.js';
+import { buildArtifactId, defineArtifactId, lldArtifactId } from '../storage.js';
+import { approvedMeta, writeHead } from './lifecycle-fixtures.js';
+import type { WorkflowIntent } from '../types.js';
 import { lldContextSchema } from '../runners/design-story/schemas.js';
 import { planContextSchema } from '../runners/plan/schemas.js';
 import { lldFixture, planFixture } from './helpers/epic-impact-fixtures.js';
@@ -92,4 +100,61 @@ test('epic-impact-artifacts.test.ts: the first-step schemas of design.story and 
 		assert.equal(validate({ analyzeBundles: [bundle], epicImpact: { applies: true } }), false, `${name}: an incomplete analysis is refused`);
 		assert.equal(validate({ analyzeBundles: [bundle], epicImpact: { ...ANALYSIS, extra: 1 } }), false, `${name}: an unknown key is refused`);
 	}
+});
+
+const EH = 'c1d2e3f4a5b6c7d8';
+const STAMP = '2026-01-01T00:00:00.000Z';
+
+/** An Epic of s1 and s2 with an approved Define; s1 has an approved BUILD when `s1Built`, and s2 an approved standalone-shaped LLD. */
+function synthRepo(s1Built: boolean): string {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-impact-synth-'));
+	writeHead(repo, defineArtifactId(EH), {
+		meta: { workflow: 'define', epicHash: EH, epicSlug: 'x', createdAt: STAMP, epicCreatedAt: STAMP, ...approvedMeta() },
+		body: { flavor: 'new-capability', problem: 'p', nonGoals: [], assumptions: [], constraints: [], openQuestions: [],
+			stories: ['s1', 's2'].map(id => ({ id, title: `Title ${id}`, userValue: 'v', acceptanceCriteria: [], dependsOn: [] })) },
+		citations: [],
+	});
+	writeHead(repo, lldArtifactId(EH, 's2'), { meta: { workflow: 'design.story', runId: 'r', storyId: 's2', epicHash: EH, epicSlug: 'x', createdAt: STAMP, epicCreatedAt: STAMP, standalone: true, ...approvedMeta() }, body: lldFixture().body, citations: [] });
+	if (s1Built) {
+		writeHead(repo, buildArtifactId(EH, 's1'), {
+			meta: { workflow: 'build', epicHash: EH, createdAt: STAMP, ...approvedMeta() },
+			body: { summary: 'built s1', tasks: [{ id: 't1', passed: true }], changeLog: [{ target: { file: 'src/s1.ts' } }] },
+			citations: [],
+		});
+	}
+	return repo;
+}
+
+const intentFor = (workflow: 'design.story' | 'plan', repo: string): WorkflowIntent =>
+	({ workflow, repoPath: repo, focus: 'f', params: { epicHash: EH, storyId: 's2' } }) as unknown as WorkflowIntent;
+
+function messageOf(r: Awaited<ReturnType<typeof finalizeArtifact>>): string {
+	return r.ok ? '' : JSON.stringify(r.failure);
+}
+
+test('epic-impact-artifacts.test.ts: design.story and plan synthesize reject a later Story with no real analysis, carry the first step\'s analysis verbatim, and do not ask a Story with nothing built for one', async () => {
+	const later = synthRepo(true);
+	const alone = synthRepo(false);
+	try {
+		const lldEmit = { body: lldFixture().body, citations: lldFixture().citations };
+		const planEmit = { body: planFixture().body, citations: planFixture().citations };
+
+		for (const [workflow, emit] of [['design.story', lldEmit], ['plan', planEmit]] as const) {
+			// nothing from the first step and nothing authored: rejected with the reason
+			const missing = await finalizeArtifact(intentFor(workflow, later), {}, 'run', 1, emit, 'client');
+			assert.equal(missing.ok, false, `${workflow}: no analysis is rejected`);
+			assert.match(messageOf(missing), /Epic impact analysis: .*is required and is missing/);
+			// an empty one is rejected
+			const empty = await finalizeArtifact(intentFor(workflow, later), { s1: { epicImpact: { ...ANALYSIS, findings: ' ' } } }, 'run', 1, emit, 'client');
+			assert.match(messageOf(empty), /no findings/);
+			// the Epic impact rule does not fire for a Story with nothing built
+			const free = await finalizeArtifact(intentFor(workflow, alone), {}, 'run', 1, emit, 'client');
+			assert.doesNotMatch(messageOf(free), /Epic impact analysis/, `${workflow}: not asked when nothing is built`);
+		}
+
+		// the PLAN carries the first step's analysis, not a retyped one
+		const carried = await finalizeArtifact(intentFor('plan', later), { s1: { epicImpact: ANALYSIS } }, 'run', 1, { ...planEmit, body: { ...planEmit.body, epicImpact: { ...ANALYSIS, findings: 'retyped' } } }, 'client');
+		assert.equal(carried.ok, true, messageOf(carried));
+		if (carried.ok) assert.deepEqual((carried.finalized.artifact as { body: { epicImpact?: unknown } }).body.epicImpact, ANALYSIS);
+	} finally { rmSync(later, { recursive: true, force: true }); rmSync(alone, { recursive: true, force: true }); }
 });

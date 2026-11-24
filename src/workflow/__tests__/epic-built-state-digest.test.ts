@@ -65,7 +65,9 @@ test('epic-built-state-digest.test.ts: buildEpicBuiltStateDigest returns null fo
 		assert.equal(buildEpicBuiltStateDigest(standalone, HASH, 's1'), null, 'no Define');
 		assert.equal(buildEpicBuiltStateDigest(repo, HASH, 's1'), null, 'first Story, nothing built');
 		build(repo, 's2', { approved: false });
-		assert.equal(buildEpicBuiltStateDigest(repo, HASH, 's1'), null, 'an unapproved BUILD does not count');
+		assert.equal(buildEpicBuiltStateDigest(repo, HASH, 's3'), null, 'an unapproved BUILD does not count');
+		writeFileSync(artifactJsonPath(repo, buildArtifactId(HASH, 's1')), '{ not json');
+		assert.equal(buildEpicBuiltStateDigest(repo, HASH, 's3'), null, 'an unreadable BUILD alone does not make a digest');
 		build(repo, 's3'); build(repo, 's2'); build(repo, 's1');
 		assert.equal(buildEpicBuiltStateDigest(repo, HASH, 's1'), null, "the Define's first Story is never given a digest, even when later Stories are built");
 		const d = buildEpicBuiltStateDigest(repo, HASH, 's2');
@@ -112,9 +114,11 @@ test('epic-built-state-digest.test.ts: the newest Stories are in full and older 
 		assert.match(text, /Contracts its LLD names: `Alpha`, `Beta`/);
 		const capped = buildEpicBuiltStateDigest(repo, HASH, 's6', { fullStories: 5, totalChars: 900 });
 		assert.ok(capped && capped.truncated !== null && capped.truncated.reducedStories >= 3, 'the builder reports reductions made to fit the total cap');
-		assert.ok(renderEpicBuiltStateDigest(capped).length <= 900);
+		assert.ok(renderEpicBuiltStateDigest(capped).length <= 900, 'the renderer keeps to the cap the digest was built with');
+		assert.ok(buildEpicBuiltStateDigest(repo, HASH, 's6', { totalChars: 700 })?.caps.totalChars === 700);
 		const tiny = buildEpicBuiltStateDigest(repo, HASH, 's6', { totalChars: 700 });
 		assert.ok(tiny && tiny.truncated !== null && tiny.truncated.omittedStories > 0 && tiny.stories.length < 5, 'older Stories are left out and counted');
+		assert.match(renderEpicBuiltStateDigest(tiny), /more left out to stay within the size cap/, 'the render still says Stories were left out');
 		for (const cap of [400, 900, 3000]) {
 			const t = renderEpicBuiltStateDigest(d, { totalChars: cap });
 			assert.ok(t.length <= cap, `cap ${cap}: ${t.length}`);

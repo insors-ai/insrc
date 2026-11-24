@@ -78,6 +78,8 @@ export interface EpicBuiltStateDigest {
 	readonly epicHash:  string;
 	readonly forStory:  string;
 	readonly stories:   readonly EpicBuiltStory[];
+	/** The caps the digest was fitted to; the renderer keeps to them. */
+	readonly caps:      { readonly perStoryChars: number; readonly totalChars: number };
 	/** Set when Stories were reduced to a line or left out to stay within the cap. */
 	/** Set when Stories were reduced to a line (`reducedStories`, which includes the omitted) or left out (`omittedStories`) to stay within the caps. */
 	readonly truncated: { readonly reducedStories: number; readonly omittedStories: number } | null;
@@ -97,7 +99,7 @@ function defaultReadJson(path: string): unknown {
 
 const clip = (s: string, max: number): string => (s.length <= max ? s : `${s.slice(0, Math.max(0, max - 1)).trimEnd()}…`);
 
-interface StoryRead { readonly story: EpicBuiltStory; readonly builtAt: string }
+interface StoryRead { readonly story: EpicBuiltStory; readonly builtAt: string; readonly approved: boolean }
 
 function readStory(repoPath: string, epicHash: string, id: string, title: string, read: (p: string) => unknown, perStoryChars: number): StoryRead | undefined {
 	const buildPath = artifactJsonPath(repoPath, buildArtifactId(epicHash, id));
@@ -105,10 +107,10 @@ function readStory(repoPath: string, epicHash: string, id: string, title: string
 	try {
 		build = read(buildPath);
 	} catch (e) {
-		return { builtAt: '', story: { storyId: id, title, detail: 'full', buildPath, note: `BUILD record unreadable: ${e instanceof Error ? e.message : String(e)}` } };
+		return { builtAt: '', approved: false, story: { storyId: id, title, detail: 'full', buildPath, note: `BUILD record unreadable: ${e instanceof Error ? e.message : String(e)}` } };
 	}
 	if (build === undefined) return undefined;   // no BUILD record: not built yet
-	if (!isObj(build)) return { builtAt: '', story: { storyId: id, title, detail: 'full', buildPath, note: 'BUILD record unreadable: it is not a record object' } };
+	if (!isObj(build)) return { builtAt: '', approved: false, story: { storyId: id, title, detail: 'full', buildPath, note: 'BUILD record unreadable: it is not a record object' } };
 	if (approvalStateOf(build['meta']) !== 'approved') return undefined;   // not approved yet
 	const meta = isObj(build['meta']) ? build['meta'] : {};
 	const body = isObj(build['body']) ? build['body'] : {};
@@ -153,7 +155,7 @@ function readStory(repoPath: string, epicHash: string, id: string, title: string
 
 	const builtAt = [meta['updatedAt'], meta['createdAt']].find((v): v is string => typeof v === 'string') ?? '';
 	return {
-		builtAt,
+		builtAt, approved: true,
 		story: {
 			storyId: id, title, detail: 'full', buildPath, builtAt,
 			...(summary.length > 0 ? { buildSummary: clip(summary, perStoryChars) } : {}),
@@ -188,14 +190,15 @@ export function buildEpicBuiltStateDigest(repoPath: string, epicHash: string, st
 		const read_ = stories.filter(s => s.id !== storyId)
 			.map(s => readStory(repoPath, epicHash, s.id, s.title, read, perStoryChars))
 			.filter((r): r is StoryRead => r !== undefined);
-		if (read_.length === 0) return null;
+		if (!read_.some(r => r.approved)) return null;   // unreadable records are listed only beside at least one approved BUILD
 
 		// the newest `fullStories` stay in full, the rest are lines; then the whole is fitted to the total cap (output in the Define's order)
 		const newest = new Set([...read_].sort((a, b) => b.builtAt.localeCompare(a.builtAt) || b.story.storyId.localeCompare(a.story.storyId)).slice(0, fullStories).map(r => r.story.storyId));
 		const shaped = read_.map(r => (newest.has(r.story.storyId) ? r.story : { ...r.story, detail: 'line' as const }));
-		const fitted = fit(storyId, epicHash, shaped, perStoryChars, opts.totalChars ?? DEFAULTS.totalChars);
+		const totalChars = opts.totalChars ?? DEFAULTS.totalChars;
+		const fitted = fit(storyId, epicHash, shaped, perStoryChars, totalChars);
 		const reduced = fitted.stories.filter(x => x.detail === 'line').length + fitted.omitted;
-		return { epicHash, forStory: storyId, stories: fitted.stories, truncated: reduced > 0 ? { reducedStories: reduced, omittedStories: fitted.omitted } : null };
+		return { epicHash, forStory: storyId, stories: fitted.stories, caps: { perStoryChars, totalChars }, truncated: reduced > 0 ? { reducedStories: reduced, omittedStories: fitted.omitted } : null };
 	} catch (e) {
 		log.warn({ err: e instanceof Error ? e.message : String(e) }, 'the Epic built-state digest could not be built');
 		return null;
@@ -228,7 +231,7 @@ function lineOf(s: EpicBuiltStory): string {
 interface Fitted { readonly stories: readonly EpicBuiltStory[]; readonly omitted: number; readonly text: string }
 
 /** Reduces the oldest full Stories to lines, then leaves out the oldest lines, until the text fits `totalChars`. Output stays in the Define's order. */
-function fit(forStory: string, epicHash: string, input: readonly EpicBuiltStory[], perStoryChars: number, totalChars: number): Fitted {
+function fit(forStory: string, epicHash: string, input: readonly EpicBuiltStory[], perStoryChars: number, totalChars: number, alreadyOmitted = 0): Fitted {
 	const head = [`## Epic built-state digest (Epic ${epicHash}; for Story ${forStory})`, '', 'What this Epic\'s other Stories have already built, from their approved BUILD, TESTS and LLD records.', ''];
 	const render = (stories: readonly EpicBuiltStory[], omitted: number): string => {
 		const body: string[] = [];
@@ -243,12 +246,12 @@ function fit(forStory: string, epicHash: string, input: readonly EpicBuiltStory[
 		[...list].sort((a, b) => (a.builtAt ?? '').localeCompare(b.builtAt ?? '') || a.storyId.localeCompare(b.storyId));
 
 	let stories = [...input];
-	let text = render(stories, 0);
+	let text = render(stories, alreadyOmitted);
 	for (const old of oldestFirst(input)) {
 		if (text.length <= totalChars) break;
-		if (old.detail === 'full') { stories = stories.map(s => (s.storyId === old.storyId ? { ...s, detail: 'line' as const } : s)); text = render(stories, 0); }
+		if (old.detail === 'full') { stories = stories.map(s => (s.storyId === old.storyId ? { ...s, detail: 'line' as const } : s)); text = render(stories, alreadyOmitted); }
 	}
-	let omitted = 0;
+	let omitted = alreadyOmitted;
 	for (const old of oldestFirst(input)) {
 		if (text.length <= totalChars || stories.length <= 1) break;
 		stories = stories.filter(s => s.storyId !== old.storyId); omitted++; text = render(stories, omitted);
@@ -259,5 +262,5 @@ function fit(forStory: string, epicHash: string, input: readonly EpicBuiltStory[
 /** The block placed above the Story detail; one line for a null digest. Pure and deterministic; a cap given here narrows the digest further. */
 export function renderEpicBuiltStateDigest(digest: EpicBuiltStateDigest | null, opts: Pick<EpicDigestOptions, 'perStoryChars' | 'totalChars'> = {}): string {
 	if (digest === null) return EPIC_IMPACT_NOT_APPLICABLE;
-	return fit(digest.forStory, digest.epicHash, digest.stories, opts.perStoryChars ?? DEFAULTS.perStoryChars, opts.totalChars ?? DEFAULTS.totalChars).text;
+	return fit(digest.forStory, digest.epicHash, digest.stories, Math.min(opts.perStoryChars ?? digest.caps.perStoryChars, digest.caps.perStoryChars), Math.min(opts.totalChars ?? digest.caps.totalChars, digest.caps.totalChars), digest.truncated?.omittedStories ?? 0).text;
 }

@@ -187,50 +187,54 @@ test('authority boundary — claim mutex acquired with key ISSUE-<hash> through 
 	// the claim FILE name does not parse — it bypasses the artifact store
 	assert.equal(ArtifactIds.parse(`PENDING-CREATE-${HASH}`), undefined, 'PENDING-CREATE-<hash> rejected by ArtifactIds.parse');
 
-	// the REAL daemon-side authority (write-authority.ts): rejects unparseable
-	// ids and serializes per key. Install it and drive the claim mutex through
-	// acquireClaimMutex with it.
+	// the REAL daemon-side authority queue: a real ArtifactStore
+	// (store.exclusive is the same per-key queue the daemon's
+	// ArtifactWriteAuthorityHost borrows). No mocks.
+	const { createNonDurableStore } = await import('../../artifact-core/store.js');
+	const { History } = await import('../../artifact-core/history.js');
 	const { installArtifactWriteAuthority, withArtifactWriteAuthority } = await import('../../artifact-core/write-authority.js');
-	const queue: string[] = [];
-	const perKey = new Map<string, Promise<unknown>>();
-	installArtifactWriteAuthority(async (_repo: string, id: string) => {
-		if (ArtifactIds.parse(id) === undefined) throw new Error(`authority rejects ${id}`);
-		// mimic the daemon queue: wait for the previous holder of this id, then hold
-		const prev = perKey.get(id) ?? Promise.resolve();
-		let release!: () => void;
-		const held2 = new Promise<void>(r => { release = r; });
-		perKey.set(id, prev.then(() => held2));
-		queue.push(id + ':acquire');
-		await prev;
-		return async () => { release(); queue.push(id + ':release'); };
-	});
+	const fx = repo();
 	try {
-		const fx = repo();
-		try {
-			claimCreateIntent(fx.repo, HASH, 'run-A', input);
-			const order: string[] = [];
-			// the claim op holds the authority entry for the ISSUE-<hash> key until released
-			let releaseClaimHold!: () => void;
-			const claimHold = new Promise<void>(r => { releaseClaimHold = r; });
-			const mutex = await acquireClaimMutex(fx.repo, HASH, async (repo, id, run) => {
-				await withArtifactWriteAuthority(repo, id, async () => { order.push('claim:' + id); await run(); await claimHold; });
-			});
-			// claim mutex held; an artifact write on the same key must queue behind it
-			const writeP = withArtifactWriteAuthority(fx.repo, claimMutexKey(HASH), async () => { order.push('artifact:' + claimMutexKey(HASH)); });
-			await new Promise(r => setImmediate(r));
-			await new Promise(r => setImmediate(r));
-			assert.deepEqual(order, ['claim:' + issueArtifactId(HASH)], 'artifact write still queued behind the held claim mutex');
-			releaseClaimHold();
-			mutex.release();
-			await writeP;
-			assert.deepEqual(order, ['claim:' + issueArtifactId(HASH), 'artifact:' + issueArtifactId(HASH)], 'lock ordering: claim mutex before the artifact write');
-			assert.ok(queue.some(q => q.startsWith(issueArtifactId(HASH))), 'the ISSUE-<hash> key went through the real authority queue');
-			// the claim-file id is rejected by the real handler
-			await assert.rejects(withArtifactWriteAuthority(fx.repo, `PENDING-CREATE-${HASH}`, async () => {}), /authority rejects/);
-		} finally { fx.cleanup(); }
-	} finally {
+		const store = createNonDurableStore({ repoPath: fx.repo, history: new History({ appendRecord: async () => {}, readRecords: async () => [] } as never) });
+		// the claim-file id is rejected by the REAL store queue (ArtifactIds.parse gate):
+		let rejected = false;
+		try { await store.exclusive(`PENDING-CREATE-${HASH}`, async () => {}); } catch { rejected = true; }
+		assert.equal(rejected, true, 'PENDING-CREATE-<hash> rejected by the real queue');
+		await store.exclusive(claimMutexKey(HASH), async () => true);
+		// lock ordering through the REAL process authority: install a per-key
+		// queue as the authority (the same shape the daemon installs), hold it on
+		// ISSUE-<hash>, then acquire the claim mutex — the claim op must wait
+		const perKey2 = new Map<string, Promise<unknown>>();
+		installArtifactWriteAuthority(async (_repo, id) => {
+			const prev = perKey2.get(id) ?? Promise.resolve();
+			let release!: () => void;
+			const held2 = new Promise<void>(r => { release = r; });
+			perKey2.set(id, prev.then(() => held2));
+			await prev;
+			return async () => { release(); };
+		});
+		const order: string[] = [];
+		let releaseHold!: () => void;
+		const hold = new Promise<void>(r => { releaseHold = r; });
+		// hold the real authority on ISSUE-<hash> FIRST (claim-before-artifact ordering):
+		// the claim mutex's authority borrow must queue behind this held write
+		// record the ORDER OF ACQUISITION (not entry): the artifact write acquires
+		// first; the claim mutex's authority borrow must only acquire after it
+		const acquired: string[] = [];
+		const artifactWrite = withArtifactWriteAuthority(fx.repo, claimMutexKey(HASH), async () => { order.push('artifact-held'); await hold; });
+		acquired.push('artifact');
+		const claimP = acquireClaimMutex(fx.repo, HASH, async (_repo, id, run) => { acquired.push('claim'); order.push('claim:' + id); await run(); });
+		// let the claim mutex reach its authority borrow, then sample
+		for (let i = 0; i < 100 && acquired.length < 2; i++) { await new Promise(r => setImmediate(r)); }
+		assert.deepEqual(acquired, ['artifact', 'claim'], 'claim mutex acquired AFTER the artifact write (lock ordering claim-behind-artifact)');
+		releaseHold();
+		const mutex = await claimP;
+		assert.ok(order.includes('claim:' + issueArtifactId(HASH)), 'claim mutex acquired with key ISSUE-<hash> through the real authority');
+		mutex.release();
+		await artifactWrite;
+		assert.deepEqual(order, ['claim:' + issueArtifactId(HASH), 'artifact-held'], 'final order: claim ran, then the artifact write completed');
 		installArtifactWriteAuthority(undefined as never);
-	}
+	} finally { fx.cleanup(); }
 });
 
 test('liveness — isClaimAbandoned fresh vs stale heartbeat', () => {

@@ -22,15 +22,17 @@ import { dirname } from 'node:path';
 
 import { approvalStateOf } from '../../artifact-core/approval-view.js';
 import { readAmendment } from '../../amendments/store.js';
-import { readBaseHld, readDefineArtifact, requireApprovedEpic } from '../../gates.js';
+import { readBaseHld, readDefineArtifact, requireApprovedDefinition, requireApprovedEpic } from '../../gates.js';
 import { readLldArtifact } from '../../artifacts/lld-io.js';
-import { renderEpicBody, renderTrackerHldSummary, renderTrackerLldSummary, renderTrackerAmendmentSummary } from '../../tracker/conventions.js';
+import type { IssueArtifact } from '../../artifacts/issue.js';
+import { renderEpicBody, renderIssueEpicBody, renderTrackerHldSummary, renderTrackerLldSummary, renderTrackerAmendmentSummary } from '../../tracker/conventions.js';
 import type { PlanArtifact } from '../../artifacts/plan.js';
 import { resolveGithubConfig, type ResolvedGithubConfig } from '../../config/github.js';
-import { artifactJsonPath, planArtifactId, planMdRel } from '../../storage.js';
+import { artifactJsonPath, impliedIssueStories, planArtifactId, planMdRel, IMPLIED_ISSUE_STORY_ID } from '../../storage.js';
 import { assertEpicHash } from '../../hash.js';
 import { taskIssueRefsOf } from '../../tasks/lookup.js';
 import { unitIssueOf } from '../../tracker/unit-head.js';
+import { readTrackerMeta } from '../../tracker/refs.js';
 import type { StepRunnerContext } from '../../types.js';
 import type { PostContext, PushContext, PushTaskInfo, SyncContext } from './schemas.js';
 
@@ -40,38 +42,60 @@ import type { PostContext, PushContext, PushTaskInfo, SyncContext } from './sche
 
 export async function assemblePushContext(ctx: StepRunnerContext): Promise<PushContext> {
 	const epicHash = requireEpicHash(ctx);
-	const epic = requireApprovedEpic(ctx.intent.repoPath, epicHash);
-	const epicSlug = epic.meta.epicSlug ?? epicHash;
+	// ISSUE-5f9d4ab4c90c0b4c s1/t2: read the head kind-aware. DEF heads take the
+	// exact pre-change path below; ISSUE heads derive from the ISSUE artifact.
+	const head = requireApprovedDefinition(ctx.intent.repoPath, epicHash);
+	const headKind = head.kind;
+	const epic = headKind === 'def' ? requireApprovedEpic(ctx.intent.repoPath, epicHash) : undefined;
+	const issue = headKind === 'issue' ? (head.artifact as IssueArtifact) : undefined;
+	const epicSlug = (epic?.meta.epicSlug ?? issue?.meta.epicSlug) ?? epicHash;
 	const gh   = requireGithubAdapter(await resolveGithubConfig(ctx.intent.repoPath), ctx.intent.workflow);
 	const force = ctx.intent.params['force'] === true;
 
 	// Compose the Epic issue body via the SHARED renderer so a
 	// coarse-handoff push matches a deterministic push byte-for-byte
 	// (same task-list + slug-based doc links).
-	const epicBodyMd = renderEpicBody(epic, epicSlug);
+	const epicBodyMd = epic !== undefined ? renderEpicBody(epic, epicSlug) : renderIssueEpicBody(issue!, epicSlug);
 
-	const stories = epic.body.stories.map(s => ({
+	const stories = epic !== undefined ? epic.body.stories.map(s => ({
 		id: s.id, title: s.title,
 		bodyMd: [
 			`## User value`, s.userValue, '',
 			`## Acceptance criteria`,
 			...s.acceptanceCriteria.map(ac => `- **${ac.id}:** Given ${ac.given}, when ${ac.when}, then ${ac.then}.`),
 		].join('\n'),
+	})) : impliedIssueStories(issue!).map(s => ({
+		id: s.id, title: s.title,
+		bodyMd: [`## User value`, issue!.body.title, ''].join('\n'),
 	}));
 
+	const storyIds = stories.map(s => s.id);
 	const existing: { epicRef?: string; storyRefs?: Record<string, string>; taskRefs?: Record<string, Record<string, string>> } = {};
 	// the issues already bound on the Epic's head and on its Stories' heads
 	const boundEpic = unitIssueOf(ctx.intent.repoPath, epicHash);
 	if (boundEpic !== undefined) existing.epicRef = boundEpic;
-	const boundStories = boundStoryRefs(ctx.intent.repoPath, epicHash, epic.body.stories.map(s => s.id));
+	// ISSUE-5f9d4ab4c90c0b4c s1/t2: for an ISSUE head the approval may already
+	// have recorded meta.tracker.issueRef (the work-item root issue); that ref
+	// is ALSO the single implied story's issue, so seed both from it.
+	if (headKind === 'issue' && existing.epicRef === undefined) {
+		const recorded = readTrackerMeta(head.jsonPath)?.issueRef;
+		if (recorded !== undefined) existing.epicRef = recorded;
+	}
+	const boundStories = boundStoryRefs(ctx.intent.repoPath, epicHash, storyIds);
+	if (headKind === 'issue' && existing.epicRef !== undefined && boundStories[IMPLIED_ISSUE_STORY_ID] === undefined) {
+		boundStories[IMPLIED_ISSUE_STORY_ID] = existing.epicRef;
+	}
 	if (Object.keys(boundStories).length > 0) existing.storyRefs = boundStories;
 
 	// Task tier (opt-in): for each Story that has an APPROVED plan, surface
 	// its Tasks so the execute step can create typed Task sub-issues. Also
 	// carry any Task issues already bound to the Story's Task artifacts (dedup on re-push).
+	// ISSUE heads have no Stories-with-plans tier beyond the implied s1 only when
+	// a plan exists for it; the loop below is unchanged and driven by `stories`.
 	const plans: { storyId: string; planDocRel: string; tasks: PushTaskInfo[] }[] = [];
 	if (gh.pushTasks) {
-		for (const s of epic.body.stories) {
+		const anchorCreatedAt = epic?.meta.createdAt ?? issue?.meta.createdAt ?? '';
+		for (const s of stories) {
 			const planJson = artifactJsonPath(ctx.intent.repoPath, planArtifactId(epicHash, s.id));
 			if (!existsSync(planJson)) continue;
 			let plan: PlanArtifact;
@@ -79,7 +103,7 @@ export async function assemblePushContext(ctx: StepRunnerContext): Promise<PushC
 			if (approvalStateOf(plan.meta) !== 'approved') continue;   // unapproved plan → skip
 			plans.push({
 				storyId:    s.id,
-				planDocRel: planMdRel(epicHash, epic.meta.createdAt, 'epic', epicSlug, s.id),
+				planDocRel: planMdRel(epicHash, anchorCreatedAt, 'epic', epicSlug, s.id),
 				tasks: [...(plan.body?.tasks ?? [])].sort((a, b) => a.order - b.order).map(t => ({
 					id: t.id, title: t.title, size: t.size, summary: t.summary,
 					dependsOn: t.dependsOn, acceptanceChecks: t.acceptanceChecks,
@@ -97,8 +121,9 @@ export async function assemblePushContext(ctx: StepRunnerContext): Promise<PushC
 		kind: 'push',
 		epicHash,
 		epicSlug,
+		...(headKind === 'issue' ? { headKind } : {}),
 		gh: { owner: gh.owner, repo: gh.repo, epicLabel: gh.epicLabel, storyLabel: gh.storyLabel, taskLabel: gh.taskLabel, useMilestones: gh.useMilestones, pushTasks: gh.pushTasks, taskIssueType: gh.taskIssueType },
-		epicTitle: firstSentence(epic.body.problem),
+		epicTitle: epic !== undefined ? firstSentence(epic.body.problem) : issue!.body.title,
 		epicBodyMd,
 		stories,
 		...(plans.length > 0 ? { plans } : {}),
@@ -113,26 +138,34 @@ export async function assemblePushContext(ctx: StepRunnerContext): Promise<PushC
 
 export async function assembleSyncContext(ctx: StepRunnerContext): Promise<SyncContext> {
 	const epicHash = requireEpicHash(ctx);
-	const epic = requireApprovedEpic(ctx.intent.repoPath, epicHash);
-	const epicSlug = epic.meta.epicSlug ?? epicHash;
+	// ISSUE-5f9d4ab4c90c0b4c s1/t2: kind-aware head read; DEF path unchanged below.
+	const head = requireApprovedDefinition(ctx.intent.repoPath, epicHash);
+	const headKind = head.kind;
+	const epic = headKind === 'def' ? requireApprovedEpic(ctx.intent.repoPath, epicHash) : undefined;
+	const issue = headKind === 'issue' ? (head.artifact as IssueArtifact) : undefined;
+	const epicSlug = (epic?.meta.epicSlug ?? issue?.meta.epicSlug) ?? epicHash;
 	const gh   = requireGithubAdapter(await resolveGithubConfig(ctx.intent.repoPath), ctx.intent.workflow);
-	const milestoneRef = (epic.meta as { tracker?: { milestoneRef?: string } }).tracker?.milestoneRef;
-	const epicRef = unitIssueOf(ctx.intent.repoPath, epicHash);
+	const milestoneRef = readTrackerMeta(head.jsonPath)?.milestoneRef;
+	const epicRef = unitIssueOf(ctx.intent.repoPath, epicHash) ?? (headKind === 'issue' ? readTrackerMeta(head.jsonPath)?.issueRef : undefined);
 	if (epicRef === undefined) {
 		throw new Error(
 			`tracker.sync: Epic '${epicSlug}' (${epicHash}) has no tracker refs to sync. ` +
 			`Run \`tracker.push\` first.`,
 		);
 	}
+	const storyIds = epic !== undefined ? epic.body.stories.map(s => s.id) : impliedIssueStories(issue!).map(s => s.id);
+	const storyRefs = boundStoryRefs(ctx.intent.repoPath, epicHash, storyIds);
+	if (headKind === 'issue') storyRefs[IMPLIED_ISSUE_STORY_ID] ??= epicRef;
 	const refs: SyncContext['refs'] = {
 		epicRef,
-		storyRefs: boundStoryRefs(ctx.intent.repoPath, epicHash, epic.body.stories.map(s => s.id)),
+		storyRefs,
 		...(typeof milestoneRef === 'string' ? { milestoneRef } : {}),
 	};
 	return {
 		kind: 'sync',
 		epicHash,
 		epicSlug,
+		...(headKind === 'issue' ? { headKind } : {}),
 		gh: { owner: gh.owner, repo: gh.repo, epicLabel: gh.epicLabel, storyLabel: gh.storyLabel, useMilestones: gh.useMilestones },
 		refs,
 	};
@@ -144,16 +177,28 @@ export async function assembleSyncContext(ctx: StepRunnerContext): Promise<SyncC
 
 export async function assemblePostContext(ctx: StepRunnerContext): Promise<PostContext> {
 	const epicHash = requireEpicHash(ctx);
-	const epic = requireApprovedEpic(ctx.intent.repoPath, epicHash);
-	const epicSlug = epic.meta.epicSlug ?? epicHash;
+	// ISSUE-5f9d4ab4c90c0b4c s1/t2: kind-aware head read; DEF path unchanged below.
+	const head = requireApprovedDefinition(ctx.intent.repoPath, epicHash);
+	const headKind = head.kind;
+	const epic = headKind === 'def' ? requireApprovedEpic(ctx.intent.repoPath, epicHash) : undefined;
+	const issue = headKind === 'issue' ? (head.artifact as IssueArtifact) : undefined;
+	const epicSlug = (epic?.meta.epicSlug ?? issue?.meta.epicSlug) ?? epicHash;
 	const gh   = requireGithubAdapter(await resolveGithubConfig(ctx.intent.repoPath), ctx.intent.workflow);
 	const targetKind = (ctx.intent.params['target'] as { kind?: unknown } | undefined)?.kind;
 	if (targetKind !== 'hld' && targetKind !== 'lld' && targetKind !== 'amendment') {
 		throw new Error(`tracker.post: params.target.kind must be 'hld' | 'lld' | 'amendment'`);
 	}
+	// ISSUE-5f9d4ab4c90c0b4c s1/t2: an ISSUE-anchored work item has no HLD and
+	// no amendments; post targets refuse with clear errors (t5/chain-level).
+	if (headKind === 'issue' && targetKind !== 'lld') {
+		throw new Error(
+			`tracker.post: target.kind='${targetKind}' is not supported for an ISSUE-anchored work item ` +
+			`('${epicSlug}', ${epicHash}); only 'lld' posts (to the story issue).`,
+		);
+	}
 
 	// Pull Epic's tracker refs (must already exist): the issues bound on its heads.
-	const epicRef = unitIssueOf(ctx.intent.repoPath, epicHash);
+	const epicRef = unitIssueOf(ctx.intent.repoPath, epicHash) ?? (headKind === 'issue' ? readTrackerMeta(head.jsonPath)?.issueRef : undefined);
 	if (epicRef === undefined) {
 		throw new Error(`tracker.post: Epic '${epicSlug}' (${epicHash}) has no tracker refs. Run \`tracker.push\` first.`);
 	}
@@ -169,7 +214,12 @@ export async function assemblePostContext(ctx: StepRunnerContext): Promise<PostC
 		if (typeof storyId !== 'string' || storyId.length === 0) {
 			throw new Error(`tracker.post: target.kind='lld' requires target.storyId`);
 		}
-		const storyRef = unitIssueOf(ctx.intent.repoPath, epicHash, storyId);
+		// ISSUE-5f9d4ab4c90c0b4c s1/t2: the only story of an ISSUE work item is
+		// the implied s1, and its issue IS the work-item root issue.
+		if (headKind === 'issue' && storyId !== IMPLIED_ISSUE_STORY_ID) {
+			throw new Error(`tracker.post: ISSUE-anchored work item '${epicSlug}' has only the implied story '${IMPLIED_ISSUE_STORY_ID}'; no story '${storyId}'.`);
+		}
+		const storyRef = unitIssueOf(ctx.intent.repoPath, epicHash, storyId) ?? (headKind === 'issue' ? epicRef : undefined);
 		if (typeof storyRef !== 'string') {
 			throw new Error(`tracker.post: no tracker ref for Story '${storyId}' (Epic may need a re-push)`);
 		}
@@ -193,6 +243,7 @@ export async function assemblePostContext(ctx: StepRunnerContext): Promise<PostC
 		kind: 'post',
 		epicHash,
 		epicSlug,
+		...(headKind === 'issue' ? { headKind } : {}),
 		gh: { owner: gh.owner, repo: gh.repo, epicLabel: gh.epicLabel, storyLabel: gh.storyLabel, useMilestones: gh.useMilestones },
 		target: { kind: targetKind, issueRef, summaryMd },
 	};

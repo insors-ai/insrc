@@ -120,6 +120,11 @@ export interface PushContext {
 	readonly kind: 'push';
 	readonly epicHash: string;
 	readonly epicSlug: string;
+	/** ISSUE-5f9d4ab4c90c0b4c s1/t2: which head answered the work item's
+	 *  definition read ('def' default). 'issue' marks a bugfix work item and
+	 *  switches the push prompts to the single-issue ISSUE block; DEF contexts
+	 *  are byte-identical to before. */
+	readonly headKind?: 'def' | 'issue';
 	readonly gh: {
 		readonly owner: string; readonly repo: string;
 		readonly epicLabel: string; readonly storyLabel: string; readonly taskLabel: string;
@@ -153,6 +158,8 @@ export interface SyncContext {
 	readonly kind: 'sync';
 	readonly epicHash: string;
 	readonly epicSlug: string;
+	/** ISSUE-5f9d4ab4c90c0b4c s1/t2: head kind of the work item ('def' default). */
+	readonly headKind?: 'def' | 'issue';
 	readonly gh: { readonly owner: string; readonly repo: string; readonly epicLabel: string; readonly storyLabel: string; readonly useMilestones: boolean };
 	readonly refs: { readonly epicRef: string; readonly storyRefs: Readonly<Record<string, string>>; readonly milestoneRef?: string };
 }
@@ -161,6 +168,8 @@ export interface PostContext {
 	readonly kind: 'post';
 	readonly epicHash: string;
 	readonly epicSlug: string;
+	/** ISSUE-5f9d4ab4c90c0b4c s1/t2: head kind of the work item ('def' default). */
+	readonly headKind?: 'def' | 'issue';
 	readonly gh: { readonly owner: string; readonly repo: string; readonly epicLabel: string; readonly storyLabel: string; readonly useMilestones: boolean };
 	readonly target: {
 		readonly kind:      'hld' | 'lld' | 'amendment';

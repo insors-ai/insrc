@@ -18,8 +18,9 @@ import { createHash } from 'node:crypto';
 
 import { ArtifactIds } from '../artifact-ids.js';
 import { issueNumber } from './refs.js';
-import { defineMdRel, hldMdRel, lldMdRel, planMdRel } from '../storage.js';
+import { defineMdRel, hldMdRel, lldMdRel, planMdRel, IMPLIED_ISSUE_STORY_ID } from '../storage.js';
 import type { DefineArtifact, DefineStory } from '../artifacts/define.js';
+import type { IssueArtifact } from '../artifacts/issue.js';
 import type { HldArtifact } from '../artifacts/hld.js';
 import type { LldArtifact } from '../artifacts/lld.js';
 import type { PlanTask } from '../artifacts/plan.js';
@@ -120,6 +121,26 @@ export function renderEpicBody(define: DefineArtifact, epicSlug: string, repo?: 
 	lines.push('## Design references', '');
 	lines.push(docRef('HLD', hldMdRel(define.meta.epicHash ?? epicSlug, define.meta.createdAt, 'epic', epicSlug), repo));
 	lines.push(docRef('Define', defineMdRel(define.meta.epicHash ?? epicSlug, define.meta.createdAt, 'epic', epicSlug), repo));
+	lines.push('');
+	lines.push(`_epic slug: ${epicSlug}_`);
+	return lines.join('\n');
+}
+
+/** ISSUE-anchored work item body (the single GitHub issue of a sized bugfix).
+ *  Renders ONLY the IssueArtifactBody sections — never DEF-only fields
+ *  (problem/nonGoals/constraints/stories/HLD+Define doc links). The single
+ *  implied story (IMPLIED_ISSUE_STORY_ID) is listed with its LLD doc link when
+ *  one exists. This is the one authoritative body for the bugfix issue. */
+export function renderIssueEpicBody(issue: IssueArtifact, epicSlug: string, repo?: RepoRef, artifactId?: string): string {
+	const body = issue.body;
+	const lines: string[] = [];
+	if (artifactId !== undefined && artifactId.length > 0) lines.push(idMarker(artifactId));
+	lines.push(`# ${body.title}`, '');
+	lines.push('## Reproduction', '', body.reproduction, '');
+	lines.push('## Root cause', '', body.rootCause, '');
+	lines.push('## Fix intent', '', body.fixIntent, '');
+	lines.push('## Stories', '');
+	lines.push(`- [ ] ${IMPLIED_ISSUE_STORY_ID}: ${body.title}`);
 	lines.push('');
 	lines.push(`_epic slug: ${epicSlug}_`);
 	return lines.join('\n');

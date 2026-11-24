@@ -199,11 +199,24 @@ function maskMultilineStringNewlines(text: string): string {
 	let i = 0;
 	while (i < chars.length) {
 		const c = chars[i]!;
+		if (c === '#') {
+			// A comment runs to end of line — its quotes are not string fences
+			// (`# """` must not open a fake multiline string and mask the rest
+			// of the file, hiding a real table header from the analysis).
+			while (i < chars.length && chars[i] !== '\n') i++;
+			continue;
+		}
 		if (c === '"' || c === "'") {
 			const fence = c.repeat(3);
 			if (text.startsWith(fence, i)) {
+				const basic = c === '"';
 				let j = i + 3;
 				while (j < chars.length) {
+					// In a basic multiline string an escape sequence is content:
+					// `\"""` is an escaped quote plus two quotes, NOT a closing
+					// fence — a false close would unmask the rest of the string
+					// and expose its lines to the analysis as structure.
+					if (basic && chars[j] === '\\') { j += 2; continue; }
 					if (text.startsWith(fence, j)) { j += 3; break; }
 					if (chars[j] === '\n') chars[j] = ' ';
 					j++;

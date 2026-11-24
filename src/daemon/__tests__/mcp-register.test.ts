@@ -694,6 +694,33 @@ test('removeVibeProjectServer ignores a fake [[table]] line inside a multiline s
 	assert.equal(removed.length, 0);
 });
 
+test('removeVibeProjectServer treats quotes inside comments as plain text', async () => {
+	const { removeVibeProjectServer } = await import('../mcp-register.js');
+	// `# """` is a comment, not a multiline-string fence: the masker must skip
+	// it, or everything after it looks like string content and a real [tools]
+	// header hides from the analysis — the whole file would be deleted.
+	const files = new Map([['/r', '[[mcp_servers]]\nname = "insrc"\ncommand = "node"\nargs = ["/mac/path"]\n# """\n[tools]\nfoo = 1\n']]);
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.equal(removeVibeProjectServer('/r', deps), 'removed');
+	assert.equal(files.get('/r'), '[tools]\nfoo = 1\n', 'the entry (and its comment) drop; the tools table survives');
+	assert.equal(removed.length, 0, 'the file is rewritten, not deleted');
+});
+
+test('removeVibeProjectServer does not close a multiline basic string at an escaped quote before a fence run', async () => {
+	const { removeVibeProjectServer } = await import('../mcp-register.js');
+	// `\"""` inside a basic multiline string is an escaped quote plus two
+	// content quotes, not the closing fence. A naive fence scan closes there,
+	// unmasks the rest of the string and exposes its lines as structure.
+	const input = '[[mcp_servers]]\nname = "docs"\ncommand = "node"\nargs = ["""x\\"""y\n[tools]\nfake = 1\n"""]\n\n[[mcp_servers]]\nname = "insrc"\ncommand = "node"\n';
+	const files = new Map([['/r', input]]);
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.equal(removeVibeProjectServer('/r', deps), 'removed');
+	assert.equal(files.get('/r'), '[[mcp_servers]]\nname = "docs"\ncommand = "node"\nargs = ["""x\\"""y\n[tools]\nfake = 1\n"""]\n\n', 'the docs entry survives byte for byte; the [tools] line inside its string stays string content');
+	assert.equal(removed.length, 0);
+});
+
 test('removeVibeProjectServer leaves a config it cannot normalize untouched and reports the failure', async () => {
 	const { removeVibeProjectServer } = await import('../mcp-register.js');
 	let wrote = false;

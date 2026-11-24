@@ -6,7 +6,7 @@ This is evidence for the task being developed, not a separate defect or approval
 ## Status
 
 S2's plan is approved. Tasks t1 and t2 passed the registered build validator.
-Tasks t3–t7 passed formal validation after approval of LLD revision 4. Task t8 is in validation; t9 has not started. No S2 BUILD approval is requested.
+Tasks t3–t8 passed formal validation after approval of LLD revision 4. Task t9 is running the final composed native smoke and combined installer regression. No S2 BUILD approval is requested yet.
 The current host daemon and its v2 installation have not been changed.
 
 The first t3 validation passed its typecheck and four worker tests but rejected:
@@ -55,7 +55,7 @@ For macOS, Apple's kernel header states that automatic `NOTE_TRACK`/`NOTE_CHILD`
 - The expanded t3 worker file passed four tests locally, including the additional staged-file and guard cases; TypeScript no-emit passed.
 - After extracting the shared complete-tree verifier, all four surrounding bundle tests passed, including extraction, runtime digest, cancellation and retry preservation (48.98 seconds total).
 - Earlier surrounding coordinator/metadata checks passed 21 cases before the latest staged-file changes; no claim of rerunning unchanged checks is implied.
-- T2's toolchain and coordinator checks passed 11 cases. Three additional legacy command assertions still expect removed broker/watchdog stages, removed spawn exemptions or the removed daemon-process-client test. Those expectations predate the t2 changes and remain outside this task.
+- T2's toolchain and coordinator checks passed 11 cases. Three additional legacy command assertions expected removed broker/watchdog stages, removed spawn exemptions or the removed daemon-process-client test. T9 updates the directly relevant spawn-scanner assertions and its exact standalone installer exemption; the unrelated command assertions remain outside this story.
 - Fixture/native-host evidence is not UTM, OrbStack or Windows release qualification. Unsupported descendant-disposal evidence must remain uncertain.
 
 The decision is resolved. S2 LLD revision 4 records the explicit boundary, preserves all public contracts and requires full staged-file inventory verification. The user approved it on 2026-11-24; the registered approval and t3 validation both succeeded. T3's five tests and TypeScript passed. The nine-task plan remains coherent: its existing references to admitted actors and descendants use this explicit boundary.

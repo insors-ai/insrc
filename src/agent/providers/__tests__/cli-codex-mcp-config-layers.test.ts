@@ -54,25 +54,29 @@ test('walkProjectMcpConfigLayers returns false for the default case: the home di
 });
 
 test('walkProjectMcpConfigLayers regression: CODEX_HOME nested inside the project tree still detects a genuine project-root sentinel, and does not falsely detect one when absent', async () => {
-	const root = mkdtempSync(join(tmpdir(), 'insrc-codex-nested-'));
+	// The exact layout the review's finding cited: CODEX_HOME=.../work/repo/codex-state (declaring
+	// mcp_servers.insrc), cwd=.../work/repo/src, and a mutation-sentinel server at the project root
+	// .../work/repo/.codex/config.toml -- distinct from CODEX_HOME by path, so it must still be checked.
+	const tmp = mkdtempSync(join(tmpdir(), 'insrc-codex-nested-'));
+	const workRepo = join(tmp, 'work', 'repo');
 	try {
-		const codexHome = join(root, 'codex-state');
+		const codexHome = join(workRepo, 'codex-state');
 		writeToml(join(codexHome, 'config.toml'), '[mcp_servers.insrc]\ncommand = "node"\n');
-		const cwd = join(root, 'src');
+		const cwd = join(workRepo, 'src');
 		mkdirSync(cwd, { recursive: true });
 
 		// With a sentinel declared at the project root (distinct from CODEX_HOME by path): detected.
-		writeToml(join(root, '.codex', 'config.toml'), '[mcp_servers.mutation-sentinel]\ncommand = "node"\n');
+		writeToml(join(workRepo, '.codex', 'config.toml'), '[mcp_servers.mutation-sentinel]\ncommand = "node"\n');
 		await withEnv({ HOME: undefined, CODEX_HOME: codexHome }, async () => {
 			assert.equal(await walkProjectMcpConfigLayers(cwd), true);
 		});
 
 		// Same layout, no sentinel at the project root: global insrc remains allowed.
-		rmSync(join(root, '.codex'), { recursive: true, force: true });
+		rmSync(join(workRepo, '.codex'), { recursive: true, force: true });
 		await withEnv({ HOME: undefined, CODEX_HOME: codexHome }, async () => {
 			assert.equal(await walkProjectMcpConfigLayers(cwd), false);
 		});
-	} finally { rmSync(root, { recursive: true, force: true }); }
+	} finally { rmSync(tmp, { recursive: true, force: true }); }
 });
 
 test('walkProjectMcpConfigLayers returns false when CODEX_HOME lies entirely outside cwd\'s own ancestor chain', async () => {

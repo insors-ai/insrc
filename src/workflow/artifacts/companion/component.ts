@@ -156,7 +156,11 @@ export function componentDependencyDefinitionToPage(compDef: ComponentDependency
 		lines.push(`  ${ids.id(c.id)}["${mermaidFlowText(c.label ?? c.id)}${sub}"]`);
 	}
 	for (const d of dependencies) {
-		const label = d.label !== undefined && d.label.length > 0 ? `|${mermaidFlowText(d.label)}|` : '';
+		// The label token is double-quoted, exactly like the node labels above:
+		// mermaid's unquoted `|...|` form fails to parse when the label carries
+		// parentheses (e.g. 'one subprocess per turn (k6)') and the whole
+		// flowchart renders nothing (ISSUE-a3d8c9e9f195e620).
+		const label = d.label !== undefined && d.label.length > 0 ? `|"${mermaidFlowText(d.label)}"|` : '';
 		lines.push(`  ${ids.id(d.from)} -->${label} ${ids.id(d.to)}`);
 	}
 

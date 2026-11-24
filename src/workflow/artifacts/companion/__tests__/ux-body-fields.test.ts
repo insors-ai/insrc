@@ -76,7 +76,9 @@ test('renderLldMarkdown: uxDefinition + adherence present but NO ux-mock compani
 test('renderLldMarkdown: a ux-mock companion renders the UX section as a LINK (never inlined)', () => {
 	const md = renderLldMarkdown(lldArtifact({ ...baseLld, uxDefinition: ux, companions: [uxMock] }));
 	assert.match(md, /## \d+\. UX/);
-	assert.match(md, /\[UX mock\]\(docs\/x\/S004\/ux-mock\.html\)/);
+	// ISSUE-a3d8c9e9f195e620: the link resolves from the .md's own directory
+	// (the companion is a sibling file), never the repo-relative relPath.
+	assert.match(md, /\[UX mock\]\(\.\/ux-mock\.html\)/);
 	// never inlined: the authored card JSON text is not dumped into the markdown
 	assert.ok(!md.includes('"AdaptiveCard"'));
 });
@@ -84,8 +86,8 @@ test('renderLldMarkdown: a ux-mock companion renders the UX section as a LINK (n
 test('renderLldMarkdown: an ER + a UX companion render in their OWN slots', () => {
 	const md = renderLldMarkdown(lldArtifact({ ...baseLld, companions: [erDiagram, uxMock] }));
 	// Diagrams slot carries the ER link; UX slot carries the UX link.
-	assert.match(md, /\[ER model\]\(docs\/x\/S004\/er-model\.html\)/);
-	assert.match(md, /\[UX mock\]\(docs\/x\/S004\/ux-mock\.html\)/);
+	assert.match(md, /\[ER model\]\(\.\/er-model\.html\)/);
+	assert.match(md, /\[UX mock\]\(\.\/ux-mock\.html\)/);
 	// The ER link appears before the UX link (diagramsEr slot precedes the ux slot).
 	assert.ok(md.indexOf('ER model') < md.indexOf('UX mock'));
 });

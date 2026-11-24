@@ -77,7 +77,7 @@ test('finalize seam: a valid uxDefinition → sibling ux-mock HTML + a UX sectio
 
 	const md = renderLldMarkdown(lldArtifact({ ...baseLld, uxDefinition: validUx, companions: [uxRef] }));
 	assert.match(md, /## \d+\. UX/);
-	assert.match(md, new RegExp(`\\[UX mock\\]\\(${uxRef.relPath.replace('.', '\\.')}\\)`));
+	assert.match(md, /\[UX mock\]\(\.\/ux-mock\.html\)/);
 	assert.ok(!md.includes('"AdaptiveCard"'), 'the card JSON is never inlined into the core markdown');
 	rmSync(repo, { recursive: true, force: true });
 });
@@ -91,8 +91,8 @@ test('finalize seam: a body with BOTH an ER and a UX definition emits BOTH compa
 
 	const md = renderLldMarkdown(lldArtifact({ ...baseLld, erDefinition: validEr, uxDefinition: validUx, companions: [erRef, uxRef] }));
 	// Diagrams (diagramsEr) slot carries the ER link; the UX slot carries the UX link.
-	assert.match(md, /\[ER model\]\(er-model\.html\)/);
-	assert.match(md, /\[UX mock\]\(ux-mock\.html\)/);
+	assert.match(md, /\[ER model\]\(\.\/er-model\.html\)/);
+	assert.match(md, /\[UX mock\]\(\.\/ux-mock\.html\)/);
 	assert.ok(md.indexOf('ER model') < md.indexOf('UX mock'), 'the ER slot precedes the UX slot');
 	rmSync(repo, { recursive: true, force: true });
 });
@@ -126,7 +126,7 @@ test('HLD: a valid uxDefinition → sibling ux-mock HTML + a UX section LINK in 
 
 	const md = renderHldMarkdown(hldArtifact({ ...baseHld, uxDefinition: validUx, companions: [uxRef] } as unknown as HldBody));
 	assert.match(md, /## \d+\. UX/);
-	assert.match(md, new RegExp(`\\[UX mock\\]\\(${uxRef.relPath.replace('.', '\\.')}\\)`));
+	assert.match(md, /\[UX mock\]\(\.\/ux-mock\.html\)/);
 	assert.ok(!md.includes('"AdaptiveCard"'), 'the card JSON is never inlined into the core markdown');
 	rmSync(repo, { recursive: true, force: true });
 });
@@ -137,8 +137,8 @@ test('HLD: a body with BOTH an ER and a UX definition emits BOTH companions in t
 	const uxRef: CompanionArtifactRef = await renderUxCompanion(validUx, 'UX mock', join(repo, 'ux-mock.html'), { repoPath: repo, header: HEADER });
 
 	const md = renderHldMarkdown(hldArtifact({ ...baseHld, erDefinition: validEr, uxDefinition: validUx, companions: [erRef, uxRef] } as unknown as HldBody));
-	assert.match(md, /\[ER model\]\(er-model\.html\)/);
-	assert.match(md, /\[UX mock\]\(ux-mock\.html\)/);
+	assert.match(md, /\[ER model\]\(\.\/er-model\.html\)/);
+	assert.match(md, /\[UX mock\]\(\.\/ux-mock\.html\)/);
 	assert.ok(md.indexOf('ER model') < md.indexOf('UX mock'), 'the Diagrams slot precedes the UX slot');
 	rmSync(repo, { recursive: true, force: true });
 });

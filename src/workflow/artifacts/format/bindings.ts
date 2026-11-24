@@ -37,6 +37,19 @@ export function frBodyLines(fd: FunctionalDefinition | undefined): string[] {
 }
 
 /**
+ * The markdown link target for a companion. The companion file is always
+ * written beside the artifact `.md`, so the link must resolve from the
+ * artifact's own directory — `./<file name>` — never the repo-relative
+ * `relPath` (which would resolve against the wrong base and 404,
+ * ISSUE-a3d8c9e9f195e620). `relPath` itself is kept repo-relative: other
+ * consumers (the IDE companion reader) resolve it against the workspace root.
+ */
+function companionLinkTarget(relPath: string): string {
+	const name = relPath.split('/').filter(s => s.length > 0).pop();
+	return `./${name !== undefined && name.length > 0 ? name : relPath}`;
+}
+
+/**
  * sc4 (S003): the Diagrams extension-slot body — each companion rendered as a
  * LINK line (never the companion's content, k1/ac2). `[]` when there are no
  * companions (the renderer then omits the extension section — absent-safe/
@@ -49,7 +62,7 @@ export function companionBodyLines(companions: readonly CompanionArtifactRef[] |
 	if (diagrams.length === 0) return [];
 	return diagrams.map(c => {
 		const suffix = c.ofSectionId !== undefined && c.ofSectionId.length > 0 ? ` (§ ${c.ofSectionId})` : '';
-		return `- [${c.title}](${c.relPath})${suffix}`;
+		return `- [${c.title}](${companionLinkTarget(c.relPath)})${suffix}`;
 	});
 }
 
@@ -67,7 +80,7 @@ export function uxCompanionBodyLines(companions: readonly CompanionArtifactRef[]
 	if (mocks.length === 0) return [];
 	return mocks.map(c => {
 		const suffix = c.ofSectionId !== undefined && c.ofSectionId.length > 0 ? ` (§ ${c.ofSectionId})` : '';
-		return `- [${c.title}](${c.relPath})${suffix}`;
+		return `- [${c.title}](${companionLinkTarget(c.relPath)})${suffix}`;
 	});
 }
 

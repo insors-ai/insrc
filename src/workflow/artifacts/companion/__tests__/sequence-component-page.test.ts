@@ -129,7 +129,7 @@ test('d9f85b3c t6 — the component flowchart has one box per component and one 
 		'  shell["Companion shell<br/><small>shell.ts</small>"]',
 		'  panzoom["Pan/zoom runtime<br/><small>panzoom.js</small>"]',
 		'  header["header"]',
-		'  orchestrator -->|renders| shell',
+		'  orchestrator -->|"renders"| shell',
 		'  orchestrator --> header',
 		'  shell --> panzoom',
 	].join('\n'));
@@ -154,5 +154,23 @@ test('d9f85b3c t6 — component labels with quotes, pipes or markup cannot break
 		dependencies: [{ from: 'x', to: 'y', label: 'a|b' }],
 	}, 't');
 	assert.ok(src(page).includes(`x["say 'hi' #lt;b#gt;/#lt;/b#gt;"]`), src(page));
-	assert.ok(src(page).includes('x -->|a/b| y'));
+	// The edge label is double-quoted like the node labels: mermaid's unquoted
+	// |...| form does not parse (ISSUE-a3d8c9e9f195e620).
+	assert.ok(src(page).includes('x -->|"a/b"| y'), src(page));
+});
+
+test('ISSUE-a3d8c9e9f195e620 — an edge label containing parentheses is emitted double-quoted, so the flowchart parses', () => {
+	// Reproduction shape from the live failure: 'one subprocess per turn (k6)'
+	// and the mechanical-rehome labels broke the whole chart unquoted.
+	const page = componentDependencyDefinitionToPage({
+		components: [{ id: 'a', label: 'Adapter' }, { id: 'c', label: 'CLI' }],
+		dependencies: [
+			{ from: 'a', to: 'c', label: 'one subprocess per turn (k6)' },
+			{ from: 'c', to: 'a', label: 'REMOVED by s1 (mechanical re-home) / s3 (full migration)' },
+		],
+	}, 't');
+	assert.ok(src(page).includes('a -->|"one subprocess per turn (k6)"| c'), src(page));
+	assert.ok(src(page).includes('c -->|"REMOVED by s1 (mechanical re-home) / s3 (full migration)"| a'), src(page));
+	// No unquoted edge-label token remains anywhere in the source.
+	assert.ok(!/\|[^"|\n]+\| /.test(src(page)), src(page));
 });

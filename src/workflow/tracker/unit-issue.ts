@@ -22,13 +22,14 @@
 import { readFileSync } from 'node:fs';
 
 import { getLogger } from '../../shared/logger.js';
-import { readDefineArtifact } from '../gates.js';
+import { readDefineArtifact, readDefinitionHead } from '../gates.js';
 import type { DefineArtifact } from '../artifacts/define.js';
 import type { PlanArtifact } from '../artifacts/plan.js';
 import { GithubConfigError, resolveGithubConfig, type ResolvedGithubConfig } from '../config/github.js';
 import { ArtifactIds, InvalidArtifactKeyError, type ArtifactKey } from '../artifact-ids.js';
 import { artifactJsonPath, lldArtifactId, planArtifactId } from '../storage.js';
-import { epicMembershipLabel, renderEpicBody, renderStoryBody, renderTaskBody } from './conventions.js';
+import { epicMembershipLabel, renderEpicBody, renderIssueEpicBody, renderStoryBody, renderTaskBody } from './conventions.js';
+import type { IssueArtifact } from '../artifacts/issue.js';
 import type { IssueRef, PortFailureKind, PortResult, TrackerComment, TrackerPort } from './port.js';
 import { bindArtifact, readBinding, recordPosted, setPendingLink, TRACKER_ISSUE_TYPE } from './binding.js';
 import type { PostedKind } from './binding.js';
@@ -245,10 +246,18 @@ export async function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, 
 	if (unit.unit === 'story' && !fileHas(lldJson(unit))) return before(`the LLD of Story '${unit.storyId ?? ''}' does not exist yet; draft it before its issue`);
 
 	// What the issue is about, read from the unit's own artifact.
+	// ISSUE-5f9d4ab4c90c0b4c s1/t4: an ISSUE-anchored work item has no Define;
+	// its head is the ISSUE, and the epic-level spec renders from it.
+	const head = readDefinitionHead(unit.repoPath, unit.epicHash);
+	const issueHead = head?.kind === 'issue' ? (head.artifact as IssueArtifact) : undefined;
 	let define: DefineArtifact;
-	try { define = readDefineArtifact(unit.repoPath, unit.epicHash); }
-	catch (err) { return before(`cannot read the Define: ${(err as Error).message}`); }
-	const epicSlug = define.meta.epicSlug ?? unit.epicHash;
+	if (issueHead === undefined) {
+		try { define = readDefineArtifact(unit.repoPath, unit.epicHash); }
+		catch (err) { return before(`cannot read the Define: ${(err as Error).message}`); }
+	} else {
+		define = { meta: { ...issueHead.meta } } as unknown as DefineArtifact;
+	}
+	const epicSlug = (define.meta.epicSlug ?? issueHead?.meta.epicSlug ?? unit.epicHash) as string;
 	const membership = epicMembershipLabel(epicSlug);
 	const repo = { owner: cfg.owner, repo: cfg.repo };
 
@@ -476,6 +485,13 @@ function buildSpec(
 	if (unit.unit === 'epic') {
 		const made = idOf({ kind: 'EPIC', epicHash: unit.epicHash });
 		if ('error' in made) return made;
+		// ISSUE-5f9d4ab4c90c0b4c s1/t4: an ISSUE head renders the single-issue body.
+		const issueHead = readDefinitionHead(unit.repoPath, unit.epicHash)?.kind === 'issue'
+			? (readDefinitionHead(unit.repoPath, unit.epicHash)!.artifact as IssueArtifact)
+			: undefined;
+		if (issueHead !== undefined) {
+			return { token: made.id, value: { title: `${made.id} \u2014 ${issueHead.body.title}`, body: renderIssueEpicBody(issueHead, epicSlug, repo, made.id), labels, issueType: cfg.epicIssueType } };
+		}
 		const problem = firstSentence(define.body.problem);
 		return { token: made.id, value: { title: `${made.id} \u2014 ${problem}`, body: renderEpicBody(define, epicSlug, repo, made.id), labels, issueType: cfg.epicIssueType } };
 	}

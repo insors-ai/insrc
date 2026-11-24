@@ -170,3 +170,28 @@ test('a repo whose tracker setting is none has nothing to refresh: no result, no
 		rmSync(repo, { recursive: true, force: true });
 	}
 });
+
+test('REVIEW-5f9d4ab4c90c0b4c MED-1 — a corrupt head becomes a per-item failed result; the rest of the refresh continues; ToolDenied still propagates', async () => {
+	const repo = seedRepo([A, B]);
+	const prior = process.env['INSRC_REPO_CONFIG'];
+	process.env['INSRC_REPO_CONFIG'] = '';
+	try {
+		writeFileSync(artifactJsonPath(repo, defineArtifactId(A)), '{ not json');
+		const all = await refreshTrackerStatus(repo, { port: fakePort() });
+		const a = all.results.find(r => r.epicHash === A);
+		const b = all.results.find(r => r.epicHash === B);
+		assert.equal(a?.result.status, 'failed', `corrupt head -> per-item failed, not an abort: ${JSON.stringify(a)}`);
+		assert.match(a!.result.status === 'failed' ? a!.result.reason : '', /unreadable head/);
+		assert.equal(b?.result.status, 'synced', 'the other work item still synced');
+		const direct = await syncTracker(repo, A, undefined, { port: fakePort() });
+		assert.equal(direct.status, 'failed');
+		assert.match(direct.status === 'failed' ? direct.reason : '', /unreadable head/);
+		const deniedPort = fakePort();
+		(deniedPort as unknown as { readIssueStatus: () => never }).readIssueStatus = () => { throw new ToolDenied('no'); };
+		await assert.rejects(refreshTrackerStatus(repo, { port: deniedPort }), (e: unknown) => e instanceof ToolDenied, 'ToolDenied propagates');
+	} finally {
+		installExecStandIn();
+		if (prior === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = prior;
+		rmSync(repo, { recursive: true, force: true });
+	}
+});

@@ -185,6 +185,7 @@ export async function acquireClaimMutex(
 	epicHash: string,
 	authority?: ((repo: string, id: string, run: () => Promise<unknown>) => Promise<unknown>) | undefined,
 	owner: ProcessIdentity = requireProcessIdentity(process.pid),
+	read?: (pid: number) => ProcessIdentity | undefined,
 ): Promise<ClaimMutex> {
 	const key = claimMutexKey(epicHash);
 	const lockKey = `${repoPath}\0${key}`;
@@ -196,21 +197,39 @@ export async function acquireClaimMutex(
 	let releaseQueue!: () => void;
 	let releaseGuard: (() => void) | undefined;
 	let chainStarted!: () => void;
-	const started = new Promise<void>(resolve => { chainStarted = resolve; });
+	let chainFailed!: (err: unknown) => void;
+	const started = new Promise<void>((resolve, reject) => { chainStarted = resolve; chainFailed = reject; });
 	const held = new Promise<void>(resolve => { releaseQueue = resolve; });
 	const next = previous.then(async () => {
 		// cross-process half: guard dir (atomic mkdir; dead owners quarantined)
-		const guard = acquireRunFileGuard(claimGuardDir(repoPath, epicHash), owner);
+		let guard: RunFileGuard;
+		try {
+			guard = acquireRunFileGuard(claimGuardDir(repoPath, epicHash), owner, read);
+		} catch (err) {
+			// REVIEW-5f9d4ab4c90c0b4c HIGH-4: propagate the acquisition failure to
+			// the caller instead of leaving `started` pending forever.
+			chainFailed(err);
+			throw err;
+		}
 		releaseGuard = () => { try { guard.release(); } catch { /* best effort */ } };
 		// in-process half through the REAL withArtifactWriteAuthority on the
 		// ISSUE-<hash> key (the daemon-installed handler when present): the
 		// authority hold spans the entire critical section (until `held` resolves)
 		const run = authority ?? withArtifactWriteAuthority;
-		await run(repoPath, key, async () => { chainStarted(); await held; });
+		try {
+			await run(repoPath, key, async () => { chainStarted(); await held; });
+		} catch (err) {
+			// HIGH-4: an authority failure after guard acquisition releases the
+			// guard instead of leaking it, then propagates.
+			releaseGuard();
+			releaseGuard = undefined;
+			chainFailed(err);
+			throw err;
+		}
 	});
 	const tail = next.catch(() => undefined);
 	CLAIM_MUTEXES.set(lockKey, tail);
-	await started;   // our turn: previous holder released (guard gone), we hold the chain
+	await started;   // our turn: previous holder released (guard gone), we hold the chain; throws on acquisition failure
 	let released = false;
 	const release = (): void => {
 		if (released) return;

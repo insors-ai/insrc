@@ -249,4 +249,34 @@ test('liveness — isClaimAbandoned fresh vs stale heartbeat', () => {
 	} finally { fx.cleanup(); }
 });
 
+test('REVIEW HIGH-4 — mutex acquisition propagates guard-conflict failure and releases nothing spuriously; authority rejection releases the acquired guard', async () => {
+	const fx = repo();
+	try {
+		// live guard conflict: another holder's guard dir exists with a DIFFERENT
+		// live pid (read reports a live occupant with a different start marker, so
+		// the recorded owner is 'replaced' -> not conclusively dead -> withheld).
+		const guardDir = join(fx.repo, ARTIFACTS_DIR, `.pending-create-${HASH}.lock`);
+		mkdirSync(guardDir, { mode: 0o700 });
+		writeFileSync(join(guardDir, 'owner.json'), JSON.stringify({ owner: { pid: 424242, startedAt: 'linux:bootZ:1', commandLine: 'node x' }, nonce: 'n' }), { flag: 'wx' });
+		// 'same' (not 'replaced'): the occupant IS the recorded owner, so the guard
+		// is live and must be withheld — the conflict propagates to the caller.
+		const liveReader = (pid: number) => pid === 424242 ? { pid, startedAt: 'linux:bootZ:1', commandLine: 'node x' } : undefined;
+		// acquisition must REJECT (not hang) with the conflict error
+		await assert.rejects(
+			acquireClaimMutex(fx.repo, HASH, undefined, { pid: 424243, startedAt: 'linux:bootZ:2', commandLine: 'node y' }, liveReader),
+			/ownership conflict|withheld|changed during acquisition/i,
+			'guard conflict propagates to the caller (no hang)',
+		);
+		assert.ok(existsSync(guardDir), 'live holder guard untouched');
+
+		// authority rejection AFTER guard acquisition must release the guard
+		const fx2 = repo();
+		try {
+			const failingAuthority = async (): Promise<never> => { throw new Error('authority down'); };
+			await assert.rejects(acquireClaimMutex(fx2.repo, HASH, failingAuthority), /authority down/, 'authority failure propagates');
+			assert.equal(existsSync(join(fx2.repo, ARTIFACTS_DIR, `.pending-create-${HASH}.lock`)), false, 'guard released on authority failure (not leaked)');
+		} finally { fx2.cleanup(); }
+	} finally { fx.cleanup(); }
+});
+
 void writeFileSync;

@@ -168,4 +168,13 @@ test('src/workflow/runners/tracker/index.ts pushPrompt/pushVerifyPrompt — head
 	// and when explicitly 'def':
 	assert.equal(pushPrompt({ ...defContext(), headKind: 'def' }), def, 'headKind def === absent (byte-identical)');
 	assert.equal(pushVerifyPrompt({ ...defContext(), headKind: 'def' }), defVerify);
+
+	// REVIEW-5f9d4ab4c90c0b4c MED-2: the ISSUE adoption prompt varies with force —
+	// force:true instructs body overwrite, force:false instructs preservation.
+	const adoptBase = { ...issueContext(), existingRefs: { epicRef: 'acme/demo#42', storyRefs: { s1: 'acme/demo#42' } } };
+	const forced = pushPrompt({ ...adoptBase, force: true });
+	const unforced = pushPrompt({ ...adoptBase, force: false });
+	assert.ok(forced.includes('FORCE MODE') && forced.includes('overwrite the body'), 'force:true overwrites the body');
+	assert.ok(unforced.includes('Do NOT edit the body') && unforced.includes('preserve it as-is'), 'force:false preserves the body');
+	assert.notEqual(forced, unforced, 'the two prompts differ');
 });

@@ -117,8 +117,9 @@ test('src/workflow/runners/tracker/context.ts assemblers — kind branches: DEF 
 			rmSync(fx.def, { force: true });
 			const c = await assemblePushContext(ctx(fx, 'tracker.push'));
 			assert.equal(c.headKind, 'issue');
-			assert.equal(c.epicTitle, 'ISSUE title verbatim');
-			assert.ok(c.epicBodyMd.startsWith('# ISSUE title verbatim'), c.epicBodyMd.slice(0, 80));
+			assert.equal(c.epicTitle, `ISSUE-${HASH} — ISSUE title verbatim`, 'REVIEW HIGH-1: title carries the canonical ISSUE-<hash> token');
+			assert.ok(c.epicBodyMd.includes(`# ISSUE-${HASH} — ISSUE title verbatim`), c.epicBodyMd.slice(0, 120));
+			assert.ok(c.epicBodyMd.startsWith(`<!-- insrc:artifact ISSUE-${HASH} -->`), 'body carries the marker first');
 			assert.ok(c.epicBodyMd.includes('## Reproduction'));
 			assert.ok(c.epicBodyMd.includes('## Root cause'));
 			assert.ok(c.epicBodyMd.includes('## Fix intent'));

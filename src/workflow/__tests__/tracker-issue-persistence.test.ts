@@ -36,6 +36,7 @@ import { ArtifactIds } from '../artifact-ids.js';
 import { approvedMeta } from './lifecycle-fixtures.js';
 import { installExecStandIn } from './helpers/exec-stand-in.js';
 import type { PortResult, TrackerPort } from '../tracker/port.js';
+import { claimCreateIntent } from '../tracker/pending-create-claim.js';
 
 const HASH = '5f9d4ab4c90c0b4c';
 const SLUG = 'issue-anchored-item';
@@ -352,4 +353,33 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 		assert.equal(readBinding(fx.repo, ArtifactIds.make({ kind: 'EPIC', epicHash: HASH }))?.reference.entityId, FIRST_REF);
 		assert.equal(defFileCount(fx.repo), 0);
 	} finally { fx.cleanup(); }
+});
+
+test('REVIEW HIGH-2/HIGH-3 — reconciled adoption returns TrackerPushRefs shape and finalize persists; a stale-fence finalize is rejected before any write', () => {
+	const fx = seedIssueOnly();
+	try {
+		const intent = { workflow: 'tracker.push', focus: 'push', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
+		const c = claimCreateIntent(fx.repo, HASH, 'run-A', { title: 'ISSUE title', marker: `<!-- insrc:artifact ISSUE-${HASH} -->` });
+		assert.equal(c.claimed, true);
+		const refs = { epicRef: 'acme/demo#42', storyRefs: { [IMPLIED_ISSUE_STORY_ID]: 'acme/demo#42' }, labelsCreated: [] };
+		const s1 = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue', claimFence: c.claim.fence };
+		const fr = _finalizeTracker(intent, { s1 }, 'run-x', 5, { refs, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } }, 'm');
+		assert.equal(fr.ok, true, `finalize accepts the adopted refs shape: ${JSON.stringify(fr)}`);
+		assert.equal(readTrackerMeta(fx.issue)?.issueRef, 'acme/demo#42', 'issueRef persisted by finalize');
+	} finally { fx.cleanup(); }
+
+	const fx2 = seedIssueOnly();
+	try {
+		writeFileSync(
+			artifactJsonPath(fx2.repo, `PENDING-CREATE-${HASH}`),
+			JSON.stringify({ epicHash: HASH, runId: 'run-B', owner: 'run:run-B', repo: fx2.repo, title: 't', marker: `<!-- insrc:artifact ISSUE-${HASH} -->`, state: 'created', fence: 2, createdAt: '2026-11-24T00:00:00.000Z', heartbeatAt: '2026-11-24T00:00:00.000Z' }),
+		);
+		const before = readFileSync(fx2.issue, 'utf8');
+		const staleS1 = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue', claimFence: 1 };
+		const intent2 = { workflow: 'tracker.push', focus: 'push', repoPath: fx2.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
+		const fr2 = _finalizeTracker(intent2, { s1: staleS1 }, 'run-stale', 5, { refs: { epicRef: 'acme/demo#9', storyRefs: { s1: 'acme/demo#9' }, labelsCreated: [] }, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } }, 'm');
+		assert.equal(fr2.ok, false, 'stale-fence finalize rejected');
+		assert.match(JSON.stringify(fr2), /stale claim fence/i);
+		assert.equal(readFileSync(fx2.issue, 'utf8'), before, 'no write happened — displaced owner fenced before its first write');
+	} finally { fx2.cleanup(); }
 });

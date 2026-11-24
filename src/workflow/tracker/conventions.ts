@@ -18,7 +18,7 @@ import { createHash } from 'node:crypto';
 
 import { ArtifactIds } from '../artifact-ids.js';
 import { issueNumber } from './refs.js';
-import { defineMdRel, hldMdRel, lldMdRel, planMdRel, IMPLIED_ISSUE_STORY_ID } from '../storage.js';
+import { artifactIdMarker, defineMdRel, hldMdRel, lldMdRel, planMdRel, IMPLIED_ISSUE_STORY_ID } from '../storage.js';
 import type { DefineArtifact, DefineStory } from '../artifacts/define.js';
 import type { IssueArtifact } from '../artifacts/issue.js';
 import type { HldArtifact } from '../artifacts/hld.js';
@@ -134,8 +134,19 @@ export function renderEpicBody(define: DefineArtifact, epicSlug: string, repo?: 
 export function renderIssueEpicBody(issue: IssueArtifact, epicSlug: string, repo?: RepoRef, artifactId?: string): string {
 	const body = issue.body;
 	const lines: string[] = [];
-	if (artifactId !== undefined && artifactId.length > 0) lines.push(idMarker(artifactId));
-	lines.push(`# ${body.title}`, '');
+	// REVIEW-5f9d4ab4c90c0b4c HIGH-1: when an artifactId is given, the title ALSO
+	// starts with the same `ISSUE-<hash>` token, so title-token discovery and the
+	// body marker agree on one canonical identity.
+	if (artifactId !== undefined && artifactId.length > 0) {
+		// REVIEW HIGH-1: use the storage.rs `insrc:artifact` marker — the exact
+		// `<!-- insrc:artifact ISSUE-<hash> -->` string the claim's
+		// verifyRecoveryCandidate matches against the remote body.
+		lines.push(artifactIdMarker(artifactId));
+		lines.push(`# ${artifactId} — ${body.title}`);
+		lines.push('');
+	} else {
+		lines.push(`# ${body.title}`, '');
+	}
 	lines.push('## Reproduction', '', body.reproduction, '');
 	lines.push('## Root cause', '', body.rootCause, '');
 	lines.push('## Fix intent', '', body.fixIntent, '');

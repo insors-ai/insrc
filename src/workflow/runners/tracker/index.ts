@@ -29,7 +29,7 @@ import { registerRunner } from '../../executor.js';
 import type { StepRunner, WorkflowName } from '../../types.js';
 import { readDefinitionHead } from '../../gates.js';
 import type { IssueArtifact } from '../../artifacts/issue.js';
-import { issueArtifactId } from '../../storage.js';
+import { IMPLIED_ISSUE_STORY_ID, issueArtifactId } from '../../storage.js';
 import { claimCreateIntent, heartbeatClaim, markClaimCreated, quarantineDeadClaim, readClaim, reconcileClaim, releaseClaim, takeoverAbandonedClaim } from '../../tracker/pending-create-claim.js';
 
 import {
@@ -94,18 +94,31 @@ const pushExecuteRunner: StepRunner = {
 							summary: `tracker.push: unresolved pending-create claim — ${reconciled.reason}`,
 						};
 					}
-					// mark the claim created under the mutex (fence-checked) and
-					// persist the issueRef the way finalize does
+					// REVIEW-5f9d4ab4c90c0b4c HIGH-2: return the schema's refs shape so
+					// finalization accepts it (epicRef + storyRefs + labelsCreated), and
+					// RETAIN the claim until the ref is durably persisted and the heads
+					// are bound — the finalize step below releases it. The claim is
+					// marked 'created' under the mutex (fence-checked), NOT deleted here.
 					await markClaimCreated(ctx.intent.repoPath, c.epicHash, active.fence, reconciled.ref);
-					await releaseClaim(ctx.intent.repoPath, c.epicHash, (readClaim(ctx.intent.repoPath, c.epicHash)?.fence ?? active.fence));
 					return {
 						type: 'output',
-						output: { adopted: true, existingClaim: active, issueRef: reconciled.ref },
-						summary: `tracker.push: reconciled pending-create claim via marker-verified candidate ${reconciled.ref}; this run dispatches no create`,
+						output: {
+							refs: {
+								epicRef: reconciled.ref,
+								storyRefs: { [IMPLIED_ISSUE_STORY_ID]: reconciled.ref },
+								labelsCreated: [],
+							},
+							adopted: true,
+							existingClaim: active,
+						},
+						summary: `tracker.push: reconciled pending-create claim via marker-verified candidate ${reconciled.ref}; no create dispatched`,
 					};
 				}
-				// winner: heartbeat under the mutex, then dispatch
+				// winner: heartbeat under the mutex, then dispatch. The fence rides
+				// in the context so finalization can fence the whole persistence op
+				// (REVIEW HIGH-3).
 				await heartbeatClaim(ctx.intent.repoPath, c.epicHash, claim.claim.fence);
+				(ctx.stepOutputs['s1'] as Record<string, unknown>)['claimFence'] = claim.claim.fence;
 			} else if (issue !== undefined) {
 				// already persisted ref: read any claim and reconcile toward adoption
 				const existing = readClaim(ctx.intent.repoPath, c.epicHash);
@@ -376,8 +389,12 @@ function pushPromptIssue(c: Awaited<ReturnType<typeof assemblePushContext>>): st
 		`  1. Ensure the labels \`${c.gh.epicLabel}\` and \`epic:${c.epicSlug}\` exist (create missing ones idempotently, e.g. \`gh label create --force\`).`,
 		...(c.existingRefs?.epicRef !== undefined ? [
 			`  2. ADOPT the existing issue ${c.existingRefs.epicRef} — do NOT create a duplicate.`,
-			`     Add the labels idempotently WITHOUT --force: \`gh issue edit <N> --add-label "${c.gh.epicLabel},epic:${c.epicSlug}"\` (the singular --add-label flag; the plural --add-labels is rejected by gh).`,
-			'     Do NOT edit the body unless --force was given; the body is already the authoritative markdown below.',
+			`     Add the labels idempotently: \`gh issue edit <N> --add-label "${c.gh.epicLabel},epic:${c.epicSlug}"\` (the singular --add-label flag; the plural --add-labels is rejected by gh). Labels are additive and need no --force.`,
+			// REVIEW-5f9d4ab4c90c0b4c MED-2: the ISSUE adoption path must vary with
+			// c.force exactly like the DEF branch does.
+			...(c.force
+				? ['     FORCE MODE: also overwrite the body to match the authoritative markdown below (\`gh issue edit <N> --body ...\` requires --force).']
+				: ['     Do NOT edit the body — preserve it as-is (body edits require --force). The authoritative markdown below is for reference only.']),
 		] : [
 			'  2. Create exactly ONE issue for this work item.',
 			`     Title: ${JSON.stringify(c.epicTitle)}`,

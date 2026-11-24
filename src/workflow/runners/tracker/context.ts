@@ -28,7 +28,7 @@ import type { IssueArtifact } from '../../artifacts/issue.js';
 import { renderEpicBody, renderIssueEpicBody, renderTrackerHldSummary, renderTrackerLldSummary, renderTrackerAmendmentSummary } from '../../tracker/conventions.js';
 import type { PlanArtifact } from '../../artifacts/plan.js';
 import { resolveGithubConfig, type ResolvedGithubConfig } from '../../config/github.js';
-import { artifactJsonPath, impliedIssueStories, planArtifactId, planMdRel, IMPLIED_ISSUE_STORY_ID } from '../../storage.js';
+import { artifactJsonPath, impliedIssueStories, issueArtifactId, planArtifactId, planMdRel, IMPLIED_ISSUE_STORY_ID } from '../../storage.js';
 import { assertEpicHash } from '../../hash.js';
 import { taskIssueRefsOf } from '../../tasks/lookup.js';
 import { unitIssueOf } from '../../tracker/unit-head.js';
@@ -57,7 +57,11 @@ export async function assemblePushContext(ctx: StepRunnerContext): Promise<PushC
 	// Compose the Epic issue body via the SHARED renderer so a
 	// coarse-handoff push matches a deterministic push byte-for-byte
 	// (same task-list + slug-based doc links).
-	const epicBodyMd = epic !== undefined ? renderEpicBody(epic, epicSlug) : renderIssueEpicBody(issue!, epicSlug);
+	// REVIEW-5f9d4ab4c90c0b4c HIGH-1: one canonical identity — the body carries the
+	// `<!-- insrc:artifact ISSUE-<hash> -->` marker AND the title starts with the
+	// same artifact id, so creation, discovery (title token) and verification
+	// (body marker) all agree on the issue the normal push created.
+	const epicBodyMd = epic !== undefined ? renderEpicBody(epic, epicSlug) : renderIssueEpicBody(issue!, epicSlug, undefined, issueArtifactId(epicHash));
 
 	const stories = epic !== undefined ? epic.body.stories.map(s => ({
 		id: s.id, title: s.title,
@@ -132,7 +136,10 @@ export async function assemblePushContext(ctx: StepRunnerContext): Promise<PushC
 					const b = await port.issueOps.readBody(ref);
 					return { ref, body: b.ok ? b.value : '' };
 				}));
-				remoteCandidates = bodies.map(b => ({ title: issue!.body.title, body: b.body, target: ctx.intent.repoPath, ref: b.ref }));
+				// REVIEW HIGH-1: candidate titles are the actual remote titles (the
+				// creation payload's ISSUE-<hash> — title), so verification matches
+				// what the normal push actually created.
+				remoteCandidates = byTitle.value.map((ref, i) => ({ title: bodies[i]!.body.split('\n')[1] ?? issue!.body.title, body: bodies[i]!.body, target: ctx.intent.repoPath, ref }));
 			}
 		} catch { remoteCandidates = undefined; }
 	}
@@ -143,7 +150,9 @@ export async function assemblePushContext(ctx: StepRunnerContext): Promise<PushC
 		epicSlug,
 		...(headKind === 'issue' ? { headKind } : {}),
 		gh: { owner: gh.owner, repo: gh.repo, epicLabel: gh.epicLabel, storyLabel: gh.storyLabel, taskLabel: gh.taskLabel, useMilestones: gh.useMilestones, pushTasks: gh.pushTasks, taskIssueType: gh.taskIssueType },
-		epicTitle: epic !== undefined ? firstSentence(epic.body.problem) : issue!.body.title,
+		// REVIEW-5f9d4ab4c90c0b4c HIGH-1: the ISSUE issue title carries the same
+		// ISSUE-<hash> token the discovery lookup and the body marker use.
+		epicTitle: epic !== undefined ? firstSentence(epic.body.problem) : `${ArtifactIds.make({ kind: 'ISSUE', epicHash })} — ${issue!.body.title}`,
 		epicBodyMd,
 		stories,
 		...(plans.length > 0 ? { plans } : {}),

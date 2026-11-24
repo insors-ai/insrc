@@ -15,7 +15,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { renderIssueEpicBody, idMarker } from '../conventions.js';
+import { renderIssueEpicBody } from '../conventions.js';
+import { artifactIdMarker } from '../../storage.js';
 import { IMPLIED_ISSUE_STORY_ID } from '../../storage.js';
 import { issueArtifactId } from '../../storage.js';
 import type { IssueArtifact } from '../../artifacts/issue.js';
@@ -36,8 +37,10 @@ test('src/workflow/tracker/conventions.ts renderIssueEpicBody — renders ISSUE 
 	const md = renderIssueEpicBody(issue, SLUG, undefined, issueArtifactId(HASH));
 
 	const lines = md.split('\n');
-	assert.equal(lines[0], idMarker(issueArtifactId(HASH)), 'artifact id marker first');
-	assert.ok(md.includes('# Tracker push must handle an ISSUE head'));
+	assert.equal(lines[0], artifactIdMarker(issueArtifactId(HASH)), 'artifact id marker first (insrc:artifact form)');
+	// REVIEW-5f9d4ab4c90c0b4c HIGH-1: with an artifactId the title also carries the
+	// same ISSUE-<hash> token, so title-token discovery and the marker agree.
+	assert.ok(md.includes(`# ${issueArtifactId(HASH)} — Tracker push must handle an ISSUE head`), 'title carries the canonical ISSUE-<hash> token');
 	assert.ok(md.includes('## Reproduction\n\nrun push on a bugfix item'));
 	assert.ok(md.includes('## Root cause\n\nDEF-only read'));
 	assert.ok(md.includes('## Fix intent\n\nbranch on head kind'));

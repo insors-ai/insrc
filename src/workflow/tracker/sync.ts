@@ -59,7 +59,14 @@ export async function syncTracker(repoPath: string, epicHash: string, table?: Re
 	const { deadline } = opts;
 	// ISSUE-5f9d4ab4c90c0b4c s1/t4: persist to the resolved head (DEF-then-ISSUE
 	// first-readable-wins), never to a DEF path the context did not read.
-	const headJson = definitionHeadJsonPath(repoPath, epicHash);
+	// REVIEW-5f9d4ab4c90c0b4c MED-1: an unreadable head becomes a per-item failed
+	// result, never an exception that aborts the whole refresh.
+	let headJson: string;
+	try {
+		headJson = definitionHeadJsonPath(repoPath, epicHash);
+	} catch (err) {
+		return { status: 'failed', reason: `unreadable head for ${epicHash}: ${err instanceof Error ? err.message : String(err)}` };
+	}
 	const headKind = readDefinitionHead(repoPath, epicHash)?.kind ?? 'def';
 	const epicRef = unitIssueOf(repoPath, epicHash) ?? (headKind === 'issue' ? readTrackerMeta(headJson)?.issueRef : undefined);
 	if (typeof epicRef !== 'string' || epicRef.length === 0) {
@@ -153,7 +160,15 @@ export async function refreshTrackerStatus(repoPath: string, opts: { readonly ep
 		const results: TrackerRefreshEntry[] = [];
 		const warnings: string[] = [];
 		for (const epicHash of hashes) {
-			const result = await syncTracker(repoPath, epicHash, undefined, { deadline, ...(opts.port !== undefined ? { port: opts.port } : {}) });
+			// REVIEW-5f9d4ab4c90c0b4c MED-1: one corrupt head must not abort the
+			// refresh — convert to a per-item failed result; ToolDenied still propagates.
+			let result: SyncResult;
+			try {
+				result = await syncTracker(repoPath, epicHash, undefined, { deadline, ...(opts.port !== undefined ? { port: opts.port } : {}) });
+			} catch (err) {
+				if (isToolDenied(err)) throw err;
+				result = { status: 'failed', reason: err instanceof Error ? err.message : String(err) };
+			}
 			// an Epic with no bound issue is not an event of this refresh when it was not asked for by name
 			// and a repo whose tracker setting is none has nothing to refresh: no result and no warning
 			if (opts.epicHash === undefined && result.status === 'skipped' && (/not pushed yet/.test(result.reason) || result.reason.startsWith(TRACKER_DISABLED))) continue;

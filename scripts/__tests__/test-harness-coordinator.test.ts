@@ -152,3 +152,42 @@ test('Explicit live opt-in admits files serially without enabling services in th
 	const report = JSON.parse(readFileSync(join(run.workspace, 'results.json'), 'utf8'));
 	assert.equal(report.requestedConcurrency, 4); assert.equal(report.effectiveConcurrency, 1); assert.equal(report.liveTests, '1');
 });
+
+test('Retained owned group drains after leader exit, including inherited output pipes', { skip: process.platform === 'win32' ? 'POSIX group qualification' : false }, async t => {
+  for (const pipes of [false, true]) {
+    const root = rootFixture(t), base = createRun(root, { budgets: { cleanupMs: 1000, fileMs: 3000 } });
+    const run = { ...base, environment: () => ({ ...base.environment(), INSRC_BUILD_CONFIRM_CLOSURE: '1' }) };
+    const release = join(root, 'release'), ready = join(root, 'group-ready'), ended = join(root, 'group-ended'), signalled = join(root, 'group-signalled');
+    const descendant = `const f=require('node:fs');process.on('SIGTERM',()=>{f.writeFileSync(${JSON.stringify(signalled)},'yes');process.exit(0)});process.on('exit',()=>f.writeFileSync(${JSON.stringify(ended)},'yes'));f.writeFileSync(${JSON.stringify(ready)},'yes');setInterval(()=>{if(f.existsSync(${JSON.stringify(release)}))process.exit(0)},10);`;
+    const leader = `const f=require('node:fs');require('node:child_process').spawn(process.execPath,['-e',${JSON.stringify(descendant)}],{detached:false,stdio:${JSON.stringify(pipes ? 'inherit' : 'ignore')}});const t=setInterval(()=>{if(f.existsSync(${JSON.stringify(ready)})){clearInterval(t);process.exit(0)}},10);`;
+    await withRun(run, async scope => {
+      try {
+        const result = await scope.start(process.execPath, ['-e', leader], pipes ? { outputLimitBytes: 1024 } : {});
+        assert.equal(result.code, 0); assert.equal(result.timedOut, false);
+        assert.equal(await scope.drain(), true);
+        assert.equal(existsSync(signalled), true); assert.equal(existsSync(ended), true);
+      } finally {
+        writeFileSync(release, 'release');
+        assert.equal(await scope.drain(), true, 'fixture group must be confirmed closed');
+      }
+    });
+    assert.equal(JSON.parse(readFileSync(join(run.workspace, 'cleanup.json'), 'utf8')).confirmedClosed, true);
+  }
+});
+
+test('Whole preparation budget spans commands and deadline cancellation uses owner channel', async t => {
+  const root = rootFixture(t), base = createRun(root, { budgets: { fileMs: 50, runMs: 6000, cleanupMs: 1000 } });
+  const run = { ...base, environment: () => ({ ...base.environment(), INSRC_BUILD_CONFIRM_CLOSURE: '1' }) };
+  await withRun(run, async scope => {
+    const valid = await scope.start(process.execPath, ['-e', 'setTimeout(()=>setTimeout(()=>{},150),150)'], { budgetMs: 1500 });
+    assert.equal(valid.code, 0); assert.equal(valid.timedOut, false, 'whole job may exceed its per-command default');
+    const program = "const f=require('node:fs');let input='';process.on('SIGTERM',()=>{f.writeFileSync('raw-signal','yes');process.exit(9)});process.stdin.on('data',chunk=>{input+=chunk;if(input.includes('cancel\\n')){f.writeFileSync('cooperatively-cancelled','yes');process.exit(0)}});";
+    const cancelled = await scope.start(process.execPath, ['-e', program], { budgetMs: 1000,
+      ownerChannel: { initial: 'start\n', cancel: 'cancel\n', connect: () => () => {} } });
+    assert.equal(cancelled.timedOut, true); assert.equal(await scope.drain(), true);
+    assert.equal(existsSync(join(root, 'cooperatively-cancelled')), true);
+    assert.equal(existsSync(join(root, 'raw-signal')), false);
+    const closed = readFileSync(join(run.workspace, 'child-results.jsonl'), 'utf8').trim().split('\n').map(line => JSON.parse(line));
+    assert.equal(closed.at(-1).code, 0); assert.equal(closed.at(-1).signal, null);
+  });
+});

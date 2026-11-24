@@ -129,8 +129,9 @@ export function devDelivery(target: Target, options: DevDeliveryOptions): Delive
       coordinatorRunId: randomUUID(), stage: 'accepted' });
     context.checkpoint(record); // Durable acceptance precedes every worker admission.
     context.checkpoint({ ...record, stage: 'building' });
-    const result = await ownedScope(environment, (_run, scope) => launchDevWorker(scope, store.location, record, {
-      entrypoint: options.workerEntrypoint, environment, ...(context.signal ? { signal: context.signal } : {}),
+    const result = await ownedScope(environment, (run, scope) => launchDevWorker(scope, store.location, record, {
+      entrypoint: options.workerEntrypoint, environment, budgetMs: run.budgets.runMs - run.budgets.cleanupMs,
+      ...(context.signal ? { signal: context.signal } : {}),
     }));
     if (result.outcome !== 'prepared') {
       context.checkpoint({ ...record, stage: result.outcome });

@@ -27,28 +27,39 @@ export function processScope(run, { includeForeignActors = true } = {}) {
 	const requireClosure = run.environment().INSRC_BUILD_CONFIRM_CLOSURE === '1';
 	const ownedMarkers = new Set();
 	const sent = new WeakMap();
+	// Once this retained group has been observed gone, never address its numeric
+	// identity again. A closed leader alone does not release its descendants.
+	const releasedGroups = new WeakSet();
+	const cooperative = new WeakMap();
 	const cancellationErrors = [];
 	const evidenceErrors = [];
 	let stopped = false;
 	let notifyStop;
 	const stopEvent = new Promise(resolve => { notifyStop = resolve; });
 	function cancel(child, signal) {
-		if (child.exitCode !== null || child.signalCode !== null) return;
+		if (child.pid === undefined || releasedGroups.has(child)) return;
+		const exited = child.exitCode !== null || child.signalCode !== null;
+		if (process.platform === 'win32' && exited) return;
 		const signals = sent.get(child) ?? new Set();
 		if (signals.has(signal)) return;
 		signals.add(signal); sent.set(child, signals);
 		try {
+			if (!exited && signal === 'SIGTERM' && cooperative.has(child)) { cooperative.get(child)(); return; }
 			// This group was created by this retained ChildProcess, never discovered.
 			if (process.platform === 'win32') child.kill(signal);
 			else process.kill(-child.pid, signal);
-		} catch (error) { if (error.code !== 'ESRCH') cancellationErrors.push({ signal, code: error.code }); }
+		} catch (error) {
+			if (error.code === 'ESRCH') releasedGroups.add(child);
+			else cancellationErrors.push({ signal, code: error.code });
+		}
 	}
 	function disposal(entry) {
 		if (!entry.closed) return 'unknown';
 		if (entry.child.pid === undefined) return 'not-started';
 		if (process.platform === 'win32') return 'unknown';
+		if (releasedGroups.has(entry.child)) return 'closed';
 		try { process.kill(-entry.child.pid, 0); return 'held'; }
-		catch (error) { return error.code === 'ESRCH' ? 'closed' : 'unknown'; }
+		catch (error) { if (error.code === 'ESRCH') { releasedGroups.add(entry.child); return 'closed'; } return 'unknown'; }
 	}
 	function confirmDisposals() {
 		for (const entry of admitted) {
@@ -93,6 +104,11 @@ export function processScope(run, { includeForeignActors = true } = {}) {
 		const timeout = new Promise(accept => { timer = setTimeout(() => { timedOut = true; cancel(child, 'SIGTERM'); accept({ code: null, signal: null, timedOut: true }); }, budgetMs); });
 		entry.ended = new Promise(accept => {
 			child.once('error', error => { launchError = error.message; });
+				child.once('exit', () => {
+					// Dispose retained POSIX group members even when the command leader
+					// exited first (including descendants holding inherited pipes).
+					if (requireClosure && process.platform !== 'win32') cancel(child, 'SIGTERM');
+				});
 			child.once('close', (code, signal) => {
 				entry.closed = true;
 				try { disconnect?.(); } catch (error) { evidenceErrors.push(error.code ?? 'owner-channel-close'); }
@@ -109,6 +125,9 @@ export function processScope(run, { includeForeignActors = true } = {}) {
 			child.stdin.on('error', () => { /* Peer closure is reconciled through the result/close evidence. */ });
 			child.stdin.write(ownerChannel.initial);
 			disconnect = ownerChannel.connect({ write: frame => { if (!child.stdin.destroyed) child.stdin.write(frame); }, end: () => child.stdin.end() });
+				if (ownerChannel.cancel !== undefined) cooperative.set(child, () => {
+					if (!child.stdin.destroyed && !child.stdin.writableEnded) child.stdin.end(ownerChannel.cancel);
+				});
 		}
 		// Deadline returns immediately; the owning finally drains within one ceiling.
 		const result = await Promise.race([entry.ended, timeout, stopEvent.then(() => ({ code: null, signal: null, interrupted: true }))]);

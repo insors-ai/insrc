@@ -55,8 +55,11 @@ if (process.argv[2] === '--nested') {
       } else if (scenario === 'nested') {
         assert.equal((await scope.start(process.execPath, [process.argv[1], '--nested', run.root])).code, 0);
       } else if (scenario === 'held') {
-        const done = join(run.root, 'descendant-closed'), quote = value => "'" + value.replaceAll("'", "'\\''") + "'";
-        assert.equal((await scope.start('sh', ['-c', `(sleep 7; printf closed > ${quote(done)}) >/dev/null 2>&1 & exit 0`])).code, 0);
+        // Missing cooperating-actor evidence is genuinely unconfirmed. A
+        // killable descendant in our retained POSIX group must instead drain.
+        assert.equal((await scope.start(process.execPath, ['-e', '0'])).code, 0);
+        mkdirSync(join(run.workspace,'actors'),{recursive:true});
+        writeFileSync(join(run.workspace,'actors','unconfirmed.fixture.json'),JSON.stringify({runId:run.runId,kind:'unconfirmed-fixture'}));
       } else if (scenario === 'unregistered-detached') {
         const folder = devWorkerPaths(home, launch.checkpoint).privateRoot;
         const ready = join(folder, 'fixture-detached-ready'), release = join(folder, 'fixture-detached-release'), ended = join(folder, 'fixture-detached-ended');
@@ -109,7 +112,7 @@ if (process.argv[2] === '--nested') {
       await assert.rejects(launchDevWorker(scope, location, record, launchOptions), { code: 'preparation-uncertain' });
       await assert.rejects(requireClosedDevAttempt(home, record, 'cleanup'), { code: 'preparation-uncertain' });
       assert.equal(existsSync(paths.active), true); assert.equal(existsSync(paths.checkout), true);
-      await until(() => existsSync(join(paths.checkout, 'descendant-closed')));
+      rmSync(join(paths.workspace,'actors','unconfirmed.fixture.json'));
       return;
     }
     const result = await pending;

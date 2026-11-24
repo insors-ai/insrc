@@ -147,7 +147,7 @@ function closureEvidence(record: DevPreparationRecord, paths: ReturnType<typeof 
     closesSha256: digest(closes.raw), disposalsSha256: digest(disposals.raw), admittedCommands: ids.size,
     commandsSucceeded: closes.rows.every(row => row['code'] === 0 && row['signal'] === null && row['timedOut'] === false && row['launchError'] === null) };
 }
-async function verifyStagedMetadata(record: DevPreparationRecord, paths: ReturnType<typeof devWorkerPaths>, inventorySha256: string): Promise<void> {
+async function verifyStagedMetadata(record: DevPreparationRecord, paths: ReturnType<typeof devWorkerPaths>, inventorySha256: string, signal?: AbortSignal): Promise<void> {
   realParents(paths.home, join(paths.stage, '.dev-release.json'));
   const receiptBytes = bytes(join(paths.stage, '.dev-release.json')), receipt = parseDevReleaseReceipt(JSON.parse(receiptBytes));
   const inventoryBytes = bytes(join(paths.stage, 'inventory.json'), 32 * 1024 * 1024), inventory = parseInventory(JSON.parse(inventoryBytes));
@@ -161,12 +161,12 @@ async function verifyStagedMetadata(record: DevPreparationRecord, paths: ReturnT
     const stat = lstatSync(join(paths.stage, name));
     if (!stat.isFile() || stat.isSymbolicLink()) throw uncertain('Worker stage has missing or linked control entries');
   }
-  await verifyPayloadInventory(paths.stage, inventory, { receipt: '.dev-release.json' });
+  await verifyPayloadInventory(paths.stage, inventory, { receipt: '.dev-release.json', signal });
 }
 
 export class DevWorkerInput {
   readonly controller = new AbortController();
-  private pending = ''; private record?: DevPreparationRecord;
+  private pending = Buffer.alloc(0); private record?: DevPreparationRecord;
   private resolveLaunch!: (value: DevWorkerLaunch) => void; private rejectLaunch!: (error: unknown) => void;
   readonly launch = new Promise<DevWorkerLaunch>((resolve, reject) => { this.resolveLaunch = resolve; this.rejectLaunch = reject; });
   constructor(private readonly input: Readable) { input.on('data', this.data); input.once('end', this.ended); input.once('close', this.ended); input.once('error', this.failed); }
@@ -174,13 +174,13 @@ export class DevWorkerInput {
   private ended = (): void => { this.failed(new InstallerError('source-cancelled', 'Preparation owner input ended')); };
   private data = (chunk: Buffer | string): void => {
     if (this.controller.signal.aborted) return;
-    if (Buffer.byteLength(chunk) > MAX_CONTROL_BYTES) { this.failed(new InstallerError('schema-invalid', 'Worker control frame exceeds bound')); return; }
-    this.pending += chunk.toString();
-    if (Buffer.byteLength(this.pending) > MAX_CONTROL_BYTES) { this.failed(new InstallerError('schema-invalid', 'Worker control frame exceeds bound')); return; }
-    while (this.pending.includes('\n')) {
-      const end = this.pending.indexOf('\n'), line = this.pending.slice(0, end); this.pending = this.pending.slice(end + 1);
+    const raw = typeof chunk === 'string' ? Buffer.from(chunk) : chunk;
+    if (raw.length + this.pending.length > MAX_CONTROL_BYTES) { this.failed(new InstallerError('schema-invalid', 'Worker control frame exceeds bound')); return; }
+    this.pending = Buffer.concat([this.pending, raw]);
+    while (this.pending.includes(10)) {
+      const end = this.pending.indexOf(10), frame = this.pending.subarray(0, end); this.pending = this.pending.subarray(end + 1);
       try {
-        const value: unknown = JSON.parse(line);
+        const value: unknown = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(frame));
         if (!this.record) { const launch = parseDevWorkerLaunch(value); this.record = launch.checkpoint; this.resolveLaunch(launch); }
         else { parseDevWorkerCancel(value, this.record); this.controller.abort(new InstallerError('source-cancelled', 'Preparation owner cancelled')); return; }
       } catch (cause) { this.failed(cause); return; }
@@ -213,7 +213,7 @@ export async function executeDevWorker(home: string, input: DevWorkerLaunch, opt
           const output = await options.work(run, scope, options.signal ?? new AbortController().signal, paths.stage);
           options.signal?.throwIfAborted();
           if (!output || !/^[a-f0-9]{64}$/.test(output.inventorySha256)) throw uncertain('Preparation workload returned no complete stage');
-          await verifyStagedMetadata(record, paths, output.inventorySha256); inventorySha256 = output.inventorySha256;
+          await verifyStagedMetadata(record, paths, output.inventorySha256, options.signal); inventorySha256 = output.inventorySha256;
         } finally { options.signal?.removeEventListener('abort', cancel); }
       });
     } catch (cause) { failure = cause; }
@@ -278,7 +278,7 @@ export async function requireClosedDevAttempt(home: string, record: DevPreparati
 }
 
 export async function launchDevWorker(scope: CommandScope, location: InstallationLocation, record: DevPreparationRecord, options: {
-  entrypoint: string; signal?: AbortSignal; ownerInput?: Readable; environment: NodeJS.ProcessEnv;
+  entrypoint: string; signal?: AbortSignal; ownerInput?: Readable; environment: NodeJS.ProcessEnv; budgetMs?: number;
 }): Promise<DevPreparationResult> {
   if (location.installationId !== record.installationId) throw uncertain('Worker location targets another installation');
   const paths = devWorkerPaths(location.home, record);
@@ -287,10 +287,12 @@ export async function launchDevWorker(scope: CommandScope, location: Installatio
   if (!isAbsolute(options.entrypoint) || !lstatSync(options.entrypoint).isFile() || lstatSync(options.entrypoint).isSymbolicLink()) throw uncertain('Worker entrypoint must be an absolute regular control file');
   options.signal?.throwIfAborted();
   if (options.ownerInput?.readableEnded || options.ownerInput?.destroyed) throw new InstallerError('source-cancelled', 'Preparation owner input ended before launch');
+  const cancelFrame = canonicalJson({ schemaVersion: 1, kind: 'cancel', operationId: record.operationId, attemptId: record.attemptId, workerNonce: record.workerNonce }) + '\n';
   const result = await scope.start(process.execPath, [options.entrypoint, '--dev-preparation-worker', location.home], {
     env: options.environment,
-    ownerChannel: { initial: canonicalJson({ schemaVersion: 1, kind: 'prepare', checkpoint: record }) + '\n', connect(channel) {
-      const cancel = () => { channel.write(canonicalJson({ schemaVersion: 1, kind: 'cancel', operationId: record.operationId, attemptId: record.attemptId, workerNonce: record.workerNonce }) + '\n'); channel.end(); };
+    ...(options.budgetMs !== undefined ? { budgetMs: options.budgetMs } : {}),
+    ownerChannel: { initial: canonicalJson({ schemaVersion: 1, kind: 'prepare', checkpoint: record }) + '\n', cancel: cancelFrame, connect(channel) {
+      const cancel = () => { channel.write(cancelFrame); channel.end(); };
       const end = () => channel.end();
       options.signal?.addEventListener('abort', cancel, { once: true }); options.ownerInput?.once('end', end); options.ownerInput?.once('close', end); options.ownerInput?.once('error', end);
       if (options.signal?.aborted) cancel(); else if (options.ownerInput?.readableEnded) end();

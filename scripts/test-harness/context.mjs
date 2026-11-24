@@ -82,8 +82,9 @@ function readRecord(active) {
 	} finally { closeSync(fd); }
 }
 
-export function createRun(rootPath, { mode = 'test', selectedFiles = [], budgets: overrides = {} } = {}) {
+export function createRun(rootPath, { mode = 'test', selectedFiles = [], budgets: overrides = {}, runId: requestedRunId } = {}) {
 	const runtime = runtimeContext(); // Refuse before creating directories.
+	if (requestedRunId !== undefined && (typeof requestedRunId !== 'string' || !/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(requestedRunId))) throw harnessError('context-invalid', 'Explicit run identity must be a UUID.');
 	const budgets = checkedBudgets(overrides);
 	if (!['test', 'build'].includes(mode) || !Array.isArray(selectedFiles) || selectedFiles.some(file => typeof file !== 'string')) throw harnessError('context-invalid', 'Invalid run selection.');
 	const root = realpathSync(rootPath);
@@ -94,7 +95,7 @@ export function createRun(rootPath, { mode = 'test', selectedFiles = [], budgets
 		throw error;
 	}
 	const leaseIdentity = identity(active);
-	const runId = randomUUID();
+	const runId = requestedRunId ?? randomUUID();
 	const runs = join(directory, 'runs');
 	try { mkdirSync(runs, { mode: 0o700 }); } catch (error) { if (error.code !== 'EEXIST') throw error; }
 	identity(runs);

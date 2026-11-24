@@ -1,0 +1,11 @@
+import type { BuildRun } from './context.mjs';
+import type { CommandScope } from './process.mjs';
+export const ROOT: string;
+export const BUILD_INPUTS: string[];
+export const REQUIRED_ARTIFACTS: string[];
+export function fingerprint(root: string, paths: string[]): string;
+export function inputFingerprint(root: string): string;
+export function npmEntrypoint(env: NodeJS.ProcessEnv): string;
+export function buildStages(run: Pick<BuildRun, 'environment'>, options?: { npmCli?: string }): string[][];
+export function withWriter<T>(run: BuildRun, scope: CommandScope, work: () => Promise<T>): Promise<T>;
+export function prepareBuild(run: BuildRun, scope: CommandScope, options?: { npmCli?: string; stages?: string[][]; requiredArtifacts?: string[] }): Promise<unknown>;

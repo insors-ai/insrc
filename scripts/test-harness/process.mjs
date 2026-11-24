@@ -23,6 +23,8 @@ export function actorsClosed(run) {
 
 export function processScope(run, { includeForeignActors = true } = {}) {
 	const children = new Set();
+	const admitted = new Set();
+	const requireClosure = run.environment().INSRC_BUILD_CONFIRM_CLOSURE === '1';
 	const ownedMarkers = new Set();
 	const sent = new WeakMap();
 	const cancellationErrors = [];
@@ -41,31 +43,63 @@ export function processScope(run, { includeForeignActors = true } = {}) {
 			else process.kill(-child.pid, signal);
 		} catch (error) { if (error.code !== 'ESRCH') cancellationErrors.push({ signal, code: error.code }); }
 	}
-	async function start(command, args, { cwd = run.root, env = run.environment(), budgetMs = run.budgets.fileMs, stdout, stderr, logPath } = {}) {
+	function disposal(entry) {
+		if (!entry.closed) return 'unknown';
+		if (entry.child.pid === undefined) return 'not-started';
+		if (process.platform === 'win32') return 'unknown';
+		try { process.kill(-entry.child.pid, 0); return 'held'; }
+		catch (error) { return error.code === 'ESRCH' ? 'closed' : 'unknown'; }
+	}
+	function confirmDisposals() {
+		for (const entry of admitted) {
+			if (entry.disposed) continue;
+			const state = disposal(entry);
+			if (!['closed', 'not-started'].includes(state)) continue;
+			try {
+				appendFileSync(join(run.workspace, 'child-disposals.jsonl'), JSON.stringify({ runId: run.runId, childId: entry.childId, state }) + '\n');
+				entry.disposed = true;
+			} catch (error) { evidenceErrors.push(error.code); }
+		}
+	}
+	async function start(command, args, { cwd = run.root, env = run.environment(), budgetMs = run.budgets.fileMs, stdout, stderr, logPath, ownerChannel } = {}) {
 		if (stopped) throw harnessError('interrupted', 'Harness admission stopped.');
 		run.assertOwner();
 		const childId = randomUUID();
 		const log = logPath ?? join(run.workspace, `child-${childId}.log`);
 		const fd = stdout === undefined && stderr === undefined ? openSync(log, 'wx', 0o600) : undefined;
-		const child = spawn(command, args, { cwd, env, detached: process.platform !== 'win32', stdio: ['ignore', stdout ?? fd, stderr ?? fd] });
+		const child = spawn(command, args, { cwd, env, detached: process.platform !== 'win32', stdio: [ownerChannel ? 'pipe' : 'ignore', stdout ?? fd, stderr ?? fd] });
 		registerChild(child, run);
 		ownedMarkers.add(markers.get(child));
-		const entry = { child, childId, ended: undefined };
+		const entry = { child, childId, ended: undefined, closed: false, disposed: false };
 		children.add(entry);
+		if (requireClosure) {
+			admitted.add(entry);
+			try { appendFileSync(join(run.workspace, 'child-admissions.jsonl'), JSON.stringify({ runId: run.runId, childId }) + '\n'); }
+			catch (error) { evidenceErrors.push(error.code); }
+		}
+		let disconnect;
 		let timedOut = false, launchError;
 		let timer;
 		const timeout = new Promise(accept => { timer = setTimeout(() => { timedOut = true; cancel(child, 'SIGTERM'); accept({ code: null, signal: null, timedOut: true }); }, budgetMs); });
 		entry.ended = new Promise(accept => {
 			child.once('error', error => { launchError = error.message; });
 			child.once('close', (code, signal) => {
+				entry.closed = true;
+				try { disconnect?.(); } catch (error) { evidenceErrors.push(error.code ?? 'owner-channel-close'); }
 				clearTimeout(timer);
 				if (fd !== undefined) closeSync(fd);
-				try { appendFileSync(join(run.workspace, 'child-results.jsonl'), JSON.stringify({ childId, log, code, signal, timedOut, launchError: launchError ?? null, closedAt: new Date().toISOString() }) + '\n'); }
+				try { appendFileSync(join(run.workspace, 'child-results.jsonl'), JSON.stringify({ runId: run.runId, childId, log, code, signal, timedOut, launchError: launchError ?? null, closedAt: new Date().toISOString() }) + '\n'); }
 				catch (error) { evidenceErrors.push(error.code); }
 				children.delete(entry);
+				if (requireClosure) confirmDisposals();
 				accept({ code, signal, timedOut, ...(launchError ? { launchError } : {}) });
 			});
 		});
+		if (ownerChannel) {
+			child.stdin.on('error', () => { /* Peer closure is reconciled through the result/close evidence. */ });
+			child.stdin.write(ownerChannel.initial);
+			disconnect = ownerChannel.connect({ write: frame => { if (!child.stdin.destroyed) child.stdin.write(frame); }, end: () => child.stdin.end() });
+		}
 		// Deadline returns immediately; the owning finally drains within one ceiling.
 		const result = await Promise.race([entry.ended, timeout, stopEvent.then(() => ({ code: null, signal: null, interrupted: true }))]);
 		clearTimeout(timer);
@@ -76,13 +110,17 @@ export function processScope(run, { includeForeignActors = true } = {}) {
 		const markersClosed = () => includeForeignActors ? actorsClosed(run) : [...ownedMarkers].every(path => !existsSync(path));
 		async function waitClosed(ms) {
 			const end = performance.now() + ms;
-			while ((children.size || !markersClosed()) && performance.now() < end) await new Promise(resolve => setTimeout(resolve, Math.min(10, Math.max(1, end - performance.now()))));
+			while ((children.size || !markersClosed() || (requireClosure && [...admitted].some(entry => !entry.disposed))) && performance.now() < end) {
+				if (requireClosure) confirmDisposals();
+				await new Promise(resolve => setTimeout(resolve, Math.min(10, Math.max(1, end - performance.now()))));
+			}
 		}
-		for (const { child } of children) cancel(child, 'SIGTERM');
+		for (const { child, disposed } of requireClosure ? admitted : children) if (!disposed) cancel(child, 'SIGTERM');
 		await waitClosed(run.budgets.cleanupMs / 2);
-		for (const { child } of children) cancel(child, 'SIGKILL');
+		for (const { child, disposed } of requireClosure ? admitted : children) if (!disposed) cancel(child, 'SIGKILL');
 		await waitClosed(run.budgets.cleanupMs / 2);
-		const closed = children.size === 0 && markersClosed() && cancellationErrors.length === 0 && evidenceErrors.length === 0;
+		if (requireClosure) confirmDisposals();
+		const closed = children.size === 0 && markersClosed() && (!requireClosure || [...admitted].every(entry => entry.disposed)) && cancellationErrors.length === 0 && evidenceErrors.length === 0;
 		if (!closed) {
 			// Do not wait forever on inherited pipes. The lease remains blocked;
 			// detaching these observers does not assert descendant disposal.
@@ -106,7 +144,7 @@ export async function withRun(run, work) {
 		try {
 			run.transition('draining');
 			const closed = await scope.drain();
-			writeFileSync(join(run.workspace, 'cleanup.json'), JSON.stringify({ confirmedClosed: closed, interrupted, cancellationErrors: scope.cancellationErrors, evidenceErrors: scope.evidenceErrors, childCloseJournal: 'child-results.jsonl' }) + '\n');
+			writeFileSync(join(run.workspace, 'cleanup.json'), JSON.stringify({ confirmedClosed: closed, interrupted, cancellationErrors: scope.cancellationErrors, evidenceErrors: scope.evidenceErrors, childCloseJournal: 'child-results.jsonl', closureMode: run.environment().INSRC_BUILD_CONFIRM_CLOSURE === '1' ? 'owned-groups' : 'legacy' }) + '\n');
 			run.release({ confirmedClosed: closed });
 		} catch (cause) { error ??= cause; }
 		process.off('SIGINT', interrupt); process.off('SIGTERM', interrupt);

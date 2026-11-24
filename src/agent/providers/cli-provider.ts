@@ -176,6 +176,23 @@ export class CodexProjectMcpServersUnexcludableError extends Error {
 	}
 }
 
+/** codex's own bootstrap rejects a partial `mcp_servers.<name>.enabled=false`
+ *  override for some globally-registered servers (confirmed live: codex_app,
+ *  cua_repl), crashing before any session -- including insrc's own -- starts.
+ *  readOnlySessionOnce recognizes codex's own rejection wording and throws
+ *  this named error instead of letting an opaque CliExitError surface. */
+export class CodexMcpServerOverrideUnsafeError extends Error {
+	constructor(readonly serverName: string) {
+		super(`codex: cannot safely exclude the '${serverName}' MCP server from a read-only session -- codex's own bootstrap rejects a partial override for it`);
+		this.name = 'CodexMcpServerOverrideUnsafeError';
+	}
+}
+
+/** codex's own bootstrap-rejection wording for an unacceptable per-server
+ *  override, live-confirmed this session for codex_app and cua_repl. Captures
+ *  the rejected server name. */
+const CODEX_MCP_SERVER_OVERRIDE_UNSAFE = /invalid transport in `mcp_servers\.([^`]+)`/;
+
 /** The insrc analyze tools the codex MCP server exposes, by their own remote names. */
 const CODEX_INSRC_SERVER_NAME = 'insrc';
 const CODEX_INSRC_TOOL_NAMES: readonly string[] = ['insrc_analyze', 'insrc_analyze_step'];
@@ -738,7 +755,15 @@ export class CliProvider implements LLMProvider {
 			const servers = await discoverCodexMcpServers(this.binPath, exec.cwd, exec.timeoutMs, exec.signal);
 			const remainingMs = exec.timeoutMs - (Date.now() - discoveryStartedAt);
 			if (remainingMs <= 0) throw new ReadOnlySessionTimeoutError(exec.timeoutMs);
-			const { agentText: text } = await this.runCodex(codexReadOnlySessionArgs(schemaPath, exec.cwd, this.modelArgs(), servers), prompt, { ...exec, timeoutMs: remainingMs });
+			let text: string | undefined;
+			try {
+				({ agentText: text } = await this.runCodex(codexReadOnlySessionArgs(schemaPath, exec.cwd, this.modelArgs(), servers), prompt, { ...exec, timeoutMs: remainingMs }));
+			} catch (err) {
+				const said = err instanceof CliExitError ? err.said : (err as Error).message;
+				const match = CODEX_MCP_SERVER_OVERRIDE_UNSAFE.exec(said);
+				if (match?.[1] !== undefined) throw new CodexMcpServerOverrideUnsafeError(match[1]);
+				throw err;
+			}
 			if (text === undefined) throw new Error('codex read-only session emitted no agent_message item');
 			let parsed: unknown;
 			try {

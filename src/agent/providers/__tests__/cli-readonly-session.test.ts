@@ -17,7 +17,7 @@ import { test } from 'node:test';
 
 import {
 	claudeReadOnlySessionArgs, CliProvider, codexReadOnlySessionArgs, CodexMcpServerNotRegisteredError,
-	CodexProjectMcpServersUnexcludableError, READ_ONLY_SESSION_ANALYZE_TOOLS,
+	CodexMcpServerOverrideUnsafeError, CodexProjectMcpServersUnexcludableError, READ_ONLY_SESSION_ANALYZE_TOOLS,
 	READ_ONLY_SESSION_READ_TOOLS, ReadOnlySessionTimeoutError, CliStallError, CODEX_FIRST_OUTPUT_MS, InputTooLargeError,
 } from '../cli-provider.js';
 
@@ -46,7 +46,8 @@ if (argv.includes('mcp') && argv.includes('list')) {
   appendFileSync(join(here, 'mcp-list-calls.jsonl'), JSON.stringify({ argv }) + '\\n');
   const sleepMs = Number(process.env.INSRC_FAKE_DISCOVERY_SLEEP_MS || 0);
   if (sleepMs > 0) await new Promise(r => setTimeout(r, sleepMs));
-  process.stdout.write(JSON.stringify([{ name: 'insrc', enabled: true }]));
+  const servers = process.env.INSRC_FAKE_DISCOVERY_SERVERS;
+  process.stdout.write(servers ?? JSON.stringify([{ name: 'insrc', enabled: true }]));
   process.exit(0);
 }
 let stdin = '';
@@ -206,6 +207,18 @@ test('readOnlySessionOnce calls runCodex with the recomputed remaining timeoutMs
 		assert.equal(f.mcpListCalls(), 1);
 		assert.equal(f.calls().length, 1, 'the exec call did start, inside the recomputed remaining budget');
 	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SLEEP_MS']; f.cleanup(); }
+});
+
+test("readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('codex_app') when runCodex's failure message matches codex's live-confirmed bootstrap-rejection wording naming codex_app", async () => {
+	const f = fakeCli([{ fail: 'Error loading config.toml: invalid transport in `mcp_servers.codex_app`', code: 1 }]);
+	process.env['INSRC_FAKE_DISCOVERY_SERVERS'] = JSON.stringify([{ name: 'insrc', enabled: true }, { name: 'codex_app', enabled: false }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
+		await assert.rejects(
+			p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, internalRetry: false }),
+			(e: unknown) => e instanceof CodexMcpServerOverrideUnsafeError && e.serverName === 'codex_app',
+		);
+	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; f.cleanup(); }
 });
 
 // --- retry and deadline --------------------------------------------------------

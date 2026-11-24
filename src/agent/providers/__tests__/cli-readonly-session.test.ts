@@ -10,21 +10,26 @@
  */
 
 import assert from 'node:assert/strict';
-import { chmodSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
 import {
-	claudeReadOnlySessionArgs, CliProvider, codexReadOnlySessionArgs, CodexMcpServerNotRegisteredError, READ_ONLY_SESSION_ANALYZE_TOOLS,
+	claudeReadOnlySessionArgs, CliProvider, codexReadOnlySessionArgs, CodexMcpServerNotRegisteredError,
+	CodexProjectMcpServersUnexcludableError, READ_ONLY_SESSION_ANALYZE_TOOLS,
 	READ_ONLY_SESSION_READ_TOOLS, ReadOnlySessionTimeoutError, CliStallError, CODEX_FIRST_OUTPUT_MS, InputTooLargeError,
 } from '../cli-provider.js';
 
 const SCHEMA = { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } } };
 
 /**
- * A fake CLI. Each run appends `{ argv, cwd }` to `calls.jsonl` beside it, then
- * acts on the next entry of `script.json` (the last entry repeats):
+ * A fake CLI. A codex `-C cwd mcp list --json` discovery call is answered
+ * directly (recorded separately, in `mcp-list-calls.jsonl`, NOT in
+ * `calls.jsonl`) and never touches script.json, so every existing script-
+ * stepping test is unaffected by it. Every other run appends `{ argv, cwd }`
+ * to `calls.jsonl` beside it, then acts on the next entry of `script.json`
+ * (the last entry repeats):
  *   { out }            print `out` and exit 0
  *   { fail, code? }    print `fail` to stderr and exit `code` (default 1)
  *   { sleepMs, ... }   wait first
@@ -36,10 +41,17 @@ import { appendFileSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
+const argv = process.argv.slice(2);
+if (argv.includes('mcp') && argv.includes('list')) {
+  appendFileSync(join(here, 'mcp-list-calls.jsonl'), JSON.stringify({ argv }) + '\\n');
+  const sleepMs = Number(process.env.INSRC_FAKE_DISCOVERY_SLEEP_MS || 0);
+  if (sleepMs > 0) await new Promise(r => setTimeout(r, sleepMs));
+  process.stdout.write(JSON.stringify([{ name: 'insrc', enabled: true }]));
+  process.exit(0);
+}
 let stdin = '';
 for await (const c of process.stdin) stdin += c;
 const calls = join(here, 'calls.jsonl');
-const argv = process.argv.slice(2);
 const schemaIndex = argv.indexOf('--output-schema');
 const wireSchema = schemaIndex >= 0 ? readFileSync(argv[schemaIndex + 1], 'utf8') : argv[argv.indexOf('--json-schema') + 1];
 appendFileSync(calls, JSON.stringify({ argv, cwd: process.cwd(), stdin, wireSchema }) + '\\n');
@@ -55,16 +67,18 @@ process.stdout.write(step.out);
 
 interface Call { argv: string[]; cwd: string; stdin: string; wireSchema?: string | undefined }
 
-function fakeCli(script: readonly Record<string, unknown>[]): { bin: string; dir: string; calls: () => Call[]; cleanup: () => void } {
+function fakeCli(script: readonly Record<string, unknown>[]): { bin: string; dir: string; calls: () => Call[]; mcpListCalls: () => number; cleanup: () => void } {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-fake-cli-'));
 	const bin = join(dir, 'fake.mjs');
 	writeFileSync(bin, FAKE);
 	chmodSync(bin, 0o755);
 	writeFileSync(join(dir, 'script.json'), JSON.stringify(script));
 	const callsPath = join(dir, 'calls.jsonl');
+	const mcpListCallsPath = join(dir, 'mcp-list-calls.jsonl');
 	return {
 		bin, dir,
 		calls: () => (existsSync(callsPath) ? readFileSync(callsPath, 'utf8').trim().split('\n').map(l => JSON.parse(l) as Call) : []),
+		mcpListCalls: () => (existsSync(mcpListCallsPath) ? readFileSync(mcpListCallsPath, 'utf8').trim().split('\n').filter(l => l.length > 0).length : 0),
 		cleanup: () => rmSync(dir, { recursive: true, force: true }),
 	};
 }
@@ -140,6 +154,58 @@ test('a session with no checked answer fails', async () => {
 		await assert.rejects(p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000 }), /no structured_output/);
 		assert.equal(f.calls().length, 1);
 	} finally { f.cleanup(); }
+});
+
+// --- codex: discovery + the project-config refusal (plan task t4) --------------
+
+test('readOnlySessionOnce throws CodexProjectMcpServersUnexcludableError and calls neither discoverCodexMcpServers nor runCodex when walkProjectMcpConfigLayers returns true', async () => {
+	const f = fakeCli([{ out: codexOk('{"ok":true}') }]);
+	try {
+		mkdirSync(join(f.dir, '.codex'), { recursive: true });
+		writeFileSync(join(f.dir, '.codex', 'config.toml'), '[mcp_servers.other]\ncommand = "node"\n', 'utf8');
+		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
+		await assert.rejects(
+			p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000 }),
+			(e: unknown) => e instanceof CodexProjectMcpServersUnexcludableError && e.cwd === f.dir,
+		);
+		assert.equal(f.mcpListCalls(), 0, 'discoverCodexMcpServers was never called');
+		assert.equal(f.calls().length, 0, 'runCodex was never called');
+	} finally { f.cleanup(); }
+});
+
+test('readOnlySessionOnce throws ReadOnlySessionTimeoutError and never calls runCodex when discovery consumes the entire remaining budget', async () => {
+	const f = fakeCli([{ out: codexOk('{"ok":true}') }]);
+	process.env['INSRC_FAKE_DISCOVERY_SLEEP_MS'] = '2990';
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
+		await assert.rejects(
+			p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 3_000, internalRetry: false }),
+			ReadOnlySessionTimeoutError,
+		);
+		assert.equal(f.mcpListCalls(), 1, 'discovery ran once');
+		assert.equal(f.calls().length, 0, 'runCodex was never called: discovery left no budget');
+	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SLEEP_MS']; f.cleanup(); }
+});
+
+test('readOnlySessionOnce calls runCodex with the recomputed remaining timeoutMs, not the original, after discovery consumes part of the budget', async () => {
+	const f = fakeCli([{ sleepMs: 30_000, out: codexOk('{"ok":true}') }]);
+	process.env['INSRC_FAKE_DISCOVERY_SLEEP_MS'] = '1000';
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
+		const t0 = Date.now();
+		await assert.rejects(
+			p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 3_000, internalRetry: false }),
+			ReadOnlySessionTimeoutError,
+		);
+		const took = Date.now() - t0;
+		// If the original (unrecomputed) budget were reused for the exec call, this
+		// would run close to deadlineMs(3000) + deadlineMs(3000) again = ~6000ms.
+		// With the recomputed remaining budget it stops close to the ONE shared
+		// deadline of 3000ms total (discovery's 1000ms + the ~2000ms left for exec).
+		assert.ok(took < 4_500, `stopped within the one shared deadline, not a fresh budget after discovery (took ${took}ms)`);
+		assert.equal(f.mcpListCalls(), 1);
+		assert.equal(f.calls().length, 1, 'the exec call did start, inside the recomputed remaining budget');
+	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SLEEP_MS']; f.cleanup(); }
 });
 
 // --- retry and deadline --------------------------------------------------------

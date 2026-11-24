@@ -28,15 +28,21 @@ import { schemaKeywordSummary } from '../structured-schema.js';
 import { modelFacingBundleSchema } from '../../../analyze/context/schema.js';
 import type { StructuredSchema } from '../../../shared/types.js';
 
-/** A fake codex: copies the `--output-schema` file to `schema-seen.json` beside it, then answers
- *  the text of `answer.json` beside it, or `{"ok":true}`. */
+/** A fake codex: answers a `mcp list --json` discovery call directly (the read-only
+ *  session path discovers globally-registered servers first), then copies the
+ *  `--output-schema` file to `schema-seen.json` beside it and answers the text of
+ *  `answer.json` beside it, or `{"ok":true}`. */
 const FAKE = `#!/usr/bin/env node
 import { copyFileSync, existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
-for await (const _ of process.stdin) { /* drain */ }
 const argv = process.argv.slice(2);
+if (argv.includes('mcp') && argv.includes('list')) {
+  process.stdout.write(JSON.stringify([{ name: 'insrc', enabled: true }]));
+  process.exit(0);
+}
+for await (const _ of process.stdin) { /* drain */ }
 copyFileSync(argv[argv.indexOf('--output-schema') + 1], join(here, 'schema-seen.json'));
 const answer = existsSync(join(here, 'answer.json')) ? readFileSync(join(here, 'answer.json'), 'utf8') : '{"ok":true}';
 process.stdout.write(JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text: answer } }) + '\\n');

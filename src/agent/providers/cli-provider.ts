@@ -165,6 +165,17 @@ export class CodexMcpServerNotRegisteredError extends Error {
 	}
 }
 
+/** A project-local .codex/config.toml between a codex read-only session's cwd
+ *  and the filesystem root declares its own `mcp_servers` table that this
+ *  module's discovery/allowlist mechanism cannot enumerate or exclude. The
+ *  session refuses to start rather than leave that server reachable. */
+export class CodexProjectMcpServersUnexcludableError extends Error {
+	constructor(readonly cwd: string) {
+		super(`codex: a project-local .codex/config.toml between '${cwd}' and the filesystem root declares its own mcp_servers table, which cannot be excluded from a read-only session`);
+		this.name = 'CodexProjectMcpServersUnexcludableError';
+	}
+}
+
 /** The insrc analyze tools the codex MCP server exposes, by their own remote names. */
 const CODEX_INSRC_SERVER_NAME = 'insrc';
 const CODEX_INSRC_TOOL_NAMES: readonly string[] = ['insrc_analyze', 'insrc_analyze_step'];
@@ -718,15 +729,16 @@ export class CliProvider implements LLMProvider {
 			}
 			return envelope.structured_output as T;
 		}
+		if (await walkProjectMcpConfigLayers(exec.cwd)) throw new CodexProjectMcpServersUnexcludableError(exec.cwd);
+		const discoveryStartedAt = Date.now();
 		const tmpDir = mkdtempSync(join(tmpdir(), 'codex-readonly-schema-'));
 		try {
 			const schemaPath = join(tmpDir, 'schema.json');
 			writeFileSync(schemaPath, codexSchemaJson(schema));
-			// Discovery + the project-config refusal are wired in by the Task that
-			// rewrites this orchestration end to end; until then, insrc is the only
-			// server this allowlist knows about.
-			const servers: readonly CodexMcpServerStatus[] = [{ name: 'insrc', enabled: true }];
-			const { agentText: text } = await this.runCodex(codexReadOnlySessionArgs(schemaPath, exec.cwd, this.modelArgs(), servers), prompt, exec);
+			const servers = await discoverCodexMcpServers(this.binPath, exec.cwd, exec.timeoutMs, exec.signal);
+			const remainingMs = exec.timeoutMs - (Date.now() - discoveryStartedAt);
+			if (remainingMs <= 0) throw new ReadOnlySessionTimeoutError(exec.timeoutMs);
+			const { agentText: text } = await this.runCodex(codexReadOnlySessionArgs(schemaPath, exec.cwd, this.modelArgs(), servers), prompt, { ...exec, timeoutMs: remainingMs });
 			if (text === undefined) throw new Error('codex read-only session emitted no agent_message item');
 			let parsed: unknown;
 			try {

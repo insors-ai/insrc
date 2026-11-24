@@ -1,0 +1,357 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795509806452-lstznj",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T08:51:12.400Z",
+    "epicCreatedAt": "2026-11-24T05:10:09.065Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 459910,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a9ae072ce3b7b794",
+    "epicSlug": "cliprovider-runreadonlysession-s-read-only-tool",
+    "storyId": "s1",
+    "lldRunId": "wf-1795508022085-ym3ik3",
+    "lldEffectiveHash": "3fc16fcfd501018da8a781098833a13e2fa5755776a5649feaceb434b8f20f20",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b9adee336fe77d442ada7b5cbc5e61184069710b2fff9136d8c29d6ba0ff6f33",
+        "at": "2026-11-24T08:51:14.599Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T08:52:27.924Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "51eb8f3c27917ea3bfa1bbfdd0e8e34fadc0b23b"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story means swapping one bad constant for a correct one on the vibe side, and adding a small, self-contained TOML-aware gate plus a native capability-discovery call on the codex side. The vibe fix is a single-file, low-risk rename-and-harden. The codex fix layers three independent pieces -- a filesystem walk that decides whether a session can even start, a discovery call that enumerates what's globally registered, and a pure argv builder -- then wires all three into the existing session flow so a codex read-only session either runs with a verified, native tool restriction or refuses clearly before any subprocess work happens.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Fix vibe's read-only tool allowlist and add verifyRuntime's required-tool check",
+        "summary": "Add the READ_ONLY_SESSION_VIBE_TOOL_NAMES constant and replace the three independently-hardcoded ['read_file','mcp_insrc_*'] literals at cli-provider.ts:577/670/688-693 with it; add a required-tools-present condition to verifyRuntime alongside its existing unexpected-tool rejection.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "READ_ONLY_SESSION_VIBE_TOOL_NAMES is the single source of truth read by all three call sites",
+          "verifyRuntime throws when an unexpected tool is reported (existing behavior, unchanged)",
+          "verifyRuntime throws when either of the two analyze-tool names is absent from the reported tools, including an empty tools array"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "verifyRuntime throws when an unexpected tool is reported (existing behavior, unchanged)"
+          },
+          {
+            "level": "unit",
+            "name": "verifyRuntime throws on an empty tools array or a tools array missing one or both analyze tools"
+          },
+          {
+            "level": "live",
+            "name": "claude: unchanged behavior re-confirmed as a regression guard"
+          },
+          {
+            "level": "live",
+            "name": "vibe: functional proofs unaffected by this round's change"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add a TOML-parsing dependency and walkProjectMcpConfigLayers",
+        "summary": "Add a minimal, pure-ESM TOML-parsing dependency (this repo has none today); implement walkProjectMcpConfigLayers(cwd), which resolves the global config's exact file path once and walks cwd to the filesystem root, skipping only the one layer whose own .codex/config.toml path exactly equals that resolved global path, parsing every other layer's config.toml and checking whether its mcp_servers value is non-empty.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "walkProjectMcpConfigLayers returns false for the default case (home directory's own config.toml is the global config, declaring mcp_servers.insrc)",
+          "walkProjectMcpConfigLayers returns true when a genuine ancestor layer (CODEX_HOME nested inside the project tree, project root distinct from CODEX_HOME) declares its own mcp_servers table, and false for the same layout with no such declaration",
+          "walkProjectMcpConfigLayers returns false when CODEX_HOME lies entirely outside cwd's ancestor chain",
+          "walkProjectMcpConfigLayers returns true for each of the four valid TOML forms (dotted header, bare header with dotted/nested keys, inline-table assignment, top-level dotted key-value)",
+          "walkProjectMcpConfigLayers propagates a plain Error (not false) on a non-ENOENT read/parse failure at a non-excluded layer"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "walkProjectMcpConfigLayers returns false for a cwd beneath a mocked home directory whose .codex/config.toml (the mocked global config) declares mcp_servers.insrc -- the default-case positive regression test"
+          },
+          {
+            "level": "unit",
+            "name": "THE REGRESSION TEST FOR THIS ROUND'S FINDING, using the exact cited layout: mocked CODEX_HOME=/work/repo/codex-state (declaring mcp_servers.insrc), mocked cwd=/work/repo/src, and a mocked /work/repo/.codex/config.toml declaring a mutation-sentinel server -- walkProjectMcpConfigLayers must return TRUE (the sentinel at the project root is still detected and refused) while the SEPARATE case of the same layout with NO sentinel at /work/repo must return false (global insrc remains allowed)"
+          },
+          {
+            "level": "unit",
+            "name": "walkProjectMcpConfigLayers returns false when a mocked CODEX_HOME lies entirely outside cwd's own ancestor chain -- the exclusion comparison never matches, and the walk otherwise behaves exactly as the unbounded design would"
+          },
+          {
+            "level": "unit",
+            "name": "walkProjectMcpConfigLayers returns true when a genuine ancestor project layer (distinct from the global config by path) declares its own mcp_servers table, for each of the four valid TOML forms"
+          },
+          {
+            "level": "unit",
+            "name": "walkProjectMcpConfigLayers returns false for a cwd chain with no non-excluded .codex/config.toml at all"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add discoverCodexMcpServers and replace codexReadOnlySessionArgs",
+        "summary": "Implement discoverCodexMcpServers(binPath, cwd, timeoutMs, signal) with the corrected '-C cwd mcp list --json' argv; replace the current 3-argument, unrestricted codexReadOnlySessionArgs with the new 4-argument, pure/synchronous builder that takes the discovered servers list, throws CodexMcpServerNotRegisteredError when insrc is absent, and otherwise emits the existing base argv plus the insrc enabled_tools override and one disable override per other server.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "discoverCodexMcpServers' subprocess argv places '-C', cwd before 'mcp', 'list', '--json'",
+          "discoverCodexMcpServers propagates a plain Error on non-zero exit, timeout, abort, or unparseable JSON",
+          "codexReadOnlySessionArgs, given insrc plus other servers, returns the existing base argv plus the enabled_tools override and one disable override per other server, excluding insrc's own name",
+          "codexReadOnlySessionArgs throws CodexMcpServerNotRegisteredError synchronously, with no argv constructed, when insrc is absent from the servers list"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "discoverCodexMcpServers' subprocess invocation places '-C', cwd BEFORE 'mcp', 'list', '--json'"
+          },
+          {
+            "level": "unit",
+            "name": "codexReadOnlySessionArgs, given insrc plus two other servers, returns the enabled_tools override and one disable override per other server"
+          },
+          {
+            "level": "unit",
+            "name": "codexReadOnlySessionArgs throws CodexMcpServerNotRegisteredError synchronously, with no argv constructed, when insrc is absent from the servers list"
+          },
+          {
+            "level": "live",
+            "name": "codex: the previously-covered misregistration, budget/cancellation, and functional-proof tests, unaffected by this round's exact-path-exclusion fix"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Rewire readOnlySessionOnce's codex branch to orchestrate the new checks",
+        "summary": "Rewrite readOnlySessionOnce's codex branch (cli-provider.ts:604-619) to, in order: call walkProjectMcpConfigLayers(exec.cwd) and throw CodexProjectMcpServersUnexcludableError if true; write the schema temp file as today; call discoverCodexMcpServers(this.binPath, exec.cwd, exec.timeoutMs, exec.signal); recompute the remaining budget and throw ReadOnlySessionTimeoutError if exhausted; call the new codexReadOnlySessionArgs with the discovery result; call runCodex (unmodified) with the recomputed timeoutMs; parse the reply exactly as today.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "readOnlySessionOnce throws CodexProjectMcpServersUnexcludableError and calls neither discoverCodexMcpServers nor runCodex when walkProjectMcpConfigLayers returns true",
+          "readOnlySessionOnce calls runCodex with the recomputed remaining timeoutMs, not the original, after discovery consumes part of the budget",
+          "readOnlySessionOnce throws ReadOnlySessionTimeoutError and never calls runCodex when discovery consumes the entire remaining budget",
+          "readOnlySessionOnce's existing claude/vibe branches and its post-exec reply-parsing logic are unchanged"
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "readOnlySessionOnce throws CodexProjectMcpServersUnexcludableError and calls neither discoverCodexMcpServers nor runCodex when walkProjectMcpConfigLayers returns true"
+          },
+          {
+            "level": "unit",
+            "name": "readOnlySessionOnce throws ReadOnlySessionTimeoutError and never calls runCodex when discovery consumes the entire remaining budget"
+          },
+          {
+            "level": "live",
+            "name": "codex: a real runReadOnlySession call against THIS environment's own repo succeeds and is NOT refused by CodexProjectMcpServersUnexcludableError, run against the real global config rather than a mock"
+          },
+          {
+            "level": "live",
+            "name": "codex: the prior round's nested-working-directory mutation-sentinel test still results in CodexProjectMcpServersUnexcludableError"
+          },
+          {
+            "level": "live",
+            "name": "codex: the same refusal for a sentinel declared at the exact cwd via each of the four valid TOML forms"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "walkProjectMcpConfigLayers returns false for a cwd beneath a mocked home directory whose .codex/config.toml (the mocked global config) declares mcp_servers.insrc -- the default-case positive regression test",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "THE REGRESSION TEST FOR THIS ROUND'S FINDING, using the exact cited layout: mocked CODEX_HOME=/work/repo/codex-state (declaring mcp_servers.insrc), mocked cwd=/work/repo/src, and a mocked /work/repo/.codex/config.toml declaring a mutation-sentinel server -- walkProjectMcpConfigLayers must return TRUE (the sentinel at the project root is still detected and refused) while the SEPARATE case of the same layout with NO sentinel at /work/repo must return false (global insrc remains allowed)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "walkProjectMcpConfigLayers returns false when a mocked CODEX_HOME lies entirely outside cwd's own ancestor chain -- the exclusion comparison never matches, and the walk otherwise behaves exactly as the unbounded design would",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "walkProjectMcpConfigLayers returns true when a genuine ancestor project layer (distinct from the global config by path) declares its own mcp_servers table, for each of the four valid TOML forms",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "walkProjectMcpConfigLayers returns false for a cwd chain with no non-excluded .codex/config.toml at all",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "discoverCodexMcpServers' subprocess invocation places '-C', cwd BEFORE 'mcp', 'list', '--json'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "codexReadOnlySessionArgs, given insrc plus two other servers, returns the enabled_tools override and one disable override per other server",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "readOnlySessionOnce throws CodexProjectMcpServersUnexcludableError and calls neither discoverCodexMcpServers nor runCodex when walkProjectMcpConfigLayers returns true",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "verifyRuntime throws on an empty tools array or a tools array missing one or both analyze tools",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "codex: a real runReadOnlySession call against THIS environment's own repo succeeds and is NOT refused by CodexProjectMcpServersUnexcludableError, run against the real global config rather than a mock",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "codex: the prior round's nested-working-directory mutation-sentinel test still results in CodexProjectMcpServersUnexcludableError",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "codex: the same refusal for a sentinel declared at the exact cwd via each of the four valid TOML forms",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "codex: the previously-covered misregistration, budget/cancellation, and functional-proof tests, unaffected by this round's exact-path-exclusion fix",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "vibe: functional proofs unaffected by this round's change",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "claude: unchanged behavior re-confirmed as a regression guard",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 handoff item: READ_ONLY_SESSION_VIBE_TOOL_NAMES (new shared constant)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 handoff item: runVibe's verifyRuntime callback"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 handoff item: walkProjectMcpConfigLayers (new module-level helper)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges entity: codex project-local MCP config exclusion refusal, now excluding only the exact global config file"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 handoff item: discoverCodexMcpServers (new module-level helper)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 handoff item: codexReadOnlySessionArgs (replaces the current definition at src/agent/providers/cli-provider.ts:143-145)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges entity: codex read-only session argv (native per-server allowlist + other-server disable)"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 handoff item: readOnlySessionOnce (private, codex branch -- replaces the current flow at src/agent/providers/cli-provider.ts:604-619)"
+    }
+  ]
+}

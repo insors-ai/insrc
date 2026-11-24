@@ -3,7 +3,7 @@ import { Ajv } from 'ajv';
 import type { ValidateFunction } from 'ajv';
 import { posix, win32 } from 'node:path';
 import { InstallerError, MAX_CONTROL_BYTES } from './contracts.js';
-import type { Delivery, HookReference, ReleaseManifest, RuntimeIdentity, Target } from './contracts.js';
+import type { Delivery, HookReference, InstallationLocation, ReleaseManifest, RuntimeIdentity, Target } from './contracts.js';
 import type { PreparedCandidate } from './bundle.js';
 import { assertRelativeFile, normalizeHome } from './location.js';
 import { BUNDLE_LIMITS, canonicalJson, digest, parseInventory } from './release-descriptor.js';
@@ -16,6 +16,18 @@ export interface DevSourceIntent {
   target: Target; runtime: RuntimeIdentity; recipeVersion: 'dev-v1';
 }
 export interface DevSourceOffer extends DevSourceIntent { releaseId: string; sourceSha256: string }
+/** Consent binds source intent, not the later receipt/inventory digest. The
+ * manager re-resolves under its lease; workers use the saved accepted offer. */
+export function devUpgradeOfferId(location: InstallationLocation, predecessorId: string | undefined, input: DevSourceOffer): string {
+  const offer = parseDevSourceOffer(input);
+  return digest(canonicalJson({ location, current: predecessorId, delivery: offer.delivery, source: offer.sourceSha256 }));
+}
+export function acceptResolvedDevSource(location: InstallationLocation, predecessorId: string | undefined,
+  input: DevSourceOffer, acceptedOfferId: string): DevSourceOffer {
+  const offer = parseDevSourceOffer(input);
+  if (acceptedOfferId !== devUpgradeOfferId(location, predecessorId, offer)) throw new InstallerError('offer-stale', 'Upgrade acceptance differs from the exact current source offer');
+  return offer;
+}
 export interface DevPreparationRecord {
   schemaVersion: 1; installationId: string; operationId: string; sourceOffer: DevSourceOffer;
   predecessorId?: string | undefined; attemptId: string; workerNonce: string;

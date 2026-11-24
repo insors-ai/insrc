@@ -6,7 +6,7 @@ This is evidence for the task being developed, not a separate defect or approval
 ## Status
 
 S2's plan is approved. Tasks t1 and t2 passed the registered build validator.
-Task t3 passed formal validation after approval of LLD revision 4. Task t4 is in validation; t5–t9 have not started. No S2 BUILD approval is requested.
+Tasks t3–t5 passed formal validation after approval of LLD revision 4. Task t6 is being built; t7–t9 have not started. No S2 BUILD approval is requested.
 The current host daemon and its v2 installation have not been changed.
 
 The first t3 validation passed its typecheck and four worker tests but rejected:

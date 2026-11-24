@@ -1,6 +1,7 @@
 /** Required ports, implemented by their owning stories. No app/runtime imports. */
 import type { DependencyDecision, DependencyReport, Delivery, InstallationLocation, LocalEndpoint, MigrationContext, ReleaseManifest } from './contracts.js';
 import type { PreparedCandidate, PreparationLease } from './bundle.js';
+import type { DevSourceOffer, PreparationContext } from './dev.js';
 export interface DaemonIdentity { instanceId: string; installationId: string; releaseId: string; protocolVersion: 1; state: 'ready' | 'draining' | 'migration-blocked' }
 export interface ShutdownRequest { operationId: string; expectedInstanceId: string; mode: 'graceful' | 'immediate'; completionEndpoint: string; completionNonce: string }
 export interface ShutdownAccepted { operationId: string; instanceId: string; accepted: true; mode: 'graceful' | 'immediate' }
@@ -16,11 +17,13 @@ export type DaemonObservation = { state: 'present'; identity: DaemonIdentity; en
   | { state: 'absent'; resourceOwnershipReleased: true; evidence: { kind: 'never-started' } | { kind: 'observed-exit'; identity: DaemonIdentity } } | { state: 'uncertain' };
 export interface DeliveryPort {
   resolve(delivery: Delivery): Promise<PreparedReleaseOffer>;
-  prepare(store: PreparationLease, offer: PreparedReleaseOffer): Promise<PreparedCandidate>;
+  prepare(store: PreparationLease, offer: PreparedReleaseOffer, context: PreparationContext): Promise<PreparedCandidate>;
+  resumePreparation?(store: PreparationLease, context: PreparationContext): Promise<PreparedCandidate>;
   open(location: InstallationLocation, releaseId: string): Promise<PreparedCandidate>;
   verify(candidate: PreparedCandidate, location: InstallationLocation): Promise<void>;
 }
-export interface PreparedReleaseOffer { manifest: ReleaseManifest; descriptorSha256: string }
+export interface BundleReleaseOffer { kind: 'bundle'; manifest: ReleaseManifest; descriptorSha256: string }
+export type PreparedReleaseOffer = BundleReleaseOffer | DevSourceOffer;
 export interface DependencyPort {
   inspect(location: InstallationLocation): Promise<DependencyReport>;
   decide(location: InstallationLocation, decision: DependencyDecision): Promise<DependencyReport>;

@@ -11,12 +11,13 @@ export function bundleDelivery(target: Target): DeliveryPort {
       const descriptor = parseReleaseDescriptor(await resolveBundleDelivery(delivery, target), { target });
       const descriptorSha256 = digest(canonicalJson(descriptor));
       if (offers.size >= 8) offers.delete(offers.keys().next().value!); offers.set(descriptorSha256, descriptor);
-      return { manifest: descriptor.manifest, descriptorSha256 };
+      return { kind: 'bundle', manifest: descriptor.manifest, descriptorSha256 };
     },
-    async prepare(store, offer) {
+    async prepare(store, offer, context) {
+      if (offer.kind !== 'bundle') throw new InstallerError('delivery-invalid', 'Bundle preparation requires a bundle offer');
       const descriptor = offers.get(offer.descriptorSha256);
       if (!descriptor || canonicalJson(descriptor.manifest) !== canonicalJson(offer.manifest)) throw new InstallerError('offer-stale', 'Exact accepted descriptor is unavailable');
-      return prepareBundle(store, descriptor, { target });
+      return prepareBundle(store, descriptor, { target, signal: context.signal });
     },
     open: (location, releaseId) => openPreparedBundle(location, releaseId, target),
     async verify(candidate, location) {

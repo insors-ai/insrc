@@ -23,7 +23,7 @@ export function managerFixture(existingHome?: string) {
   const state = { shutdowns: [] as ShutdownRequest[], migrations: [] as LaunchAdmission[], activations: [] as LaunchAdmission[], ownership: 'released' as 'released' | 'held' | 'unknown', receipt: undefined as MigrationExitReceipt | undefined, journalValidated: true, allowRetry: false, missingReceipt: false, badReady: false, observation: { state: 'present', identity, endpoint: location.daemonEndpoint } as DaemonObservation };
   const peers: ManagerPeers = {
     bundle: {
-      async resolve() { return { manifest: next.manifest, descriptorSha256: next.descriptorSha256 }; },
+      async resolve() { return { kind: 'bundle', manifest: next.manifest, descriptorSha256: next.descriptorSha256 }; },
       async prepare() { return next; }, async open(_location, id) { return id === 'old' ? old : next; },
       async verify(item) { if (readFileSync(join(item.directory, 'marker'), 'utf8') !== item.releaseId) throw new Error('immutable candidate mismatch'); },
     },

@@ -7,13 +7,32 @@ import { InstallerError, PRIVATE_NODE_VERSION } from './contracts.js';
 import { resolveInstallationLocation, assertToken } from './location.js';
 import { controlBinding } from './native.js';
 import { parseInstaller } from './schemas.js';
-import { productionPeers } from './production-peers.js';
+import { controlRuntimeDirectory, productionPeers } from './production-peers.js';
+import { canonicalJson } from './release-descriptor.js';
+import { DevWorkerInput, executeDevWorker } from './dev-worker.js';
+import { createDevPreparationWork, verifyDevPayload } from './dev-payload.js';
+import { join } from 'node:path';
 import { runTerminalInstall } from './terminal-install.js';
 import { InstallerManager } from './manager.js';
 import { launchInstalledTui, selectInstalledTui } from './installed-launcher.js';
 /** Substituted only by the digest-bound release publisher, never wire/env input. */
 declare const __INSRC_INSTALLER_TARGET__: unknown;
 export async function terminalMain(args = process.argv.slice(2)): Promise<void> {
+  if (args[0] === '--dev-preparation-worker') {
+    if (args.length !== 2 || !args[1]) throw new InstallerError('schema-invalid', 'Worker requires one explicit installation home');
+    if (typeof __INSRC_INSTALLER_TARGET__ === 'undefined') throw new InstallerError('target-unqualified', 'Use the target-specific control bootstrap');
+    const target = parseInstaller('target', __INSRC_INSTALLER_TARGET__), runtimeDirectory = controlRuntimeDirectory(target);
+    const channel = new DevWorkerInput(process.stdin);
+    try {
+      const launch = await channel.launch, record = launch.checkpoint;
+      if (canonicalJson(record.sourceOffer.target) !== canonicalJson(target)) throw new InstallerError('identity-mismatch', 'Worker checkpoint targets another control build');
+      const location = resolveInstallationLocation(record.installationId, { home: args[1], ...(process.platform === 'win32' ? { userSid: controlBinding().userSid() } : {}) });
+      const predecessor = record.predecessorId ? (await verifyDevPayload(join(location.home, 'releases', record.predecessorId), target, runtimeDirectory)).receipt : undefined;
+      await executeDevWorker(location.home, launch, { signal: channel.controller.signal, environment: process.env,
+        work: createDevPreparationWork(location, record, { runtimeDirectory, ...(predecessor ? { predecessor } : {}) }) });
+    } finally { channel.dispose(); }
+    return;
+  }
   requireTerminal();
   if (typeof __INSRC_INSTALLER_TARGET__ === 'undefined') throw new InstallerError('target-unqualified', 'Use the published target-specific installer');
   const target = parseInstaller('target', __INSRC_INSTALLER_TARGET__);

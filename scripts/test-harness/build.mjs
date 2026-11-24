@@ -115,6 +115,9 @@ export async function mainBuild(root = ROOT) {
 	return withRun(run, scope => prepareBuild(run, scope));
 }
 
-if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
+// esbuild rebases import.meta.url to the control bundle. Only the actual source
+// CLI may start a build; importing these helpers in a manager must stay inert.
+if (/[\\/]scripts[\\/]test-harness[\\/]build\.mjs$/i.test(fileURLToPath(import.meta.url))
+  && process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
 	try { await mainBuild(); } catch (error) { process.stderr.write(`${error.code ?? 'harness-build-failed'}: ${error.message}\n`); process.exitCode = 1; }
 }

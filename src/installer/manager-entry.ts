@@ -5,10 +5,12 @@ import { InstallerError, MAX_CONTROL_BYTES } from './contracts.js';
 import { resolveInstallationLocation } from './location.js';
 import { controlBinding } from './native.js';
 import { parseInstaller, parseManagerRequest } from './schemas.js';
-import { readBoundedFile } from './safe-zip.js';
-import { parseReleaseDescriptor } from './release-descriptor.js';
+import { canonicalJson } from './release-descriptor.js';
+import { parseDevDelivery } from './dev.js';
+import { readInstalledReceipt } from './installed-receipt.js';
 import { InstallerManager } from './manager.js';
-import { productionPeers } from './production-peers.js';
+import { controlRuntimeDirectory, productionPeers } from './production-peers.js';
+declare const __INSRC_INSTALLER_TARGET__: unknown;
 /** Ordinary CLI owns no prompts and cannot construct an install admission. */
 export async function managerMain(args = process.argv.slice(2)): Promise<void> {
   let bytes = '';
@@ -20,11 +22,15 @@ export async function managerMain(args = process.argv.slice(2)): Promise<void> {
     if (args[index] === '--home') home = value; else if (args[index] === '--installation-id') installationId = value; else throw new InstallerError('schema-invalid', 'Unknown manager argument');
   }
   const location = resolveInstallationLocation(installationId, { home, ...(process.platform === 'win32' ? { userSid: controlBinding().userSid() } : {}) });
-  // Bundled manager lives at release root. Source/out invocation is inspection
-  // tooling only and cannot guess a release identity or obtain fake peers.
-  const receipt = JSON.parse((await readBoundedFile(join(dirname(fileURLToPath(import.meta.url)), '.release.json'), 2 * 1024 * 1024)).toString('utf8')) as { manifest?: { target?: unknown } };
-  const descriptor = parseReleaseDescriptor(receipt, { target: parseInstaller('target', receipt.manifest?.target) });
-  const manager = new InstallerManager(location, descriptor.manifest.target, productionPeers(descriptor.manifest.target, location), event => process.stdout.write(JSON.stringify(event) + '\n'));
+  if (typeof __INSRC_INSTALLER_TARGET__ === 'undefined') throw new InstallerError('target-unqualified', 'Use the installed manager for this platform');
+  const target = parseInstaller('target', __INSRC_INSTALLER_TARGET__); controlRuntimeDirectory(target);
+  const directory = dirname(fileURLToPath(import.meta.url)), installed = await readInstalledReceipt(directory, target);
+  if (realpathSync(process.execPath) !== realpathSync(join(directory, 'tools/node', installed.manifest.runtime.relativeExecutable))) throw new InstallerError('runtime-invalid', 'Installed manager requires its own release runtime');
+  const manager = new InstallerManager(location, target, productionPeers(target, location), event => process.stdout.write(JSON.stringify(event) + '\n'));
+  const current = manager.inspect();
+  if (current.kind === 'present' && (current.snapshot.installation.delivery.mode !== installed.mode
+    || (current.snapshot.installation.activeReleaseId !== undefined && current.snapshot.installation.activeReleaseId !== installed.manifest.releaseId)
+    || (installed.mode === 'dev' && canonicalJson(parseDevDelivery(current.snapshot.installation.delivery)) !== canonicalJson(installed.receipt.sourceOffer.delivery)))) throw new InstallerError('candidate-conflict', 'Installed receipt differs from the selected controller delivery/release');
   process.stdout.write(JSON.stringify(await manager.execute(request)) + '\n');
 }
 if (process.argv[1] && realpathSync(resolve(process.argv[1])) === realpathSync(fileURLToPath(import.meta.url))) {

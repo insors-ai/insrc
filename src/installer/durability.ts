@@ -22,7 +22,7 @@ export function flushParents(directory: string, boundary: string): void {
   const part = relative(boundary, directory);
   if (isAbsolute(part) || part === '..' || part.startsWith(`..${sep}`)) throw new InstallerError('path-invalid', 'Durability path escapes its owner');
   for (let current = directory; ; current = dirname(current)) {
-    flushDirectory(current); if (current === boundary) return;
+    flushDirectory(current); if (relative(boundary, current) === '') return;
   }
 }
 /** Flush newly created directory entries bottom-up after file data is durable. */

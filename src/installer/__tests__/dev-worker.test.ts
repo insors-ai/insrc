@@ -16,13 +16,17 @@ async function scenario(name: string): Promise<void> {
   const root = mkdtempSync(join(realpathSync(tmpdir()), 'insrc-dev-worker-')), children: ChildProcess[] = [], node = await node22Fixture();
   try {
     const file = realpathSync('src/installer/__tests__/dev-worker-fixture.mjs');
-    const child = spawnFixture(node.executable, [file, root, name], { env: { ...process.env, NODE_OPTIONS: '', NODE_PATH: '' }, stdio: ['ignore', 'pipe', 'pipe'] });
+    const args = name === 'coordinator'
+      ? ['--import', 'tsx', '--test', '--test-concurrency=1', '--test-name-pattern=Retained owned group|Whole preparation budget', 'scripts/__tests__/test-harness-coordinator.test.ts']
+      : [file, root, name];
+    const child = spawnFixture(node.executable, args, { env: { ...process.env, NODE_OPTIONS: '', NODE_PATH: '', NODE_TEST_CONTEXT: undefined }, stdio: ['ignore', 'pipe', 'pipe'] });
     children.push(child); let output = '';
     child.stdout!.on('data', value => { output += String(value); }); child.stderr!.on('data', value => { output += String(value); });
     const code = (await once(child, 'close'))[0]; assert.equal(code, 0, output);
+    if (name === 'coordinator') { assert.match(output, /^# pass 2$/m); assert.match(output, /^# skipped 0$/m); }
   } finally { await stopOwnedChildren(children); node.cleanup(); rmSync(root, { recursive: true, force: true }); }
 }
-test('cancel-or-terminal-eof-drains-owned-preparation-actors-before-return', async () => { await scenario('abort'); await scenario('eof'); });
+test('cancel-or-terminal-eof-drains-owned-preparation-actors-before-return', async () => { await scenario('abort'); await scenario('eof'); await scenario('coordinator'); });
 test('held-unknown-or-mismatched-preparation-result-blocks-retry-and-cleanup', async () => { await scenario('tamper'); await scenario('held'); });
 test('worker-protocol-rejects-foreign-checkpoint-and-empty-prepared-result', async () => {
   for (const name of ['nested', 'foreign', 'empty', 'missing', 'missing-file', 'tampered-file', 'wrong-size', 'extra-file']) await scenario(name);

@@ -26,7 +26,16 @@
           "relation": "tracked-by"
         },
         "createdAtRevision": 1,
-        "posted": []
+        "posted": [
+          {
+            "kind": "task-list",
+            "at": "2026-11-24T18:43:57.180Z"
+          },
+          {
+            "kind": "design",
+            "at": "2026-11-24T18:43:59.393Z"
+          }
+        ]
       }
     },
     "lifecycle": {

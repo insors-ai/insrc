@@ -9,18 +9,19 @@
 **HLD effective hash:** `acb12724c316...`
 **Tracker:** [insors-ai/insrc#245](https://github.com/insors-ai/insrc/issues/245)
 
-Dependency setup checks local Ollama and coding-agent availability without starting model work or sign-in. Missing Ollama is offered as a user-level installation with explicit terminal consent; coding agents are recommendations only. Existing installations are reused.
+S3 supplies the production dependency adapter behind the completed S1/S2 installer: bounded Ollama/runtime checks, an exact consent-bound user-level Ollama installation, and lookup-only coding-agent recommendations. It reuses the existing terminal and manager, preserves public report/decision schemas, propagates cancellation, and makes archive limits, durable publication and service handoff explicit. Full daemon installation remains unavailable until S4/S5 supply their production peers; platform support is never inferred from fixtures.
 
 ## Contents
 
 1. [HLD context](#1-hld-context)
 2. [Contract details](#2-contract-details)
 3. [Data model changes](#3-data-model-changes)
-4. [Interaction with shared contracts](#4-interaction-with-shared-contracts)
-5. [Error paths](#5-error-paths)
-6. [Test strategy](#6-test-strategy)
-7. [Alternatives considered](#7-alternatives-considered)
-8. [References](#8-references)
+4. [Diagrams](#4-diagrams)
+5. [Interaction with shared contracts](#5-interaction-with-shared-contracts)
+6. [Error paths](#6-error-paths)
+7. [Test strategy](#7-test-strategy)
+8. [Alternatives considered](#8-alternatives-considered)
+9. [References](#9-references)
 
 ## 1. HLD context
 
@@ -42,165 +43,320 @@ Dependency setup checks local Ollama and coding-agent availability without start
 
 **Surface level:** internal-shared
 
-### 2.1 `DependencyReport`
+### 2.1 `DependencyPort`
 
 ```typescript
-interface DependencyReport { runtimeReady: boolean; ollama: 'ready' | 'installed-not-running' | 'missing' | 'unavailable'; ollamaInstallOffer?: { id: string; destination: string; version: string }; agents: { claude: boolean; codex: boolean; vibe: boolean }; recommendations: string[]; blockers: string[] }
+interface DependencyPort { inspect(location: InstallationLocation, context?: DependencyProbeContext): Promise<DependencyReport>; decide(location: InstallationLocation, decision: DependencyDecision, context?: DependencyOperationContext): Promise<DependencyReport>; }
 ```
 
 **Parameters:**
-- `input: unknown` — Truthful bounded detection report.; untrusted wire input is schema-validated before use.
+- `location: InstallationLocation` — Canonical explicit installation home and installation identity; validated against the adapter factory binding.
+- `decision: DependencyDecision` — Existing exact offerId with install/decline; accepted only from the manager terminal path.
+- `context: DependencyProbeContext | DependencyOperationContext` _(optional)_ — Proposed optional internal TypeScript context. Probe context carries AbortSignal. Mutation context also binds operationId and attempt nonce, a live-owner assertion and bounded progress callback; production acceptance requires it. No controller writer, wire flag or prompt authority is exposed.
 
-**Returns:** `DependencyReport` — Truthful bounded detection report.
+**Returns:** `Promise<DependencyReport>` — Existing schema-validated truthful runtime/Ollama/agent report. Missing Ollama is an unmet blocker until a valid service is ready; no agent CLI is ever a blocker.
 
 **Errors:**
-- `dependency-probe-failed` when Unreadable path, malformed endpoint/version reply or bounded probe failure.
+- `dependency-offer-stale` when Policy, target, endpoint, destination, existing executable/service or accepted id differs on locked recheck.
+- `dependency-blocked` when Required private runtime or Ollama service is not available; diagnostics distinguish missing/stopped/unavailable.
+- `dependency-uncertain` when Finite accepted preparation has no confirmed drain or published dependency state is inconsistent; manager retains a blocked operation.
+- `cancelled` when Abort at a safe boundary; no subsequent download, publication or service launch is admitted.
 
 **Preconditions:**
-- Private runtime readiness comes from verified s1 policy, not PATH Node.
-- Filesystem/HTTP probe errors must not be silently recast as missing.
+- inspect is read-only: no directory creation, downloads, process launch, models, sign-in or global configuration writes. A bounded GET /api/version is the only service probe.
+- decide install requires the original manager-held installation mutation and valid internal context. A direct adapter accept without that context fails.
+- Shared DependencyReport/DependencyDecision/ManagerRequest JSON schemas and protocol versions remain unchanged. Existing fixture implementations remain source compatible with optional internal parameters.
 
 **Postconditions:**
-- A service-ready result requires a bounded local version response; executable-only is installed-not-running.
-- Agent checks detect executables without LLM requests, auth prompts or installation.
+- Decline performs no mutation, lookup commands or service start and returns the still-unmet report.
+- Acceptance recomputes the offer immediately before mutation, then prepares an immutable private payload. No installer may overwrite an existing Ollama installation or replace an already available service.
+- Cancellation and EOF propagate to all finite preparation work; only the explicitly consented, recorded long-lived Ollama service is exempt from finite preparation drain after its handoff boundary.
+- A private dependency-uncertain failure is preserved as blocked by narrow manager integration; inspect/stop and daemon shutdown behavior are unchanged.
 
-### 2.2 `DependencyDecision`
+### 2.2 `DependencyReport`
 
 ```typescript
-interface DependencyDecision { offerId: string; choice: 'install' | 'decline' }
+interface DependencyReport { runtimeReady: boolean; ollama: 'ready' | 'installed-not-running' | 'missing' | 'unavailable'; ollamaInstallOffer?: { id: string; destination: string; version: string }; agents: { claude: boolean; codex: boolean; vibe: boolean }; recommendations: string[]; blockers: string[]; }
 ```
 
 **Parameters:**
-- `input: unknown` — One exact user decision from the shared terminal script.; untrusted wire input is schema-validated before use.
+- `input: unknown` — Existing sc3 wire input, parsed through the existing installer schema before consumption.
 
-**Returns:** `DependencyDecision` — One exact user decision from the shared terminal script.
+**Returns:** `DependencyReport` — ready requires a bounded successful local Ollama version response. An executable without a reachable service is installed-not-running. No executable and an unoccupied/refused configured endpoint is missing. Permission, timeout, malformed replies, endpoint conflict or configuration errors are unavailable.
 
 **Errors:**
-- `dependency-offer-stale` when Policy, target, destination or existing installation changed.
+- `dependency-probe-failed` when Bounded filesystem/configuration or loopback response cannot establish state; include concrete diagnostic rather than silently reporting missing.
 
 **Preconditions:**
-- Offer binds target/version/digest/destination and whether starting a user-session Ollama process is included.
-- No IDE-generated/default-yes consent; stale offers re-prompt.
+- runtimeReady uses exact verified control runtime/target provenance from S1/S2, never host PATH node/npm.
+- A ready existing service may be reused even when no executable is on PATH. All diagnostic and recommendation lists retain existing schema bounds.
 
 **Postconditions:**
-- Decline changes nothing and retains visible unmet requirement.
-- Accept installs only Ollama, never agent CLIs or GPU drivers/system services.
+- Only missing, qualified targets with a clean absent private destination receive an offer. Installed-stopped gets an exact quoted manual serve instruction, not an install offer or invented API start action.
+- Report recommendations disclose all install/start/model-directory side effects before the terminal consent prompt. No false success after decline.
+
+### 2.3 `productionPeers`
+
+```typescript
+productionPeers(target: Target, location: InstallationLocation): ManagerPeers
+```
+
+**Parameters:**
+- `target: Target` — Publisher-bound target, architecture and baseline.
+- `location: InstallationLocation` — Bind dependency policy, paths, endpoint configuration and runtime provenance to this installation.
+
+**Returns:** `ManagerPeers` — Existing bundle/dev adapters plus the production S3 dependency adapter. Lifecycle and migration peers remain absent until their owning stories implement them.
+
+**Errors:**
+- `runtime-invalid` when Control runtime is not the exact owned Node distribution for the selected target.
+
+**Preconditions:**
+- Factory construction has no install, probe, model initialization or application DB side effects.
+- No fixture/no-op lifecycle or migration port is inserted to make a real install appear complete.
+
+**Postconditions:**
+- Both located manager-entry and terminal-entry callers receive the same dependency adapter. Packaging bundles the policy/decoder without importing config stores, providers, daemon boot or application DB modules.
+- Update the S2 installed-dev composition assertion to expect the real dependency adapter while retaining assertions that S4/S5 capabilities are absent.
+
+### 2.4 `runTerminalInstall`
+
+```typescript
+runTerminalInstall(options: TerminalInstallOptions): Promise<TerminalOutcome>
+```
+
+**Parameters:**
+- `options: TerminalInstallOptions` — Existing terminal streams, manager peers and AbortSignal; report/decision forms stay unchanged.
+
+**Returns:** `Promise<TerminalOutcome>` — Existing outcome semantics and same-terminal TUI handoff remain S1-owned.
+
+**Errors:**
+- `dependency-offer-stale` when Locked dependency recheck invalidates the displayed offer; return to explicit terminal consent rather than silently accepting a replacement.
+
+**Preconditions:**
+- TTY admission remains mandatory. Only the terminal sends install/decline; IDE and ManagerRequest flags cannot pre-answer it.
+- For missing Ollama, the question explicitly reads Install and start Ollama <version> at <destination>? [y/N], with its scoped endpoint/log/model-directory policy shown beforehand.
+
+**Postconditions:**
+- Existing stopped Ollama displays manual start guidance with no automatic start/reinstall.
+- Thread optional signal into dependency probes; mutation context is supplied only by the lock-owning InstallerManager. Preserve existing post-ready lock release, TUI launch, cancellation and retry behavior.
 
 ## 3. Data model changes
 
-### 3.1 `Qualified Ollama offer` — new
+### 3.1 `Dependency operation context and integration boundary` — new
 
-Private s3 policy selects explicit per-target official payload/version/digest and user-owned destination under the selected installation home. Reuse a healthy existing Ollama binary/service; never overwrite it. Offer text says install and start for this user when that side effect is needed. No models or GPU/system drivers are downloaded implicitly. Proposed boundary: src/installer/dependencies.ts; provider modules are inspected context, not reused for model initialization.
+Proposed internal-only types live beside DependencyPort in src/installer/peer-contracts.ts. DependencyProbeContext contains optional signal; DependencyOperationContext adds operationId, attemptNonce, assertCurrent():void and progress(stage,detail):void. The manager establishes/persists the preparing intent before accepting dependency side effects, and owns all controller updates. The adapter writes only its private dependency attempt/receipt files. It never receives ControllerStore, a release publication lease or lifecycle/migration authority. The optional API addition preserves fixture callers and all sc3/sc2 wire shapes. On dependency-uncertain the manager retains blocked preparation rather than clearing it; explicit same-operation reconciliation first inspects the recorded dependency attempt without starting a second actor. This is narrow wiring in src/installer/manager.ts, not a new scheduler or replacement lifecycle.
 
+**Call sites:**
+- `src/installer/peer-contracts.ts`
+- `src/installer/manager.ts`
+- `src/installer/terminal-install.ts`
 
-### 3.2 `Platform extraction and readiness` — new
+### 3.2 `Immutable qualified Ollama policy and exact offer` — new
 
-Windows uses a qualified official standalone archive; macOS uses a user-local app/CLI location without global links, quarantine removal or automatic privilege escalation. Linux extracts official tar.zst into a user-owned directory, never running the upstream privileged installer. Bundle a pinned streaming fzstd decoder plus validated tar reader rather than depending on root-installed zstd; qualify the exact large payload/frame window and fail with a concrete limitation if unsupported. Apply byte/path/symlink and free-space limits before publication. Start only an accepted owned Ollama user-session process with logs and a bounded loopback version probe; do not stop another user's/existing service or create system launch services.
+Proposed source files: src/installer/dependencies.ts and src/installer/ollama-policy.ts. One shipped policy entry per enabled OS/arch/baseline selects exact version, official immutable URL, SHA256, compressed/expanded byte/file/window limits, validated layout, absolute executable-relative path, endpoint, model/log destinations and whether user-session serve startup is included. Offer identity is SHA256 of canonical policy + installation identity/home + target + normalized destination + endpoint/start/model side effects + observed absence state. Encode as an existing token-safe identifier (at most 128 characters). The report still projects only id/version/destination. Do not download latest metadata during inspect or accept arbitrary user URLs/digests. Recheck the whole offer and filesystem/service state under manager ownership before first mutation and again before publication/start. A policy, target or existing-installation race is stale and requires renewed consent. Nonenabled targets report concrete manual user-level guidance; target is not falsely marked supported.
 
+**Call sites:**
+- `src/installer/production-peers.ts`
+- `src/installer/contracts.ts`
+- `src/installer/terminal-install.ts`
 
-### 3.3 `Detection-only coding agents` — new
+### 3.3 `Detection and service-state table` — new
 
-Resolve claude, codex and vibe through bounded platform executable lookup including Windows executable suffixes. Existence/executability is reported without spawning login/model commands; recommendations are shown when none are found. Permission/lookup diagnostics stay visible and never trigger automatic agent installation. The original terminal handles all prompts; normal daemon/TUI launch remains the foundation owner's responsibility.
+Bound the entire read-only inspection to 3 seconds, including executable lookup and the loopback HTTP version response (16 KiB body, no redirects, no credentials, accepted version shape/length). Derive the Ollama endpoint through a narrow read-only configuration seam shared with the selected installation; default is loopback port 11434. Do not change configuration or probe a remote configured host as if it were local. Missing config uses the documented default; malformed, inaccessible or conflicting config is unavailable. Ready endpoint wins over a missing PATH executable and is reused; refused endpoint plus executable is installed-not-running; refused endpoint plus no executable is missing. Other network, permission, malformed-response or policy failures are unavailable, not missing. Enumerate absolute executable candidates via bounded PATH/PATHEXT and known user/macOS app locations. Never invoke claude/codex/vibe, auth, completion, embeddings, model-list or model-pull. Return zero/one/many booleans truthfully; recommend at least one agent if none found and preserve lookup diagnostics.
 
+**Call sites:**
+- `src/installer/contracts.ts`
+- `src/installer/production-peers.ts`
+- `src/installer/terminal-install.ts`
 
-## 4. Interaction with shared contracts
+### 3.4 `Private payload, receipt and filesystem ownership` — new
+
+One installation owns zero or more immutable deps/ollama/<version>/<target>/<asset-digest> payloads and at most one accepted finite dependency preparation attempt under its installation lock. Each private attempt references exactly one qualified policy/offer and owns its isolated staging, bounded logs and atomic receipt; receipts never contain application DB data, credentials or a global service definition. Derive all paths below the canonical installation home; validate ancestors, user ownership and link/reparse-point state before writes. Stream exact-byte/digest download; do not reuse the S1 bundle compressed limit blindly because Ollama asset policy may differ. Finite preparation has an explicit 20-minute overall deadline, 30-second readiness deadline, 5-second cleanup deadline and bounded log/output limits; no background task queue or implicit retry. Check cancellation/current-owner before and after awaits and immediately before publication or spawn. Fsync files and bottom-up directories plus source/destination parents using the existing filesystem-only durability helpers and non-replacing native publication. A same-ID existing payload is reusable only after complete receipt/inventory/target verification; conflicting bytes never overwrite. Failed/cancelled unpublished staging is removed only after its finite admitted actors positively close. Retain uncertain artifacts and block a second mutation; do not infer ownership from PID, age, a free lock or a log line.
+
+**Call sites:**
+- `src/installer/durability.ts`
+- `src/installer/manager.ts`
+- `src/installer/dev-worker.ts`
+- `src/installer/download.ts`
+
+### 3.5 `Platform extraction and endpoint compatibility` — new
+
+Proposed source file src/installer/ollama-archive.ts uses in-process bounded parsers. Linux consumes pinned official tar.zst using bundled pinned fzstd streaming decoding plus a validated tar reader; reject unsupported frame windows before decoder allocation and enforce its 2^25-byte backreference limit, input/output/file-count/individual-file limits and cooperative yielding. Qualify exact real archives, not only tiny fixtures. Windows consumes qualified standalone CLI ZIP plus only the required target libraries; never runs OllamaSetup.exe, changes user PATH or registers a service. macOS stages a qualified user-local app/CLI payload and invokes the bundled CLI directly, never the GUI move/global-link flow or quarantine-removal/elevation commands. Preserve exact layouts and executable/library dependencies. Archive member paths reject traversal, absolute/drive/UNC paths, ADS, collisions, device entries and escapes; permit no links in the published tree. If an official layout requires internal symlinks/hardlinks, qualify a two-pass bounded materialization of regular-file targets contained in the same payload (cycle/depth bounds, directory links materialized only with explicitly qualified layout); never create traversable archive links. Otherwise that exact payload remains unsupported with a concrete limitation. Preserve Linux/macOS/Windows scope while distinguishing pending qualification from enabled routes.
+
+**Call sites:**
+- `src/installer/production-peers.ts`
+- `src/installer/download.ts`
+- `src/installer/safe-zip.ts`
+
+### 3.6 `Consented Ollama service handoff and interrupted attempts` — new
+
+The missing-Ollama offer explicitly covers installation plus a user-session serve process with local-only binding, private bounded logs and a model directory under the selected dependency home. Reuse any healthy configured existing service without launching or stopping it. Publish and verify immutable payload before recording service-start admission; check cancellation immediately before spawn. Launch only the qualified absolute Ollama executable with an argv array and sanitized explicit environment (including scoped OLLAMA_HOST/OLLAMA_MODELS), no shell/system service/global PATH edits or implicit models. The service is intentionally retained after its recorded handoff, including installer/TUI exit; finite preparation drain must not wait for that long-lived process. Before admission cancellation prevents start; after admission cancellation stops installation progress, preserves truthful installed/unverified state and does not promise rollback or terminate an existing/reused service. Store the admission intent before spawn and outcome/readiness atomically; startup failure/port races never authorize stopping another listener. A healthy /api/version response establishes availability, not cryptographic process ownership. Record whether availability was reused or startup was admitted; do not label an arbitrary listener as owned. After manager death, inspect receipt/inventory and endpoint without replaying spawn/download; already ready service is reusable, a stopped published binary gets manual guidance, and unresolved finite actors or an ambiguous in-progress launch remain unavailable/blocked until reconciled. Same-operation recovery must reconcile these facts before ordinary manager continuation, never start a second unconfirmed service. A discarded/failed dependency attempt cannot change selected daemon release or invoke lifecycle/migrations. The exact finite-actor guarantee remains admitted actors, retained owned groups and cooperating descendants; no arbitrary descendant isolation claim.
+
+**Call sites:**
+- `src/installer/manager.ts`
+- `src/installer/peer-contracts.ts`
+- `src/installer/terminal-install.ts`
+- `src/installer/production-peers.ts`
+
+### 3.7 `Composition, packaging and verification boundaries` — new
+
+Production composition adds only dependencies to the existing bundle/dev peers. Private proposed helper files are bundled into the same target control artifacts; update required packaging assets only where the chosen decoder/policy requires it. Preserve dependency-free control startup and private-runtime executable provenance; no provider/config-store/application DB import. Entry callers remain src/installer/manager-entry.ts and src/installer/terminal-entry.ts. Existing S1/S2 test assertions expecting dependencies absent are revised narrowly; lifecycle/migrations stay absent, so complete real installer success remains gated on S4/S5. No changes to IDE adapters, daemon IPC, migration hooks or host v2 code. ERD is unnecessary for this small ownership model; the owner/cardinality, links and compatibility are explicit above. Terminal flow remains sequential prose prompts; no new layout warrants a UX mock. Ordered interactions are: read-only inspect -> disclose offer -> terminal decision -> manager lock/current recheck -> private prepare/probe/drain -> durable publication -> consented service admission/readiness -> ordinary S1/S4/S5 continuation -> ready/lock release/TUI.
+
+**Call sites:**
+- `src/installer/production-peers.ts`
+- `src/installer/manager-entry.ts`
+- `src/installer/terminal-entry.ts`
+- `src/installer/__tests__/installed-dev-fixture.mjs`
+
+## 4. Diagrams
+
+- [Sequence diagram](docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/sequence-diagram.html)
+
+## 5. Interaction with shared contracts
 
 | Contract | Role | How |
 | :--- | :--- | :--- |
-| `sc1` | consumes | Use selected target/private runtime/home; do not select a new delivery mode. |
-| `sc2` | consumes | Publish bounded dependency progress through the existing operation; no new install action. |
-| `sc3` | consumes | Provide real detection/setup behavior behind foundation-owned report/decision types. |
-| `sc6` | consumes | Resolve the same explicit user home; local service probing is not daemon lifecycle. |
+| `sc1` | consumes | Bind the existing target/private runtime and installation home; do not add a delivery mode, select a release, install PATH Node or replace verified runtime policy. |
+| `sc2` | consumes | Use existing lock-owning manager preparation and terminal admission. Narrow internal context/progress and blocked dependency evidence preserve its sole controller writer and cancellation boundaries; ordinary lifecycle/inspect/stop behavior is unchanged. |
+| `sc3` | consumes | Return existing schema-validated reports and consume exact install/decline decisions. Use opaque offer identity to bind private policy and all side effects. No new report field, install flag, public service-start action or IDE prompt API. |
+| `sc6` | consumes | Use resolved explicit installation home and the existing control entrypoints. Ollama loopback HTTP availability probing is separate from daemon IPC; no changes to Unix socket, named pipe or bridge protocol. |
 
-## 5. Error paths
+## 6. Error paths
 
 **Error cases**
 
-- **Missing or stale consent** (recoverable)
-  - Detection: Offer identity no longer matches policy/destination or no terminal decision exists.
-  - Response: No side effects; report stale/no consent.
-  - User impact: User can re-read the exact offer.
-- **Download/extraction/readiness failure** (recoverable)
-  - Detection: Digest, archive limits, filesystem write or bounded local-version probe fails.
-  - Response: Report dependency unavailable with owned staging/log location; do not mark ready or request elevation.
-  - User impact: Installation state remains accurate; no model work starts.
-- **Existing endpoint is not Ollama or is unhealthy** (recoverable)
-  - Detection: Version response fails shape/identity validation.
-  - Response: unavailable, not missing; do not overwrite or replace a running service.
-  - User impact: User gets the real probe error.
-- **Unsupported user-level platform payload** (recoverable)
-  - Detection: Qualification policy lacks this target or decompressor rejects its exact archive.
-  - Response: Concrete user-level limitation; no sudo/system installer fallback.
-  - User impact: User may install Ollama manually and retry detection.
+- **Stale, forged or missing terminal consent** (recoverable)
+  - Detection: Recompute the canonical qualified offer and compare id/target/home/destination/endpoint/side effects plus current executable/service observations after manager lock acquisition and immediately before mutation; production acceptance also validates operation context and live owner.
+  - Response: Return dependency-offer-stale or capability error before writes/download/spawn. Do not accept a changed offer or ManagerRequest.installOllama as consent.
+  - User impact: User sees the exact changed offer and must explicitly accept again.
+- **Required runtime or local probe is unavailable** (recoverable)
+  - Detection: Verify the selected control runtime provenance and target; bound candidate filesystem lookups and loopback version GET. Track refused versus timeout/permission/malformed/redirect/configuration failures separately.
+  - Response: Return runtimeReady false or unavailable with bounded actionable blockers; never turn an unknown failure into missing or an install offer.
+  - User impact: Repair the actual private-runtime or endpoint/configuration problem; existing Ollama is preserved.
+- **Payload digest, extraction layout or decoder qualification fails** (recoverable)
+  - Detection: Count and hash compressed bytes, validate target policy and archive headers/windows, bound expanded members/output and validate each canonical member before write. Verify complete staged inventory/runtime layout before publication.
+  - Response: Stop admission and drain finite work, retain diagnostics and reject the payload. Delete only proven-private unpublished staging after confirmed closure; no system installer/decompressor fallback.
+  - User impact: User gets the exact target/archive/window limitation and manual user-level guidance; no elevation requested.
+- **Destination changed, durable flush failed or same-id payload conflicts** (recoverable)
+  - Detection: Revalidate ancestors and absence under manager ownership; use exclusive no-replace publication; compare complete receipt/inventory on existing ids; check file/directory fsync and parent namespace results.
+  - Response: Preserve the existing payload and daemon selection. If publication may have occurred, retain private evidence and reconcile its complete bytes and successful parent flush before reuse; never overwrite by retry.
+  - User impact: No destructive rollback or false success; exact staging/receipt diagnostic is retained.
+- **Ctrl+C, terminal EOF, deadline or manager owner loss** (recoverable)
+  - Detection: AbortSignal and live-owner assertions are checked around awaits and before side effects; finite owned actors and streams have bounded closure evidence. The service-admission checkpoint distinguishes finite preparation from the accepted long-lived service.
+  - Response: Before service admission, cancel finite work and admit no later publication/start. After the recorded service-admission boundary, cancel installer continuation and preserve truthful installed/unverified state; the consented service may remain. Unknown finite closure persists dependency-uncertain/blocked and prevents a duplicate attempt. No PID/age inference or blind restart.
+  - User impact: Cancellation outcome and any retained private payload/service/logs are explained. It is not claimed to undo an accepted service start.
+- **Service port conflict, startup exit or readiness timeout** (recoverable)
+  - Detection: Reprobe immediately before service admission, observe launch/exit errors, and bound the configured loopback version response. A response alone is not proof the newly spawned actor owns the endpoint.
+  - Response: Reuse a healthy existing service without stopping it; otherwise report unavailable with bounded logs. Never stop/replace a foreign listener, elevate, or claim ready solely because a child was spawned.
+  - User impact: User gets a concrete endpoint/start diagnostic with manual remedy and preserved existing service.
+- **Interrupted dependency preparation on a later explicit operation** (recoverable)
+  - Detection: Read and validate private attempt/receipt identities and stage under the installation lock; inspect existing immutable bytes and endpoint without replaying download/spawn. Distinguish a completely closed failed attempt, validated published binary, admitted retained service and unresolved finite actors.
+  - Response: Reconcile the same operation before ordinary continuation. Reuse validated ready service; show manual guidance for a proven stopped binary; retain blocked state for unknown work/ambiguous launch. No automatic new service, new payload or changed consent.
+  - User impact: Retry cannot silently duplicate uncertain work or overwrite a working installation.
+- **S4/S5 production peer is still absent** (recoverable)
+  - Detection: Existing manager/terminal capability admission detects missing lifecycle/readiness or migration ports after S3 is composed.
+  - Response: Keep capability-unavailable; do not install a fixture/no-op peer or fabricate full installation success.
+  - User impact: S3 dependency adapter can be independently tested but real complete installation awaits its owning stories.
 
 **Edge cases**
 
 | Input | Expected |
 | :--- | :--- |
-| Ollama executable exists but service is stopped | Report installed-not-running; a separate explicit start choice is visible. |
-| User declines missing Ollama | No install/start; report remains unmet and no success claim for Ollama-dependent functionality. |
-| One or several coding agents found | Report them; no install or sign-in action. |
+| Working local Ollama service exists but no Ollama binary is found on PATH. | Report ready and reuse the service; do not offer installation or require locating/replacing its executable. |
+| Existing Ollama executable is present and the configured loopback endpoint refuses connections. | Report installed-not-running with exact quoted manual serve guidance. No automatic start/reinstall and no fabricated public start decision. |
+| Missing Ollama offer is declined, or user answers empty/default N. | No filesystem writes, downloads, service start, agent installation or model work. Return missing plus the visible unmet requirement; preserve incumbent daemon state. |
+| Zero, one or multiple coding-agent executables are found, including Windows PATHEXT launchers. | Return exact boolean presence. Zero triggers recommendations. Lookup permission errors stay diagnostic; no CLI is spawned and no agent affects required dependency readiness. |
+| Path/home includes spaces or Unicode, existing private payload is present, or CUDA environment is explicitly set (including empty). | Preserve argv boundaries and canonical paths. Reuse only complete valid immutable payload. Preserve explicit inherited CUDA setting; default skip only when absent for any relevant preparation environment. |
+| Official archive contains internal library aliases, large zstd frames, or an unqualified architecture. | Only the explicitly qualified bounded materialization/layout is allowed; no published symlink escape. Unsupported frames/layout/target are concrete limitations, not silently enabled or narrowed platform support. |
+| Installer is cancelled after the Ollama service was explicitly admitted to remain running. | Show cancellation and retained service/payload state truthfully. Stop installer continuation and TUI handoff; do not silently kill a reused or intentionally retained service. |
 
 **Invariants to preserve**
 
-- Remain inside s3 boundary; no elevated commands, PID/kill daemon fallback, direct cloud LLM REST, or host v2 daemon mutation. [[c1]]
-- Approved HLD shared contracts, terminal-only install and success-to-TUI handoff remain unchanged. [[c2]]
-- DEF E20261123c3d71313:S003:FR001 and this story acceptance criteria apply unchanged. [[c3]]
+- S3 consumes sc1/sc2/sc3/sc6 without changing public schemas, daemon IPC, delivery modes, release selection or IDE prompt ownership. [[c1]]
+- Only the original manager lock owner writes controller state. Dependency adapter owns only private dependency staging/receipts; missing/uncertain closure blocks duplicate mutation. Finite ownership guarantee covers admitted actors, retained groups and cooperating descendants only. [[c2]]
+- S1 terminal-only install, exact consent, stop bypass of unrelated dependency health, pre-shutdown cancellation, ready/lock-release-before-TUI and post-install failure semantics remain covered. [[c3]]
+- No elevation, global PATH/system-service modification, implicit model download, direct cloud REST, provider initialization, agent spawn/auth/install or host v2 lifecycle changes. [[c4]]
+- E20261123c3d71313:S003:FR001 and DEF ac1/ac2/ac3 apply unchanged; local fixtures do not certify target-native/VM/IDE support. [[c5]]
 
-## 6. Test strategy
+## 7. Test strategy
 
-**Test framework:** `node:test + node:assert/strict; canonical *.test.ts coordinator. Real platform/IDE qualification is recorded separately and not inferred from fakes.`
+**Test framework:** `node:test + node:assert/strict with canonical *.test.ts coordinator under verified Node 22; reuse src/installer/__tests__ fixture conventions. Run only surrounding tests per task, then one combined S1/S2/S3 installer regression after all tasks. No unrelated backend sweep or host daemon/Ollama mutation.`
 
 **Test levels**
 
-- **contract** — Verify truthful report/consent classification and advisory boundaries.
-  - Subjects: `missing versus unavailable versus installed-not-running`, `stale/declined consent cannot mutate`, `agent lookup never calls auth/model/install`
-- **integration** — Exercise safe user-level extraction and readiness without any LLM.
-  - Subjects: `local version endpoint fixtures`, `official payload layout/hostile archive/large frame limits`, `no-elevation and no-global-PATH sentinels`
-  - Fixtures: `Disposable home, loopback server and owned process fixtures.`
-- **live** — Qualify each offered exact payload on actual platforms without downloading models.
-  - Subjects: `private executable version and local serve/version readiness`, `existing Ollama reused`, `decline path remains untouched`
+- **contract** — Prove truthful reporting and unchanged public wire semantics at consent boundaries.
+  - Subjects: `dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable`, `healthy-service-without-path-binary-is-reused`, `inspect-and-decline-have-zero-mutation-or-process-side-effects`, `stale-forged-and-cross-home-offers-reject-before-mutation`, `stopped-existing-ollama-has-manual-guidance-without-start-action`, `agent-zero-one-many-detection-never-spawns-auth-model-or-install`, `private-runtime-provenance-rejects-path-node-and-wrong-target`
+  - Fixtures: `Disposable home and configuration, absolute executable/PATHEXT lookup fixtures, loopback refused/slow/malformed/redirect/version endpoints and write/spawn sentinels.`
+- **integration** — Exercise the accepted private payload, finite actor and intentional service-handoff paths with controlled peers and no models.
+  - Subjects: `accepted-official-payload-is-user-only-and-discloses-install-and-start`, `consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state`, `hostile-archive-and-large-zstd-window-fail-before-unsafe-write-or-allocation`, `internal-archive-links-materialize-only-qualified-contained-files`, `download-size-digest-layout-and-fsync-failures-never-report-ready`, `cancellation-and-eof-block-later-publication-or-service-admission`, `finite-actor-closure-uncertainty-blocks-retry-and-cleanup`, `service-admission-is-durable-and-distinct-from-finite-preparation-drain`, `interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn`, `owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener`, `production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5`, `terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions`
+  - Fixtures: `Tiny exact-hash ZIP/tar.zst payloads, qualified internal-alias layouts, malformed frame headers/stream truncation/output bombs, injected fsync/no-replace failures, controlled executable and loopback server with argv/env/log capture.`, `Manager/terminal fixtures with real S1/S2 control/store/download helpers and explicit S4/S5 fixture peers only in tests. Actor admission/close/disposal and retained-service checkpoint evidence.`
+- **live** — Qualify each offered exact official payload/layout/version on its native target before enabling its auto-install route, without models or elevation.
+  - Subjects: `qualified-exact-ollama-payload-version-and-user-session-readiness-on-enabled-target`, `existing-installation-reuse-and-decline-preserve-platform-state`, `official-large-archive-streaming-and-library-layout-match-policy`
+  - Fixtures: `Linux ARM64 OrbStack disposable VM as the first Linux route; native Linux x64 runner or explicitly recorded translation plus native follow-up.`, `Existing macOS ARM64 UTM disposable guest; separate macOS x64 and Windows ARM64/x64 runners/guests when available. Unavailable targets remain pending, with no fake passed evidence.`, `Per-target receipt recording official URL/hash/bytes/version, native/translated status, archive limits, executable/library probe, no-elevation sentinels, endpoint readiness and cleanup/service intent.`
+- **smoke** — Complete one coherent installer regression after all S3 tasks, preserving S1/S2 functionality and qualification honesty.
+  - Subjects: `combined-s1-s2-s3-installer-regression-has-exact-coverage-and-confirmed-cleanup`, `published-control-payload-includes-real-dependency-adapter-without-application-boot-imports`, `terminal-install-upgrade-consent-and-ready-before-tui-regressions`
+  - Fixtures: `Canonical coordinator build, current source/output fingerprints, exact selected file list, admission/close/disposal journals and scoped report audit. A fixture pass never qualifies real target support.`
 
 **Acceptance mapping**
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `missing-ollama-exact-consent-before-user-install`, `accepted-official-payload-user-only`, `unsupported-route-no-elevation` |
-| `ac2` | `existing-healthy-reuse`, `installed-stopped-classification`, `decline-keeps-unmet-state` |
-| `ac3` | `zero-one-many-agent-detection`, `no-auth-model-or-agent-install-side-effects` |
+| `ac1` | `stale-forged-and-cross-home-offers-reject-before-mutation`, `accepted-official-payload-is-user-only-and-discloses-install-and-start`, `consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state`, `hostile-archive-and-large-zstd-window-fail-before-unsafe-write-or-allocation`, `qualified-exact-ollama-payload-version-and-user-session-readiness-on-enabled-target` |
+| `ac2` | `dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable`, `healthy-service-without-path-binary-is-reused`, `inspect-and-decline-have-zero-mutation-or-process-side-effects`, `stopped-existing-ollama-has-manual-guidance-without-start-action`, `download-size-digest-layout-and-fsync-failures-never-report-ready`, `cancellation-and-eof-block-later-publication-or-service-admission`, `interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn` |
+| `ac3` | `agent-zero-one-many-detection-never-spawns-auth-model-or-install`, `inspect-and-decline-have-zero-mutation-or-process-side-effects` |
 
-## 7. Alternatives considered
+## 8. Alternatives considered
 
-### 7.1 a1: Bounded report and exact consent offer — **CHOSEN**
+### 8.1 a1: Operation-bound dependency adapter with exact consent — **CHOSEN**
 
-Probe local availability, then bind each side effect to one exact terminal offer.
+Implement the existing DependencyPort with bounded read-only probes and one manager-owned accepted install attempt.
 
-Produce the existing DependencyReport from filesystem/executable and lightweight local service checks. Missing Ollama produces a version/destination offer; the canonical script returns explicit acceptance or decline.
+Retain DependencyReport/DependencyDecision wire schemas. Compose a private adapter in productionPeers. Add optional internal operation context for cancellation/progress and bounded manager-owned staging/evidence callbacks, keeping all controller writes with the manager. Re-resolve an immutable qualified Ollama policy at consent admission, install into a private immutable directory and disclose user-session serve startup in the existing terminal question. Existing stopped installations receive accurate diagnostics and a manual start instruction; no new start action is invented. Reuse safe download/durability/ownership patterns without a second scheduler. Coding-agent checks remain lookup-only.
 
-Install only qualified official payloads into the user's private dependency directory, verify readiness, and keep coding-agent detection advisory.
+### 8.2 a2: Private dependency preparation helper
 
-### 7.2 a2: Persistent dependency task queue
+Use the same report/decision surface but isolate accepted extraction and startup preparation in a private helper process.
 
-Store dependency setup jobs and replay them across restarts.
+Keep the same foundational wire schemas and exact consent semantics. The lock-owning manager admits one identity-bound helper and consumes its verified private result only after retained ownership closes; the helper handles platform payload preparation while the manager alone owns publication. An accepted user-session service requires explicit retained ownership handoff distinct from helper closure. No persistent service queue or independent lifecycle engine is added.
 
-Use the same report/decision contracts but persist a queue of detection, download and service-start jobs. Terminal interaction confirms jobs and watches their state.
+**Rejected because:** Also satisfies all criteria/contracts, but helper launch/result/cleanup protocol and packaging add substantial surface without resolving long-lived service ownership or qualification. Reserve isolation only if measured decoder responsiveness cannot satisfy bounds; such a change needs an explicit design revision.
 
-Queue replay and cancellation require an additional lifecycle separate from the existing installation operation record.
+## 9. References
 
-**Rejected because:** A separate dependency scheduler/replay model duplicates foundation state and makes terminal-owned consent harder to reason about.
+- **[[c1]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md`
+- **[[c2]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S002/LLD.md`
+- **[[c3]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/LLD.md`
+- **[[c4]]** `doc` `AGENTS.md`
+- **[[c5]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/DEF.md`
+- **[[c6]]** `analyze-bundle` `src/installer` — "Completed six-probe insrc_analyze_step; relationship coverage incomplete and manually verified at actual entry/manager/terminal files."
+- **[[c7]]** `code` `src/installer/peer-contracts.ts`
+- **[[c8]]** `code` `src/installer/production-peers.ts`
+- **[[c9]]** `code` `src/installer/manager.ts`
+- **[[c10]]** `code` `src/installer/terminal-install.ts`
+- **[[c11]]** `code` `src/installer/contracts.ts`
+- **[[c12]]** `doc` `https://docs.ollama.com/linux`
+- **[[c13]]** `doc` `https://docs.ollama.com/windows`
+- **[[c14]]** `doc` `https://docs.ollama.com/macos`
+- **[[c15]]** `doc` `https://github.com/101arrowz/fzstd`
+- **[[c16]]** `stakeholder` `User: continue after S2 completed with override; workflow lifecycle fixes are being handled in v2.`
+- **[[c17]]** `prior-artifact` `docs/plans/s2-dev-preparation-validation-2026-11-24.md`
 
-## 8. References
+## Citations
 
-- **[[c1]]** `doc` `AGENTS.md`
-- **[[c2]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md`
-- **[[c3]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/DEF.md`
-- **[[c4]]** `analyze-bundle` `src/agent/providers/ollama.ts`
-- **[[c5]]** `analyze-bundle` `src/agent/providers/cli-provider.ts`
-- **[[c6]]** `doc` `https://docs.ollama.com/linux`
-- **[[c7]]** `doc` `https://docs.ollama.com/windows`
-- **[[c8]]** `doc` `https://docs.ollama.com/macos`
-- **[[c9]]** `doc` `https://github.com/101arrowz/fzstd`
-- **[[c10]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-1.json`
-- **[[c11]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-2.json`
-- **[[c12]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-3.json`
-- **[[c13]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-4.json`
+- **[[c1]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md`
+- **[[c2]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S002/LLD.md`
+- **[[c3]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/LLD.md`
+- **[[c4]]** `doc` `AGENTS.md`
+- **[[c5]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/DEF.md`
+- **[[c6]]** `analyze-bundle` `src/installer` — "Completed six-probe insrc_analyze_step; relationship coverage incomplete and manually verified at actual entry/manager/terminal files."
+- **[[c7]]** `code` `src/installer/peer-contracts.ts`
+- **[[c8]]** `code` `src/installer/production-peers.ts`
+- **[[c9]]** `code` `src/installer/manager.ts`
+- **[[c10]]** `code` `src/installer/terminal-install.ts`
+- **[[c11]]** `code` `src/installer/contracts.ts`
+- **[[c12]]** `doc` `https://docs.ollama.com/linux`
+- **[[c13]]** `doc` `https://docs.ollama.com/windows`
+- **[[c14]]** `doc` `https://docs.ollama.com/macos`
+- **[[c15]]** `doc` `https://github.com/101arrowz/fzstd`
+- **[[c16]]** `stakeholder` `User: continue after S2 completed with override; workflow lifecycle fixes are being handled in v2.`
+- **[[c17]]** `prior-artifact` `docs/plans/s2-dev-preparation-validation-2026-11-24.md`

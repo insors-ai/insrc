@@ -294,26 +294,26 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 				const unit = { unit: 'epic', repoPath: fx2.repo, epicHash: HASH } as const;
 
 				// run A: the deterministic push creates ONE issue (EPIC-token title +
-				// unit/membership labels) and records it:
+				// unit/membership labels). Stage a journal write for the EPIC head FIRST,
+				// so the post-create recordUnit is refused by the staged-write guard
+				// (kind 'staged') — the write-back genuinely fails; the remote issue
+				// exists but no local record does.
+				mkdirSync(join(fx2.repo, '.insrc', 'journal'), { recursive: true });
+				writeFileSync(join(fx2.repo, '.insrc', 'journal', `${token}.json`), '{}');
 				const runA = await ensureUnitIssueDetailed(unit, remotePort, { readConfig: () => GITHUB });
 				assert.equal(runA.ok, true, JSON.stringify(runA));
 				if (runA.ok) assert.equal(runA.value.created, true);
 				const createsAfterA = creates;
 				const FAIL_REF = runA.ok ? runA.value.issue : '';
 				assert.ok(FAIL_REF.length > 0);
-				// simulate the lost write-back: remove the EPIC head binding (the local record)
-				{
-					const headPath = artifactJsonPath(fx2.repo, token);
-					const head = JSON.parse(readFileSync(headPath, 'utf8')) as { meta: { envelope?: { binding?: unknown } } };
-					if (head.meta.envelope !== undefined) delete head.meta.envelope.binding;
-					writeFileSync(headPath, JSON.stringify(head, null, 2) + '\n');
-				}
-				assert.equal(readBinding(fx2.repo, token), undefined, 'write-back lost: no local binding');
+				assert.equal(readBinding(fx2.repo, token), undefined, 'write-back failed: staged write blocks the binding');
 				assert.equal(readTrackerMeta(fx2.issue)?.issueRef, undefined, 'no issueRef persisted');
 
-				// run B (retry): the SAME production ensure — the local record is absent,
-				// so it falls through to the remote lookups and the title-token guard finds
-				// the issue run A created (EPIC-token title), adopting it with created:false:
+				// run B (retry): the SAME production ensure — local record absent (the
+				// staged-write guard still blocks a rebind until the journal is cleared),
+				// so it falls through to the remote lookups and the title-token guard
+				// finds the issue run A created (EPIC-token title), adopting created:false:
+				rmSync(join(fx2.repo, '.insrc', 'journal', `${token}.json`), { force: true });
 				const runB = await ensureUnitIssueDetailed(unit, remotePort, { readConfig: () => GITHUB });
 				assert.equal(runB.ok, true, JSON.stringify(runB));
 				if (runB.ok) {

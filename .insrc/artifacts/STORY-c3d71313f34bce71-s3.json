@@ -62,6 +62,17 @@
           "revision": 2,
           "at": "2026-11-25T13:46:07.998Z",
           "externalId": "7164260852"
+        },
+        {
+          "target": {
+            "entityId": "LLD-c3d71313f34bce71-s3",
+            "type": "LLD",
+            "relation": "documents",
+            "fragment": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md"
+          },
+          "revision": 6,
+          "at": "2026-11-25T16:29:42.750Z",
+          "externalId": "7168070727"
         }
       ],
       "binding": {

@@ -15,7 +15,7 @@ import { dependencyAttemptIdentity, ollamaPolicySha256 } from './ollama-policy.j
 import type { OllamaPolicy } from './ollama-policy.js';
 import { closedOllamaAttempts, verifyPreparedOllama } from './ollama-prepare.js';
 import type { PreparedOllama } from './ollama-prepare.js';
-import { dependencyPath, dependencyUncertain, ensureDependencyDirectory, parseOllamaAttempt, readDependencyRecord, writeDependencyRecord } from './ollama-records.js';
+import { closurePath, dependencyPath, dependencyUncertain, ensureDependencyDirectory, parseOllamaAttempt, parseOllamaClosure, readDependencyRecord, writeDependencyRecord } from './ollama-records.js';
 import { controlBinding } from './native.js';
 import { parseServiceFact, parseServiceFrame, serviceAdmission, serviceFact, serviceJson, servicePaths, SERVICE_FRAME_LIMIT } from './ollama-service-records.js';
 import type { OllamaServiceFact, OllamaServiceFrame } from './ollama-service-records.js';
@@ -64,16 +64,22 @@ export async function reconcileOllamaDependencies(location: InstallationLocation
     const attempts = await closedOllamaAttempts(location, signal); signal.throwIfAborted(); let report = inspection.report;
     for (const attempt of attempts) {
       signal.throwIfAborted(); const record = dependencyPath(location, attempt.identity.recordRelativePath), paths = servicePaths(record);
+      const closure = parseOllamaClosure(attempt.identity, serviceJson(await readDependencyRecord(location, closurePath(record)))); signal.throwIfAborted();
       if (existsSync(paths.admission)) {
         const frame = parseServiceFrame(serviceJson(await readDependencyRecord(location, paths.frame, SERVICE_FRAME_LIMIT))); signal.throwIfAborted();
         if (canonicalJson(frame.location) !== canonicalJson(location) || canonicalJson(frame.attempt) !== canonicalJson(attempt)) throw dependencyUncertain('Interrupted service belongs to a different attempt');
         const verified = await verifyPreparedOllama(location, frame.policy, dependencyPath(location, attempt.identity.payloadRelativePath), signal); signal.throwIfAborted();
-        if (verified.inventorySha256 !== frame.admission.inventorySha256) throw dependencyUncertain('Interrupted service inventory differs from its accepted admission');
+        if (closure.outcome !== 'prepared' || verified.inventorySha256 !== closure.inventorySha256
+          || verified.inventorySha256 !== frame.admission.inventorySha256) throw dependencyUncertain('Interrupted service inventory differs from its accepted preparation or admission');
         report = await serviceState(frame, record, report, signal);
-      } else if (policy && attempt.identity.policySha256 === ollamaPolicySha256(policy)) {
+      } else {
         // Closed abandoned preparations without a published tree grant no start.
         const payload = dependencyPath(location, attempt.identity.payloadRelativePath);
-        if (existsSync(payload)) await verifyPreparedOllama(location, policy, payload, signal);
+        if (existsSync(payload)) {
+          if (!policy || attempt.identity.policySha256 !== ollamaPolicySha256(policy)) throw dependencyUncertain('Published interrupted preparation has no matching accepted policy for verification');
+          const verified = await verifyPreparedOllama(location, policy, payload, signal); signal.throwIfAborted();
+          if (closure.outcome !== 'prepared' || verified.inventorySha256 !== closure.inventorySha256) throw dependencyUncertain('Published interrupted preparation differs from its durable inventory closure');
+        }
       }
     }
     signal.throwIfAborted(); return { ...inspection, report, ...(report.ollama === 'unavailable' ? { offer: undefined } : {}) };

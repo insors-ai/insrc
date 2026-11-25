@@ -66,6 +66,15 @@ async function fixture() {
 function attemptBytes(root: string): unknown {
   return readdirSync(root).sort().map(name => { const file = join(root, name); return [name, lstatSync(file).isDirectory() ? attemptBytes(file) : readFileSync(file).toString('base64')]; });
 }
+function replacePayload(f: Awaited<ReturnType<typeof fixture>>): () => void {
+  const inventoryFile = join(f.prepared.directory, 'inventory.json'), receiptFile = join(f.prepared.directory, '.ollama-receipt.json'), dataFile = join(f.prepared.directory, 'lib/data.dat');
+  const inventoryBytes = readFileSync(inventoryFile), receiptBytes = readFileSync(receiptFile), dataBytes = readFileSync(dataFile);
+  const inventory = JSON.parse(inventoryBytes.toString()), changed = Buffer.alloc(dataBytes.length, 2);
+  inventory.files.find((file: { path: string }) => file.path === 'lib/data.dat').sha256 = digest(changed);
+  const replacedInventory = canonicalJson(inventory), receipt = JSON.parse(receiptBytes.toString()); receipt.inventorySha256 = digest(replacedInventory);
+  writeFileSync(dataFile, changed); writeFileSync(inventoryFile, replacedInventory); writeFileSync(receiptFile, canonicalJson(receipt));
+  return () => { writeFileSync(dataFile, dataBytes); writeFileSync(inventoryFile, inventoryBytes); writeFileSync(receiptFile, receiptBytes); };
+}
 
 serviceTest('service-admission-is-durable-and-distinct-from-finite-preparation-drain', async () => {
   const f = await fixture();
@@ -91,6 +100,10 @@ serviceTest('service-admission-is-durable-and-distinct-from-finite-preparation-d
 serviceTest('interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn', async () => {
   const f = await fixture();
   try {
+    const restore = replacePayload(f);
+    assert.equal((await dependencyPort(f.target, f.location, f.options).inspect(f.location)).ollama, 'unavailable', 'published preparation must match its closed inventory before admission');
+    restore();
+    assert.equal((await dependencyPort(f.target, f.location, { ...f.options, policies: [] }).inspect(f.location)).ollama, 'unavailable', 'missing original policy cannot bypass published payload verification');
     await startOllamaService(f.location, f.prepared, f.context(), f.service);
     const before = attemptBytes(join(f.home, 'deps/ollama/.attempts'));
     const fresh = dependencyPort(f.target, f.location, f.options);
@@ -99,14 +112,9 @@ serviceTest('interrupted-attempt-reconciles-existing-receipt-without-duplicate-d
     const launch = readFileSync(f.paths.launch); unlinkSync(f.paths.launch);
     assert.equal((await f.inspectFresh()).ollama, 'unavailable', 'running fact without durable launch admission is not trusted');
     writeFileSync(f.paths.launch, launch, { mode: 0o600, flag: 'wx' });
-    const inventoryFile = join(f.prepared.directory, 'inventory.json'), receiptFile = join(f.prepared.directory, '.ollama-receipt.json'), dataFile = join(f.prepared.directory, 'lib/data.dat');
-    const inventoryBytes = readFileSync(inventoryFile), receiptBytes = readFileSync(receiptFile), dataBytes = readFileSync(dataFile);
-    const inventory = JSON.parse(inventoryBytes.toString()), changed = Buffer.alloc(dataBytes.length, 2);
-    inventory.files.find((file: { path: string }) => file.path === 'lib/data.dat').sha256 = digest(changed);
-    const replacedInventory = canonicalJson(inventory), receipt = JSON.parse(receiptBytes.toString()); receipt.inventorySha256 = digest(replacedInventory);
-    writeFileSync(dataFile, changed); writeFileSync(inventoryFile, replacedInventory); writeFileSync(receiptFile, canonicalJson(receipt));
+    const restoreAdmitted = replacePayload(f);
     assert.equal((await f.inspectFresh()).ollama, 'unavailable', 'a self-consistent replacement tree cannot replace the admitted inventory');
-    writeFileSync(dataFile, dataBytes); writeFileSync(inventoryFile, inventoryBytes); writeFileSync(receiptFile, receiptBytes);
+    restoreAdmitted();
     const reused = await startOllamaService(f.location, f.prepared, f.context(), { ...f.service, launch: async () => { throw new Error('must not replay a retained launch'); } });
     assert.equal(reused.ollama, 'ready'); assert.equal(f.count(), 1);
     await f.stop(); await until(() => existsSync(f.paths.exit));

@@ -1,0 +1,709 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795545958919-wlh1tq",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-24T18:51:51.618Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 352299,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
+    "storyId": "s3",
+    "lldRunId": "wf-1795544885792-xw1ws3",
+    "lldEffectiveHash": "acb12724c31638094f715440e8d7679ed70268700c5e10e1d06197fb93ace475",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "67835729a874a34d2d8ddeefa01c74854a5c13cabb367213a6af8f37ea3ea7ac",
+        "at": "2026-11-24T18:51:51.718Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T01:51:50.140Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "155f7f92ceb6fd198fcc30570700a04ce80e5049"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Build the production dependency adapter on the completed installer foundation, with truthful read-only checks, exact terminal consent, bounded platform payload preparation and a durable user-session Ollama handoff. Ten ordered tasks separate the two extraction paths, publication, service behavior and manager/packaging integration; Linux ARM64 auto-install must pass real OrbStack qualification before enablement. Run surrounding tests for each task, then one complete S1/S2/S3 installer regression after implementation; final human BUILD approval follows story validation."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define private dependency context and qualified offer policy",
+        "summary": "Add S3 private operation/probe context and schema-checked immutable Ollama policy/attempt identity helpers in the proposed dependency modules and existing internal peer contracts. Preserve all foundational wire schemas.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "DependencyReport, DependencyDecision, ManagerRequest and their JSON schemas/protocols remain unchanged; optional internal probe/operation context is source compatible with existing fixtures.",
+          "A qualified entry binds exact target/baseline/version/official immutable URL/SHA256/byte and extraction limits/layout/executable/endpoint/model-log paths/start intent; invalid, incomplete or unqualified entries never generate an offer.",
+          "Canonical offer id binds installation identity/home, target, destination, endpoint, effective side effects and current absence state; encode within the existing token bound.",
+          "Define operation/attempt identity and bounded progress/current-owner/signal context without exposing ControllerStore, release publication, lifecycle, migration or application-data capability."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "dependency-policy-and-offer-bind-exact-target-home-destination-and-side-effects"
+          },
+          {
+            "level": "unit",
+            "name": "private-context-preserves-public-wire-shapes-and-rejects-unowned-install"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Implement bounded read-only dependency and coding-agent detection",
+        "summary": "Build truthful runtime/Ollama state inspection and executable-only claude/codex/vibe detection behind the existing DependencyPort, without any installation or provider side effects.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Inspection completes within one 3-second aggregate budget, performs no writes/downloads/spawns, and uses exact owned runtime/target provenance rather than PATH Node/npm.",
+          "Loopback version GET has a 16 KiB response bound, no redirect/credential/remote-host fallback, and accurately distinguishes ready, installed-not-running, missing and unavailable across refused/slow/malformed/permission/configuration cases.",
+          "A ready endpoint without PATH Ollama is reused; a stopped existing binary gets quoted manual serve guidance without an install offer or invented start action; non-ready required dependencies remain visible blockers.",
+          "Bounded absolute candidate/PATH/PATHEXT and known user/macOS-app lookup reports zero/one/many agent binaries, with lookup diagnostics; never execute an agent, authenticate, call models, or make an agent a required blocker.",
+          "Offers appear only for qualified missing routes with clean private destination absence; decline returns unchanged unmet state without mutation."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable"
+          },
+          {
+            "level": "integration",
+            "name": "healthy-service-without-path-binary-is-reused"
+          },
+          {
+            "level": "integration",
+            "name": "inspect-and-decline-have-zero-mutation-or-process-side-effects"
+          },
+          {
+            "level": "unit",
+            "name": "stopped-existing-ollama-has-manual-guidance-without-start-action"
+          },
+          {
+            "level": "unit",
+            "name": "agent-zero-one-many-detection-never-spawns-auth-model-or-install"
+          },
+          {
+            "level": "unit",
+            "name": "private-runtime-provenance-rejects-path-node-and-wrong-target"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Implement bounded Linux zstd and tar decoding",
+        "summary": "Add the pinned bundled fzstd streaming path and validated tar reader for official Linux payloads, reusing existing safe path/inventory patterns and returning controlled layout metadata for later qualified alias materialization.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Pin and bundle the decoder; validate zstd frame/window headers before allocation, enforce its 2^25-byte backreference limit and compressed/expanded/per-file/count/memory bounds, and fail closed on malformed/truncated/multiframe input.",
+          "Canonical tar members reject traversal, absolute/drive/UNC paths, ADS, collisions, device nodes and link escapes before any unsafe write; link metadata is never traversed or created as an on-disk archive link.",
+          "Bound parsing/output chunks and yield/check AbortSignal so cancellation and progress remain responsive; errors leave only contained private staging with no publication.",
+          "Linux extraction never invokes the privileged upstream installer, root/system decompressor, GPU driver setup or model work. Actual large official-archive qualification remains the later route task."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "linux-zstd-large-window-truncation-and-output-bombs-refuse-before-unsafe-write"
+          },
+          {
+            "level": "integration",
+            "name": "linux-tar-path-collision-device-and-link-escape-inputs-stay-contained"
+          },
+          {
+            "level": "integration",
+            "name": "stream-decoding-cancellation-yields-and-leaves-no-published-payload"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Implement qualified ZIP layouts and contained archive alias materialization",
+        "summary": "Add qualified standalone Windows ZIP/macOS app layout handling and the bounded shared materializer for explicitly allowed internal regular-file aliases, preserving required libraries and strict existing bundle rules.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Validate ZIP directory/member metadata, paths, bytes/count/expansion limits, compression/truncation and collisions before writes, using S3-specific policy without weakening unrelated S1 safe-zip acceptance.",
+          "Qualify Windows standalone CLI/library and macOS user-local app/CLI layouts; reject missing/wrong executable/library members and never launch setup/GUI/global-link/quarantine-removal/system-service actions.",
+          "For both tar and ZIP/app layouts, materialize only policy-qualified contained regular-file alias targets with bounded cycles/depth/expanded output; directory aliases need an explicitly qualified complete layout. Published dependency trees contain no traversable archive links.",
+          "Path aliases cannot escape via case/Unicode/drive/UNC/ADS/symlink/reparse-point differences; unqualified aliases/layouts produce concrete limitations and preserve existing destination bytes.",
+          "Abort/error leaves only contained unpublished private stage; no elevation, host PATH edits, application boot imports or archive-side commands."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "qualified-zip-app-layout-requires-correct-executable-and-library-closure"
+          },
+          {
+            "level": "integration",
+            "name": "internal-archive-links-materialize-only-qualified-contained-files"
+          },
+          {
+            "level": "integration",
+            "name": "zip-and-layout-escapes-collisions-and-abort-preserve-existing-bytes"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Prepare and durably publish immutable private Ollama payloads",
+        "summary": "Implement consent-rechecked bounded download, private staging, complete inventory/receipt verification, finite owned-work drain and exclusive durable publication under the manager-supplied S3 context.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Production install acceptance requires valid manager-owned operation context and exact current offer; recompute before first side effect and immediately before publication; policy/path/endpoint/existing-install races reject stale.",
+          "Download enforces exact bytes/SHA256/HTTPS and S3 asset limits without inheriting an inappropriate S1 bundle cap; overall finite preparation deadline is 20 minutes and cleanup deadline is 5 seconds with bounded diagnostics.",
+          "Derive contained user-owned staging, payload and attempt paths from the selected home; complete inventory/layout verification precedes publication and same-id reuse requires all receipt/inventory/target bytes to agree.",
+          "Flush payload/receipt files, bottom-up directories and source/destination parents using existing filesystem-only durability and non-replacing publication; publication/fsync uncertainty never becomes false success or overwrite.",
+          "Abort/EOF/current-owner loss prevents later admission, drains finite work and deletes only proven-private unpublished staging after positive closure. Unknown admitted/cooperating actor closure retains evidence and returns dependency-uncertain for manager blocking.",
+          "Adapter writes private dependency records only; incumbent daemon release/data/running intent and existing Ollama binaries/services remain untouched."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c7",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "stale-forged-and-cross-home-offers-reject-before-mutation"
+          },
+          {
+            "level": "integration",
+            "name": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state"
+          },
+          {
+            "level": "integration",
+            "name": "download-size-digest-layout-and-fsync-failures-never-report-ready"
+          },
+          {
+            "level": "integration",
+            "name": "finite-actor-closure-uncertainty-blocks-retry-and-cleanup"
+          },
+          {
+            "level": "integration",
+            "name": "private-preparation-cancellation-blocks-later-publication"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Implement consented user-session service handoff and reconciliation",
+        "summary": "Start only the accepted qualified private Ollama executable, separate its intentional retained lifetime from finite preparation, and reconcile interrupted attempt/receipt/endpoint state without replaying uncertain work.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t2",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Verify the immutable published payload and reprobe existing service before durable service-start admission; a healthy existing service is reused without spawn, stop or replacement.",
+          "After explicit install-and-start consent and immediately rechecked cancellation/owner state, launch only the absolute qualified executable with argv and scoped sanitized OLLAMA_HOST/OLLAMA_MODELS/log environment; no shell, global PATH, system service or implicit models.",
+          "Record service admission before spawn and truthful outcome/readiness after it; a 30-second version probe checks availability, and spawn/exit/port/timeout errors never claim endpoint process ownership or authorize stopping another listener.",
+          "Finite preparation drain excludes only the explicitly recorded intentionally retained service; cancellation before admission forbids launch, while later cancellation halts installer continuation and describes retained installed/unverified service state without promising rollback.",
+          "Fresh-process inspection of interrupted attempts validates identities/inventory/receipt and current endpoint without automatic download/spawn. Reuse ready service, diagnose a proven stopped binary, and block unresolved finite actors or ambiguous admitted launch until evidence reconciles.",
+          "Retries do not create a second unconfirmed service or replace payload identity; no PID/age/free-lock/log-line inference, application DB access or daemon lifecycle operation is introduced."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "service-admission-is-durable-and-distinct-from-finite-preparation-drain"
+          },
+          {
+            "level": "integration",
+            "name": "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn"
+          },
+          {
+            "level": "integration",
+            "name": "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener"
+          },
+          {
+            "level": "integration",
+            "name": "service-admission-cancellation-retains-only-explicitly-accepted-service-intent"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Integrate dependency context and exact consent into manager and terminal",
+        "summary": "Thread S3 probe/mutation context through the existing terminal and lock-owning manager, record preparation before side effects, and preserve blocked recovery/cancellation with unchanged public request/report shapes.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t2",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Terminal displays version/destination/endpoint/start/model-log side effects and asks Install and start Ollama with default no; only its explicit existing DependencyDecision reaches mutation. IDE flags and ManagerRequest.installOllama cannot grant consent.",
+          "Manager persists the current operation/preparing intent and supplies bound operation/attempt/signal/current-owner/progress context before dependency mutation, while retaining sole controller ownership.",
+          "Recheck consent under lock, reject stale replacements without silent acceptance, preserve dependent cancellation before/after awaited probes/decision and before any later shutdown/publication/service start.",
+          "dependency-uncertain retains a blocked operation and private evidence instead of clearing it. Explicit same-operation recovery reconciles recorded dependency evidence before ordinary continuation and cannot duplicate unconfirmed work.",
+          "Preserve read-only inspect/check-upgrade semantics, stop/recovery bypass of dependency-health checks, actual sibling-port admission, immutable delivery/source identity, and existing ready/lock-release/TUI/cancellation/retry semantics."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c8",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "accepted-official-payload-is-user-only-and-discloses-install-and-start"
+          },
+          {
+            "level": "integration",
+            "name": "cancellation-and-eof-block-later-publication-or-service-admission"
+          },
+          {
+            "level": "integration",
+            "name": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions"
+          },
+          {
+            "level": "integration",
+            "name": "dependency-uncertain-recovery-preserves-operation-and-prevents-duplicate-side-effects"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Compose and package the real dependency adapter in both control entrypoints",
+        "summary": "Wire S3 into productionPeers and package its policy/decoder/helpers into target-specific manager/bootstrap artifacts, retaining real S1/S2 delivery and explicit missing S4/S5 capabilities.",
+        "size": "S",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Both existing managerMain and terminalMain productionPeers callers obtain the same installation/target-bound production dependency adapter; factory construction performs no probes, writes, installs or provider boot.",
+          "Keep actual bundle/dev adapters and exact private-runtime provenance; lifecycle/migration peers remain absent until their owning stories supply them, with truthful capability-unavailable rather than fixture success.",
+          "Update only directly affected installed-dev composition/asset expectations; package the pinned decoder/policy and proposed dependency helpers without importing daemon/indexer/config-store/provider/DB application boot.",
+          "Fresh target-control process can load/inspect the S3 adapter through its private runtime with no host Node/npm/tool dependency, no broad spawn-scanner exemption and no changed daemon IPC or IDE install flow."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c9",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5"
+          },
+          {
+            "level": "smoke",
+            "name": "published-control-payload-includes-real-dependency-adapter-without-application-boot-imports"
+          },
+          {
+            "level": "integration",
+            "name": "both-control-entrypoints-use-identical-installation-bound-dependency-policy"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Qualify the Linux OrbStack dependency route and gate other exact targets",
+        "summary": "Exercise the completed S3 adapter with a pinned official Ollama payload in a disposable Linux ARM64 OrbStack guest, enable that exact passing route, and record evidence/limitations for the planned macOS/Windows/native-x64 routes.",
+        "size": "L",
+        "order": 9,
+        "dependsOn": [
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "Provision/use a disposable Linux ARM64 OrbStack environment and actually install the exact official payload with the selected private Node toolchain, exercising large archive/library layout, executable version and user-session readiness without models/elevation/global writes.",
+          "Record exact version/URL/SHA256/compressed-expanded sizes/target-baseline/native-versus-translated status, decoder limits, private filesystem/argv/env/log results, reuse/decline and finite cleanup/retained-service evidence; enable Linux auto-install only for the route actually qualified.",
+          "A Linux payload/decoder/platform failure is a real story blocker requiring diagnosis or user-directed design correction, not a fabricated pass or silent removal of Linux support.",
+          "For each planned darwin/linux/win32 × arm64/x64 target, record either native exact-policy payload qualification before offer enablement or a concrete pending/unavailable/unsupported reason and manual user-level guidance. Use the existing macOS ARM64 UTM guest and genuine available Windows/native-x64 runners for dependency-only validation; translated evidence is explicitly labeled and cannot certify native gaps. A missing optional environment cannot silently enable a route or hide the required Linux result.",
+          "Do not mutate/restart installed host daemon/Ollama or claim full daemon installation, migration, IDE, signing or complete S8 platform-matrix qualification. Preserve all Linux/macOS/Windows targets in the plan and evidence table."
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6",
+          "c10",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "qualified-exact-ollama-payload-version-and-user-session-readiness-on-enabled-target"
+          },
+          {
+            "level": "live",
+            "name": "existing-installation-reuse-and-decline-preserve-platform-state"
+          },
+          {
+            "level": "live",
+            "name": "official-large-archive-streaming-and-library-layout-match-policy"
+          },
+          {
+            "level": "unit",
+            "name": "enabled-target-policy-requires-matching-native-evidence-and-mandatory-linux-route"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Run the final composed installer regression and reconcile evidence",
+        "summary": "After all implementation and route-qualification tasks, run the complete scoped S1/S2/S3 installer regression once and record exact coverage/fingerprints/build/cleanup evidence plus current limitations.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t7",
+          "t8",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "Run the canonical Node 22 installer test selection only after t1–t9 are built and task-local checks pass, including all S1/S2/S3 installer files, installation-home, relevant build/scanner/coordinator and packaging regression cases; no unrelated backend sweep.",
+          "The final audit reconciles exact selected files, discovered/executed test counts with zero skips/failures/cancellations, current source/output fingerprints, successful canonical build and per-admission close/disposal journals with confirmed finite-work cleanup. Include the split archive paths and current S3 production packaging/qualification evidence in the recorded selection and audit.",
+          "Keep intentionally retained dependency-service evidence separate from finite actor closure; fixture tests clean their owned services explicitly and never leave unaccounted work.",
+          "Record real Linux OrbStack exact-route evidence and any separately qualified target results/limits; passing fakes/native host tests do not claim unsupported target/VM/IDE/migration qualification.",
+          "Update story validation evidence and keep the relevant S3 sequence/ownership documentation aligned with any approved implementation refinements. Human final BUILD presentation/approval follows validation and is not a precondition of this task acceptance."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5",
+          "c9",
+          "c10",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "combined-s1-s2-s3-installer-regression-has-exact-coverage-and-confirmed-cleanup"
+          },
+          {
+            "level": "integration",
+            "name": "terminal-install-upgrade-consent-and-ready-before-tui-regressions"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "healthy-service-without-path-binary-is-reused",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "inspect-and-decline-have-zero-mutation-or-process-side-effects",
+        "coveredByTaskIds": [
+          "t2",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "stale-forged-and-cross-home-offers-reject-before-mutation",
+        "coveredByTaskIds": [
+          "t1",
+          "t5",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "stopped-existing-ollama-has-manual-guidance-without-start-action",
+        "coveredByTaskIds": [
+          "t2",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "agent-zero-one-many-detection-never-spawns-auth-model-or-install",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "private-runtime-provenance-rejects-path-node-and-wrong-target",
+        "coveredByTaskIds": [
+          "t2",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "accepted-official-payload-is-user-only-and-discloses-install-and-start",
+        "coveredByTaskIds": [
+          "t5",
+          "t6",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state",
+        "coveredByTaskIds": [
+          "t5",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "hostile-archive-and-large-zstd-window-fail-before-unsafe-write-or-allocation",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "internal-archive-links-materialize-only-qualified-contained-files",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "download-size-digest-layout-and-fsync-failures-never-report-ready",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "cancellation-and-eof-block-later-publication-or-service-admission",
+        "coveredByTaskIds": [
+          "t3",
+          "t5",
+          "t6",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "finite-actor-closure-uncertainty-blocks-retry-and-cleanup",
+        "coveredByTaskIds": [
+          "t5",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "service-admission-is-durable-and-distinct-from-finite-preparation-drain",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn",
+        "coveredByTaskIds": [
+          "t6",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions",
+        "coveredByTaskIds": [
+          "t7",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "qualified-exact-ollama-payload-version-and-user-session-readiness-on-enabled-target",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "existing-installation-reuse-and-decline-preserve-platform-state",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "official-large-archive-streaming-and-library-layout-match-policy",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "combined-s1-s2-s3-installer-regression-has-exact-coverage-and-confirmed-cleanup",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "published-control-payload-includes-real-dependency-adapter-without-application-boot-imports",
+        "coveredByTaskIds": [
+          "t8",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "terminal-install-upgrade-consent-and-ready-before-tui-regressions",
+        "coveredByTaskIds": [
+          "t7",
+          "t10"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#2-contract-details",
+      "quotedText": "DependencyPort/DependencyReport/productionPeers/runTerminalInstall interfaces; optional internal context and unchanged public wire schemas."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#3-data-model-changes",
+      "quotedText": "Dependency operation context and integration boundary: bound operation/attempt, current-owner/signal/progress; manager-only controller writes and blocked uncertainty."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#3-data-model-changes",
+      "quotedText": "Immutable qualified Ollama policy and exact offer: exact target/version/asset/layout/limits/destination/endpoint/side effects and stale rechecks."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#3-data-model-changes",
+      "quotedText": "Detection and service-state table: bounded runtime/local endpoint/executable-only agent checks, truthful stopped/missing/unavailable classification."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#6-error-paths",
+      "quotedText": "Error cases, valid edge cases and preserved invariants: consent races, probe/archive/fsync/cancellation/port/ownership/interruption failure behavior."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#3-data-model-changes",
+      "quotedText": "Platform extraction and endpoint compatibility: bounded fzstd/tar/ZIP/app layouts, contained alias materialization, no elevation/system installer or published links."
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#3-data-model-changes",
+      "quotedText": "Private payload, receipt and filesystem ownership: exact verification, finite preparation budget/drain, immutable no-replace publication and durable namespaces."
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#3-data-model-changes",
+      "quotedText": "Consented Ollama service handoff and interrupted attempts: admitted retained service versus finite preparation, readiness, cancellation and no blind replay."
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#7-test-strategy",
+      "quotedText": "Contract/integration/smoke strategy, acceptance mapping and surrounding per-task tests followed by one final combined installer regression."
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#3-data-model-changes",
+      "quotedText": "Composition, packaging and verification boundaries: both entrypoints, real S1/S2 delivery, dependency adapter, truthful absent S4/S5, control import isolation."
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#7-test-strategy",
+      "quotedText": "Live target qualification: mandatory first Linux ARM64 OrbStack route, separate macOS UTM/Windows/native-x64 evidence and no enabled target inferred from fixtures."
+    }
+  ]
+}

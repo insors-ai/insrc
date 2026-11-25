@@ -1,0 +1,823 @@
+{
+  "status": "pass",
+  "runId": "3cdda64a-f71b-40ea-a4c7-336a32dce819",
+  "runtime": {
+    "executable": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node",
+    "version": "v22.22.1"
+  },
+  "selectedFiles": [
+    "scripts/__tests__/build-script.test.ts",
+    "scripts/__tests__/forbidden-spawn-scan.test.ts",
+    "scripts/__tests__/test-harness-coordinator.test.ts",
+    "src/installer/__tests__/bootstrap.test.ts",
+    "src/installer/__tests__/bridge-protocol.test.ts",
+    "src/installer/__tests__/bundle-recovery.test.ts",
+    "src/installer/__tests__/bundle.test.ts",
+    "src/installer/__tests__/contracts.test.ts",
+    "src/installer/__tests__/controller-store.test.ts",
+    "src/installer/__tests__/dependencies.test.ts",
+    "src/installer/__tests__/dependency-integration.test.ts",
+    "src/installer/__tests__/dependency-policy.test.ts",
+    "src/installer/__tests__/dev-complete-payload.test.ts",
+    "src/installer/__tests__/dev-git.test.ts",
+    "src/installer/__tests__/dev-manager.test.ts",
+    "src/installer/__tests__/dev-metadata.test.ts",
+    "src/installer/__tests__/dev-payload.test.ts",
+    "src/installer/__tests__/dev-recovery.test.ts",
+    "src/installer/__tests__/dev-toolchain.test.ts",
+    "src/installer/__tests__/dev-worker.test.ts",
+    "src/installer/__tests__/foundation-payload.test.ts",
+    "src/installer/__tests__/install-retry.test.ts",
+    "src/installer/__tests__/installed-dev.test.ts",
+    "src/installer/__tests__/location.test.ts",
+    "src/installer/__tests__/manager.test.ts",
+    "src/installer/__tests__/ollama-archive-matrix.test.ts",
+    "src/installer/__tests__/ollama-archive.test.ts",
+    "src/installer/__tests__/ollama-catalog.test.ts",
+    "src/installer/__tests__/ollama-prepare.test.ts",
+    "src/installer/__tests__/ollama-production-worker.test.ts",
+    "src/installer/__tests__/ollama-qualification.test.ts",
+    "src/installer/__tests__/ollama-read-sentinel.test.ts",
+    "src/installer/__tests__/ollama-recovery.test.ts",
+    "src/installer/__tests__/ollama-service.test.ts",
+    "src/installer/__tests__/ollama-signals.test.ts",
+    "src/installer/__tests__/ollama-tar.test.ts",
+    "src/installer/__tests__/ollama-validation.test.ts",
+    "src/installer/__tests__/ollama-zip-boundaries.test.ts",
+    "src/installer/__tests__/operation-control.test.ts",
+    "src/installer/__tests__/production-peers.test.ts",
+    "src/installer/__tests__/publisher.test.ts",
+    "src/installer/__tests__/terminal-abort.test.ts",
+    "src/installer/__tests__/terminal-install.test.ts",
+    "src/shared/__tests__/installation-home.test.ts"
+  ],
+  "selected": 44,
+  "executed": 44,
+  "counts": {
+    "tests": 209,
+    "pass": 209,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 600000,
+    "runMs": 1800000,
+    "cleanupMs": 30000
+  },
+  "effectiveConcurrency": 1,
+  "prepared": {
+    "runId": "3cdda64a-f71b-40ea-a4c7-336a32dce819",
+    "canonicalRoot": "/Users/subhagho/work/projects/insors/insrc",
+    "runtimeExecutable": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node",
+    "buildExitCode": 0,
+    "completedAt": "2026-11-25T20:33:02.212Z",
+    "inputFingerprint": "d1d228499ce4a963482b154e3609d882d710f97df994fae8a72d31bc29236838",
+    "outputFingerprint": "e60c2f4ddb44083c4527c7297e152f093bf55c2b236e0be0b6e9ca426f7dc3ce",
+    "requiredArtifacts": [
+      "out/daemon/index.js",
+      "out/bin/insrc-mcp.js",
+      "out/shared/daemon-run-files.js",
+      "out/cli/services/daemon.js",
+      "out/daemon/server.js",
+      "out/shared/daemon-process.js",
+      "out/installer/native/control.node"
+    ]
+  },
+  "cleanup": {
+    "confirmedClosed": true,
+    "interrupted": false,
+    "cancellationErrors": [],
+    "evidenceErrors": [],
+    "childCloseJournal": "child-results.jsonl",
+    "closureMode": "owned-groups"
+  },
+  "ownership": {
+    "admissions": 53,
+    "closes": 53,
+    "disposals": 53,
+    "uniqueMatchingIds": true,
+    "actorDirectoryEmpty": true
+  },
+  "files": [
+    {
+      "file": "scripts/__tests__/build-script.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/0-scripts___tests___build-script.test.ts.log"
+    },
+    {
+      "file": "scripts/__tests__/forbidden-spawn-scan.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/1-scripts___tests___forbidden-spawn-scan.test.ts.log"
+    },
+    {
+      "file": "scripts/__tests__/test-harness-coordinator.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/2-scripts___tests___test-harness-coordinator.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/bootstrap.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/3-src_installer___tests___bootstrap.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/bridge-protocol.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/4-src_installer___tests___bridge-protocol.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/bundle-recovery.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/5-src_installer___tests___bundle-recovery.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/bundle.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/6-src_installer___tests___bundle.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/contracts.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/7-src_installer___tests___contracts.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/controller-store.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 7,
+          "pass": 7,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/8-src_installer___tests___controller-store.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dependencies.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 8,
+          "pass": 8,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/9-src_installer___tests___dependencies.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dependency-integration.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/10-src_installer___tests___dependency-integration.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dependency-policy.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/11-src_installer___tests___dependency-policy.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dev-complete-payload.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/12-src_installer___tests___dev-complete-payload.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dev-git.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/13-src_installer___tests___dev-git.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dev-manager.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/14-src_installer___tests___dev-manager.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dev-metadata.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/15-src_installer___tests___dev-metadata.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dev-payload.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/16-src_installer___tests___dev-payload.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dev-recovery.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/17-src_installer___tests___dev-recovery.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dev-toolchain.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/18-src_installer___tests___dev-toolchain.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dev-worker.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 7,
+          "pass": 7,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/19-src_installer___tests___dev-worker.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/foundation-payload.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/20-src_installer___tests___foundation-payload.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/install-retry.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 8,
+          "pass": 8,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/21-src_installer___tests___install-retry.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/installed-dev.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/22-src_installer___tests___installed-dev.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/location.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/23-src_installer___tests___location.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/manager.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 14,
+          "pass": 14,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/24-src_installer___tests___manager.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-archive-matrix.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/25-src_installer___tests___ollama-archive-matrix.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-archive.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/26-src_installer___tests___ollama-archive.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-catalog.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/27-src_installer___tests___ollama-catalog.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-prepare.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/28-src_installer___tests___ollama-prepare.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-production-worker.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/29-src_installer___tests___ollama-production-worker.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-qualification.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/30-src_installer___tests___ollama-qualification.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-read-sentinel.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/31-src_installer___tests___ollama-read-sentinel.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-recovery.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 19,
+          "pass": 19,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/32-src_installer___tests___ollama-recovery.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-service.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/33-src_installer___tests___ollama-service.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-signals.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/34-src_installer___tests___ollama-signals.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-tar.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/35-src_installer___tests___ollama-tar.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-validation.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/36-src_installer___tests___ollama-validation.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-zip-boundaries.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/37-src_installer___tests___ollama-zip-boundaries.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/operation-control.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/38-src_installer___tests___operation-control.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/production-peers.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/39-src_installer___tests___production-peers.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/publisher.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/40-src_installer___tests___publisher.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/terminal-abort.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/41-src_installer___tests___terminal-abort.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/terminal-install.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/42-src_installer___tests___terminal-install.test.ts.log"
+    },
+    {
+      "file": "src/shared/__tests__/installation-home.test.ts",
+      "code": 0,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/3cdda64a-f71b-40ea-a4c7-336a32dce819/43-src_shared___tests___installation-home.test.ts.log"
+    }
+  ],
+  "postRunAudit": ".insrc/tmp/s3-final-audit.log",
+  "sourceCodeCommit": "c68b48e17",
+  "scope": "All installer S1/S2/S3 tests plus installation-home/build/spawn-scan/coordinator; no unrelated backend suite.",
+  "nativeEvidence": "docs/plans/s3-ollama-native-qualification-2026-11-26/qualification.json",
+  "supersededAttempt": {
+    "runId": "2268c465-6e54-477f-b7fd-517c7614e11b",
+    "status": "interrupted-incomplete",
+    "reason": "Outer 120s file budget did not preserve established 600s dev-payload smoke budget.",
+    "recoveryProof": ".insrc/tmp/s3-interrupted-regression-recovery.json",
+    "originalCleanupPreserved": true
+  },
+  "limits": "Local native-module/fixture regression is not full live daemon installation, IDE/migration/S8 or other-platform qualification. Retained native dependency service is separately accounted by its stopped isolated VM record.",
+  "postRunAuditPassed": true
+}

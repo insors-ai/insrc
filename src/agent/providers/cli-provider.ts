@@ -76,6 +76,7 @@ import { buildRetryNote, validateAgainstSchema, withStructuredRetry } from './st
 import { ModelResponseShapeError } from './model-call-error.js';
 import { checkOllamaTarget, OllamaTargetError } from './ollama-target.js';
 import { getModelRegistry } from '../../daemon/model-registry.js';
+import { daemonInstallRoot } from '../../daemon/mcp-register.js';
 import { openVerifiedVibeSession, runVerifiedVibeTurn, vibeAssistantOutput, VibeTurnError, type VibeCatalogModel } from '../../shared/vibe-session.js';
 
 const log = getLogger('cli-provider');
@@ -155,10 +156,34 @@ export const READ_ONLY_SESSION_ANALYZE_TOOLS: readonly string[] = ['mcp__insrc__
  *  CLI (2026-11-24). */
 export const READ_ONLY_SESSION_VIBE_TOOL_NAMES: readonly string[] = ['read_file', 'grep', 'mcp_insrc.insrc_analyze', 'mcp_insrc.insrc_analyze_step'];
 
-/** Read-only sessions expose file reads and analysis tools only. */
-export function claudeReadOnlySessionArgs(schema: StructuredSchema, modelArgs: readonly string[]): string[] {
- return ['--print', '--output-format', 'json', '--json-schema', JSON.stringify(schema),
-  '--tools', READ_ONLY_SESSION_READ_TOOLS.join(','), '--allowedTools', [...READ_ONLY_SESSION_READ_TOOLS, ...READ_ONLY_SESSION_ANALYZE_TOOLS].join(','), ...modelArgs];
+/**
+ * The MCP config a 'strict-read-analyze' claude session is confined to: ONLY
+ * the insrc server (so the two analyze tools in READ_ONLY_SESSION_ANALYZE_TOOLS
+ * stay reachable), launched the same way `mcp-register.ts`'s own `claude mcp
+ * add` wiring launches it (`node <insrc-mcp.js>`, no extra args/env) -- one
+ * launch spec, never a second drifting copy. `--tools` alone only restricts
+ * claude's BUILT-IN tools (confirmed against the installed CLI's own
+ * `--help`); it has no effect on which MCP servers are loaded or callable, so
+ * without this, every OTHER MCP server configured for the user/project would
+ * still be loaded and callable by an unlisted tool call -- `--allowedTools`
+ * merely pre-approves specific tools without a permission prompt, it does not
+ * exclude the rest.
+ */
+function strictMcpConfig(): { mcpServers: Record<string, { command: string; args: readonly string[] }> } {
+	return { mcpServers: { insrc: { command: 'node', args: [join(daemonInstallRoot(), 'out', 'bin', 'insrc-mcp.js')] } } };
+}
+
+/** Read-only sessions expose file reads and analysis tools only. `capabilityPolicy`
+ *  'strict-read-analyze' additionally confines the MCP surface to ONLY the
+ *  insrc server via --strict-mcp-config + --mcp-config -- --tools/--allowedTools
+ *  alone close off built-ins but never exclude other configured MCP servers. */
+export function claudeReadOnlySessionArgs(schema: StructuredSchema, modelArgs: readonly string[], capabilityPolicy: 'write-sandboxed' | 'strict-read-analyze' = 'write-sandboxed'): string[] {
+ const base = ['--print', '--output-format', 'json', '--json-schema', JSON.stringify(schema),
+  '--tools', READ_ONLY_SESSION_READ_TOOLS.join(','), '--allowedTools', [...READ_ONLY_SESSION_READ_TOOLS, ...READ_ONLY_SESSION_ANALYZE_TOOLS].join(',')];
+ const mcpScope = capabilityPolicy === 'strict-read-analyze'
+  ? ['--strict-mcp-config', '--mcp-config', JSON.stringify(strictMcpConfig())]
+  : [];
+ return [...base, ...mcpScope, ...modelArgs];
 }
 
 /**
@@ -822,7 +847,7 @@ export class CliProvider implements LLMProvider {
 			throw new ModelResponseShapeError('vibe read-only session answer did not satisfy the schema', errors);
 		}
 		if (this.kind === 'claude') {
-			const { envelope } = await this.runClaude(claudeReadOnlySessionArgs(schema, this.modelArgs()), prompt, exec);
+			const { envelope } = await this.runClaude(claudeReadOnlySessionArgs(schema, this.modelArgs(), exec.capabilityPolicy), prompt, exec);
 			if (envelope.is_error) {
 				const message = `claude read-only session failed: ${envelope.result ?? 'no error message'}`;
 				throw sizeRefusalOr(message, envelope.result ?? '', () => new Error(message));

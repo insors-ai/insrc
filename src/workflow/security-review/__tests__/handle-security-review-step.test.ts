@@ -17,6 +17,7 @@ import { execFileSync } from 'node:child_process';
 
 import {
 	handleSecurityReviewStep, _setSecurityReviewStepDepsForTests,
+	SecurityReviewRepoNotRegisteredError, SecurityReviewCancelledError, SecurityReviewTargetUnreachableError,
 } from '../handle-security-review-step.js';
 import { ContentIdentityMismatchError, SecurityModelUnavailableError, deriveReceiptIdentity } from '../run-security-review.js';
 import type { SecurityReviewReport } from '../run-security-review.js';
@@ -52,6 +53,15 @@ function fakeReport(): SecurityReviewReport {
 	};
 }
 
+const ok = (mtimeMs: number) => ({ kind: 'ok' as const, mtimeMs });
+const missing = () => ({ kind: 'missing' as const });
+
+/** The shared fixture every test below needs: a repo treated as registered
+ *  (the admission check this Story's security review flagged -- every test
+ *  must now pass this explicitly, matching a real caller authorizing a real
+ *  repoPath). */
+const REGISTERED = { isRepoRegistered: async () => true };
+
 function unwire(): void { _setSecurityReviewStepDepsForTests(); }
 
 test('a fresh request against a repo with a FRESH index reaches {next:"done"} directly, never confirm_wait', async () => {
@@ -59,8 +69,9 @@ test('a fresh request against a repo with a FRESH index reaches {next:"done"} di
 	let collectCalls = 0;
 	let runReviewCalls = 0;
 	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
 		resolveRepoLastIndexedAt: async () => 2_000_000,
-		statMtimeMs: async () => 1_000_000, // older than the index -- fresh
+		statTarget: async () => ok(1_000_000), // older than the index -- fresh
 		resolveSecurityModel: async () => { resolveModelCalls++; return modelSelection; },
 		collectDependencyAdvisories: async () => { collectCalls++; return evidence(); },
 		runSecurityReview: async () => { runReviewCalls++; return fakeReport(); },
@@ -68,6 +79,7 @@ test('a fresh request against a repo with a FRESH index reaches {next:"done"} di
 	try {
 		const response = await handleSecurityReviewStep({ phase: 'start', repoPath: '/repo', targets });
 		assert.equal(response.next, 'done');
+		assert.equal((response as { degraded: boolean }).degraded, false);
 		assert.equal(resolveModelCalls, 1);
 		assert.equal(collectCalls, 1);
 		assert.equal(runReviewCalls, 1);
@@ -79,8 +91,9 @@ test('a fresh request against a repo with a STALE index returns {next:"confirm_w
 	let collectCalls = 0;
 	let runReviewCalls = 0;
 	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
 		resolveRepoLastIndexedAt: async () => 1_000_000,
-		statMtimeMs: async () => 2_000_000, // newer than the index -- stale
+		statTarget: async () => ok(2_000_000), // newer than the index -- stale
 		resolveSecurityModel: async () => { resolveModelCalls++; return modelSelection; },
 		collectDependencyAdvisories: async () => { collectCalls++; return evidence(); },
 		runSecurityReview: async () => { runReviewCalls++; return fakeReport(); },
@@ -96,15 +109,16 @@ test('a fresh request against a repo with a STALE index returns {next:"confirm_w
 	} finally { unwire(); }
 });
 
-test("a resumed call ({phase:'start', state, proceed:true}) waits for the index before running the review end-to-end to done", async () => {
+test("a resumed call ({phase:'start', state, proceed:true}) waits for the index before running the review end-to-end to done, with degraded:false", async () => {
 	let staleReads = 0;
 	const sleptMs: number[] = [];
 	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
 		resolveRepoLastIndexedAt: async () => {
 			staleReads++;
 			return staleReads < 3 ? 1_000_000 : 2_000_000; // becomes fresh on the 3rd read
 		},
-		statMtimeMs: async () => 2_000_000,
+		statTarget: async () => ok(2_000_000),
 		sleep: async ms => { sleptMs.push(ms); },
 		resolveSecurityModel: async () => modelSelection,
 		collectDependencyAdvisories: async () => evidence(),
@@ -115,15 +129,17 @@ test("a resumed call ({phase:'start', state, proceed:true}) waits for the index 
 		assert.equal(first.next, 'confirm_wait');
 		const resumed = await handleSecurityReviewStep({ phase: 'start', state: (first as { state: string }).state, proceed: true });
 		assert.equal(resumed.next, 'done');
+		assert.equal((resumed as { degraded: boolean }).degraded, false, 'proceed:true waited until fresh, so the run is not degraded');
 		assert.ok(sleptMs.length >= 1, 'waited at least once before the index became fresh');
 	} finally { unwire(); }
 });
 
-test("a resumed call ({phase:'start', state, proceed:false}) runs the review against the index as-is (a degraded run) and still reaches done with a fully populated report", async () => {
+test("a resumed call ({phase:'start', state, proceed:false}) runs the review against the index as-is (a degraded run) and still reaches done with a fully populated report, with degraded:true and a coverage-status note in the markdown", async () => {
 	let sleptCalls = 0;
 	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
 		resolveRepoLastIndexedAt: async () => 1_000_000,
-		statMtimeMs: async () => 2_000_000, // stays stale throughout
+		statTarget: async () => ok(2_000_000), // stays stale throughout
 		sleep: async () => { sleptCalls++; },
 		resolveSecurityModel: async () => modelSelection,
 		collectDependencyAdvisories: async () => evidence(),
@@ -132,9 +148,11 @@ test("a resumed call ({phase:'start', state, proceed:false}) runs the review aga
 	try {
 		const first = await handleSecurityReviewStep({ phase: 'start', repoPath: '/repo', targets });
 		assert.equal(first.next, 'confirm_wait');
-		const resumed = await handleSecurityReviewStep({ phase: 'start', state: (first as { state: string }).state, proceed: false }) as { next: string; report: SecurityReviewReport };
+		const resumed = await handleSecurityReviewStep({ phase: 'start', state: (first as { state: string }).state, proceed: false }) as { next: string; report: SecurityReviewReport; degraded: boolean; markdown: string };
 		assert.equal(resumed.next, 'done');
 		assert.ok(resumed.report);
+		assert.equal(resumed.degraded, true);
+		assert.match(resumed.markdown, /DEGRADED/);
 		assert.equal(sleptCalls, 0, 'proceed:false never waits on the index at all');
 	} finally { unwire(); }
 });
@@ -142,8 +160,9 @@ test("a resumed call ({phase:'start', state, proceed:false}) runs the review aga
 test("epicHash/storyId supplied on the ORIGINAL request are passed straight through into runSecurityReview's opts unchanged, never re-derived or second-guessed here", async () => {
 	let capturedOpts: { epicHash?: string; storyId?: string } | undefined;
 	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
 		resolveRepoLastIndexedAt: async () => 2_000_000,
-		statMtimeMs: async () => 1_000_000,
+		statTarget: async () => ok(1_000_000),
 		resolveSecurityModel: async () => modelSelection,
 		collectDependencyAdvisories: async () => evidence(),
 		runSecurityReview: async (_repo, _targets, opts) => { capturedOpts = opts; return fakeReport(); },
@@ -158,8 +177,9 @@ test("epicHash/storyId supplied on the ORIGINAL request are passed straight thro
 	// is the ONLY thing carrying epicHash/storyId forward, never re-derived.
 	let resumedOpts: { epicHash?: string; storyId?: string } | undefined;
 	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
 		resolveRepoLastIndexedAt: async () => 1_000_000,
-		statMtimeMs: async () => 2_000_000,
+		statTarget: async () => ok(2_000_000),
 		resolveSecurityModel: async () => modelSelection,
 		collectDependencyAdvisories: async () => evidence(),
 		runSecurityReview: async (_repo, _targets, opts) => { resumedOpts = opts; return fakeReport(); },
@@ -174,8 +194,9 @@ test("epicHash/storyId supplied on the ORIGINAL request are passed straight thro
 
 test('ContentIdentityMismatchError and SecurityModelUnavailableError from runSecurityReview propagate out of handleSecurityReviewStep unchanged', async () => {
 	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
 		resolveRepoLastIndexedAt: async () => 2_000_000,
-		statMtimeMs: async () => 1_000_000,
+		statTarget: async () => ok(1_000_000),
 		resolveSecurityModel: async () => modelSelection,
 		collectDependencyAdvisories: async () => evidence(),
 		runSecurityReview: async () => { throw new ContentIdentityMismatchError('a', 'b', true); },
@@ -188,8 +209,9 @@ test('ContentIdentityMismatchError and SecurityModelUnavailableError from runSec
 	} finally { unwire(); }
 
 	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
 		resolveRepoLastIndexedAt: async () => 2_000_000,
-		statMtimeMs: async () => 1_000_000,
+		statTarget: async () => ok(1_000_000),
 		resolveSecurityModel: async () => modelSelection,
 		collectDependencyAdvisories: async () => evidence(),
 		runSecurityReview: async () => { throw new SecurityModelUnavailableError('no backend'); },
@@ -198,6 +220,160 @@ test('ContentIdentityMismatchError and SecurityModelUnavailableError from runSec
 		await assert.rejects(
 			handleSecurityReviewStep({ phase: 'start', repoPath: '/repo', targets }),
 			SecurityModelUnavailableError,
+		);
+	} finally { unwire(); }
+});
+
+// --- repo admission (security finding: a write-capable review endpoint had
+// no registered-repository check at all, on either the fresh or resumed
+// path) -----------------------------------------------------------------
+
+test('a fresh request naming an UNREGISTERED repoPath is refused with SecurityReviewRepoNotRegisteredError before any stat, model probe, advisory audit or round', async () => {
+	let statCalls = 0;
+	let resolveModelCalls = 0;
+	_setSecurityReviewStepDepsForTests({
+		isRepoRegistered: async () => false,
+		resolveRepoLastIndexedAt: async () => { statCalls++; return 2_000_000; },
+		statTarget: async () => { statCalls++; return ok(1_000_000); },
+		resolveSecurityModel: async () => { resolveModelCalls++; return modelSelection; },
+		collectDependencyAdvisories: async () => evidence(),
+		runSecurityReview: async () => fakeReport(),
+	});
+	try {
+		await assert.rejects(
+			handleSecurityReviewStep({ phase: 'start', repoPath: '/not-registered', targets }),
+			SecurityReviewRepoNotRegisteredError,
+		);
+		assert.equal(statCalls, 0, 'not even the freshness check ran');
+		assert.equal(resolveModelCalls, 0);
+	} finally { unwire(); }
+});
+
+test('a resumed call is RE-AUTHORIZED against the registry at resume time, never merely trusting that its state token\'s repoPath was authorized once at pause time', async () => {
+	let registeredNow = true;
+	_setSecurityReviewStepDepsForTests({
+		isRepoRegistered: async () => registeredNow,
+		resolveRepoLastIndexedAt: async () => 1_000_000,
+		statTarget: async () => ok(2_000_000),
+		resolveSecurityModel: async () => modelSelection,
+		collectDependencyAdvisories: async () => evidence(),
+		runSecurityReview: async () => fakeReport(),
+	});
+	try {
+		const first = await handleSecurityReviewStep({ phase: 'start', repoPath: '/repo', targets });
+		assert.equal(first.next, 'confirm_wait');
+		registeredNow = false; // the repo is de-registered between pause and resume
+		await assert.rejects(
+			handleSecurityReviewStep({ phase: 'start', state: (first as { state: string }).state, proceed: false }),
+			SecurityReviewRepoNotRegisteredError,
+		);
+	} finally { unwire(); }
+});
+
+test("proceed:true's wait re-authorizes on every poll iteration too -- a repo de-registered MID-WAIT stops the wait with SecurityReviewRepoNotRegisteredError rather than spinning forever", async () => {
+	let pollCount = 0;
+	let registeredNow = true;
+	const sleptMs: number[] = [];
+	_setSecurityReviewStepDepsForTests({
+		isRepoRegistered: async () => registeredNow,
+		resolveRepoLastIndexedAt: async () => { pollCount++; if (pollCount === 2) registeredNow = false; return 1_000_000; },
+		statTarget: async () => ok(2_000_000), // stays stale -- the only exit is de-registration
+		sleep: async ms => { sleptMs.push(ms); },
+		resolveSecurityModel: async () => modelSelection,
+		collectDependencyAdvisories: async () => evidence(),
+		runSecurityReview: async () => fakeReport(),
+	});
+	try {
+		const first = await handleSecurityReviewStep({ phase: 'start', repoPath: '/repo', targets });
+		assert.equal(first.next, 'confirm_wait');
+		await assert.rejects(
+			handleSecurityReviewStep({ phase: 'start', state: (first as { state: string }).state, proceed: true }),
+			SecurityReviewRepoNotRegisteredError,
+		);
+		assert.ok(sleptMs.length >= 1, 'at least one poll happened before de-registration was noticed');
+	} finally { unwire(); }
+});
+
+// --- missing vs. stale; cancellation --------------------------------------
+
+test('a PERMANENTLY MISSING target (not merely stale) refuses immediately with SecurityReviewTargetUnreachableError on a fresh request, rather than silently treating it as ordinary lag', async () => {
+	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
+		resolveRepoLastIndexedAt: async () => 2_000_000,
+		statTarget: async () => missing(),
+		resolveSecurityModel: async () => modelSelection,
+		collectDependencyAdvisories: async () => evidence(),
+		runSecurityReview: async () => fakeReport(),
+	});
+	try {
+		await assert.rejects(
+			handleSecurityReviewStep({ phase: 'start', repoPath: '/repo', targets }),
+			SecurityReviewTargetUnreachableError,
+		);
+	} finally { unwire(); }
+});
+
+test("proceed:true's wait refuses with SecurityReviewTargetUnreachableError instead of looping forever when a target becomes permanently missing mid-wait", async () => {
+	let pollCount = 0;
+	const sleptMs: number[] = [];
+	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
+		resolveRepoLastIndexedAt: async () => 1_000_000,
+		statTarget: async () => { pollCount++; return pollCount < 2 ? ok(2_000_000) : missing(); },
+		sleep: async ms => { sleptMs.push(ms); },
+		resolveSecurityModel: async () => modelSelection,
+		collectDependencyAdvisories: async () => evidence(),
+		runSecurityReview: async () => fakeReport(),
+	});
+	try {
+		const first = await handleSecurityReviewStep({ phase: 'start', repoPath: '/repo', targets });
+		assert.equal(first.next, 'confirm_wait');
+		await assert.rejects(
+			handleSecurityReviewStep({ phase: 'start', state: (first as { state: string }).state, proceed: true }),
+			SecurityReviewTargetUnreachableError,
+		);
+	} finally { unwire(); }
+});
+
+test('an already-aborted signal refuses immediately with SecurityReviewCancelledError, before any admission check, stat, model probe or round', async () => {
+	let registeredCalls = 0;
+	_setSecurityReviewStepDepsForTests({
+		isRepoRegistered: async () => { registeredCalls++; return true; },
+		resolveRepoLastIndexedAt: async () => 2_000_000,
+		statTarget: async () => ok(1_000_000),
+		resolveSecurityModel: async () => modelSelection,
+		collectDependencyAdvisories: async () => evidence(),
+		runSecurityReview: async () => fakeReport(),
+	});
+	try {
+		const controller = new AbortController();
+		controller.abort();
+		await assert.rejects(
+			handleSecurityReviewStep({ phase: 'start', repoPath: '/repo', targets }, controller.signal),
+			SecurityReviewCancelledError,
+		);
+		assert.equal(registeredCalls, 0, 'not even the admission check ran once already aborted');
+	} finally { unwire(); }
+});
+
+test("proceed:true's wait is cancellable: aborting mid-poll stops the loop with SecurityReviewCancelledError rather than waiting for freshness", async () => {
+	const controller = new AbortController();
+	let pollCount = 0;
+	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
+		resolveRepoLastIndexedAt: async () => { pollCount++; if (pollCount === 1) controller.abort(); return 1_000_000; },
+		statTarget: async () => ok(2_000_000), // never becomes fresh on its own
+		sleep: async () => undefined,
+		resolveSecurityModel: async () => modelSelection,
+		collectDependencyAdvisories: async () => evidence(),
+		runSecurityReview: async () => fakeReport(),
+	});
+	try {
+		const first = await handleSecurityReviewStep({ phase: 'start', repoPath: '/repo', targets });
+		assert.equal(first.next, 'confirm_wait');
+		await assert.rejects(
+			handleSecurityReviewStep({ phase: 'start', state: (first as { state: string }).state, proceed: true }, controller.signal),
+			SecurityReviewCancelledError,
 		);
 	} finally { unwire(); }
 });
@@ -232,17 +408,20 @@ function unwireReal(): void {
 	_setRunSecurityCodePassForTests();
 }
 
-test('integration: handleSecurityReviewStep: a fresh-index request calls the REAL runSecurityReview; epicHash/storyId supplied on the request land unchanged in the persisted receipt, while an omitted pair is derived via deriveReceiptIdentity with standalone:true', async () => {
+test('integration: handleSecurityReviewStep: a fresh-index request calls the REAL runSecurityReview; epicHash/storyId supplied on the request land unchanged in the persisted receipt, while an omitted pair is derived via deriveReceiptIdentity with standalone:true -- the repo IS genuinely registered here (via the SAME content-identity seam this test already wires), proving admission is not merely faked away', async () => {
 	const repo = initRepo();
 	wireRealRunSecurityReview(repo);
 	try {
 		const identity = await computeContentIdentity(repo, targets);
 		// handleSecurityReviewStep resolves the model/advisories itself (per its
 		// own contract) -- only those two, plus the index-freshness check, are
-		// faked here; runSecurityReview itself is the REAL implementation.
+		// faked here; runSecurityReview AND the registration check are the REAL
+		// implementations (registration governed by _setContentIdentityDepsForTests
+		// above, since handleSecurityReviewStep's admission check reuses that
+		// SAME registry lookup).
 		_setSecurityReviewStepDepsForTests({
 			resolveRepoLastIndexedAt: async () => 2_000_000,
-			statMtimeMs: async () => 1_000_000,
+			statTarget: async () => ok(1_000_000),
 			resolveSecurityModel: async () => modelSelection,
 			collectDependencyAdvisories: async () => ({ ...evidence(), contentIdentity: identity }),
 		});
@@ -263,6 +442,24 @@ test('integration: handleSecurityReviewStep: a fresh-index request calls the REA
 	} finally { unwireReal(); unwire(); rmSync(repo, { recursive: true, force: true }); }
 });
 
+test('integration: a request naming a repoPath that is NOT the one registered (via the same real content-identity seam) is refused with SecurityReviewRepoNotRegisteredError, never silently run against an unauthorized root', async () => {
+	const registeredRepo = initRepo();
+	const otherRepo = initRepo();
+	wireRealRunSecurityReview(registeredRepo); // only registeredRepo is treated as registered
+	try {
+		_setSecurityReviewStepDepsForTests({
+			resolveRepoLastIndexedAt: async () => 2_000_000,
+			statTarget: async () => ok(1_000_000),
+			resolveSecurityModel: async () => modelSelection,
+			collectDependencyAdvisories: async () => evidence(),
+		});
+		await assert.rejects(
+			handleSecurityReviewStep({ phase: 'start', repoPath: otherRepo, targets }),
+			SecurityReviewRepoNotRegisteredError,
+		);
+	} finally { unwireReal(); unwire(); rmSync(registeredRepo, { recursive: true, force: true }); rmSync(otherRepo, { recursive: true, force: true }); }
+});
+
 test('integration: a STALE-index request pauses at confirm_wait, then a resumed proceed:false call runs the REAL runSecurityReview degraded and persists receipts; a separate resumed proceed:true call waits for freshness before running it', async () => {
 	const repoFalse = initRepo();
 	wireRealRunSecurityReview(repoFalse);
@@ -270,7 +467,7 @@ test('integration: a STALE-index request pauses at confirm_wait, then a resumed 
 		const identityFalse = await computeContentIdentity(repoFalse, targets);
 		_setSecurityReviewStepDepsForTests({
 			resolveRepoLastIndexedAt: async () => 1_000_000,
-			statMtimeMs: async () => 2_000_000, // stale throughout -- proceed:false never waits
+			statTarget: async () => ok(2_000_000), // stale throughout -- proceed:false never waits
 			resolveSecurityModel: async () => modelSelection,
 			collectDependencyAdvisories: async () => ({ ...evidence(), contentIdentity: identityFalse }),
 		});
@@ -278,8 +475,9 @@ test('integration: a STALE-index request pauses at confirm_wait, then a resumed 
 		assert.equal(first.next, 'confirm_wait');
 		assert.equal(readReceiptRecord(repoFalse, '1111111111111111', 's3'), null, 'nothing persisted yet at confirm_wait');
 
-		const resumedFalse = await handleSecurityReviewStep({ phase: 'start', state: (first as { state: string }).state, proceed: false }) as { next: string };
+		const resumedFalse = await handleSecurityReviewStep({ phase: 'start', state: (first as { state: string }).state, proceed: false }) as { next: string; degraded: boolean };
 		assert.equal(resumedFalse.next, 'done');
+		assert.equal(resumedFalse.degraded, true);
 		const falseRecord = readReceiptRecord(repoFalse, '1111111111111111', 's3');
 		assert.ok(falseRecord, 'the degraded proceed:false run genuinely persisted both round receipts via the real runSecurityReview');
 		assert.equal(falseRecord.body.receipts.length, 2);
@@ -293,7 +491,7 @@ test('integration: a STALE-index request pauses at confirm_wait, then a resumed 
 		const sleptMs: number[] = [];
 		_setSecurityReviewStepDepsForTests({
 			resolveRepoLastIndexedAt: async () => { staleReads++; return staleReads < 3 ? 1_000_000 : 2_000_000; },
-			statMtimeMs: async () => 2_000_000,
+			statTarget: async () => ok(2_000_000),
 			sleep: async ms => { sleptMs.push(ms); },
 			resolveSecurityModel: async () => modelSelection,
 			collectDependencyAdvisories: async () => ({ ...evidence(), contentIdentity: identityTrue }),
@@ -301,8 +499,9 @@ test('integration: a STALE-index request pauses at confirm_wait, then a resumed 
 		const first = await handleSecurityReviewStep({ phase: 'start', repoPath: repoTrue, targets, epicHash: '2222222222222222', storyId: 's3' });
 		assert.equal(first.next, 'confirm_wait');
 
-		const resumedTrue = await handleSecurityReviewStep({ phase: 'start', state: (first as { state: string }).state, proceed: true }) as { next: string };
+		const resumedTrue = await handleSecurityReviewStep({ phase: 'start', state: (first as { state: string }).state, proceed: true }) as { next: string; degraded: boolean };
 		assert.equal(resumedTrue.next, 'done');
+		assert.equal(resumedTrue.degraded, false);
 		assert.ok(sleptMs.length >= 1, 'proceed:true genuinely waited at least once before the index became fresh');
 		const trueRecord = readReceiptRecord(repoTrue, '2222222222222222', 's3');
 		assert.ok(trueRecord, 'the proceed:true run, once fresh, genuinely persisted both round receipts via the real runSecurityReview');

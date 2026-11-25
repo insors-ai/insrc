@@ -769,3 +769,20 @@ test("readOnlySessionOnce's unsafe-MCP-server retry loop carries the identical c
 	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; _stopCapturingCapabilityPolicyAttemptsForTests(); f.cleanup(); }
 });
 
+test("a qualified claude session under capabilityPolicy:'strict-read-analyze' actually closes the MCP surface: its argv carries --strict-mcp-config + an --mcp-config naming ONLY the insrc server, unlike a 'write-sandboxed' session's argv, which carries neither", async () => {
+	const f = fakeCli([{ out: claudeOk({ ok: true }) }, { out: claudeOk({ ok: true }) }]);
+	try {
+		const p = new CliProvider({ kind: 'claude', binPath: f.bin });
+		await p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, capabilityPolicy: 'strict-read-analyze' });
+		await p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, capabilityPolicy: 'write-sandboxed' });
+		const [strict, sandboxed] = f.calls();
+		assert.ok(strict!.argv.includes('--strict-mcp-config'), "strict-read-analyze's argv carries --strict-mcp-config");
+		const mcpConfigIndex = strict!.argv.indexOf('--mcp-config');
+		assert.ok(mcpConfigIndex >= 0, "strict-read-analyze's argv carries --mcp-config");
+		const mcpConfig = JSON.parse(strict!.argv[mcpConfigIndex + 1]!) as { mcpServers: Record<string, unknown> };
+		assert.deepEqual(Object.keys(mcpConfig.mcpServers), ['insrc'], '--mcp-config names ONLY the insrc server, excluding every other configured MCP server');
+		assert.equal(sandboxed!.argv.includes('--strict-mcp-config'), false, "write-sandboxed's argv carries no MCP scoping at all (today's unchanged behavior)");
+		assert.equal(sandboxed!.argv.includes('--mcp-config'), false);
+	} finally { f.cleanup(); }
+});
+

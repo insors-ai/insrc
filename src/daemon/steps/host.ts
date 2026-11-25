@@ -80,7 +80,7 @@ export function stepToolTable(opts: StepHostOptions = {}): Record<string, StepTo
 		insrc_build_step:       (args) => handleBuildStep(args),
 		insrc_review_step: (args, _signal, _progress, _execution, trusted) => handleDesignReviewStep(args, trusted),
 		insrc_code_review_step: (args, _signal, _progress, _execution, trusted) => handleTaskReviewStep(args, trusted),
-		insrc_security_review_step: (args) => handleSecurityReviewStepCall(args),
+		insrc_security_review_step: (args, signal) => handleSecurityReviewStepCall(args, signal),
 		insrc_triage:           (args) => handleTriageStep(args),
 	};
 	return { ...table, ...opts.tools } as Record<string, StepToolRunner>;

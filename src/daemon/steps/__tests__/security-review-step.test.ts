@@ -36,10 +36,14 @@ test('insrc_security_review_step is registered in the step host table under exac
 	assert.ok(Object.hasOwn(table, 'insrc_security_review_step'));
 });
 
+const REGISTERED = { isRepoRegistered: async () => true };
+const ok = (mtimeMs: number) => ({ kind: 'ok' as const, mtimeMs });
+
 test('handleSecurityReviewStepCall: a valid fresh request wraps handleSecurityReviewStep\'s reply as {content:[{type:"text",text}]}, routed through handleSecurityReviewStep and nowhere else', async () => {
 	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
 		resolveRepoLastIndexedAt: async () => 2_000_000,
-		statMtimeMs: async () => 1_000_000,
+		statTarget: async () => ok(1_000_000),
 		resolveSecurityModel: async () => ({ status: 'configured', provider: 'cli-claude', modelId: 'claude-opus' }),
 		collectDependencyAdvisories: async () => ({ contentIdentity: 'id', contentStable: true, readOnly: true, queriedCoordinates: [], matches: [], perManagerMode: [], unresolvedDependencies: [], unavailableSources: [] }),
 		runSecurityReview: async () => ({
@@ -61,8 +65,16 @@ test('handleSecurityReviewStepCall: a valid fresh request wraps handleSecurityRe
 	} finally { _setSecurityReviewStepDepsForTests(); }
 });
 
-test('handleSecurityReviewStepCall: malformed input (missing phase, or neither a fresh nor a resumed shape) is refused with an error envelope, never a throw', async () => {
-	for (const bad of [undefined, {}, { phase: 'start' }, { phase: 'resume', repoPath: '/repo', targets: {} }, { phase: 'start', state: 'abc' /* missing proceed */ }]) {
+test('handleSecurityReviewStepCall: malformed input (missing phase, neither a fresh nor a resumed shape, a MIXED fresh+resumed shape, or a lone epicHash/storyId without its pair) is refused with an error envelope, never a throw', async () => {
+	for (const bad of [
+		undefined, {}, { phase: 'start' }, { phase: 'resume', repoPath: '/repo', targets: {} },
+		{ phase: 'start', state: 'abc' } /* missing proceed */,
+		{ phase: 'start', state: 'abc', proceed: true, repoPath: '/repo' } /* mixed: state + a fresh field */,
+		{ phase: 'start', state: 'abc', proceed: true, targets: {} } /* mixed: state + targets */,
+		{ phase: 'start', repoPath: '/repo', targets: {}, proceed: false } /* resumed-only field on a fresh request */,
+		{ phase: 'start', repoPath: '/repo', targets: {}, epicHash: 'abc' } /* epicHash without storyId */,
+		{ phase: 'start', repoPath: '/repo', targets: {}, storyId: 's1' } /* storyId without epicHash */,
+	]) {
 		const envelope = await handleSecurityReviewStepCall(bad);
 		assert.equal(envelope.isError, true, JSON.stringify(bad));
 		const parsed = JSON.parse(envelope.content[0]!.text) as { next: string };
@@ -72,8 +84,9 @@ test('handleSecurityReviewStepCall: malformed input (missing phase, or neither a
 
 test('handleSecurityReviewStepCall: a thrown error from handleSecurityReviewStep (e.g. SecurityModelUnavailableError) is reported as an error envelope, not an uncaught rejection', async () => {
 	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
 		resolveRepoLastIndexedAt: async () => 2_000_000,
-		statMtimeMs: async () => 1_000_000,
+		statTarget: async () => ok(1_000_000),
 		resolveSecurityModel: async () => ({ status: 'configured', provider: 'cli-claude', modelId: 'claude-opus' }),
 		collectDependencyAdvisories: async () => ({ contentIdentity: 'id', contentStable: true, readOnly: true, queriedCoordinates: [], matches: [], perManagerMode: [], unresolvedDependencies: [], unavailableSources: [] }),
 		runSecurityReview: async () => { throw new SecurityModelUnavailableError('no backend'); },
@@ -84,6 +97,26 @@ test('handleSecurityReviewStepCall: a thrown error from handleSecurityReviewStep
 		const parsed = JSON.parse(envelope.content[0]!.text) as { next: string; error: { message: string } };
 		assert.equal(parsed.next, 'error');
 		assert.match(parsed.error.message, /no backend/);
+	} finally { _setSecurityReviewStepDepsForTests(); }
+});
+
+test('handleSecurityReviewStepCall forwards a given AbortSignal into handleSecurityReviewStep: an already-aborted signal refuses with SecurityReviewCancelledError before the admission check ever runs', async () => {
+	let registeredCalls = 0;
+	_setSecurityReviewStepDepsForTests({
+		isRepoRegistered: async () => { registeredCalls++; return true; },
+		resolveRepoLastIndexedAt: async () => 2_000_000,
+		statTarget: async () => ok(1_000_000),
+		resolveSecurityModel: async () => ({ status: 'configured', provider: 'cli-claude', modelId: 'claude-opus' }),
+		collectDependencyAdvisories: async () => ({ contentIdentity: 'id', contentStable: true, readOnly: true, queriedCoordinates: [], matches: [], perManagerMode: [], unresolvedDependencies: [], unavailableSources: [] }),
+	});
+	try {
+		const controller = new AbortController();
+		controller.abort();
+		const envelope = await handleSecurityReviewStepCall({ phase: 'start', repoPath: '/repo', targets: { entries: [{ path: 'app.ts' }] } }, controller.signal);
+		assert.equal(envelope.isError, true);
+		const parsed = JSON.parse(envelope.content[0]!.text) as { next: string; error: { message: string } };
+		assert.match(parsed.error.message, /cancelled/);
+		assert.equal(registeredCalls, 0);
 	} finally { _setSecurityReviewStepDepsForTests(); }
 });
 
@@ -112,7 +145,7 @@ test("smoke: calling the REGISTERED insrc_security_review_step tool through the 
 		const identity = await computeContentIdentity(repo, { entries: [{ path: 'app.ts' }] });
 		_setSecurityReviewStepDepsForTests({
 			resolveRepoLastIndexedAt: async () => 2_000_000, // fresh: newer than app.ts's mtime
-			statMtimeMs: async () => 1_000_000,
+			statTarget: async () => ok(1_000_000),
 			resolveSecurityModel: async () => ({ status: 'configured', provider: 'cli-claude', modelId: 'claude-opus' }),
 			collectDependencyAdvisories: async () => ({ contentIdentity: identity, contentStable: true, readOnly: true, queriedCoordinates: [], matches: [], perManagerMode: [], unresolvedDependencies: [], unavailableSources: [] }),
 			// runSecurityReview itself is left REAL (not faked) -- only its own

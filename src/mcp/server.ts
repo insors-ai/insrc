@@ -698,12 +698,16 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 			title: 'Run a dedicated security review',
 			description:
 				'Runs a two-round, dependency-advisory-aware security review over the given ' +
-				'targets. phase=\'start\' with { repoPath, targets, epicHash?, storyId? } on a ' +
-				'fresh request. If the repo\'s graph index is stale for one or more targets, ' +
-				'returns { next:\'confirm_wait\', state, guidance } before anything else runs -- ' +
-				'ask the user whether to wait for a fresh index or run degraded, then call again ' +
-				'with phase=\'start\', the same state, and { proceed }. Either way the terminal ' +
-				'reply is { next:\'done\', report, markdown }.',
+				'targets. repoPath must be an absolute, already-registered repo (checked fresh ' +
+				'on every call, including a resumed one -- never merely trusted from an earlier ' +
+				'pause). phase=\'start\' with { repoPath, targets, epicHash?, storyId? } on a ' +
+				'fresh request (epicHash/storyId as a pair, never just one). If the repo\'s graph ' +
+				'index is stale for one or more targets, returns { next:\'confirm_wait\', state, ' +
+				'guidance } before anything else runs -- ask the user whether to wait for a fresh ' +
+				'index or run degraded, then call again with phase=\'start\', the same state, and ' +
+				'{ proceed }. Either way the terminal reply is { next:\'done\', report, markdown, ' +
+				'degraded } -- degraded:true on a proceed:false run, flagging that graph-grounded ' +
+				'coverage may be stale.',
 			inputSchema: {
 				phase: z.literal('start').describe('The only phase this tool has.'),
 				repoPath: z.string().describe('Only for a fresh request. Absolute path of the registered repo to review.').optional(),

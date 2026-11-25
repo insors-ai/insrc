@@ -42,6 +42,15 @@ export function _setContentIdentityDepsForTests(fn?: (repoPath: string) => Promi
 	isRepoRegistered = fn ?? (async repoPath => (await listRepos(null)).some(r => r.path === repoPath));
 }
 
+/** The SAME registration check computeContentIdentity enforces below, exported
+ *  for any other caller that must authorize a repoPath against the real
+ *  registry before doing anything with it (e.g. handleSecurityReviewStep's
+ *  own admission check) -- one registry lookup, never a second drifting copy.
+ *  Governed by the SAME test seam above. */
+export async function checkRepoRegistered(repoPath: string): Promise<boolean> {
+	return isRepoRegistered(repoPath);
+}
+
 /**
  * A deterministic digest over the repo's HEAD commit sha plus a sha256 of
  * every file named in targets.entries' actual, current raw bytes. Pure

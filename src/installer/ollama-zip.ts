@@ -1,17 +1,42 @@
 import yauzl from 'yauzl';
-import type { Entry, ZipFile } from 'yauzl';
+import type { Entry, ZipFile, LocalFileHeader } from 'yauzl';
 import { constants } from 'node:fs';
 import { lstat, open } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { posix, join, dirname } from 'node:path';
-import { crc32 } from 'node:zlib';
+import { crc32, createInflateRaw } from 'node:zlib';
 import type { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import { InstallerError } from './contracts.js';
 import { parseOllamaPolicy } from './ollama-policy.js';
 import type { OllamaPolicy } from './ollama-policy.js';
 import type { OllamaExtracted } from './ollama-tar.js';
 import { archiveUnsafe, OllamaArchivePaths, ollamaMemberPath, ollamaParents, privateOllamaDirectory } from './ollama-layout.js';
 import { controlBinding } from './native.js';
+
+function localSizes(local: LocalFileHeader): { compressed: number; expanded: number } {
+  const fields = new Map<number, Buffer>(); let offset = 0;
+  while (offset < local.extraField.length) {
+    if (offset + 4 > local.extraField.length) throw archiveUnsafe('Truncated ZIP local extra field');
+    const id = local.extraField.readUInt16LE(offset), bytes = local.extraField.readUInt16LE(offset + 2); offset += 4;
+    if (offset + bytes > local.extraField.length || fields.has(id)) throw archiveUnsafe('Truncated or duplicate ZIP local extra field');
+    fields.set(id, local.extraField.subarray(offset, offset + bytes)); offset += bytes;
+  }
+  let compressed = local.compressedSize, expanded = local.uncompressedSize;
+  if (compressed === 0xffffffff || expanded === 0xffffffff) {
+    const data = fields.get(1), expected = (compressed === 0xffffffff ? 8 : 0) + (expanded === 0xffffffff ? 8 : 0);
+    if (!data || ![expected, 16].includes(data.length) || local.versionNeededToExtract < 45) throw archiveUnsafe('Missing or invalid ZIP64 local sizes');
+    let position = 0;
+    const value = () => { const integer = data.readBigUInt64LE(position); position += 8;
+      if (integer > BigInt(Number.MAX_SAFE_INTEGER)) throw archiveUnsafe('ZIP64 local size exceeds integer bounds'); return Number(integer); };
+    if (data.length === 16) {
+      const largeExpanded = value(), largeCompressed = value();
+      if ((expanded !== 0xffffffff && expanded !== largeExpanded) || (compressed !== 0xffffffff && compressed !== largeCompressed)) throw archiveUnsafe('Conflicting ZIP64 local sizes');
+      expanded = largeExpanded; compressed = largeCompressed;
+    } else { if (expanded === 0xffffffff) expanded = value(); if (compressed === 0xffffffff) compressed = value(); }
+  } else if (fields.has(1)) throw archiveUnsafe('Ambiguous ZIP64 local sizes without placeholders');
+  return { compressed, expanded };
+}
 
 /** Separate policy from S1 ZIP limits: no inventory is trusted from the vendor. */
 export async function extractOllamaZip(archive: string, destination: string, policyInput: OllamaPolicy,
@@ -63,12 +88,13 @@ export async function extractOllamaZip(archive: string, destination: string, pol
         || entry.uncompressedSize > (alias ? 1024 : policy.limits.fileBytes) || (directory && (entry.uncompressedSize !== 0 || entry.compressedSize !== 0 || entry.compressionMethod !== 0))
         || (total += entry.uncompressedSize) > policy.limits.expandedBytes) throw archiveUnsafe('Dependency ZIP expansion exceeds policy');
       const local = await zip.readLocalFileHeaderPromise(entry); signal?.throwIfAborted();
+      const sizes = localSizes(local), deferred = !!(entry.generalPurposeBitFlag & 8);
       metadata += 76 + entry.fileNameLength + entry.extraFieldLength + entry.fileCommentLength + local.fileNameLength + local.extraFieldLength;
       if (metadata > 16 * 1024 * 1024) throw archiveUnsafe('Dependency ZIP metadata memory exceeds bound');
       if (!local.fileName.equals(entry.fileNameRaw) || local.compressionMethod !== entry.compressionMethod || local.generalPurposeBitFlag !== entry.generalPurposeBitFlag
-        || (!(entry.generalPurposeBitFlag & 8) && (local.crc32 !== entry.crc32
-          || (local.compressedSize !== 0xffffffff && local.compressedSize !== entry.compressedSize)
-          || (local.uncompressedSize !== 0xffffffff && local.uncompressedSize !== entry.uncompressedSize)))) throw archiveUnsafe('Dependency ZIP local/directory headers differ');
+        || (local.crc32 !== entry.crc32 && !(deferred && local.crc32 === 0))
+        || (sizes.compressed !== entry.compressedSize && !(deferred && sizes.compressed === 0))
+        || (sizes.expanded !== entry.uncompressedSize && !(deferred && sizes.expanded === 0))) throw archiveUnsafe('Dependency ZIP local/directory headers differ');
       if (entry.relativeOffsetOfLocalHeader < 0 || !Number.isSafeInteger(local.fileDataStart + entry.compressedSize) || local.fileDataStart + entry.compressedSize > central) throw archiveUnsafe('Dependency ZIP data overlaps directory');
       entries.push({ entry, name, directory, alias, mode: mode & 0o111 ? 0o755 : 0o644, start: entry.relativeOffsetOfLocalHeader, end: local.fileDataStart + entry.compressedSize });
     }
@@ -83,7 +109,11 @@ export async function extractOllamaZip(archive: string, destination: string, pol
       signal?.throwIfAborted(); if (failure) throw failure;
       if (item.directory) { if (item.entry.crc32 !== 0) throw archiveUnsafe('Invalid ZIP directory checksum'); if (writing) await ollamaParents(destination, item.name, true, signal); continue; }
       if (writing && item.alias) continue;
-      input = await zip.openReadStreamPromise(item.entry); input.on('error', error => { failure = error; });
+      const rawInput = await zip.openReadStreamPromise(item.entry, { decodeFileData: false });
+      const inflater = item.entry.compressionMethod === 8 ? createInflateRaw({ chunkSize: 65536 }) : undefined;
+      input = inflater ?? rawInput; input.on('error', error => { failure = error; });
+      let pipeError: unknown;
+      const piped = inflater ? pipeline(rawInput, inflater, { signal }).catch(error => { pipeError = error; }) : Promise.resolve();
       const hash = createHash('sha256'); let bytes = 0, crc = 0; const link: Buffer[] = [];
       let output: Awaited<ReturnType<typeof open>> | undefined;
       try {
@@ -95,7 +125,8 @@ export async function extractOllamaZip(archive: string, destination: string, pol
           if (item.alias) link.push(Buffer.from(chunk));
           else if (writing) { let offset = 0; while (offset < chunk.length) { signal?.throwIfAborted(); const wrote = await output!.write(chunk, offset, chunk.length - offset); if (!wrote.bytesWritten) throw archiveUnsafe('Short ZIP output write'); offset += wrote.bytesWritten; } }
         }
-        if (bytes !== item.entry.uncompressedSize || crc !== item.entry.crc32) throw archiveUnsafe('Dependency ZIP truncated or CRC differs');
+        await piped; if (pipeError) throw pipeError;
+        if ((inflater && inflater.bytesWritten !== item.entry.compressedSize) || bytes !== item.entry.uncompressedSize || crc !== item.entry.crc32) throw archiveUnsafe('Dependency ZIP compressed consumption, length or CRC differs');
         if (item.alias) {
           const target = new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(link));
           if (!target || /^[\\/]/.test(target) || /[\\:\u0000-\u001f\u007f]/.test(target)) throw archiveUnsafe('Escaping ZIP alias target');
@@ -109,7 +140,7 @@ export async function extractOllamaZip(archive: string, destination: string, pol
             result.files.push({ path: item.name, bytes, sha256, mode: item.mode });
           } else verified.set(item.name, sha256);
         }
-      } finally { try { await output?.close(); } finally { input.destroy(); input = undefined; } }
+      } finally { try { await output?.close(); } finally { input.destroy(); rawInput.destroy(); await piped; input = undefined; } }
     }
     }
     return result;

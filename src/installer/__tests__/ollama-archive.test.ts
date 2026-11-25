@@ -134,10 +134,31 @@ function mutate(zip: Buffer, change: (data: Buffer, offset: number, central: boo
   for (let i = 0; i <= data.length - 46; i++) { const magic = data.readUInt32LE(i); if (magic === 0x02014b50) change(data, i, true); else if (magic === 0x04034b50) change(data, i, false); }
   return data;
 }
+function zip64Local(bytes: Buffer): Buffer {
+  const data = Buffer.from(bytes), end = data.length - 22, central = data.readUInt32LE(end + 16);
+  const insert = 30 + data.readUInt16LE(26) + data.readUInt16LE(28), extra = Buffer.alloc(20);
+  extra.writeUInt16LE(1); extra.writeUInt16LE(16, 2); extra.writeBigUInt64LE(BigInt(data.readUInt32LE(22)), 4); extra.writeBigUInt64LE(BigInt(data.readUInt32LE(18)), 12);
+  data.writeUInt16LE(45, 4); data.writeUInt16LE(data.readUInt16LE(28) + extra.length, 28); data.writeUInt32LE(0xffffffff, 18); data.writeUInt32LE(0xffffffff, 22);
+  data.writeUInt16LE(45, central + 6); data.writeUInt32LE(central + extra.length, end + 16);
+  return Buffer.concat([data.subarray(0, insert), extra, data.subarray(insert)]);
+}
+function trailingDeflateBytes(bytes: Buffer): Buffer {
+  const data = Buffer.from(bytes), end = data.length - 22, central = data.readUInt32LE(end + 16);
+  assert.equal(data.readUInt16LE(6) & 8, 0, 'independent fixture has exact local sizes');
+  const compressed = data.readUInt32LE(central + 20), start = 30 + data.readUInt16LE(26) + data.readUInt16LE(28), insert = start + compressed;
+  data.writeUInt32LE(compressed + 3, 18); data.writeUInt32LE(compressed + 3, central + 20); data.writeUInt32LE(central + 3, end + 16);
+  return Buffer.concat([data.subarray(0, insert), Buffer.from([1, 2, 3]), data.subarray(insert)]);
+}
 test('zip-and-layout-escapes-collisions-and-abort-preserve-existing-bytes', async () => {
   const f = fixture(); let timer: ReturnType<typeof setInterval> | undefined;
   try {
     const base = await zip([{ path: 'safe.txt', bytes: Buffer.from('safe') }]);
+    const zipped64 = zip64Local(base), qualified64 = f.input(zipped64);
+    assert.equal((await extractOllamaZip(qualified64.archive, qualified64.stage, policy(zipped64))).files.length, 1);
+    const deflated = await zip([{ path: 'safe.txt', bytes: Buffer.alloc(4096, 1) }], true);
+    const trailing = trailingDeflateBytes(deflated), trailingInput = f.input(trailing);
+    await assert.rejects(extractOllamaZip(trailingInput.archive, trailingInput.stage, policy(trailing)), /compressed consumption/);
+    assert.deepEqual(readdirSync(trailingInput.stage), []);
     for (const name of ['../a.txt', '/bad.txt', 'C:/a.txt', 'ads:byte', 'CON.file', 'bad\\name']) {
       const data = Buffer.from(base.toString('latin1').replaceAll('safe.txt', name), 'latin1'), x = f.input(data);
       await assert.rejects(extractOllamaZip(x.archive, x.stage, policy(data))); assert.equal(existsSync(join(f.root, 'a.txt')), false);
@@ -148,6 +169,8 @@ test('zip-and-layout-escapes-collisions-and-abort-preserve-existing-bytes', asyn
       mutate(base, (b, i, central) => { if (central) b.writeUInt32LE((b.readUInt32LE(i + 38) | 0x400) >>> 0, i + 38); }),
       mutate(base, (b, i, central) => b.writeUInt16LE(b.readUInt16LE(i + (central ? 8 : 6)) | 1, i + (central ? 8 : 6))),
       mutate(base, (b, i, central) => { if (!central) b[i + 30]! ^= 1; }),
+      mutate(base, (b, i, central) => { if (!central) b.writeUInt32LE(0xffffffff, i + 22); }),
+      mutate(zipped64, (b, i, central) => { if (!central) b.writeBigUInt64LE(100n, i + 30 + b.readUInt16LE(i + 26) + 4); }),
       mutate(base, (b, i, central) => { if (central) b.writeUInt32LE((b.readUInt32LE(i + 16) ^ 1) >>> 0, i + 16); }), base.subarray(0, base.length - 5),
       mutate(base, (b, i, central) => { const offset = central ? 16 : 14; b.writeUInt32LE((b.readUInt32LE(i + offset) ^ 1) >>> 0, i + offset); }),
       await zip([{ path: 'lib/alias', bytes: Buffer.from('../../escape'), mode: 0o120777 }]),

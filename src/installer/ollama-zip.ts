@@ -11,6 +11,7 @@ import { parseOllamaPolicy } from './ollama-policy.js';
 import type { OllamaPolicy } from './ollama-policy.js';
 import type { OllamaExtracted } from './ollama-tar.js';
 import { archiveUnsafe, OllamaArchivePaths, ollamaMemberPath, ollamaParents, privateOllamaDirectory } from './ollama-layout.js';
+import { controlBinding } from './native.js';
 
 /** Separate policy from S1 ZIP limits: no inventory is trusted from the vendor. */
 export async function extractOllamaZip(archive: string, destination: string, policyInput: OllamaPolicy,
@@ -19,6 +20,7 @@ export async function extractOllamaZip(archive: string, destination: string, pol
   if (policy.asset.format !== 'zip') throw archiveUnsafe('Expected dependency ZIP policy');
   await privateOllamaDirectory(destination, true);
   await privateOllamaDirectory(dirname(archive));
+  if (process.platform === 'win32' && !controlBinding().safePath(archive, false, false)) throw archiveUnsafe('Dependency ZIP is a reparse point');
   const source = await open(archive, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
     const info = await source.stat(), initial = await lstat(archive);
@@ -72,21 +74,26 @@ export async function extractOllamaZip(archive: string, destination: string, pol
     }
     const ordered = [...entries].sort((a, b) => a.start - b.start);
     for (let i = 1; i < ordered.length; i++) if (ordered[i]!.start < ordered[i - 1]!.end) throw archiveUnsafe('Overlapping dependency ZIP members');
-    total = 0;
-    for (const item of entries) {
+    const verified = new Map<string, string>();
+    // First consume/verify every compressed member without writing. A second
+    // streaming pass copies only those bytes, checking the same digest again.
+    for (const writing of [false, true]) {
+      total = 0;
+      for (const item of entries) {
       signal?.throwIfAborted(); if (failure) throw failure;
-      if (item.directory) { if (item.entry.crc32 !== 0) throw archiveUnsafe('Invalid ZIP directory checksum'); await ollamaParents(destination, item.name, true, signal); continue; }
+      if (item.directory) { if (item.entry.crc32 !== 0) throw archiveUnsafe('Invalid ZIP directory checksum'); if (writing) await ollamaParents(destination, item.name, true, signal); continue; }
+      if (writing && item.alias) continue;
       input = await zip.openReadStreamPromise(item.entry); input.on('error', error => { failure = error; });
       const hash = createHash('sha256'); let bytes = 0, crc = 0; const link: Buffer[] = [];
       let output: Awaited<ReturnType<typeof open>> | undefined;
       try {
-        if (!item.alias) { await ollamaParents(destination, item.name, false, signal); signal?.throwIfAborted(); output = await open(join(destination, item.name), constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, item.mode); }
+        if (writing) { await ollamaParents(destination, item.name, false, signal); signal?.throwIfAborted(); output = await open(join(destination, item.name), constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, item.mode); }
         for await (const raw of input) {
           signal?.throwIfAborted(); const chunk = raw as Buffer;
           if (chunk.length > 65536 || (bytes += chunk.length) > item.entry.uncompressedSize || (total += chunk.length) > policy.limits.expandedBytes) throw archiveUnsafe('Dependency ZIP actual output exceeds bounds');
           hash.update(chunk); crc = crc32(chunk, crc);
           if (item.alias) link.push(Buffer.from(chunk));
-          else { let offset = 0; while (offset < chunk.length) { signal?.throwIfAborted(); const wrote = await output!.write(chunk, offset, chunk.length - offset); if (!wrote.bytesWritten) throw archiveUnsafe('Short ZIP output write'); offset += wrote.bytesWritten; } }
+          else if (writing) { let offset = 0; while (offset < chunk.length) { signal?.throwIfAborted(); const wrote = await output!.write(chunk, offset, chunk.length - offset); if (!wrote.bytesWritten) throw archiveUnsafe('Short ZIP output write'); offset += wrote.bytesWritten; } }
         }
         if (bytes !== item.entry.uncompressedSize || crc !== item.entry.crc32) throw archiveUnsafe('Dependency ZIP truncated or CRC differs');
         if (item.alias) {
@@ -95,8 +102,15 @@ export async function extractOllamaZip(archive: string, destination: string, pol
           const normalized = posix.normalize(posix.join(posix.dirname(item.name), target)); ollamaMemberPath(normalized);
           if (normalized.normalize('NFC').toLowerCase() === item.name.normalize('NFC').toLowerCase()) throw archiveUnsafe('Self-referencing ZIP alias');
           result.aliases.push({ path: item.name, target: normalized, kind: 'symlink' });
-        } else result.files.push({ path: item.name, bytes, sha256: hash.digest('hex'), mode: item.mode });
+        } else {
+          const sha256 = hash.digest('hex');
+          if (writing) {
+            if (verified.get(item.name) !== sha256) throw archiveUnsafe('ZIP bytes changed after validation');
+            result.files.push({ path: item.name, bytes, sha256, mode: item.mode });
+          } else verified.set(item.name, sha256);
+        }
       } finally { try { await output?.close(); } finally { input.destroy(); input = undefined; } }
+    }
     }
     return result;
   } catch (cause) {

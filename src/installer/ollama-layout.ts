@@ -10,6 +10,7 @@ import { parseOllamaPolicy } from './ollama-policy.js';
 import type { OllamaPolicy } from './ollama-policy.js';
 import type { InventoryFile } from './release-descriptor.js';
 import type { OllamaExtracted } from './ollama-tar.js';
+import { controlBinding } from './native.js';
 
 export const archiveUnsafe = (message: string) => new InstallerError('archive-unsafe', message);
 const fold = (path: string) => path.normalize('NFC').toLowerCase();
@@ -21,9 +22,10 @@ export async function privateOllamaDirectory(path: string, empty = false): Promi
   const info = await lstat(path);
   if (!info.isDirectory() || info.isSymbolicLink() || (typeof process.getuid === 'function' && info.uid !== process.getuid())
     || (process.platform !== 'win32' && (info.mode & 0o077)) || (empty && (await readdir(path)).length)) throw archiveUnsafe('Expected private owned dependency directory');
+  if (process.platform === 'win32' && !controlBinding().safePath(path, true, true)) throw archiveUnsafe('Dependency directory is not private or is a reparse point');
   for (let current = dirname(path); ; current = dirname(current)) {
     const stat = await lstat(current);
-    if (!stat.isDirectory() || stat.isSymbolicLink()) throw archiveUnsafe('Linked dependency ancestor');
+    if (!stat.isDirectory() || stat.isSymbolicLink() || (process.platform === 'win32' && !controlBinding().safePath(current, true, false))) throw archiveUnsafe('Linked dependency ancestor');
     if (dirname(current) === current) break;
   }
 }
@@ -32,7 +34,7 @@ export async function ollamaParents(root: string, path: string, directory = fals
   for (const part of directory ? parts : parts.slice(0, -1)) {
     signal?.throwIfAborted(); current = join(current, part);
     try { await mkdir(current, { mode: 0o700 }); } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
-    const info = await lstat(current); if (!info.isDirectory() || info.isSymbolicLink()) throw archiveUnsafe('Non-directory dependency parent');
+    const info = await lstat(current); if (!info.isDirectory() || info.isSymbolicLink() || (process.platform === 'win32' && !controlBinding().safePath(current, true, true))) throw archiveUnsafe('Non-directory dependency parent');
   }
 }
 export class OllamaArchivePaths {
@@ -56,6 +58,7 @@ export class OllamaArchivePaths {
 async function hashFile(root: string, file: InventoryFile, signal?: AbortSignal): Promise<void> {
   ollamaMemberPath(file.path); const path = join(root, file.path), initial = await lstat(path);
   if (!initial.isFile() || initial.isSymbolicLink() || initial.nlink !== 1 || initial.size !== file.bytes) throw archiveUnsafe('Dependency file differs from inventory');
+  if (process.platform === 'win32' && !controlBinding().safePath(path, false, false)) throw archiveUnsafe('Dependency file is a reparse point');
   const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
     const stat = await handle.stat();
@@ -87,9 +90,9 @@ export async function verifyOllamaTree(root: string, files: InventoryFile[], pol
       signal?.throwIfAborted(); const path = prefix ? `${prefix}/${name}` : name, full = join(directory, name), info = await lstat(full);
       assertRelativeFile(path);
       if (++entries > policy.limits.files * 2 + 2 || path.split('/').length > 64 || info.isSymbolicLink() || (!info.isFile() && !info.isDirectory())) throw archiveUnsafe('Special or excessive dependency tree entry');
-      if (info.isDirectory()) { actual.add(path, true); await visit(full, path); continue; }
+      if (info.isDirectory()) { if (process.platform === 'win32' && !controlBinding().safePath(full, true, true)) throw archiveUnsafe('Dependency directory is a reparse point'); actual.add(path, true); await visit(full, path); continue; }
       if (options.records && ['inventory.json', '.ollama-receipt.json'].includes(path)) {
-        if (info.nlink !== 1) throw archiveUnsafe('Linked dependency record'); continue;
+        if (info.nlink !== 1 || (process.platform === 'win32' && !controlBinding().safePath(full, false, false))) throw archiveUnsafe('Linked dependency record'); continue;
       }
       actual.add(path, false);
       const file = expected.get(path); if (!file) throw archiveUnsafe('Unrecorded dependency file');
@@ -103,10 +106,16 @@ export async function verifyOllamaTree(root: string, files: InventoryFile[], pol
   const executable = members.get(policy.layout.executable)!;
   if (policy.target.os !== 'win32' && executable.mode !== 0o755) throw archiveUnsafe('Dependency CLI is not executable');
   await verifyOllamaExecutable(join(root, executable.path), policy);
+  for (const path of policy.layout.requiredFiles) {
+    if (/\.(?:dll|dylib)$|\.so(?:\.[0-9.]+)?$/i.test(path)
+      || /(?:^|\/)([^/]+)\.framework\/(?:Versions\/[^/]+\/)?\1$/.test(path)) {
+      await verifyOllamaExecutable(join(root, path), policy, true); signal?.throwIfAborted();
+    }
+  }
 }
 
 /** Inspect target binary headers; do not execute setup, GUI or foreign code. */
-async function verifyOllamaExecutable(path: string, policy: OllamaPolicy): Promise<void> {
+async function verifyOllamaExecutable(path: string, policy: OllamaPolicy, library = false): Promise<void> {
   const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
     const stat = await file.stat();
@@ -117,19 +126,19 @@ async function verifyOllamaExecutable(path: string, policy: OllamaPolicy): Promi
       return data;
     };
     const header = await read(0, 64), arm = policy.target.arch === 'arm64'; let valid = false;
-    if (policy.target.os === 'linux') valid = header.subarray(0, 4).equals(Buffer.from([127, 69, 76, 70])) && header[4] === 2 && header[5] === 1 && [2, 3].includes(header.readUInt16LE(16)) && header.readUInt16LE(18) === (arm ? 183 : 62);
+    if (policy.target.os === 'linux') valid = header.subarray(0, 4).equals(Buffer.from([127, 69, 76, 70])) && header[4] === 2 && header[5] === 1 && (library ? header.readUInt16LE(16) === 3 : [2, 3].includes(header.readUInt16LE(16))) && header.readUInt16LE(18) === (arm ? 183 : 62);
     if (policy.target.os === 'win32' && header.toString('ascii', 0, 2) === 'MZ') {
       const offset = header.readUInt32LE(60);
       if (offset >= 64 && offset <= 1024 * 1024) {
         const pe = await read(offset, 26), flags = pe.readUInt16LE(22);
         valid = pe.readUInt32LE() === 0x4550 && pe.readUInt16LE(4) === (arm ? 0xaa64 : 0x8664)
-          && !!(flags & 2) && !(flags & 0x2000) && pe.readUInt16LE(20) >= 112
+          && !!(flags & 2) && !!(flags & 0x2000) === library && pe.readUInt16LE(20) >= 112
           && offset + 24 + pe.readUInt16LE(20) <= stat.size && pe.readUInt16LE(24) === 0x20b;
       }
     }
     if (policy.target.os === 'darwin') {
       const cpu = arm ? 0x0100000c : 0x01000007;
-      valid = header.readUInt32LE() === 0xfeedfacf && header.readUInt32LE(4) === cpu && header.readUInt32LE(12) === 2;
+      valid = header.readUInt32LE() === 0xfeedfacf && header.readUInt32LE(4) === cpu && (library ? [6, 8].includes(header.readUInt32LE(12)) : header.readUInt32LE(12) === 2);
       const magic = header.readUInt32BE();
       if (magic === 0xcafebabe || magic === 0xcafebabf) {
         const count = header.readUInt32BE(4), width = magic === 0xcafebabe ? 20 : 32;
@@ -141,11 +150,11 @@ async function verifyOllamaExecutable(path: string, policy: OllamaPolicy): Promi
           const offset = width === 20 ? BigInt(entry.readUInt32BE(8)) : entry.readBigUInt64BE(8);
           const size = width === 20 ? BigInt(entry.readUInt32BE(12)) : entry.readBigUInt64BE(16);
           if (offset < BigInt(8 + table.length) || size < 64n || offset + size > BigInt(stat.size)) throw archiveUnsafe('Invalid universal executable slice');
-          const slice = await read(Number(offset), 64); valid = slice.readUInt32LE() === 0xfeedfacf && slice.readUInt32LE(4) === cpu && slice.readUInt32LE(12) === 2;
+          const slice = await read(Number(offset), 64); valid = slice.readUInt32LE() === 0xfeedfacf && slice.readUInt32LE(4) === cpu && (library ? [6, 8].includes(slice.readUInt32LE(12)) : slice.readUInt32LE(12) === 2);
         }
       }
     }
-    if (!valid) throw archiveUnsafe('Dependency executable does not match target binary layout');
+    if (!valid) throw archiveUnsafe(`Dependency ${library ? 'library' : 'executable'} does not match target binary layout`);
   } finally { await file.close(); }
 }
 

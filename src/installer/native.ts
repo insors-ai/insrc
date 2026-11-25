@@ -10,6 +10,7 @@ interface ControlBinding {
   protect(directory: string): void;
   userSid(): string;
   localVolume(directory: string): boolean;
+  safePath(path: string, directory: boolean, privateOwner: boolean): boolean;
 }
 let binding: ControlBinding | undefined;
 /** No compilation, download, application imports or fallback lock implementation. */

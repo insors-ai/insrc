@@ -10,7 +10,9 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { setTimeout as delay } from 'node:timers/promises';
 import { extractOllamaArchive } from '../ollama-archive.js';
+import { extractOllamaZip } from '../ollama-zip.js';
 import { digest } from '../release-descriptor.js';
+import { controlBinding } from '../native.js';
 import type { OllamaPolicy } from '../ollama-policy.js';
 
 interface Member { path: string; bytes: Buffer; mode?: number }
@@ -27,6 +29,11 @@ function executable(os: OllamaPolicy['target']['os'], arm = true) {
   if (os === 'win32') { data.write('MZ'); data.writeUInt32LE(128, 60); data.writeUInt32LE(0x4550, 128); data.writeUInt16LE(arm ? 0xaa64 : 0x8664, 132); data.writeUInt16LE(240, 148); data.writeUInt16LE(2, 150); data.writeUInt16LE(0x20b, 152); }
   return data;
 }
+function library(os: OllamaPolicy['target']['os'], arm = true) {
+  const data = executable(os, arm);
+  if (os === 'darwin') data.writeUInt32LE(6, 12); else if (os === 'win32') data.writeUInt16LE(0x2002, 150);
+  return data;
+}
 function policy(bytes: Buffer, os: OllamaPolicy['target']['os'] = 'win32'): OllamaPolicy {
   const executable = os === 'win32' ? 'ollama.exe' : os === 'linux' ? 'bin/ollama' : 'Ollama.app/Contents/Resources/ollama';
   return { schemaVersion: 1, target: { os, arch: 'arm64', baseline: 'fixture' }, version: '0.0.1-fixture',
@@ -37,6 +44,7 @@ function policy(bytes: Buffer, os: OllamaPolicy['target']['os'] = 'win32'): Olla
 }
 function fixture() {
   const root = mkdtempSync(join(realpathSync(tmpdir()), 'ioa-')); let serial = 0;
+  if (process.platform === 'win32') controlBinding().protect(root);
   return { root, input(bytes: Buffer) { const stage = join(root, `stage${++serial}`), archive = join(root, `archive${serial}`); mkdirSync(stage, { mode: 0o700 }); writeFileSync(archive, bytes); return { stage, archive }; }, cleanup() { rmSync(root, { recursive: true, force: true }); } };
 }
 const tar = createRequire(import.meta.url)('tar-stream') as { pack(): Readable & { entry(header: object, data?: Buffer): void; finalize(): void } };
@@ -52,15 +60,20 @@ test('qualified-zip-app-layout-requires-correct-executable-and-library-closure',
   try {
     for (const os of ['win32', 'darwin'] as const) {
       const shape = policy(Buffer.from('x'), os), files = [{ path: shape.layout.executable, bytes: executable(os), mode: 0o100755 }, { path: 'lib/runtime.dat', bytes: Buffer.from('required library closure') }];
+      const binaryLibrary = os === 'win32' ? 'lib/ollama.dll' : 'lib/libollama.dylib';
+      files.push({ path: binaryLibrary, bytes: library(os) });
       const bytes = await zip(files), p = policy(bytes, os), good = f.input(bytes);
-      const inventory = await extractOllamaArchive(good.archive, good.stage, p); assert.equal(inventory.length, 2);
+      p.layout.requiredFiles.push(binaryLibrary);
+      const inventory = await extractOllamaArchive(good.archive, good.stage, p); assert.equal(inventory.length, 3);
       assert.deepEqual(readFileSync(join(good.stage, p.layout.executable)), executable(os));
       const deflated = await zip(files, true), compressed = f.input(deflated);
-      await extractOllamaArchive(compressed.archive, compressed.stage, policy(deflated, os));
-      const library = executable(os);
-      if (os === 'darwin') library.writeUInt32LE(6, 12); else library.writeUInt16LE(0x2002, 150);
-      for (const broken of [files.slice(0, 1), [{ ...files[0]!, bytes: executable(os, false) }, files[1]!], [{ ...files[0]!, bytes: library }, files[1]!], [{ ...files[0]!, bytes: Buffer.from('not an executable') }, files[1]!]]) {
-        const bad = await zip(broken), x = f.input(bad); await assert.rejects(extractOllamaArchive(x.archive, x.stage, policy(bad, os)), /layout|missing|executable/i);
+      const cp = policy(deflated, os); cp.layout.requiredFiles.push(binaryLibrary);
+      await extractOllamaArchive(compressed.archive, compressed.stage, cp);
+      for (const broken of [files.slice(0, 2), [{ ...files[0]!, bytes: executable(os, false) }, ...files.slice(1)], [{ ...files[0]!, bytes: library(os) }, ...files.slice(1)],
+        [files[0]!, files[1]!, { ...files[2]!, bytes: library(os, false) }], [files[0]!, files[1]!, { ...files[2]!, bytes: Buffer.from('wrong library bytes') }],
+        [{ ...files[0]!, bytes: Buffer.from('not an executable') }, ...files.slice(1)]]) {
+        const bad = await zip(broken), x = f.input(bad), p = policy(bad, os); p.layout.requiredFiles.push(binaryLibrary);
+        await assert.rejects(extractOllamaArchive(x.archive, x.stage, p), /layout|missing|executable|library/i);
       }
       const other = structuredClone(p); other.layout.executable = 'OllamaSetup.exe'; other.layout.requiredFiles.push('OllamaSetup.exe');
       const wrong = f.input(bytes); await assert.rejects(extractOllamaArchive(wrong.archive, wrong.stage, other), /missing/i);
@@ -100,7 +113,7 @@ test('internal-archive-links-materialize-only-qualified-contained-files', async 
     const z = f.input(zipData); await extractOllamaArchive(z.archive, z.stage, zp); assert.equal(lstatSync(join(z.stage, 'lib/alias')).isFile(), true);
     const framework = 'Ollama.app/Contents/Frameworks/Foo.framework', cli = 'Ollama.app/Contents/Resources/ollama';
     const app = await zip([{ path: cli, bytes: executable('darwin'), mode: 0o100755 }, { path: 'lib/runtime.dat', bytes: Buffer.from('library') },
-      { path: `${framework}/Versions/A/Foo`, bytes: Buffer.from('framework dylib') },
+      { path: `${framework}/Versions/A/Foo`, bytes: library('darwin') },
       { path: `${framework}/Foo`, bytes: Buffer.from('Versions/Current/Foo'), mode: 0o120777 },
       { path: `${framework}/Versions/Current`, bytes: Buffer.from('A'), mode: 0o120777 }]);
     const ap = policy(app, 'darwin'); ap.layout.aliases = [{ path: `${framework}/Foo`, target: `${framework}/Versions/Current/Foo`, kind: 'file' },
@@ -109,7 +122,7 @@ test('internal-archive-links-materialize-only-qualified-contained-files', async 
     const a = f.input(app); await extractOllamaArchive(a.archive, a.stage, ap);
     assert.equal(lstatSync(join(a.stage, `${framework}/Versions/Current`)).isDirectory(), true);
     assert.equal(lstatSync(join(a.stage, `${framework}/Foo`)).isFile(), true);
-    assert.equal(readFileSync(join(a.stage, `${framework}/Foo`), 'utf8'), 'framework dylib');
+    assert.deepEqual(readFileSync(join(a.stage, `${framework}/Foo`)), library('darwin'));
     const large = await tarBytes([files[0]!, { path: 'lib/runtime.dat', bytes: Buffer.alloc(1024 * 1024) }], [{ path: 'alias', target: 'lib/runtime.dat' }]);
     const lp = policy(large, 'linux'); lp.limits.expandedBytes = 1200000; lp.limits.fileBytes = 1100000; lp.layout.aliases = [{ path: 'alias', target: 'lib/runtime.dat', kind: 'file' }];
     const bomb = f.input(large); await assert.rejects(extractOllamaArchive(bomb.archive, bomb.stage, lp), /expansion/); assert.equal(existsSync(join(bomb.stage, 'alias')), false);
@@ -127,7 +140,7 @@ test('zip-and-layout-escapes-collisions-and-abort-preserve-existing-bytes', asyn
     const base = await zip([{ path: 'safe.txt', bytes: Buffer.from('safe') }]);
     for (const name of ['../a.txt', '/bad.txt', 'C:/a.txt', 'ads:byte', 'CON.file', 'bad\\name']) {
       const data = Buffer.from(base.toString('latin1').replaceAll('safe.txt', name), 'latin1'), x = f.input(data);
-      await assert.rejects(extractOllamaArchive(x.archive, x.stage, policy(data))); assert.equal(existsSync(join(f.root, 'a.txt')), false);
+      await assert.rejects(extractOllamaZip(x.archive, x.stage, policy(data))); assert.equal(existsSync(join(f.root, 'a.txt')), false);
     }
     for (const data of [await zip([{ path: 'Folder/a', bytes: Buffer.alloc(1) }, { path: 'folder/b', bytes: Buffer.alloc(1) }]),
       await zip([{ path: 'café', bytes: Buffer.alloc(1) }, { path: 'cafe\u0301', bytes: Buffer.alloc(1) }]),
@@ -138,14 +151,15 @@ test('zip-and-layout-escapes-collisions-and-abort-preserve-existing-bytes', asyn
       mutate(base, (b, i, central) => { if (central) b.writeUInt32LE((b.readUInt32LE(i + 16) ^ 1) >>> 0, i + 16); }), base.subarray(0, base.length - 5),
       mutate(base, (b, i, central) => { const offset = central ? 16 : 14; b.writeUInt32LE((b.readUInt32LE(i + offset) ^ 1) >>> 0, i + offset); }),
       await zip([{ path: 'lib/alias', bytes: Buffer.from('../../escape'), mode: 0o120777 }]),
-    ]) { const x = f.input(data); await assert.rejects(extractOllamaArchive(x.archive, x.stage, policy(data))); assert.equal(existsSync(join(f.root, 'escape')), false); }
+    ]) { const x = f.input(data); await assert.rejects(extractOllamaZip(x.archive, x.stage, policy(data))); assert.equal(existsSync(join(f.root, 'escape')), false); assert.deepEqual(readdirSync(x.stage), [], 'invalid ZIP data must fail before any write'); }
     const bytes = await zip([{ path: 'ollama.exe', bytes: executable('win32'), mode: 0o100755 }, { path: 'lib/runtime.dat', bytes: Buffer.alloc(2 * 1024 * 1024) }]);
     const occupied = f.input(bytes); writeFileSync(join(occupied.stage, 'sentinel'), 'retain');
     await assert.rejects(extractOllamaArchive(occupied.archive, occupied.stage, policy(bytes)), /private owned/); assert.deepEqual(readdirSync(occupied.stage), ['sentinel']);
-    if (process.platform !== 'win32') {
-      const linked = join(f.root, 'linked'); symlinkSync(occupied.stage, linked); const x = f.input(bytes);
-      await assert.rejects(extractOllamaArchive(x.archive, linked, policy(bytes)), /private owned/); assert.equal(readFileSync(join(occupied.stage, 'sentinel'), 'utf8'), 'retain');
-    }
+    assert.equal(controlBinding().safePath(f.root, true, true), true);
+    assert.equal(controlBinding().safePath(join(occupied.stage, 'sentinel'), false, false), true);
+    const linked = join(f.root, 'linked'); symlinkSync(occupied.stage, linked, process.platform === 'win32' ? 'junction' : 'dir'); const linkInput = f.input(bytes);
+    assert.equal(controlBinding().safePath(linked, true, false), false);
+    await assert.rejects(extractOllamaArchive(linkInput.archive, linked, policy(bytes)), /private owned/); assert.equal(readFileSync(join(occupied.stage, 'sentinel'), 'utf8'), 'retain');
     const x = f.input(bytes), cancel = new AbortController(); let seen = false;
     timer = setInterval(() => { if (existsSync(join(x.stage, 'lib/runtime.dat'))) { seen = true; cancel.abort(); } }, 1);
     await assert.rejects(extractOllamaArchive(x.archive, x.stage, policy(bytes), cancel.signal), { code: 'cancelled' });

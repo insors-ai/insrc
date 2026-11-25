@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -202,13 +203,53 @@ static napi_value local(napi_env e,napi_callback_info info) {
 #endif
   free(p);return boolean(e,ok);
 }
+/* Read-only path admission: never follow any Windows reparse tag. A private
+   directory must already be owned by this user with no foreign allow ACE. */
+static napi_value safe_path(napi_env e,napi_callback_info info) {
+  size_t n=3; napi_value a[3]; bool directory=false,private_owner=false;
+  napi_get_cb_info(e,info,&n,a,NULL,NULL);
+  pathchar *p=n==3?patharg(e,a[0]):NULL;
+  if(!p || napi_get_value_bool(e,a[1],&directory)!=napi_ok || napi_get_value_bool(e,a[2],&private_owner)!=napi_ok) {
+    free(p);return fail(e,"path-invalid","Expected path and directory/privacy flags");
+  }
+#ifdef _WIN32
+  HANDLE h=CreateFileW(p,FILE_READ_ATTRIBUTES|(private_owner?READ_CONTROL:0),FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,NULL,OPEN_EXISTING,
+    FILE_FLAG_OPEN_REPARSE_POINT|(directory?FILE_FLAG_BACKUP_SEMANTICS:0),NULL);
+  BY_HANDLE_FILE_INFORMATION st;
+  int ok=h!=INVALID_HANDLE_VALUE && GetFileInformationByHandle(h,&st)
+    && !(st.dwFileAttributes&FILE_ATTRIBUTE_REPARSE_POINT)
+    && !!(st.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY)==directory && (directory || st.nNumberOfLinks==1);
+  if(ok && private_owner) {
+    PSID own=ownsid(),owner=NULL; PACL acl=NULL; PSECURITY_DESCRIPTOR sd=NULL;
+    ok=own && GetSecurityInfo(h,SE_FILE_OBJECT,OWNER_SECURITY_INFORMATION|DACL_SECURITY_INFORMATION,&owner,NULL,&acl,NULL,&sd)==ERROR_SUCCESS
+      && owner && EqualSid(own,owner) && acl;
+    if(ok) for(DWORD i=0;i<acl->AceCount;i++) {
+      void *entry=NULL;
+      if(!GetAce(acl,i,&entry)) { ok=0;break; }
+      ACE_HEADER *header=(ACE_HEADER*)entry;
+      if(header->AceType==ACCESS_ALLOWED_ACE_TYPE) {
+        ACCESS_ALLOWED_ACE *allow=(ACCESS_ALLOWED_ACE*)entry;
+        if(!EqualSid(own,&allow->SidStart)) { ok=0;break; }
+      } else if(header->AceType!=ACCESS_DENIED_ACE_TYPE) { ok=0;break; }
+    }
+    if(sd) LocalFree(sd);free(own);
+  }
+  if(h!=INVALID_HANDLE_VALUE) CloseHandle(h);
+#else
+  struct stat st;
+  int ok=lstat(p,&st)==0 && (directory?S_ISDIR(st.st_mode):S_ISREG(st.st_mode))
+    && (directory || st.st_nlink==1) && (!private_owner || (st.st_uid==geteuid() && (st.st_mode&077)==0));
+#endif
+  free(p);return boolean(e,ok);
+}
 static napi_value init(napi_env e,napi_value exports) {
   napi_property_descriptor props[]={
     {"acquire",NULL,acquire,NULL,NULL,NULL,napi_default,NULL}, {"held",NULL,held,NULL,NULL,NULL,napi_default,NULL},
     {"close",NULL,close_lock,NULL,NULL,NULL,napi_default,NULL}, {"replace",NULL,replace,NULL,NULL,NULL,napi_default,NULL},
     {"publishDirectory",NULL,publish_directory,NULL,NULL,NULL,napi_default,NULL},
     {"protect",NULL,protect,NULL,NULL,NULL,napi_default,NULL}, {"userSid",NULL,sid,NULL,NULL,NULL,napi_default,NULL},
-    {"localVolume",NULL,local,NULL,NULL,NULL,napi_default,NULL}
+    {"localVolume",NULL,local,NULL,NULL,NULL,napi_default,NULL},
+    {"safePath",NULL,safe_path,NULL,NULL,NULL,napi_default,NULL}
   };
   napi_define_properties(e,exports,sizeof(props)/sizeof(props[0]),props);return exports;
 }

@@ -58,9 +58,17 @@ test('model-catalog-asset.test.ts: shipped asset validates, ships via copy-asset
 	const byAlias = (f: FamilyDefinition, alias: string): string | undefined =>
 		f.models.find(m => (m.aliases ?? []).includes(alias))?.id;
 	assert.equal(byAlias(claude, 'opus'),   'claude-opus-5-5');
-	assert.equal(byAlias(claude, 'sonnet'), 'claude-sonnet-5');
+	assert.equal(byAlias(claude, 'sonnet'), 'claude-sonnet-5-5');
 	assert.equal(byAlias(claude, 'haiku'),  'claude-haiku-5-5');
-	for (const id of ['gpt-6-astra', 'gpt-6.1-sol', 'gpt-6-luna']) {
+	for (const id of ['claude-sonnet-5', 'claude-fable-5-2', 'claude-fable-5-1']) {
+		assert.ok(claude.models.some(m => m.id === id), `${id} listed`);
+	}
+	assert.deepEqual(codex.tierDefaults, {
+		core: { model: 'gpt-6.2-astra' },
+		mid: { model: 'gpt-6.2-sol' },
+		cheap: { model: 'gpt-6-luna' },
+	});
+	for (const id of ['gpt-6.2-astra', 'gpt-6.2-sol', 'gpt-6-astra', 'gpt-6.1-sol', 'gpt-6-luna']) {
 		assert.ok(codex.models.some(m => m.id === id), `${id} listed`);
 	}
 	const qwen = ollama.models.find(m => m.id === 'qwen3.6:27b');

@@ -529,7 +529,7 @@ always via the `claude`/`codex` CLI subprocess (never a direct REST call).
 These built-in defaults apply out of the box — with **no** tiering config,
 critical roles already resolve to `opus`, mid to `sonnet`, and peripheral
 to `haiku`. The installer preconfigures `models.tiers` for your chosen CLI
-(Claude → `opus`/`sonnet`/`haiku`; Codex → `gpt-6-astra`/`gpt-6.1-sol`/`gpt-6-luna`).
+(Claude → `opus`/`sonnet`/`haiku`; Codex → `gpt-6.2-astra`/`gpt-6.2-sol`/`gpt-6-luna`).
 The background document summariser follows the `cheap` tier, so it makes one
 CLI call per document; set `cheap` to `ollama` to keep summaries local.
 Configs written before this default keep the tiers they name.

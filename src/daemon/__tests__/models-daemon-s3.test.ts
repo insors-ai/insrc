@@ -107,7 +107,7 @@ test("models-daemon-s3.test.ts: a real daemon removes byRepo tiers at boot with 
 			assert.deepEqual(r, { tier: 'cheap', family: 'cli-codex', model: 'gpt-6-luna', inputLimit: { unit: 'chars', max: 1_048_576 }, cli: { kind: 'codex' } });
 			// Without the repo, the role keeps its default tier.
 			const plain = await rpc(daemon.sock, 'models.resolveRole', { role: ROLE, repoPath: '/w/other' }) as Record<string, unknown>;
-			assert.deepEqual([plain['tier'], plain['family'], plain['model']], ['mid', 'cli-claude', 'claude-sonnet-5']);
+			assert.deepEqual([plain['tier'], plain['family'], plain['model']], ['mid', 'cli-claude', 'claude-sonnet-5-5']);
 			// Bad params are refused over the socket too.
 			const bad = await rpc(daemon.sock, 'models.resolveRole', { role: ROLE }) as Record<string, unknown>;
 			assert.match(String(bad['error']), /^invalid-params/);

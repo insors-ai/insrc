@@ -106,23 +106,26 @@ test('first boot against an empty home → surviving former-literal keys written
 test('update chain: newly-catalogued key added, type-invalid key repaired, retired keys pruned, live namespaces unchanged; repeat writes nothing', async () => {
 	// A "freshly built" daemon-root catalog (all non-retired paths so it is
 	// disjoint from RETIRED_PATHS): gains svc.port, repairs a type-invalid one.
+	const savedCore = { runner: 'cli-codex', model: 'gpt-6-astra', effort: 'high' };
 	const rows: readonly ConfigOption[] = [
 		{ path: 'logLevel', type: 'enum', default: 'info', desc: '' },
 		{ path: 'svc.port', type: 'number', default: 8080, desc: '' },
 		{ path: 'models.coreFloor', type: 'enum', default: 'mid', desc: '' },
+		{ path: 'models.tiers.core.model', type: 'string', default: 'gpt-6.2-astra', desc: '' },
+		{ path: 'models.tiers.core.effort', type: 'string', default: '', desc: '' },
 	];
 	const root = mkdtempSync(join(tmpdir(), 'insrc-smoke-root-'));
 	mkdirSync(join(root, 'out', 'config'), { recursive: true });
 	writeFileSync(join(root, 'package.json'), JSON.stringify({ type: 'module' }));
 	writeFileSync(join(root, 'out', 'config', 'config-catalog.js'), `export const CONFIG_CATALOG = ${JSON.stringify(rows)};\n`);
 
-	// On-disk config: a type-invalid svc.port, a retired models.tiers block, and a live roleTiers namespace.
+	// On-disk config: a type-invalid svc.port, an explicit core model pin, and a live roleTiers namespace.
 	const cfgDir = mkdtempSync(join(tmpdir(), 'insrc-smoke-cfg-'));
 	const configPath = join(cfgDir, 'config.json');
 	writeFileSync(configPath, JSON.stringify({
 		logLevel: 'info',
 		svc: { port: 'not-a-number' },
-		models: { agents: { x: 1 }, tasks: { a: 'core' } },
+		models: { agents: { x: 1 }, tasks: { a: 'core' }, tiers: { core: savedCore } },
 	}, null, 2));
 
 	try {
@@ -134,6 +137,7 @@ test('update chain: newly-catalogued key added, type-invalid key repaired, retir
 		const after = JSON.parse(readFileSync(configPath, 'utf-8')) as Record<string, unknown>;
 		const models = after['models'] as Record<string, unknown>;
 		assert.equal(models['coreFloor'], 'mid');
+		assert.deepEqual(models['tiers'], { core: savedCore });
 		assert.equal((after['svc'] as Record<string, unknown>)['port'], 8080);
 		assert.equal(Object.prototype.hasOwnProperty.call(models, 'agents'), false);   // retired pruned
 		assert.deepEqual(models['tasks'], { a: 'core' }); // live survived

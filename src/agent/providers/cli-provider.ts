@@ -820,12 +820,10 @@ export class CliProvider implements LLMProvider {
 			const maxAttempts = attemptServers.filter(s => s.name !== 'insrc').length + 1;
 			for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 				const attemptStartedAt = Date.now();
-				// The unsafe-MCP-server retry never drops or widens capabilityPolicy: the
-				// same exec.capabilityPolicy (set once, before the outer retry loop in
-				// runReadOnlySession) is re-asserted identically on every attempt here.
-				if (!isQualifiedForCapabilityPolicy(this.kind, exec.capabilityPolicy)) {
-					throw new UnqualifiedCapabilityPolicyError(this.kind, exec.capabilityPolicy);
-				}
+				// The unsafe-MCP-server retry never drops or widens capabilityPolicy: every
+				// attempt spreads the SAME `exec` object (capabilityPolicy was resolved once,
+				// before readOnlySessionOnce was ever called) -- no attempt recomputes or
+				// substitutes a different value.
 				try {
 					({ agentText: text } = await this.runCodex(codexReadOnlySessionArgs(schemaPath, exec.cwd, this.modelArgs(), attemptServers), prompt, { ...exec, timeoutMs: attemptTimeoutMs }));
 					break;

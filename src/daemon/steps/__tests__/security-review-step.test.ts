@@ -11,11 +11,24 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 import { handleSecurityReviewStepCall } from '../security-review-step.js';
-import { stepToolTable, STEP_TOOL_NAMES } from '../host.js';
+import { stepToolTable, STEP_TOOL_NAMES, createStepCallHandler } from '../host.js';
+import type { StepEnvelope } from '../host.js';
 import { _setSecurityReviewStepDepsForTests } from '../../../workflow/security-review/handle-security-review-step.js';
 import { SecurityModelUnavailableError } from '../../../workflow/security-review/run-security-review.js';
+import { registerGitTools } from '../../tools/builtins/git/index.js';
+import { _setContentIdentityDepsForTests, computeContentIdentity } from '../../../workflow/security-review/content-identity.js';
+import { _setCheckpointDepsForTests } from '../../../workflow/review-round/checkpoint.js';
+import { _setReviewReportDepsForTests } from '../../../workflow/review-round/review-report.js';
+import { _setReconciliationDepsForTests } from '../../../workflow/review-round/reconciliation.js';
+import { _setRunSecurityCodePassForTests } from '../../../workflow/security-review/security-round-hooks.js';
+
+registerGitTools();
 
 test('insrc_security_review_step is registered in the step host table under exactly its own name', () => {
 	assert.ok(STEP_TOOL_NAMES.includes('insrc_security_review_step'));
@@ -72,4 +85,62 @@ test('handleSecurityReviewStepCall: a thrown error from handleSecurityReviewStep
 		assert.equal(parsed.next, 'error');
 		assert.match(parsed.error.message, /no backend/);
 	} finally { _setSecurityReviewStepDepsForTests(); }
+});
+
+// --- smoke: the REGISTERED tool, through real step.call dispatch, with a
+// REAL runSecurityReview over a real repo (fresh index, real report) --------
+
+function initRepo(): string {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-security-review-step-smoke-'));
+	execFileSync('git', ['init', '-q'], { cwd: repo });
+	execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: repo });
+	execFileSync('git', ['config', 'user.name', 'test'], { cwd: repo });
+	writeFileSync(join(repo, 'app.ts'), 'export const x = 1;\n');
+	execFileSync('git', ['add', '.'], { cwd: repo });
+	execFileSync('git', ['commit', '-q', '-m', 'init'], { cwd: repo });
+	return repo;
+}
+
+test("smoke: calling the REGISTERED insrc_security_review_step tool through the real step.call dispatch (createStepCallHandler + stepToolTable), with a fresh index, reaches {next:'done'} with a REAL report and markdown -- proving the registration -> handler wiring is live, not just type-checked", async () => {
+	const repo = initRepo();
+	_setContentIdentityDepsForTests(async candidate => candidate === repo);
+	_setCheckpointDepsForTests({ resolveRepoRoot: async () => repo });
+	_setReviewReportDepsForTests({ resolveRepoRoot: async () => repo });
+	_setReconciliationDepsForTests({ resolveRepoRoot: async () => repo, classify: async (_id, prior) => prior.map(() => 'still-open') });
+	_setRunSecurityCodePassForTests(async () => []);
+	try {
+		const identity = await computeContentIdentity(repo, { entries: [{ path: 'app.ts' }] });
+		_setSecurityReviewStepDepsForTests({
+			resolveRepoLastIndexedAt: async () => 2_000_000, // fresh: newer than app.ts's mtime
+			statMtimeMs: async () => 1_000_000,
+			resolveSecurityModel: async () => ({ status: 'configured', provider: 'cli-claude', modelId: 'claude-opus' }),
+			collectDependencyAdvisories: async () => ({ contentIdentity: identity, contentStable: true, readOnly: true, queriedCoordinates: [], matches: [], perManagerMode: [], unresolvedDependencies: [], unavailableSources: [] }),
+			// runSecurityReview itself is left REAL (not faked) -- only its own
+			// CLI code-pass dispatch is, via _setRunSecurityCodePassForTests above.
+		});
+
+		const host = createStepCallHandler(stepToolTable());
+		const frames: { stream: string; data: unknown }[] = [];
+		await host(
+			{ tool: 'insrc_security_review_step', args: { phase: 'start', repoPath: repo, targets: { entries: [{ path: 'app.ts' }] } }, context: { cwd: repo } },
+			frame => frames.push(frame),
+			new AbortController().signal,
+		);
+		assert.equal(frames.length, 1);
+		assert.equal(frames[0]!.stream, 'done', JSON.stringify(frames[0]!.data));
+		const envelope = frames[0]!.data as StepEnvelope;
+		const parsed = JSON.parse(envelope.content[0]!.text) as { next: string; report: { receipts: { round1: { result: string }; round2: { result: string } } }; markdown: string };
+		assert.equal(parsed.next, 'done');
+		assert.equal(parsed.report.receipts.round1.result, 'pass');
+		assert.equal(parsed.report.receipts.round2.result, 'pass');
+		assert.ok(parsed.markdown.length > 0, 'a real, non-empty markdown rendering');
+	} finally {
+		_setSecurityReviewStepDepsForTests();
+		_setContentIdentityDepsForTests();
+		_setCheckpointDepsForTests();
+		_setReviewReportDepsForTests();
+		_setReconciliationDepsForTests();
+		_setRunSecurityCodePassForTests();
+		rmSync(repo, { recursive: true, force: true });
+	}
 });

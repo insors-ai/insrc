@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1795544885792-xw1ws3",
+    "runId": "wf-1795613684348-xxohki",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-24T18:35:15.128Z",
+    "createdAt": "2026-11-25T13:37:22.255Z",
     "attribution": {
       "outputs": [
         {
@@ -14,15 +14,15 @@
         }
       ]
     },
-    "elapsedMs": 428997,
+    "elapsedMs": 157610,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
     "epicHash": "c3d71313f34bce71",
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
     "storyId": "s3",
-    "hldBaseRunId": "wf-1795445383474-itgkv3",
-    "hldEffectiveHash": "acb12724c31638094f715440e8d7679ed70268700c5e10e1d06197fb93ace475",
+    "hldBaseRunId": "wf-1795612799378-x1xqpi",
+    "hldEffectiveHash": "ca69fcdcd2b019a9f896c3de33519f2abd2ac93ed18efe96c628ba08dee66d48",
     "hldAmendmentsApplied": [
       "AMD-c3d71313f34bce71-1",
       "AMD-c3d71313f34bce71-2",
@@ -34,9 +34,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 3,
-        "contentHash": "17660cf8d01e4c49dc34f61e7061d7d0fd1276976a887e2658f6b8c2023931bc",
-        "at": "2026-11-24T18:35:15.247Z",
+        "number": 5,
+        "contentHash": "07021c97bb5b1d541aa3ce7915f5715bd414ce962d2813589c8aa8a1c0d539af",
+        "at": "2026-11-25T13:37:22.382Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -45,31 +45,31 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 3,
+        "revision": 5,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-24T18:43:53.486Z"
+        "at": "2026-11-25T13:38:12.068Z"
       }
     },
-    "revision": 3,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
-    }
+    },
+    "revision": 5
   },
   "body": {
     "hldContextSlice": {
-      "frameworkSummary": "Choose a1: one shared user-level installer/manager with bundle and dev delivery adapters. Install launched from either IDE runs the same public platform installer script interactively in a visible terminal; the script owns prompts and output. IDE-specific installation wizards and hidden background installs are excluded. Lifecycle, migration, runtime and privilege constraints remain shared and unchanged. Successful interactive installation hands the same terminal directly to the installed insrc TUI after daemon readiness; it does not finish at an idle shell.",
+      "frameworkSummary": "Choose a1: one shared user-level installer/manager with bundle and dev delivery adapters. Install launched from either IDE runs the same public platform installer script interactively in a visible terminal; the script owns prompts and output. IDE-specific installation wizards and hidden background installs are excluded. Lifecycle, migration, runtime and privilege constraints remain shared and unchanged. Successful interactive installation hands the same terminal directly to the installed insrc TUI after daemon readiness; it does not finish at an idle shell. Dependency delivery is separate from application delivery: live, verified private Node 22 acquisition and consented live Ollama acquisition apply to both bundle and dev modes.",
       "ownedContracts": [],
       "consumedContracts": [
         {
           "id": "sc1",
           "name": "Installation and release identity",
-          "purpose": "One installation owns one selected delivery mode, zero or one active release and zero or one unresolved operation. Release identities are immutable; the controller metadata never stores application DB contents.",
+          "purpose": "One installation owns one selected delivery mode, zero or one active release and zero or one unresolved operation. Release identities are immutable; the controller metadata never stores application DB contents. A release references one pinned runtime identity; runtime bytes live in an independently verified private runtime store and may be shared by multiple releases. relativeExecutable is relative to that distribution root, not a release payload. Node and Ollama bytes are excluded from application/IDE payloads.",
           "interfaceSketch": "type Delivery = { mode: 'bundle'; repository: string; channel: string } | { mode: 'dev'; repository: string; branch: string };\ninterface Target { os: 'darwin' | 'linux' | 'win32'; arch: 'arm64' | 'x64'; baseline: string }\ninterface RuntimeIdentity { version: string; target: Target; sha256: string; relativeExecutable: string }\ninterface ReleaseManifest { schemaVersion: 1; releaseId: string; sourceCommit: string; target: Target; runtime: RuntimeIdentity; payloadSha256: string; daemonEntry: string; managerEntry: string; tuiEntry: string; protocolVersion: 1; compatiblePredecessors: string[]; migrations: HookReference[] }\ninterface Installation { schemaVersion: 1; installationId: string; dataHome: string; delivery: Delivery; activeReleaseId?: string; operationId?: string }",
           "ownedByStory": "s1",
           "consumedByStories": [
@@ -103,7 +103,7 @@
         {
           "id": "sc3",
           "name": "Dependency report and consent",
-          "purpose": "Foundation contract separates required private Node, Ollama availability and advisory agent CLI detection from their platform implementations in s3; IDEs cannot infer consent from plugin updates.",
+          "purpose": "Foundation contract separates required private Node, Ollama availability and advisory agent CLI detection from their platform implementations in s3; IDEs cannot infer consent from plugin updates. Node 22 is acquired live from the pinned official source by the bootstrap/runtime foundation. Ollama is acquired live from its pinned official source only after explicit install consent; neither is bundled with insrc. Verified matching private-runtime reuse is permitted.",
           "interfaceSketch": "interface DependencyReport { runtimeReady: boolean; ollama: 'ready' | 'installed-not-running' | 'missing' | 'unavailable'; ollamaInstallOffer?: { id: string; destination: string; version: string }; agents: { claude: boolean; codex: boolean; vibe: boolean }; recommendations: string[]; blockers: string[] }\ninterface DependencyDecision { offerId: string; choice: 'install' | 'decline' }",
           "ownedByStory": "s1",
           "consumedByStories": [
@@ -144,7 +144,7 @@
           "sc3",
           "sc6"
         ],
-        "internal": "Private platform dependency detection, user-level Ollama installation and agent CLI recommendations. It implements foundational reports/consent and never auto-installs agent CLIs. DEF traceability: E20261123c3d71313:S003:FR001 and this story's DEF acceptance criteria apply unchanged."
+        "internal": "Private platform dependency detection, user-level Ollama installation and agent CLI recommendations. It implements foundational reports/consent and never auto-installs agent CLIs. DEF traceability: E20261123c3d71313:S003:FR001 and this story's DEF acceptance criteria apply unchanged. Download the official pinned Ollama asset live only after consent; do not package Ollama or models. Preserve independent Node foundation ownership and disclose downloaded versus installed size."
       },
       "adjacentBoundaries": [
         {
@@ -158,7 +158,7 @@
             "sc7"
           ],
           "depends": [],
-          "internal": "Own the foundational manifest, controller/operation/consent/hook/transport contracts because every branch already depends on s1. Private implementation covers bootstrap, runtime/payload integrity, bundle preparation/publication, platform lock adapter and atomic install records. Later stories implement lifecycle, checks and hooks behind these contracts. The canonical scripts and interactive installer mode are shared with manual invocation and both IDEs; terminal prompts and durable results are part of this foundation. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. The s1 LLD must explicitly reserve ManagerAction.install to the shared terminal bootstrap script and forbid IDE-adapter invocation. DEF traceability: E20261123c3d71313:S001:FR001 and this story's DEF acceptance criteria apply unchanged."
+          "internal": "Own the foundational manifest, controller/operation/consent/hook/transport contracts because every branch already depends on s1. Private implementation covers bootstrap, runtime/payload integrity, bundle preparation/publication, platform lock adapter and atomic install records. Later stories implement lifecycle, checks and hooks behind these contracts. The canonical scripts and interactive installer mode are shared with manual invocation and both IDEs; terminal prompts and durable results are part of this foundation. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. The s1 LLD must explicitly reserve ManagerAction.install to the shared terminal bootstrap script and forbid IDE-adapter invocation. DEF traceability: E20261123c3d71313:S001:FR001 and this story's DEF acceptance criteria apply unchanged. Resolve manifest runtime identity through the private live-downloaded runtime store; remove publisher duplication of tools/node and runtime archives, update probes/launchers/inventory validation and preserve digest/target checks."
         },
         {
           "storyId": "s2",
@@ -170,7 +170,7 @@
             "sc5",
             "sc6"
           ],
-          "internal": "Private dev checkout/branch sync, lockfile installation and native build preparation; returns the same immutable prepared candidate. It does not define a second lifecycle or migration engine. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. DEF traceability: E20261123c3d71313:S002:FR001 and this story's DEF acceptance criteria apply unchanged."
+          "internal": "Private dev checkout/branch sync, lockfile installation and native build preparation; returns the same immutable prepared candidate. It does not define a second lifecycle or migration engine. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. DEF traceability: E20261123c3d71313:S002:FR001 and this story's DEF acceptance criteria apply unchanged. Build with the identity-bound separately installed Node/npm; omit runtime archives/distributions from prepared dev payloads and share s1 runtime resolution."
         },
         {
           "storyId": "s4",
@@ -239,20 +239,20 @@
             "sc6",
             "sc7"
           ],
-          "internal": "Private isolated VM/runner fixtures, target matrix evidence and release qualification results, including real Windows named-pipe behavior and preservation of host v2 daemon. Terminal-install parity checks cover each IDE and manual invocation, paths with spaces/Unicode, missing terminal support, declined Ollama, Ctrl+C/close, duplicate windows, retained output and readiness-confirmed completion. Verify successful install enters TUI in the original terminal, install lock is released before TUI use, TUI exit leaves daemon running, and failure/cancellation never opens TUI. DEF traceability: E20261123c3d71313:S008:FR001 and this story's DEF acceptance criteria apply unchanged."
+          "internal": "Private isolated VM/runner fixtures, target matrix evidence and release qualification results, including real Windows named-pipe behavior and preservation of host v2 daemon. Terminal-install parity checks cover each IDE and manual invocation, paths with spaces/Unicode, missing terminal support, declined Ollama, Ctrl+C/close, duplicate windows, retained output and readiness-confirmed completion. Verify successful install enters TUI in the original terminal, install lock is released before TUI use, TUI exit leaves daemon running, and failure/cancellation never opens TUI. DEF traceability: E20261123c3d71313:S008:FR001 and this story's DEF acceptance criteria apply unchanged. Verify fresh live dependency acquisition and verified runtime reuse in both modes, application/IDE archives excluding Node/Ollama, decline/offline/digest failure behavior and resolved-runtime launch on each enabled target."
         }
       ],
       "rolloutPhase": "C — dependencies and lifecycle",
       "nonFunctional": {
         "performance": "Targets: local read-only inspection/reachability <=3 seconds; activation never blocks IDE UI. Progress/phase changes emit within 1 second after state changes. Ready startup target <=15 seconds excluding dependency/model initialization; startup probe deadline 30 seconds. Default graceful wait 60 seconds with configurable user deadline; timeout reports uncertainty and never silently escalates. Downloads/builds/hooks have per-operation budgets and progress, not an arbitrary task retry loop.",
-        "security": "No elevated commands, global PATH edits, user credential capture, LLM calls for dependency detection or shell-interpolated actions. Verify payload/runtime digests and targets, reject archive traversal/symlink escapes and module paths outside candidate payload. Local endpoints are user-scoped, capability-protected where needed; bind operation/instance/release identity. Signing deferred and no cryptographic authenticity claim from unsigned digest metadata. No IDE prompt automation or credential/input capture; terminal launch preserves argument boundaries. User-visible script identity matches manual release assets.",
+        "security": "No elevated commands, global PATH edits, user credential capture, LLM calls for dependency detection or shell-interpolated actions. Verify payload/runtime digests and targets, reject archive traversal/symlink escapes and module paths outside candidate payload. Local endpoints are user-scoped, capability-protected where needed; bind operation/instance/release identity. Signing deferred and no cryptographic authenticity claim from unsigned digest metadata. No IDE prompt automation or credential/input capture; terminal launch preserves argument boundaries. User-visible script identity matches manual release assets. Dependency acquisition uses pinned official HTTPS sources and verified digests; no Node/Ollama executable bytes or dependency archives are shipped in insrc/IDE payloads. Matching private runtime reuse must verify identity/integrity; no host PATH fallback.",
         "observability": "Structured operationId/installationId/from-to identity, platform/runtime/digest, phase/hook/stage, duration and actionable error code. Bounded NDJSON to IDE, logs in installation home with rotation; no credentials/tokens or full migration data. Report explicitly which platform/native checks passed and which were unavailable. Interactive installation prints human-readable phases and errors directly in the terminal. The terminal is retained after completion/failure; its output is not scraped or treated as success evidence.",
         "durability": "OS-backed mutation exclusivity plus atomic versioned controller records. Prepared payloads immutable; candidate data mutation is daemon-owned only. Record hook run-started before execution and require test before completion; failures/interruption retain blocked startup. Retry never substitutes a different candidate or starts the predecessor after data changes automatically. Installation completion and lock release precede the interactive TUI session. TUI exit/launch failure cannot roll back the completed installation or keep an installation lock held."
       }
     },
     "summary": {
       "audience": "technical",
-      "prose": "S3 supplies the production dependency adapter behind the completed S1/S2 installer: bounded Ollama/runtime checks, an exact consent-bound user-level Ollama installation, and lookup-only coding-agent recommendations. It reuses the existing terminal and manager, preserves public report/decision schemas, propagates cancellation, and makes archive limits, durable publication and service handoff explicit. Full daemon installation remains unavailable until S4/S5 supply their production peers; platform support is never inferred from fixtures."
+      "prose": "S3 checks dependency availability, offers an exact consent-bound live Ollama download, and recommends coding-agent CLIs without installing them. It verifies the official archive during acquisition and validates safe extraction before publication. Subsequent inspection, reconciliation, reuse and service admission use bounded receipt, identity, closure and filesystem metadata checks without rereading installed file contents for hashes. The existing three-second aggregate inspection target remains; the unapproved twenty-second reconciliation proposal is withdrawn."
     },
     "contractDetails": {
       "surfaceLevel": "internal-shared",
@@ -311,7 +311,8 @@
             "Decline performs no mutation, lookup commands or service start and returns the still-unmet report.",
             "Acceptance recomputes the offer immediately before mutation, then prepares an immutable private payload. No installer may overwrite an existing Ollama installation or replace an already available service.",
             "Cancellation and EOF propagate to all finite preparation work; only the explicitly consented, recorded long-lived Ollama service is exempt from finite preparation drain after its handoff boundary.",
-            "A private dependency-uncertain failure is preserved as blocked by narrow manager integration; inspect/stop and daemon shutdown behavior are unchanged."
+            "A private dependency-uncertain failure is preserved as blocked by narrow manager integration; inspect/stop and daemon shutdown behavior are unchanged.",
+            "All read-only inspection, including recorded-attempt reconciliation, shares the existing three-second aggregate deadline and cancellation. Never rehash installed payload files during inspection, reconciliation, reuse or service admission. Validate bounded canonical receipt/inventory metadata, pinned policy/version/target/archive identity, finite-closure/admission bindings and filesystem structure/size/mode/link state. A valid receipt means verified acquisition and closed preparation, not ongoing cryptographic integrity of installed bytes. Expiry/invalid metadata remains unavailable and grants no new mutation."
           ]
         },
         {
@@ -436,7 +437,7 @@
       {
         "entity": "Detection and service-state table",
         "change": "new",
-        "details": "Bound the entire read-only inspection to 3 seconds, including executable lookup and the loopback HTTP version response (16 KiB body, no redirects, no credentials, accepted version shape/length). Derive the Ollama endpoint through a narrow read-only configuration seam shared with the selected installation; default is loopback port 11434. Do not change configuration or probe a remote configured host as if it were local. Missing config uses the documented default; malformed, inaccessible or conflicting config is unavailable. Ready endpoint wins over a missing PATH executable and is reused; refused endpoint plus executable is installed-not-running; refused endpoint plus no executable is missing. Other network, permission, malformed-response or policy failures are unavailable, not missing. Enumerate absolute executable candidates via bounded PATH/PATHEXT and known user/macOS app locations. Never invoke claude/codex/vibe, auth, completion, embeddings, model-list or model-pull. Return zero/one/many booleans truthfully; recommend at least one agent if none found and preserve lookup diagnostics.",
+        "details": "All read-only inspection, including recorded-attempt reconciliation, shares the existing three-second aggregate deadline and cancellation. Never rehash installed payload files during inspection, reconciliation, reuse or service admission. Validate bounded canonical receipt/inventory metadata, pinned policy/version/target/archive identity, finite-closure/admission bindings and filesystem structure/size/mode/link state. A valid receipt means verified acquisition and closed preparation, not ongoing cryptographic integrity of installed bytes. Expiry/invalid metadata remains unavailable and grants no new mutation. The initial IDE daemon reachability probe remains unchanged. Derive the Ollama endpoint through a narrow read-only configuration seam shared with the selected installation; default is loopback port 11434. Do not change configuration or probe a remote configured host as if it were local. Missing config uses the documented default; malformed, inaccessible or conflicting config is unavailable. Ready endpoint wins over a missing PATH executable and is reused; refused endpoint plus executable is installed-not-running; refused endpoint plus no executable is missing. Other network, permission, malformed-response or policy failures are unavailable, not missing. Enumerate absolute executable candidates via bounded PATH/PATHEXT and known user/macOS app locations. Never invoke claude/codex/vibe, auth, completion, embeddings, model-list or model-pull. Return zero/one/many booleans truthfully; recommend at least one agent if none found and preserve lookup diagnostics.",
         "callSites": [
           "src/installer/contracts.ts",
           "src/installer/production-peers.ts",
@@ -446,7 +447,7 @@
       {
         "entity": "Private payload, receipt and filesystem ownership",
         "change": "new",
-        "details": "One installation owns zero or more immutable deps/ollama/<version>/<target>/<asset-digest> payloads and at most one accepted finite dependency preparation attempt under its installation lock. Each private attempt references exactly one qualified policy/offer and owns its isolated staging, bounded logs and atomic receipt; receipts never contain application DB data, credentials or a global service definition. Derive all paths below the canonical installation home; validate ancestors, user ownership and link/reparse-point state before writes. Stream exact-byte/digest download; do not reuse the S1 bundle compressed limit blindly because Ollama asset policy may differ. Finite preparation has an explicit 20-minute overall deadline, 30-second readiness deadline, 5-second cleanup deadline and bounded log/output limits; no background task queue or implicit retry. Check cancellation/current-owner before and after awaits and immediately before publication or spawn. Fsync files and bottom-up directories plus source/destination parents using the existing filesystem-only durability helpers and non-replacing native publication. A same-ID existing payload is reusable only after complete receipt/inventory/target verification; conflicting bytes never overwrite. Failed/cancelled unpublished staging is removed only after its finite admitted actors positively close. Retain uncertain artifacts and block a second mutation; do not infer ownership from PID, age, a free lock or a log line.",
+        "details": "One installation owns zero or more immutable deps/ollama/<version>/<target>/<asset-digest> payloads and at most one accepted finite dependency preparation attempt under its installation lock. Each private attempt references exactly one qualified policy/offer and owns its isolated staging, bounded logs and atomic receipt; receipts never contain application DB data, credentials or a global service definition. Derive all paths below the canonical installation home; validate ancestors, user ownership and link/reparse-point state before writes. Stream exact-byte/digest download; do not reuse the S1 bundle compressed limit blindly because Ollama asset policy may differ. Finite preparation has an explicit 20-minute overall deadline, 30-second readiness deadline, 5-second cleanup deadline and bounded log/output limits; no background task queue or implicit retry. Check cancellation/current-owner before and after awaits and immediately before publication or spawn. Fsync files and bottom-up directories plus source/destination parents using the existing filesystem-only durability helpers and non-replacing native publication. A same-ID existing payload is reusable only after bounded canonical receipt/inventory identity, successful preparation closure and target/layout/metadata verification; conflicting records or unsafe/missing files never overwrite. Installed bytes are not rehashed. Hashing the small canonical inventory record remains permitted to bind existing closure/admission records; this does not read payload contents. Streaming member hashes already recorded while writing may remain for schema compatibility, but no second full-file content verification pass runs after archive acquisition. Failed/cancelled unpublished staging is removed only after its finite admitted actors positively close. Retain uncertain artifacts and block a second mutation; do not infer ownership from PID, age, a free lock or a log line.",
         "callSites": [
           "src/installer/durability.ts",
           "src/installer/manager.ts",
@@ -467,7 +468,7 @@
       {
         "entity": "Consented Ollama service handoff and interrupted attempts",
         "change": "new",
-        "details": "The missing-Ollama offer explicitly covers installation plus a user-session serve process with local-only binding, private bounded logs and a model directory under the selected dependency home. Reuse any healthy configured existing service without launching or stopping it. Publish and verify immutable payload before recording service-start admission; check cancellation immediately before spawn. Launch only the qualified absolute Ollama executable with an argv array and sanitized explicit environment (including scoped OLLAMA_HOST/OLLAMA_MODELS), no shell/system service/global PATH edits or implicit models. The service is intentionally retained after its recorded handoff, including installer/TUI exit; finite preparation drain must not wait for that long-lived process. Before admission cancellation prevents start; after admission cancellation stops installation progress, preserves truthful installed/unverified state and does not promise rollback or terminate an existing/reused service. Store the admission intent before spawn and outcome/readiness atomically; startup failure/port races never authorize stopping another listener. A healthy /api/version response establishes availability, not cryptographic process ownership. Record whether availability was reused or startup was admitted; do not label an arbitrary listener as owned. After manager death, inspect receipt/inventory and endpoint without replaying spawn/download; already ready service is reusable, a stopped published binary gets manual guidance, and unresolved finite actors or an ambiguous in-progress launch remain unavailable/blocked until reconciled. Same-operation recovery must reconcile these facts before ordinary manager continuation, never start a second unconfirmed service. A discarded/failed dependency attempt cannot change selected daemon release or invoke lifecycle/migrations. The exact finite-actor guarantee remains admitted actors, retained owned groups and cooperating descendants; no arbitrary descendant isolation claim.",
+        "details": "The missing-Ollama offer explicitly covers installation plus a user-session serve process with local-only binding, private bounded logs and a model directory under the selected dependency home. Reuse any healthy configured existing service without launching or stopping it. Publish the archive-verified, safely extracted payload and validate its receipt/closure/metadata before recording service-start admission; check cancellation immediately before spawn. Launch only the qualified absolute Ollama executable with an argv array and sanitized explicit environment (including scoped OLLAMA_HOST/OLLAMA_MODELS), no shell/system service/global PATH edits or implicit models. The service is intentionally retained after its recorded handoff, including installer/TUI exit; finite preparation drain must not wait for that long-lived process. Before admission cancellation prevents start; after admission cancellation stops installation progress, preserves truthful installed/unverified state and does not promise rollback or terminate an existing/reused service. Store the admission intent before spawn and outcome/readiness atomically; startup failure/port races never authorize stopping another listener. A healthy /api/version response establishes availability, not cryptographic process ownership. Record whether availability was reused or startup was admitted; do not label an arbitrary listener as owned. After manager death, inspect bounded receipt/inventory metadata, finite closure and endpoint without replaying spawn/download; already ready service is reusable, a stopped published binary gets manual guidance, and unresolved finite actors or an ambiguous in-progress launch remain unavailable/blocked until reconciled. Same-operation recovery must reconcile these facts before ordinary manager continuation, never start a second unconfirmed service. A discarded/failed dependency attempt cannot change selected daemon release or invoke lifecycle/migrations. The exact finite-actor guarantee remains admitted actors, retained owned groups and cooperating descendants; no arbitrary descendant isolation claim.",
         "callSites": [
           "src/installer/manager.ts",
           "src/installer/peer-contracts.ts",
@@ -478,12 +479,23 @@
       {
         "entity": "Composition, packaging and verification boundaries",
         "change": "new",
-        "details": "Production composition adds only dependencies to the existing bundle/dev peers. Private proposed helper files are bundled into the same target control artifacts; update required packaging assets only where the chosen decoder/policy requires it. Preserve dependency-free control startup and private-runtime executable provenance; no provider/config-store/application DB import. Entry callers remain src/installer/manager-entry.ts and src/installer/terminal-entry.ts. Existing S1/S2 test assertions expecting dependencies absent are revised narrowly; lifecycle/migrations stay absent, so complete real installer success remains gated on S4/S5. No changes to IDE adapters, daemon IPC, migration hooks or host v2 code. ERD is unnecessary for this small ownership model; the owner/cardinality, links and compatibility are explicit above. Terminal flow remains sequential prose prompts; no new layout warrants a UX mock. Ordered interactions are: read-only inspect -> disclose offer -> terminal decision -> manager lock/current recheck -> private prepare/probe/drain -> durable publication -> consented service admission/readiness -> ordinary S1/S4/S5 continuation -> ready/lock release/TUI.",
+        "details": "Production composition adds only dependencies to the existing bundle/dev peers. Private proposed helper files are bundled into the same target control artifacts; update required packaging assets only where the chosen decoder/policy requires it. Preserve dependency-free control startup and private-runtime executable provenance; no provider/config-store/application DB import. Entry callers remain src/installer/manager-entry.ts and src/installer/terminal-entry.ts. Existing S1/S2 test assertions expecting dependencies absent are revised narrowly; lifecycle/migrations stay absent, so complete real installer success remains gated on S4/S5. No changes to IDE adapters, daemon IPC, migration hooks or host v2 code. ERD is unnecessary for this small ownership model; the owner/cardinality, links and compatibility are explicit above. Terminal flow remains sequential prose prompts; no new layout warrants a UX mock. Ordered interactions are: read-only inspect -> disclose offer -> terminal decision -> manager lock/current recheck -> private prepare/probe/drain -> durable publication -> consented service admission/readiness -> ordinary S1/S4/S5 continuation -> ready/lock release/TUI. Live dependency delivery follows approved HLD revision7: Ollama is fetched from its exact official asset only on consent, never embedded in insrc/IDE payloads; Node acquisition/runtime-store/package corrections remain S1/S2-owned. This S3 change must not edit their runtime policy/launcher/bundle format.",
         "callSites": [
           "src/installer/production-peers.ts",
           "src/installer/manager-entry.ts",
           "src/installer/terminal-entry.ts",
           "src/installer/__tests__/installed-dev-fixture.mjs"
+        ]
+      },
+      {
+        "entity": "Installed dependency validation trust boundary",
+        "change": "invariant-change",
+        "details": "Use existing verifyPreparedOllama and verifyOllamaTree surfaces. Acquisition streams the compressed archive once through SHA-256 and exact-size verification, rejects mismatch, validates safe bounded extraction, canonical contained member paths, required files and target executable/library headers, and durably publishes only after finite preparation closes. Replace full installed-file hash reads with bounded filesystem metadata checks at staged validation, published reuse, reconciliation and service admission. Preserve no-link/reparse/unsafe-ancestor checks, regular file type, declared size/mode, required layout, inventory bound and record binding checks; header reads remain bounded and are not file hashing. Retain inventory/receipt/closure schema compatibility, including small-record digests. No digest cache, hashing actor/pool, new certificate or automatic repair/re-download is introduced. Same-size post-install byte corruption may no longer be detected by inspection, which is an accepted consequence of the user directive; health/readiness remains separate from ownership and integrity. All three-second inspection work remains cancellation-aware and side-effect-free. Existing Node verification is outside this S3 change.",
+        "callSites": [
+          "src/installer/ollama-layout.ts",
+          "src/installer/ollama-prepare.ts",
+          "src/installer/ollama-service.ts",
+          "src/installer/dependencies.ts"
         ]
       }
     ],
@@ -535,7 +547,7 @@
         {
           "scenario": "Destination changed, durable flush failed or same-id payload conflicts",
           "detection": "Revalidate ancestors and absence under manager ownership; use exclusive no-replace publication; compare complete receipt/inventory on existing ids; check file/directory fsync and parent namespace results.",
-          "response": "Preserve the existing payload and daemon selection. If publication may have occurred, retain private evidence and reconcile its complete bytes and successful parent flush before reuse; never overwrite by retry.",
+          "response": "Preserve the existing payload and daemon selection. If publication may have occurred, retain private evidence and reconcile its canonical receipt/inventory identity, positive preparation closure, filesystem metadata and successful parent flush before reuse; never overwrite by retry.",
           "userImpact": "No destructive rollback or false success; exact staging/receipt diagnostic is retained.",
           "recoverable": true
         },
@@ -555,7 +567,7 @@
         },
         {
           "scenario": "Interrupted dependency preparation on a later explicit operation",
-          "detection": "Read and validate private attempt/receipt identities and stage under the installation lock; inspect existing immutable bytes and endpoint without replaying download/spawn. Distinguish a completely closed failed attempt, validated published binary, admitted retained service and unresolved finite actors.",
+          "detection": "Read and validate private attempt/receipt identities and stage under the installation lock; inspect existing payload metadata/required bounded headers and endpoint without content rehashing without replaying download/spawn. Distinguish a completely closed failed attempt, validated published binary, admitted retained service and unresolved finite actors.",
           "response": "Reconcile the same operation before ordinary continuation. Reuse validated ready service; show manual guidance for a proven stopped binary; retain blocked state for unknown work/ambiguous launch. No automatic new service, new payload or changed consent.",
           "userImpact": "Retry cannot silently duplicate uncertain work or overwrite a working installation.",
           "recoverable": true
@@ -565,6 +577,13 @@
           "detection": "Existing manager/terminal capability admission detects missing lifecycle/readiness or migration ports after S3 is composed.",
           "response": "Keep capability-unavailable; do not install a fixture/no-op peer or fabricate full installation success.",
           "userImpact": "S3 dependency adapter can be independently tested but real complete installation awaits its owning stories.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Bounded read-only reconciliation is incomplete or invalid",
+          "detection": "The shared three-second aggregate deadline expires, cancellation occurs, or canonical receipt/inventory/closure/target/layout metadata is invalid. No installed-file content hash is computed.",
+          "response": "Return unavailable/cancelled with a bounded diagnostic, preserve retained evidence and existing uncertainty gates, and admit no automatic download, publication or service start. Do not extend to twenty seconds or introduce deep hashing workers.",
+          "userImpact": "Inspection stays bounded and avoids reading multi-GB payloads; genuine record or ownership uncertainty still blocks mutation.",
           "recoverable": true
         }
       ],
@@ -596,6 +615,14 @@
         {
           "input": "Installer is cancelled after the Ollama service was explicitly admitted to remain running.",
           "expected": "Show cancellation and retained service/payload state truthfully. Stop installer continuation and TUI handoff; do not silently kill a reused or intentionally retained service."
+        },
+        {
+          "input": "Healthy existing Ollama with a valid 4.01 GB private payload and cold file caches",
+          "expected": "The aggregate read-only inspection target stays three seconds. Validate bounded receipts/closure/layout metadata and service health without reading or hashing 4.01 GB; payload cache warmth must not determine inspection cost."
+        },
+        {
+          "input": "Cancellation or receipt/inventory identity tampering during bounded reconciliation",
+          "expected": "Return unavailable/cancelled with positive resource closure and no late success, changed offer, download, publication or spawn. Download digest failures still reject acquisition; same-size installed content changes are not detected by hashing."
         }
       ],
       "invariantsToPreserve": [
@@ -618,6 +645,10 @@
         {
           "text": "E20261123c3d71313:S003:FR001 and DEF ac1/ac2/ac3 apply unchanged; local fixtures do not certify target-native/VM/IDE support.",
           "source": "c5"
+        },
+        {
+          "text": "Official archive size/SHA-256 remains mandatory on live download. Installed payload contents are not rehashed during staged second-pass validation, reuse, inspect/reconciliation or service admission; small metadata record digests and bounded target headers remain. No twenty-second inspection phase.",
+          "source": "c90"
         }
       ]
     },
@@ -655,11 +686,17 @@
             "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn",
             "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener",
             "production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5",
-            "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions"
+            "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions",
+            "inspection-and-reconciliation-share-three-second-bound-without-payload-hashing",
+            "receipt-closure-and-layout-errors-block-reuse-without-content-rehash",
+            "same-size-installed-content-change-does-not-trigger-digest-reverification",
+            "archive-digest-mismatch-still-rejects-live-acquisition",
+            "reuse-and-service-admission-never-rehash-installed-files"
           ],
           "fixturesNeeded": [
             "Tiny exact-hash ZIP/tar.zst payloads, qualified internal-alias layouts, malformed frame headers/stream truncation/output bombs, injected fsync/no-replace failures, controlled executable and loopback server with argv/env/log capture.",
-            "Manager/terminal fixtures with real S1/S2 control/store/download helpers and explicit S4/S5 fixture peers only in tests. Actor admission/close/disposal and retained-service checkpoint evidence."
+            "Manager/terminal fixtures with real S1/S2 control/store/download helpers and explicit S4/S5 fixture peers only in tests. Actor admission/close/disposal and retained-service checkpoint evidence.",
+            "Payload content-read/hash sentinel covering inspection, reconciliation, same-ID reuse and service admission; bounded metadata/target-header reads allowed. Same-size changed installed bytes demonstrate no hash revalidation; receipt/closure/link/size/layout tampering still fails. Slow metadata/HTTP and abort/late-settlement sentinels exercise the single aggregate deadline."
           ]
         },
         {
@@ -668,12 +705,14 @@
           "subjects": [
             "qualified-exact-ollama-payload-version-and-user-session-readiness-on-enabled-target",
             "existing-installation-reuse-and-decline-preserve-platform-state",
-            "official-large-archive-streaming-and-library-layout-match-policy"
+            "official-large-archive-streaming-and-library-layout-match-policy",
+            "native-large-payload-inspection-avoids-content-reads-within-three-seconds"
           ],
           "fixturesNeeded": [
             "Linux ARM64 OrbStack disposable VM as the first Linux route; native Linux x64 runner or explicitly recorded translation plus native follow-up.",
             "Existing macOS ARM64 UTM disposable guest; separate macOS x64 and Windows ARM64/x64 runners/guests when available. Unavailable targets remain pending, with no fake passed evidence.",
-            "Per-target receipt recording official URL/hash/bytes/version, native/translated status, archive limits, executable/library probe, no-elevation sentinels, endpoint readiness and cleanup/service intent."
+            "Per-target receipt recording official URL/hash/bytes/version, native/translated status, archive limits, executable/library probe, no-elevation sentinels, endpoint readiness and cleanup/service intent.",
+            "Native large-payload inspection records total time and payload read behavior, with cold/warm owned-file cache conditions if available. No global cache drop, host mutation or model work. Historical cold full-hash failure remains evidence of the removed behavior, not a current pass."
           ]
         },
         {
@@ -709,7 +748,13 @@
             "stopped-existing-ollama-has-manual-guidance-without-start-action",
             "download-size-digest-layout-and-fsync-failures-never-report-ready",
             "cancellation-and-eof-block-later-publication-or-service-admission",
-            "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn"
+            "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn",
+            "inspection-and-reconciliation-share-three-second-bound-without-payload-hashing",
+            "receipt-closure-and-layout-errors-block-reuse-without-content-rehash",
+            "native-large-payload-inspection-avoids-content-reads-within-three-seconds",
+            "same-size-installed-content-change-does-not-trigger-digest-reverification",
+            "archive-digest-mismatch-still-rejects-live-acquisition",
+            "reuse-and-service-admission-never-rehash-installed-files"
           ]
         },
         {
@@ -724,41 +769,39 @@
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Operation-bound dependency adapter with exact consent",
-        "oneLineSummary": "Implement the existing DependencyPort with bounded read-only probes and one manager-owned accepted install attempt.",
-        "approach": "Retain DependencyReport/DependencyDecision wire schemas. Compose a private adapter in productionPeers. Add optional internal operation context for cancellation/progress and bounded manager-owned staging/evidence callbacks, keeping all controller writes with the manager. Re-resolve an immutable qualified Ollama policy at consent admission, install into a private immutable directory and disclose user-session serve startup in the existing terminal question. Existing stopped installations receive accurate diagnostics and a manual start instruction; no new start action is invented. Reuse safe download/durability/ownership patterns without a second scheduler. Coding-agent checks remain lookup-only.",
+        "name": "Existing receipts with metadata-only installed validation",
+        "oneLineSummary": "Verify the downloaded archive once; retain existing receipts and closure bindings without rehashing installed bytes.",
+        "approach": "Keep DependencyPort and existing attempt/inventory/receipt/service records. Live acquisition checks the exact compressed archive digest and size; safe extraction validates bounds, contained paths and target layout. Installed reuse, reconciliation and service admission validate bounded record identities, closure/admission bindings and filesystem metadata/required headers, with no full-file content digest or multi-GB read. Retain the existing three-second aggregate inspection target and cancellation behavior. No new wire fields or trust cache.",
         "pros": [
-          "Smallest complete shape aligned with current S1/S2 manager and terminal contracts.",
-          "Explicit consent, owned cleanup and immutable receipts remain independently testable.",
-          "No additional public protocol, background installer daemon or application boot dependency."
+          "Smallest correction reusing implemented record and recovery boundaries.",
+          "Removes payload-size-dependent read amplification without extending inspection deadline.",
+          "Preserves fresh download integrity and no-duplicate-actor recovery checks."
         ],
         "cons": [
-          "Private integration must carefully distinguish finite preparation actors from the intentionally retained accepted Ollama service.",
-          "Each concrete archive/layout/decoder/target still requires qualification; service readiness alone cannot prove a newly launched actor owns its endpoint."
+          "Same-size content changes to already installed private files are not detected by ordinary inspection; metadata validation is not cryptographic content integrity."
         ],
-        "costEstimate": "M"
+        "costEstimate": "S"
       },
       {
         "id": "a2",
-        "name": "Private dependency preparation helper",
-        "oneLineSummary": "Use the same report/decision surface but isolate accepted extraction and startup preparation in a private helper process.",
-        "approach": "Keep the same foundational wire schemas and exact consent semantics. The lock-owning manager admits one identity-bound helper and consumes its verified private result only after retained ownership closes; the helper handles platform payload preparation while the manager alone owns publication. An accepted user-session service requires explicit retained ownership handoff distinct from helper closure. No persistent service queue or independent lifecycle engine is added.",
+        "name": "Read only health and a new consolidated preparation certificate",
+        "oneLineSummary": "Introduce a new compact certificate to replace current inventory/receipt reconciliation.",
+        "approach": "Keep public dependency wire contracts, but add a new private versioned preparation certificate containing the pinned archive identity and closed attempt/service state. Inspection uses that certificate plus endpoint health and no payload hashing; existing records require explicit conversion/compatibility handling before use.",
         "pros": [
-          "Separates decoding CPU work from the manager event loop.",
-          "Makes helper EOF and result identity checks explicit using the S2 ownership pattern."
+          "Could reduce record fan-out for historical attempts."
         ],
         "cons": [
-          "Adds another process protocol, packaged entrypoint and proof format for the same S3 work.",
-          "Still needs service handoff and platform archive qualification; the helper does not remove those requirements."
+          "Adds another durable record format and conversion path without a demonstrated need.",
+          "Duplicates existing identity and closure evidence already implemented."
         ],
-        "costEstimate": "L",
-        "reasonRejected": "Also satisfies all criteria/contracts, but helper launch/result/cleanup protocol and packaging add substantial surface without resolving long-lived service ownership or qualification. Reserve isolation only if measured decoder responsiveness cannot satisfy bounds; such a change needs an explicit design revision."
+        "costEstimate": "M",
+        "reasonRejected": "Can satisfy contracts but adds unnecessary certificate compatibility and durability work."
       }
     ],
     "chosenAlternative": "a1",
     "openQuestions": [],
     "sequenceDefinition": {
-      "narrative": "Accepted missing-Ollama path only: the existing terminal captures exact consent, the lock-owning manager admits bounded private preparation, and durable publication precedes the explicit retained user-session service boundary. Reuse, decline, cancellation and interruption follow the state/error tables; S4/S5 lifecycle and migration internals are outside this diagram.",
+      "narrative": "Accepted missing-Ollama path only: the existing terminal captures exact consent, the lock-owning manager admits bounded private preparation, and durable publication precedes the explicit retained user-session service boundary. Reuse, decline, cancellation and interruption follow the state/error tables; S4/S5 lifecycle and migration internals are outside this diagram. Read-only inspection and recorded-attempt reconciliation share the three-second aggregate target and validate bounded metadata/closure plus endpoint health without hashing installed payload contents. Downloaded archive SHA-256 remains mandatory.",
       "participants": [
         {
           "id": "user",
@@ -795,8 +838,8 @@
         {
           "from": "terminal",
           "to": "dependency",
-          "label": "inspect(location, signal): bounded read-only probes",
-          "description": "Before consent there are no writes/downloads/spawns; report uses existing sc3 schema."
+          "label": "inspect: bounded metadata/closure + health, three-second aggregate",
+          "description": "No writes/downloads/spawns or installed-file rehashing; validate existing sc3 report and canonical receipt/attempt/closure bindings. Required structure/size/mode/link state and target headers are bounded checks, not cryptographic payload integrity."
         },
         {
           "from": "dependency",
@@ -827,7 +870,7 @@
           "from": "dependency",
           "to": "files",
           "label": "Verify download, bounded extraction, inventory and finite cleanup",
-          "description": "No privileged installer, model work or existing-payload overwrite. Uncertain finite work blocks later mutation."
+          "description": "No privileged installer, model work or existing-payload overwrite. Uncertain finite work blocks later mutation. Verify the archive digest during acquisition; no second full extracted-file content hash pass."
         },
         {
           "from": "dependency",
@@ -969,6 +1012,29 @@
       "id": "c17",
       "kind": "prior-artifact",
       "ref": "docs/plans/s2-dev-preparation-validation-2026-11-24.md"
+    },
+    {
+      "id": "c18",
+      "kind": "doc",
+      "ref": "docs/plans/s3-ollama-native-qualification-2026-11-25/README.md",
+      "quotedText": "Native official ARM64 payload materialized to 4,005,889,908 bytes. Complete verification measured 4.33/4.13 seconds; warm fresh inspection passed at 2.10 seconds, while cold-cache fresh inspection exceeded the approved three-second deadline. Catalog remains disabled."
+    },
+    {
+      "id": "c90",
+      "kind": "stakeholder",
+      "ref": "User correction, 2026-11-25: the second installed-file hashing check is redundant. Keep download verification; remove repeated installed-content hashing."
+    },
+    {
+      "id": "c91",
+      "kind": "analyze-bundle",
+      "ref": "src/installer/ollama-prepare.ts",
+      "quotedText": "Narrow insrc_analyze_step preparation profile and verifier usage graph; incomplete call graph supplemented with direct reads of layout/preparation/service/dependencies."
+    },
+    {
+      "id": "c92",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md",
+      "quotedText": "Approved revision7: live Node/Ollama delivery, runtime referenced outside payloads, existing three-second inspection target."
     }
   ]
 }

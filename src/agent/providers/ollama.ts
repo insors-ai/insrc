@@ -786,9 +786,9 @@ export class OllamaProvider implements LLMProvider {
 		assertConnectionProviderAdmission(opts.connectionExecution, this);
 		// Fail closed, before any tool-loop turn starts: an unqualified policy
 		// request is refused outright, not silently run with a weaker guarantee.
-		const capabilityPolicy = opts.capabilityPolicy ?? 'write-sandboxed';
-		if (!isQualifiedForCapabilityPolicy('ollama', capabilityPolicy)) {
-			throw new UnqualifiedCapabilityPolicyError('ollama', capabilityPolicy);
+		// Omitted entirely: no qualification check runs -- today's exact behavior.
+		if (opts.capabilityPolicy !== undefined && !isQualifiedForCapabilityPolicy('ollama', opts.capabilityPolicy)) {
+			throw new UnqualifiedCapabilityPolicyError('ollama', opts.capabilityPolicy);
 		}
     const closingInstruction = 'Now give your final answer: ONLY a JSON object matching this JSON Schema -- no prose, no fenced block.\n\n' + JSON.stringify(schema);
     const deadlineAt = Date.now() + opts.deadlineMs;

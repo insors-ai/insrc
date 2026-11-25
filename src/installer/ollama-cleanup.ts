@@ -15,6 +15,19 @@ import type { OllamaAttempt } from './ollama-records.js';
 // until process exit; GC must not make this cohort appear positively closed.
 const uncertainHandles = new Set<object>();
 export function retainUncertainOllamaHandle(handle: object): void { uncertainHandles.add(handle); }
+/** Wrapping an error must never erase unconfirmed resource ownership. */
+export function ollamaCloseUncertain(error: unknown): boolean {
+  const seen = new Set<object>(); let next = error;
+  for (let depth = 0; depth < 16; depth++) {
+    if (!next || typeof next !== 'object') return false;
+    if (seen.has(next)) return true;
+    seen.add(next);
+    const value = next as { code?: unknown; cause?: unknown };
+    if (value.code === 'resource-close-uncertain') return true;
+    next = value.cause;
+  }
+  return true;
+}
 export const disposedPath = (file: string) => file.replace(/\.json$/, '.disposed.json');
 export const cleanupPath = (file: string) => file.replace(/\.json$/, '.cleanup.json');
 export function ollamaTemporaryRecordName(nonce: string): RegExp {

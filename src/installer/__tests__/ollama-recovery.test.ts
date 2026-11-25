@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { once } from 'node:events';
 import type { ChildProcess } from 'node:child_process';
-import { existsSync, lstatSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, readdirSync, renameSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { createDependencyRetryContext } from '../dependency-context.js';
 import { cleanupOllamaInstallAttempt } from '../ollama-recovery.js';
@@ -13,7 +14,9 @@ import { controlBinding } from '../native.js';
 import { dependencyAttemptIdentity } from '../ollama-policy.js';
 import { acceptedOllamaPolicy, closurePath, dependencyLockIdentity, ensureDependencyDirectory, parseBoundOllamaAttempt, writeDependencyRecord } from '../ollama-records.js';
 import type { OllamaAttempt } from '../ollama-records.js';
-import { canonicalJson } from '../release-descriptor.js';
+import { canonicalJson, digest } from '../release-descriptor.js';
+import type { InstallationLocation, Target } from '../contracts.js';
+import type { DependencyAttemptIdentity, OllamaPolicy } from '../ollama-policy.js';
 import { ollamaFixture, qualifyFixturePolicy } from './_ollama-fixture.js';
 import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
 
@@ -98,6 +101,55 @@ privateRuntimeTest(import.meta.url, 'unknown-actor-proof-blocks-install-retry-cl
     await assert.rejects(cleanupOllamaInstallAttempt(f.location, retry(f), s.policy), { code: 'dependency-uncertain' });
     assert.equal(existsSync(s.stage), true); assert.equal(existsSync(s.offer.destination), false);
   } finally { await f.cleanup(); }
+});
+
+privateRuntimeTest(import.meta.url, 'legacy-closed-attempt-copied-to-another-home-cannot-authorize-deletion', async () => {
+  const f = await ollamaFixture('same-installation'), foreign = await ollamaFixture('same-installation');
+  try {
+    const s = await seed(f), { policy: _policy, lockProtocol: _protocol, lockIdentity: _lock, ...old } = s.attempt as Extract<OllamaAttempt, { schemaVersion: 2 }>;
+    const legacy = { ...old, schemaVersion: 1 }, closure = { schemaVersion: 1, identitySha256: digest(canonicalJson(s.attempt.identity)), closed: true, outcome: 'cancelled' };
+    for (const fixture of [f, foreign]) {
+      const ctx = fixture.context();
+      ensureDependencyDirectory(fixture.location, 'deps/ollama/.attempts/prepare-operation', ctx.assertCurrent);
+      ensureDependencyDirectory(fixture.location, s.attempt.identity.stageRelativePath, ctx.assertCurrent);
+      const record = join(fixture.home, s.attempt.identity.recordRelativePath), lock = controlBinding().acquire(`${record}.lock`); controlBinding().close(lock);
+      writeFileSync(record, canonicalJson(legacy), { mode: 0o600 }); writeFileSync(closurePath(record), canonicalJson(closure), { mode: 0o600 });
+      writeFileSync(join(fixture.home, s.attempt.identity.stageRelativePath, 'keep'), 'original bytes', { mode: 0o600 });
+    }
+    await assert.rejects(cleanupOllamaInstallAttempt(foreign.location, retry(foreign), s.policy), { code: 'dependency-uncertain' });
+    assert.equal(readFileSync(join(foreign.home, s.attempt.identity.stageRelativePath, 'keep'), 'utf8'), 'original bytes');
+    assert.equal(existsSync(join(foreign.home, s.attempt.identity.recordRelativePath.replace(/\.json$/, '.retry.json'))), false);
+    await cleanupOllamaInstallAttempt(f.location, retry(f), s.policy);
+    assert.equal(existsSync(s.stage), false, 'legitimate closed legacy attempt remains recoverable in its original home');
+  } finally { await foreign.cleanup(); await f.cleanup(); }
+});
+
+privateRuntimeTest(import.meta.url, 'disposal-descriptor-close-uncertainty-retains-lock-until-observed-process-exit', async () => {
+  for (const phase of ['cleanup', 'disposed']) {
+    const children: ChildProcess[] = []; let root: string | undefined;
+    let packet: { location: InstallationLocation; target: Target; policy: OllamaPolicy; identity: DependencyAttemptIdentity; record: string } | undefined;
+    try {
+      const child = spawnFixture(process.execPath, ['--import', 'tsx', fileURLToPath(new URL('./ollama-close-uncertain-fixture.mjs', import.meta.url)), phase],
+        { env: { ...process.env, NODE_TEST_CONTEXT: undefined }, stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
+      children.push(child); let errors = ''; child.stderr!.on('data', bytes => { errors = (errors + String(bytes)).slice(-16384); });
+      const closed = once(child, 'close');
+      const verified = new Promise<void>((resolve, reject) => {
+        child.on('message', input => {
+          const value = input as typeof packet & { root?: string; verified?: boolean };
+          if (value?.root) root = value.root;
+          if (value?.verified) { packet = value; resolve(); }
+        });
+        void closed.then(() => { if (!packet) reject(new Error(errors || 'close-uncertainty fixture did not verify ownership')); });
+      });
+      await verified; assert.ok(packet);
+      assert.throws(() => controlBinding().acquire(`${packet!.record}.lock`), { code: 'busy' });
+      child.send('exit'); assert.deepEqual(await closed, [0, null], errors);
+      const context = createDependencyRetryContext(packet.location, packet.target.os,
+        { operationId: packet.identity.operationId, attemptNonce: packet.identity.attemptNonce, assertCurrent() {}, progress() {} });
+      await cleanupOllamaInstallAttempt(packet.location, context, packet.policy);
+      assert.equal((await closedOllamaAttempts(packet.location)).length, 1);
+    } finally { await stopOwnedChildren(children); if (root) rmSync(root, { recursive: true, force: true }); }
+  }
 });
 
 privateRuntimeTest(import.meta.url, 'malformed-utf8-historical-policy-never-authorizes-cleanup', async () => {

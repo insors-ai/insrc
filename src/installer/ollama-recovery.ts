@@ -11,8 +11,8 @@ import { controlBinding } from './native.js';
 import { canonicalJson, digest } from './release-descriptor.js';
 import { flushDirectory } from './durability.js';
 import { acceptedOllamaPolicy, checkDependencyParents, closurePath, dependencyLockIdentity, dependencyPath, dependencyUncertain, parseBoundOllamaAttempt,
-  parseOllamaClosure, readDependencyRecord } from './ollama-records.js';
-import { disposeOllamaStage, ensureOllamaRecord, ollamaRetryPlan, ollamaTemporaryRecordName, retainUncertainOllamaHandle } from './ollama-cleanup.js';
+  parseOllamaAttempt, parseOllamaClosure, readDependencyRecord } from './ollama-records.js';
+import { disposeOllamaStage, ensureOllamaRecord, ollamaCloseUncertain, ollamaRetryPlan, ollamaTemporaryRecordName, retainUncertainOllamaHandle } from './ollama-cleanup.js';
 import { assertOllamaReadsClosed, closedOllamaAttempts, OLLAMA_CLEANUP_MS, verifyPreparedOllama } from './ollama-prepare.js';
 
 export interface OllamaRetryOptions {
@@ -58,6 +58,9 @@ export async function cleanupOllamaInstallAttempt(location: InstallationLocation
       throw dependencyUncertain('Retry does not name its exact original dependency attempt');
     }
     const policy = acceptedOllamaPolicy(attempt, currentPolicy);
+    // parseBound is sufficient for read-only historical closure, never for
+    // deletion: legacy offers must also be re-bound to this selected home.
+    parseOllamaAttempt(location, policy, attempt);
     if (attempt.schemaVersion === 2 && canonicalJson(attempt.lockIdentity) !== canonicalJson(dependencyLockIdentity(lock))) {
       throw dependencyUncertain('Original actor lock identity changed; a replacement free lock proves nothing');
     }
@@ -133,14 +136,14 @@ export async function cleanupOllamaInstallAttempt(location: InstallationLocation
     const result = await Promise.race([settled, new Promise<undefined>(resolve => { timer = setTimeout(() => resolve(undefined), ms); })]);
     if (!result) {
       keep = true; void settled.then(result => {
-        if ('cause' in result && (result.cause as { code?: string })?.code === 'resource-close-uncertain') retainUncertainOllamaHandle(handle);
+        if ('cause' in result && ollamaCloseUncertain(result.cause)) retainUncertainOllamaHandle(handle);
         else controlBinding().close(handle);
       });
       throw dependencyUncertain('Install-retry cleanup has not positively closed; no new installation is permitted');
     }
     if ('cause' in result) throw result.cause;
   } catch (cause) {
-    if ((cause as { code?: string })?.code === 'resource-close-uncertain') { keep = true; retainUncertainOllamaHandle(handle); }
+    if (ollamaCloseUncertain(cause)) { keep = true; retainUncertainOllamaHandle(handle); }
     throw dependencyUncertain('Explicit install-retry cleanup is incomplete; no new installation is permitted', cause);
   } finally { if (timer) clearTimeout(timer); if (!keep) controlBinding().close(handle); }
 }

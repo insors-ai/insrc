@@ -20,7 +20,7 @@ import type { DependencyAttemptIdentity, OllamaOffer, OllamaPolicy } from './oll
 import { closurePath, DEPENDENCY_INVENTORY_LIMIT, dependencyLockIdentity, dependencyPath, dependencyUncertain, ensureDependencyDirectory,
   parseBoundOllamaAttempt, parseOllamaAttempt, parseOllamaClosure, parseOllamaInventory, parseOllamaReceipt, readDependencyRecord, writeDependencyRecord } from './ollama-records.js';
 import type { OllamaAttempt, OllamaClosure, OllamaReceipt } from './ollama-records.js';
-import { assertOllamaRetryClosed, cleanupPath, disposedPath, disposeOllamaStage, retainUncertainOllamaHandle } from './ollama-cleanup.js';
+import { assertOllamaRetryClosed, cleanupPath, disposedPath, disposeOllamaStage, ollamaCloseUncertain, retainUncertainOllamaHandle } from './ollama-cleanup.js';
 
 export const OLLAMA_PREPARATION_MS = 20 * 60 * 1000, OLLAMA_CLEANUP_MS = 5000;
 /** Read-only phases cannot continue into mutation after their caller returns.
@@ -167,7 +167,7 @@ export async function prepareOllama(location: InstallationLocation, policyInput:
     current(); if (pendingReads.has(readKey)) throw dependencyUncertain('A prior dependency read has not positively closed');
     const task = Promise.resolve().then(work).then(value => ({ value }), error => ({ error })); pendingReads.set(readKey, task);
     void task.then(result => {
-      if ('error' in result && (result.error as { code?: string } | undefined)?.code === 'resource-close-uncertain') return;
+      if ('error' in result && ollamaCloseUncertain(result.error)) return;
       if (pendingReads.get(readKey) === task) pendingReads.delete(readKey);
     });
     let settled = await untilAbort(task, signal);
@@ -200,11 +200,14 @@ export async function prepareOllama(location: InstallationLocation, policyInput:
       if (!controlBinding().held(handle!) || remainingCleanup() <= 0) throw dependencyUncertain('Dependency cleanup budget/ownership ended');
     }, options.beforeStageDisposal);
     let result: Awaited<ReturnType<typeof within<void>>>;
-    try { result = await within(removal, remainingCleanup()); } catch (cause) { throw dependencyUncertain('Dependency cleanup closure is unconfirmed', cause); }
+    try { result = await within(removal, remainingCleanup()); } catch (cause) {
+      if (ollamaCloseUncertain(cause)) { keepHandle = true; retainUncertainOllamaHandle(handle); }
+      throw dependencyUncertain('Dependency cleanup closure is unconfirmed', cause);
+    }
     if (!result) {
       keepHandle = true;
       void removal.then(() => controlBinding().close(handle!), cause => {
-        if ((cause as { code?: string })?.code === 'resource-close-uncertain') retainUncertainOllamaHandle(handle!);
+        if (ollamaCloseUncertain(cause)) retainUncertainOllamaHandle(handle!);
         else controlBinding().close(handle!);
       });
       throw dependencyUncertain('Dependency cleanup exceeded its closure budget; evidence retained');
@@ -265,7 +268,7 @@ export async function prepareOllama(location: InstallationLocation, policyInput:
       keepHandle = true;
       let release = true;
       void finite.then(async result => {
-        if ('error' in result && (result.error as { code?: string } | undefined)?.code === 'resource-close-uncertain') {
+        if ('error' in result && ollamaCloseUncertain(result.error)) {
           release = false; retainUncertainOllamaHandle(handle!); return;
         }
         closed = 'value' in result ? certificate('prepared', result.value.inventorySha256) : certificate(failedOutcome(result.error));
@@ -277,12 +280,12 @@ export async function prepareOllama(location: InstallationLocation, policyInput:
           if (!controlBinding().held(handle!) || performance.now() >= ends) throw dependencyUncertain('Late dependency disposal budget/ownership ended');
         });
       }).catch(cause => {
-        if ((cause as { code?: string })?.code === 'resource-close-uncertain') { release = false; retainUncertainOllamaHandle(handle!); }
+        if (ollamaCloseUncertain(cause)) { release = false; retainUncertainOllamaHandle(handle!); }
       }).finally(() => { if (release) controlBinding().close(handle!); });
       throw dependencyUncertain('Admitted dependency preparation closure is unconfirmed; retain stage and block retry');
     }
     const outcome = settled.value;
-    if ('error' in outcome && (outcome.error as { code?: string } | undefined)?.code === 'resource-close-uncertain') {
+    if ('error' in outcome && ollamaCloseUncertain(outcome.error)) {
       keepHandle = true; retainUncertainOllamaHandle(handle!);
       throw dependencyUncertain('A dependency resource did not positively close; retain evidence', outcome.error);
     }
@@ -309,7 +312,7 @@ export async function prepareOllama(location: InstallationLocation, policyInput:
     await cleanup(); current();
     return { directory, policy, offer, identity, preparationDeadline: endsAt, files: outcome.value.files, inventorySha256: outcome.value.inventorySha256 };
   } catch (cause) {
-    if ((cause as { code?: string } | undefined)?.code === 'resource-close-uncertain') {
+    if (ollamaCloseUncertain(cause)) {
       if (handle) { keepHandle = true; retainUncertainOllamaHandle(handle); }
       throw dependencyUncertain('Dependency resource closure is unconfirmed; retain evidence', cause);
     }
@@ -321,7 +324,7 @@ export async function prepareOllama(location: InstallationLocation, policyInput:
     if (handle && !keepHandle) {
       const pending = pendingReads.get(readKey), owner = handle;
       if (pending) void pending.then(result => {
-        if ((result as { error?: { code?: string } }).error?.code === 'resource-close-uncertain') retainUncertainOllamaHandle(owner);
+        if (ollamaCloseUncertain((result as { error?: unknown }).error)) retainUncertainOllamaHandle(owner);
         else controlBinding().close(owner);
       });
       else controlBinding().close(owner);

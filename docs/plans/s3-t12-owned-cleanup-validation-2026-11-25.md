@@ -39,3 +39,11 @@ The unlink/completion interruption test now attempts real fresh preparation, ass
 The next tracked verdict identified baseless retry journals that were still ignored by the outer filename census. Every recognized non-lock journal now requires its base attempt in the same census, which then receives full finite/stage/retry validation. Orphan finite handoff records are also rejected. The regression uses otherwise empty private attempt directories across all 17 non-lock evidence forms (including retry/item completion, finite closure and service/handoff records) and proves zero transport calls, no staging/publication, and preserved orphan bytes.
 
 Focused run `7d71df69-7b87-4e7c-89de-bb902d741623`: 20 tests passed, confirmed owned-group closure. This addresses the concrete admission counterexample while retaining the existing explicit-retry-only cleanup boundary; no automatic orphan deletion was added.
+
+## Legacy home binding and nested closure correction
+
+The fourth tracked verdict passed tests/typechecks but found two further ownership gaps. Before destructive legacy cleanup, the exact accepted policy now reconstructs the offer against the selected home through parseOllamaAttempt; matching installation id/path shape and policy digest alone are insufficient. A copied closed v1 record cannot authorize deletion in another home, while the original home remains recoverable.
+
+Resource-close uncertainty is now detected through bounded error-cause chains in preparation, read tracking, late disposal and recovery. Wrapping a cleanup close failure as dependency-uncertain no longer releases the actor handle. An isolated fixture actually leaves the cleanup or disposed-record descriptor unclosed, verifies the native actor lock remains busy, and allows recovery only after the parent's captured child-close event. Parent cleanup then succeeds and removes only its fixture root.
+
+Current focused run `adf95744-d48b-4ee3-b163-1bf49f8b2af9`: 22 tests passed with confirmed owned-group closure, including both close-fault locations. No full suite or host-service mutation occurred.

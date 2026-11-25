@@ -190,7 +190,7 @@ function withReceiptId(findings: readonly SecurityFinding[], receiptId: string):
  * ContentIdentityMismatchError, leaving whichever round receipts already
  * persisted untouched.
  */
-export async function runSecurityReview(
+export function runSecurityReview(
 	repoPath: string,
 	targets: ReviewTargets,
 	opts: {
@@ -202,14 +202,21 @@ export async function runSecurityReview(
 		readonly storyId?: string;
 	},
 ): Promise<SecurityReviewReport> {
+	// Deliberately NOT async (matches runReviewRound's own documented reason):
+	// an out-of-scope target must throw synchronously, before the caller even
+	// receives a Promise, not surface as a rejection from one.
 	assertTargetsContained(repoPath, targets);
-	if (opts.modelSelection.status === 'unavailable') {
-		throw new SecurityModelUnavailableError(opts.modelSelection.blockerReason);
-	}
-	const modelSelection = opts.modelSelection;
 
 	const outerCtx = currentStepContext();
 	return runInStepContext({ ...outerCtx, cwd: repoPath, envRepo: repoPath }, async () => {
+		// The unavailable-model refusal runs inside the bound step context too,
+		// alongside everything else this call does -- the whole call body is
+		// bound to {cwd:repoPath, envRepo:repoPath}, not just the part after it.
+		if (opts.modelSelection.status === 'unavailable') {
+			throw new SecurityModelUnavailableError(opts.modelSelection.blockerReason);
+		}
+		const modelSelection = opts.modelSelection;
+
 		await verifyContentIdentityMatch(repoPath, targets, opts.advisoryEvidence);
 
 		const attemptId = randomBytes(8).toString('hex');

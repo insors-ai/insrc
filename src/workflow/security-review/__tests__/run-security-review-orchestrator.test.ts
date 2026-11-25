@@ -17,6 +17,7 @@ import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 
 import { registerGitTools } from '../../../daemon/tools/builtins/git/index.js';
+import { _setResolveForCwdForTests } from '../../../daemon/steps/resolve-repo.js';
 import { readReceiptRecord } from '../../review-round/receipt-record.js';
 import { _setCheckpointDepsForTests } from '../../review-round/checkpoint.js';
 import { _setReviewReportDepsForTests } from '../../review-round/review-report.js';
@@ -81,15 +82,15 @@ function finding(id: string): SecurityFinding {
 	return { id, category: 'security', severity: 'HIGH', kind: 'security', checkId: 'injection', evidence: [], enforcementMode: 'advisory' };
 }
 
-test('a targets.entries path resolving outside repoPath rejects with no dispatch, before any receipt or round work', async () => {
+test('a targets.entries path resolving outside repoPath throws SYNCHRONOUSLY (never a rejected Promise) with no dispatch, before any receipt or round work', async () => {
 	const repo = initRepo();
 	wireRepo(repo);
 	let dispatched = false;
 	_setRunSecurityCodePassForTests(async () => { dispatched = true; return []; });
 	try {
 		const identity = await realContentIdentity(repo);
-		await assert.rejects(
-			runSecurityReview(repo, { entries: [{ path: '../outside.ts' }] }, { reviewId: `r-${randomUUID()}`, modelSelection, advisoryEvidence: evidenceFor(identity), now: '2026-11-25T00:00:00.000Z' }),
+		assert.throws(
+			() => runSecurityReview(repo, { entries: [{ path: '../outside.ts' }] }, { reviewId: `r-${randomUUID()}`, modelSelection, advisoryEvidence: evidenceFor(identity), now: '2026-11-25T00:00:00.000Z' }),
 			/resolves outside repoPath/,
 		);
 		assert.equal(dispatched, false, 'the fake code-pass dispatch was never called');
@@ -155,6 +156,7 @@ test("persists exactly ONE VerificationReceipt per round, both 'pass' on a clean
 		});
 		assert.equal(report.receipts.round1.result, 'pass');
 		assert.equal(report.receipts.round2.result, 'pass');
+		assert.deepEqual(report.effectiveModel, { provider: modelSelection.provider, modelId: modelSelection.modelId }, 'effectiveModel matches the modelSelection actually passed in');
 		const record = readReceiptRecord(repo, 'abcdef0123456789', 's3');
 		assert.ok(record);
 		assert.equal(record.meta.standalone, undefined, 'explicit epicHash/storyId leaves standalone unset');
@@ -228,13 +230,13 @@ test('reverifies contentIdentity before round 2: a repository edit injected betw
 	} finally { unwire(); rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('two sequential calls with the SAME reviewId -- the first failing a round, the second succeeding -- persist TWO distinct receipts per round slot; the first attempt\'s fail receipt is never overwritten', async () => {
+test('two sequential calls with the SAME reviewId -- the first failing at ROUND 2, the second succeeding -- persist TWO distinct receipts in EACH round slot; neither attempt\'s receipt is ever overwritten', async () => {
 	const repo = initRepo();
 	wireRepo(repo);
 	const reviewId = `r-${randomUUID()}`;
 	try {
 		const identity = await realContentIdentity(repo);
-		_setRunSecurityCodePassForTests(async () => { throw new Error('first attempt fails'); });
+		_setRunSecurityCodePassForTests(async (_r, _t, _m, round) => { if (round === 2) throw new Error('first attempt fails at round 2'); return []; });
 		await assert.rejects(runSecurityReview(repo, targets, { reviewId, modelSelection, advisoryEvidence: evidenceFor(identity), now: '2026-11-25T00:00:00.000Z', epicHash: '3333333333333333', storyId: 's3' }));
 
 		_setRunSecurityCodePassForTests(async () => []);
@@ -243,10 +245,39 @@ test('two sequential calls with the SAME reviewId -- the first failing a round, 
 		const record = readReceiptRecord(repo, '3333333333333333', 's3');
 		assert.ok(record);
 		const round1Receipts = record.body.receipts.filter(r => r.id.includes('-round-1'));
-		assert.equal(round1Receipts.length, 2, 'two distinct round-1 receipts, one per attempt');
-		assert.equal(round1Receipts.filter(r => r.result === 'fail').length, 1);
-		assert.equal(round1Receipts.filter(r => r.result === 'pass').length, 1);
-		assert.notEqual(report.receipts.round1.id, round1Receipts.find(r => r.result === 'fail')!.id, 'the second attempt mints its own distinct receipt id');
+		const round2Receipts = record.body.receipts.filter(r => r.id.includes('-round-2'));
+		assert.equal(round1Receipts.length, 2, 'two distinct round-1 receipts, one per attempt (both pass: round 1 always succeeds here)');
+		assert.deepEqual(round1Receipts.map(r => r.result).sort(), ['pass', 'pass']);
+		assert.equal(round2Receipts.length, 2, 'two distinct round-2 receipts, one per attempt');
+		assert.equal(round2Receipts.filter(r => r.result === 'fail').length, 1, 'the first attempt\'s round-2 fail receipt');
+		assert.equal(round2Receipts.filter(r => r.result === 'pass').length, 1, 'the second attempt\'s round-2 pass receipt');
+		assert.notEqual(report.receipts.round2.id, round2Receipts.find(r => r.result === 'fail')!.id, 'the second attempt mints its own distinct round-2 receipt id, never overwriting the first attempt\'s fail receipt');
+	} finally { unwire(); rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('reverifies contentIdentity immediately before final persistence too: a repository edit injected after round 2 completes is caught and aborts with ContentIdentityMismatchError, with BOTH round receipts already durably persisted as pass', async () => {
+	const repo = initRepo();
+	wireRepo(repo);
+	const identity = await realContentIdentity(repo);
+	let round = 0;
+	_setRunSecurityCodePassForTests(async () => {
+		round++;
+		if (round === 2) {
+			// mutate the repo after round 2 completes, before the pre-finalization reverify
+			writeFileSync(join(repo, 'app.ts'), 'export const x = 3;\n');
+			execFileSync('git', ['add', '.'], { cwd: repo });
+			execFileSync('git', ['commit', '-q', '-m', 'mutate-after-round-2'], { cwd: repo });
+		}
+		return [];
+	});
+	try {
+		await assert.rejects(
+			runSecurityReview(repo, targets, { reviewId: `r-${randomUUID()}`, modelSelection, advisoryEvidence: evidenceFor(identity), now: '2026-11-25T00:00:00.000Z', epicHash: '7777777777777777', storyId: 's3' }),
+			ContentIdentityMismatchError,
+		);
+		const record = readReceiptRecord(repo, '7777777777777777', 's3');
+		assert.ok(record);
+		assert.deepEqual(record.body.receipts.map(r => r.result), ['pass', 'pass'], 'both round receipts are already durably persisted as pass before the pre-finalization reverify aborts');
 	} finally { unwire(); rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -270,16 +301,25 @@ test('on success, both round receipts exist and finalizeAndCleanup has run (the 
 	} finally { unwire(); rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('run with repoPath=B while the test harness\'s own ambient cwd is A: contentIdentity/receipt/checkpoint all resolve under B, never A', async () => {
+test('run with repoPath=B while the test harness\'s own ambient cwd is A: checkpoint/reconciliation/report-render/cleanup resolve the repo through runSecurityReview\'s OWN step-context binding, never through a test-hardcoded override, and never resolve to A', async () => {
 	const repoA = initRepo();
 	const repoB = initRepo();
 	try {
-		// Only B is wired as the registered/resolvable repo -- if anything
-		// resolved against A instead, these overrides would never be consulted
-		// and computeContentIdentity would throw 'not a registered repo'.
+		// computeContentIdentity takes repoPath explicitly as an argument (not
+		// via step context), so this seam only needs to accept B.
 		_setContentIdentityDepsForTests(async candidate => candidate === repoB);
-		_setCheckpointDepsForTests({ resolveRepoRoot: async () => repoB });
-		_setReviewReportDepsForTests({ resolveRepoRoot: async () => repoB });
+		// Deliberately NOT overriding checkpoint/review-report/reconciliation's
+		// own resolveRepoRoot: their REAL default resolves through
+		// resolveRepoPath() -> resolveRepoFrom(explicit=undefined, {cwd, envRepo,
+		// resolveForCwd}), reading stepCwd()/stepEnvRepo() from whatever step
+		// context is active at the time of the call. Forcing resolveForCwd to
+		// find no match (as it genuinely would with no daemon/registry in this
+		// test) makes the chain fall through to `envRepo` -- which
+		// runSecurityReview's own runInStepContext({cwd:repoPath, envRepo:repoPath})
+		// binding sets to repoPath (B), never to the ambient outer cwd (A). If
+		// runSecurityReview bound the wrong path, this would genuinely resolve
+		// to A (or throw with no match at all), not silently pass.
+		_setResolveForCwdForTests(async () => null);
 		_setRunSecurityCodePassForTests(async () => []);
 		const identity = await realContentIdentity(repoB);
 		const report = await runInStepContext({ cwd: repoA }, () =>
@@ -288,8 +328,8 @@ test('run with repoPath=B while the test harness\'s own ambient cwd is A: conten
 		assert.ok(report);
 		const record = readReceiptRecord(repoB, '6666666666666666', 's3');
 		assert.ok(record);
-		assert.equal(record.body.receipts.length, 2, 'both round receipts were written under B');
+		assert.equal(record.body.receipts.length, 2, 'both round receipts were written under B, resolved via the real default resolveRepoRoot chain');
 		assert.equal(existsSync(join(repoA, '.insrc')), false, 'nothing was ever written under the ambient cwd A');
 		assert.equal(readReceiptRecord(repoA, '6666666666666666', 's3'), null, 'no receipt record exists under A either');
-	} finally { unwire(); rmSync(repoA, { recursive: true, force: true }); rmSync(repoB, { recursive: true, force: true }); }
+	} finally { _setResolveForCwdForTests(); unwire(); rmSync(repoA, { recursive: true, force: true }); rmSync(repoB, { recursive: true, force: true }); }
 });

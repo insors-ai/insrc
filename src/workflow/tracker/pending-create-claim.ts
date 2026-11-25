@@ -55,12 +55,22 @@ export interface PendingCreateClaim {
 	readonly runId: string;
 	readonly owner: string;
 	readonly repo: string;
+	/** GitHub owner/repo the claim was created for — the recovery target check
+	 *  compares the CANDIDATE's actual ref target against these, never against
+	 *  the local checkout path (REVIEW round-6 MED). Absent on legacy claims,
+	 *  which fall back to the `repo` path comparison. */
+	readonly ghOwner?: string | undefined;
+	readonly ghRepo?: string | undefined;
 	readonly title: string;
 	readonly marker: string;
 	readonly state: 'pending' | 'created';
 	readonly fence: number;
 	readonly createdAt: string;
 	readonly heartbeatAt: string;
+	/** Set when the owning run dispatched the create execute step. A 'pending'
+	 *  claim WITHOUT dispatchedAt proves the create was never dispatched
+	 *  (REVIEW round-6 HIGH-2: confirmed pre-dispatch failure is recoverable). */
+	readonly dispatchedAt?: string | undefined;
 	readonly issueRef?: string | undefined;
 }
 
@@ -133,7 +143,7 @@ export function claimCreateIntent(
 	repoPath: string,
 	epicHash: string,
 	runId: string,
-	input: { readonly title: string; readonly marker: string; readonly now?: (() => string) | undefined },
+	input: { readonly title: string; readonly marker: string; readonly ghOwner?: string | undefined; readonly ghRepo?: string | undefined; readonly now?: (() => string) | undefined },
 ): ClaimResult {
 	const path = pendingCreatePath(repoPath, epicHash);
 	const now = input.now ?? (() => new Date().toISOString());
@@ -142,6 +152,8 @@ export function claimCreateIntent(
 		runId,
 		owner: `run:${runId}`,
 		repo: repoPath,
+		...(input.ghOwner !== undefined ? { ghOwner: input.ghOwner } : {}),
+		...(input.ghRepo !== undefined ? { ghRepo: input.ghRepo } : {}),
 		title: input.title,
 		marker: input.marker,
 		state: 'pending',
@@ -245,15 +257,19 @@ export async function acquireClaimMutex(
 // Ops under the mutex (fence-checked)
 // ---------------------------------------------------------------------------
 
-/** Run `op` under the claim mutex with fence checking. `op` receives the
- *  current claim + a writer that persists fence+1 atomically. A stale
- *  expectedFence throws ClaimOwnershipError BEFORE any write. */
+/** Run `op` under the claim mutex with fence + ownership checking. `op`
+ *  receives the current claim + a writer that persists fence+1 atomically.
+ *  A stale expectedFence throws ClaimOwnershipError BEFORE any write; when
+ *  `expectedRunId` is given, a claim owned by a DIFFERENT run also throws
+ *  before any write (REVIEW round-6 HIGH-1: the run id is checked alongside
+ *  the fence on every write — a losing run can never advance a live claim). */
 export async function withClaim<T>(
 	repoPath: string,
 	epicHash: string,
 	expectedFence: number,
 	op: (claim: PendingCreateClaim, commit: (next: PendingCreateClaim) => void) => T,
 	authority?: ((repo: string, id: string, run: () => Promise<unknown>) => Promise<unknown>) | undefined,
+	expectedRunId?: string | undefined,
 ): Promise<T> {
 	const mutex = await acquireClaimMutex(repoPath, epicHash, authority);
 	try {
@@ -262,6 +278,9 @@ export async function withClaim<T>(
 		if (claim === undefined) throw new Error(`no claim at ${path}`);
 		if (claim.fence !== expectedFence) {
 			throw new ClaimOwnershipError(`stale fence: expected ${expectedFence}, current ${claim.fence} — the claim was taken over at ${path}`);
+		}
+		if (expectedRunId !== undefined && claim.runId !== expectedRunId) {
+			throw new ClaimOwnershipError(`not the claim owner: expected run ${expectedRunId}, claim owned by ${claim.runId} at ${path}`);
 		}
 		let committed = false;
 		const commit = (next: PendingCreateClaim): void => {
@@ -281,38 +300,51 @@ export async function withClaim<T>(
  *  A displaced owner's heartbeat throws ClaimOwnershipError before any write.
  *  Returns the COMMITTED fence (expectedFence + 1) — the ownership token the
  *  caller must carry into finalization (REVIEW round-2 HIGH-1). */
-export async function heartbeatClaim(repoPath: string, epicHash: string, expectedFence: number, now: () => string = () => new Date().toISOString()): Promise<number> {
+export async function heartbeatClaim(repoPath: string, epicHash: string, expectedFence: number, now: () => string = () => new Date().toISOString(), runId?: string | undefined): Promise<number> {
 	let committed = expectedFence;
 	await withClaim(repoPath, epicHash, expectedFence, (claim, commit) => {
 		commit({ ...claim, heartbeatAt: now() });
 		committed = claim.fence + 1;
-	});
+	}, undefined, runId);
+	return committed;
+}
+
+/** Record that the owning run DISPATCHED the create execute step (fence- and
+ *  run-checked, under the mutex): sets `dispatchedAt` + heartbeat. A later
+ *  run that finds a 'pending' claim with NO dispatchedAt knows the create was
+ *  never dispatched (REVIEW round-6 HIGH-2). Returns the COMMITTED fence. */
+export async function markClaimDispatched(repoPath: string, epicHash: string, expectedFence: number, runId: string, now: () => string = () => new Date().toISOString()): Promise<number> {
+	let committed = expectedFence;
+	await withClaim(repoPath, epicHash, expectedFence, (claim, commit) => {
+		commit({ ...claim, dispatchedAt: now(), heartbeatAt: now() });
+		committed = claim.fence + 1;
+	}, undefined, runId);
 	return committed;
 }
 
 /** Mark the claim 'created' with the remote ref (fence-checked, under mutex).
  *  Returns the COMMITTED fence (expectedFence + 1). */
-export async function markClaimCreated(repoPath: string, epicHash: string, expectedFence: number, issueRef: string, authority?: ((repo: string, id: string, run: () => Promise<unknown>) => Promise<unknown>) | undefined): Promise<number> {
+export async function markClaimCreated(repoPath: string, epicHash: string, expectedFence: number, issueRef: string, authority?: ((repo: string, id: string, run: () => Promise<unknown>) => Promise<unknown>) | undefined, runId?: string | undefined): Promise<number> {
 	let committed = expectedFence;
 	await withClaim(repoPath, epicHash, expectedFence, (claim, commit) => {
 		commit({ ...claim, state: 'created', issueRef });
 		committed = claim.fence + 1;
-	}, authority);
+	}, authority, runId);
 	return committed;
 }
 
 /** Same, with the conventional name for callers that want the fence back. */
-export async function markClaimCreatedFence(repoPath: string, epicHash: string, expectedFence: number, issueRef: string, authority?: ((repo: string, id: string, run: () => Promise<unknown>) => Promise<unknown>) | undefined): Promise<number> {
-	return markClaimCreated(repoPath, epicHash, expectedFence, issueRef, authority);
+export async function markClaimCreatedFence(repoPath: string, epicHash: string, expectedFence: number, issueRef: string, authority?: ((repo: string, id: string, run: () => Promise<unknown>) => Promise<unknown>) | undefined, runId?: string | undefined): Promise<number> {
+	return markClaimCreated(repoPath, epicHash, expectedFence, issueRef, authority, runId);
 }
 
 /** Delete the claim after successful persistence (under the mutex,
  *  fence-checked — a displaced owner cannot delete the new owner's claim). */
-export async function releaseClaim(repoPath: string, epicHash: string, expectedFence: number): Promise<void> {
+export async function releaseClaim(repoPath: string, epicHash: string, expectedFence: number, runId?: string | undefined): Promise<void> {
 	await withClaim(repoPath, epicHash, expectedFence, (claim, commit) => {
 		void commit;
 		unlinkSync(pendingCreatePath(repoPath, epicHash));
-	});
+	}, undefined, runId);
 }
 
 /** Run `work` with the claim mutex ALREADY HELD by the caller, fence-verified
@@ -407,25 +439,31 @@ export function quarantineDeadClaim(
 // ---------------------------------------------------------------------------
 
 /** A remote issue is the claim's issue iff its body carries the claim's
- *  `<!-- insrc:artifact ISSUE-<hash> -->` marker AND its target repo matches
- *  the claim's repo+owner path shape. Duplicate or unrelated title matches
- *  refuse. */
+ *  `<!-- insrc:artifact ISSUE-<hash> -->` marker AND its target — the ACTUAL
+ *  `owner/repo` parsed from the candidate's ref — matches the GitHub
+ *  owner/repo persisted on the claim (REVIEW round-6 MED: the check must not
+ *  compare the local checkout to itself; a marker match in a newly configured
+ *  different repository must not pass an old claim's target check). Legacy
+ *  claims without a persisted gh target fall back to the repo-path compare. */
 export function verifyRecoveryCandidate(claim: PendingCreateClaim, candidate: { readonly title: string; readonly body: string; readonly target: string }): boolean {
 	if (!candidate.body.includes(claim.marker)) return false;
-	if (candidate.target !== claim.repo) return false;
+	const want = claim.ghOwner !== undefined && claim.ghRepo !== undefined ? `${claim.ghOwner}/${claim.ghRepo}` : claim.repo;
+	if (candidate.target !== want) return false;
 	return true;
 }
 
 /** Reconcile: filter candidates through verifyRecoveryCandidate. Exactly
- *  one -> adoptable; 0 or >1 -> refuse (returns undefined). */
+ *  one -> adoptable; 0 or >1 -> refuse. The failure result carries
+ *  `verifiedCount` so the caller can distinguish a confirmed pre-dispatch
+ *  failure (0 verified, claim never dispatched) from an ambiguous outcome. */
 export function reconcileClaim(
 	claim: PendingCreateClaim,
 	candidates: readonly { readonly title: string; readonly body: string; readonly target: string; readonly ref: string }[],
-): { readonly ok: true; readonly ref: string } | { readonly ok: false; readonly reason: string } {
+): { readonly ok: true; readonly ref: string } | { readonly ok: false; readonly reason: string; readonly verifiedCount: number } {
 	const verified = candidates.filter(c => verifyRecoveryCandidate(claim, c));
 	if (verified.length === 1) return { ok: true, ref: verified[0]!.ref };
-	if (verified.length === 0) return { ok: false, reason: `no marker-verified candidate for ${pendingCreatePath(claim.repo, claim.epicHash)}` };
-	return { ok: false, reason: `${verified.length} marker-verified candidates for ${pendingCreatePath(claim.repo, claim.epicHash)} (${verified.map(v => v.ref).join(', ')}); human resolves` };
+	if (verified.length === 0) return { ok: false, verifiedCount: 0, reason: `no marker-verified candidate for ${pendingCreatePath(claim.repo, claim.epicHash)}` };
+	return { ok: false, verifiedCount: verified.length, reason: `${verified.length} marker-verified candidates for ${pendingCreatePath(claim.repo, claim.epicHash)} (${verified.map(v => v.ref).join(', ')}); human resolves` };
 }
 
 // re-export for tests that inspect the artifacts dir

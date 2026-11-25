@@ -32,7 +32,7 @@ import { readTrackerMeta } from '../../tracker/refs.js';
 import { unitIssueOf } from '../../tracker/unit-head.js';
 import type { IssueArtifact } from '../../artifacts/issue.js';
 import { IMPLIED_ISSUE_STORY_ID, issueArtifactId } from '../../storage.js';
-import { acquireClaimMutex, claimCreateIntent, heartbeatClaim, markClaimCreatedFence, quarantineDeadClaim, readClaim, reconcileClaim, takeoverAbandonedClaim } from '../../tracker/pending-create-claim.js';
+import { acquireClaimMutex, claimCreateIntent, markClaimCreatedFence, markClaimDispatched, pendingCreatePath, quarantineDeadClaim, readClaim, reconcileClaim, takeoverAbandonedClaim } from '../../tracker/pending-create-claim.js';
 
 import {
 	assemblePostContext,
@@ -90,90 +90,113 @@ export const pushExecuteRunner: StepRunner = {
 					claim = claimCreateIntent(ctx.intent.repoPath, c.epicHash, ctx.runId, {
 						title: issue.body.title,
 						marker,
+						// round-6 MED: persist the GitHub target on the claim so recovery
+						// verifies candidates against the actual owner/repo, not the
+						// local checkout path.
+						ghOwner: c.gh.owner,
+						ghRepo: c.gh.repo,
 					});
 				}
 			} finally {
 				mutex.release();
 			}
+			// REVIEW round-6 HIGH-1: a fence is carried ONLY when this run actually
+			// acquired claim ownership (a successful takeover writes OUR runId).
+			// A live foreign claim's fence is never carried or advanced.
+			const setFence = (fence: number | undefined): void => {
+				if (fence !== undefined) (ctx.stepOutputs['s1'] as Record<string, unknown>)['claimFence'] = fence;
+			};
+			const adoptionPause = (ref: string, how: string) => ({
+				type: 'llm-pause' as const,
+				prompt: pushPrompt({ ...c, existingRefs: { ...c.existingRefs, epicRef: ref, storyRefs: { ...c.existingRefs?.storyRefs, [IMPLIED_ISSUE_STORY_ID]: ref } } }),
+				userTurn: [
+					`ADOPT the ${how} issue \`${ref}\` (do NOT create a duplicate).`,
+					`Perform the required non-create mutations (labels, milestone, ${c.force ? 'forced body overwrite' : 'no body edit'}), then return the refs JSON.`,
+				].join('\n'),
+				schema: trackerPushExecuteSchema,
+				preparedBlob: { stepId: 'execute' as const },
+			});
+			const refused = (reason: string) => ({
+				type: 'output' as const,
+				output: { refused: true, reason },
+				summary: `tracker.push: unresolved pending-create claim — ${reason}`,
+			});
 			if (issue !== undefined && durableRef !== undefined) {
 				// already durably published under the mutex: adopt (round-4 MED: run
 				// the adoption prompt so labels/milestone/force-body still happen).
-				// Carry a fence when a retained claim exists (round-3 MED-3).
+				// Carry a fence only if THIS run took over the retained claim
+				// (round-3 MED-3 + round-6 HIGH-1: never copy a live owner's fence).
 				const existing = readClaim(ctx.intent.repoPath, c.epicHash);
 				if (existing !== undefined) {
 					const took = await takeoverAbandonedClaim(ctx.intent.repoPath, c.epicHash, ctx.runId, Date.now());
-					const active = took ?? existing;
-					(ctx.stepOutputs['s1'] as Record<string, unknown>)['claimFence'] = active.fence;
+					if (took !== undefined && took.runId === ctx.runId) setFence(took.fence);
 				}
-				const adopted = { ...c, existingRefs: { ...c.existingRefs, epicRef: durableRef, storyRefs: { ...c.existingRefs?.storyRefs, [IMPLIED_ISSUE_STORY_ID]: durableRef } } };
-				return {
-					type: 'llm-pause',
-					prompt: pushPrompt(adopted),
-					userTurn: [
-						`ADOPT the already-persisted issue \`${durableRef}\` (do NOT create a duplicate).`,
-						`Perform the required non-create mutations (labels, milestone, ${c.force ? 'forced body overwrite' : 'no body edit'}), then return the refs JSON.`,
-					].join('\n'),
-					schema: trackerPushExecuteSchema,
-					preparedBlob: { stepId: 'execute' },
-				};
+				return adoptionPause(durableRef, 'already-persisted');
 			}
-			if (issue !== undefined && claim !== undefined) {
-				if (!claim.claimed) {
-					// loser: after reconciling to a marker-verified candidate, run the
-					// ADOPTION prompt (round-4 MED: labels/milestone/force-body are
-					// required remote work even when no create happens) instead of
-					// returning refs directly.
-					// loser: reconcile the winner's claim — reclaim if the holder is
-					// dead (guard quarantine), take over if abandoned (fence++ under
-					// the mutex), and verify the remote candidate by marker+target
-					// before adopting. 0 duplicate creates.
-					const reclaimed = quarantineDeadClaim(ctx.intent.repoPath, c.epicHash);
+			const claimResult = claim;
+			if (issue !== undefined && claimResult !== undefined) {
+				if (!claimResult.claimed) {
+					// loser: reclaim a dead holder's guard, then try to take over an
+					// ABANDONED claim. Only a successful takeover (runId === ours)
+					// may advance the fence or carry it (round-6 HIGH-1).
+					quarantineDeadClaim(ctx.intent.repoPath, c.epicHash);
 					const took = await takeoverAbandonedClaim(ctx.intent.repoPath, c.epicHash, ctx.runId, Date.now());
-					const active = took ?? reclaimed ?? claim.claim;
-					const reconciled = reconcileClaim(active, c.remoteCandidates ?? []);
-					if (!reconciled.ok) {
-						return {
-							type: 'output',
-							output: { refused: true, reason: reconciled.reason },
-							summary: `tracker.push: unresolved pending-create claim — ${reconciled.reason}`,
-						};
+					if (took === undefined) {
+						// LIVE foreign claim: read-only reconcile + adoption prompt.
+						// No fence carried, no claim mutation — finalization refuses
+						// while the claim is present without a carried fence (fail
+						// closed) and proceeds plainly once the owner released it.
+						const reconciled = reconcileClaim(claimResult.claim, c.remoteCandidates ?? []);
+						if (!reconciled.ok) return refused(reconciled.reason);
+						return adoptionPause(reconciled.ref, 'marker-verified');
 					}
-					// REVIEW-5f9d4ab4c90c0b4c HIGH-2: return the schema's refs shape so
-					// finalization accepts it (epicRef + storyRefs + labelsCreated), and
-					// RETAIN the claim until the ref is durably persisted and the heads
-					// are bound — the finalize step below releases it. The claim is
-					// marked 'created' under the mutex (fence-checked), NOT deleted here.
-					// mark the claim created under the mutex (fence-checked), and
-					// carry the COMMITTED fence for finalization (round-2 HIGH-1)
-					const markedFence = await markClaimCreatedFence(ctx.intent.repoPath, c.epicHash, active.fence, reconciled.ref);
-					(ctx.stepOutputs['s1'] as Record<string, unknown>)['claimFence'] = markedFence;
-					// round-4 MED: adoption is the no-create CHOICE within the push op,
-					// not its completion — run the adoption prompt so required labels /
-					// milestone / force-body mutations still happen, then the execute
-					// output (refs) flows through synthesis as usual.
-					const adopted = { ...c, existingRefs: { ...c.existingRefs, epicRef: reconciled.ref, storyRefs: { ...c.existingRefs?.storyRefs, [IMPLIED_ISSUE_STORY_ID]: reconciled.ref } } };
-					return {
-						type: 'llm-pause',
-						prompt: pushPrompt(adopted),
-						userTurn: [
-							`ADOPT the marker-verified issue \`${reconciled.ref}\` from the pending-create claim (do NOT create a duplicate).`,
-							`Perform the required non-create mutations (labels, milestone, ${c.force ? 'forced body overwrite' : 'no body edit'}), then return the refs JSON.`,
-						].join('\n'),
-						schema: trackerPushExecuteSchema,
-						preparedBlob: { stepId: 'execute' },
-					};
+					// we own the taken-over claim
+					const reconciled = reconcileClaim(took, c.remoteCandidates ?? []);
+					if (!reconciled.ok) {
+						// REVIEW round-6 HIGH-2: a 'pending' claim that was NEVER
+						// dispatched (no dispatchedAt) with ZERO marker-verified remote
+						// candidates is a CONFIRMED pre-dispatch failure — the session
+						// stopped before `gh issue create`. This run owns the claim, so
+						// recover by dispatching the create now (duplicate protection
+						// holds: nothing was dispatched and no verified remote issue
+						// exists). Fall through to the normal create dispatch below with
+						// our own committed fence.
+						if (reconciled.verifiedCount === 0 && took.state === 'pending' && took.dispatchedAt === undefined) {
+							const committedFence = await markClaimDispatched(ctx.intent.repoPath, c.epicHash, took.fence, ctx.runId);
+							setFence(committedFence);
+						} else {
+							// ambiguous remote outcome (create dispatched but the response
+							// was lost, or >1 verified candidates): explicit resolution
+							// path — refuse, retain the claim, name it for the human.
+							// Duplicate protection is preserved: no create either way.
+							return refused(`${reconciled.reason} — claim ${pendingCreatePath(ctx.intent.repoPath, c.epicHash)} retained (state ${took.state}, dispatched ${took.dispatchedAt !== undefined}); verify the remote issue on GitHub, then delete the claim file to retry`);
+						}
+					} else {
+						// reconciled to exactly one marker+target-verified candidate:
+						// mark the claim 'created' under the mutex (fence- + run-checked)
+						// and carry the COMMITTED fence for finalization (round-2
+						// HIGH-1). The claim is RETAINED until the ref is durably
+						// persisted and the heads bound — finalize releases it.
+						const markedFence = await markClaimCreatedFence(ctx.intent.repoPath, c.epicHash, took.fence, reconciled.ref, undefined, ctx.runId);
+						setFence(markedFence);
+						return adoptionPause(reconciled.ref, 'marker-verified');
+					}
+				} else {
+					// winner: record dispatch + heartbeat under the mutex (fence- +
+					// run-checked), then dispatch. The COMMITTED fence rides in the
+					// context so finalization can fence the whole persistence op
+					// (round-2 HIGH-1: carry the token the op actually committed).
+					const committedFence = await markClaimDispatched(ctx.intent.repoPath, c.epicHash, claimResult.claim.fence, ctx.runId);
+					setFence(committedFence);
 				}
-				// winner: heartbeat under the mutex, then dispatch. The COMMITTED
-				// fence (post-heartbeat) rides in the context so finalization can
-				// fence the whole persistence op (REVIEW round-2 HIGH-1: carry the
-				// token the heartbeat actually committed, not the pre-heartbeat one).
-				const committedFence = await heartbeatClaim(ctx.intent.repoPath, c.epicHash, claim.claim.fence);
-				(ctx.stepOutputs['s1'] as Record<string, unknown>)['claimFence'] = committedFence;
-			} else if (issue !== undefined) {
-				// already persisted ref: read any claim and reconcile toward adoption
+			}
+			if (issue !== undefined && claimResult === undefined) {
+				// existingRefs seeded by the context: reconcile any retained claim
+				// toward adoption — carry a fence only on a successful takeover.
 				const existing = readClaim(ctx.intent.repoPath, c.epicHash);
 				if (existing !== undefined) {
-					await takeoverAbandonedClaim(ctx.intent.repoPath, c.epicHash, ctx.runId, Date.now());
+					const took = await takeoverAbandonedClaim(ctx.intent.repoPath, c.epicHash, ctx.runId, Date.now());
+					if (took !== undefined && took.runId === ctx.runId) setFence(took.fence);
 				}
 			}
 		}

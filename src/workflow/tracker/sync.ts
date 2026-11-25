@@ -15,7 +15,7 @@ import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { getLogger } from '../../shared/logger.js';
 import { GithubConfigError, resolveGithubConfig } from '../config/github.js';
-import { ARTIFACTS_DIR, impliedIssueStories } from '../storage.js';
+import { ARTIFACTS_DIR, IMPLIED_ISSUE_STORY_ID, impliedIssueStories } from '../storage.js';
 import { createDeadline } from '../team/sighting-store.js';
 import type { Deadline } from '../team/sighting-store.js';
 import { createGithubTracker } from './github-adapter.js';
@@ -108,7 +108,12 @@ export async function syncTracker(repoPath: string, epicHash: string, table?: Re
 		const epicStatus = es.status as TrackerStatus;
 		const storyStatus: Record<string, TrackerStatus> = {};
 		for (const story of storiesOf(repoPath, epicHash)) {
-			const ref = unitIssueOf(repoPath, epicHash, story);
+			let ref = unitIssueOf(repoPath, epicHash, story);
+			// REVIEW round-6 MED: for an ISSUE head with only the root ref recorded
+			// (no separate STORY-s1 binding), reuse the ROOT status for the implied
+			// story — the sync context (assembleSyncContext) already falls back the
+			// same way, so both paths agree and storyStatus is never silently empty.
+			if (ref === undefined && headKind === 'issue' && story === IMPLIED_ISSUE_STORY_ID) ref = epicRef;
 			if (ref === undefined) continue;
 			const s = await read(ref);
 			if (s.status === 'skipped' || s.status === 'failed') return s as SyncResult;

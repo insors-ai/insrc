@@ -139,7 +139,11 @@ export async function assemblePushContext(ctx: StepRunnerContext): Promise<PushC
 				// REVIEW HIGH-1: candidate titles are the actual remote titles (the
 				// creation payload's ISSUE-<hash> — title), so verification matches
 				// what the normal push actually created.
-				remoteCandidates = byTitle.value.map((ref, i) => ({ title: bodies[i]!.body.split('\n')[1] ?? issue!.body.title, body: bodies[i]!.body, target: ctx.intent.repoPath, ref }));
+				// REVIEW round-6 MED: the candidate's target is the ACTUAL owner/repo
+				// parsed from its ref (`owner/repo#N`), never the local checkout
+				// path — verifyRecoveryCandidate compares it against the gh target
+				// persisted on the claim.
+				remoteCandidates = byTitle.value.map((ref, i) => ({ title: bodies[i]!.body.split('\n')[1] ?? issue!.body.title, body: bodies[i]!.body, target: ref.slice(0, ref.indexOf('#')), ref }));
 			}
 		} catch { remoteCandidates = undefined; }
 	}

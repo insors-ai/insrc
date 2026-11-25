@@ -2940,6 +2940,26 @@ async function finalizeTracker(
 	const carried = (s1 as { claimFence?: unknown }).claimFence;
 	const expectedFence = typeof carried === 'number' ? carried : undefined;
 	const existingClaim = readClaim(intent.repoPath, epicHash);
+	// REVIEW round-6 HIGH-3: for an ISSUE-head push, validate BEFORE the first
+	// write that (a) the returned epicRef targets the configured GitHub
+	// repository, (b) it equals the recovered claim's marker-verified issueRef
+	// when one was recorded, and (c) the single-issue mapping holds — the
+	// implied s1 IS the root issue, so a different storyRefs.s1 is refused and
+	// s1 is derived from the validated root instead of spread over it.
+	if (intent.workflow === 'tracker.push' && readDefinitionHead(intent.repoPath, epicHash)?.kind === 'issue') {
+		const pushRefs = typedRefs as TrackerPushRefs;
+		const m = /^([^/#\s]+)\/([^/#\s]+)#(\d+)$/.exec(pushRefs.epicRef);
+		if (m === null || m[1] !== s1.gh.owner || m[2] !== s1.gh.repo) {
+			return { ok: false, failure: schemaFailure(`ISSUE push epicRef '${pushRefs.epicRef}' does not target the configured GitHub repository ${s1.gh.owner}/${s1.gh.repo}`) };
+		}
+		if (existingClaim?.issueRef !== undefined && existingClaim.issueRef !== pushRefs.epicRef) {
+			return { ok: false, failure: schemaFailure(`recovered claim ref ${existingClaim.issueRef} != returned epicRef ${pushRefs.epicRef} — refusing to persist a different issue than the marker-verified recovery`) };
+		}
+		const s1Ref = pushRefs.storyRefs?.[IMPLIED_ISSUE_STORY_ID];
+		if (s1Ref !== undefined && s1Ref !== pushRefs.epicRef) {
+			return { ok: false, failure: schemaFailure(`ISSUE single-issue mapping: storyRefs.${IMPLIED_ISSUE_STORY_ID} '${s1Ref}' != epicRef '${pushRefs.epicRef}' — the implied story IS the root issue`) };
+		}
+	}
 	if (existingClaim !== undefined && expectedFence === undefined) {
 		return { ok: false, failure: schemaFailure(`pending-create claim exists for ${epicHash} but no fence was carried — refusing unverifiable persistence`) };
 	}
@@ -3079,8 +3099,11 @@ function mutateEpicTrackerMeta(
 		// REVIEW round-3 MED-4: required head bindings must land before success —
 		// linkDocsToIssues now reports failed bindings; a failure throws so the
 		// finalize op reports failed/retryable and retains the claim.
+		// REVIEW round-6 HIGH-3: for an ISSUE head the implied s1 is DERIVED from
+		// the validated root ref — it wins over any storyRefs.s1 the model
+		// returned (finalizeTracker refuses a mismatch before this point).
 		const linkResult = linkDocsToIssues(repoPath, epicHash, epicSlug, headKind === 'issue'
-			? { epicRef: push.epicRef, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: push.epicRef, ...push.storyRefs } }
+			? { epicRef: push.epicRef, storyRefs: { ...push.storyRefs, [IMPLIED_ISSUE_STORY_ID]: push.epicRef } }
 			: { epicRef: push.epicRef, storyRefs: push.storyRefs });
 		if (!linkResult.ok) {
 			throw new Error(`required head bindings failed: ${linkResult.failedBindings.join(', ')}`);

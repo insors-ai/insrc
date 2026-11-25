@@ -36,7 +36,7 @@ import { ArtifactIds } from '../artifact-ids.js';
 import { approvedMeta } from './lifecycle-fixtures.js';
 import { installExecStandIn } from './helpers/exec-stand-in.js';
 import type { PortResult, TrackerPort } from '../tracker/port.js';
-import { claimCreateIntent, heartbeatClaim, readClaim } from '../tracker/pending-create-claim.js';
+import { claimCreateIntent, heartbeatClaim, markClaimCreatedFence, readClaim } from '../tracker/pending-create-claim.js';
 import { bindUnitIssue } from '../tracker/link.js';
 import { unitIssueOf } from '../tracker/unit-head.js';
 import { readDefinitionHead } from '../gates.js';
@@ -447,6 +447,70 @@ test('REVIEW round-3 — stale-context run adopts the durable ref (HIGH-1); carr
 			assert.match(JSON.stringify(fr), /required head bindings failed/i);
 			assert.ok(readClaim(fx.repo, HASH) !== undefined, 'claim retained as recovery evidence');
 			assert.equal(readBinding(fx.repo, ArtifactIds.make({ kind: 'STORY', epicHash: HASH, story: 's1' })), undefined, 'STORY-s1 binding absent (staged)');
+		} finally { fx.cleanup(); }
+	}
+});
+
+test('REVIEW round-6 HIGH-3 — finalize validates the recovered ref, the configured gh repo and the single-issue mapping BEFORE any write; MED-5 — sync reuses the root status for the implied s1 when only the root ref is recorded', async () => {
+	// HIGH-3a: the claim recorded marker-verified issueRef #42; the model returns #99 -> refused, zero writes
+	{
+		const fx = seedIssueOnly();
+		try {
+			claimCreateIntent(fx.repo, HASH, 'run-A', { title: 'ISSUE title', marker: `<!-- insrc:artifact ISSUE-${HASH} -->`, ghOwner: 'acme', ghRepo: 'demo' });
+			const fence = await markClaimCreatedFence(fx.repo, HASH, 1, 'acme/demo#42', undefined, 'run-A');
+			const before = readFileSync(fx.issue, 'utf8');
+			const intent = { workflow: 'tracker.push', focus: 'push', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
+			const s1 = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue', claimFence: fence };
+			const fr = await _finalizeTracker(intent, { s1 }, 'run-A', 5, { refs: { epicRef: 'acme/demo#99', storyRefs: { s1: 'acme/demo#99' }, labelsCreated: [] }, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } }, 'm');
+			assert.equal(fr.ok, false, 'a different issue than the recovered one is refused');
+			assert.match(JSON.stringify(fr), /recovered claim ref acme\/demo#42 != returned epicRef acme\/demo#99/);
+			assert.equal(readFileSync(fx.issue, 'utf8'), before, 'no write happened before the refusal');
+		} finally { fx.cleanup(); }
+	}
+	// HIGH-3b: epicRef targets a different GitHub repository than the configured one
+	{
+		const fx = seedIssueOnly();
+		try {
+			const before = readFileSync(fx.issue, 'utf8');
+			const intent = { workflow: 'tracker.push', focus: 'push', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
+			const s1 = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue' };
+			const fr = await _finalizeTracker(intent, { s1 }, 'run-1', 5, { refs: { epicRef: 'other/repo#5', storyRefs: { s1: 'other/repo#5' }, labelsCreated: [] }, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } }, 'm');
+			assert.equal(fr.ok, false);
+			assert.match(JSON.stringify(fr), /does not target the configured GitHub repository acme\/demo/);
+			assert.equal(readFileSync(fx.issue, 'utf8'), before, 'no write happened');
+		} finally { fx.cleanup(); }
+	}
+	// HIGH-3c: storyRefs.s1 differs from the root epicRef — the implied story IS the root issue
+	{
+		const fx = seedIssueOnly();
+		try {
+			const before = readFileSync(fx.issue, 'utf8');
+			const intent = { workflow: 'tracker.push', focus: 'push', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
+			const s1 = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue' };
+			const fr = await _finalizeTracker(intent, { s1 }, 'run-1', 5, { refs: { epicRef: 'acme/demo#42', storyRefs: { s1: 'acme/demo#43' }, labelsCreated: [] }, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } }, 'm');
+			assert.equal(fr.ok, false);
+			assert.match(JSON.stringify(fr), /single-issue mapping/);
+			assert.equal(readFileSync(fx.issue, 'utf8'), before, 'no write happened; s1 is derived from the validated root, never overridden');
+		} finally { fx.cleanup(); }
+	}
+	// MED-5: only the root issueRef recorded (no STORY-s1 binding) — the deterministic
+	// refresh reuses the ROOT status for the implied s1 instead of persisting an empty storyStatus
+	{
+		const fx = seedIssueOnly();
+		try {
+			patchTrackerMeta(fx.issue, { issueRef: 'acme/demo#42' });   // root ref only; no head bindings at all
+			const port = {
+				kind: 'github', capabilities: new Set(['status-read', 'whoami']),
+				whoAmI: (): PortResult<string> => ({ ok: true, value: 'me' }),
+				readIssueStatus: () => ({ ok: true, value: { state: 'OPEN', labels: [] } }),
+			} as unknown as TrackerPort;
+			const r = await syncTracker(fx.repo, HASH, undefined, { port });
+			assert.equal(r.status, 'synced', JSON.stringify(r));
+			if (r.status === 'synced') {
+				assert.deepEqual(r.storyStatus, { [IMPLIED_ISSUE_STORY_ID]: 'open' }, 's1 reuses the root issue status on an ISSUE head with only the root ref recorded');
+			}
+			assert.equal(readTrackerMeta(fx.issue)?.storyStatus?.[IMPLIED_ISSUE_STORY_ID], 'open', 'persisted onto the ISSUE json');
+			assert.equal(readTrackerMeta(fx.issue)?.epicStatus, 'open');
 		} finally { fx.cleanup(); }
 	}
 });

@@ -20,8 +20,8 @@ import { join } from 'node:path';
 
 import {
 	acquireClaimMutex, claimCreateIntent, claimMutexKey, pendingCreatePath, readClaim, withClaim, heartbeatClaim,
-	markClaimCreated, releaseClaim, takeoverAbandonedClaim, quarantineDeadClaim, reconcileClaim,
-	isClaimAbandoned, ClaimOwnershipError, DEFAULT_CLAIM_STALE_AFTER_MS, listPendingCreateFiles,
+	markClaimCreated, markClaimDispatched, releaseClaim, takeoverAbandonedClaim, quarantineDeadClaim, reconcileClaim,
+	verifyRecoveryCandidate, isClaimAbandoned, ClaimOwnershipError, DEFAULT_CLAIM_STALE_AFTER_MS, listPendingCreateFiles,
 } from '../pending-create-claim.js';
 import { ArtifactIds } from '../../artifact-ids.js';
 import { ARTIFACTS_DIR, issueArtifactId } from '../../storage.js';
@@ -276,6 +276,77 @@ test('REVIEW HIGH-4 — mutex acquisition propagates guard-conflict failure and 
 			await assert.rejects(acquireClaimMutex(fx2.repo, HASH, failingAuthority), /authority down/, 'authority failure propagates');
 			assert.equal(existsSync(join(fx2.repo, ARTIFACTS_DIR, `.pending-create-${HASH}.lock`)), false, 'guard released on authority failure (not leaked)');
 		} finally { fx2.cleanup(); }
+	} finally { fx.cleanup(); }
+});
+
+test('REVIEW round-6 HIGH-1 — the run id is checked alongside the fence on every write: a non-owner fence op throws ClaimOwnershipError before any write', async () => {
+	const fx = repo();
+	try {
+		const a = claimCreateIntent(fx.repo, HASH, 'run-A', input);
+		assert.equal(a.claimed, true);
+		// B knows A's fence (1) but is not the owner: every mutating op refuses
+		await assert.rejects(
+			withClaim(fx.repo, HASH, 1, (claim, commit) => { commit({ ...claim, state: 'created' }); }, undefined, 'run-B'),
+			(e: unknown) => e instanceof ClaimOwnershipError && /not the claim owner/.test((e as Error).message),
+			'withClaim with a foreign runId refuses',
+		);
+		await assert.rejects(heartbeatClaim(fx.repo, HASH, 1, undefined, 'run-B'), (e: unknown) => e instanceof ClaimOwnershipError, 'heartbeat runId-checked');
+		await assert.rejects(markClaimCreated(fx.repo, HASH, 1, 'acme/demo#5', undefined, 'run-B'), (e: unknown) => e instanceof ClaimOwnershipError, 'markClaimCreated runId-checked');
+		await assert.rejects(releaseClaim(fx.repo, HASH, 1, 'run-B'), (e: unknown) => e instanceof ClaimOwnershipError, 'releaseClaim runId-checked');
+		assert.equal(readClaim(fx.repo, HASH)?.runId, 'run-A', 'claim untouched by the foreign run');
+		assert.equal(readClaim(fx.repo, HASH)?.fence, 1, 'fence not advanced by the foreign run');
+		// the OWNER's op with the matching runId succeeds and advances the fence
+		const committed = await markClaimCreated(fx.repo, HASH, 1, 'acme/demo#5', undefined, 'run-A');
+		assert.equal(committed, 2);
+		assert.equal(readClaim(fx.repo, HASH)?.state, 'created');
+		assert.equal(readClaim(fx.repo, HASH)?.issueRef, 'acme/demo#5');
+	} finally { fx.cleanup(); }
+});
+
+test('REVIEW round-6 HIGH-2 — markClaimDispatched records dispatchedAt (fence+runId checked) and returns the committed fence; a pending claim without dispatchedAt proves pre-dispatch failure', async () => {
+	const fx = repo();
+	try {
+		const a = claimCreateIntent(fx.repo, HASH, 'run-A', input);
+		assert.equal(a.claim.dispatchedAt, undefined, 'fresh claim was never dispatched');
+		const committed = await markClaimDispatched(fx.repo, HASH, 1, 'run-A', () => '2026-11-24T01:00:00.000Z');
+		assert.equal(committed, 2, 'committed fence returned');
+		const after = readClaim(fx.repo, HASH);
+		assert.equal(after?.dispatchedAt, '2026-11-24T01:00:00.000Z', 'dispatchedAt persisted');
+		assert.equal(after?.fence, 2);
+		// a foreign run cannot mark dispatched even with the new fence value known
+		await assert.rejects(markClaimDispatched(fx.repo, HASH, 2, 'run-B'), (e: unknown) => e instanceof ClaimOwnershipError);
+		// ...but after a real takeover the new owner may dispatch
+		const staleNow = Date.now() + DEFAULT_CLAIM_STALE_AFTER_MS + 1000;
+		const took = await takeoverAbandonedClaim(fx.repo, HASH, 'run-B', staleNow);
+		assert.ok(took !== undefined);
+		assert.equal(took!.dispatchedAt, '2026-11-24T01:00:00.000Z', 'takeover preserves the dispatched marker (ambiguous case stays ambiguous)');
+		const committed2 = await markClaimDispatched(fx.repo, HASH, took!.fence, 'run-B');
+		assert.equal(committed2, took!.fence + 1);
+	} finally { fx.cleanup(); }
+});
+
+test('REVIEW round-6 MED — recovery target check compares the candidate\'s actual owner/repo (from its ref) against the gh target persisted on the claim, not the local checkout', () => {
+	const fx = repo();
+	try {
+		const a = claimCreateIntent(fx.repo, HASH, 'run-A', { ...input, ghOwner: 'acme', ghRepo: 'demo' });
+		const claim = a.claim;
+		assert.equal(claim.ghOwner, 'acme');
+		// marker match in a DIFFERENT gh repo: target comes from the ref, not repoPath
+		assert.equal(verifyRecoveryCandidate(claim, { title: 't', body: MARKER, target: 'other/repo' }), false, 'marker in another repo refuses');
+		assert.equal(verifyRecoveryCandidate(claim, { title: 't', body: MARKER, target: 'acme/demo' }), true, 'marker in the claimed gh target passes');
+		assert.equal(verifyRecoveryCandidate(claim, { title: 't', body: '# no marker', target: 'acme/demo' }), false, 'no marker refuses');
+		// the local checkout path is NOT the target anymore
+		assert.equal(verifyRecoveryCandidate(claim, { title: 't', body: MARKER, target: fx.repo }), false, 'local-path target no longer matches');
+		// reconcile: the wrong-repo candidate is not verified -> verifiedCount 0
+		const rec = reconcileClaim(claim, [{ title: 't', body: MARKER, target: 'other/repo', ref: 'other/repo#1' }]);
+		assert.equal(rec.ok, false);
+		if (!rec.ok) assert.equal(rec.verifiedCount, 0);
+		const rec2 = reconcileClaim(claim, [{ title: 't', body: MARKER, target: 'acme/demo', ref: 'acme/demo#7' }]);
+		assert.equal(rec2.ok, true);
+		if (rec2.ok) assert.equal(rec2.ref, 'acme/demo#7');
+		// legacy claim without gh fields falls back to the repo-path comparison
+		const legacy = claimCreateIntent(fx.repo, 'legacyhash0000000000000000aa', 'run-L', input).claim;
+		assert.equal(verifyRecoveryCandidate(legacy, { title: 't', body: MARKER, target: fx.repo }), true, 'legacy claim keeps the repo-path compare');
 	} finally { fx.cleanup(); }
 });
 

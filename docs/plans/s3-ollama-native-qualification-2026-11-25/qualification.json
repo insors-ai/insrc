@@ -65,31 +65,36 @@
       "os": "linux",
       "arch": "x64",
       "status": "pending",
-      "reason": "No native x64 runner provisioned in this session; OrbStack amd64 on this ARM host would be translated evidence."
+      "reason": "No native x64 runner provisioned in this session; OrbStack amd64 on this ARM host would be translated evidence.",
+      "manualGuidance": "Download an official matching Linux archive from https://github.com/ollama/ollama/releases. Extract the complete bin/ and lib/ layout with an available zstd-capable tool into a new user-owned directory such as ~/.local/opt/ollama. Run its absolute bin/ollama path with serve in a terminal; no sudo, system installer or service registration. If the matching CPU/baseline payload or user-level extraction tool is unavailable, keep the route pending; do not substitute translated qualification."
     },
     {
       "os": "darwin",
       "arch": "arm64",
       "status": "pending",
-      "reason": "Existing UTM VM insrc-macos-arm64 failed to restore with permission denied and remains stopped; user informed."
+      "reason": "Existing UTM VM insrc-macos-arm64 failed to restore with permission denied and remains stopped; user informed.",
+      "manualGuidance": "Obtain the official macOS payload from https://github.com/ollama/ollama/releases and place Ollama.app in ~/Applications. Run ~/Applications/Ollama.app/Contents/Resources/ollama serve in a terminal; decline system Applications/global CLI-link prompts. Do not bypass quarantine or request elevation. Verify OS/CPU requirements in https://docs.ollama.com/macos; this manual route is not native installer qualification."
     },
     {
       "os": "darwin",
       "arch": "x64",
       "status": "pending",
-      "reason": "No native Intel Mac runner provisioned; this host is ARM64."
+      "reason": "No native Intel Mac runner provisioned; this host is ARM64.",
+      "manualGuidance": "Obtain the official macOS payload from https://github.com/ollama/ollama/releases and place Ollama.app in ~/Applications. Run ~/Applications/Ollama.app/Contents/Resources/ollama serve in a terminal; decline system Applications/global CLI-link prompts. Do not bypass quarantine or request elevation. Verify OS/CPU requirements in https://docs.ollama.com/macos; this manual route is not native installer qualification."
     },
     {
       "os": "win32",
       "arch": "arm64",
       "status": "pending",
-      "reason": "No Windows ARM64 VM is registered in UTM."
+      "reason": "No Windows ARM64 VM is registered in UTM.",
+      "manualGuidance": "Obtain a matching official standalone CLI ZIP, when available, from https://github.com/ollama/ollama/releases. Extract it completely, including libraries, into %LOCALAPPDATA%\\Ollama\\manual. In PowerShell run & \"$env:LOCALAPPDATA\\Ollama\\manual\\ollama.exe\" serve in a terminal. No Administrator, PATH edits or system service. If only another CPU build is available, keep native qualification pending rather than claiming emulation is native. See https://docs.ollama.com/windows."
     },
     {
       "os": "win32",
       "arch": "x64",
       "status": "pending",
-      "reason": "No native Windows x64 runner provisioned in this session."
+      "reason": "No native Windows x64 runner provisioned in this session.",
+      "manualGuidance": "Obtain a matching official standalone CLI ZIP, when available, from https://github.com/ollama/ollama/releases. Extract it completely, including libraries, into %LOCALAPPDATA%\\Ollama\\manual. In PowerShell run & \"$env:LOCALAPPDATA\\Ollama\\manual\\ollama.exe\" serve in a terminal. No Administrator, PATH edits or system service. If only another CPU build is available, keep native qualification pending rather than claiming emulation is native. See https://docs.ollama.com/windows."
     }
   ],
   "historicalFullHashFailure": {

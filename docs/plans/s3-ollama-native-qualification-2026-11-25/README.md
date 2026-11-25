@@ -25,3 +25,13 @@ The first no-rehash rerun exposed a separate timer interaction: a per-probe time
 Only Linux ARM64/glibc 2.35 is enabled. Linux x64, macOS ARM64/x64 and Windows ARM64/x64 remain pending with concrete reasons in the matrix. The macOS ARM64 UTM guest previously failed to restore with permission denied; no bypass or host mutation was attempted. Passing Linux does not qualify another architecture or operating system.
 
 The named OrbStack VM was stopped after collection. Its retained service ended at that VM boundary, which is not a daemon shutdown test or PID-based closure claim. The VM and evidence remain available. S1/S2 still own the approved change to remove embedded Node from application payloads and resolve separately downloaded runtimes.
+
+## Manual routes for pending targets
+
+These routes are guidance, not passed native qualification. Download the matching official payload from the [release assets](https://github.com/ollama/ollama/releases); if no compatible payload exists, keep the target pending. Verify the release digest before extracting. Preserve existing installations and use a new private destination.
+
+- **Linux x64:** extract the full archive with an available zstd-capable tool into a user-owned directory such as `~/.local/opt/ollama`, retaining both `bin/` and `lib/`. Run the absolute `bin/ollama` path with `serve` in a terminal. This adapts the official [manual archive route](https://docs.ollama.com/linux) to a private destination: do not run its privileged system-install commands. If extraction or baseline requirements cannot be met without elevation, leave installation unmet.
+- **macOS ARM64/x64:** place the official `Ollama.app` in `~/Applications` and run `~/Applications/Ollama.app/Contents/Resources/ollama serve`. Decline moving to system Applications or creating global CLI links. The official [custom location documentation](https://docs.ollama.com/macos) identifies this CLI path; confirm OS/CPU requirements. No quarantine bypass is proposed.
+- **Windows ARM64/x64:** where an official matching standalone CLI ZIP is available, extract the complete ZIP and its libraries into `%LOCALAPPDATA%\Ollama\manual`, then use PowerShell: `& "$env:LOCALAPPDATA\Ollama\manual\ollama.exe" serve`. This adapts the official [standalone CLI route](https://docs.ollama.com/windows) without Administrator, PATH edits or service registration. Missing native ARM64 assets are a limitation; x64 emulation is not ARM64 native evidence.
+
+Keep the serve terminal open, select the configured local endpoint, and retry inspection. Starting the service does not require downloading models. Each pending matrix entry also carries its applicable manual guidance.

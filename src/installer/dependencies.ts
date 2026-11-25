@@ -341,7 +341,14 @@ async function inspectDependencyWork(location: InstallationLocation, target: Tar
       note(`Accepting this offer installs and starts a user-session Ollama service at ${offer.endpoint}.`);
       note(`Models stay at ${offer.modelsDirectory}; logs stay at ${offer.logsDirectory}. No models are downloaded automatically.`);
       note(`Ollama support files and temporary data stay at ${(target.os === 'win32' ? win32 : posix).dirname(offer.modelsDirectory)}.`);
-    } else if (report.ollama === 'missing') note('Automatic user-level Ollama installation is not qualified for this exact target/configuration; install Ollama manually and retry.');
+    } else if (report.ollama === 'missing') {
+      note('Automatic user-level Ollama installation is not qualified for this exact target/configuration.');
+      note('Manual download: https://github.com/ollama/ollama/releases — choose an official payload for your OS and CPU; an unavailable matching payload remains unsupported.');
+      if (target.os === 'linux') note('Extract the complete Linux archive, preserving bin/ and lib/, into a new user-owned directory such as ~/.local/opt/ollama; use an available zstd-capable extractor. Run its absolute bin/ollama path with serve. Do not use sudo or the system install script.');
+      else if (target.os === 'darwin') note('Place the official Ollama.app in ~/Applications, then run ~/Applications/Ollama.app/Contents/Resources/ollama serve. Decline global CLI links or moving the app to system Applications; no elevation or quarantine bypass.');
+      else note('Extract the complete standalone CLI ZIP, including libraries, into a user-owned directory such as %LOCALAPPDATA%\\Ollama\\manual. In PowerShell run & "$env:LOCALAPPDATA\\Ollama\\manual\\ollama.exe" serve; no Administrator, PATH change or service registration.');
+      note('Keep the serve terminal open, use the configured local Ollama endpoint, then retry inspection. These manual routes are not native auto-install qualification; no models are downloaded by insrc.');
+    }
     const inspection = { report: finish(), endpoint, executable: binary.executable, policy, offer };
     return evidence ? evidence(inspection, signal) : inspection;
   };

@@ -4,6 +4,9 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { ollamaPolicies } from '../ollama-catalog.js';
 import { ollamaPolicySha256, parseOllamaPolicy } from '../ollama-policy.js';
+import { dependencyPort } from '../dependencies.js';
+import { ollamaFixture } from './_ollama-fixture.js';
+import { privateRuntimeTest } from './_private-runtime-test.js';
 
 test('enabled-target-policy-requires-matching-native-evidence-and-mandatory-linux-route', () => {
   assert.deepEqual(ollamaPolicies.map(policy => policy.target), [{ os: 'linux', arch: 'arm64', baseline: 'glibc-2.35' }]);
@@ -22,7 +25,23 @@ test('enabled-target-policy-requires-matching-native-evidence-and-mandatory-linu
     assert.ok(evidence.observed.coldFreshInspectionMs < 3000); assert.ok(evidence.observed.inspectionReadCharacters < 16 * 1024 * 1024);
     assert.equal(evidence.targets.length, 6);
     assert.deepEqual(evidence.targets.filter((target: { status: string }) => target.status === 'qualified').map((target: { os: string; arch: string }) => `${target.os}/${target.arch}`), ['linux/arm64']);
-    for (const target of evidence.targets) if (target.status !== 'qualified') { assert.equal(target.status, 'pending'); assert.ok(target.reason); }
+    for (const target of evidence.targets) if (target.status !== 'qualified') {
+      assert.equal(target.status, 'pending'); assert.ok(target.reason);
+      assert.match(target.manualGuidance, /user-owned|~\/Applications|LOCALAPPDATA/);
+      assert.ok(target.manualGuidance.includes('serve'));
+    }
     assert.throws(() => parseOllamaPolicy({ ...policy, version: '0.0.0' }), { code: 'dependency-policy-invalid' });
   }
+});
+
+privateRuntimeTest(import.meta.url, 'manual-user-level-guidance-preserves-disabled-target-status', async () => {
+  const f = await ollamaFixture();
+  try {
+    const report = await dependencyPort(f.target, f.location, { ...f.options, policies: [] }).inspect(f.location);
+    assert.equal(report.ollama, 'missing'); assert.equal(report.ollamaInstallOffer, undefined);
+    const text = report.recommendations.join('\n');
+    assert.match(text, /https:\/\/github.com\/ollama\/ollama\/releases/);
+    assert.match(text, /serve/); assert.match(text, /not native auto-install qualification/);
+    assert.match(text, process.platform === 'darwin' ? /~\/Applications/ : process.platform === 'win32' ? /LOCALAPPDATA/ : /user-owned/);
+  } finally { await f.cleanup(); }
 });

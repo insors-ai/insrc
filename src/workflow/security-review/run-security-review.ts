@@ -12,13 +12,19 @@
  * Entirely new surface -- review-round/ itself is unchanged (HLD sc3).
  */
 
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
+import { relative, resolve, sep } from 'node:path';
 
-import type { VerificationReceipt } from '../review-round/receipt-record.js';
-import type { ReconciliationResult } from '../review-round/reconciliation.js';
+import { persistVerificationReceipt, type VerificationReceipt } from '../review-round/receipt-record.js';
+import { reconcileRound, type ReconciliationResult } from '../review-round/reconciliation.js';
 import type { SecurityFinding } from '../review-round/security-finding.js';
 import type { ReviewTargets } from '../artifact-core/types.js';
+import { runReviewRound } from '../review-round/driver.js';
+import { writeCheckpoint, finalizeAndCleanup } from '../review-round/checkpoint.js';
+import { renderReviewReport } from '../review-round/review-report.js';
+import { runInStepContext, currentStepContext } from '../../shared/step-context.js';
 import { computeContentIdentity } from './content-identity.js';
+import { buildSecurityRoundHooks } from './security-round-hooks.js';
 import type { SecurityAdvisoryEvidence, SecurityAdvisoryMatch } from './collect-dependency-advisories.js';
 import type { SecurityModelSelection } from '../../config/analyze.js';
 
@@ -146,4 +152,111 @@ export function assembleSecurityReport(
 		baseReportMarkdown: baseReport.markdown,
 		supplementalMarkdown: renderSupplementalMarkdown(advisoryEvidence),
 	};
+}
+
+/** Synchronous containment check only (the lexical `resolve`/`relative` test
+ *  computeContentIdentity itself also runs) -- must throw before ANY I/O,
+ *  including the async realpath-based symlink check computeContentIdentity
+ *  performs later; that one still runs (inside verifyContentIdentityMatch)
+ *  and catches a symlink escape this check cannot see. */
+function assertTargetsContained(repoPath: string, targets: ReviewTargets): void {
+	for (const entry of targets.entries) {
+		const resolved = resolve(repoPath, entry.path);
+		const rel = relative(repoPath, resolved);
+		if (rel === '..' || rel.startsWith(`..${sep}`)) {
+			throw new Error(`runSecurityReview: targets.entries path '${entry.path}' resolves outside repoPath`);
+		}
+	}
+}
+
+/** Stamps `receiptId` onto a round's own findings -- the ONLY place a code
+ *  finding's receiptId is ever set (runSecurityCodePass's own findings carry
+ *  none). Dependency-advisory findings never pass through here. */
+function withReceiptId(findings: readonly SecurityFinding[], receiptId: string): readonly SecurityFinding[] {
+	return findings.map(f => ({ ...f, receiptId }));
+}
+
+/**
+ * The Story's own orchestrator (sc3's internal implementation, not the entry
+ * point itself -- that is t5/t6). Runs entirely inside a step context bound
+ * to {cwd:repoPath, envRepo:repoPath}, spread over any already-bound outer
+ * context so an attached caller's own connectionExecution/client survive
+ * (src/shared/step-context.ts's runInStepContext rejects a mismatched one).
+ * Refuses before any round dispatches on an out-of-scope target, an
+ * unavailable modelSelection, or a pre-flight contentIdentity mismatch --
+ * none of those ever persists a receipt or writes a checkpoint. Reverifies
+ * contentIdentity again immediately before round 2 and immediately before
+ * final persistence; a divergence at either point aborts with
+ * ContentIdentityMismatchError, leaving whichever round receipts already
+ * persisted untouched.
+ */
+export async function runSecurityReview(
+	repoPath: string,
+	targets: ReviewTargets,
+	opts: {
+		readonly reviewId: string;
+		readonly modelSelection: SecurityModelSelection;
+		readonly advisoryEvidence: SecurityAdvisoryEvidence;
+		readonly now: string;
+		readonly epicHash?: string;
+		readonly storyId?: string;
+	},
+): Promise<SecurityReviewReport> {
+	assertTargetsContained(repoPath, targets);
+	if (opts.modelSelection.status === 'unavailable') {
+		throw new SecurityModelUnavailableError(opts.modelSelection.blockerReason);
+	}
+	const modelSelection = opts.modelSelection;
+
+	const outerCtx = currentStepContext();
+	return runInStepContext({ ...outerCtx, cwd: repoPath, envRepo: repoPath }, async () => {
+		await verifyContentIdentityMatch(repoPath, targets, opts.advisoryEvidence);
+
+		const attemptId = randomBytes(8).toString('hex');
+		const explicitIdent = opts.epicHash !== undefined && opts.storyId !== undefined;
+		const ident = explicitIdent
+			? { epicHash: opts.epicHash as string, storyId: opts.storyId as string }
+			: deriveReceiptIdentity(opts.advisoryEvidence.contentIdentity);
+
+		const hooks = buildSecurityRoundHooks(repoPath, targets, modelSelection, opts.reviewId);
+
+		async function runRoundWithReceipt(round: number): Promise<{ findings: readonly SecurityFinding[]; receipt: VerificationReceipt }> {
+			const receiptId = `${opts.reviewId}-${attemptId}-round-${round}`;
+			try {
+				const result = await runReviewRound<SecurityFinding>(opts.reviewId, hooks, round, targets);
+				const receipt: VerificationReceipt = { id: receiptId, result: 'pass', ranAt: opts.now };
+				await persistVerificationReceipt(repoPath, { ...ident, now: opts.now, ...(explicitIdent ? {} : { standalone: true }) }, receipt);
+				await writeCheckpoint(opts.reviewId, { kind: 'round', ref: round });
+				return { findings: withReceiptId(result.findings, receiptId), receipt };
+			} catch (err) {
+				const receipt: VerificationReceipt = { id: receiptId, result: 'fail', ranAt: opts.now };
+				await persistVerificationReceipt(repoPath, { ...ident, now: opts.now, ...(explicitIdent ? {} : { standalone: true }) }, receipt);
+				throw err;
+			}
+		}
+
+		const round1 = await runRoundWithReceipt(1);
+
+		await verifyContentIdentityMatch(repoPath, targets, opts.advisoryEvidence);
+
+		const round2 = await runRoundWithReceipt(2);
+
+		const reconciliation = await reconcileRound(opts.reviewId, round1.findings, round2.findings);
+
+		await verifyContentIdentityMatch(repoPath, targets, opts.advisoryEvidence);
+
+		const baseReport = await renderReviewReport({ reviewId: opts.reviewId, round: 2 }, round2.findings, reconciliation, round1.findings);
+
+		const report = assembleSecurityReport(
+			opts.advisoryEvidence,
+			[...round1.findings, ...round2.findings],
+			reconciliation,
+			{ round1: round1.receipt, round2: round2.receipt },
+			modelSelection,
+			baseReport,
+		);
+
+		await finalizeAndCleanup(opts.reviewId, report);
+		return report;
+	});
 }

@@ -28,6 +28,7 @@
 import { registerRunner } from '../../executor.js';
 import type { StepRunner, WorkflowName } from '../../types.js';
 import { definitionHeadJsonPath, readDefinitionHead } from '../../gates.js';
+import { approvalStateOf } from '../../artifact-core/approval-view.js';
 import { readTrackerMeta } from '../../tracker/refs.js';
 import { unitIssueOf } from '../../tracker/unit-head.js';
 import type { IssueArtifact } from '../../artifacts/issue.js';
@@ -41,7 +42,7 @@ import {
 	lookupIssueCandidates,
 } from './context.js';
 import type { PushContext } from './schemas.js';
-import { epicMembershipLabel } from '../../tracker/conventions.js';
+import { epicMembershipLabel, renderIssueEpicBody } from '../../tracker/conventions.js';
 import {
 	trackerChecklistSchema,
 	trackerPostExecuteSchema,
@@ -76,16 +77,39 @@ export const pushExecuteRunner: StepRunner = {
 		// any adoption — 0 duplicate creates.
 		if (c.headKind === 'issue') {
 			const head = readDefinitionHead(ctx.intent.repoPath, c.epicHash);
-			const issue = head?.kind === 'issue' ? (head.artifact as IssueArtifact) : undefined;
 			// REVIEW round-14 HIGH: the push context was assembled for an ISSUE
 			// head; if the durable head is now missing or changed, the context is
 			// stale — refuse instead of falling through to a generic create/adopt
 			// prompt with no claim and no live lookup.
-			if (issue === undefined) {
+			if (head === undefined || head.kind !== 'issue') {
 				return {
 					type: 'error' as const,
 					code: 'issue-head-missing',
 					message: `tracker.push: ISSUE head ${issueArtifactId(c.epicHash)} is missing or changed since the push context was assembled (readDefinitionHead returned ${head === undefined ? 'no head' : `kind '${head.kind}'`}) — re-run tracker.push so the context and head agree`,
+					retryable: false,
+				};
+			}
+			const issue = head.artifact as IssueArtifact;
+			// REVIEW round-15 HIGH: context assembly gated on
+			// requireApprovedDefinition, but this reread only checked the kind.
+			// Revalidate the LIVE head's approval AND content before acquiring a
+			// claim or preparing any mutation prompt: an unapproved replacement
+			// under the same ISSUE id, or approved content that changed since the
+			// context was assembled, makes the assembled context stale — refuse.
+			const liveApproval = approvalStateOf(head.artifact.meta);
+			if (liveApproval !== 'approved') {
+				return {
+					type: 'error' as const,
+					code: 'issue-head-not-approved',
+					message: `tracker.push: ISSUE head ${issueArtifactId(c.epicHash)} is ${liveApproval} (it was approved when the push context was assembled) — re-approve it or re-run tracker.push so the context and head agree`,
+					retryable: false,
+				};
+			}
+			if (renderIssueEpicBody(issue, c.epicSlug, undefined, issueArtifactId(c.epicHash)) !== c.epicBodyMd) {
+				return {
+					type: 'error' as const,
+					code: 'issue-head-changed',
+					message: `tracker.push: the approved ISSUE head ${issueArtifactId(c.epicHash)} changed since the push context was assembled — re-run tracker.push to rebuild the context`,
 					retryable: false,
 				};
 			}

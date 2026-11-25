@@ -18,6 +18,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { pushPrompt, pushVerifyPrompt } from '../index.js';
+import { renderIssueEpicBody } from '../../../tracker/conventions.js';
+import { issueArtifactId } from '../../../storage.js';
 import type { PushContext } from '../schemas.js';
 import { deriveSlug } from '../../../slug.js';
 import { epicMembershipLabel } from '../../../tracker/conventions.js';
@@ -27,6 +29,12 @@ import { setIssueCandidateLookupForTests } from '../context.js';
 afterEach(() => { setIssueCandidateLookupForTests(undefined); });
 
 const GH = { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' };
+
+// REVIEW round-15: the runner revalidates the live ISSUE head against the
+// assembled context's epicBodyMd, so runner fixtures must carry the REAL
+// rendered body for the fixture issue (title 'T', repro 'r', cause 'c',
+// intent 'f', slug 's', hash 5f9d4ab4c90c0b4c) — not a placeholder.
+const RENDERED_ISSUE_BODY = renderIssueEpicBody({ body: { title: 'T', reproduction: 'r', rootCause: 'c', fixIntent: 'f' } } as never, 's', undefined, issueArtifactId('5f9d4ab4c90c0b4c'));
 
 function defContext(): PushContext {
 	return {
@@ -245,7 +253,7 @@ test('REVIEW round-6 HIGH-1 — a fresh competing owner (live claim) cannot adva
 		markApprovedSync(issue);
 		// run-A holds a LIVE claim (fresh heartbeat) and the remote issue exists
 		claimCreateIntent(repo, H, 'run-A', { title: 'T', marker: MARKER, ghOwner: 'acme', ghRepo: 'demo' });
-		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#42' }] };
+		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: RENDERED_ISSUE_BODY, stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#42' }] };
 		const ctx = { intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } }, runId: 'run-B', stepOutputs: { s1 } } as never;
 		const out = await pushExecuteRunner.run(ctx) as { type: string; prompt?: string; userTurn?: string };
 		assert.equal(out.type, 'llm-pause', 'live foreign claim -> read-only adoption prompt, not a refusal and not a create');
@@ -283,7 +291,7 @@ test('REVIEW round-6 HIGH-2 — confirmed pre-dispatch failure recovers: stale n
 		markApprovedSync(issue);
 		// run-A claimed long ago and died BEFORE dispatching the create (stale heartbeat, no dispatchedAt)
 		claimCreateIntent(repo, H, 'run-A', { title: 'T', marker: MARKER, ghOwner: 'acme', ghRepo: 'demo', now: () => '2020-01-01T00:00:00.000Z' });
-		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] };
+		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: RENDERED_ISSUE_BODY, stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] };
 		const ctx = { intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } }, runId: 'run-B', stepOutputs: { s1 } } as never;
 		const out = await pushExecuteRunner.run(ctx) as { type: string; prompt?: string };
 		assert.equal(out.type, 'llm-pause');
@@ -329,7 +337,7 @@ test('REVIEW round-6 HIGH-2 — ambiguous outcome (dispatched but response lost,
 		// run-A claimed, DISPATCHED the create, then died with the response lost (stale heartbeat)
 		const a = claimCreateIntent(repo, H, 'run-A', { title: 'T', marker: MARKER, ghOwner: 'acme', ghRepo: 'demo', now: () => '2020-01-01T00:00:00.000Z' });
 		await markClaimDispatched(repo, H, a.claim.fence, 'run-A', () => '2020-01-01T00:01:00.000Z');
-		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] };
+		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: RENDERED_ISSUE_BODY, stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] };
 		const ctx = { intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } }, runId: 'run-B', stepOutputs: { s1 } } as never;
 		const out = await pushExecuteRunner.run(ctx) as { type: string; code?: string; message?: string; prompt?: string };
 		assert.equal(out.type, 'error', 'ambiguous outcome is a TERMINAL error (round-8 MED: never a step output that flows into verify)');
@@ -371,7 +379,7 @@ test('REVIEW round-7 HIGH-1/HIGH-2 — a LEGACY claim (no version, unknown dispa
 			title: 'T', marker: MARKER, state: 'pending', fence: 1,
 			createdAt: '2020-01-01T00:00:00.000Z', heartbeatAt: '2020-01-01T00:00:00.000Z',
 		}));
-		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] };
+		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: RENDERED_ISSUE_BODY, stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] };
 		const ctx = { intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } }, runId: 'run-B', stepOutputs: { s1 } } as never;
 		const out = await pushExecuteRunner.run(ctx) as { type: string; code?: string; message?: string; prompt?: string };
 		assert.equal(out.type, 'error', 'legacy claim with unknown dispatch history is a terminal error — no create');
@@ -414,7 +422,7 @@ test('REVIEW round-8 HIGH-1 — a FRESH winner with an existing marker-verified 
 		markApprovedSync(issue);
 		// no claim, no local binding — but the remote issue ALREADY exists (e.g.
 		// after claim removal / loss of local tracker state), surfaced in context
-		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#42' }] };
+		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: RENDERED_ISSUE_BODY, stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#42' }] };
 		const ctx = { intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } }, runId: 'run-W', stepOutputs: { s1 } } as never;
 		const out = await pushExecuteRunner.run(ctx) as { type: string; prompt?: string; userTurn?: string; code?: string };
 		assert.equal(out.type, 'llm-pause', 'fresh winner adopts — no create dispatched');
@@ -455,7 +463,7 @@ test('REVIEW round-9 HIGH-1 — a FAILED discovery never authorizes a create: no
 	const ctxOf = (repo: string, s1extra: Record<string, unknown>) => ({
 		intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } },
 		runId: 'run-W',
-		stepOutputs: { s1: { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, ...s1extra } },
+		stepOutputs: { s1: { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: RENDERED_ISSUE_BODY, stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, ...s1extra } },
 	}) as never;
 
 	// (a) discovery failed in context AND the live recheck fails -> terminal error, NO create
@@ -529,7 +537,7 @@ test('REVIEW round-9 HIGH-2 — gh config changed after an undispatched v2 claim
 			createdAt: '2020-01-01T00:00:00.000Z', heartbeatAt: '2020-01-01T00:00:00.000Z',
 		}));
 		// the marker-verified issue already exists in the NEW configured repo
-		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#42' }] };
+		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: RENDERED_ISSUE_BODY, stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#42' }] };
 		const ctx = { intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } }, runId: 'run-B', stepOutputs: { s1 } } as never;
 		const out = await pushExecuteRunner.run(ctx) as { type: string; prompt?: string; userTurn?: string };
 		assert.equal(out.type, 'llm-pause', 'adopts in the new repo — no create');
@@ -566,7 +574,7 @@ test('REVIEW round-10 HIGH-1 — an earlier EMPTY snapshot never authorizes a cr
 		// the context snapshot is EMPTY (stale assembly) — but the fresh live
 		// lookup at the create decision finds the existing marker-verified issue
 		setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#42' }] }));
-		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] };
+		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: RENDERED_ISSUE_BODY, stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] };
 		const ctx = { intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } }, runId: 'run-W', stepOutputs: { s1 } } as never;
 		const out = await pushExecuteRunner.run(ctx) as { type: string; prompt?: string; userTurn?: string };
 		assert.equal(out.type, 'llm-pause');
@@ -604,7 +612,7 @@ test('REVIEW round-10 HIGH-2 — retargeting is restricted to confirmed pre-disp
 			createdAt: '2020-01-01T00:00:00.000Z', heartbeatAt: '2020-01-01T00:01:00.000Z',
 		}));
 		setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#42' }] }));
-		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#42' }] };
+		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: RENDERED_ISSUE_BODY, stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#42' }] };
 		const ctx = { intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } }, runId: 'run-B', stepOutputs: { s1 } } as never;
 		const out = await pushExecuteRunner.run(ctx) as { type: string; code?: string; prompt?: string };
 		assert.equal(out.type, 'error', 'dispatched claim in old repo + new config -> refuse, no create, no retarget');
@@ -648,7 +656,7 @@ test('REVIEW round-11 HIGH — a created claim\'s saved issueRef is the recovery
 	const ctxOf = (repo: string, candidates: unknown[]) => ({
 		intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } },
 		runId: 'run-B',
-		stepOutputs: { s1: { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: candidates } },
+		stepOutputs: { s1: { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: RENDERED_ISSUE_BODY, stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: candidates } },
 	}) as never;
 
 	// (a) discovery returns a CONFLICTING ref #42 -> refuse, claim keeps #41
@@ -719,7 +727,7 @@ test('REVIEW round-12 — saved-ref adoption validates the target repo before an
 	const ctxOf = (repo: string) => ({
 		intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } },
 		runId: 'run-B',
-		stepOutputs: { s1: { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] } },
+		stepOutputs: { s1: { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: RENDERED_ISSUE_BODY, stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] } },
 	}) as never;
 
 	// HIGH: created claim recorded old/repo#41, config is acme/demo -> refuse BEFORE any prompt
@@ -791,7 +799,7 @@ test('REVIEW round-4 — HIGH-1: durable-ref recheck + claim create are one mute
 	const ctxOf = (repo: string) => ({
 		intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } },
 		runId: 'run-T',
-		stepOutputs: { s1: { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: true, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] } },
+		stepOutputs: { s1: { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: true, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: RENDERED_ISSUE_BODY, stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] } },
 	}) as never;
 
 	{
@@ -843,7 +851,7 @@ test('REVIEW round-13 HIGH — canonical ref parsing + configured-repo validatio
 	const ctxOf = (repo: string) => ({
 		intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } },
 		runId: 'run-B',
-		stepOutputs: { s1: { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] } },
+		stepOutputs: { s1: { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: RENDERED_ISSUE_BODY, stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] } },
 	}) as never;
 
 	// (a) durable meta.tracker.issueRef 'old/repo#41' with config acme/demo, no claim -> terminal error, NO prompt
@@ -915,7 +923,7 @@ test('REVIEW round-14 HIGH — the ISSUE execute branch is exhaustive: a missing
 	const ctxOf = (repo: string, existingRefs?: unknown) => ({
 		intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } },
 		runId: 'run-B',
-		stepOutputs: { s1: { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[], ...(existingRefs !== undefined ? { existingRefs } : {}) } },
+		stepOutputs: { s1: { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: RENDERED_ISSUE_BODY, stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[], ...(existingRefs !== undefined ? { existingRefs } : {}) } },
 	}) as never;
 
 	// (a) stale context ref old/repo#41, NO durable ref, empty live discovery -> claim IS acquired (durable reread decides), dispatch recorded, create prompt WITHOUT the stale ref
@@ -961,6 +969,78 @@ test('REVIEW round-14 HIGH — the ISSUE execute branch is exhaustive: a missing
 			assert.ok(!out.prompt, 'no mutation prompt without a head');
 			assert.equal(readClaim(fx.repo, H), undefined, 'no claim written');
 			assert.ok(!existsSync(join(fx.repo, '.insrc', 'artifacts', `PENDING-CREATE-${H}.json`)));
+		} finally { fx.cleanup(); }
+	}
+});
+
+test('REVIEW round-15 HIGH — execute revalidates the LIVE head approval + content before any claim or prompt: an unapproved replacement under the same ISSUE id refuses; changed approved content refuses; the unchanged approved head proceeds', async () => {
+	const { pushExecuteRunner } = await import('../index.js');
+	const { readClaim } = await import('../../../tracker/pending-create-claim.js');
+	const { artifactJsonPath, issueArtifactId } = await import('../../../storage.js');
+	const { markApprovedSync } = await import('../../../__tests__/lifecycle-fixtures.js');
+	const { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } = await import('node:fs');
+	const { tmpdir } = await import('node:os');
+	const { join } = await import('node:path');
+
+	const H = '5f9d4ab4c90c0b4c';
+	const mk = () => {
+		const repo = mkdtempSync(join(tmpdir(), 'insrc-r15-'));
+		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		writeFileSync(join(repo, 'repo-config.json'), JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
+		process.env['INSRC_REPO_CONFIG'] = join(repo, 'repo-config.json');
+		const issue = artifactJsonPath(repo, issueArtifactId(H));
+		writeFileSync(issue, JSON.stringify({ meta: { workflow: 'issue', runId: 'i', schemaVersion: 1, issueHash: H, epicHash: H, epicSlug: 's', createdAt: '2026-11-16T07:14:04.399Z', epicCreatedAt: '2026-11-16T07:14:04.399Z', standalone: true }, body: { title: 'T', reproduction: 'r', rootCause: 'c', fixIntent: 'f' }, citations: [] }));
+		markApprovedSync(issue);
+		return { repo, issue, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+	};
+	const ctxOf = (repo: string) => ({
+		intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } },
+		runId: 'run-B',
+		stepOutputs: { s1: { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: RENDERED_ISSUE_BODY, stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] } },
+	}) as never;
+
+	// (a) approved head replaced by a readable UNAPPROVED revision (same ISSUE id, changed body) -> terminal error, no claim, no prompt
+	{
+		const fx = mk();
+		try {
+			setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [] }));
+			const j = JSON.parse(readFileSync(fx.issue!, 'utf8')) as { meta: Record<string, unknown>; body: unknown };
+			delete j.meta['lifecycle'];
+			j.body = { title: 'T2', reproduction: 'r2', rootCause: 'c2', fixIntent: 'f2' };
+			writeFileSync(fx.issue!, JSON.stringify(j));
+			const out = await pushExecuteRunner.run(ctxOf(fx.repo)) as { type: string; code?: string; message?: string; prompt?: string };
+			assert.equal(out.type, 'error');
+			assert.equal(out.code, 'issue-head-not-approved', out.message);
+			assert.match(out.message ?? '', /is pending .*was approved when the push context was assembled/);
+			assert.ok(!out.prompt, 'no mutation prompt after the head lost approval');
+			assert.equal(readClaim(fx.repo, H), undefined, 'no claim written');
+		} finally { fx.cleanup(); }
+	}
+	// (b) head still approved but content CHANGED since context assembly -> terminal error, no claim, no prompt
+	{
+		const fx = mk();
+		try {
+			setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [] }));
+			const j = JSON.parse(readFileSync(fx.issue!, 'utf8')) as { body: unknown };
+			j.body = { title: 'T2', reproduction: 'r2', rootCause: 'c2', fixIntent: 'f2' };
+			writeFileSync(fx.issue!, JSON.stringify(j));
+			const out = await pushExecuteRunner.run(ctxOf(fx.repo)) as { type: string; code?: string; message?: string; prompt?: string };
+			assert.equal(out.type, 'error');
+			assert.equal(out.code, 'issue-head-changed', out.message);
+			assert.match(out.message ?? '', /changed since the push context was assembled/);
+			assert.ok(!out.prompt, 'no prompt against stale context content');
+			assert.equal(readClaim(fx.repo, H), undefined, 'no claim written');
+		} finally { fx.cleanup(); }
+	}
+	// (c) positive: unchanged approved head proceeds to the claim decision (covered in depth by round-4/13/14 blocks; here assert the guard passes and a create prompt is reached)
+	{
+		const fx = mk();
+		try {
+			setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [] }));
+			const out = await pushExecuteRunner.run(ctxOf(fx.repo)) as { type: string; prompt?: string };
+			assert.equal(out.type, 'llm-pause');
+			assert.ok(out.prompt!.includes('Create exactly ONE issue'), out.prompt!.slice(0, 200));
+			assert.ok(readClaim(fx.repo, H) !== undefined, 'claim acquired for the unchanged approved head');
 		} finally { fx.cleanup(); }
 	}
 });

@@ -19,7 +19,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import {
-	acquireClaimMutex, claimCreateIntent, claimMutexKey, pendingCreatePath, readClaim, withClaim, heartbeatClaim,
+	acquireClaimMutex, CLAIM_VERSION, claimCreateIntent, claimMutexKey, pendingCreatePath, readClaim, withClaim, withOwnedFence, heartbeatClaim,
 	markClaimCreated, markClaimDispatched, releaseClaim, takeoverAbandonedClaim, quarantineDeadClaim, reconcileClaim,
 	verifyRecoveryCandidate, isClaimAbandoned, ClaimOwnershipError, DEFAULT_CLAIM_STALE_AFTER_MS, listPendingCreateFiles,
 } from '../pending-create-claim.js';
@@ -347,6 +347,36 @@ test('REVIEW round-6 MED — recovery target check compares the candidate\'s act
 		// legacy claim without gh fields falls back to the repo-path comparison
 		const legacy = claimCreateIntent(fx.repo, 'legacyhash0000000000000000aa', 'run-L', input).claim;
 		assert.equal(verifyRecoveryCandidate(legacy, { title: 't', body: MARKER, target: fx.repo }), true, 'legacy claim keeps the repo-path compare');
+	} finally { fx.cleanup(); }
+});
+
+test('REVIEW round-7 HIGH-1/HIGH-3 — new claims carry version 2 (legacy = no version, dispatch history unknown); withOwnedFence checks run id AND fence together under the mutex', async () => {
+	const fx = repo();
+	try {
+		// new claims are v2 — the only shape allowed to prove pre-dispatch
+		const a = claimCreateIntent(fx.repo, HASH, 'run-A', input);
+		assert.equal(a.claim.version, CLAIM_VERSION, 'claimCreateIntent stamps the format version');
+		assert.equal(CLAIM_VERSION, 2);
+
+		// fence matches but a DIFFERENT run owns the claim (delete-and-retry
+		// replacement claim reaches the same fence number) -> refused
+		const mutex = await acquireClaimMutex(fx.repo, HASH);
+		try {
+			await assert.rejects(
+				withOwnedFence(fx.repo, HASH, 1, () => 'should-not-run', 'run-OLD'),
+				(e: unknown) => e instanceof ClaimOwnershipError && /not the claim owner/.test((e as Error).message),
+				'same fence + different runId is refused',
+			);
+			// the owner's runId passes and the work runs
+			const out = await withOwnedFence(fx.repo, HASH, 1, (claim) => `owned-by-${claim.runId}`, 'run-A');
+			assert.equal(out, 'owned-by-run-A');
+			// fence mismatch still refused regardless of runId
+			await assert.rejects(
+				withOwnedFence(fx.repo, HASH, 99, () => 'x', 'run-A'),
+				(e: unknown) => e instanceof ClaimOwnershipError && /stale fence/.test((e as Error).message),
+			);
+		} finally { mutex.release(); }
+		assert.equal(readClaim(fx.repo, HASH)?.runId, 'run-A', 'refused ops wrote nothing');
 	} finally { fx.cleanup(); }
 });
 

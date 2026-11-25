@@ -288,6 +288,7 @@ test('REVIEW round-6 HIGH-2 — confirmed pre-dispatch failure recovers: stale n
 		assert.ok(claim?.dispatchedAt !== undefined, 'dispatch recorded on the claim');
 		const carried = (ctx.stepOutputs as { s1: Record<string, unknown> }).s1['claimFence'];
 		assert.equal(carried, claim?.fence, 'the carried fence is this run\'s own committed fence');
+		assert.equal((ctx.stepOutputs as { s1: Record<string, unknown> }).s1['claimRunId'], 'run-B', 'round-7 HIGH-3: the fence travels together with the carrying run id');
 		// runner -> finalizer: the create returns refs; finalize persists issueRef + bindings and releases the claim
 		const intent = { workflow: 'tracker.push', focus: 'push', repoPath: repo, repoIndexedAt: null, params: { epicHash: H } } as never;
 		const res = await _finalizeTracker(intent, { s1: (ctx.stepOutputs as { s1: unknown }).s1 } as never, 'run-B', 5, {
@@ -333,6 +334,54 @@ test('REVIEW round-6 HIGH-2 — ambiguous outcome (dispatched but response lost,
 		assert.ok(claim !== undefined, 'claim retained as recovery evidence');
 		assert.equal(claim?.runId, 'run-B', 'takeover ownership recorded for the reconciler');
 		assert.equal((ctx.stepOutputs as { s1: Record<string, unknown> }).s1['claimFence'], undefined, 'no fence carried into a refused run');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('REVIEW round-7 HIGH-1/HIGH-2 — a LEGACY claim (no version, unknown dispatch history) with 0 candidates is NEVER treated as pre-dispatch: refused with an adoption-first resolution path, no create dispatched', async () => {
+	const { pushExecuteRunner } = await import('../index.js');
+	const { readClaim } = await import('../../../tracker/pending-create-claim.js');
+	const { artifactJsonPath, issueArtifactId } = await import('../../../storage.js');
+	const { markApprovedSync } = await import('../../../__tests__/lifecycle-fixtures.js');
+	const { mkdirSync, mkdtempSync, rmSync, writeFileSync } = await import('node:fs');
+	const { tmpdir } = await import('node:os');
+	const { join } = await import('node:path');
+
+	const H = '5f9d4ab4c90c0b4c';
+	const MARKER = `<!-- insrc:artifact ISSUE-${H} -->`;
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-r7-'));
+	try {
+		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		writeFileSync(join(repo, 'repo-config.json'), JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
+		process.env['INSRC_REPO_CONFIG'] = join(repo, 'repo-config.json');
+		const issue = artifactJsonPath(repo, issueArtifactId(H));
+		writeFileSync(issue, JSON.stringify({ meta: { workflow: 'issue', runId: 'i', schemaVersion: 1, issueHash: H, epicHash: H, epicSlug: 's', createdAt: '2026-11-16T07:14:04.399Z', epicCreatedAt: '2026-11-16T07:14:04.399Z', standalone: true }, body: { title: 'T', reproduction: 'r', rootCause: 'c', fixIntent: 'f' }, citations: [] }));
+		markApprovedSync(issue);
+		// LEGACY claim: written by an older runner — no version, no dispatchedAt,
+		// stale heartbeat. Its dispatch history is UNKNOWN (the old runner may
+		// have created the remote issue without recording it).
+		writeFileSync(join(repo, '.insrc', 'artifacts', `PENDING-CREATE-${H}.json`), JSON.stringify({
+			epicHash: H, runId: 'run-OLD', owner: 'run:run-OLD', repo, ghOwner: 'acme', ghRepo: 'demo',
+			title: 'T', marker: MARKER, state: 'pending', fence: 1,
+			createdAt: '2020-01-01T00:00:00.000Z', heartbeatAt: '2020-01-01T00:00:00.000Z',
+		}));
+		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] };
+		const ctx = { intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } }, runId: 'run-B', stepOutputs: { s1 } } as never;
+		const out = await pushExecuteRunner.run(ctx) as { type: string; output?: { refused: boolean; reason: string }; prompt?: string };
+		assert.equal(out.type, 'output', 'legacy claim with unknown dispatch history refuses — no create');
+		assert.equal(out.output?.refused, true);
+		assert.match(out.output?.reason ?? '', /version legacy/, 'the refusal names the legacy claim shape');
+		// HIGH-2: the resolution path leads with ADOPTION of a confirmed ref and
+		// reserves claim deletion for confirmed absence — it must not instruct
+		// delete-and-retry as a way to force a create
+		assert.match(out.output?.reason ?? '', /record its ref on the work item.*retry — the next run adopts it with 0 creates/s);
+		assert.match(out.output?.reason ?? '', /delete the claim file ONLY after confirming NO remote issue exists/);
+		assert.ok(!out.prompt, 'no create prompt dispatched');
+		const claim = readClaim(repo, H);
+		assert.ok(claim !== undefined, 'claim retained');
+		assert.equal(claim?.runId, 'run-B', 'takeover recorded for the reconciler, but no create');
+		const s1o = (ctx.stepOutputs as { s1: Record<string, unknown> }).s1;
+		assert.equal(s1o['claimFence'], undefined, 'no fence carried into a refused run');
+		assert.equal(s1o['claimRunId'], undefined);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 

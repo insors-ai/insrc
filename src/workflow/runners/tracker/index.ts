@@ -32,7 +32,7 @@ import { readTrackerMeta } from '../../tracker/refs.js';
 import { unitIssueOf } from '../../tracker/unit-head.js';
 import type { IssueArtifact } from '../../artifacts/issue.js';
 import { IMPLIED_ISSUE_STORY_ID, issueArtifactId } from '../../storage.js';
-import { acquireClaimMutex, claimCreateIntent, markClaimCreatedFence, markClaimDispatched, pendingCreatePath, quarantineDeadClaim, readClaim, reconcileClaim, takeoverAbandonedClaim } from '../../tracker/pending-create-claim.js';
+import { acquireClaimMutex, CLAIM_VERSION, claimCreateIntent, markClaimCreatedFence, markClaimDispatched, pendingCreatePath, quarantineDeadClaim, readClaim, reconcileClaim, takeoverAbandonedClaim } from '../../tracker/pending-create-claim.js';
 
 import {
 	assemblePostContext,
@@ -103,8 +103,15 @@ export const pushExecuteRunner: StepRunner = {
 			// REVIEW round-6 HIGH-1: a fence is carried ONLY when this run actually
 			// acquired claim ownership (a successful takeover writes OUR runId).
 			// A live foreign claim's fence is never carried or advanced.
+			// REVIEW round-7 HIGH-3: the fence and the carrying run id travel
+			// TOGETHER — finalization checks both under the mutex, so a replacement
+			// claim that reaches the same fence number cannot be persisted into.
 			const setFence = (fence: number | undefined): void => {
-				if (fence !== undefined) (ctx.stepOutputs['s1'] as Record<string, unknown>)['claimFence'] = fence;
+				if (fence !== undefined) {
+					const s1o = ctx.stepOutputs['s1'] as Record<string, unknown>;
+					s1o['claimFence'] = fence;
+					s1o['claimRunId'] = ctx.runId;
+				}
 			};
 			const adoptionPause = (ref: string, how: string) => ({
 				type: 'llm-pause' as const,
@@ -153,7 +160,7 @@ export const pushExecuteRunner: StepRunner = {
 					// we own the taken-over claim
 					const reconciled = reconcileClaim(took, c.remoteCandidates ?? []);
 					if (!reconciled.ok) {
-						// REVIEW round-6 HIGH-2: a 'pending' claim that was NEVER
+						// REVIEW round-6 HIGH-2: a 'pending' v2 claim that was NEVER
 						// dispatched (no dispatchedAt) with ZERO marker-verified remote
 						// candidates is a CONFIRMED pre-dispatch failure — the session
 						// stopped before `gh issue create`. This run owns the claim, so
@@ -161,15 +168,24 @@ export const pushExecuteRunner: StepRunner = {
 						// holds: nothing was dispatched and no verified remote issue
 						// exists). Fall through to the normal create dispatch below with
 						// our own committed fence.
-						if (reconciled.verifiedCount === 0 && took.state === 'pending' && took.dispatchedAt === undefined) {
+						// REVIEW round-7 HIGH-1: only a v2 claim (CLAIM_VERSION) proves
+						// pre-dispatch — a LEGACY claim (no version field) has UNKNOWN
+						// dispatch history (an older runner may have created the remote
+						// issue without recording dispatchedAt), so it must take the
+						// refusal path, never the create path.
+						if (reconciled.verifiedCount === 0 && took.state === 'pending' && took.dispatchedAt === undefined && took.version === CLAIM_VERSION) {
 							const committedFence = await markClaimDispatched(ctx.intent.repoPath, c.epicHash, took.fence, ctx.runId);
 							setFence(committedFence);
 						} else {
 							// ambiguous remote outcome (create dispatched but the response
-							// was lost, or >1 verified candidates): explicit resolution
-							// path — refuse, retain the claim, name it for the human.
-							// Duplicate protection is preserved: no create either way.
-							return refused(`${reconciled.reason} — claim ${pendingCreatePath(ctx.intent.repoPath, c.epicHash)} retained (state ${took.state}, dispatched ${took.dispatchedAt !== undefined}); verify the remote issue on GitHub, then delete the claim file to retry`);
+							// was lost, legacy claim with unknown dispatch history, or >1
+							// verified candidates): explicit resolution path — refuse,
+							// retain the claim, and never instruct claim deletion as a way
+							// to force a create (REVIEW round-7 HIGH-2: deletion is for
+							// CONFIRMED absence only; a confirmed remote ref is adopted by
+							// recording it on the work item, and the next run's durable-ref
+							// branch adopts with 0 creates). Duplicate protection preserved.
+							return refused(`${reconciled.reason} — claim ${pendingCreatePath(ctx.intent.repoPath, c.epicHash)} retained (state ${took.state}, dispatched ${took.dispatchedAt !== undefined}, version ${took.version ?? 'legacy'}). Resolution: if the remote issue is CONFIRMED on GitHub, record its ref on the work item (ISSUE meta.tracker.issueRef / head binding) and retry — the next run adopts it with 0 creates; delete the claim file ONLY after confirming NO remote issue exists (confirmed absence)`);
 						}
 					} else {
 						// reconciled to exactly one marker+target-verified candidate:

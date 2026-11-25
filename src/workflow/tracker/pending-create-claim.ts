@@ -50,11 +50,19 @@ export class ClaimOwnershipError extends Error {
 	constructor(message: string) { super(message); this.name = 'ClaimOwnershipError'; }
 }
 
+/** Claim format version. v2 claims carry an explicit `dispatchedAt` marker
+ *  (absent = provably never dispatched). Claims written by older runners have
+ *  NO version field — their dispatch history is UNKNOWN, so they must never
+ *  be treated as confirmed pre-dispatch failures (REVIEW round-7 HIGH-1). */
+export const CLAIM_VERSION = 2;
+
 export interface PendingCreateClaim {
 	readonly epicHash: string;
 	readonly runId: string;
 	readonly owner: string;
 	readonly repo: string;
+	/** Claim format version; absent on legacy (pre-v2) claims. */
+	readonly version?: number | undefined;
 	/** GitHub owner/repo the claim was created for — the recovery target check
 	 *  compares the CANDIDATE's actual ref target against these, never against
 	 *  the local checkout path (REVIEW round-6 MED). Absent on legacy claims,
@@ -152,6 +160,7 @@ export function claimCreateIntent(
 		runId,
 		owner: `run:${runId}`,
 		repo: repoPath,
+		version: CLAIM_VERSION,
 		...(input.ghOwner !== undefined ? { ghOwner: input.ghOwner } : {}),
 		...(input.ghRepo !== undefined ? { ghRepo: input.ghRepo } : {}),
 		title: input.title,
@@ -350,14 +359,19 @@ export async function releaseClaim(repoPath: string, epicHash: string, expectedF
 /** Run `work` with the claim mutex ALREADY HELD by the caller, fence-verified
  *  atomically with the work — the check and the writes cannot be separated by a
  *  takeover (REVIEW round-2 HIGH-3). `expectedFence` is required — a missing
- *  fence never borrows current ownership. Throws ClaimOwnershipError on
- *  stale/absent claim. The caller owns the mutex (acquire via acquireClaimMutex
- *  / withClaim) and releases it, so nested claim ops do not deadlock. */
+ *  fence never borrows current ownership. When `expectedRunId` is given, the
+ *  claim must ALSO be owned by that run (REVIEW round-7 HIGH-3: the run id and
+ *  the fence are checked together — a replacement claim from a delete-and-retry
+ *  can reach the same fence number, so the fence alone proves nothing).
+ *  Throws ClaimOwnershipError on stale/absent claim or wrong owner. The caller
+ *  owns the mutex (acquire via acquireClaimMutex / withClaim) and releases it,
+ *  so nested claim ops do not deadlock. */
 export async function withOwnedFence<T>(
 	repoPath: string,
 	epicHash: string,
 	expectedFence: number,
 	work: (claim: PendingCreateClaim) => T | Promise<T>,
+	expectedRunId?: string | undefined,
 ): Promise<T> {
 	if (!Number.isSafeInteger(expectedFence) || expectedFence < 1) {
 		throw new ClaimOwnershipError(`no carried fence for ${epicHash} — refusing to persist without verified claim ownership`);
@@ -369,6 +383,9 @@ export async function withOwnedFence<T>(
 	}
 	if (claim.fence !== expectedFence) {
 		throw new ClaimOwnershipError(`stale fence: expected ${expectedFence}, current ${claim.fence} at ${path}`);
+	}
+	if (expectedRunId !== undefined && claim.runId !== expectedRunId) {
+		throw new ClaimOwnershipError(`not the claim owner: expected run ${expectedRunId}, claim owned by ${claim.runId} at ${path} (fence ${expectedFence} matches but belongs to another run)`);
 	}
 	return await work(claim);
 }

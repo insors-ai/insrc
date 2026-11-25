@@ -2939,6 +2939,11 @@ async function finalizeTracker(
 	// stale or missing fence refuses before any write; cleanup is awaited.
 	const carried = (s1 as { claimFence?: unknown }).claimFence;
 	const expectedFence = typeof carried === 'number' ? carried : undefined;
+	// REVIEW round-7 HIGH-3: the carried fence is only meaningful together with
+	// the run id that owns the claim — a replacement claim (delete-and-retry)
+	// can reach the same fence number, so fence alone proves nothing.
+	const carriedRunIdRaw = (s1 as { claimRunId?: unknown }).claimRunId;
+	const carriedRunId = typeof carriedRunIdRaw === 'string' ? carriedRunIdRaw : undefined;
 	const existingClaim = readClaim(intent.repoPath, epicHash);
 	// REVIEW round-6 HIGH-3: for an ISSUE-head push, validate BEFORE the first
 	// write that (a) the returned epicRef targets the configured GitHub
@@ -2960,8 +2965,8 @@ async function finalizeTracker(
 			return { ok: false, failure: schemaFailure(`ISSUE single-issue mapping: storyRefs.${IMPLIED_ISSUE_STORY_ID} '${s1Ref}' != epicRef '${pushRefs.epicRef}' — the implied story IS the root issue`) };
 		}
 	}
-	if (existingClaim !== undefined && expectedFence === undefined) {
-		return { ok: false, failure: schemaFailure(`pending-create claim exists for ${epicHash} but no fence was carried — refusing unverifiable persistence`) };
+	if (existingClaim !== undefined && (expectedFence === undefined || carriedRunId === undefined)) {
+		return { ok: false, failure: schemaFailure(`pending-create claim exists for ${epicHash} but no fence+runId was carried — refusing unverifiable persistence`) };
 	}
 	// REVIEW round-3 HIGH-2: a run that CARRIED claim ownership must not downgrade
 	// to unfenced persistence when its claim disappeared (another run completed and
@@ -2986,7 +2991,16 @@ async function finalizeTracker(
 				// (round-2 HIGH-3: atomic ownership boundary; HIGH-4: awaited cleanup).
 				const mutex = await acquireClaimMutex(intent.repoPath, epicHash);
 				try {
-					await withOwnedFence(intent.repoPath, epicHash, expectedFence ?? -1, async () => {
+					await withOwnedFence(intent.repoPath, epicHash, expectedFence ?? -1, async (lockedClaim) => {
+						// REVIEW round-7 HIGH-3: validate the recovered ref from the
+						// SAME locked claim (we hold the mutex, so the claim cannot be
+						// swapped between check and write) BEFORE the first persistence.
+						if (intent.workflow === 'tracker.push' && lockedClaim.issueRef !== undefined) {
+							const pushRefs = typedRefs as TrackerPushRefs;
+							if (lockedClaim.issueRef !== pushRefs.epicRef) {
+								throw new Error(`locked claim ref ${lockedClaim.issueRef} != returned epicRef ${pushRefs.epicRef} — refusing to persist a different issue than the marker-verified recovery`);
+							}
+						}
 						mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs);
 						// Only AFTER the refs are durably persisted and the heads bound
 						// is the claim released (HIGH-2) — unlink directly, we already
@@ -2994,7 +3008,7 @@ async function finalizeTracker(
 						if (intent.workflow === 'tracker.push') {
 							unlinkSync(pendingCreatePath(intent.repoPath, epicHash));
 						}
-					});
+					}, carriedRunId);
 				} finally {
 					mutex.release();
 				}

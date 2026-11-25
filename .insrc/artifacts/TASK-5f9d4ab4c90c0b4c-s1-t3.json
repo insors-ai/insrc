@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a46df187-909d-41fd-b29e-2b93cfddf03b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T08:50:12.122Z",
+    "epicCreatedAt": "2026-11-16T07:14:04.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5f9d4ab4c90c0b4c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "ISSUE execute/verify prompt block in tracker runner",
+      "parent": {
+        "entityId": "STORY-5f9d4ab4c90c0b4c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5f9d4ab4c90c0b4c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-5f9d4ab4c90c0b4c-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "ea06775a67b623cae4b2da47ef2cfc3bd5295d59cabd03e4b94f29797fd762a5",
+        "at": "2026-11-24T08:50:12.122Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T08:50:12.123Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "ISSUE execute/verify prompt block in tracker runner",
+    "summary": "ISSUE block in pushPrompt/pushVerifyPrompt keyed on headKind (runners/tracker/index.ts), DEF prompts byte-identical",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "prompt-string unit tests: headKind 'issue' prompt has ISSUE block (one issue, body=epicBodyMd, labels epicLabel+epic:<slug>, adopt without --force via singular --add-label mapping issue.ts:234/273, no task-list/backRef/sub-issues, not 'error unless'); 'def' byte-identical; ISSUE verify = issueLabelled+bodyMatches+singleIssue"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/runners/tracker/index.ts pushPrompt/pushVerifyPrompt — headKind 'issue' contains ISSUE block, NOT 'error unless'/task-list/backRef/sub-issue; headKind 'def' byte-identical to baseline"
+      },
+      {
+        "level": "unit",
+        "name": "gh_issue_edit through the typed tool executor with a stubbed gh asserts the singular --add-label argv mapping (issue.ts:234/273) — tool-boundary, not prompt-string"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

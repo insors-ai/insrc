@@ -1,0 +1,262 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 44,
+        "contentHash": "01ee5856e619ee3ab5c156ea54b40ed46df21062cf5f19e993fc2067d2cc1b7c",
+        "at": "2026-11-24T13:05:00.936Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 44,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T17:45:14.516Z",
+        "override": {
+          "reason": "Automated code review is unavailable (insrc_code_review_step fails by design while being rewritten); the controller's self-review packet /tmp/.insrc/review-packet-5f9d4ab4c90c0b4c-s1.md (19 rounds, all findings fixed and re-reviewed, final round approved) is the review of record; t6/t8 validate-gate verdicts were not daemon-stamped passed but the committed sweep evidence (t8-sweep-evidence.txt) is reproducible."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-2b293234-d1b6-4f7d-9476-d9551cdd638f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T08:56:06.826Z",
+    "epicCreatedAt": "2026-11-16T07:14:04.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5f9d4ab4c90c0b4c",
+    "storyId": "s1",
+    "revision": 44,
+    "updatedAt": "2026-11-24T13:03:44.021Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "make-tracker-push-sync-post-stages"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": false
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": false
+      }
+    ],
+    "summary": "t8 sweep with persisted evidence (6c0d3a0af): tsc clean; docs/standalone/.../S001/t8-sweep-evidence.txt holds the per-file results — all 408 src/workflow files run individually under Node 22.22.1 (2505 pass / 5 fail; the 5 failures reproduce at clean HEAD via git stash, pre-existing baseline) and all 27 src/mcp files (105 pass / 0 fail). All t1-t7 test files pass.",
+    "testRecord": {
+      "md": "docs/standalone/make-tracker-push-sync-post-stages-E202611165f9d4ab4/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/__tests__/gates.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/gates.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/tracker/__tests__/context-head-kind.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/tracker/context.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/tracker/schemas.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/render-issue-epic-body.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/conventions.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/tracker/__tests__/gh-issue-edit-add-label.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/tracker/__tests__/push-prompt-issue.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/tracker/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/tracker-issue-persistence.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/orchestrator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/link.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/sync.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/unit-issue.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/chain-issue-anchored.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/chain-issue-tracker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/chain.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/pending-create-claim.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/pending-create-claim.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/issue.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/link-issue-docs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/issue-anchored-route.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/make-tracker-push-sync-post-stages-E202611165f9d4ab4/S001/t8-sweep-evidence.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T13:03:44.021Z"
+      }
+    ],
+    "commit": "6c0d3a0af"
+  },
+  "citations": []
+}

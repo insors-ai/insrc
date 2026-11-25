@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c990ba9d-00c3-4175-9795-c70ec0287f9e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T08:50:12.127Z",
+    "epicCreatedAt": "2026-11-16T07:14:04.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5f9d4ab4c90c0b4c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Chain ISSUE branch tracker next-actions",
+      "parent": {
+        "entityId": "STORY-5f9d4ab4c90c0b4c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5f9d4ab4c90c0b4c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-5f9d4ab4c90c0b4c-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "19b333fbf739f035245ca200554d12c7746cce8f2e495ac4d2fba8f95c06900d",
+        "at": "2026-11-24T08:50:12.127Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T08:50:12.128Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Chain ISSUE branch tracker next-actions",
+    "summary": "chain.ts computeNextAction ISSUE branch falls through to DEF tracker steps",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "integration: chain four-state sequence on ISSUE fixture — push-tracker -> sync-tracker -> chain-complete, never hld/amendment/stale"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/chain.ts computeNextAction + readTrackerMeta — buildChainReport four-state sequence on an ISSUE-anchored fixture: push-tracker -> sync-tracker -> chain-complete, never hld/amendment/stale"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

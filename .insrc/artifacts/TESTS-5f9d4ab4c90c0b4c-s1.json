@@ -1,0 +1,669 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 48,
+        "contentHash": "905eb91ab39a2ed8dc4829511ee2bccc5b84680cf9f278265a1a87a84de883eb",
+        "at": "2026-11-24T13:15:20.821Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "5f9d4ab4c90c0b4c",
+    "storyId": "s1",
+    "createdAt": "2026-11-24T08:56:06.826Z",
+    "updatedAt": "2026-11-24T13:15:20.733Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-16T07:14:04.399Z",
+    "epicSlug": "make-tracker-push-sync-post-stages",
+    "revision": 48
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "d593f20ce",
+        "ranAt": "2026-11-24T09:05:44.923Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/gates.ts new helpers — requireApprovedDefinition + definitionHeadJsonPath head order (DEF-wins / corrupt-DEF->ISSUE / missing), approval gating, refuse messages, head md paths",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/gates.test.ts",
+                "title": "definitionHeadJsonPath: DEF wins when both parse; corrupt DEF falls through to a valid ISSUE (first-READABLE-wins)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/gates.test.ts",
+                "title": "definitionHeadJsonPath + requireApprovedDefinition: missing both -> ArtifactMissingError naming the ISSUE id",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/gates.test.ts",
+                "title": "requireApprovedDefinition: ISSUE head approved -> kind issue + jsonPath; draft -> ArtifactNotApprovedError naming the ISSUE md; rejected -> rejected message",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/gates.test.ts",
+                "title": "requireApprovedDefinition: DEF head approved -> kind def; draft DEF -> ArtifactNotApprovedError naming the DEF md; DEF-only repo keeps requireApprovedEpic working",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/gates.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1174,
+            "titles": [
+              {
+                "title": "jsonPathForMd resolves a nested epic DEF md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested epic HLD md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested story-scoped LLD md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd leaves docs/stub layout untouched",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd returns json paths unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested standalone SPEC md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested story-scoped CR md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd recognises both docs/epics and docs/standalone top-levels, stub stays the side-by-side exception",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd rejects unknown extensions",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd throws for a nested md with no insrc:artifact marker (path no longer encodes the id)",
+                "result": "pass"
+              },
+              {
+                "title": "gates.test.ts: approval goes through LifecycleService and stamps none of the removed fields",
+                "result": "pass"
+              },
+              {
+                "title": "rejectArtifactByJsonPath rejects through the lifecycle and keeps the reason in the change log",
+                "result": "pass"
+              },
+              {
+                "title": "rejectArtifactByJsonPath refuses empty reason",
+                "result": "pass"
+              },
+              {
+                "title": "reject then approve is refused until the content changes",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedEpic throws ArtifactMissingError when no Define exists",
+                "result": "pass"
+              },
+              {
+                "title": "readDefineArtifact on an ISSUE-only hash names the ISSUE and does not advise running define",
+                "result": "pass"
+              },
+              {
+                "title": "readDefineArtifact on a hash with neither root keeps the original message",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedEpic throws ArtifactNotApprovedError when Define is not approved",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedEpic returns the Define artifact after approval",
+                "result": "pass"
+              },
+              {
+                "title": "t5: approving a PLAN stamps meta.rangeBase as a FULL 40-hex sha alongside the lifecycle approval",
+                "result": "pass"
+              },
+              {
+                "title": "t5: the GENERIC stamp site is GATED — DEF, HLD, AMD and BUILD each stamp NO rangeBase",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a STANDALONE design.story LLD IS stamped (the only upstream the no-plan route has), an EPIC-route LLD is NOT",
+                "result": "pass"
+              },
+              {
+                "title": "t5: an UNREADABLE HEAD leaves rangeBase ABSENT and still completes the approval — never throws, never an empty string",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a git repo with NO COMMITS leaves rangeBase ABSENT (HEAD does not resolve yet)",
+                "result": "pass"
+              },
+              {
+                "title": "CR-3: re-approving after the work has landed does NOT move rangeBase forward — the FIRST stamp wins",
+                "result": "pass"
+              },
+              {
+                "title": "CR-3: a PRE-EXISTING rangeBase on an unapproved artifact is also preserved, so the stamp is write-once rather than approve-once",
+                "result": "pass"
+              },
+              {
+                "title": "CR-3: an EMPTY-STRING rangeBase is treated as unstamped and gets a real base — write-once must not preserve a useless value forever",
+                "result": "pass"
+              },
+              {
+                "title": "t5: rangeBase SURVIVES a write-read-write round trip",
+                "result": "pass"
+              },
+              {
+                "title": "definitionHeadJsonPath: DEF wins when both parse; corrupt DEF falls through to a valid ISSUE (first-READABLE-wins)",
+                "result": "pass"
+              },
+              {
+                "title": "definitionHeadJsonPath + requireApprovedDefinition: missing both -> ArtifactMissingError naming the ISSUE id",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedDefinition: ISSUE head approved -> kind issue + jsonPath; draft -> ArtifactNotApprovedError naming the ISSUE md; rejected -> rejected message",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedDefinition: DEF head approved -> kind def; draft DEF -> ArtifactNotApprovedError naming the DEF md; DEF-only repo keeps requireApprovedEpic working",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "4ef5e6952",
+        "ranAt": "2026-11-24T09:22:31.101Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/runners/tracker/context.ts assemblers — kind branches: DEF context byte-identical to pre-change baseline, ISSUE context carries headKind + prerendered epicBodyMd",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/tracker/__tests__/context-head-kind.test.ts",
+                "title": "src/workflow/runners/tracker/context.ts assemblers — kind branches: DEF context byte-identical to pre-change baseline, ISSUE context carries headKind + prerendered epicBodyMd",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/conventions.ts renderIssueEpicBody — renders ISSUE body sections without DEF-only fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/render-issue-epic-body.test.ts",
+                "title": "src/workflow/tracker/conventions.ts renderIssueEpicBody — renders ISSUE body sections without DEF-only fields",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/runners/tracker/__tests__/context-head-kind.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 888,
+            "titles": [
+              {
+                "title": "src/workflow/runners/tracker/context.ts assemblers — kind branches: DEF context byte-identical to pre-change baseline, ISSUE context carries headKind + prerendered epicBodyMd",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/render-issue-epic-body.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 687,
+            "titles": [
+              {
+                "title": "src/workflow/tracker/conventions.ts renderIssueEpicBody — renders ISSUE body sections without DEF-only fields",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "100f2f8ef",
+        "ranAt": "2026-11-24T09:32:15.333Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/runners/tracker/index.ts pushPrompt/pushVerifyPrompt — headKind 'issue' contains ISSUE block, NOT 'error unless'/task-list/backRef/sub-issue; headKind 'def' byte-identical to baseline",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/tracker/__tests__/push-prompt-issue.test.ts",
+                "title": "src/workflow/runners/tracker/index.ts pushPrompt/pushVerifyPrompt — headKind 'issue' contains ISSUE block, NOT 'error unless'/task-list/backRef/sub-issue; headKind 'def' byte-identical to baseline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "gh_issue_edit through the typed tool executor with a stubbed gh asserts the singular --add-label argv mapping (issue.ts:234/273) — tool-boundary, not prompt-string",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/tracker/__tests__/gh-issue-edit-add-label.test.ts",
+                "title": "gh_issue_edit through the typed tool executor with a stubbed gh asserts the singular --add-label argv mapping (issue.ts:234/273) — tool-boundary, not prompt-string",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/runners/tracker/__tests__/gh-issue-edit-add-label.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 748,
+            "titles": [
+              {
+                "title": "gh_issue_edit through the typed tool executor with a stubbed gh asserts the singular --add-label argv mapping (issue.ts:234/273) — tool-boundary, not prompt-string",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/tracker/__tests__/push-prompt-issue.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 866,
+            "titles": [
+              {
+                "title": "src/workflow/runners/tracker/index.ts pushPrompt/pushVerifyPrompt — headKind 'issue' contains ISSUE block, NOT 'error unless'/task-list/backRef/sub-issue; headKind 'def' byte-identical to baseline",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "9e6e6f040",
+        "ranAt": "2026-11-24T10:47:51.353Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/orchestrator.ts mutateEpicTrackerMeta + finalizeTracker — finalize push+sync on ISSUE-only seed repo: ISSUE meta.tracker written, EPIC/STORY-s1 heads bound, readdir zero DEF-*.json; corrupt-DEF/valid-ISSUE finalize lands on ISSUE json; issueRef write-back on first publication",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/tracker-issue-persistence.test.ts",
+                "title": "src/workflow/orchestrator.ts mutateEpicTrackerMeta + finalizeTracker — finalize push+sync on ISSUE-only seed repo: ISSUE meta.tracker written, EPIC/STORY-s1 heads bound, readdir zero DEF-*.json; corrupt-DEF/valid-ISSUE finalize lands on ISSUE json; issueRef write-back on first publication",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/sync.ts — storiesOf uses impliedIssueStories for ISSUE heads; patchTrackerMeta writes onto the resolved head; closeBugfixTrackerIssue closes via readRecordedRef (stubbed)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/tracker-issue-persistence.test.ts",
+                "title": "src/workflow/tracker/sync.ts — storiesOf uses impliedIssueStories for ISSUE heads; patchTrackerMeta writes onto the resolved head; closeBugfixTrackerIssue closes via readRecordedRef (stubbed)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "first publication sequence — approve ISSUE with tracking disabled, enable, push: exactly 1 create, issueRef written back + heads bound; write-back failure -> retry adopts with 0 creates",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/tracker-issue-persistence.test.ts",
+                "title": "first publication sequence — approve ISSUE with tracking disabled, enable, push: exactly 1 create, issueRef written back + heads bound; write-back failure -> retry adopts with 0 creates",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/tracker-issue-persistence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 871,
+            "titles": [
+              {
+                "title": "src/workflow/orchestrator.ts mutateEpicTrackerMeta + finalizeTracker — finalize push+sync on ISSUE-only seed repo: ISSUE meta.tracker written, EPIC/STORY-s1 heads bound, readdir zero DEF-*.json; corrupt-DEF/valid-ISSUE finalize lands on ISSUE json; issueRef write-back on first publication",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/tracker/sync.ts — storiesOf uses impliedIssueStories for ISSUE heads; patchTrackerMeta writes onto the resolved head; closeBugfixTrackerIssue closes via readRecordedRef (stubbed)",
+                "result": "pass"
+              },
+              {
+                "title": "first publication sequence — approve ISSUE with tracking disabled, enable, push: exactly 1 create, issueRef written back + heads bound; write-back failure -> retry adopts with 0 creates",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "b954b7723",
+        "ranAt": "2026-11-24T10:52:32.054Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/chain.ts computeNextAction + readTrackerMeta — buildChainReport four-state sequence on an ISSUE-anchored fixture: push-tracker -> sync-tracker -> chain-complete, never hld/amendment/stale",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/chain-issue-tracker.test.ts",
+                "title": "src/workflow/chain.ts computeNextAction + readTrackerMeta — buildChainReport four-state sequence on an ISSUE-anchored fixture: push-tracker -> sync-tracker -> chain-complete, never hld/amendment/stale",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/chain-issue-tracker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 818,
+            "titles": [
+              {
+                "title": "src/workflow/chain.ts computeNextAction + readTrackerMeta — buildChainReport four-state sequence on an ISSUE-anchored fixture: push-tracker -> sync-tracker -> chain-complete, never hld/amendment/stale",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "60b695d36",
+        "ranAt": "2026-11-24T11:43:27.536Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "deterministic two-run race — barrier after context assembly, released toward claimCreateIntent; exactly 1 createIssue, claim runId == winner, loser claimed:false never updates/deletes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/pending-create-claim.test.ts",
+                "title": "deterministic two-run race — barrier after context assembly, released toward claimCreateIntent; exactly 1 createIssue, claim runId == winner, loser claimed:false never updates/deletes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "interleaving takeover race — pause A after ownership read, B takes over under mutex (fence++), resume A -> ClaimOwnershipError, no overwrite/delete, A fenced from later persistence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/pending-create-claim.test.ts",
+                "title": "interleaving takeover race — pause A after ownership read, B takes over under mutex (fence++), resume A -> ClaimOwnershipError, no overwrite/delete, A fenced from later persistence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "two simultaneous abandoned-claim reconcilers — mutex serializes, exactly one takeover",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/pending-create-claim.test.ts",
+                "title": "two simultaneous abandoned-claim reconcilers — mutex serializes, exactly one takeover",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "crash recovery — SIGKILL holder inside critical section; guard remains; fresh run reclaims via quarantineDeadGuard, recovers original claim, 0 new creates, live holder undisturbed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/pending-create-claim.test.ts",
+                "title": "crash recovery — SIGKILL holder inside critical section; guard remains; fresh run reclaims via quarantineDeadGuard, recovers original claim, 0 new creates, live holder undisturbed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "lost execute response — claim stays 'pending' with owner runId; fresh invocation (nothing injected) reconciles via title+marker, 0 additional creates, persists issueRef + bindings",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/pending-create-claim.test.ts",
+                "title": "lost execute response — claim stays 'pending' with owner runId; fresh invocation (nothing injected) reconciles via title+marker, 0 additional creates, persists issueRef + bindings",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "identity refusal — duplicate titles / single unrelated title match refuse via ISSUE-<hash> marker + target verification, no label mutation, no create",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/pending-create-claim.test.ts",
+                "title": "identity refusal — duplicate titles / single unrelated title match refuse via ISSUE-<hash> marker + target verification, no label mutation, no create",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "authority boundary — claim mutex acquired with key ISSUE-<hash> through the real withArtifactWriteAuthority/daemon handler; ArtifactIds.parse rejects PENDING-CREATE-<hash>; lock ordering claim-before-artifact-writes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/pending-create-claim.test.ts",
+                "title": "authority boundary — claim mutex acquired with key ISSUE-<hash> through the real withArtifactWriteAuthority/daemon handler; ArtifactIds.parse rejects PENDING-CREATE-<hash>; lock ordering claim-before-artifact-writes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/pending-create-claim.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 717,
+            "titles": [
+              {
+                "title": "deterministic two-run race — barrier after context assembly, released toward claimCreateIntent; exactly 1 createIssue, claim runId == winner, loser claimed:false never updates/deletes",
+                "result": "pass"
+              },
+              {
+                "title": "interleaving takeover race — pause A after ownership read, B takes over under mutex (fence++), resume A -> ClaimOwnershipError, no overwrite/delete, A fenced from later persistence",
+                "result": "pass"
+              },
+              {
+                "title": "two simultaneous abandoned-claim reconcilers — mutex serializes, exactly one takeover",
+                "result": "pass"
+              },
+              {
+                "title": "crash recovery — SIGKILL holder inside critical section; guard remains; fresh run reclaims via quarantineDeadGuard, recovers original claim, 0 new creates, live holder undisturbed",
+                "result": "pass"
+              },
+              {
+                "title": "lost execute response — claim stays 'pending' with owner runId; fresh invocation (nothing injected) reconciles via title+marker, 0 additional creates, persists issueRef + bindings",
+                "result": "pass"
+              },
+              {
+                "title": "identity refusal — duplicate titles / single unrelated title match refuse via ISSUE-<hash> marker + target verification, no label mutation, no create",
+                "result": "pass"
+              },
+              {
+                "title": "authority boundary — claim mutex acquired with key ISSUE-<hash> through the real withArtifactWriteAuthority/daemon handler; ArtifactIds.parse rejects PENDING-CREATE-<hash>; lock ordering claim-before-artifact-writes",
+                "result": "pass"
+              },
+              {
+                "title": "liveness — isClaimAbandoned fresh vs stale heartbeat",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "cbcc99193",
+        "ranAt": "2026-11-24T12:00:13.729Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/tracker/link.ts linkDocsToIssues — docs/standalone ISSUE.md contains marker + canonical body bytes + **Tracker:** line after push, byte-identical to renderIssueMarkdown without a ref; S001/LLD.md relinked; no docs/epics entry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/link-issue-docs.test.ts",
+                "title": "src/workflow/tracker/link.ts linkDocsToIssues — docs/standalone ISSUE.md contains marker + canonical body bytes + **Tracker:** line after push, byte-identical to renderIssueMarkdown without a ref; S001/LLD.md relinked; no docs/epics entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "tracker.post on pushed ISSUE fixture — lld+s1 posts to adopted story ref; hld/amendment/non-s1 refuse",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/link-issue-docs.test.ts",
+                "title": "tracker.post on pushed ISSUE fixture — lld+s1 posts to adopted story ref; hld/amendment/non-s1 refuse",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/link-issue-docs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 819,
+            "titles": [
+              {
+                "title": "src/workflow/tracker/link.ts linkDocsToIssues — docs/standalone ISSUE.md contains marker + canonical body bytes + **Tracker:** line after push, byte-identical to renderIssueMarkdown without a ref; S001/LLD.md relinked; no docs/epics entry",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.post on pushed ISSUE fixture — lld+s1 posts to adopted story ref; hld/amendment/non-s1 refuse",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "3ab55bace",
+        "ranAt": "2026-11-24T13:15:20.733Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "npx tsc --noEmit — clean typecheck",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "npx tsc --noEmit exit 0"
+            }
+          },
+          {
+            "name": "npx tsx --test 'src/workflow/**/*.test.ts' 'src/mcp/**/*.test.ts' — diff-identical to the recorded HEAD baseline (36/10/11/16 workflow chunks, 6/26 MCP, 4 gates)",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "t8-sweep-evidence.txt @ 3ab55bace with baseline-vs-current diff: only TOTAL line differs, 5 failures pre-existing, MCP 105/0"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  },
+  "citations": []
+}

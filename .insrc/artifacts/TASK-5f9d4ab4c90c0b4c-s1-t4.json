@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d8c2c130-67ad-4293-85dd-755e71adf977",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T08:50:12.125Z",
+    "epicCreatedAt": "2026-11-16T07:14:04.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5f9d4ab4c90c0b4c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Kind-aware tracker persistence + issueRef write-back",
+      "parent": {
+        "entityId": "STORY-5f9d4ab4c90c0b4c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5f9d4ab4c90c0b4c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-5f9d4ab4c90c0b4c-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "6c23bb904356a083e1b4588b568df785e0fbe3f660b3fbf1876795188a63c101",
+        "at": "2026-11-24T08:50:12.125Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T08:50:12.126Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Kind-aware tracker persistence + issueRef write-back",
+    "summary": "mutateEpicTrackerMeta + sync.ts persist to definitionHeadJsonPath (readable-head rule); issueRef write-back on first publication",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "integration: finalize push+sync on ISSUE-only fixture writes meta.tracker onto ISSUE json, binds EPIC/STORY-s1 heads, readdir zero DEF files; corrupt-DEF/valid-ISSUE finalize lands on ISSUE json; ISSUE push writes meta.tracker.issueRef back on first publication; sync storiesOf uses impliedIssueStories for ISSUE heads"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/orchestrator.ts mutateEpicTrackerMeta + finalizeTracker — finalize push+sync on ISSUE-only seed repo: ISSUE meta.tracker written, EPIC/STORY-s1 heads bound, readdir zero DEF-*.json; corrupt-DEF/valid-ISSUE finalize lands on ISSUE json; issueRef write-back on first publication"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/tracker/sync.ts — storiesOf uses impliedIssueStories for ISSUE heads; patchTrackerMeta writes onto the resolved head; closeBugfixTrackerIssue closes via readRecordedRef (stubbed)"
+      },
+      {
+        "level": "integration",
+        "name": "first publication sequence — approve ISSUE with tracking disabled, enable, push: exactly 1 create, issueRef written back + heads bound; write-back failure -> retry adopts with 0 creates"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

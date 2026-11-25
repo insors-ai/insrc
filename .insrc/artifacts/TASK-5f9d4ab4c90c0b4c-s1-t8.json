@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-094bc54b-4322-4ff9-bbb6-b45d899c3573",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T08:50:12.135Z",
+    "epicCreatedAt": "2026-11-16T07:14:04.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5f9d4ab4c90c0b4c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verification sweep + baseline parity",
+      "parent": {
+        "entityId": "STORY-5f9d4ab4c90c0b4c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5f9d4ab4c90c0b4c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-5f9d4ab4c90c0b4c-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5f9d4ab4c90c0b4c-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5f9d4ab4c90c0b4c-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5f9d4ab4c90c0b4c-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5f9d4ab4c90c0b4c-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5f9d4ab4c90c0b4c-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5f9d4ab4c90c0b4c-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "6a572e91282725db79fbd0888d2d33204f5d5ada414afc754a7841052171ab87",
+        "at": "2026-11-24T08:50:12.135Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T08:50:12.137Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verification sweep + baseline parity",
+    "summary": "Build all of t1-t7, run named tests + typecheck + baseline-diff sweep",
+    "size": "S",
+    "order": 8,
+    "acceptanceChecks": [
+      "smoke: tsc clean; workflow+MCP subsets no new failures vs baseline (36/10/11/16, 6/26, 4 gates pre-existing); all t1-t7 tests pass"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "npx tsc --noEmit — clean typecheck"
+      },
+      {
+        "level": "smoke",
+        "name": "npx tsx --test 'src/workflow/**/*.test.ts' 'src/mcp/**/*.test.ts' — diff-identical to the recorded HEAD baseline (36/10/11/16 workflow chunks, 6/26 MCP, 4 gates)"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-69f39435-611c-4461-83c4-d3c7fe10bc19",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T08:50:12.130Z",
+    "epicCreatedAt": "2026-11-16T07:14:04.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5f9d4ab4c90c0b4c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Atomic pending-create claim + mutex + fencing + recovery",
+      "parent": {
+        "entityId": "STORY-5f9d4ab4c90c0b4c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5f9d4ab4c90c0b4c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-5f9d4ab4c90c0b4c-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5f9d4ab4c90c0b4c-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "36ce5d690343d651be9ed729a165bfa73f96582e524b139bbc0f188ab62893f6",
+        "at": "2026-11-24T08:50:12.130Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T08:50:12.131Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Atomic pending-create claim + mutex + fencing + recovery",
+    "summary": "claimCreateIntent 'wx' create-if-absent + claim mutex keyed ISSUE-<hash> via write-authority + guard-directory lock (quarantineDeadGuard) + fence token + heartbeat liveness + ownership checks + verifyRecoveryCandidate reconciliation",
+    "size": "L",
+    "order": 6,
+    "acceptanceChecks": [
+      "integration: two-run race -> 1 create, winner runId, loser claimed:false never mutates; interleaving takeover -> ClaimOwnershipError + fenced; two reconcilers -> one takeover; SIGKILL holder -> quarantine reclaims, 0 new creates, live holder undisturbed; lost execute response -> 'pending' reconciled 0 creates; duplicate/unrelated titles refuse via marker+target; authority-boundary: mutex key ISSUE-<hash> through real withArtifactWriteAuthority handler, PENDING-CREATE-<hash> rejected by ArtifactIds.parse"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "deterministic two-run race — barrier after context assembly, released toward claimCreateIntent; exactly 1 createIssue, claim runId == winner, loser claimed:false never updates/deletes"
+      },
+      {
+        "level": "integration",
+        "name": "interleaving takeover race — pause A after ownership read, B takes over under mutex (fence++), resume A -> ClaimOwnershipError, no overwrite/delete, A fenced from later persistence"
+      },
+      {
+        "level": "integration",
+        "name": "two simultaneous abandoned-claim reconcilers — mutex serializes, exactly one takeover"
+      },
+      {
+        "level": "integration",
+        "name": "crash recovery — SIGKILL holder inside critical section; guard remains; fresh run reclaims via quarantineDeadGuard, recovers original claim, 0 new creates, live holder undisturbed"
+      },
+      {
+        "level": "integration",
+        "name": "lost execute response — claim stays 'pending' with owner runId; fresh invocation (nothing injected) reconciles via title+marker, 0 additional creates, persists issueRef + bindings"
+      },
+      {
+        "level": "integration",
+        "name": "identity refusal — duplicate titles / single unrelated title match refuse via ISSUE-<hash> marker + target verification, no label mutation, no create"
+      },
+      {
+        "level": "integration",
+        "name": "authority boundary — claim mutex acquired with key ISSUE-<hash> through the real withArtifactWriteAuthority/daemon handler; ArtifactIds.parse rejects PENDING-CREATE-<hash>; lock ordering claim-before-artifact-writes"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

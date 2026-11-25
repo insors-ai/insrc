@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-da15f8e4-584e-4959-9042-43389736f188",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T08:50:12.120Z",
+    "epicCreatedAt": "2026-11-16T07:14:04.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5f9d4ab4c90c0b4c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "headKind on tracker contexts + kind-aware assemblers + renderIssueEpicBody",
+      "parent": {
+        "entityId": "STORY-5f9d4ab4c90c0b4c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5f9d4ab4c90c0b4c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-5f9d4ab4c90c0b4c-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "b10208a85cc38959e37f24e32b465e2ebbd54992ce26afe2593d397bda1dc749",
+        "at": "2026-11-24T08:50:12.120Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T08:50:12.121Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "headKind on tracker contexts + kind-aware assemblers + renderIssueEpicBody",
+    "summary": "headKind on tracker context schemas + kind-aware assemblers in context.ts + renderIssueEpicBody in conventions.ts",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "schemas carry optional headKind; assemblers branch on kind: DEF byte-identical, ISSUE via impliedIssueStories + renderIssueEpicBody",
+      "unit test: DEF context byte-identical; ISSUE context carries headKind + prerendered body"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/runners/tracker/context.ts assemblers — kind branches: DEF context byte-identical to pre-change baseline, ISSUE context carries headKind + prerendered epicBodyMd"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/conventions.ts renderIssueEpicBody — renders ISSUE body sections without DEF-only fields"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

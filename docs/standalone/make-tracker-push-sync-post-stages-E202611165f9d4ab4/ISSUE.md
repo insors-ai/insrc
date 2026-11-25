@@ -1,4 +1,5 @@
 <!-- insrc:artifact ISSUE-5f9d4ab4c90c0b4c -->
+**Tracker:** [insors-ai/insrc#295](https://github.com/insors-ai/insrc/issues/295)
 
 # Make the tracker push, sync and post stages handle an ISSUE-anchored work item
 
@@ -20,14 +21,3 @@ The tracker resolver (readEpicDefinition) already reads DEF then ISSUE, and the 
 The tracker push, sync and post stages should accept an ISSUE-anchored work item as they accept a DEF-anchored one, and the chain report's tracker reading and push-tracker / sync-tracker next actions should be correct for it.
 Deliberately not settled here, because it is the design decision this defect turns on: what an ISSUE pushes as (the ISSUE is already filed to GitHub at approval, so whether tracker.push re-files, links or only syncs the existing issue and its story), which stages need an ISSUE-aware reader and which should keep refusing one, and how this reuses the one implied-story rule from ISSUE-149283b0d0455a43 rather than a second copy. That belongs in an LLD with its alternatives written down.
 Out of scope and owned elsewhere: the ISSUE-anchored chain report story list and the producer of the sized route, which are ISSUE-149283b0d0455a43.
-
-## Citations
-
-- **[[c1]]** `code` `src/workflow/runners/tracker/context.ts:43` — "const epic = requireApprovedEpic(ctx.intent.repoPath, epicHash);"
-- **[[c2]]** `code` `src/workflow/runners/tracker/context.ts:116` — "const epic = requireApprovedEpic(ctx.intent.repoPath, epicHash);"
-- **[[c3]]** `code` `src/workflow/runners/tracker/context.ts:147` — "const epic = requireApprovedEpic(ctx.intent.repoPath, epicHash);"
-- **[[c4]]** `code` `src/workflow/gates.ts:233` — "export function requireApprovedEpic(repoPath: string, epicHash: string): DefineArtifact {"
-- **[[c5]]** `code` `src/workflow/chain.ts:233` — "if (define === undefined) return { pushed: false };"
-- **[[c6]]** `code` `src/workflow/tracker/resolve.ts:209` — "export function readEpicDefinition(dir: string, epicHash: string): EpicDefinition | null"
-- **[[c7]]** `code` `src/workflow/bugfix/advance.ts:62` — "const nextCall = nextAfterIssue(stamped, input.repo);"
-- **[[c8]]** `prior-artifact` `ISSUE-149283b0d0455a43 — the approved companion defect whose LLD leaves the tracker next actions out of scope`

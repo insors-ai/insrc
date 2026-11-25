@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a677da84-47da-40ab-8524-3b5c1f99d8c2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T08:50:12.118Z",
+    "epicCreatedAt": "2026-11-16T07:14:04.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5f9d4ab4c90c0b4c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Readable-head helpers in gates.ts",
+      "parent": {
+        "entityId": "STORY-5f9d4ab4c90c0b4c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5f9d4ab4c90c0b4c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "d0c26d4a7748cd2c88d95583bbd4287bc282d5e40d7c33a2d94fea0757ccc41e",
+        "at": "2026-11-24T08:50:12.118Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T08:50:12.119Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Readable-head helpers in gates.ts",
+    "summary": "gates.ts: add requireApprovedDefinition + definitionHeadJsonPath using readArtifactCore first-READABLE-wins (DEF then ISSUE), approval-gated like requireApprovedEpic",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "unit tests: DEF-wins when both parse; corrupt DEF falls through to ISSUE (readArtifactCore first-READABLE-wins); missing both -> ArtifactMissingError naming ISSUE id; approval gating (rejected/not-approved -> ArtifactNotApprovedError with head md path)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/gates.ts new helpers — requireApprovedDefinition + definitionHeadJsonPath head order (DEF-wins / corrupt-DEF->ISSUE / missing), approval gating, refuse messages, head md paths"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

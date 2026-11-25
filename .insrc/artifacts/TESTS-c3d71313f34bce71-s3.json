@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 26,
-        "contentHash": "8f46ba2a53e14028f423216ed43b2b8a4e3e2ab76aa8311f2c7e599ddbd663b0",
-        "at": "2026-11-25T15:13:05.319Z",
+        "number": 31,
+        "contentHash": "6688cabce214d061f292682c6a85abfa29bac1506ee4b8162571f495abccddf5",
+        "at": "2026-11-25T17:27:30.557Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "c3d71313f34bce71",
     "storyId": "s3",
     "createdAt": "2026-11-25T02:01:50.011Z",
-    "updatedAt": "2026-11-25T15:13:05.297Z",
+    "updatedAt": "2026-11-25T17:27:30.533Z",
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
-    "revision": 26
+    "revision": 31
   },
   "body": {
     "tasks": [
@@ -1176,6 +1176,378 @@
               },
               {
                 "title": "saved installer selects candidate control runtime and exact post-install retry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "e580dbaa7",
+        "ranAt": "2026-11-25T17:27:30.533Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "stale-forged-and-cross-home-offers-reject-before-mutation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-prepare.test.ts",
+                "title": "stale-forged-and-cross-home-offers-reject-before-mutation",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "legacy-closed-attempt-copied-to-another-home-cannot-authorize-deletion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-prepare.test.ts",
+                "title": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "download-size-digest-layout-and-fsync-failures-never-report-ready",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-prepare.test.ts",
+                "title": "download-size-digest-layout-and-fsync-failures-never-report-ready",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cancellation-and-eof-block-later-publication-or-service-admission",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependency-integration.test.ts",
+                "title": "cancellation-and-eof-block-later-publication-or-service-admission",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "unknown-actor-proof-blocks-install-retry-cleanup",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "unknown-actor-proof-blocks-install-retry-cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "malformed-utf8-historical-policy-never-authorizes-cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "orphan-evidence-in-empty-attempt-directory-blocks-fresh-preparation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "cleanup-deadline-retains-actor-until-close-and-retry-finishes-disposal",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "retry-reconciles-interruption-at-every-stage-disposal-boundary",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "malformed-or-incomplete-retry-journals-block-fresh-preparation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "temporary-disposal-intent-survives-unlink-completion-crash-gap",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "qualified-in-process-lock-proof-excludes-live-inherited-and-unknown-actors",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "qualified-in-process-lock-proof-excludes-live-inherited-and-unknown-actors",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "replacement-free-lock-cannot-authorize-cleanup-of-original-actor",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "native-preparation-lock-is-not-inherited-by-live-exec-child",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "disposal-descriptor-close-uncertainty-retains-lock-until-observed-process-exit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "late-settlement-records-true-outcome-and-completes-disposal-under-held-handle",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "late-settlement-records-true-outcome-and-completes-disposal-under-held-handle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "policy-change-reconciles-exact-accepted-copy-without-current-policy-substitution",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "policy-change-reconciles-exact-accepted-copy-without-current-policy-substitution",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-service.test.ts",
+                "title": "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "immutable-record-publication-never-replaces-existing-target-and-cleans-owned-temp",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "immutable-record-publication-never-replaces-existing-target-and-cleans-owned-temp",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/dependency-integration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11661,
+            "titles": [
+              {
+                "title": "accepted-official-payload-is-user-only-and-discloses-install-and-start",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation-and-eof-block-later-publication-or-service-admission",
+                "result": "pass"
+              },
+              {
+                "title": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions",
+                "result": "pass"
+              },
+              {
+                "title": "dependency-uncertain-recovery-preserves-operation-and-prevents-duplicate-side-effects",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-prepare.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 15300,
+            "titles": [
+              {
+                "title": "stale-forged-and-cross-home-offers-reject-before-mutation",
+                "result": "pass"
+              },
+              {
+                "title": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state",
+                "result": "pass"
+              },
+              {
+                "title": "download-size-digest-layout-and-fsync-failures-never-report-ready",
+                "result": "pass"
+              },
+              {
+                "title": "finite-actor-closure-uncertainty-blocks-retry-and-cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "private-preparation-cancellation-blocks-later-publication",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 43815,
+            "titles": [
+              {
+                "title": "qualified-in-process-lock-proof-excludes-live-inherited-and-unknown-actors",
+                "result": "pass"
+              },
+              {
+                "title": "repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first",
+                "result": "pass"
+              },
+              {
+                "title": "cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect",
+                "result": "pass"
+              },
+              {
+                "title": "unknown-actor-proof-blocks-install-retry-cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "legacy-closed-attempt-copied-to-another-home-cannot-authorize-deletion",
+                "result": "pass"
+              },
+              {
+                "title": "disposal-descriptor-close-uncertainty-retains-lock-until-observed-process-exit",
+                "result": "pass"
+              },
+              {
+                "title": "malformed-utf8-historical-policy-never-authorizes-cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "policy-change-reconciles-exact-accepted-copy-without-current-policy-substitution",
+                "result": "pass"
+              },
+              {
+                "title": "replacement-free-lock-cannot-authorize-cleanup-of-original-actor",
+                "result": "pass"
+              },
+              {
+                "title": "late-settlement-records-true-outcome-and-completes-disposal-under-held-handle",
+                "result": "pass"
+              },
+              {
+                "title": "immutable-record-publication-never-replaces-existing-target-and-cleans-owned-temp",
+                "result": "pass"
+              },
+              {
+                "title": "native-preparation-lock-is-not-inherited-by-live-exec-child",
+                "result": "pass"
+              },
+              {
+                "title": "retry-reconciles-interruption-at-every-stage-disposal-boundary",
+                "result": "pass"
+              },
+              {
+                "title": "temporary-disposal-intent-survives-unlink-completion-crash-gap",
+                "result": "pass"
+              },
+              {
+                "title": "malformed-or-incomplete-retry-journals-block-fresh-preparation",
+                "result": "pass"
+              },
+              {
+                "title": "orphan-evidence-in-empty-attempt-directory-blocks-fresh-preparation",
+                "result": "pass"
+              },
+              {
+                "title": "cleanup-deadline-retains-actor-until-close-and-retry-finishes-disposal",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 22754,
+            "titles": [
+              {
+                "title": "reuse-and-service-admission-never-rehash-installed-files",
+                "result": "pass"
+              },
+              {
+                "title": "transient-presence-probe-timeout-preserves-service-readiness-window",
+                "result": "pass"
+              },
+              {
+                "title": "service-admission-is-durable-and-distinct-from-finite-preparation-drain",
+                "result": "pass"
+              },
+              {
+                "title": "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn",
+                "result": "pass"
+              },
+              {
+                "title": "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener",
+                "result": "pass"
+              },
+              {
+                "title": "service-admission-cancellation-retains-only-explicitly-accepted-service-intent",
                 "result": "pass"
               }
             ],

@@ -47,3 +47,7 @@ The fourth tracked verdict passed tests/typechecks but found two further ownersh
 Resource-close uncertainty is now detected through bounded error-cause chains in preparation, read tracking, late disposal and recovery. Wrapping a cleanup close failure as dependency-uncertain no longer releases the actor handle. An isolated fixture actually leaves the cleanup or disposed-record descriptor unclosed, verifies the native actor lock remains busy, and allows recovery only after the parent's captured child-close event. Parent cleanup then succeeds and removes only its fixture root.
 
 Current focused run `adf95744-d48b-4ee3-b163-1bf49f8b2af9`: 22 tests passed with confirmed owned-group closure, including both close-fault locations. No full suite or host-service mutation occurred.
+
+## Authoritative t12 gate result
+
+The final registered build validation returned passed=true: all seven acceptance checks satisfied, mapped tests passed and typecheck clean, against commit `e580dbaa7`. The compact verdict is archived in `docs/plans/s3-t12-build-gate-2026-11-25.json`; the workflow wrote the current S3 BUILD/TESTS ledger. T13–t18 remain pending; this is not final story BUILD approval or full installer/native qualification.

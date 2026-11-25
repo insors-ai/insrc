@@ -1,0 +1,44 @@
+{
+  "taskId": "t12",
+  "passed": true,
+  "checks": [
+    {
+      "check": "Persist the exact accepted policy in a strict versioned private attempt record and verify its digest/home/target/paths for historical reconciliation without substituting current catalog. Legacy v1 closure remains readable; unavailable exact legacy policy yields a concrete blocker rather than guessed policy.",
+      "satisfied": true,
+      "evidence": "ollama-records.ts validates strict v1/v2 records; v2 stores the accepted policy and reconstructs its home-bound offer, digest and paths. acceptedOllamaPolicy rejects unavailable legacy policy with 'Historical dependency policy is unavailable'. Tests exercise changed/absent catalogs, malformed UTF-8 and copied cross-home legacy records."
+    },
+    {
+      "check": "Late finite settlement records the actual outcome and completes bounded cleanup/disposal while retaining its original actor handle. Cancellation/owner loss never admits later publication/service start. Remove failed unpublished stages only after positive closure; preserve complete installed dependencies.",
+      "satisfied": true,
+      "evidence": "prepareOllama's late finite continuation records the settled result, disposes under the retained handle and contains no publication/start path. The late-settlement test injects 'late real failure', verifies outcome 'failed', completed disposal and no published destination. Cancellation/owner-loss tests verify zero publication; policy-change cleanup preserves the installed executable inode."
+    },
+    {
+      "check": "Implement bounded idempotent cleanup planning and immutable per-item completion records bound to the original install/attempt; derive canonical owned targets from validated evidence. Remove only proven abandoned temporary stages/archive/temp records; preserve diagnostics, installed dependencies/services/models/logs and foreign/unknown artifacts.",
+      "satisfied": true,
+      "evidence": "ollamaRetryPlan binds installation, original operation, identity digest and canonical stage. Stage admission/completion and individual temporary-file intent/completion records use immutable publication. Removal validates bounded trees and file identities; targets are restricted to the exact stage and attempt-specific temporary names. Repeated-retry and unlink/completion-gap tests verify idempotence and preserved application data."
+    },
+    {
+      "check": "Positive closure or the exact qualified in-process-only actor/admission/non-inherited anchored-lock protocol is required and held during cleanup. Generic lock/PID/age/health cannot authorize deletion; live, external, inherited or unknown actor evidence blocks.",
+      "satisfied": true,
+      "evidence": "cleanupOllamaInstallAttempt requires positive closure or strict v2 'in-process-native-v1' admission, reacquires the original lock and checks recorded device/inode plus held ownership throughout cleanup. Tests reject held locks, external/unknown actors, inherited protocol and replacement locks. A live exec-child test verifies native lock non-inheritance."
+    },
+    {
+      "check": "Use actual atomic no-replace record publication through existing native primitives, qualifying regular-file use on supported platforms. Clean exact temp writes after known descriptor close; uncertain close/publication and interrupted disposal remain explicit retry inputs without silently weakening unknown-evidence checks.",
+      "satisfied": true,
+      "evidence": "writeDependencyRecord closes/fsyncs its exclusive temporary file before native publishDirectory; native code uses RENAME_EXCL, RENAME_NOREPLACE or non-replacing MoveFileEx. Tests verify regular-file publication, incumbent preservation and closed-temp removal. The descriptor-fault fixture leaves a descriptor unclosed and proves the actor lock stays busy until observed process exit. Linux ARM64 primitive qualification is recorded separately."
+    },
+    {
+      "check": "Interruption/deadline/cancellation at each cleanup step retains durable progress and prevents any fresh install. Surrounding records/prepare/layout tests prove true late outcome, policy changes, cleanup interruption/idempotence, and no side effects when closure is unknown.",
+      "satisfied": true,
+      "evidence": "Cleanup persists intent before deletion and completion afterward. closedOllamaAttempts validates retry admission, overall completion and every temporary-item completion before preparation. Tests interrupt each fixture deletion boundary, stage completion and temporary unlink/completion; malformed/orphan journals block fresh preparation with zero downloads. All required named tests exist, exercise their stated behavior, and have daemon-reported passes."
+    },
+    {
+      "check": "Retain approved finite-operation and cleanup budgets, cooperative cancellation and positive handle close. Prove held/live, unknown/external and inherited-lock actor cases cannot be disposed; cleanup budget expiry persists blocked state and permits no new install.",
+      "satisfied": true,
+      "evidence": "Preparation retains the 20-minute finite and 5-second cleanup limits, rejects larger overrides and checks cancellation/ownership at work boundaries. Expired cleanup retains unfinished journals and its handle until pending work settles; uncertain close retains the handle until exit. Deadline and actor-proof tests verify blocked cleanup and subsequent explicit recovery; incomplete evidence prevents fresh preparation."
+    }
+  ],
+  "reason": "The five t12 commits stay within dependency records, preparation, cleanup/recovery, necessary historical service reconciliation, tests and evidence; inspected behavior and daemon checks satisfy all acceptance requirements.",
+  "testsPassed": true,
+  "typecheckClean": true
+}

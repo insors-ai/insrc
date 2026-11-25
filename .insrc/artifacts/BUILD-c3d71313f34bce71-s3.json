@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 26,
-        "contentHash": "9dfe5fe06debd4b96dc155e138594aee55c1c2830f8df8ba149e27529a0c716b",
-        "at": "2026-11-25T15:14:31.480Z",
+        "number": 31,
+        "contentHash": "911101941aa3a50c5edbe8891aaa2ceb730f464db5cab6b5d92b68d8c63adcde",
+        "at": "2026-11-25T17:29:11.126Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "c3d71313f34bce71",
     "storyId": "s3",
-    "revision": 26,
-    "updatedAt": "2026-11-25T15:13:05.297Z",
+    "revision": 31,
+    "updatedAt": "2026-11-25T17:27:30.533Z",
     "authoredBy": "controller",
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle"
   },
@@ -79,6 +79,10 @@
       {
         "id": "t10",
         "passed": true
+      },
+      {
+        "id": "t12",
+        "passed": true
       }
     ],
     "testRecord": {
@@ -90,508 +94,655 @@
           "file": "src/installer/__tests__/dependency-policy.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/dependency-context.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/ollama-policy.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/peer-contracts.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dependencies.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/dependencies.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "package.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/ollama-tar.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/ollama-tar.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/ollama-zstd.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "scripts/package-installer.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/publisher.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/ollama-archive.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/ollama-archive.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/ollama-layout.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/ollama-zip.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/native.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/native/control.c"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/_ollama-fixture.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/ollama-prepare.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/download.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/durability.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/ollama-prepare.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/ollama-records.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/owned-file.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/safe-zip.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/ollama-inspect-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/ollama-process-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/ollama-service-worker-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/ollama-service.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/ollama-service-records.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/ollama-service-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/ollama-service.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/terminal-entry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/_manager-fixture.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/_private-runtime-test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dependency-integration.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/manager.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/terminal-install.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/terminal-install.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/installed-dev-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/production-peers.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/ollama-catalog.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/production-peers.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-ollama-native-qualification-2026-11-25/README.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-ollama-native-qualification-2026-11-25/archive-layout.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-ollama-native-qualification-2026-11-25/cold-inspection-failure.log"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-ollama-native-qualification-2026-11-25/decline.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-ollama-native-qualification-2026-11-25/fresh-inspection-warm.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-ollama-native-qualification-2026-11-25/native-install.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-ollama-native-qualification-2026-11-25/native-run.log"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-ollama-native-qualification-2026-11-25/source-hashes.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-ollama-native-qualification-2026-11-25/verification-after.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-ollama-native-qualification-2026-11-25/verification-before.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "scripts/qualify-ollama.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/_ollama-read-sentinel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/ollama-validation.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-ollama-native-qualification-2026-11-25/native-no-rehash-decline.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-ollama-native-qualification-2026-11-25/native-no-rehash-inspection-cold.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-ollama-native-qualification-2026-11-25/native-no-rehash-inspection-warm.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-ollama-native-qualification-2026-11-25/native-no-rehash-install.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-ollama-native-qualification-2026-11-25/native-no-rehash-run.log"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-ollama-native-qualification-2026-11-25/native-no-rehash-source-hashes.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-ollama-native-qualification-2026-11-25/readiness-probe-failure.log"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/ollama-catalog.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/sequence-diagram.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-dependency-setup-validation-2026-11-25-audit.log"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-dependency-setup-validation-2026-11-25.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-dependency-setup-validation-2026-11-25.log"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
       },
       {
         "target": {
           "file": "docs/plans/s3-dependency-setup-validation-2026-11-25.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-25T15:13:05.297Z"
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s3-t1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s3-t10.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s3-t11.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s3-t2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s3-t3.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s3-t4.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s3-t5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s3-t6.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s3-t7.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s3-t8.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s3-t9.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-c3d71313f34bce71-s3.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-c3d71313f34bce71-s3.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/s3-manual-review-feedback-2026-11-25.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/s3-t12-owned-cleanup-validation-2026-11-25.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/ollama-recovery.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/ollama-cleanup.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/ollama-recovery.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/s3-t12-native-publication-2026-11-25.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/s3-t12-native-publication-driver-2026-11-25.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/ollama-close-uncertain-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T17:27:30.533Z"
       }
     ],
-    "commit": "c3e167d66",
-    "summary": "Completed all S3 implementation and native qualification, then ran the canonical Node22.22.1 combined S1/S2/S3 installer selection:152/152 tests across34 files, zero skips/failures/cancellations. Independent post-run audit passed current source/output fingerprints, exact coverage, unique matching admission/close/disposal journals, empty actor directory and confirmed owned-group cleanup. Linux ARM64 dependency route qualified; other targets pending. S4/S5/IDE/end-to-end and S1/S2 Node payload cleanup remain outside S3. Final human BUILD approval pending."
+    "commit": "e580dbaa7",
+    "summary": "S3 t12 implements accepted historical policy, exact home/actor-lock binding, positive late disposal, atomic immutable records and explicit-capability cleanup. The census blocks incomplete and orphan journals; tests prove zero fresh downloads until cleanup completes, copied legacy records cannot authorize foreign-home deletion, and actual disposal close failures retain locks until observed process exit. Current focused tests and macOS/Linux ARM64 native primitive probes passed; manager/terminal Retry and final qualification/regression remain t13–t18."
   },
   "citations": []
 }

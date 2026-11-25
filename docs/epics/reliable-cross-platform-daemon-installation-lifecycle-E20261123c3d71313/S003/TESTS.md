@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 44 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
+**Totals:** 66 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -369,3 +369,93 @@ Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/installer/__tests__/terminal-install.test.ts` | 0 | 9 | 3.7 s |  |
+
+## t12
+
+Run at 2026-11-25T17:27:30.533Z on commit `e580dbaa7`. Tests check: **passed**. 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: stale-forged-and-cross-home-offers-reject-before-mutation**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | stale-forged-and-cross-home-offers-reject-before-mutation | `src/installer/__tests__/ollama-prepare.test.ts` |
+| pass | legacy-closed-attempt-copied-to-another-home-cannot-authorize-deletion | `src/installer/__tests__/ollama-recovery.test.ts` |
+
+**integration: consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state | `src/installer/__tests__/ollama-prepare.test.ts` |
+
+**integration: download-size-digest-layout-and-fsync-failures-never-report-ready**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | download-size-digest-layout-and-fsync-failures-never-report-ready | `src/installer/__tests__/ollama-prepare.test.ts` |
+
+**integration: cancellation-and-eof-block-later-publication-or-service-admission**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | cancellation-and-eof-block-later-publication-or-service-admission | `src/installer/__tests__/dependency-integration.test.ts` |
+
+**integration: unknown-actor-proof-blocks-install-retry-cleanup**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | unknown-actor-proof-blocks-install-retry-cleanup | `src/installer/__tests__/ollama-recovery.test.ts` |
+| pass | malformed-utf8-historical-policy-never-authorizes-cleanup | `src/installer/__tests__/ollama-recovery.test.ts` |
+| pass | orphan-evidence-in-empty-attempt-directory-blocks-fresh-preparation | `src/installer/__tests__/ollama-recovery.test.ts` |
+
+**integration: cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect | `src/installer/__tests__/ollama-recovery.test.ts` |
+| pass | cleanup-deadline-retains-actor-until-close-and-retry-finishes-disposal | `src/installer/__tests__/ollama-recovery.test.ts` |
+| pass | retry-reconciles-interruption-at-every-stage-disposal-boundary | `src/installer/__tests__/ollama-recovery.test.ts` |
+| pass | malformed-or-incomplete-retry-journals-block-fresh-preparation | `src/installer/__tests__/ollama-recovery.test.ts` |
+
+**integration: repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first | `src/installer/__tests__/ollama-recovery.test.ts` |
+| pass | temporary-disposal-intent-survives-unlink-completion-crash-gap | `src/installer/__tests__/ollama-recovery.test.ts` |
+
+**integration: qualified-in-process-lock-proof-excludes-live-inherited-and-unknown-actors**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | qualified-in-process-lock-proof-excludes-live-inherited-and-unknown-actors | `src/installer/__tests__/ollama-recovery.test.ts` |
+| pass | replacement-free-lock-cannot-authorize-cleanup-of-original-actor | `src/installer/__tests__/ollama-recovery.test.ts` |
+| pass | native-preparation-lock-is-not-inherited-by-live-exec-child | `src/installer/__tests__/ollama-recovery.test.ts` |
+| pass | disposal-descriptor-close-uncertainty-retains-lock-until-observed-process-exit | `src/installer/__tests__/ollama-recovery.test.ts` |
+
+**integration: late-settlement-records-true-outcome-and-completes-disposal-under-held-handle**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | late-settlement-records-true-outcome-and-completes-disposal-under-held-handle | `src/installer/__tests__/ollama-recovery.test.ts` |
+
+**integration: policy-change-reconciles-exact-accepted-copy-without-current-policy-substitution**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | policy-change-reconciles-exact-accepted-copy-without-current-policy-substitution | `src/installer/__tests__/ollama-recovery.test.ts` |
+| pass | interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn | `src/installer/__tests__/ollama-service.test.ts` |
+
+**integration: immutable-record-publication-never-replaces-existing-target-and-cleans-owned-temp**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | immutable-record-publication-never-replaces-existing-target-and-cleans-owned-temp | `src/installer/__tests__/ollama-recovery.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/installer/__tests__/dependency-integration.test.ts` | 0 | 4 | 11.7 s |  |
+| `src/installer/__tests__/ollama-prepare.test.ts` | 0 | 5 | 15.3 s |  |
+| `src/installer/__tests__/ollama-recovery.test.ts` | 0 | 17 | 43.8 s |  |
+| `src/installer/__tests__/ollama-service.test.ts` | 0 | 6 | 22.8 s |  |

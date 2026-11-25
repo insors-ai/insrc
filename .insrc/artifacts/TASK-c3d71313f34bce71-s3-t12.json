@@ -1,0 +1,137 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-05d64084-910f-49b6-bf96-d710b3a83c8b",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-25T16:36:51.212Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Complete dependency attempt closure and explicit cleanup primitives",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#288",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2e1b0f3756e71e3c830a1cbdb28eee263069894227dcd6abd8e883d5b5142193",
+        "at": "2026-11-25T16:36:51.212Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T16:36:51.219Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Complete dependency attempt closure and explicit cleanup primitives",
+    "summary": "Repair the shared recovery root in owned dependency records and preparation: accepted policy, true late closure, bounded disposal, temp files and atomic no-replace evidence. Expose cleanup only to the explicit install-retry owner; do not start installation.",
+    "size": "L",
+    "order": 12,
+    "acceptanceChecks": [
+      "Persist the exact accepted policy in a strict versioned private attempt record and verify its digest/home/target/paths for historical reconciliation without substituting current catalog. Legacy v1 closure remains readable; unavailable exact legacy policy yields a concrete blocker rather than guessed policy.",
+      "Late finite settlement records the actual outcome and completes bounded cleanup/disposal while retaining its original actor handle. Cancellation/owner loss never admits later publication/service start. Remove failed unpublished stages only after positive closure; preserve complete installed dependencies.",
+      "Implement bounded idempotent cleanup planning and immutable per-item completion records bound to the original install/attempt; derive canonical owned targets from validated evidence. Remove only proven abandoned temporary stages/archive/temp records; preserve diagnostics, installed dependencies/services/models/logs and foreign/unknown artifacts.",
+      "Positive closure or the exact qualified in-process-only actor/admission/non-inherited anchored-lock protocol is required and held during cleanup. Generic lock/PID/age/health cannot authorize deletion; live, external, inherited or unknown actor evidence blocks.",
+      "Use actual atomic no-replace record publication through existing native primitives, qualifying regular-file use on supported platforms. Clean exact temp writes after known descriptor close; uncertain close/publication and interrupted disposal remain explicit retry inputs without silently weakening unknown-evidence checks.",
+      "Interruption/deadline/cancellation at each cleanup step retains durable progress and prevents any fresh install. Surrounding records/prepare/layout tests prove true late outcome, policy changes, cleanup interruption/idempotence, and no side effects when closure is unknown.",
+      "Retain approved finite-operation and cleanup budgets, cooperative cancellation and positive handle close. Prove held/live, unknown/external and inherited-lock actor cases cannot be disposed; cleanup budget expiry persists blocked state and permits no new install."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "stale-forged-and-cross-home-offers-reject-before-mutation"
+      },
+      {
+        "level": "integration",
+        "name": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state"
+      },
+      {
+        "level": "integration",
+        "name": "download-size-digest-layout-and-fsync-failures-never-report-ready"
+      },
+      {
+        "level": "integration",
+        "name": "cancellation-and-eof-block-later-publication-or-service-admission"
+      },
+      {
+        "level": "integration",
+        "name": "unknown-actor-proof-blocks-install-retry-cleanup"
+      },
+      {
+        "level": "integration",
+        "name": "cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect"
+      },
+      {
+        "level": "integration",
+        "name": "repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first"
+      },
+      {
+        "level": "integration",
+        "name": "qualified-in-process-lock-proof-excludes-live-inherited-and-unknown-actors"
+      },
+      {
+        "level": "integration",
+        "name": "late-settlement-records-true-outcome-and-completes-disposal-under-held-handle"
+      },
+      {
+        "level": "integration",
+        "name": "policy-change-reconciles-exact-accepted-copy-without-current-policy-substitution"
+      },
+      {
+        "level": "integration",
+        "name": "immutable-record-publication-never-replaces-existing-target-and-cleans-owned-temp"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

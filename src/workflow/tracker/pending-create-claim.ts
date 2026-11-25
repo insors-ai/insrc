@@ -347,10 +347,16 @@ export async function updateClaimTarget(repoPath: string, epicHash: string, expe
 }
 
 /** Mark the claim 'created' with the remote ref (fence-checked, under mutex).
- *  Returns the COMMITTED fence (expectedFence + 1). */
+ *  Returns the COMMITTED fence (expectedFence + 1).
+ *  REVIEW round-11 HIGH: a 'created' claim's saved issueRef is the recovery
+ *  identity — re-marking the SAME ref is idempotent, but overwriting it with a
+ *  DIFFERENT ref throws ClaimOwnershipError before any write. */
 export async function markClaimCreated(repoPath: string, epicHash: string, expectedFence: number, issueRef: string, authority?: ((repo: string, id: string, run: () => Promise<unknown>) => Promise<unknown>) | undefined, runId?: string | undefined): Promise<number> {
 	let committed = expectedFence;
 	await withClaim(repoPath, epicHash, expectedFence, (claim, commit) => {
+		if (claim.state === 'created' && claim.issueRef !== undefined && claim.issueRef !== issueRef) {
+			throw new ClaimOwnershipError(`created claim already records ref ${claim.issueRef} — refusing to overwrite with ${issueRef}`);
+		}
 		commit({ ...claim, state: 'created', issueRef });
 		committed = claim.fence + 1;
 	}, authority, runId);

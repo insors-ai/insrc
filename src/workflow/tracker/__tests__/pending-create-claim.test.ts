@@ -398,4 +398,23 @@ test('REVIEW round-8 MED — a legacy claim without a persisted gh target has an
 	} finally { fx.cleanup(); }
 });
 
+test('REVIEW round-11 HIGH — a created claim\'s saved issueRef is the recovery identity: re-marking the SAME ref is idempotent, a DIFFERENT ref throws ClaimOwnershipError before any write', async () => {
+	const fx = repo();
+	try {
+		const a = claimCreateIntent(fx.repo, HASH, 'run-A', input);
+		const f1 = await markClaimCreated(fx.repo, HASH, a.claim.fence, 'acme/demo#41', undefined, 'run-A');
+		assert.equal(readClaim(fx.repo, HASH)?.issueRef, 'acme/demo#41');
+		// same ref: idempotent, fence advances
+		const f2 = await markClaimCreated(fx.repo, HASH, f1, 'acme/demo#41', undefined, 'run-A');
+		assert.equal(readClaim(fx.repo, HASH)?.issueRef, 'acme/demo#41');
+		assert.equal(f2, f1 + 1);
+		// different ref: refused, claim preserved
+		await assert.rejects(
+			markClaimCreated(fx.repo, HASH, f2, 'acme/demo#42', undefined, 'run-A'),
+			(e: unknown) => e instanceof ClaimOwnershipError && /refusing to overwrite/.test((e as Error).message),
+		);
+		assert.equal(readClaim(fx.repo, HASH)?.issueRef, 'acme/demo#41', 'saved ref preserved');
+	} finally { fx.cleanup(); }
+});
+
 void writeFileSync;

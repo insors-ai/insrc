@@ -196,6 +196,15 @@ export const pushExecuteRunner: StepRunner = {
 						// closed) and proceeds plainly once the owner released it.
 						if (!disc.complete) return refused(`remote discovery failed (${disc.reason}) — cannot verify adoption without a complete lookup; claim left untouched`, 'pending-create-discovery-failed');
 						const reconciled = reconcileClaim(claimResult.claim, disc.candidates, ghTarget);
+						// REVIEW round-11 HIGH: a 'created' claim's saved issueRef IS the
+						// recovery identity — adopt it; a conflicting discovery refuses.
+						const saved = claimResult.claim.state === 'created' ? claimResult.claim.issueRef : undefined;
+						if (saved !== undefined) {
+							if (reconciled.ok && reconciled.ref !== saved) {
+								return refused(`discovered ${reconciled.ref} conflicts with the created claim's recorded ref ${saved} — claim left untouched; human resolves`);
+							}
+							return adoptionPause(saved, 'recorded on the created claim');
+						}
 						if (!reconciled.ok) return refused(reconciled.reason);
 						return adoptionPause(reconciled.ref, 'marker-verified');
 					}
@@ -207,6 +216,19 @@ export const pushExecuteRunner: StepRunner = {
 					const fresh = await liveLookup();
 					if (!fresh.ok && c.remoteCandidates === undefined) return refused(`remote discovery failed (${fresh.reason}) — claim retained; neither reconciliation nor a create is authorized without a complete lookup`, 'pending-create-discovery-failed');
 					const candidates = fresh.ok ? fresh.candidates : c.remoteCandidates!;
+					// REVIEW round-11 HIGH: a 'created' claim's saved issueRef IS the
+					// recovery identity (LLD created-claim rule) — adopt it directly
+					// with the fence we already own (no write needed); a conflicting
+					// discovery result refuses while preserving the claim.
+					if (rt.claim.state === 'created' && rt.claim.issueRef !== undefined) {
+						const saved = rt.claim.issueRef;
+						const discovered = reconcileClaim(rt.claim, candidates, ghTarget);
+						if (discovered.ok && discovered.ref !== saved) {
+							return refused(`discovered ${discovered.ref} conflicts with the created claim's recorded ref ${saved} — claim ${pendingCreatePath(ctx.intent.repoPath, c.epicHash)} preserved; human resolves`);
+						}
+						setFence(rt.fence);
+						return adoptionPause(saved, 'recorded on the created claim');
+					}
 					const reconciled = reconcileClaim(rt.claim, candidates, ghTarget);
 					if (reconciled.ok) {
 						// exactly one marker+target-verified candidate: mark the claim

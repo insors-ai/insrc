@@ -460,11 +460,17 @@ export function quarantineDeadClaim(
  *  `owner/repo` parsed from the candidate's ref — matches the GitHub
  *  owner/repo persisted on the claim (REVIEW round-6 MED: the check must not
  *  compare the local checkout to itself; a marker match in a newly configured
- *  different repository must not pass an old claim's target check). Legacy
- *  claims without a persisted gh target fall back to the repo-path compare. */
-export function verifyRecoveryCandidate(claim: PendingCreateClaim, candidate: { readonly title: string; readonly body: string; readonly target: string }): boolean {
+ *  different repository must not pass an old claim's target check).
+ *  REVIEW round-8 MED: a LEGACY claim without a persisted gh target has an
+ *  UNKNOWN target — do not compare against the absolute checkout path
+ *  (never equal to `owner/repo`); when the caller supplies `ghTarget` (the
+ *  currently configured `owner/repo`), confirm the candidate against that
+ *  instead. Only when neither is available does the repo-path compare remain. */
+export function verifyRecoveryCandidate(claim: PendingCreateClaim, candidate: { readonly title: string; readonly body: string; readonly target: string }, ghTarget?: string | undefined): boolean {
 	if (!candidate.body.includes(claim.marker)) return false;
-	const want = claim.ghOwner !== undefined && claim.ghRepo !== undefined ? `${claim.ghOwner}/${claim.ghRepo}` : claim.repo;
+	const want = claim.ghOwner !== undefined && claim.ghRepo !== undefined
+		? `${claim.ghOwner}/${claim.ghRepo}`
+		: (ghTarget ?? claim.repo);
 	if (candidate.target !== want) return false;
 	return true;
 }
@@ -472,12 +478,15 @@ export function verifyRecoveryCandidate(claim: PendingCreateClaim, candidate: { 
 /** Reconcile: filter candidates through verifyRecoveryCandidate. Exactly
  *  one -> adoptable; 0 or >1 -> refuse. The failure result carries
  *  `verifiedCount` so the caller can distinguish a confirmed pre-dispatch
- *  failure (0 verified, claim never dispatched) from an ambiguous outcome. */
+ *  failure (0 verified, claim never dispatched) from an ambiguous outcome.
+ *  `ghTarget` is the currently configured `owner/repo`, used to confirm
+ *  candidates for legacy claims whose own gh target is unknown. */
 export function reconcileClaim(
 	claim: PendingCreateClaim,
 	candidates: readonly { readonly title: string; readonly body: string; readonly target: string; readonly ref: string }[],
+	ghTarget?: string | undefined,
 ): { readonly ok: true; readonly ref: string } | { readonly ok: false; readonly reason: string; readonly verifiedCount: number } {
-	const verified = candidates.filter(c => verifyRecoveryCandidate(claim, c));
+	const verified = candidates.filter(c => verifyRecoveryCandidate(claim, c, ghTarget));
 	if (verified.length === 1) return { ok: true, ref: verified[0]!.ref };
 	if (verified.length === 0) return { ok: false, verifiedCount: 0, reason: `no marker-verified candidate for ${pendingCreatePath(claim.repo, claim.epicHash)}` };
 	return { ok: false, verifiedCount: verified.length, reason: `${verified.length} marker-verified candidates for ${pendingCreatePath(claim.repo, claim.epicHash)} (${verified.map(v => v.ref).join(', ')}); human resolves` };

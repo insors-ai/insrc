@@ -123,10 +123,15 @@ export const pushExecuteRunner: StepRunner = {
 				schema: trackerPushExecuteSchema,
 				preparedBlob: { stepId: 'execute' as const },
 			});
+			// REVIEW round-8 MED: an unresolved claim is a TERMINAL error, not a
+			// step output — an 'output' would flow into checklist.verify as refs
+			// and be masked by a schema failure at finalize. `type:'error'`
+			// aborts the run with the actionable resolution text intact.
 			const refused = (reason: string) => ({
-				type: 'output' as const,
-				output: { refused: true, reason },
-				summary: `tracker.push: unresolved pending-create claim — ${reason}`,
+				type: 'error' as const,
+				code: 'pending-create-unresolved',
+				message: `tracker.push: unresolved pending-create claim — ${reason}`,
+				retryable: false,
 			});
 			if (issue !== undefined && durableRef !== undefined) {
 				// already durably published under the mutex: adopt (round-4 MED: run
@@ -140,6 +145,9 @@ export const pushExecuteRunner: StepRunner = {
 				}
 				return adoptionPause(durableRef, 'already-persisted');
 			}
+			// the currently configured gh target — confirms candidates for legacy
+			// claims whose own persisted target is unknown (round-8 MED)
+			const ghTarget = `${c.gh.owner}/${c.gh.repo}`;
 			const claimResult = claim;
 			if (issue !== undefined && claimResult !== undefined) {
 				if (!claimResult.claimed) {
@@ -153,12 +161,12 @@ export const pushExecuteRunner: StepRunner = {
 						// No fence carried, no claim mutation — finalization refuses
 						// while the claim is present without a carried fence (fail
 						// closed) and proceeds plainly once the owner released it.
-						const reconciled = reconcileClaim(claimResult.claim, c.remoteCandidates ?? []);
+						const reconciled = reconcileClaim(claimResult.claim, c.remoteCandidates ?? [], ghTarget);
 						if (!reconciled.ok) return refused(reconciled.reason);
 						return adoptionPause(reconciled.ref, 'marker-verified');
 					}
 					// we own the taken-over claim
-					const reconciled = reconcileClaim(took, c.remoteCandidates ?? []);
+					const reconciled = reconcileClaim(took, c.remoteCandidates ?? [], ghTarget);
 					if (!reconciled.ok) {
 						// REVIEW round-6 HIGH-2: a 'pending' v2 claim that was NEVER
 						// dispatched (no dispatchedAt) with ZERO marker-verified remote
@@ -198,10 +206,23 @@ export const pushExecuteRunner: StepRunner = {
 						return adoptionPause(reconciled.ref, 'marker-verified');
 					}
 				} else {
-					// winner: record dispatch + heartbeat under the mutex (fence- +
-					// run-checked), then dispatch. The COMMITTED fence rides in the
-					// context so finalization can fence the whole persistence op
-					// (round-2 HIGH-1: carry the token the op actually committed).
+					// winner — REVIEW round-8 HIGH-1: BEFORE dispatching a create,
+					// reconcile the remote candidates already collected in context.
+					// An existing marker+target-verified issue means ADOPT, never
+					// create (the claim can be fresh after claim removal or loss of
+					// local tracker state while the remote issue already exists).
+					// Ambiguous (>1 verified) refuses; 0 verified is safe to create.
+					const pre = reconcileClaim(claimResult.claim, c.remoteCandidates ?? [], ghTarget);
+					if (pre.ok) {
+						const markedFence = await markClaimCreatedFence(ctx.intent.repoPath, c.epicHash, claimResult.claim.fence, pre.ref, undefined, ctx.runId);
+						setFence(markedFence);
+						return adoptionPause(pre.ref, 'marker-verified');
+					}
+					if (!pre.ok && pre.verifiedCount > 1) return refused(pre.reason);
+					// 0 verified candidates: record dispatch + heartbeat under the
+					// mutex (fence- + run-checked), then dispatch. The COMMITTED
+					// fence rides in the context so finalization can fence the whole
+					// persistence op (round-2 HIGH-1: carry the token committed).
 					const committedFence = await markClaimDispatched(ctx.intent.repoPath, c.epicHash, claimResult.claim.fence, ctx.runId);
 					setFence(committedFence);
 				}

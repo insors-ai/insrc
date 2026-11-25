@@ -380,4 +380,22 @@ test('REVIEW round-7 HIGH-1/HIGH-3 — new claims carry version 2 (legacy = no v
 	} finally { fx.cleanup(); }
 });
 
+test('REVIEW round-8 MED — a legacy claim without a persisted gh target has an UNKNOWN target: candidates are confirmed against the caller-supplied configured gh target, not the checkout path', () => {
+	const fx = repo();
+	try {
+		// legacy claim: no ghOwner/ghRepo (pre-round-6 format)
+		const legacy = claimCreateIntent(fx.repo, 'legacyhash0000000000000000bb', 'run-L', input).claim;
+		assert.equal(legacy.ghOwner, undefined);
+		const cand = { title: 't', body: MARKER, target: 'acme/demo', ref: 'acme/demo#7' };
+		// without a caller-supplied target the legacy repo-path fallback remains
+		assert.equal(verifyRecoveryCandidate(legacy, cand), false, 'owner/repo never equals the checkout path');
+		// with the configured gh target supplied, the marker match in that repo adopts
+		assert.equal(verifyRecoveryCandidate(legacy, cand, 'acme/demo'), true, 'unknown claim target is confirmed against the current configuration');
+		assert.equal(verifyRecoveryCandidate(legacy, cand, 'other/repo'), false, 'a different configured repo refuses');
+		const rec = reconcileClaim(legacy, [cand], 'acme/demo');
+		assert.equal(rec.ok, true);
+		if (rec.ok) assert.equal(rec.ref, 'acme/demo#7');
+	} finally { fx.cleanup(); }
+});
+
 void writeFileSync;

@@ -325,10 +325,10 @@ test('REVIEW round-6 HIGH-2 — ambiguous outcome (dispatched but response lost,
 		await markClaimDispatched(repo, H, a.claim.fence, 'run-A', () => '2020-01-01T00:01:00.000Z');
 		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] };
 		const ctx = { intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } }, runId: 'run-B', stepOutputs: { s1 } } as never;
-		const out = await pushExecuteRunner.run(ctx) as { type: string; output?: { refused: boolean; reason: string }; prompt?: string };
-		assert.equal(out.type, 'output', 'ambiguous outcome refuses instead of creating');
-		assert.equal(out.output?.refused, true);
-		assert.match(out.output?.reason ?? '', /retained/, 'the refusal names the retained claim for human resolution');
+		const out = await pushExecuteRunner.run(ctx) as { type: string; code?: string; message?: string; prompt?: string };
+		assert.equal(out.type, 'error', 'ambiguous outcome is a TERMINAL error (round-8 MED: never a step output that flows into verify)');
+		assert.equal(out.code, 'pending-create-unresolved');
+		assert.match(out.message ?? '', /retained/, 'the error message carries the retained claim for human resolution');
 		assert.ok(!out.prompt, 'no create prompt dispatched');
 		const claim = readClaim(repo, H);
 		assert.ok(claim !== undefined, 'claim retained as recovery evidence');
@@ -366,15 +366,15 @@ test('REVIEW round-7 HIGH-1/HIGH-2 — a LEGACY claim (no version, unknown dispa
 		}));
 		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] };
 		const ctx = { intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } }, runId: 'run-B', stepOutputs: { s1 } } as never;
-		const out = await pushExecuteRunner.run(ctx) as { type: string; output?: { refused: boolean; reason: string }; prompt?: string };
-		assert.equal(out.type, 'output', 'legacy claim with unknown dispatch history refuses — no create');
-		assert.equal(out.output?.refused, true);
-		assert.match(out.output?.reason ?? '', /version legacy/, 'the refusal names the legacy claim shape');
+		const out = await pushExecuteRunner.run(ctx) as { type: string; code?: string; message?: string; prompt?: string };
+		assert.equal(out.type, 'error', 'legacy claim with unknown dispatch history is a terminal error — no create');
+		assert.equal(out.code, 'pending-create-unresolved');
+		assert.match(out.message ?? '', /version legacy/, 'the error names the legacy claim shape');
 		// HIGH-2: the resolution path leads with ADOPTION of a confirmed ref and
 		// reserves claim deletion for confirmed absence — it must not instruct
 		// delete-and-retry as a way to force a create
-		assert.match(out.output?.reason ?? '', /record its ref on the work item.*retry — the next run adopts it with 0 creates/s);
-		assert.match(out.output?.reason ?? '', /delete the claim file ONLY after confirming NO remote issue exists/);
+		assert.match(out.message ?? '', /record its ref on the work item.*retry — the next run adopts it with 0 creates/s);
+		assert.match(out.message ?? '', /delete the claim file ONLY after confirming NO remote issue exists/);
 		assert.ok(!out.prompt, 'no create prompt dispatched');
 		const claim = readClaim(repo, H);
 		assert.ok(claim !== undefined, 'claim retained');
@@ -382,6 +382,43 @@ test('REVIEW round-7 HIGH-1/HIGH-2 — a LEGACY claim (no version, unknown dispa
 		const s1o = (ctx.stepOutputs as { s1: Record<string, unknown> }).s1;
 		assert.equal(s1o['claimFence'], undefined, 'no fence carried into a refused run');
 		assert.equal(s1o['claimRunId'], undefined);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('REVIEW round-8 HIGH-1 — a FRESH winner with an existing marker-verified remote issue ADOPTS instead of creating (reconcile under the create decision)', async () => {
+	const { pushExecuteRunner } = await import('../index.js');
+	const { readClaim } = await import('../../../tracker/pending-create-claim.js');
+	const { artifactJsonPath, issueArtifactId } = await import('../../../storage.js');
+	const { markApprovedSync } = await import('../../../__tests__/lifecycle-fixtures.js');
+	const { mkdirSync, mkdtempSync, rmSync, writeFileSync } = await import('node:fs');
+	const { tmpdir } = await import('node:os');
+	const { join } = await import('node:path');
+
+	const H = '5f9d4ab4c90c0b4c';
+	const MARKER = `<!-- insrc:artifact ISSUE-${H} -->`;
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-r8-'));
+	try {
+		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		writeFileSync(join(repo, 'repo-config.json'), JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
+		process.env['INSRC_REPO_CONFIG'] = join(repo, 'repo-config.json');
+		const issue = artifactJsonPath(repo, issueArtifactId(H));
+		writeFileSync(issue, JSON.stringify({ meta: { workflow: 'issue', runId: 'i', schemaVersion: 1, issueHash: H, epicHash: H, epicSlug: 's', createdAt: '2026-11-16T07:14:04.399Z', epicCreatedAt: '2026-11-16T07:14:04.399Z', standalone: true }, body: { title: 'T', reproduction: 'r', rootCause: 'c', fixIntent: 'f' }, citations: [] }));
+		markApprovedSync(issue);
+		// no claim, no local binding — but the remote issue ALREADY exists (e.g.
+		// after claim removal / loss of local tracker state), surfaced in context
+		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#42' }] };
+		const ctx = { intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } }, runId: 'run-W', stepOutputs: { s1 } } as never;
+		const out = await pushExecuteRunner.run(ctx) as { type: string; prompt?: string; userTurn?: string; code?: string };
+		assert.equal(out.type, 'llm-pause', 'fresh winner adopts — no create dispatched');
+		assert.ok(!out.prompt!.includes('Create exactly ONE issue'), 'no create prompt');
+		assert.ok(out.userTurn!.includes('ADOPT the marker-verified issue `acme/demo#42`'), out.userTurn!);
+		const claim = readClaim(repo, H);
+		assert.equal(claim?.state, 'created', 'the fresh claim is marked created with the adopted ref');
+		assert.equal(claim?.issueRef, 'acme/demo#42');
+		assert.equal(claim?.runId, 'run-W');
+		const s1o = (ctx.stepOutputs as { s1: Record<string, unknown> }).s1;
+		assert.equal(s1o['claimFence'], claim?.fence, 'fence+runId carried for finalize');
+		assert.equal(s1o['claimRunId'], 'run-W');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 

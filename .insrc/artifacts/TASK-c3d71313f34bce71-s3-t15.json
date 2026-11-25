@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-00ff2a8e-ca56-4fe2-af6b-4e27e60e505d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-25T16:36:51.257Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Preserve verified ZIP descriptor and expand archive boundary coverage",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#291",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2daed2505c56e9dc0d85c734efe1db47e7791b65e8bf58f7aa7b7e0d855028f3",
+        "at": "2026-11-25T16:36:51.257Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T16:36:51.265Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Preserve verified ZIP descriptor and expand archive boundary coverage",
+    "summary": "Extract ZIP from its verified descriptor and strengthen risk-focused tar/zstd/ZIP and alias-copy cancellation tests without weakening existing archive controls.",
+    "size": "M",
+    "order": 15,
+    "acceptanceChecks": [
+      "Hash/envelope validation and yauzl.fromFd extraction use the same open descriptor through actual ZIP close, with explicit positive close ownership and cancellation; no path reopen/swap window.",
+      "Add hostile tar GNU L/K/base256-negative/PAX-size/padding/endmarker/link-data/setuid/nested-inventory vectors and zstd reserved/dictionary/content-size/skippable/dual-decoder mismatch vectors. Assert intended validation codes/paths instead of incidental EEXIST.",
+      "Cover ZIP64 descriptors, EOCD signature in comment, Unicode extra names, gap/overlap and verified-fd path swap, plus cancellation during alias copy. Preserve byte/file/memory/path bounds and contained publication.",
+      "Check real destination/stage/publication paths and safe event-based synchronization/margins in archive tests. No fixture can pass a no-publication assertion against an unused path.",
+      "Run only archive/tar/ZIP/prepare surrounding selectors and relevant packaging/scanner checks for changed ownership paths; defer combined installer suite to final task."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "hostile-archive-and-large-zstd-window-fail-before-unsafe-write-or-allocation"
+      },
+      {
+        "level": "integration",
+        "name": "internal-archive-links-materialize-only-qualified-contained-files"
+      },
+      {
+        "level": "integration",
+        "name": "download-size-digest-layout-and-fsync-failures-never-report-ready"
+      },
+      {
+        "level": "integration",
+        "name": "archive-digest-mismatch-still-rejects-live-acquisition"
+      },
+      {
+        "level": "integration",
+        "name": "zip-extraction-uses-verified-descriptor-across-path-swap-and-positive-close"
+      },
+      {
+        "level": "integration",
+        "name": "hostile-tar-zstd-zip-boundary-matrix-rejects-before-unsafe-write"
+      },
+      {
+        "level": "integration",
+        "name": "alias-copy-cancellation-closes-before-owned-cleanup"
+      }
+    ],
+    "planTaskId": "t15"
+  },
+  "citations": []
+}

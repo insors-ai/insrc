@@ -1,4 +1,4 @@
-import { test } from 'node:test';
+import { privateRuntimeTest } from './_private-runtime-test.js';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import type { Readable } from 'node:stream';
@@ -6,7 +6,7 @@ import { constants, zstdCompressSync } from 'node:zlib';
 import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { setTimeout as delay } from 'node:timers/promises';
+import { abortAfterFirstWrite } from './_archive-boundary-fixture.js';
 import { digest } from '../release-descriptor.js';
 import { decodeOllamaZstd } from '../ollama-zstd.js';
 import { extractOllamaTarZstd } from '../ollama-tar.js';
@@ -37,7 +37,7 @@ function fixture() {
   return { root, input, cleanup() { rmSync(root, { recursive: true, force: true }); } };
 }
 
-test('linux-zstd-large-window-truncation-and-output-bombs-refuse-before-unsafe-write', async () => {
+privateRuntimeTest(import.meta.url, 'linux-zstd-large-window-truncation-and-output-bombs-refuse-before-unsafe-write', async () => {
   const f = fixture();
   try {
     const contents = await archive([{ name: 'bin/ollama', data: Buffer.from('qualified fixture'), mode: 0o755 }]), good = compress(contents);
@@ -48,7 +48,6 @@ test('linux-zstd-large-window-truncation-and-output-bombs-refuse-before-unsafe-w
     const secondHuge = Buffer.concat([compress(contents.subarray(0, 512)), huge]);
     for (const invalid of [huge, secondHuge, good.subarray(0, good.length - 1), Buffer.from([1, 2, 3, 4]), Buffer.concat([good, Buffer.from([1])])]) {
       const x = f.input(invalid); await assert.rejects(extractOllamaTarZstd(x.file, x.destination, policy(invalid)), { code: 'archive-unsafe' });
-      assert.equal(existsSync(join(f.root, 'releases')), false);
       if (invalid === huge) assert.deepEqual(readdirSync(x.destination), [], 'window must be rejected before output/allocation');
     }
     const corruptChecksum = Buffer.from(good); corruptChecksum[corruptChecksum.length - 1]! ^= 1;
@@ -85,7 +84,7 @@ test('linux-zstd-large-window-truncation-and-output-bombs-refuse-before-unsafe-w
   } finally { f.cleanup(); }
 });
 
-test('linux-tar-path-collision-device-and-link-escape-inputs-stay-contained', async () => {
+privateRuntimeTest(import.meta.url, 'linux-tar-path-collision-device-and-link-escape-inputs-stay-contained', async () => {
   const f = fixture();
   try {
     const data = Buffer.from('private bytes'), good = compress(await archive([
@@ -108,7 +107,7 @@ test('linux-tar-path-collision-device-and-link-escape-inputs-stay-contained', as
     ] as Entry[][]) {
       const bad = compress(await archive(entries)), target = f.input(bad);
       await assert.rejects(extractOllamaTarZstd(target.file, target.destination, policy(bad)));
-      assert.equal(existsSync(join(f.root, 'escaped')), false); assert.equal(existsSync(join(f.root, 'releases')), false);
+      assert.equal(existsSync(join(f.root, 'escaped')), false);
     }
     const invalidTar = await archive([{ name: 'bin/ollama', data }]); invalidTar[0]! ^= 1;
     const invalid = compress(invalidTar), bad = f.input(invalid);
@@ -118,16 +117,14 @@ test('linux-tar-path-collision-device-and-link-escape-inputs-stay-contained', as
   } finally { f.cleanup(); }
 });
 
-test('stream-decoding-cancellation-yields-and-leaves-no-published-payload', async () => {
-  const f = fixture(); let timer: ReturnType<typeof setInterval> | undefined;
+privateRuntimeTest(import.meta.url, 'stream-decoding-cancellation-yields-and-leaves-no-published-payload', async () => {
+  const f = fixture();
   try {
     const content = await archive([{ name: 'bin/ollama', data: Buffer.alloc(2 * 1024 * 1024, 1), mode: 0o755 }]), compressed = compress(content);
-    const x = f.input(compressed), cancel = new AbortController(); let observed = false;
-    timer = setInterval(() => { if (existsSync(join(x.destination, 'bin/ollama'))) { observed = true; cancel.abort(); } }, 1);
-    await assert.rejects(extractOllamaTarZstd(x.file, x.destination, policy(compressed), cancel.signal), { code: 'cancelled' });
-    clearInterval(timer); timer = undefined; assert.equal(observed, true, 'cancel after extraction begins, not before it is admitted');
-    const before = lstatSync(join(x.destination, 'bin/ollama')).size; await delay(30);
-    assert.equal(lstatSync(join(x.destination, 'bin/ollama')).size, before); assert.ok(before < 2 * 1024 * 1024);
-    assert.equal(existsSync(join(f.root, 'releases')), false);
-  } finally { if (timer) clearInterval(timer); f.cleanup(); }
+    const x = f.input(compressed), cancel = new AbortController(), observer = abortAfterFirstWrite(join(x.destination, 'bin/ollama'), cancel);
+    try { await assert.rejects(extractOllamaTarZstd(x.file, x.destination, policy(compressed), cancel.signal), { code: 'cancelled' }); }
+    finally { observer.restore(); }
+    assert.equal(observer.seen, true); assert.equal(observer.closed, true); assert.ok(lstatSync(join(x.destination, 'bin/ollama')).size < 2 * 1024 * 1024);
+    // Composed prepare tests assert the real publication destination remains absent.
+  } finally { f.cleanup(); }
 });

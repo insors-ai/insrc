@@ -1,4 +1,4 @@
-import { test } from 'node:test';
+import { privateRuntimeTest } from './_private-runtime-test.js';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { createRequire } from 'node:module';
@@ -8,7 +8,7 @@ import { zstdCompressSync } from 'node:zlib';
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { setTimeout as delay } from 'node:timers/promises';
+import { abortAfterFirstWrite } from './_archive-boundary-fixture.js';
 import { extractOllamaArchive } from '../ollama-archive.js';
 import { extractOllamaZip } from '../ollama-zip.js';
 import { digest } from '../release-descriptor.js';
@@ -59,7 +59,7 @@ async function tarBytes(files: Member[], aliases: Array<{ path: string; target: 
   output.finalize(); for await (const chunk of output) parts.push(Buffer.from(chunk)); return zstdCompressSync(Buffer.concat(parts));
 }
 
-test('qualified-zip-app-layout-requires-correct-executable-and-library-closure', async () => {
+privateRuntimeTest(import.meta.url, 'qualified-zip-app-layout-requires-correct-executable-and-library-closure', async () => {
   const f = fixture();
   try {
     for (const os of ['win32', 'darwin'] as const) {
@@ -94,7 +94,7 @@ test('qualified-zip-app-layout-requires-correct-executable-and-library-closure',
   } finally { f.cleanup(); }
 });
 
-test('internal-archive-links-materialize-only-qualified-contained-files', async () => {
+privateRuntimeTest(import.meta.url, 'internal-archive-links-materialize-only-qualified-contained-files', async () => {
   const f = fixture();
   try {
     const files = [{ path: 'bin/ollama', bytes: executable('linux'), mode: 0o755 }, { path: 'lib/runtime.dat', bytes: Buffer.from('library') }];
@@ -159,8 +159,8 @@ function centralExtra(bytes: Buffer, extra: Buffer): Buffer {
   data.writeUInt16LE(count + extra.length, central + 30); data.writeUInt32LE(data.readUInt32LE(end + 12) + extra.length, end + 12);
   return Buffer.concat([data.subarray(0, insert), extra, data.subarray(insert)]);
 }
-test('zip-and-layout-escapes-collisions-and-abort-preserve-existing-bytes', async () => {
-  const f = fixture(); let timer: ReturnType<typeof setInterval> | undefined;
+privateRuntimeTest(import.meta.url, 'zip-and-layout-escapes-collisions-and-abort-preserve-existing-bytes', async () => {
+  const f = fixture();
   try {
     const base = await zip([{ path: 'safe.txt', bytes: Buffer.from('safe') }]);
     const zipped64 = zip64Local(base), qualified64 = f.input(zipped64);
@@ -203,11 +203,11 @@ test('zip-and-layout-escapes-collisions-and-abort-preserve-existing-bytes', asyn
     const linked = join(f.root, 'linked'); symlinkSync(occupied.stage, linked, process.platform === 'win32' ? 'junction' : 'dir'); const linkInput = f.input(bytes);
     assert.equal(controlBinding().safePath(linked, true, false), false);
     await assert.rejects(extractOllamaArchive(linkInput.archive, linked, policy(bytes)), /private owned/); assert.equal(readFileSync(join(occupied.stage, 'sentinel'), 'utf8'), 'retain');
-    const x = f.input(bytes), cancel = new AbortController(); let seen = false;
-    timer = setInterval(() => { if (existsSync(join(x.stage, 'lib/runtime.dat'))) { seen = true; cancel.abort(); } }, 1);
-    await assert.rejects(extractOllamaArchive(x.archive, x.stage, policy(bytes), cancel.signal), { code: 'cancelled' });
-    clearInterval(timer); timer = undefined; assert.equal(seen, true);
-    const before = lstatSync(join(x.stage, 'lib/runtime.dat')).size; await delay(30); assert.equal(lstatSync(join(x.stage, 'lib/runtime.dat')).size, before);
-    assert.equal(existsSync(join(f.root, 'releases')), false);
-  } finally { if (timer) clearInterval(timer); f.cleanup(); }
+    const x = f.input(bytes), cancel = new AbortController(), observer = abortAfterFirstWrite(join(x.stage, 'lib/runtime.dat'), cancel);
+    try { await assert.rejects(extractOllamaArchive(x.archive, x.stage, policy(bytes), cancel.signal), { code: 'cancelled' }); }
+    finally { observer.restore(); }
+    assert.equal(observer.seen, true); assert.equal(observer.closed, true); assert.ok(lstatSync(join(x.stage, 'lib/runtime.dat')).size < 2 * 1024 * 1024);
+    // Actual dependency publication is asserted by the composed prepare/alias
+    // cancellation case, rather than an unused root/releases pathname.
+  } finally { f.cleanup(); }
 });

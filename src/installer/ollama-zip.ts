@@ -1,8 +1,7 @@
 import yauzl from 'yauzl';
 import type { Entry, ZipFile, LocalFileHeader } from 'yauzl';
-import { constants } from 'node:fs';
+import { constants, fstatSync, openSync, read as readDescriptor } from 'node:fs';
 import { lstat, open } from 'node:fs/promises';
-import type { FileHandle } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { posix, join, dirname } from 'node:path';
 import { crc32, createInflateRaw } from 'node:zlib';
@@ -14,7 +13,43 @@ import type { OllamaPolicy } from './ollama-policy.js';
 import type { OllamaExtracted } from './ollama-tar.js';
 import { archiveUnsafe, OllamaArchivePaths, ollamaMemberPath, ollamaParents, privateOllamaDirectory } from './ollama-layout.js';
 import { controlBinding } from './native.js';
-import { closeOwnedFile } from './owned-file.js';
+import { closeOwnedDescriptor, closeOwnedFile } from './owned-file.js';
+
+interface ZipSource { read(buffer: Buffer, offset: number, length: number, position: number | null): Promise<{ bytesRead: number }> }
+
+/** Read exact bounded blocks rather than accepting async-iterator coalescing.
+ * Node may combine several decoder buffers while a file write is pending. */
+async function* zipChunks(input: Readable): AsyncGenerator<Buffer> {
+  while (true) {
+    const chunk = input.read(Math.min(65536, input.readableLength || 65536)) as Buffer | null;
+    if (chunk) { if (chunk.length > 65536) throw archiveUnsafe('ZIP read exceeded bounded block'); yield chunk; continue; }
+    if (input.readableEnded) return;
+    if (input.destroyed) throw input.errored ?? archiveUnsafe('ZIP stream closed before end');
+    await new Promise<void>((resolve, reject) => {
+      const clean = () => { input.off('readable', ready); input.off('end', ready); input.off('error', failed); input.off('close', ended); };
+      const ready = () => { clean(); resolve(); }, failed = (cause: Error) => { clean(); reject(cause); };
+      const ended = () => { clean(); input.readableEnded ? resolve() : reject(input.errored ?? archiveUnsafe('ZIP stream closed before end')); };
+      input.once('readable', ready); input.once('end', ready); input.once('error', failed); input.once('close', ended);
+      if (input.readableEnded) ready(); else if (input.destroyed) ended(); else if (input.readableLength > 0) ready();
+    });
+  }
+}
+
+/** yauzl 3.4.0's fromFd owns the numeric fd on success. Its pinned FdSlicer
+ * queue must drain after stream destruction before close can release that fd. */
+async function closeVerifiedZip(zip: ZipFile): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const pending = (zip as unknown as { reader?: { pend?: { wait(callback: () => void): void } } }).reader?.pend;
+  if (typeof pending?.wait !== 'function') throw new InstallerError('resource-close-uncertain', 'ZIP reader ownership protocol is unavailable');
+  const close = new Promise<void>((resolve, reject) => {
+    zip.once('close', resolve);
+    zip.once('error', cause => reject(new InstallerError('resource-close-uncertain', 'ZIP descriptor close is unconfirmed', { cause })));
+    pending.wait(() => { try { zip.close(); } catch (cause) { reject(new InstallerError('resource-close-uncertain', 'ZIP descriptor close is unconfirmed', { cause })); } });
+  });
+  try { await Promise.race([close, new Promise<never>((_resolve, reject) => { timer = setTimeout(() => reject(new InstallerError('resource-close-uncertain', 'ZIP descriptor close exceeded its bounded drain')), 5000); })]); }
+  catch (cause) { if (cause instanceof InstallerError && cause.code === 'resource-close-uncertain') throw cause; throw new InstallerError('resource-close-uncertain', 'ZIP descriptor close is unconfirmed', { cause }); }
+  finally { if (timer) clearTimeout(timer); }
+}
 
 function extraFields(bytes: Buffer): Map<number, Buffer> {
   const fields = new Map<number, Buffer>(); let offset = 0;
@@ -45,7 +80,7 @@ function localSizes(local: LocalFileHeader): { compressed: number; expanded: num
 }
 /** yauzl intentionally tolerates some directory metadata. Qualify its envelope
  * and raw extra fields strictly, including fields it otherwise ignores. */
-async function directoryEnvelope(file: FileHandle, bytes: number, maximum: number, signal?: AbortSignal) {
+async function directoryEnvelope(file: ZipSource, bytes: number, maximum: number, signal?: AbortSignal) {
   const read = async (offset: number, length: number) => {
     if (!Number.isSafeInteger(offset) || offset < 0 || offset + length > bytes) throw archiveUnsafe('ZIP metadata range exceeds archive');
     const data = Buffer.alloc(length); let got = 0;
@@ -123,11 +158,17 @@ export async function extractOllamaZip(archive: string, destination: string, pol
   await privateOllamaDirectory(destination, true);
   await privateOllamaDirectory(dirname(archive));
   if (process.platform === 'win32' && !controlBinding().safePath(archive, false, false)) throw archiveUnsafe('Dependency ZIP is a reparse point');
-  const source = await open(archive, constants.O_RDONLY | constants.O_NOFOLLOW);
+  // A numeric descriptor transfers to fromFd on success. A FileHandle cannot
+  // safely share ownership: yauzl.close would leave its GC finalizer stale.
+  const fd = openSync(archive, constants.O_RDONLY | constants.O_NOFOLLOW);
+  const source: ZipSource = { read: (buffer, offset, length, position) => new Promise((resolve, reject) => {
+    readDescriptor(fd, buffer, offset, length, position, (error, bytesRead) => error ? reject(error) : resolve({ bytesRead }));
+  }) };
+  let owner: ZipFile | undefined;
   let envelope: Awaited<ReturnType<typeof directoryEnvelope>>;
   try {
-    const info = await source.stat(), initial = await lstat(archive);
-    if (!info.isFile() || info.nlink !== 1 || info.size !== policy.asset.bytes || info.ino !== initial.ino || initial.isSymbolicLink()) throw archiveUnsafe('Unsafe dependency ZIP source');
+    const info = fstatSync(fd), initial = await lstat(archive);
+    if (!info.isFile() || info.nlink !== 1 || info.size !== policy.asset.bytes || info.ino !== initial.ino || info.dev !== initial.dev || initial.isSymbolicLink()) throw archiveUnsafe('Unsafe dependency ZIP source');
     const hash = createHash('sha256'), buffer = Buffer.alloc(65536); let bytes = 0;
     while (true) {
       signal?.throwIfAborted(); const part = await source.read(buffer, 0, buffer.length, null); if (!part.bytesRead) break;
@@ -135,9 +176,8 @@ export async function extractOllamaZip(archive: string, destination: string, pol
     }
     if (bytes !== policy.asset.bytes || hash.digest('hex') !== policy.asset.sha256) throw archiveUnsafe('Dependency ZIP identity differs');
     envelope = await directoryEnvelope(source, info.size, policy.limits.files, signal);
-  } finally { await closeOwnedFile(source); }
-  const zip = await new Promise<ZipFile>((resolve, reject) => yauzl.open(archive, { lazyEntries: true, strictFileNames: true, validateEntrySizes: true, autoClose: false }, (error, value) => error ? reject(error) : resolve(value!)));
-  const closed = new Promise<void>(resolve => zip.once('close', resolve));
+  const zip = await new Promise<ZipFile>((resolve, reject) => yauzl.fromFd(fd, { lazyEntries: true, strictFileNames: true, validateEntrySizes: true, autoClose: false }, (error, value) => error ? reject(error) : resolve(value!)));
+  owner = zip;
   let failure: unknown, pending: { resolve(entry: Entry | null): void; reject(error: unknown): void } | undefined, input: Readable | undefined;
   const fail = (error: Error) => { failure = error; pending?.reject(error); pending = undefined; input?.destroy(error); };
   zip.on('error', fail);
@@ -148,6 +188,7 @@ export async function extractOllamaZip(archive: string, destination: string, pol
   const result: OllamaExtracted = { files: [], aliases: [] }, paths = new OllamaArchivePaths(policy.limits.files);
   const entries: Array<{ entry: Entry; name: string; directory: boolean; alias: boolean; mode: number; start: number; end: number }> = [];
   const central = Number(zip.readEntryCursor); let total = 0, metadata = 0;
+  let extractionFailed = false;
   try {
     if (zip.entryCount !== envelope.count || central !== envelope.offset) throw archiveUnsafe('ZIP reader and verified directory envelope differ');
     // Validate the whole directory and each local header before creating files.
@@ -202,7 +243,7 @@ export async function extractOllamaZip(archive: string, destination: string, pol
       let output: Awaited<ReturnType<typeof open>> | undefined;
       try {
         if (writing) { await ollamaParents(destination, item.name, false, signal); signal?.throwIfAborted(); output = await open(join(destination, item.name), constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, item.mode); }
-        for await (const raw of input) {
+        for await (const raw of zipChunks(input)) {
           signal?.throwIfAborted(); const chunk = raw as Buffer;
           if (chunk.length > 65536 || (bytes += chunk.length) > item.entry.uncompressedSize || (total += chunk.length) > policy.limits.expandedBytes) throw archiveUnsafe('Dependency ZIP actual output exceeds bounds');
           hash.update(chunk); crc = crc32(chunk, crc);
@@ -229,8 +270,13 @@ export async function extractOllamaZip(archive: string, destination: string, pol
     }
     return result;
   } catch (cause) {
+    extractionFailed = true;
     if (signal?.aborted) throw new InstallerError('cancelled', 'Dependency ZIP extraction cancelled', { cause });
     if (cause instanceof InstallerError) throw cause;
     throw new InstallerError('archive-unsafe', 'Malformed dependency ZIP payload', { cause });
-  } finally { signal?.removeEventListener('abort', cancel); zip.close(); await closed; }
+  } finally {
+    signal?.removeEventListener('abort', cancel); await closeVerifiedZip(zip);
+    if (!extractionFailed && signal?.aborted) throw new InstallerError('cancelled', 'Dependency ZIP extraction cancelled after descriptor drain');
+  }
+  } finally { if (!owner) closeOwnedDescriptor(fd); }
 }

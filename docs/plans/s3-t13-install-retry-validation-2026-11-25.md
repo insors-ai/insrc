@@ -18,3 +18,9 @@ Bundle offers now carry their complete parsed descriptor in versioned private me
 - Interruption tests in this task use deterministic actor/barrier and completion gaps. Actual signal/process death and production supervisor tests remain t14. No installed host daemon or host Ollama was changed; no full backend suite was run.
 
 The registered task validation gate follows this commit. Final story approval and the composed scoped regression remain pending until all correction tasks are complete.
+
+## Gate follow-up: actual death during cleanup
+
+The first tracked gate passed typecheck and all new Retry/bundle tests, but rejected the round because the detection file still ran under host Node 26 and cleanup interruption was only simulated after completion. Detection cases now use the existing private-runtime wrapper. A new captured child runs the real manager Retry and real cleanup primitive, acknowledges the temporary-unlink/completion gap, and is killed with SIGKILL by its owning test. At death one temporary item remains, cleanup completion is absent, and no new install operation exists. A fresh manager and newly constructed typed delivery peers then finish the missing real cleanup journals before ordinary fresh installation. The real dependency adapter performs this second cleanup; delivery/daemon peers remain controlled fixtures.
+
+Canonical focused run `e92921b4-bf1c-4547-b575-2c13f915116d`: 14/14 tests passed, zero failed/skipped/cancelled, confirmed owned-group closure. The captured cleanup child is the only actor intentionally terminated; no daemon/service process or host installation was touched. Broader preparation/handoff signals and retained-supervisor death still belong to t14. Tracked revalidation follows.

@@ -1,4 +1,4 @@
-import { test } from 'node:test';
+import { privateRuntimeTest } from './_private-runtime-test.js';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -55,7 +55,7 @@ function tree(root: string): unknown[] {
     return stat.isDirectory() ? [name, tree(file)] : [name, stat.isSymbolicLink() ? 'link' : readFileSync(file).toString('base64'), stat.mode]; });
 }
 
-test('dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable', async () => {
+privateRuntimeTest(import.meta.url, 'dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable', async () => {
   for (const kind of ['missing', 'stopped', 'ready', 'malformed', 'redirect', 'oversized', 'slow', 'permission', 'configuration'] as const) {
     const f = await fixture((req, res) => {
       if (kind === 'slow') return;
@@ -82,7 +82,7 @@ test('dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailabl
   }
 });
 
-test('healthy-service-without-path-binary-is-reused', async () => {
+privateRuntimeTest(import.meta.url, 'healthy-service-without-path-binary-is-reused', async () => {
   const f = await fixture();
   try {
     const result = await inspectDependencies(f.location, target, { ...f.options, policies: [f.policy()] });
@@ -92,7 +92,7 @@ test('healthy-service-without-path-binary-is-reused', async () => {
   } finally { await f.cleanup(); }
 });
 
-test('inspect-and-decline-have-zero-mutation-or-process-side-effects', async () => {
+privateRuntimeTest(import.meta.url, 'inspect-and-decline-have-zero-mutation-or-process-side-effects', async () => {
   const f = await fixture();
   try {
     await f.closeServer(); for (const name of ['claude', 'codex', 'vibe']) f.executable(name);
@@ -110,7 +110,7 @@ test('inspect-and-decline-have-zero-mutation-or-process-side-effects', async () 
   } finally { await f.cleanup(); }
 });
 
-test('stopped-existing-ollama-has-manual-guidance-without-start-action', async () => {
+privateRuntimeTest(import.meta.url, 'stopped-existing-ollama-has-manual-guidance-without-start-action', async () => {
   const f = await fixture();
   try {
     await f.closeServer(); const file = f.executable('ollama');
@@ -124,7 +124,7 @@ test('stopped-existing-ollama-has-manual-guidance-without-start-action', async (
   } finally { await f.cleanup(); }
 });
 
-test('agent-zero-one-many-detection-never-spawns-auth-model-or-install', async () => {
+privateRuntimeTest(import.meta.url, 'agent-zero-one-many-detection-never-spawns-auth-model-or-install', async () => {
   const f = await fixture();
   try {
     let report = (await inspectDependencies(f.location, target, f.options)).report;
@@ -154,7 +154,7 @@ test('agent-zero-one-many-detection-never-spawns-auth-model-or-install', async (
   } finally { await f.cleanup(); }
 });
 
-test('private-runtime-provenance-rejects-path-node-and-wrong-target', async () => {
+privateRuntimeTest(import.meta.url, 'private-runtime-provenance-rejects-path-node-and-wrong-target', async () => {
   const f = await fixture();
   try {
     f.executable('node'); f.executable('npm');

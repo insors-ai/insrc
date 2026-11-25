@@ -1,12 +1,23 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, readdirSync, unlinkSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
+import { once } from 'node:events';
+import { fileURLToPath } from 'node:url';
+import { randomUUID } from 'node:crypto';
+import type { ChildProcess } from 'node:child_process';
 import { join } from 'node:path';
 import { privateRuntimeTest } from './_private-runtime-test.js';
 import { managerFixture } from './_manager-fixture.js';
 import { ControllerStore } from '../controller-store.js';
 import { InstallerError } from '../contracts.js';
 import type { DependencyReport } from '../contracts.js';
-import { requireDependencyOperation, requireDependencyRetry } from '../dependency-context.js';
+import { createDependencyOperationContext, requireDependencyOperation, requireDependencyRetry } from '../dependency-context.js';
+import { dependencyAttemptIdentity } from '../ollama-policy.js';
+import { dependencyLockIdentity, ensureDependencyDirectory, writeDependencyRecord } from '../ollama-records.js';
+import { canonicalJson } from '../release-descriptor.js';
+import { controlBinding } from '../native.js';
+import { dependencyPort } from '../dependencies.js';
+import { ollamaFixture } from './_ollama-fixture.js';
+import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
 import { requireTerminal } from '../terminal-admission.js';
 import { runTerminalInstall } from '../terminal-install.js';
 import type { TerminalUI } from '../terminal-install.js';
@@ -24,8 +35,8 @@ const admission = () => requireTerminal(ui([]).streams);
 function readData(home: string, operation: string, name: string): unknown {
   return JSON.parse(readFileSync(join(home, 'install/operations', operation, `${name}.json`), 'utf8'));
 }
-async function interrupted() {
-  const f = managerFixture(), store = ControllerStore.acquire(f.location);
+async function interrupted(home?: string) {
+  const f = managerFixture(home, true), store = ControllerStore.acquire(f.location);
   try {
     const current = store.inspect(); assert.equal(current.kind, 'present'); if (current.kind !== 'present') throw new Error('missing fixture');
     store.commit({ ...current.snapshot, revision: current.snapshot.revision + 1,
@@ -177,4 +188,52 @@ privateRuntimeTest(import.meta.url, 'decline-creates-no-dependency-context-recor
     assert.equal(existsSync(join(f.home, 'install/operations/declined-install/dependency.json')), false);
     assert.equal(existsSync(join(f.home, 'deps')), false); assert.equal(f.state.migrations.length, 0); assert.equal(f.state.activations.length, 0);
   } finally { f.cleanup(); }
+});
+
+privateRuntimeTest(import.meta.url, 'actual-cleanup-process-death-retries-missing-items-with-fresh-manager-and-delivery', async () => {
+  const base = await ollamaFixture('fixture'), f = await interrupted(base.home), children: ChildProcess[] = [];
+  try {
+    const { policy, offer } = await base.input(), dependency = readData(f.home, originalId, 'dependency') as { attemptNonce: string };
+    const context = createDependencyOperationContext(f.location, f.target.os, { operationId: originalId, attemptNonce: dependency.attemptNonce, assertCurrent() {}, progress() {} });
+    const identity = dependencyAttemptIdentity(f.location, policy, offer, context);
+    for (const path of [`deps/ollama/.attempts/${originalId}`, identity.stageRelativePath]) ensureDependencyDirectory(f.location, path, context.assertCurrent);
+    const record = join(f.home, identity.recordRelativePath), stage = join(f.home, identity.stageRelativePath), handle = controlBinding().acquire(`${record}.lock`);
+    try {
+      writeDependencyRecord(f.location, handle, record, { schemaVersion: 2, identity, absence: offer.absence, actor: 'in-process-preparation', externalActors: 0,
+        policy, lockProtocol: 'in-process-native-v1', lockIdentity: dependencyLockIdentity(`${record}.lock`) });
+      writeFileSync(join(stage, 'partial-download'), 'only owned partial bytes', { mode: 0o600 });
+    } finally { controlBinding().close(handle); }
+    const store = ControllerStore.acquire(f.location);
+    try { store.writeOperationData(originalId, 'dependency', { ...(readData(f.home, originalId, 'dependency') as object), decision: { offerId: offer.id, choice: 'install' } }, true); }
+    finally { store.close(); }
+    const temporary = [`${record}.${randomUUID()}.tmp`, `${record}.${randomUUID()}.tmp`];
+    for (const path of temporary) writeFileSync(path, 'interrupted record bytes', { mode: 0o600 });
+    const input = join(base.root, 'cleanup-child.json'); writeFileSync(input, JSON.stringify({ home: f.home, operationId: originalId, policy }));
+    const child = spawnFixture(process.execPath, ['--import', 'tsx', fileURLToPath(new URL('./install-retry-death-fixture.mjs', import.meta.url)), input], { stdio: ['ignore', 'ignore', 'pipe', 'ipc'] }); children.push(child);
+    let diagnostic = ''; child.stderr!.on('data', bytes => { diagnostic = (diagnostic + bytes.toString()).slice(-8192); });
+    const boundary = await Promise.race([once(child, 'message'), once(child, 'close').then(result => { throw new Error(`cleanup child exited ${result}: ${diagnostic}`); })]);
+    assert.deepEqual(boundary[0], { boundary: 'temporary-unlinked-before-completion' });
+    assert.equal(existsSync(stage), false); assert.equal(temporary.filter(path => existsSync(path)).length, 1);
+    assert.equal(existsSync(record.replace(/\.json$/, '.retry-done.json')), false);
+    assert.equal(existsSync(join(f.home, 'install/operations', originalId, 'install-retry.json')), false);
+    // Only this captured fixture process is terminated, never a daemon/service.
+    const closed = once(child, 'close'); assert.equal(child.kill('SIGKILL'), true); assert.deepEqual(await closed, [null, 'SIGKILL']);
+    assert.deepEqual(readdirSync(join(f.home, 'install/operations')), [originalId]);
+    const fresh = managerFixture(f.home, false), real = dependencyPort(base.target, base.location, base.options), events: string[] = [];
+    fresh.state.observation = { state: 'absent', resourceOwnershipReleased: true, evidence: { kind: 'never-started' } };
+    // These are new typed delivery/lifecycle fixtures, never the original peer
+    // closures. The cleanup itself uses the real dependency adapter/journals.
+    const bundle = fresh.peers.bundle!;
+    fresh.peers.bundle = { ...bundle, async resolve(input) { events.push('resolve'); return bundle.resolve(input); }, async prepare(...args) { events.push('prepare'); return bundle.prepare(...args); } };
+    fresh.peers.dependencies = { async inspect() { return ready; }, async decide() { throw new Error('ready existing state needs no dependency installation'); },
+      async cleanupInstall(location, owner) { events.push('cleanup-start'); await real.cleanupInstall!(location, owner); events.push('cleanup-done'); } };
+    const result = await runTerminalInstall({ location: fresh.location, target: fresh.target, peers: fresh.peers, ui: ui(['yes', '', '', '', 'yes']), operationId: originalId,
+      select: async () => ({ node: 'fixture', entry: 'fixture', managerEntry: 'fixture', releaseId: fresh.next.releaseId, location: fresh.location }), publish: () => '', launch: async () => ({ code: 0, signal: null }) });
+    assert.equal(result.kind, 'completed', result.event?.state.message); assert.notEqual(result.event?.operationId, originalId);
+    assert.deepEqual(events, ['cleanup-start', 'cleanup-done', 'resolve', 'prepare']);
+    assert.ok(temporary.every(path => !existsSync(path))); assert.equal(existsSync(record.replace(/\.json$/, '.retry-done.json')), true);
+    assert.equal((readData(f.home, originalId, 'install-retry') as { cleanupComplete: boolean }).cleanupComplete, true);
+    assert.equal(readFileSync(join(f.home, 'application-data'), 'utf8'), 'retain'); assert.equal(readFileSync(join(f.old.directory, 'marker'), 'utf8'), 'old');
+    assert.equal(canonicalJson(readData(f.home, originalId, 'dependency')), canonicalJson({ ...dependency, decision: { offerId: offer.id, choice: 'install' } }));
+  } finally { await stopOwnedChildren(children); await base.cleanup(); }
 });

@@ -78,7 +78,7 @@ await withRun(run,async scope=>{
     enrolled();const before=readFileSync(join(home,'install/controller.json'),'utf8');
     const checked=await request(inspect);assert.equal(checked.response.code,0,checked.text);assert.equal(JSON.parse(checked.text.trim().split('\n').at(-1)).kind,'result');
     assert.equal(readFileSync(join(home,'install/controller.json'),'utf8'),before);assert.equal(existsSync(join(home,'dev/checkouts')),false);
-    const realPeers=productionPeers(target,location);assert.ok(realPeers.dev);assert.ok(realPeers.bundle);assert.equal(realPeers.dependencies,undefined);assert.equal(realPeers.lifecycle,undefined);assert.equal(realPeers.migrations,undefined);
+    const realPeers=productionPeers(target,location);assert.ok(realPeers.dev);assert.ok(realPeers.bundle);assert.equal(typeof realPeers.dependencies.inspect,'function');assert.equal(typeof realPeers.dependencies.decide,'function');assert.equal(realPeers.lifecycle,undefined);assert.equal(realPeers.migrations,undefined);
     const unavailable=await request({...inspect,operationId:'start',action:'start'});assert.notEqual(unavailable.response.code,0);assert.match(unavailable.text,/capability-unavailable/);assert.equal(readFileSync(join(home,'install/controller.json'),'utf8'),before);
     if(scenario==='inspect') {
       const candidate=await realPeers.dev.open(location,first.offer.releaseId);await realPeers.dev.verify(candidate,location);

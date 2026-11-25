@@ -414,7 +414,9 @@ test('REVIEW round-3 — stale-context run adopts the durable ref (HIGH-1); carr
 			const intent = { workflow: 'tracker.push', focus: 'push', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
 			const fr = await _finalizeTracker(intent, { s1: staleS1 }, 'run-A-stale', 5, { refs: { epicRef: 'acme/demo#99', storyRefs: { s1: 'acme/demo#99' }, labelsCreated: [] }, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } }, 'm');
 			assert.equal(fr.ok, false, 'HIGH-2: stale owner with a different ref is refused');
-			assert.match(JSON.stringify(fr), /displaced\/completed owner refused/i);
+			// round-16 self-review: the durable-ref rebind check fires before the
+			// displaced-owner check — both refuse before any write
+			assert.match(JSON.stringify(fr), /displaced\/completed owner refused|refusing to rebind/i);
 			assert.equal(readTrackerMeta(fx.issue)?.issueRef, 'acme/demo#42', 'completed publication not replaced');
 			const fr2 = await _finalizeTracker(intent, { s1: staleS1 }, 'run-A-idem', 5, { refs: { epicRef: 'acme/demo#42', storyRefs: { s1: 'acme/demo#42' }, labelsCreated: [] }, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } }, 'm');
 			assert.equal(fr2.ok, true, 'HIGH-2: idempotent completion with the same durable ref is allowed: ' + JSON.stringify(fr2));
@@ -542,4 +544,64 @@ test('REVIEW round-7 HIGH-3 — a reused fence from a different run is refused: 
 		assert.equal(readTrackerMeta(fx.issue)?.issueRef, 'acme/demo#42');
 		assert.equal(readClaim(fx.repo, HASH), undefined, 'the rightful owner releases the claim after persistence');
 	} finally { fx.cleanup(); }
+});
+
+test('SELF-REVIEW round-16 — finalize rereads the live ISSUE head: durable-ref rebind refused without a claim; unapproved head refused on push AND sync; changed approved content refused on push', async () => {
+	const { renderIssueEpicBody } = await import('../tracker/conventions.js');
+	const BODY = renderIssueEpicBody({ body: { title: 'ISSUE title', reproduction: 'r', rootCause: 'c', fixIntent: 'f' } } as never, SLUG, undefined, issueArtifactId(HASH));
+	const pushIntentOf = (repo: string) => ({ workflow: 'tracker.push', focus: 'push', repoPath: repo, repoIndexedAt: null, params: { epicHash: HASH } }) as never;
+	const refsOf = (ref: string) => ({ refs: { epicRef: ref, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: ref }, labelsCreated: [] }, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } }) as never;
+	const s1Of = (extra: Record<string, unknown> = {}) => ({ gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue', epicBodyMd: BODY, ...extra });
+
+	// (a) durable ref recorded, NO claim, model returns a different in-repo ref -> refused; same ref -> allowed
+	{
+		const fx = seedIssueOnly();
+		try {
+			bindUnitIssue({ unit: 'epic', repoPath: fx.repo, epicHash: HASH }, 'acme/demo#42');
+			patchTrackerMeta(fx.issue, { issueRef: 'acme/demo#42' });
+			const fr = await _finalizeTracker(pushIntentOf(fx.repo), { s1: s1Of() }, 'run-X', 5, refsOf('acme/demo#99'), 'm');
+			assert.equal(fr.ok, false, 'a different returned ref is refused even with no claim');
+			assert.match(JSON.stringify(fr), /refusing to rebind/);
+			assert.equal(readTrackerMeta(fx.issue)?.issueRef, 'acme/demo#42', 'durable ref not rebound');
+			const fr2 = await _finalizeTracker(pushIntentOf(fx.repo), { s1: s1Of() }, 'run-X', 5, refsOf('acme/demo#42'), 'm');
+			assert.equal(fr2.ok, true, 'adopting the recorded ref persists: ' + JSON.stringify(fr2));
+		} finally { fx.cleanup(); }
+	}
+	// (b) head loses approval between execute and finalize -> refused on push
+	{
+		const fx = seedIssueOnly();
+		try {
+			const j = JSON.parse(readFileSync(fx.issue, 'utf8')) as { meta: Record<string, unknown> };
+			delete j.meta['lifecycle'];
+			writeFileSync(fx.issue, JSON.stringify(j));
+			const fr = await _finalizeTracker(pushIntentOf(fx.repo), { s1: s1Of() }, 'run-X', 5, refsOf('acme/demo#42'), 'm');
+			assert.equal(fr.ok, false);
+			assert.match(JSON.stringify(fr), /not approved at finalize/);
+		} finally { fx.cleanup(); }
+	}
+	// (b2) same gate on sync
+	{
+		const fx = seedIssueOnly();
+		try {
+			const j = JSON.parse(readFileSync(fx.issue, 'utf8')) as { meta: Record<string, unknown> };
+			delete j.meta['lifecycle'];
+			writeFileSync(fx.issue, JSON.stringify(j));
+			const syncIntent = { workflow: 'tracker.sync', focus: 'sync', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
+			const fr = await _finalizeTracker(syncIntent, { s1: { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue' } }, 'run-S', 5, { refs: { epicStatus: 'open', storyStatus: { [IMPLIED_ISSUE_STORY_ID]: 'open' }, syncedAt: '2026-11-24T00:00:00.000Z' }, checklist: { items: [], failedCount: 0 } } as never, 'm');
+			assert.equal(fr.ok, false);
+			assert.match(JSON.stringify(fr), /not approved at finalize/);
+		} finally { fx.cleanup(); }
+	}
+	// (c) approved but content changed since context assembly -> refused on push (stale context)
+	{
+		const fx = seedIssueOnly();
+		try {
+			const j = JSON.parse(readFileSync(fx.issue, 'utf8')) as { body: unknown };
+			j.body = { title: 'ISSUE title v2', reproduction: 'r2', rootCause: 'c2', fixIntent: 'f2' };
+			writeFileSync(fx.issue, JSON.stringify(j));
+			const fr = await _finalizeTracker(pushIntentOf(fx.repo), { s1: s1Of() }, 'run-X', 5, refsOf('acme/demo#42'), 'm');
+			assert.equal(fr.ok, false);
+			assert.match(JSON.stringify(fr), /stale context/);
+		} finally { fx.cleanup(); }
+	}
 });

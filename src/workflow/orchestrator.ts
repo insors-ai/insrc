@@ -105,6 +105,9 @@ import { assertMayReviseDraft } from './team/author-gate.js';
 import { TeamGateRefusedError } from './team/gate.js';
 import { isToolDenied } from './tracker/tool-denied.js';
 import { appendStoryToDefine, definitionHeadJsonPath, nextStoryId, readBaseHld, readDefinitionHead, readDefineArtifact, requireApprovedEpic, requireApprovedHld, requireApprovedLld, requireApprovedPlan } from './gates.js';
+import { approvalStateOf } from './artifact-core/approval-view.js';
+import { renderIssueEpicBody } from './tracker/conventions.js';
+import { readTrackerMeta } from './tracker/refs.js';
 import { acquireClaimMutex, pendingCreatePath, readClaim, withOwnedFence } from './tracker/pending-create-claim.js';
 import {
 	isTrackerChecklistResult,
@@ -120,7 +123,7 @@ import {
 	type TrackerSyncRefs,
 } from './artifacts/tracker.js';
 import { MissingAnchorError } from './artifact-ids.js';
-import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, IMPLIED_ISSUE_STORY_ID, inheritedEpicSlug, inheritedStandalone, lldArtifactId, lldArtifactPaths, planArtifactId, planArtifactPaths, requireEpicAnchor, resolveEpicAnchor, scopeAnalyzeCachePath, stampRootAnchor, workItemAnchorCreatedAt, workItemKindOf, writeArtifact, writeAtomic } from './storage.js';
+import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, IMPLIED_ISSUE_STORY_ID, inheritedEpicSlug, inheritedStandalone, issueArtifactId, lldArtifactId, lldArtifactPaths, planArtifactId, planArtifactPaths, requireEpicAnchor, resolveEpicAnchor, scopeAnalyzeCachePath, stampRootAnchor, workItemAnchorCreatedAt, workItemKindOf, writeArtifact, writeAtomic } from './storage.js';
 import { basename, dirname, join as joinPath } from 'node:path';
 import { validateErDefinition, type ErDefinition } from './artifacts/companion/er.js';
 import { validateUxDefinition, type UxDefinition } from './artifacts/companion/ux.js';
@@ -2951,7 +2954,16 @@ async function finalizeTracker(
 	// when one was recorded, and (c) the single-issue mapping holds — the
 	// implied s1 IS the root issue, so a different storyRefs.s1 is refused and
 	// s1 is derived from the validated root instead of spread over it.
-	if (intent.workflow === 'tracker.push' && readDefinitionHead(intent.repoPath, epicHash)?.kind === 'issue') {
+	// SELF-REVIEW round-16 (holistic self-review): reread the live head at
+	// finalize. For an ISSUE head on push/sync the head must STILL be approved —
+	// execute revalidates it (round-15), but the head could be replaced during
+	// the execution turn, and persisting tracker meta into an unapproved head
+	// would write state the approval gate never saw.
+	const liveHead = readDefinitionHead(intent.repoPath, epicHash);
+	if (intent.workflow !== 'tracker.post' && liveHead?.kind === 'issue' && approvalStateOf(liveHead.artifact.meta) !== 'approved') {
+		return { ok: false, failure: schemaFailure(`ISSUE head for ${epicHash} is not approved at finalize — refusing to persist tracker meta into an unapproved head; re-approve and re-run`) };
+	}
+	if (intent.workflow === 'tracker.push' && liveHead?.kind === 'issue') {
 		const pushRefs = typedRefs as TrackerPushRefs;
 		const m = /^([^/#\s]+)\/([^/#\s]+)#(\d+)$/.exec(pushRefs.epicRef);
 		if (m === null || m[1] !== s1.gh.owner || m[2] !== s1.gh.repo) {
@@ -2963,6 +2975,21 @@ async function finalizeTracker(
 		const s1Ref = pushRefs.storyRefs?.[IMPLIED_ISSUE_STORY_ID];
 		if (s1Ref !== undefined && s1Ref !== pushRefs.epicRef) {
 			return { ok: false, failure: schemaFailure(`ISSUE single-issue mapping: storyRefs.${IMPLIED_ISSUE_STORY_ID} '${s1Ref}' != epicRef '${pushRefs.epicRef}' — the implied story IS the root issue`) };
+		}
+		// SELF-REVIEW round-16: the durable ref already recorded on the head is
+		// the work item's issue identity (closeBugfixTrackerIssue + doc links key
+		// on it). The durable-ref adoption path carries no claim fence, so without
+		// this check finalize would silently rebind meta.tracker.issueRef to
+		// whatever ref the model returned.
+		const durableRef = unitIssueOf(intent.repoPath, epicHash) ?? readTrackerMeta(definitionHeadJsonPath(intent.repoPath, epicHash))?.issueRef;
+		if (durableRef !== undefined && durableRef !== pushRefs.epicRef) {
+			return { ok: false, failure: schemaFailure(`durable issueRef '${durableRef}' != returned epicRef '${pushRefs.epicRef}' — an ISSUE re-push must adopt the recorded issue; refusing to rebind`) };
+		}
+		// SELF-REVIEW round-16: content freshness — the head's rendered body must
+		// still equal the one the push context was assembled from.
+		const bodyMd = (s1 as { epicBodyMd?: unknown }).epicBodyMd;
+		if (typeof bodyMd === 'string' && renderIssueEpicBody(liveHead.artifact as IssueArtifact, epicSlug, undefined, issueArtifactId(epicHash)) !== bodyMd) {
+			return { ok: false, failure: schemaFailure(`ISSUE head content changed since the push context was assembled — refusing to persist against a stale context; re-run tracker.push`) };
 		}
 	}
 	if (existingClaim !== undefined && (expectedFence === undefined || carriedRunId === undefined)) {

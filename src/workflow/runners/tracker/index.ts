@@ -216,7 +216,7 @@ export const pushExecuteRunner: StepRunner = {
 				message: `tracker.push: unresolved pending-create claim — ${reason}`,
 				retryable: false,
 			});
-			if (issue !== undefined && durableRef !== undefined) {
+			if (durableRef !== undefined) {   // issue is guaranteed present above (round-14 head guard)
 				// already durably published under the mutex: adopt (round-4 MED: run
 				// the adoption prompt so labels/milestone/force-body still happen).
 				// Carry a fence only if THIS run took over the retained claim
@@ -259,7 +259,7 @@ export const pushExecuteRunner: StepRunner = {
 				return { claim: fresh ?? { ...active, ghOwner: c.gh.owner, ghRepo: c.gh.repo, fence: committed }, fence: committed };
 			};
 			const claimResult = claim;
-			if (issue !== undefined && claimResult !== undefined) {
+			if (claimResult !== undefined) {   // claim is acquired whenever no durable ref exists
 				if (!claimResult.claimed) {
 					// loser: reclaim a dead holder's guard, then try to take over an
 					// ABANDONED claim. Only a successful takeover (runId === ours)
@@ -300,8 +300,13 @@ export const pushExecuteRunner: StepRunner = {
 					// HIGH-1: the snapshot may only adopt, never authorize create).
 					const rt = await retargetIfNeeded(took, took.fence);
 					const fresh = await liveLookup();
-					if (!fresh.ok && c.remoteCandidates === undefined) return refused(`remote discovery failed (${fresh.reason}) — claim retained; neither reconciliation nor a create is authorized without a complete lookup`, 'pending-create-discovery-failed');
-					const candidates = fresh.ok ? fresh.candidates : c.remoteCandidates!;
+					// SELF-REVIEW round-16: fail closed — this path OWNS the claim
+					// and mutates it (markClaimCreated / markClaimDispatched), so
+					// only a fresh COMPLETE lookup may feed the reconciliation; a
+					// failed lookup with an earlier snapshot refuses instead of
+					// reconciling stale state.
+					if (!fresh.ok) return refused(`remote discovery failed (${fresh.reason}) — claim retained; neither reconciliation nor a create is authorized without a complete live lookup`, 'pending-create-discovery-failed');
+					const candidates = fresh.candidates;
 					// REVIEW round-11 HIGH: a 'created' claim's saved issueRef IS the
 					// recovery identity (LLD created-claim rule) — adopt it directly
 					// with the fence we already own (no write needed); a conflicting
@@ -349,8 +354,7 @@ export const pushExecuteRunner: StepRunner = {
 						// pre-dispatch — a LEGACY claim (no version) has UNKNOWN
 						// dispatch history, so it takes the refusal path, never create.
 						if (reconciled.verifiedCount === 0 && isConfirmedPreDispatch(rt.claim)) {
-								// round-10 HIGH-1: create is authorized ONLY by the fresh complete lookup taken after claim acquisition
-								if (!fresh.ok) return refused(`remote discovery failed (${fresh.reason}) — an empty earlier snapshot is not absence; no create dispatched`, 'pending-create-discovery-failed');
+								// round-10 HIGH-1: create is authorized ONLY by the fresh complete lookup taken after claim acquisition (fresh.ok guaranteed above)
 							const committedFence = await markClaimDispatched(ctx.intent.repoPath, c.epicHash, rt.fence, ctx.runId);
 							setFence(committedFence);
 							// fall through to the normal create dispatch below
@@ -377,30 +381,24 @@ export const pushExecuteRunner: StepRunner = {
 					// only 0 verified under the fresh COMPLETE lookup authorizes create.
 					const rt = await retargetIfNeeded(claimResult.claim, claimResult.claim.fence);
 					const fresh = await liveLookup();
-					const candidates = fresh.ok ? fresh.candidates : (c.remoteCandidates ?? []);
-					const pre = reconcileClaim(rt.claim, candidates, ghTarget);
+					// SELF-REVIEW round-16: fail closed — a FAILED fresh lookup is neither
+					// absence nor a verified candidate, and the context snapshot must never
+					// drive the WINNER's claim mutation (markClaimCreated) or adoption; only
+					// a fresh COMPLETE lookup authorizes either.
+					if (!fresh.ok) return refused(`remote discovery failed (${fresh.reason}) — a failed lookup is not absence and an earlier snapshot cannot authorize adoption or create; no prompt dispatched`, 'pending-create-discovery-failed');
+					const pre = reconcileClaim(rt.claim, fresh.candidates, ghTarget);
 					if (pre.ok) {
 						const markedFence = await markClaimCreatedFence(ctx.intent.repoPath, c.epicHash, rt.fence, pre.ref, undefined, ctx.runId);
 						setFence(markedFence);
 						return adoptionPause(pre.ref, 'marker-verified');
 					}
 					if (pre.verifiedCount > 1) return refused(pre.reason);
-					if (!fresh.ok) return refused(`remote discovery failed (${fresh.reason}) — a failed lookup is not absence and an earlier snapshot cannot authorize a create; no create dispatched`, 'pending-create-discovery-failed');
 					// 0 verified under the fresh COMPLETE lookup: record dispatch +
 					// heartbeat under the mutex (fence- + run-checked), then dispatch.
 					// The COMMITTED fence rides in the context so finalization can
 					// fence the whole persistence op (round-2 HIGH-1).
 					const committedFence = await markClaimDispatched(ctx.intent.repoPath, c.epicHash, rt.fence, ctx.runId);
 					setFence(committedFence);
-				}
-			}
-			if (claimResult === undefined) {
-				// existingRefs seeded by the context: reconcile any retained claim
-				// toward adoption — carry a fence only on a successful takeover.
-				const existing = readClaim(ctx.intent.repoPath, c.epicHash);
-				if (existing !== undefined) {
-					const took = await takeoverAbandonedClaim(ctx.intent.repoPath, c.epicHash, ctx.runId, Date.now());
-					if (took !== undefined && took.runId === ctx.runId) setFence(took.fence);
 				}
 			}
 			// REVIEW round-14 HIGH: the ISSUE execute branch is EXHAUSTIVE — the

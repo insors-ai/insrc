@@ -1044,3 +1044,40 @@ test('REVIEW round-15 HIGH — execute revalidates the LIVE head approval + cont
 		} finally { fx.cleanup(); }
 	}
 });
+
+test('SELF-REVIEW round-16 — fail closed: a FAILED fresh live lookup never drives the winner path (no adoption from a stale context snapshot, no create); claim retained, not dispatched, no fence carried', async () => {
+	const { pushExecuteRunner } = await import('../index.js');
+	const { readClaim } = await import('../../../tracker/pending-create-claim.js');
+	const { artifactJsonPath, issueArtifactId } = await import('../../../storage.js');
+	const { markApprovedSync } = await import('../../../__tests__/lifecycle-fixtures.js');
+	const { mkdirSync, mkdtempSync, rmSync, writeFileSync } = await import('node:fs');
+	const { tmpdir } = await import('node:os');
+	const { join } = await import('node:path');
+
+	const H = '5f9d4ab4c90c0b4c';
+	const MARKER = `<!-- insrc:artifact ISSUE-${H} -->`;
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-r16-'));
+	try {
+		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		writeFileSync(join(repo, 'repo-config.json'), JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
+		process.env['INSRC_REPO_CONFIG'] = join(repo, 'repo-config.json');
+		const issue = artifactJsonPath(repo, issueArtifactId(H));
+		writeFileSync(issue, JSON.stringify({ meta: { workflow: 'issue', runId: 'i', schemaVersion: 1, issueHash: H, epicHash: H, epicSlug: 's', createdAt: '2026-11-16T07:14:04.399Z', epicCreatedAt: '2026-11-16T07:14:04.399Z', standalone: true }, body: { title: 'T', reproduction: 'r', rootCause: 'c', fixIntent: 'f' }, citations: [] }));
+		markApprovedSync(issue);
+		// the context snapshot carries a marker-verified candidate, but the FRESH live lookup fails
+		setIssueCandidateLookupForTests(async () => ({ ok: false, reason: 'gh down' }));
+		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: RENDERED_ISSUE_BODY, stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#42' }] };
+		const ctx = { intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } }, runId: 'run-W', stepOutputs: { s1 } } as never;
+		const out = await pushExecuteRunner.run(ctx) as { type: string; code?: string; message?: string; prompt?: string };
+		assert.equal(out.type, 'error', 'a failed fresh lookup refuses — the stale snapshot cannot drive adoption or create');
+		assert.equal(out.code, 'pending-create-discovery-failed');
+		assert.match(out.message ?? '', /gh down/);
+		assert.ok(!out.prompt, 'no prompt dispatched');
+		const claim = readClaim(repo, H);
+		assert.ok(claim !== undefined && claim.runId === 'run-W', 'winner claim exists');
+		assert.equal(claim!.dispatchedAt, undefined, 'not dispatched');
+		assert.equal(claim!.issueRef, undefined, 'not marked created from the stale snapshot');
+		const s1o = (ctx.stepOutputs as { s1: Record<string, unknown> }).s1;
+		assert.equal(s1o['claimFence'], undefined, 'no fence carried');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});

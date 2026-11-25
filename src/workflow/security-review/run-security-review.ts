@@ -19,7 +19,8 @@ import type { ReconciliationResult } from '../review-round/reconciliation.js';
 import type { SecurityFinding } from '../review-round/security-finding.js';
 import type { ReviewTargets } from '../artifact-core/types.js';
 import { computeContentIdentity } from './content-identity.js';
-import type { SecurityAdvisoryEvidence } from './collect-dependency-advisories.js';
+import type { SecurityAdvisoryEvidence, SecurityAdvisoryMatch } from './collect-dependency-advisories.js';
+import type { SecurityModelSelection } from '../../config/analyze.js';
 
 /** Thrown when a recomputed contentIdentity no longer matches the one s2's
  *  evidence was collected against, or when s2's own contentStable flag is
@@ -83,4 +84,66 @@ export async function verifyContentIdentityMatch(repoPath: string, targets: Revi
 	if (recomputed !== advisoryEvidence.contentIdentity || !advisoryEvidence.contentStable) {
 		throw new ContentIdentityMismatchError(advisoryEvidence.contentIdentity, recomputed, advisoryEvidence.contentStable);
 	}
+}
+
+/** One confirmed dependency-advisory match, as a SecurityFinding: checkId is
+ *  the fixed literal 'dependency-advisory' (distinct from a code finding's
+ *  own checkId, which names the specific vulnerability class); receiptId is
+ *  never set -- no round's CLI execution produced this finding, s2's
+ *  controller-side audit did. */
+function advisoryMatchToFinding(match: SecurityAdvisoryMatch): SecurityFinding {
+	return {
+		id: `dependency-advisory:${match.coordinate}:${match.advisoryId}`,
+		category: 'security',
+		severity: match.severity,
+		kind: 'security',
+		checkId: 'dependency-advisory',
+		evidence: [{ providerCategory: 'dependency-advisory', locator: { kind: 'package', value: match.coordinate } }],
+		fixability: `Upgrade ${match.coordinate} away from the affected range ${match.affectedVersions}.`,
+		enforcementMode: 'advisory',
+	};
+}
+
+/** Supplemental markdown (HLD: "a supplemental report structure stay private
+ *  to s3") separating confirmed affected dependencies and unverified coverage
+ *  from the generic review-round renderer's code-finding-only output (ac3). */
+function renderSupplementalMarkdown(advisoryEvidence: SecurityAdvisoryEvidence): string {
+	const matchRows = advisoryEvidence.matches.map(m =>
+		`| ${m.coordinate} | ${m.advisoryId} | ${m.affectedVersions} | ${m.severity} | ${m.provenance} |`).join('\n');
+	const matchesSection = advisoryEvidence.matches.length > 0
+		? `| Coordinate | Advisory | Affected versions | Severity | Provenance |\n| :--- | :--- | :--- | :--- | :--- |\n${matchRows}`
+		: 'None confirmed.';
+	const gapsSection = [...advisoryEvidence.unresolvedDependencies, ...advisoryEvidence.unavailableSources].length > 0
+		? [...advisoryEvidence.unresolvedDependencies.map(d => `- ${d} (unresolved)`), ...advisoryEvidence.unavailableSources.map(s => `- ${s} (unavailable)`)].join('\n')
+		: 'None.';
+	return `## Confirmed affected dependencies\n\n${matchesSection}\n\n## Unverified coverage\n\n${gapsSection}\n`;
+}
+
+/**
+ * Pure: folds s2's dependency-advisory evidence (as SecurityFindings, never
+ * receipt-stamped), the already round-stamped code findings (each already
+ * carrying its own round's receipt.id, set by the caller before this is
+ * invoked), the reconciliation result, both rounds' receipts and the
+ * dispatched modelSelection into one in-memory SecurityReviewReport.
+ * effectiveModel is copied verbatim from modelSelection, never re-resolved.
+ */
+export function assembleSecurityReport(
+	advisoryEvidence: SecurityAdvisoryEvidence,
+	codeFindings: readonly SecurityFinding[],
+	reconciliation: readonly ReconciliationResult[],
+	receipts: { readonly round1: VerificationReceipt; readonly round2: VerificationReceipt },
+	modelSelection: SecurityModelSelection & { readonly status: 'configured' },
+	baseReport: { readonly path: string; readonly markdown: string },
+): SecurityReviewReport {
+	const advisoryFindings = advisoryEvidence.matches.map(advisoryMatchToFinding);
+	return {
+		findings: [...advisoryFindings, ...codeFindings],
+		unresolvedDependencies: advisoryEvidence.unresolvedDependencies,
+		unavailableSources: advisoryEvidence.unavailableSources,
+		reconciliation,
+		receipts,
+		effectiveModel: { provider: modelSelection.provider, modelId: modelSelection.modelId },
+		baseReportMarkdown: baseReport.markdown,
+		supplementalMarkdown: renderSupplementalMarkdown(advisoryEvidence),
+	};
 }

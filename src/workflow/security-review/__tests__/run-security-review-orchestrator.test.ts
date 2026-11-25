@@ -288,5 +288,8 @@ test('run with repoPath=B while the test harness\'s own ambient cwd is A: conten
 		assert.ok(report);
 		const record = readReceiptRecord(repoB, '6666666666666666', 's3');
 		assert.ok(record);
+		assert.equal(record.body.receipts.length, 2, 'both round receipts were written under B');
+		assert.equal(existsSync(join(repoA, '.insrc')), false, 'nothing was ever written under the ambient cwd A');
+		assert.equal(readReceiptRecord(repoA, '6666666666666666', 's3'), null, 'no receipt record exists under A either');
 	} finally { unwire(); rmSync(repoA, { recursive: true, force: true }); rmSync(repoB, { recursive: true, force: true }); }
 });

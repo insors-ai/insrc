@@ -1,0 +1,9 @@
+{"kind":"install-machine.json"}
+{"kind":"install-upstream.json","status":200}
+{"kind":"install-provenance.json"}
+{"kind":"progress","stage":"dependency-download","detail":"Downloading exact Ollama 0.40.18 payload"}
+{"kind":"progress","stage":"dependency-extract","detail":"Validating bounded private Ollama payload"}
+{"kind":"progress","stage":"dependency-publish","detail":"Publishing verified immutable private Ollama payload"}
+{"kind":"progress","stage":"ollama-service-admitted","detail":"Ollama start was accepted and may remain running or unverified."}
+{"kind":"native-install.json","status":"pass","elapsedMs":73887.20307999999}
+{"kind":"install-write-observations.json","status":"observed"}

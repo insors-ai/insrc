@@ -32,6 +32,14 @@ test('native-evidence-validator-rejects-wrong-platform-glibc-digest-and-translat
   ];
   for (const [index, mutate] of mutations.entries()) {
     const f = fixture(); Object.assign(f.observed, { native: true, translated: false }); mutate(f);
+    // Keep the response internally consistent so each mutation reaches its
+    // intended platform/release/asset check rather than the raw-body check.
+    Object.assign(f.upstream, { raw: JSON.stringify(f.upstream.release) });
     assert.throws(() => validateNativeProvenance(f.policy, f.observed, f.upstream), `mutation ${index} cannot qualify by claiming native=true`);
   }
+});
+
+test('native-evidence-validator-rejects-raw-response-inconsistency', () => {
+  const f = fixture(); f.upstream.release.assets[0]!.digest = 'sha256:' + '0'.repeat(64);
+  assert.throws(() => validateNativeProvenance(f.policy, f.observed, f.upstream), /parsed upstream data must match retained raw response/);
 });

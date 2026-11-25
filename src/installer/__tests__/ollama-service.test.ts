@@ -11,8 +11,26 @@ import { prepareOllama, closedOllamaAttempts } from '../ollama-prepare.js';
 import { startOllamaService } from '../ollama-service.js';
 import { servicePaths } from '../ollama-service-records.js';
 import { dependencyPort } from '../dependencies.js';
-import { canonicalJson } from '../release-descriptor.js';
+import { canonicalJson, digest } from '../release-descriptor.js';
 import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
+import { completeNode22Fixture } from './_runtime-fixture.js';
+
+// The tracked gate may use the host Node. Execute the unchanged production
+// runtime checks in the complete verified Node fixture, never weaken them.
+function serviceTest(title: string, run: () => Promise<void>): void {
+  test(title, async () => {
+    if (process.version === 'v22.22.1') return run();
+    const runtime = await completeNode22Fixture(), children: ChildProcess[] = [];
+    try {
+      const child = spawnFixture(runtime.executable, ['--import', 'tsx', '--test', '--test-name-pattern', `^${title}$`, fileURLToPath(import.meta.url)],
+        { env: { ...process.env, NODE_OPTIONS: '', NODE_PATH: '', NODE_TEST_CONTEXT: undefined }, stdio: ['ignore', 'pipe', 'pipe'] });
+      children.push(child); let output = '';
+      for (const stream of [child.stdout!, child.stderr!]) stream.on('data', bytes => { output = (output + String(bytes)).slice(-32768); });
+      assert.deepEqual(await once(child, 'close'), [0, null], output);
+      assert.match(output, /^# pass 1$/m);
+    } finally { await stopOwnedChildren(children); runtime.cleanup(); }
+  });
+}
 
 const driver = fileURLToPath(new URL('./ollama-service-worker-fixture.mjs', import.meta.url));
 const inspector = fileURLToPath(new URL('./ollama-inspect-fixture.mjs', import.meta.url));
@@ -49,7 +67,7 @@ function attemptBytes(root: string): unknown {
   return readdirSync(root).sort().map(name => { const file = join(root, name); return [name, lstatSync(file).isDirectory() ? attemptBytes(file) : readFileSync(file).toString('base64')]; });
 }
 
-test('service-admission-is-durable-and-distinct-from-finite-preparation-drain', async () => {
+serviceTest('service-admission-is-durable-and-distinct-from-finite-preparation-drain', async () => {
   const f = await fixture();
   try {
     const report = await startOllamaService(f.location, f.prepared, f.context(), f.service); assert.equal(report.ollama, 'ready'); assert.equal(f.count(), 1);
@@ -70,7 +88,7 @@ test('service-admission-is-durable-and-distinct-from-finite-preparation-drain', 
   } finally { await f.cleanup(); }
 });
 
-test('interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn', async () => {
+serviceTest('interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn', async () => {
   const f = await fixture();
   try {
     await startOllamaService(f.location, f.prepared, f.context(), f.service);
@@ -81,6 +99,14 @@ test('interrupted-attempt-reconciles-existing-receipt-without-duplicate-download
     const launch = readFileSync(f.paths.launch); unlinkSync(f.paths.launch);
     assert.equal((await f.inspectFresh()).ollama, 'unavailable', 'running fact without durable launch admission is not trusted');
     writeFileSync(f.paths.launch, launch, { mode: 0o600, flag: 'wx' });
+    const inventoryFile = join(f.prepared.directory, 'inventory.json'), receiptFile = join(f.prepared.directory, '.ollama-receipt.json'), dataFile = join(f.prepared.directory, 'lib/data.dat');
+    const inventoryBytes = readFileSync(inventoryFile), receiptBytes = readFileSync(receiptFile), dataBytes = readFileSync(dataFile);
+    const inventory = JSON.parse(inventoryBytes.toString()), changed = Buffer.alloc(dataBytes.length, 2);
+    inventory.files.find((file: { path: string }) => file.path === 'lib/data.dat').sha256 = digest(changed);
+    const replacedInventory = canonicalJson(inventory), receipt = JSON.parse(receiptBytes.toString()); receipt.inventorySha256 = digest(replacedInventory);
+    writeFileSync(dataFile, changed); writeFileSync(inventoryFile, replacedInventory); writeFileSync(receiptFile, canonicalJson(receipt));
+    assert.equal((await f.inspectFresh()).ollama, 'unavailable', 'a self-consistent replacement tree cannot replace the admitted inventory');
+    writeFileSync(dataFile, dataBytes); writeFileSync(inventoryFile, inventoryBytes); writeFileSync(receiptFile, receiptBytes);
     const reused = await startOllamaService(f.location, f.prepared, f.context(), { ...f.service, launch: async () => { throw new Error('must not replay a retained launch'); } });
     assert.equal(reused.ollama, 'ready'); assert.equal(f.count(), 1);
     await f.stop(); await until(() => existsSync(f.paths.exit));
@@ -101,7 +127,7 @@ test('interrupted-attempt-reconciles-existing-receipt-without-duplicate-download
   } finally { await interrupted.cleanup(); }
 });
 
-test('owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener', async () => {
+serviceTest('owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener', async () => {
   for (const mode of ['existing', 'race', 'slow'] as const) {
     const f = await fixture();
     try {
@@ -122,7 +148,7 @@ test('owned-service-start-port-conflict-and-readiness-failure-preserve-existing-
   }
 });
 
-test('service-admission-cancellation-retains-only-explicitly-accepted-service-intent', async () => {
+serviceTest('service-admission-cancellation-retains-only-explicitly-accepted-service-intent', async () => {
   const before = await fixture();
   try {
     const cancel = new AbortController(), owner = before.context('a'.repeat(64), cancel.signal); cancel.abort();

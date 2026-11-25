@@ -67,7 +67,8 @@ export async function reconcileOllamaDependencies(location: InstallationLocation
       if (existsSync(paths.admission)) {
         const frame = parseServiceFrame(serviceJson(await readDependencyRecord(location, paths.frame, SERVICE_FRAME_LIMIT))); signal.throwIfAborted();
         if (canonicalJson(frame.location) !== canonicalJson(location) || canonicalJson(frame.attempt) !== canonicalJson(attempt)) throw dependencyUncertain('Interrupted service belongs to a different attempt');
-        await verifyPreparedOllama(location, frame.policy, dependencyPath(location, attempt.identity.payloadRelativePath), signal); signal.throwIfAborted();
+        const verified = await verifyPreparedOllama(location, frame.policy, dependencyPath(location, attempt.identity.payloadRelativePath), signal); signal.throwIfAborted();
+        if (verified.inventorySha256 !== frame.admission.inventorySha256) throw dependencyUncertain('Interrupted service inventory differs from its accepted admission');
         report = await serviceState(frame, record, report, signal);
       } else if (policy && attempt.identity.policySha256 === ollamaPolicySha256(policy)) {
         // Closed abandoned preparations without a published tree grant no start.

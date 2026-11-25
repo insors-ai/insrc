@@ -14,10 +14,21 @@ import { createDevPreparationWork, verifyDevPayload } from './dev-payload.js';
 import { join } from 'node:path';
 import { runTerminalInstall } from './terminal-install.js';
 import { InstallerManager } from './manager.js';
+import { executeOllamaServiceWorker } from './ollama-service-worker.js';
 import { launchInstalledTui, selectInstalledTui } from './installed-launcher.js';
 /** Substituted only by the digest-bound release publisher, never wire/env input. */
 declare const __INSRC_INSTALLER_TARGET__: unknown;
 export async function terminalMain(args = process.argv.slice(2)): Promise<void> {
+  if (args[0] === '--ollama-service-worker') {
+    if (args.length !== 4 || !args[1] || !args[2] || !args[3]) throw new InstallerError('schema-invalid', 'Service worker requires installation home, identity and attempt record');
+    if (typeof __INSRC_INSTALLER_TARGET__ === 'undefined') throw new InstallerError('target-unqualified', 'Use the target-specific control bootstrap');
+    const target = parseInstaller('target', __INSRC_INSTALLER_TARGET__);
+    controlRuntimeDirectory(target);
+    assertToken(args[2]);
+    const location = resolveInstallationLocation(args[2], { home: args[1], ...(process.platform === 'win32' ? { userSid: controlBinding().userSid() } : {}) });
+    await executeOllamaServiceWorker(location, args[3], { target });
+    return;
+  }
   if (args[0] === '--dev-preparation-worker') {
     if (args.length !== 2 || !args[1]) throw new InstallerError('schema-invalid', 'Worker requires one explicit installation home');
     if (typeof __INSRC_INSTALLER_TARGET__ === 'undefined') throw new InstallerError('target-unqualified', 'Use the target-specific control bootstrap');

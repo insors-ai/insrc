@@ -22,6 +22,7 @@ test("buildSecurityRoundHooks: hooks.ground always resolves to [] without I/O; h
 	// be real), this would throw ENOENT or hang rather than resolve to [].
 	const bogusRepoPath = '/does/not/exist/' + Math.random().toString(36).slice(2);
 	const targets = { entries: [{ path: 'this-file-does-not-exist.ts' }] };
+
 	let captured: unknown;
 	_setRunSecurityCodePassForTests(async (repoPath, calledTargets, calledModelSelection, round, reviewId) => {
 		captured = { repoPath, calledTargets, calledModelSelection, round, reviewId };
@@ -31,6 +32,14 @@ test("buildSecurityRoundHooks: hooks.ground always resolves to [] without I/O; h
 		const hooks = buildSecurityRoundHooks(bogusRepoPath, targets, modelSelection, 'review-1');
 		assert.equal(hooks.reviewKind, 'code');
 		assert.equal(hooks.checkpointGranularity, 'round');
+
+		// Directly inspect the hook itself, rather than merely inferring the
+		// absence of I/O from a nonexistent path not throwing (node:test's own
+		// mock.method cannot stub node:fs's frozen ESM bindings to spy on real
+		// calls): ground is a closure-free arrow function whose ENTIRE body is
+		// the literal `[]` -- its source text proves, independent of any input,
+		// that it can never reach the filesystem or any other I/O.
+		assert.match(hooks.ground.toString().replace(/\s+/g, ' ').trim(), /^async\s*\(\s*\)\s*=>\s*\[\s*\]$/, 'hooks.ground must be the literal no-op `async () => []`, with no body that could perform I/O');
 
 		const groundResult = await hooks.ground(targets, 1);
 		assert.deepEqual(groundResult, []);

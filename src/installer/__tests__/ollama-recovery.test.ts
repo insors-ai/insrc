@@ -1,6 +1,8 @@
-import { test } from 'node:test';
+import { privateRuntimeTest } from './_private-runtime-test.js';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { once } from 'node:events';
+import type { ChildProcess } from 'node:child_process';
 import { existsSync, lstatSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -13,6 +15,7 @@ import { acceptedOllamaPolicy, closurePath, dependencyLockIdentity, ensureDepend
 import type { OllamaAttempt } from '../ollama-records.js';
 import { canonicalJson } from '../release-descriptor.js';
 import { ollamaFixture, qualifyFixturePolicy } from './_ollama-fixture.js';
+import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
 
 type Fixture = Awaited<ReturnType<typeof ollamaFixture>>;
 function retry(f: Fixture, signal?: AbortSignal) {
@@ -33,7 +36,7 @@ async function waitFor(predicate: () => boolean): Promise<void> {
   while (!predicate()) { assert.ok(performance.now() < ends, 'owned completion did not arrive'); await delay(10); }
 }
 
-test('qualified-in-process-lock-proof-excludes-live-inherited-and-unknown-actors', async () => {
+privateRuntimeTest(import.meta.url, 'qualified-in-process-lock-proof-excludes-live-inherited-and-unknown-actors', async () => {
   const f = await ollamaFixture();
   try {
     const s = await seed(f), lock = controlBinding().acquire(`${s.record}.lock`);
@@ -55,7 +58,7 @@ test('qualified-in-process-lock-proof-excludes-live-inherited-and-unknown-actors
   } finally { await f.cleanup(); }
 });
 
-test('repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first', async () => {
+privateRuntimeTest(import.meta.url, 'repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first', async () => {
   const f = await ollamaFixture();
   try {
     const s = await seed(f), temporary = `${s.record}.${randomUUID()}.tmp`;
@@ -72,7 +75,7 @@ test('repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first', asyn
   } finally { await f.cleanup(); }
 });
 
-test('cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect', async () => {
+privateRuntimeTest(import.meta.url, 'cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect', async () => {
   const f = await ollamaFixture();
   try {
     const s = await seed(f), abort = new AbortController();
@@ -86,7 +89,7 @@ test('cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-ef
   } finally { await f.cleanup(); }
 });
 
-test('unknown-actor-proof-blocks-install-retry-cleanup', async () => {
+privateRuntimeTest(import.meta.url, 'unknown-actor-proof-blocks-install-retry-cleanup', async () => {
   const f = await ollamaFixture();
   try {
     const s = await seed(f);
@@ -97,7 +100,7 @@ test('unknown-actor-proof-blocks-install-retry-cleanup', async () => {
   } finally { await f.cleanup(); }
 });
 
-test('malformed-utf8-historical-policy-never-authorizes-cleanup', async () => {
+privateRuntimeTest(import.meta.url, 'malformed-utf8-historical-policy-never-authorizes-cleanup', async () => {
   const f = await ollamaFixture();
   try {
     const s = await seed(f), bytes = readFileSync(s.record), offset = bytes.indexOf('fixtures/not-native-evidence.json');
@@ -107,7 +110,7 @@ test('malformed-utf8-historical-policy-never-authorizes-cleanup', async () => {
   } finally { await f.cleanup(); }
 });
 
-test('policy-change-reconciles-exact-accepted-copy-without-current-policy-substitution', async () => {
+privateRuntimeTest(import.meta.url, 'policy-change-reconciles-exact-accepted-copy-without-current-policy-substitution', async () => {
   const f = await ollamaFixture();
   try {
     const { policy, offer } = await f.input();
@@ -126,7 +129,7 @@ test('policy-change-reconciles-exact-accepted-copy-without-current-policy-substi
   } finally { await f.cleanup(); }
 });
 
-test('replacement-free-lock-cannot-authorize-cleanup-of-original-actor', async () => {
+privateRuntimeTest(import.meta.url, 'replacement-free-lock-cannot-authorize-cleanup-of-original-actor', async () => {
   const f = await ollamaFixture();
   try {
     const s = await seed(f), original = `${s.record}.lock`, moved = `${original}.preserved`;
@@ -138,7 +141,7 @@ test('replacement-free-lock-cannot-authorize-cleanup-of-original-actor', async (
   } finally { await f.cleanup(); }
 });
 
-test('late-settlement-records-true-outcome-and-completes-disposal-under-held-handle', async () => {
+privateRuntimeTest(import.meta.url, 'late-settlement-records-true-outcome-and-completes-disposal-under-held-handle', async () => {
   const f = await ollamaFixture(), abort = new AbortController(); let release!: () => void, started!: () => void;
   const waiting = new Promise<void>(resolve => { release = resolve; }), entered = new Promise<void>(resolve => { started = resolve; });
   try {
@@ -154,12 +157,14 @@ test('late-settlement-records-true-outcome-and-completes-disposal-under-held-han
   } finally { release(); await f.cleanup(); }
 });
 
-test('immutable-record-publication-never-replaces-existing-target-and-cleans-owned-temp', async () => {
+privateRuntimeTest(import.meta.url, 'immutable-record-publication-never-replaces-existing-target-and-cleans-owned-temp', async () => {
   const f = await ollamaFixture(); const native = controlBinding();
   try {
     const s = await seed(f), lock = native.acquire(`${s.record}.lock`), target = join(dirname(s.record), 'publication-test.json');
     try {
       const from = `${target}.source`;
+      writeFileSync(from, 'first publication', { mode: 0o600 }); native.publishDirectory(lock, from, target);
+      assert.equal(readFileSync(target, 'utf8'), 'first publication'); assert.equal(existsSync(from), false); unlinkSync(target);
       writeFileSync(target, 'incumbent', { mode: 0o600 }); writeFileSync(from, 'candidate', { mode: 0o600 });
       assert.throws(() => native.publishDirectory(lock, from, target), { code: 'candidate-exists' });
       assert.equal(readFileSync(target, 'utf8'), 'incumbent'); assert.equal(readFileSync(from, 'utf8'), 'candidate');
@@ -171,7 +176,60 @@ test('immutable-record-publication-never-replaces-existing-target-and-cleans-own
   } finally { await f.cleanup(); }
 });
 
-test('cleanup-deadline-retains-actor-until-close-and-retry-finishes-disposal', async () => {
+privateRuntimeTest(import.meta.url, 'native-preparation-lock-is-not-inherited-by-live-exec-child', async () => {
+  const f = await ollamaFixture(), children: ChildProcess[] = [];
+  let handle: object | undefined;
+  try {
+    const s = await seed(f); handle = controlBinding().acquire(`${s.record}.lock`);
+    const child = spawnFixture(process.execPath, ['--input-type=module', '-e',
+      'process.on("message",()=>process.disconnect());process.send("ready");'], { stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
+    children.push(child); child.stderr!.resume();
+    const ready = once(child, 'message'); await ready;
+    controlBinding().close(handle); handle = undefined;
+    // With an inherited flock/handle this would remain busy until child exit.
+    const acquired = controlBinding().acquire(`${s.record}.lock`); controlBinding().close(acquired);
+    assert.equal(child.exitCode, null); assert.equal(child.connected, true);
+    const closed = once(child, 'close'); child.send('close'); assert.deepEqual(await closed, [0, null]);
+  } finally { if (handle) controlBinding().close(handle); await stopOwnedChildren(children); await f.cleanup(); }
+});
+
+privateRuntimeTest(import.meta.url, 'retry-reconciles-interruption-at-every-stage-disposal-boundary', async () => {
+  for (const boundary of [0, 1, 2, 'after-stage'] as const) {
+    const f = await ollamaFixture();
+    try {
+      const s = await seed(f); writeFileSync(join(s.stage, 'extra.download'), 'partial', { mode: 0o600 }); let removes = 0;
+      await assert.rejects(cleanupOllamaInstallAttempt(f.location, retry(f), undefined, {
+        async beforeRemove() { if (boundary === removes++) throw new Error('injected disposal interruption'); },
+        async afterRemoval() { if (boundary === 'after-stage') throw new Error('injected completion interruption'); },
+      }), { code: 'dependency-uncertain' });
+      assert.equal(existsSync(s.record.replace(/\.json$/, '.retry-done.json')), false);
+      assert.equal(existsSync(s.offer.destination), false);
+      const intent = JSON.parse(readFileSync(s.record.replace(/\.json$/, '.cleanup.json'), 'utf8'));
+      assert.equal(intent.purpose, 'private-stage-disposal');
+      await cleanupOllamaInstallAttempt(f.location, retry(f));
+      assert.equal(existsSync(s.stage), false); assert.equal((await closedOllamaAttempts(f.location)).length, 1);
+    } finally { await f.cleanup(); }
+  }
+});
+
+privateRuntimeTest(import.meta.url, 'temporary-disposal-intent-survives-unlink-completion-crash-gap', async () => {
+  const f = await ollamaFixture();
+  try {
+    const s = await seed(f), temporary = `${s.record}.${randomUUID()}.tmp`;
+    writeFileSync(temporary, 'interrupted', { mode: 0o600 });
+    await assert.rejects(cleanupOllamaInstallAttempt(f.location, retry(f), undefined,
+      { async afterTemporaryRemoval() { throw new Error('interrupted after unlink'); } }), { code: 'dependency-uncertain' });
+    assert.equal(existsSync(temporary), false);
+    const names = readdirSync(dirname(s.record)), intent = names.find(n => /\.retry-temp-[a-f0-9]{64}\.json$/.test(n));
+    assert.ok(intent); assert.equal(existsSync(join(dirname(s.record), intent.replace(/\.json$/, '.done.json'))), false);
+    assert.equal(JSON.parse(readFileSync(join(dirname(s.record), intent), 'utf8')).purpose, 'temporary-record-disposal');
+    await cleanupOllamaInstallAttempt(f.location, retry(f));
+    assert.equal(existsSync(join(dirname(s.record), intent.replace(/\.json$/, '.done.json'))), true);
+    assert.equal((await closedOllamaAttempts(f.location)).length, 1);
+  } finally { await f.cleanup(); }
+});
+
+privateRuntimeTest(import.meta.url, 'cleanup-deadline-retains-actor-until-close-and-retry-finishes-disposal', async () => {
   const f = await ollamaFixture(); let release!: () => void, entered!: () => void;
   const paused = new Promise<void>(resolve => { release = resolve; }), started = new Promise<void>(resolve => { entered = resolve; });
   try {

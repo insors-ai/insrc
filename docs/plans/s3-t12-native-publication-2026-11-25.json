@@ -1,0 +1,18 @@
+{
+  "scope": "native regular-file publication and non-inherited lock only",
+  "platform": "linux",
+  "arch": "arm64",
+  "machine": "aarch64",
+  "uid": 501,
+  "node": "v22.22.1",
+  "glibc": "2.35",
+  "sourceSha256": "1722b934f118c800989bd7bb8a5a54057e5f211da03e9e32442dc9af5071213a",
+  "binarySha256": "50bc90852ba66254c98e188df5a8f603263c108229692b2e1530e07e8762e837",
+  "checks": {
+    "regularFilePublication": true,
+    "noReplace": true,
+    "execDoesNotInheritLock": true,
+    "childClosed": true
+  },
+  "temporaryRoot": "/tmp/insrc-t12-native-xl3JpV"
+}

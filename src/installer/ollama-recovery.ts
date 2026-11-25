@@ -19,6 +19,9 @@ export interface OllamaRetryOptions {
   cleanupMs?: number | undefined;
   /** Deterministic crash/cancellation boundary for owned tests. */
   beforeDisposal?: (() => Promise<void>) | undefined;
+  beforeRemove?: ((path: string) => Promise<void>) | undefined;
+  afterRemoval?: (() => Promise<void>) | undefined;
+  afterTemporaryRemoval?: (() => Promise<void>) | undefined;
 }
 async function read(location: InstallationLocation, file: string): Promise<unknown> {
   const raw = await readDependencyRecord(location, file);
@@ -94,20 +97,35 @@ export async function cleanupOllamaInstallAttempt(location: InstallationLocation
     if (!closure) await ensureOllamaRecord(location, handle, closedFile,
       { schemaVersion: 1, identitySha256, closed: true, outcome: 'cancelled' });
     current();
-    await disposeOllamaStage(location, identity, policy, handle, current, options.beforeDisposal); current();
+    await disposeOllamaStage(location, identity, policy, handle, current, options.beforeDisposal, options.beforeRemove, options.afterRemoval); current();
     const names = await readdir(directory); current();
     if (names.length > 1024) throw dependencyUncertain('Recovery record inventory exceeds bound');
-    const temporary = new RegExp(`^${nonce}(?:\\.(?:closed|cleanup|disposed|retry|retry-done|retry-temp-[a-f0-9]{64}))?\\.json\\.[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}\\.tmp$`);
-    for (const name of names) {
-      current();
-      if (!temporary.test(name)) continue;
-      const file = join(directory, name), stat = lstatSync(file);
-      if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1
-        || (process.platform !== 'win32' && (stat.uid !== process.getuid?.() || (stat.mode & 0o077)))
-        || (process.platform === 'win32' && !controlBinding().safePath(file, false, false))) throw dependencyUncertain('Unsafe recovery temporary file');
-      const fileRelativePath = relative(location.home, file).replaceAll('\\', '/');
-      await unlink(file); current(); flushDirectory(directory);
-      await ensureOllamaRecord(location, handle, record.replace(/\.json$/, `.retry-temp-${digest(name)}.json`),
+    const temporary = new RegExp(`^${nonce}(?:\\.(?:closed|cleanup|disposed|retry|retry-done|retry-temp-[a-f0-9]{64}(?:\\.done)?))?\\.json\\.[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}\\.tmp$`);
+    const tempItems = new Set(names.filter(name => temporary.test(name)));
+    // Persist intent BEFORE unlink, so a crash in the unlink/completion gap
+    // can later reconcile absence and still write the per-item completion.
+    for (const name of names) if (new RegExp(`^${nonce}\\.retry-temp-[a-f0-9]{64}\\.json$`).test(name)) {
+      const item = await read(location, join(directory, name)) as { fileRelativePath?: unknown }; current();
+      if (typeof item.fileRelativePath !== 'string') throw dependencyUncertain('Temporary disposal intent is malformed');
+      const file = dependencyPath(location, item.fileRelativePath), tempName = basename(file);
+      if (dirname(file) !== directory || !temporary.test(tempName)
+        || name !== `${nonce}.retry-temp-${digest(tempName)}.json`) throw dependencyUncertain('Temporary disposal intent escapes its attempt');
+      tempItems.add(tempName);
+    }
+    for (const name of tempItems) {
+      current(); const file = join(directory, name), fileRelativePath = relative(location.home, file).replaceAll('\\', '/');
+      const intentFile = record.replace(/\.json$/, `.retry-temp-${digest(name)}.json`);
+      await ensureOllamaRecord(location, handle, intentFile,
+        { schemaVersion: 1, identitySha256, fileRelativePath, purpose: 'temporary-record-disposal' }); current();
+      if (existsSync(file)) {
+        const stat = lstatSync(file);
+        if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1
+          || (process.platform !== 'win32' && (stat.uid !== process.getuid?.() || (stat.mode & 0o077)))
+          || (process.platform === 'win32' && !controlBinding().safePath(file, false, false))) throw dependencyUncertain('Unsafe recovery temporary file');
+        await unlink(file); current(); flushDirectory(directory);
+        if (options.afterTemporaryRemoval) { await options.afterTemporaryRemoval(); current(); }
+      }
+      await ensureOllamaRecord(location, handle, intentFile.replace(/\.json$/, '.done.json'),
         { schemaVersion: 1, identitySha256, fileRelativePath, removed: true }); current();
     }
     await ensureOllamaRecord(location, handle, record.replace(/\.json$/, '.retry-done.json'),

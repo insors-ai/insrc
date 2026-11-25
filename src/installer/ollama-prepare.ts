@@ -94,7 +94,7 @@ export async function closedOllamaAttempts(location: InstallationLocation, signa
           const info = lstatSync(join(directory, name)); if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1
             || (process.platform !== 'win32' && (info.uid !== process.getuid?.() || (info.mode & 0o077)))) throw dependencyUncertain('Unsafe dependency attempt lock'); continue;
         }
-        if (!/^[A-Za-z0-9_-]{32,128}\.(?:closed|cleanup|disposed|retry|retry-done|retry-temp-[a-f0-9]{64}|published|service|service-input|service-launch|service-running|service-exit|service-result|service-log-error)\.json$/.test(name)) throw dependencyUncertain('Unrecognized dependency attempt evidence');
+        if (!/^[A-Za-z0-9_-]{32,128}\.(?:closed|cleanup|disposed|retry|retry-done|retry-temp-[a-f0-9]{64}(?:\.done)?|published|service|service-input|service-launch|service-running|service-exit|service-result|service-log-error)\.json$/.test(name)) throw dependencyUncertain('Unrecognized dependency attempt evidence');
         continue;
       }
       if (result.length >= 128) throw dependencyUncertain('Dependency attempt history exceeds bound');

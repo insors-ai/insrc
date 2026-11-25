@@ -1,4 +1,4 @@
-import { test } from 'node:test';
+import { privateRuntimeTest } from './_private-runtime-test.js';
 import assert from 'node:assert/strict';
 import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -16,7 +16,7 @@ import type { DependencyOperationContext } from '../peer-contracts.js';
 import { createDependencyRetryContext } from '../dependency-context.js';
 import { cleanupOllamaInstallAttempt } from '../ollama-recovery.js';
 
-test('stale-forged-and-cross-home-offers-reject-before-mutation', async () => {
+privateRuntimeTest(import.meta.url, 'stale-forged-and-cross-home-offers-reject-before-mutation', async () => {
   const f = await ollamaFixture();
   try {
     const large = { url: 'https://github.com/ollama/ollama/releases/download/v0.0.1-fixture/large.zip', bytes: 3 * 1024 ** 3, sha256: 'a'.repeat(64) };
@@ -39,7 +39,7 @@ test('stale-forged-and-cross-home-offers-reject-before-mutation', async () => {
   } finally { await f.cleanup(); }
 });
 
-test('consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state', async () => {
+privateRuntimeTest(import.meta.url, 'consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state', async () => {
   for (const race of ['policy', 'destination', 'endpoint'] as const) {
     const f = await ollamaFixture();
     try {
@@ -61,7 +61,7 @@ test('consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-
   }
 });
 
-test('download-size-digest-layout-and-fsync-failures-never-report-ready', async () => {
+privateRuntimeTest(import.meta.url, 'download-size-digest-layout-and-fsync-failures-never-report-ready', async () => {
   for (const failure of ['size', 'digest', 'layout', 'fsync', 'publication'] as const) {
     const f = await ollamaFixture();
     try {
@@ -94,7 +94,7 @@ test('download-size-digest-layout-and-fsync-failures-never-report-ready', async 
   } finally { await f.cleanup(); }
 });
 
-test('finite-actor-closure-uncertainty-blocks-retry-and-cleanup', async () => {
+privateRuntimeTest(import.meta.url, 'finite-actor-closure-uncertainty-blocks-retry-and-cleanup', async () => {
   for (const kind of ['cooperating-work', 'transport-close', 'transport-close-rejected'] as const) {
   const f = await ollamaFixture(); let release!: () => void;
   const cancel = new AbortController();
@@ -167,7 +167,7 @@ test('finite-actor-closure-uncertainty-blocks-retry-and-cleanup', async () => {
   } finally { probeCancel.abort(); releaseProbe(); if (probeStarted) await probeClosed; await production.cleanup(); }
 });
 
-test('private-preparation-cancellation-blocks-later-publication', async () => {
+privateRuntimeTest(import.meta.url, 'private-preparation-cancellation-blocks-later-publication', async () => {
   for (const kind of ['abort-before-download', 'abort-after-extract', 'owner-lost'] as const) {
     const f = await ollamaFixture();
     try {

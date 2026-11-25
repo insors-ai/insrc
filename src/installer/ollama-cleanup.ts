@@ -2,6 +2,7 @@
 import { existsSync } from 'node:fs';
 import { lstat, readdir, rmdir, unlink } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import { relative } from 'node:path';
 import type { InstallationLocation } from './contracts.js';
 import type { DependencyAttemptIdentity, OllamaPolicy } from './ollama-policy.js';
 import { controlBinding } from './native.js';
@@ -26,7 +27,7 @@ export async function ensureOllamaRecord(location: InstallationLocation, handle:
 /** Validate the entire stage before deleting. Recheck every identity before its
  * unlink, bounded by caller deadline and retained native handle. */
 export async function removeOwnedOllamaStage(location: InstallationLocation, identity: DependencyAttemptIdentity,
-  policy: OllamaPolicy, current: () => void): Promise<void> {
+  policy: OllamaPolicy, current: () => void, beforeRemove?: (path: string) => Promise<void>): Promise<void> {
   const stage = dependencyPath(location, identity.stageRelativePath);
   current(); if (!existsSync(stage)) return;
   await privateOllamaDirectory(stage); current();
@@ -44,6 +45,7 @@ export async function removeOwnedOllamaStage(location: InstallationLocation, ide
   };
   await scan(stage, 0);
   for (const entry of entries.reverse()) {
+    if (beforeRemove) { await beforeRemove(relative(location.home, entry.path).replaceAll('\\', '/')); current(); }
     current(); const info = await lstat(entry.path); current();
     if (info.dev !== entry.dev || info.ino !== entry.ino || info.isSymbolicLink()
       || info.isDirectory() !== entry.directory || (!entry.directory && (!info.isFile() || info.nlink !== 1))) {
@@ -58,10 +60,14 @@ export async function removeOwnedOllamaStage(location: InstallationLocation, ide
 /** Caller has positively closed preparation (or explicitly retired a qualified
  * dead in-process cohort). This never touches published payloads or services. */
 export async function disposeOllamaStage(location: InstallationLocation, identity: DependencyAttemptIdentity,
-  policy: OllamaPolicy, handle: object, current: () => void, beforeRemoval?: () => Promise<void>): Promise<void> {
+  policy: OllamaPolicy, handle: object, current: () => void, beforeRemoval?: () => Promise<void>,
+  beforeRemove?: (path: string) => Promise<void>, afterRemoval?: () => Promise<void>): Promise<void> {
   const record = dependencyPath(location, identity.recordRelativePath), identitySha256 = digest(canonicalJson(identity));
   current(); await ensureOllamaRecord(location, handle, cleanupPath(record), { schemaVersion: 1, identitySha256, purpose: 'private-stage-disposal' }); current();
   if (beforeRemoval) { await beforeRemoval(); current(); }
-  await removeOwnedOllamaStage(location, identity, policy, current); current();
+  // The entire exact private stage is one plan item. Its durable admission and
+  // completion bracket idempotent deletion of any remaining contained entries.
+  await removeOwnedOllamaStage(location, identity, policy, current, beforeRemove); current();
+  if (afterRemoval) { await afterRemoval(); current(); }
   await ensureOllamaRecord(location, handle, disposedPath(record), { schemaVersion: 1, identitySha256, closed: true, stageRemoved: true }); current();
 }

@@ -17,3 +17,13 @@ Cleanup validates the owned tree before removal, retains bounded immutable progr
 ## Remaining evidence
 
 Task gate validation follows this checkpoint and writes the authoritative BUILD/TESTS result. Process-death/production-supervisor tests belong to t14; native Linux proof and cross-platform limitations to t17; final composed regression to t18. Crash-shaped fixtures here do not claim an actual SIGKILL/native-platform qualification. Legacy incomplete attempts without matching policy or qualified actor proof remain blocked. Inspection remains read-only with its existing three-second aggregate target; installed payloads are not rehashed.
+
+## Gate-environment and interruption follow-up
+
+The first tracked gate failed because its host-Node runner bypassed the canonical private Node 22 environment for direct tests. Preparation/recovery tests now use the existing privateRuntimeTest wrapper, as the service/integration tests already did. No installed daemon/runtime change was made. The gate also exposed a real temporary-file unlink/completion journal gap: immutable per-file intent now precedes unlink, and interrupted absence is reconciled into a separate completion record. The stage is one exact plan target, with durable disposal admission/completion; its contained entries are safely rescanned after interruption. Tests fault every deletion boundary and the stage-removal/completion gap.
+
+Current canonical focused run `faa6372d-7d68-4ae5-83fe-fea128cc35c9`: 18/18 passed, zero fail/skip/cancel, confirmed owned-group closure. Includes a real live exec child proving the native actor handle is not inherited, rather than only a record-field rejection. Successful regular-file first publication and refusal to replace an incumbent are both tested.
+
+Native Linux ARM64 OrbStack smoke was run under private Node 22.22.1, uid observed as 501, glibc observed as 2.35. The current C source was freshly compiled with matching installed headers; source SHA-256 and binary SHA-256 are in `docs/plans/s3-t12-native-publication-2026-11-25.json`. The accompanying driver records successful regular-file publication/no-replace and a live exec non-inheritance check. Guest temporary-root absence was independently checked, then VM `insrc-s3-ollama-arm64` was stopped. This is primitive qualification, not a fresh full Ollama/install qualification or Windows/macOS x64 claim; t17 retains that evidence scope.
+
+The cleanup primitive has no delivery/lifecycle/installation ports and cannot start an install. The composed manager blocked-state and cleanup-before-fresh-install assertions belong to t13; no t13 behavior is claimed by these primitive tests. Tracked gate revalidation follows.

@@ -816,3 +816,75 @@ test('REVIEW round-4 — HIGH-1: durable-ref recheck + claim create are one mute
 		} finally { fx.cleanup(); }
 	}
 });
+
+test('REVIEW round-13 HIGH — canonical ref parsing + configured-repo validation at the common ISSUE adoption boundary (adoptionPause): a durable meta.tracker.issueRef from another repo refuses BEFORE any mutation prompt; a retained created claim\'s saved ref must also agree', async () => {
+	const { pushExecuteRunner } = await import('../index.js');
+	setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [] }));
+	const { readClaim } = await import('../../../tracker/pending-create-claim.js');
+	const { artifactJsonPath, issueArtifactId } = await import('../../../storage.js');
+	const { patchTrackerMeta } = await import('../../../tracker/refs.js');
+	const { markApprovedSync } = await import('../../../__tests__/lifecycle-fixtures.js');
+	const { mkdirSync, mkdtempSync, rmSync, writeFileSync } = await import('node:fs');
+	const { tmpdir } = await import('node:os');
+	const { join } = await import('node:path');
+
+	const H = '5f9d4ab4c90c0b4c';
+	const MARKER = `<!-- insrc:artifact ISSUE-${H} -->`;
+	const mk = () => {
+		const repo = mkdtempSync(join(tmpdir(), 'insrc-r13-'));
+		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		writeFileSync(join(repo, 'repo-config.json'), JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
+		process.env['INSRC_REPO_CONFIG'] = join(repo, 'repo-config.json');
+		const issue = artifactJsonPath(repo, issueArtifactId(H));
+		writeFileSync(issue, JSON.stringify({ meta: { workflow: 'issue', runId: 'i', schemaVersion: 1, issueHash: H, epicHash: H, epicSlug: 's', createdAt: '2026-11-16T07:14:04.399Z', epicCreatedAt: '2026-11-16T07:14:04.399Z', standalone: true }, body: { title: 'T', reproduction: 'r', rootCause: 'c', fixIntent: 'f' }, citations: [] }));
+		markApprovedSync(issue);
+		return { repo, issue, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+	};
+	const ctxOf = (repo: string) => ({
+		intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } },
+		runId: 'run-B',
+		stepOutputs: { s1: { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] } },
+	}) as never;
+
+	// (a) durable meta.tracker.issueRef 'old/repo#41' with config acme/demo, no claim -> terminal error, NO prompt
+	{
+		const fx = mk();
+		try {
+			patchTrackerMeta(fx.issue, { issueRef: 'old/repo#41' });
+			const out = await pushExecuteRunner.run(ctxOf(fx.repo)) as { type: string; code?: string; message?: string; prompt?: string };
+			assert.equal(out.type, 'error', 'cross-repo durable ref refuses at the adoption boundary');
+			assert.equal(out.code, 'pending-create-unresolved');
+			assert.match(out.message ?? '', /does not target the configured GitHub repository acme\/demo/);
+			assert.ok(!out.prompt, 'no mutation prompt emitted for a foreign-repo ref');
+			assert.equal(readClaim(fx.repo, H), undefined, 'no claim written');
+		} finally { fx.cleanup(); }
+	}
+	// (b) durable ref acme/demo#42 + retained created claim saved acme/demo#41 -> conflict refusal, claim preserved
+	{
+		const fx = mk();
+		try {
+			patchTrackerMeta(fx.issue, { issueRef: 'acme/demo#42' });
+			writeFileSync(join(fx.repo, '.insrc', 'artifacts', `PENDING-CREATE-${H}.json`), JSON.stringify({
+				epicHash: H, runId: 'run-OLD', owner: 'run:run-OLD', repo: fx.repo, version: 2, ghOwner: 'acme', ghRepo: 'demo',
+				title: 'T', marker: MARKER, state: 'created', issueRef: 'acme/demo#41', fence: 1,
+				createdAt: '2020-01-01T00:00:00.000Z', heartbeatAt: '2020-01-01T00:00:00.000Z',
+			}));
+			const out = await pushExecuteRunner.run(ctxOf(fx.repo)) as { type: string; message?: string; prompt?: string };
+			assert.equal(out.type, 'error', 'durable ref conflicting with the created claim\'s saved ref refuses');
+			assert.match(out.message ?? '', /conflicts with the retained created claim's recorded ref acme\/demo#41/);
+			assert.ok(!out.prompt, 'no mutation prompt emitted');
+			const claim = readClaim(fx.repo, H);
+			assert.equal(claim?.issueRef, 'acme/demo#41', 'claim preserved with its recorded ref');
+		} finally { fx.cleanup(); }
+	}
+	// (c) positive: durable ref acme/demo#42 with NO claim -> adoption prompt still emitted (round-4 behavior preserved)
+	{
+		const fx = mk();
+		try {
+			patchTrackerMeta(fx.issue, { issueRef: 'acme/demo#42' });
+			const out = await pushExecuteRunner.run(ctxOf(fx.repo)) as { type: string; userTurn?: string; prompt?: string };
+			assert.equal(out.type, 'llm-pause', 'in-repo durable ref still adopts via the prompt');
+			assert.ok(out.userTurn!.includes('ADOPT the already-persisted issue `acme/demo#42`'), out.userTurn!);
+		} finally { fx.cleanup(); }
+	}
+});

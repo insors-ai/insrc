@@ -102,6 +102,18 @@ export const pushExecuteRunner: StepRunner = {
 			} finally {
 				mutex.release();
 			}
+			// the currently configured gh target — confirms candidates for legacy
+			// claims whose own persisted target is unknown (round-8 MED)
+			const ghTarget = `${c.gh.owner}/${c.gh.repo}`;
+			// REVIEW round-12: a saved ref is only adoptable if it targets BOTH
+			// the claim's recorded gh target (when present) and the currently
+			// configured one — validated BEFORE any mutation prompt is emitted.
+			const refTargetsRepo = (ref: string, target: string): boolean => ref.startsWith(`${target}#`);
+			const savedRefTargetsOk = (saved: string, cl: PendingCreateClaim): boolean => {
+				const claimTarget = cl.ghOwner !== undefined && cl.ghRepo !== undefined ? `${cl.ghOwner}/${cl.ghRepo}` : undefined;
+				if (claimTarget !== undefined && !refTargetsRepo(saved, claimTarget)) return false;
+				return refTargetsRepo(saved, ghTarget);
+			};
 			// REVIEW round-6 HIGH-1: a fence is carried ONLY when this run actually
 			// acquired claim ownership (a successful takeover writes OUR runId).
 			// A live foreign claim's fence is never carried or advanced.
@@ -115,16 +127,40 @@ export const pushExecuteRunner: StepRunner = {
 					s1o['claimRunId'] = ctx.runId;
 				}
 			};
-			const adoptionPause = (ref: string, how: string) => ({
-				type: 'llm-pause' as const,
-				prompt: pushPrompt({ ...c, existingRefs: { ...c.existingRefs, epicRef: ref, storyRefs: { ...c.existingRefs?.storyRefs, [IMPLIED_ISSUE_STORY_ID]: ref } } }),
-				userTurn: [
-					`ADOPT the ${how} issue \`${ref}\` (do NOT create a duplicate).`,
-					`Perform the required non-create mutations (labels, milestone, ${c.force ? 'forced body overwrite' : 'no body edit'}), then return the refs JSON.`,
-				].join('\n'),
-				schema: trackerPushExecuteSchema,
-				preparedBlob: { stepId: 'execute' as const },
-			});
+			// REVIEW round-13 HIGH: canonical issue-ref parsing + configured-repo
+			// validation live at THIS common ISSUE adoption boundary — every ISSUE
+			// adoption path (durable ref, snapshot candidate, saved claim ref)
+			// funnels through here, so a ref from another repo (e.g. a durable
+			// meta.tracker.issueRef 'old/repo#41' with config acme/demo) is refused
+			// BEFORE any mutation prompt is emitted, not only at finalize.
+			const adoptionPause = (ref: string, how: string) => {
+				const m = /^([^/#\s]+)\/([^/#\s]+)#(\d+)$/.exec(ref);
+				if (m === null || m[1] !== c.gh.owner || m[2] !== c.gh.repo) {
+					return refused(`adoption ref '${ref}' does not target the configured GitHub repository ${ghTarget} — refusing before any mutation prompt`);
+				}
+				// where a claim is retained, its recorded target and saved ref must
+				// also agree with the adopted ref before proceeding.
+				const retained = readClaim(ctx.intent.repoPath, c.epicHash);
+				if (retained !== undefined) {
+					const claimTarget = retained.ghOwner !== undefined && retained.ghRepo !== undefined ? `${retained.ghOwner}/${retained.ghRepo}` : undefined;
+					if (claimTarget !== undefined && !refTargetsRepo(ref, claimTarget)) {
+						return refused(`adoption ref '${ref}' does not target the retained claim's recorded repository ${claimTarget} — claim preserved; human resolves`);
+					}
+					if (retained.state === 'created' && retained.issueRef !== undefined && retained.issueRef !== ref) {
+						return refused(`adoption ref '${ref}' conflicts with the retained created claim's recorded ref ${retained.issueRef} — claim preserved; human resolves`);
+					}
+				}
+				return {
+					type: 'llm-pause' as const,
+					prompt: pushPrompt({ ...c, existingRefs: { ...c.existingRefs, epicRef: ref, storyRefs: { ...c.existingRefs?.storyRefs, [IMPLIED_ISSUE_STORY_ID]: ref } } }),
+					userTurn: [
+						`ADOPT the ${how} issue \`${ref}\` (do NOT create a duplicate).`,
+						`Perform the required non-create mutations (labels, milestone, ${c.force ? 'forced body overwrite' : 'no body edit'}), then return the refs JSON.`,
+					].join('\n'),
+					schema: trackerPushExecuteSchema,
+					preparedBlob: { stepId: 'execute' as const },
+				};
+			};
 			// REVIEW round-8 MED: an unresolved claim is a TERMINAL error, not a
 			// step output — an 'output' would flow into checklist.verify as refs
 			// and be masked by a schema failure at finalize. `type:'error'`
@@ -147,18 +183,6 @@ export const pushExecuteRunner: StepRunner = {
 				}
 				return adoptionPause(durableRef, 'already-persisted');
 			}
-			// the currently configured gh target — confirms candidates for legacy
-			// claims whose own persisted target is unknown (round-8 MED)
-			const ghTarget = `${c.gh.owner}/${c.gh.repo}`;
-			// REVIEW round-12: a saved ref is only adoptable if it targets BOTH
-			// the claim's recorded gh target (when present) and the currently
-			// configured one — validated BEFORE any mutation prompt is emitted.
-			const refTargetsRepo = (ref: string, target: string): boolean => ref.startsWith(`${target}#`);
-			const savedRefTargetsOk = (saved: string, cl: PendingCreateClaim): boolean => {
-				const claimTarget = cl.ghOwner !== undefined && cl.ghRepo !== undefined ? `${cl.ghOwner}/${cl.ghRepo}` : undefined;
-				if (claimTarget !== undefined && !refTargetsRepo(saved, claimTarget)) return false;
-				return refTargetsRepo(saved, ghTarget);
-			};
 			// REVIEW round-9/10: discovery at the create decision. The context
 			// snapshot is used ONLY for read-only adoption paths; it is NEVER
 			// trusted to authorize a create (round-10 HIGH-1: an earlier empty

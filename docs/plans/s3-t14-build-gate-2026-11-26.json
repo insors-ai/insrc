@@ -1,0 +1,44 @@
+{
+  "next": "done",
+  "passed": true,
+  "verdict": {
+    "taskId": "t14",
+    "passed": true,
+    "checks": [
+      {
+        "check": "Route EOF/SIGINT/SIGHUP/SIGTERM into cooperative finite abort/drain with bounded completion and diagnostic output. Process-death tests exercise preparation and handoff, including SIGKILL, without relying on cooperative handlers to prove hard-death closure.",
+        "satisfied": true,
+        "evidence": "terminal-abort.ts routes all four inputs through one abort and drain diagnostic. Finite work has bounded drain budgets. ollama-signals.test.ts sends actual signals and stdin EOF at both boundaries; SIGKILL leaves unclosed evidence that requires qualified explicit retry."
+      },
+      {
+        "check": "Durable service admission/launch/outcome remains separate from finite handoff markers. A stale marker does not suppress valid retained facts or truthful availability. Health never proves ownership; ambiguous launch forbids duplicate spawn and service/payload removal.",
+        "satisfied": true,
+        "evidence": "Service records and finite handoff records remain distinct. Read-only reconciliation accepts bound retained facts without repairing stale markers; strict closure checks remain enforced for mutation. Tests verify unchanged evidence, no replay, preserved payload and endpointOwnership='unproven', including after supervisor death."
+      },
+      {
+        "check": "Make pre/post-admission entrypoint regular-file/nlink/header checks identical. Known pre-spawn failures (including log creation/validation) record bound not-started outcome and bounded diagnostic file; unknown launches never get fabricated exit receipts.",
+        "satisfied": true,
+        "evidence": "Both control-entrypoint checks use checkWorkerEntrypoint; pre-admission tree validation and the worker share verifyOllamaExecutable for regular-file, nlink and header checks. Tests cover linked control/CLI files, invalid headers/receipts, log collisions, synchronous/asynchronous spawn failures and cancellation ordering. Diagnostics bind admission hashes and remain below 4096 bytes; ambiguous launches have no exit receipt."
+      },
+      {
+        "check": "Exercise production detached launchWorker and valid --ollama-service-worker dispatch with actual argv/relative path boundaries. Test supervisor death with service possibly alive and preserve admitted service. Use isolated owned test actors and positive closure evidence.",
+        "satisfied": true,
+        "evidence": "ollama-production-worker.test.ts uses the production launcher and bundled terminal bootstrap under space/Unicode paths, asserting exact spawn arguments and relative record path. Separate SIGKILL coverage preserves a live owned service, forbids replay and fabricated exit evidence, and observes the service's actual close."
+      },
+      {
+        "check": "Seed harmless credentials/NODE_OPTIONS in parent environment before spawn and restore afterward; child allowlist must strip them. Cancellation/failure after admission explicitly says Ollama may remain.",
+        "satisfied": true,
+        "evidence": "Service and production-worker tests seed credentials, NODE_OPTIONS and NODE_PATH before spawn and restore them in finally. The actual service fixture confirms credentials and Node overrides are absent. Admission progress, error handling and manager cancellation reporting disclose that accepted Ollama may remain running or unverified."
+      },
+      {
+        "check": "Use min(overall, readiness) deadline and distinguish owner loss, abort, overall timeout and startup failure. Task-local service/terminal/worker tests pass without host daemon/Ollama changes.",
+        "satisfied": true,
+        "evidence": "ollama-service.ts computes Math.min(prepared.preparationDeadline, performance.now() + readinessMs) and distinguishes owner loss, cancellation, deadline expiry and startup failure. Tests assert these outcomes and an overall bound below the readiness window. All nine required test mappings have substantive matching assertions; the daemon reports all six selected files and typecheck passed. Fixtures use isolated homes, listeners and owned processes."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "The two t14 commits stay within installer behavior, focused fixtures/tests and task records; repository evidence and daemon results satisfy every acceptance check.",
+    "testsPassed": true,
+    "typecheckClean": true
+  }
+}

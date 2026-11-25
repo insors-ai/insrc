@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 82 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
+**Totals:** 99 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -549,3 +549,80 @@ Run at 2026-11-25T18:07:52.061Z on commit `ecfd94321`. Tests check: **passed**. 
 | `src/installer/__tests__/dependency-integration.test.ts` | 0 | 5 | 13.9 s |  |
 | `src/installer/__tests__/install-retry.test.ts` | 0 | 8 | 21.8 s |  |
 | `src/installer/__tests__/ollama-prepare.test.ts` | 0 | 5 | 14.8 s |  |
+
+## t14
+
+Run at 2026-11-25T19:15:00.130Z on commit `be434767d`. Tests check: **passed**. 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: cancellation-and-eof-block-later-publication-or-service-admission**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | cancellation-and-eof-block-later-publication-or-service-admission | `src/installer/__tests__/dependency-integration.test.ts` |
+| pass | terminal-eof-and-interrupt-request-one-drain-and-restore-handlers | `src/installer/__tests__/terminal-abort.test.ts` |
+
+**integration: service-admission-is-durable-and-distinct-from-finite-preparation-drain**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | service-admission-is-durable-and-distinct-from-finite-preparation-drain | `src/installer/__tests__/ollama-service.test.ts` |
+| pass | retained-facts-survive-stale-finite-marker-without-repair-or-replay | `src/installer/__tests__/ollama-service.test.ts` |
+| pass | explicit-retry-closes-qualified-dead-handoff-and-owned-temporary-writes | `src/installer/__tests__/ollama-recovery.test.ts` |
+| pass | legacy-preparation-closure-does-not-authorize-unknown-handoff-disposal | `src/installer/__tests__/ollama-recovery.test.ts` |
+
+**integration: owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener | `src/installer/__tests__/ollama-service.test.ts` |
+
+**integration: terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions | `src/installer/__tests__/dependency-integration.test.ts` |
+| pass | normal-terminal-close-removes-install-handlers-before-tui-handoff | `src/installer/__tests__/terminal-abort.test.ts` |
+
+**integration: sighup-sigterm-and-sigkill-at-preparation-and-handoff-preserve-correct-evidence**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | sighup-sigterm-and-sigkill-at-preparation-and-handoff-preserve-correct-evidence | `src/installer/__tests__/ollama-signals.test.ts` |
+
+**integration: supervisor-log-validation-and-pre-spawn-failures-have-bounded-not-started-diagnostics**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | supervisor-log-validation-and-pre-spawn-failures-have-bounded-not-started-diagnostics | `src/installer/__tests__/ollama-service.test.ts` |
+| pass | supervisor-control-entrypoint-link-check-is-identical-before-and-after-admission | `src/installer/__tests__/ollama-production-worker.test.ts` |
+| pass | pre-launch-failure-and-cancelled-failed-spawn-keep-bound-not-started-diagnostics | `src/installer/__tests__/ollama-service.test.ts` |
+
+**integration: production-worker-dispatch-argv-path-and-sanitized-environment-with-seeded-sentinels**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | production-worker-dispatch-argv-path-and-sanitized-environment-with-seeded-sentinels | `src/installer/__tests__/ollama-production-worker.test.ts` |
+
+**integration: supervisor-death-does-not-imply-retained-service-death-or-authorize-replay**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | supervisor-death-does-not-imply-retained-service-death-or-authorize-replay | `src/installer/__tests__/ollama-production-worker.test.ts` |
+
+**integration: retained-service-cancellation-is-explicit-and-total-deadline-bounds-readiness**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | retained-service-cancellation-is-explicit-and-total-deadline-bounds-readiness | `src/installer/__tests__/ollama-service.test.ts` |
+| pass | cancellation-after-ready-dependency-report-still-discloses-retained-service | `src/installer/__tests__/dependency-integration.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/installer/__tests__/dependency-integration.test.ts` | 0 | 6 | 18.2 s |  |
+| `src/installer/__tests__/ollama-production-worker.test.ts` | 0 | 3 | 10.4 s |  |
+| `src/installer/__tests__/ollama-recovery.test.ts` | 0 | 19 | 47.1 s |  |
+| `src/installer/__tests__/ollama-service.test.ts` | 0 | 10 | 35.7 s |  |
+| `src/installer/__tests__/ollama-signals.test.ts` | 0 | 1 | 7.1 s |  |
+| `src/installer/__tests__/terminal-abort.test.ts` | 0 | 2 | 0.5 s |  |

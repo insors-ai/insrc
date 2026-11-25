@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 33,
-        "contentHash": "917ceea4a757362b026b3145b30a2710b9e28c27297ad9d451e4ab8ff9426e8c",
-        "at": "2026-11-25T18:07:52.081Z",
+        "number": 35,
+        "contentHash": "02670a77a1a4ab2f5c834d52b2a2b64f958b3a826d6533047afa31ac40df85a5",
+        "at": "2026-11-25T19:15:00.152Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "c3d71313f34bce71",
     "storyId": "s3",
     "createdAt": "2026-11-25T02:01:50.011Z",
-    "updatedAt": "2026-11-25T18:07:52.061Z",
+    "updatedAt": "2026-11-25T19:15:00.130Z",
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
-    "revision": 33
+    "revision": 35
   },
   "body": {
     "tasks": [
@@ -1883,6 +1883,391 @@
               },
               {
                 "title": "private-preparation-cancellation-blocks-later-publication",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "be434767d",
+        "ranAt": "2026-11-25T19:15:00.130Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "cancellation-and-eof-block-later-publication-or-service-admission",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependency-integration.test.ts",
+                "title": "cancellation-and-eof-block-later-publication-or-service-admission",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/terminal-abort.test.ts",
+                "title": "terminal-eof-and-interrupt-request-one-drain-and-restore-handlers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "service-admission-is-durable-and-distinct-from-finite-preparation-drain",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-service.test.ts",
+                "title": "service-admission-is-durable-and-distinct-from-finite-preparation-drain",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-service.test.ts",
+                "title": "retained-facts-survive-stale-finite-marker-without-repair-or-replay",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "explicit-retry-closes-qualified-dead-handoff-and-owned-temporary-writes",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-recovery.test.ts",
+                "title": "legacy-preparation-closure-does-not-authorize-unknown-handoff-disposal",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-service.test.ts",
+                "title": "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependency-integration.test.ts",
+                "title": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/terminal-abort.test.ts",
+                "title": "normal-terminal-close-removes-install-handlers-before-tui-handoff",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "sighup-sigterm-and-sigkill-at-preparation-and-handoff-preserve-correct-evidence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-signals.test.ts",
+                "title": "sighup-sigterm-and-sigkill-at-preparation-and-handoff-preserve-correct-evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "supervisor-log-validation-and-pre-spawn-failures-have-bounded-not-started-diagnostics",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-service.test.ts",
+                "title": "supervisor-log-validation-and-pre-spawn-failures-have-bounded-not-started-diagnostics",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-production-worker.test.ts",
+                "title": "supervisor-control-entrypoint-link-check-is-identical-before-and-after-admission",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-service.test.ts",
+                "title": "pre-launch-failure-and-cancelled-failed-spawn-keep-bound-not-started-diagnostics",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "production-worker-dispatch-argv-path-and-sanitized-environment-with-seeded-sentinels",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-production-worker.test.ts",
+                "title": "production-worker-dispatch-argv-path-and-sanitized-environment-with-seeded-sentinels",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "supervisor-death-does-not-imply-retained-service-death-or-authorize-replay",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-production-worker.test.ts",
+                "title": "supervisor-death-does-not-imply-retained-service-death-or-authorize-replay",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "retained-service-cancellation-is-explicit-and-total-deadline-bounds-readiness",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-service.test.ts",
+                "title": "retained-service-cancellation-is-explicit-and-total-deadline-bounds-readiness",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dependency-integration.test.ts",
+                "title": "cancellation-after-ready-dependency-report-still-discloses-retained-service",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/dependency-integration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 18241,
+            "titles": [
+              {
+                "title": "accepted-official-payload-is-user-only-and-discloses-install-and-start",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation-and-eof-block-later-publication-or-service-admission",
+                "result": "pass"
+              },
+              {
+                "title": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions",
+                "result": "pass"
+              },
+              {
+                "title": "dependency-uncertain-recovery-preserves-operation-and-prevents-duplicate-side-effects",
+                "result": "pass"
+              },
+              {
+                "title": "real-install-retry-waits-for-owned-actor-closure-and-cleans-original-policy",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation-after-ready-dependency-report-still-discloses-retained-service",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-production-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10355,
+            "titles": [
+              {
+                "title": "production-worker-dispatch-argv-path-and-sanitized-environment-with-seeded-sentinels",
+                "result": "pass"
+              },
+              {
+                "title": "supervisor-control-entrypoint-link-check-is-identical-before-and-after-admission",
+                "result": "pass"
+              },
+              {
+                "title": "supervisor-death-does-not-imply-retained-service-death-or-authorize-replay",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 47148,
+            "titles": [
+              {
+                "title": "qualified-in-process-lock-proof-excludes-live-inherited-and-unknown-actors",
+                "result": "pass"
+              },
+              {
+                "title": "repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first",
+                "result": "pass"
+              },
+              {
+                "title": "cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect",
+                "result": "pass"
+              },
+              {
+                "title": "unknown-actor-proof-blocks-install-retry-cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "explicit-retry-closes-qualified-dead-handoff-and-owned-temporary-writes",
+                "result": "pass"
+              },
+              {
+                "title": "legacy-preparation-closure-does-not-authorize-unknown-handoff-disposal",
+                "result": "pass"
+              },
+              {
+                "title": "legacy-closed-attempt-copied-to-another-home-cannot-authorize-deletion",
+                "result": "pass"
+              },
+              {
+                "title": "disposal-descriptor-close-uncertainty-retains-lock-until-observed-process-exit",
+                "result": "pass"
+              },
+              {
+                "title": "malformed-utf8-historical-policy-never-authorizes-cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "policy-change-reconciles-exact-accepted-copy-without-current-policy-substitution",
+                "result": "pass"
+              },
+              {
+                "title": "replacement-free-lock-cannot-authorize-cleanup-of-original-actor",
+                "result": "pass"
+              },
+              {
+                "title": "late-settlement-records-true-outcome-and-completes-disposal-under-held-handle",
+                "result": "pass"
+              },
+              {
+                "title": "immutable-record-publication-never-replaces-existing-target-and-cleans-owned-temp",
+                "result": "pass"
+              },
+              {
+                "title": "native-preparation-lock-is-not-inherited-by-live-exec-child",
+                "result": "pass"
+              },
+              {
+                "title": "retry-reconciles-interruption-at-every-stage-disposal-boundary",
+                "result": "pass"
+              },
+              {
+                "title": "temporary-disposal-intent-survives-unlink-completion-crash-gap",
+                "result": "pass"
+              },
+              {
+                "title": "malformed-or-incomplete-retry-journals-block-fresh-preparation",
+                "result": "pass"
+              },
+              {
+                "title": "orphan-evidence-in-empty-attempt-directory-blocks-fresh-preparation",
+                "result": "pass"
+              },
+              {
+                "title": "cleanup-deadline-retains-actor-until-close-and-retry-finishes-disposal",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 35706,
+            "titles": [
+              {
+                "title": "reuse-and-service-admission-never-rehash-installed-files",
+                "result": "pass"
+              },
+              {
+                "title": "transient-presence-probe-timeout-preserves-service-readiness-window",
+                "result": "pass"
+              },
+              {
+                "title": "service-admission-is-durable-and-distinct-from-finite-preparation-drain",
+                "result": "pass"
+              },
+              {
+                "title": "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn",
+                "result": "pass"
+              },
+              {
+                "title": "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener",
+                "result": "pass"
+              },
+              {
+                "title": "service-admission-cancellation-retains-only-explicitly-accepted-service-intent",
+                "result": "pass"
+              },
+              {
+                "title": "supervisor-log-validation-and-pre-spawn-failures-have-bounded-not-started-diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "retained-service-cancellation-is-explicit-and-total-deadline-bounds-readiness",
+                "result": "pass"
+              },
+              {
+                "title": "pre-launch-failure-and-cancelled-failed-spawn-keep-bound-not-started-diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "retained-facts-survive-stale-finite-marker-without-repair-or-replay",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-signals.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7130,
+            "titles": [
+              {
+                "title": "sighup-sigterm-and-sigkill-at-preparation-and-handoff-preserve-correct-evidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/terminal-abort.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 460,
+            "titles": [
+              {
+                "title": "terminal-eof-and-interrupt-request-one-drain-and-restore-handlers",
+                "result": "pass"
+              },
+              {
+                "title": "normal-terminal-close-removes-install-handlers-before-tui-handoff",
                 "result": "pass"
               }
             ],

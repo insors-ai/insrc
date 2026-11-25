@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1795613951642-ko36ut",
+    "runId": "wf-1795624248429-0hi3qc",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-25T13:40:52.824Z",
+    "createdAt": "2026-11-25T16:34:35.050Z",
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
     "attribution": {
       "outputs": [
@@ -15,21 +15,21 @@
         }
       ]
     },
-    "elapsedMs": 100827,
+    "elapsedMs": 226245,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "c3d71313f34bce71",
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
     "storyId": "s3",
-    "lldRunId": "wf-1795613684348-xxohki",
+    "lldRunId": "wf-1795622684271-4t6oq9",
     "lldEffectiveHash": "ca69fcdcd2b019a9f896c3de33519f2abd2ac93ed18efe96c628ba08dee66d48",
     "authoredBy": "controller",
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 2,
-        "contentHash": "1f3f0aa648ff00adeab30f7ac368928a54519843c08ec8f8946986414b5d5989",
-        "at": "2026-11-25T13:40:52.922Z",
+        "number": 3,
+        "contentHash": "fe6dc77f02f12ef6e0805e1a270fe2f835fc96212ed1c265039668c2718949db",
+        "at": "2026-11-25T16:34:35.150Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -38,13 +38,13 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 2,
+        "revision": 3,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-25T13:45:10.033Z"
+        "at": "2026-11-25T16:36:49.361Z"
       }
     },
     "envelope": {
@@ -52,13 +52,13 @@
       "references": [],
       "attachments": []
     },
-    "revision": 2,
-    "rangeBase": "373d9268391f598f3d1b0d57dbbacae424dbe8f1"
+    "revision": 3,
+    "rangeBase": "8ea4de1488105c5b6794cac35639436f2b3d6314"
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Preserve S3 task identities and completed implementation history while applying approved LLD revision5. Add one coherent follow-up task t11 to remove repeated installed-file hashing and retain archive verification, bounded metadata/closure checks and the three-second aggregate inspection target. Run its surrounding tests, then requalify the exact Linux route in t9 and run the combined S1/S2/S3 installer regression in t10. Node runtime packaging corrections remain S1/S2-owned; final story BUILD approval follows all task validation."
+      "prose": "Preserve the 11 completed S3 tasks and their historical evidence, then apply approved LLD revision6 in seven coherent correction batches. Explicit install Retry completes safe owned cleanup before normal fresh installation; update and later candidate/hook recovery remain separate. Each batch runs surrounding tests, followed by observed Linux native qualification and one composed S1/S2/S3 installer regression with current fingerprints and positive finite-actor closure. Final human BUILD approval occurs after all tasks validate."
     },
     "tasks": [
       {
@@ -520,210 +520,796 @@
             "name": "terminal-install-upgrade-consent-and-ready-before-tui-regressions"
           }
         ]
+      },
+      {
+        "id": "t12",
+        "title": "Complete dependency attempt closure and explicit cleanup primitives",
+        "size": "L",
+        "order": 12,
+        "dependsOn": [
+          "t10",
+          "t11"
+        ],
+        "summary": "Repair the shared recovery root in owned dependency records and preparation: accepted policy, true late closure, bounded disposal, temp files and atomic no-replace evidence. Expose cleanup only to the explicit install-retry owner; do not start installation.",
+        "acceptanceChecks": [
+          "Persist the exact accepted policy in a strict versioned private attempt record and verify its digest/home/target/paths for historical reconciliation without substituting current catalog. Legacy v1 closure remains readable; unavailable exact legacy policy yields a concrete blocker rather than guessed policy.",
+          "Late finite settlement records the actual outcome and completes bounded cleanup/disposal while retaining its original actor handle. Cancellation/owner loss never admits later publication/service start. Remove failed unpublished stages only after positive closure; preserve complete installed dependencies.",
+          "Implement bounded idempotent cleanup planning and immutable per-item completion records bound to the original install/attempt; derive canonical owned targets from validated evidence. Remove only proven abandoned temporary stages/archive/temp records; preserve diagnostics, installed dependencies/services/models/logs and foreign/unknown artifacts.",
+          "Positive closure or the exact qualified in-process-only actor/admission/non-inherited anchored-lock protocol is required and held during cleanup. Generic lock/PID/age/health cannot authorize deletion; live, external, inherited or unknown actor evidence blocks.",
+          "Use actual atomic no-replace record publication through existing native primitives, qualifying regular-file use on supported platforms. Clean exact temp writes after known descriptor close; uncertain close/publication and interrupted disposal remain explicit retry inputs without silently weakening unknown-evidence checks.",
+          "Interruption/deadline/cancellation at each cleanup step retains durable progress and prevents any fresh install. Surrounding records/prepare/layout tests prove true late outcome, policy changes, cleanup interruption/idempotence, and no side effects when closure is unknown.",
+          "Retain approved finite-operation and cleanup budgets, cooperative cancellation and positive handle close. Prove held/live, unknown/external and inherited-lock actor cases cannot be disposed; cleanup budget expiry persists blocked state and permits no new install."
+        ],
+        "derivedFrom": [
+          "c14",
+          "c15",
+          "c16"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "stale-forged-and-cross-home-offers-reject-before-mutation"
+          },
+          {
+            "level": "integration",
+            "name": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state"
+          },
+          {
+            "level": "integration",
+            "name": "download-size-digest-layout-and-fsync-failures-never-report-ready"
+          },
+          {
+            "level": "integration",
+            "name": "cancellation-and-eof-block-later-publication-or-service-admission"
+          },
+          {
+            "level": "integration",
+            "name": "unknown-actor-proof-blocks-install-retry-cleanup"
+          },
+          {
+            "level": "integration",
+            "name": "cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect"
+          },
+          {
+            "level": "integration",
+            "name": "repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first"
+          },
+          {
+            "level": "integration",
+            "name": "qualified-in-process-lock-proof-excludes-live-inherited-and-unknown-actors"
+          },
+          {
+            "level": "integration",
+            "name": "late-settlement-records-true-outcome-and-completes-disposal-under-held-handle"
+          },
+          {
+            "level": "integration",
+            "name": "policy-change-reconciles-exact-accepted-copy-without-current-policy-substitution"
+          },
+          {
+            "level": "integration",
+            "name": "immutable-record-publication-never-replaces-existing-target-and-cleans-owned-temp"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Add terminal install Retry cleanup gate and durable offer recovery",
+        "size": "L",
+        "order": 13,
+        "dependsOn": [
+          "t12"
+        ],
+        "summary": "Integrate explicit Retry for original install dependency preparation: cleanup first, retire old operation, then normal fresh install with new identity/current consent. Make accepted bundle data survive fresh peers and keep update recovery separate.",
+        "acceptanceChecks": [
+          "Add approved internal InstallerManager.retryInstall terminal capability without a new ManagerRequest action. Check original durable action=install, preparing phase, exact id/home, no selected release/candidate/dev-worker/shutdown/daemon admission before cleanup writes.",
+          "Terminal defaults Retry install to no; inspection/startup/IDE flags never trigger cleanup and no separate Discard flow is added. On yes, finish all owned cleanup and retire the old operation before ordinary install with a new operation/attempt, normal release resolution and current dependency consent.",
+          "Cleanup failure, cancellation or process death blocks every new install/download/publication/service launch. Repeated explicit Retry completes missing cleanup steps idempotently. Preserve already installed dependencies/services as existing state found by normal fresh installation, not partial-work resume.",
+          "Original upgrade intent never enters install cleanup. Existing update same-candidate acceptance, migration hooks, lifecycle, selected releases and installed daemon remain intact; later-stage install work with another owner blocks rather than inventing its reset policy.",
+          "Persist complete parsed descriptor in versioned private accepted-offer data and validate canonical digest/manifest/target/delivery on fresh bundle peer construction. No factory-local Map dependency, no resolve-latest substitution; invalid/unavailable legacy exact data fails closed.",
+          "Create dependency context/attempt data only for install choice, not decline; certain decline survives interruption without dependency-uncertain. Do not clear disruption/blocked state before positive cleanup or existing recovery completion.",
+          "Use fresh manager AND fresh delivery peers in restart tests. Assert strict cleanup-before-install event ordering, current-offer reconsent, cancellation/death/retry, decline-zero-dependency-writes and categorical upgrade exclusion. Preserve stop/TUI/terminal-only admission regressions.",
+          "Sentinels separately seed original upgrade intent, candidateId/durable candidate, admitted dev-preparation, shutdown and daemon migration/activation admission; every case rejects before cleanup writes. The fresh-install gate is confined to S3 dependency preparation and cannot substitute a different admitted HLD candidate."
+        ],
+        "derivedFrom": [
+          "c14",
+          "c15",
+          "c16",
+          "c17"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "inspect-and-decline-have-zero-mutation-or-process-side-effects"
+          },
+          {
+            "level": "integration",
+            "name": "stale-forged-and-cross-home-offers-reject-before-mutation"
+          },
+          {
+            "level": "integration",
+            "name": "accepted-official-payload-is-user-only-and-discloses-install-and-start"
+          },
+          {
+            "level": "integration",
+            "name": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state"
+          },
+          {
+            "level": "integration",
+            "name": "explicit-install-retry-completes-cleanup-before-fresh-install"
+          },
+          {
+            "level": "integration",
+            "name": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions"
+          },
+          {
+            "level": "integration",
+            "name": "install-retry-requires-explicit-terminal-admission-and-original-install-intent"
+          },
+          {
+            "level": "integration",
+            "name": "upgrade-retry-never-enters-install-cleanup-or-changes-selected-release"
+          },
+          {
+            "level": "integration",
+            "name": "cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect"
+          },
+          {
+            "level": "integration",
+            "name": "repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first"
+          },
+          {
+            "level": "integration",
+            "name": "fresh-bundle-peer-validates-durable-descriptor-without-resolve-map"
+          },
+          {
+            "level": "integration",
+            "name": "decline-creates-no-dependency-context-record-or-process-and-remains-certain"
+          }
+        ]
+      },
+      {
+        "id": "t14",
+        "title": "Close supervisor signal and retained-service reporting gaps",
+        "size": "M",
+        "order": 14,
+        "dependsOn": [
+          "t12",
+          "t13"
+        ],
+        "summary": "Make finite signal drain, production worker launch and retained Ollama facts truthful across failures and process death without terminating services or controlling the host daemon.",
+        "acceptanceChecks": [
+          "Route EOF/SIGINT/SIGHUP/SIGTERM into cooperative finite abort/drain with bounded completion and diagnostic output. Process-death tests exercise preparation and handoff, including SIGKILL, without relying on cooperative handlers to prove hard-death closure.",
+          "Durable service admission/launch/outcome remains separate from finite handoff markers. A stale marker does not suppress valid retained facts or truthful availability. Health never proves ownership; ambiguous launch forbids duplicate spawn and service/payload removal.",
+          "Make pre/post-admission entrypoint regular-file/nlink/header checks identical. Known pre-spawn failures (including log creation/validation) record bound not-started outcome and bounded diagnostic file; unknown launches never get fabricated exit receipts.",
+          "Exercise production detached launchWorker and valid --ollama-service-worker dispatch with actual argv/relative path boundaries. Test supervisor death with service possibly alive and preserve admitted service. Use isolated owned test actors and positive closure evidence.",
+          "Seed harmless credentials/NODE_OPTIONS in parent environment before spawn and restore afterward; child allowlist must strip them. Cancellation/failure after admission explicitly says Ollama may remain.",
+          "Use min(overall, readiness) deadline and distinguish owner loss, abort, overall timeout and startup failure. Task-local service/terminal/worker tests pass without host daemon/Ollama changes."
+        ],
+        "derivedFrom": [
+          "c14",
+          "c15",
+          "c18"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "cancellation-and-eof-block-later-publication-or-service-admission"
+          },
+          {
+            "level": "integration",
+            "name": "service-admission-is-durable-and-distinct-from-finite-preparation-drain"
+          },
+          {
+            "level": "integration",
+            "name": "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener"
+          },
+          {
+            "level": "integration",
+            "name": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions"
+          },
+          {
+            "level": "integration",
+            "name": "sighup-sigterm-and-sigkill-at-preparation-and-handoff-preserve-correct-evidence"
+          },
+          {
+            "level": "integration",
+            "name": "supervisor-log-validation-and-pre-spawn-failures-have-bounded-not-started-diagnostics"
+          },
+          {
+            "level": "integration",
+            "name": "production-worker-dispatch-argv-path-and-sanitized-environment-with-seeded-sentinels"
+          },
+          {
+            "level": "integration",
+            "name": "supervisor-death-does-not-imply-retained-service-death-or-authorize-replay"
+          },
+          {
+            "level": "integration",
+            "name": "retained-service-cancellation-is-explicit-and-total-deadline-bounds-readiness"
+          }
+        ]
+      },
+      {
+        "id": "t15",
+        "title": "Preserve verified ZIP descriptor and expand archive boundary coverage",
+        "size": "M",
+        "order": 15,
+        "dependsOn": [
+          "t12"
+        ],
+        "summary": "Extract ZIP from its verified descriptor and strengthen risk-focused tar/zstd/ZIP and alias-copy cancellation tests without weakening existing archive controls.",
+        "acceptanceChecks": [
+          "Hash/envelope validation and yauzl.fromFd extraction use the same open descriptor through actual ZIP close, with explicit positive close ownership and cancellation; no path reopen/swap window.",
+          "Add hostile tar GNU L/K/base256-negative/PAX-size/padding/endmarker/link-data/setuid/nested-inventory vectors and zstd reserved/dictionary/content-size/skippable/dual-decoder mismatch vectors. Assert intended validation codes/paths instead of incidental EEXIST.",
+          "Cover ZIP64 descriptors, EOCD signature in comment, Unicode extra names, gap/overlap and verified-fd path swap, plus cancellation during alias copy. Preserve byte/file/memory/path bounds and contained publication.",
+          "Check real destination/stage/publication paths and safe event-based synchronization/margins in archive tests. No fixture can pass a no-publication assertion against an unused path.",
+          "Run only archive/tar/ZIP/prepare surrounding selectors and relevant packaging/scanner checks for changed ownership paths; defer combined installer suite to final task."
+        ],
+        "derivedFrom": [
+          "c14",
+          "c15",
+          "c19"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "hostile-archive-and-large-zstd-window-fail-before-unsafe-write-or-allocation"
+          },
+          {
+            "level": "integration",
+            "name": "internal-archive-links-materialize-only-qualified-contained-files"
+          },
+          {
+            "level": "integration",
+            "name": "download-size-digest-layout-and-fsync-failures-never-report-ready"
+          },
+          {
+            "level": "integration",
+            "name": "archive-digest-mismatch-still-rejects-live-acquisition"
+          },
+          {
+            "level": "integration",
+            "name": "zip-extraction-uses-verified-descriptor-across-path-swap-and-positive-close"
+          },
+          {
+            "level": "integration",
+            "name": "hostile-tar-zstd-zip-boundary-matrix-rejects-before-unsafe-write"
+          },
+          {
+            "level": "integration",
+            "name": "alias-copy-cancellation-closes-before-owned-cleanup"
+          }
+        ]
+      },
+      {
+        "id": "t16",
+        "title": "Make detection diagnostics and validation tests non-vacuous",
+        "size": "M",
+        "order": 16,
+        "dependsOn": [
+          "t12",
+          "t13",
+          "t14",
+          "t15"
+        ],
+        "summary": "Strengthen no-rehash/read-only/redirect/agent assertions and actionable diagnostics, correcting the manual-review test findings without adding installation behavior.",
+        "acceptanceChecks": [
+          "Invalid receipt/closure/layout tests assert exact intended error codes and zero transport calls; a throwing download stub cannot mask accidental redownload. Preserve acquisition SHA checks and metadata-only installed validation.",
+          "Expand content-read sentinel over practical sync/async/stream/path APIs and retain same-size-content cases. Demonstrate bounded metadata/header allowance without full installed-content reads.",
+          "Use second loopback listener returning a valid version to prove redirect/remote target is never contacted; assert listener count zero instead of relying on external.invalid DNS failure.",
+          "Provide actionable unsupported-ancestor-alias blocker while preserving S1 canonical-home/link ownership. Emit agent recommendation once and assert no coding CLI install/auth/spawn for zero/one/many presence cases.",
+          "Replace tight wall-clock or half-written-JSON polling with hooks/events or safe margins in touched prepare/detection/validation tests; assertions must prove claimed behavior.",
+          "Correct TESTS traceability: transient readiness timeout maps to its service test; never-installs-agent assertions are real. Run surrounding detection/validation/policy/terminal selectors only."
+        ],
+        "derivedFrom": [
+          "c14",
+          "c15",
+          "c20"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable"
+          },
+          {
+            "level": "integration",
+            "name": "healthy-service-without-path-binary-is-reused"
+          },
+          {
+            "level": "integration",
+            "name": "inspect-and-decline-have-zero-mutation-or-process-side-effects"
+          },
+          {
+            "level": "integration",
+            "name": "stopped-existing-ollama-has-manual-guidance-without-start-action"
+          },
+          {
+            "level": "integration",
+            "name": "agent-zero-one-many-detection-never-spawns-auth-model-or-install"
+          },
+          {
+            "level": "integration",
+            "name": "inspection-and-reconciliation-share-three-second-bound-without-payload-hashing"
+          },
+          {
+            "level": "integration",
+            "name": "receipt-closure-and-layout-errors-block-reuse-without-content-rehash"
+          },
+          {
+            "level": "integration",
+            "name": "same-size-installed-content-change-does-not-trigger-digest-reverification"
+          },
+          {
+            "level": "integration",
+            "name": "reuse-and-service-admission-never-rehash-installed-files"
+          },
+          {
+            "level": "integration",
+            "name": "invalid-receipt-closure-layout-reject-with-specific-code-and-zero-transport-calls"
+          },
+          {
+            "level": "integration",
+            "name": "payload-read-sentinel-covers-sync-async-stream-and-path-read-entrypoints"
+          },
+          {
+            "level": "integration",
+            "name": "redirect-target-local-listener-is-never-contacted"
+          },
+          {
+            "level": "integration",
+            "name": "coding-cli-advice-emitted-once-and-install-spawn-sentinels-remain-zero"
+          }
+        ]
+      },
+      {
+        "id": "t17",
+        "title": "Requalify exact Linux route with observed native and upstream provenance",
+        "size": "L",
+        "order": 17,
+        "dependsOn": [
+          "t13",
+          "t14",
+          "t15",
+          "t16"
+        ],
+        "summary": "Update the qualification driver and re-run the current Linux ARM64 dependency route in OrbStack, generating claims from observed raw evidence and independently attributed official asset identity.",
+        "acceptanceChecks": [
+          "Record observed os.machine/process.arch/platform, uid>0, Node executable/version, raw /etc/os-release, process.report glibcVersionRuntime and meaningful translation check. Never hardcode uid501 or hand-author native/glibc conclusions.",
+          "Capture independent official upstream asset digest/checksum source and raw supporting metadata, bind exact URL/version/bytes/SHA to it. If evidence unavailable, mark provenance/route qualification pending rather than inventing a match.",
+          "Record scoped before/after installation-home, ~/.ollama and relevant temp-path observations; private argv/env/log/zero-model/decline/reuse results. Record unprivileged cache-advice action/result and limits; no claim of global cache eviction or exhaustive filesystem-write proof.",
+          "Run exact pinned route under private Node22 in isolated OrbStack VM; verify large archive layout, service readiness, fresh-process inspection within three-second aggregate target and bounded payload-read behavior after corrections. Leave intentional service/finite actor status accounted and VM stopped afterward.",
+          "Preserve previous successful and failed evidence as historical pre-review runs. Generate revised qualification summary from raw script output, with current source hashes and correct test mapping. Only native-qualified exact routes are enabled; other Linux/macOS/Windows architectures keep explicit pending/manual guidance.",
+          "No elevation/model download/global cache drop/host daemon or host Ollama change; missing UTM/Windows/native-x64 evidence is reported honestly. Tests of the evidence validator prove wrong platform/glibc/digest/translation claims cannot enable a route."
+        ],
+        "derivedFrom": [
+          "c14",
+          "c15",
+          "c21"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "accepted-official-payload-is-user-only-and-discloses-install-and-start"
+          },
+          {
+            "level": "live",
+            "name": "qualified-exact-ollama-payload-version-and-user-session-readiness-on-enabled-target"
+          },
+          {
+            "level": "live",
+            "name": "existing-installation-reuse-and-decline-preserve-platform-state"
+          },
+          {
+            "level": "live",
+            "name": "official-large-archive-streaming-and-library-layout-match-policy"
+          },
+          {
+            "level": "live",
+            "name": "native-large-payload-inspection-avoids-content-reads-within-three-seconds"
+          },
+          {
+            "level": "live",
+            "name": "native-platform-glibc-translation-and-upstream-digest-provenance-are-observed"
+          },
+          {
+            "level": "live",
+            "name": "native-write-observations-and-cache-advice-are-recorded-with-limits"
+          }
+        ]
+      },
+      {
+        "id": "t18",
+        "title": "Run final scoped regression and refresh manual review evidence",
+        "size": "M",
+        "order": 18,
+        "dependsOn": [
+          "t12",
+          "t13",
+          "t14",
+          "t15",
+          "t16",
+          "t17"
+        ],
+        "summary": "After all corrective tasks and local checks, run one composed S1/S2/S3 installer regression, reconcile current evidence and generate an updated manual-review delta packet.",
+        "acceptanceChecks": [
+          "Canonical Node22 build and one final all-installer plus installation-home/build/scanner/coordinator regression after t12–t17. Set INSRC_BUILD_CONFIRM_CLOSURE=1 and --concurrency=1; no unrelated backend sweep or per-task full suite.",
+          "Audit exact selected/discovered/executed counts with zero unexplained skips/failures/cancellations; current source/output fingerprints; matching unique admission/close/disposal sets, confirmed finite closure and no unaccounted owned work.",
+          "Keep retained-service admissions separate from finite actor closure. Account/clean isolated fixture actors without any PID/kill daemon fallback or host-service mutation.",
+          "Update BUILD/TESTS mapping and revised native/inspection evidence; identify the prior152/152 packet as pre-review history, preserve it unchanged, and map every finding to corrected files/tests or an honest pending qualification limit.",
+          "Keep approved sequence/ownership docs aligned and prepare a fresh /tmp/.insrc manual-review packet/delta with commits, changed files, epic/HLD/LLD/PLAN trail and raw test/native evidence. Automated review endpoints remain unavailable; do not invent CR registration or request per-task human BUILD approvals.",
+          "Only after all tasks validate, present final story BUILD for specific human approval using available supported flow; report any known disabled-review presentation gate accurately.",
+          "Do not renumber/reissue/rebuild completed t1–t11 as if newly failed. Their original test evidence remains historical, while t12–t18 supply current revision validation; every current LLD strategy item maps to an executing corrective/qualification/final task."
+        ],
+        "derivedFrom": [
+          "c14",
+          "c15",
+          "c16",
+          "c21",
+          "c22"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "private-runtime-provenance-rejects-path-node-and-wrong-target"
+          },
+          {
+            "level": "integration",
+            "name": "production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5"
+          },
+          {
+            "level": "smoke",
+            "name": "combined-s1-s2-s3-installer-regression-has-exact-coverage-and-confirmed-cleanup"
+          },
+          {
+            "level": "smoke",
+            "name": "published-control-payload-includes-real-dependency-adapter-without-application-boot-imports"
+          },
+          {
+            "level": "smoke",
+            "name": "terminal-install-upgrade-consent-and-ready-before-tui-regressions"
+          }
+        ]
       }
     ],
     "testStrategyCoverage": [
       {
         "lldStrategyItem": "dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable",
         "coveredByTaskIds": [
-          "t2"
+          "t16"
         ]
       },
       {
         "lldStrategyItem": "healthy-service-without-path-binary-is-reused",
         "coveredByTaskIds": [
-          "t2"
+          "t16"
         ]
       },
       {
         "lldStrategyItem": "inspect-and-decline-have-zero-mutation-or-process-side-effects",
         "coveredByTaskIds": [
-          "t2",
-          "t7"
+          "t13",
+          "t16"
         ]
       },
       {
         "lldStrategyItem": "stale-forged-and-cross-home-offers-reject-before-mutation",
         "coveredByTaskIds": [
-          "t1",
-          "t5",
-          "t7"
+          "t12",
+          "t13"
         ]
       },
       {
         "lldStrategyItem": "stopped-existing-ollama-has-manual-guidance-without-start-action",
         "coveredByTaskIds": [
-          "t2",
-          "t7"
+          "t16"
         ]
       },
       {
         "lldStrategyItem": "agent-zero-one-many-detection-never-spawns-auth-model-or-install",
         "coveredByTaskIds": [
-          "t2"
+          "t16"
         ]
       },
       {
         "lldStrategyItem": "private-runtime-provenance-rejects-path-node-and-wrong-target",
         "coveredByTaskIds": [
-          "t2",
-          "t8"
+          "t18"
         ]
       },
       {
         "lldStrategyItem": "accepted-official-payload-is-user-only-and-discloses-install-and-start",
         "coveredByTaskIds": [
-          "t5",
-          "t6",
-          "t7"
+          "t13",
+          "t17"
         ]
       },
       {
         "lldStrategyItem": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state",
         "coveredByTaskIds": [
-          "t5",
-          "t7"
+          "t12",
+          "t13"
         ]
       },
       {
         "lldStrategyItem": "hostile-archive-and-large-zstd-window-fail-before-unsafe-write-or-allocation",
         "coveredByTaskIds": [
-          "t3",
-          "t4"
+          "t15"
         ]
       },
       {
         "lldStrategyItem": "internal-archive-links-materialize-only-qualified-contained-files",
         "coveredByTaskIds": [
-          "t4"
+          "t15"
         ]
       },
       {
         "lldStrategyItem": "download-size-digest-layout-and-fsync-failures-never-report-ready",
         "coveredByTaskIds": [
-          "t5"
+          "t12",
+          "t15"
         ]
       },
       {
         "lldStrategyItem": "cancellation-and-eof-block-later-publication-or-service-admission",
         "coveredByTaskIds": [
-          "t3",
-          "t5",
-          "t6",
-          "t7"
+          "t12",
+          "t14"
         ]
       },
       {
-        "lldStrategyItem": "finite-actor-closure-uncertainty-blocks-retry-and-cleanup",
+        "lldStrategyItem": "unknown-actor-proof-blocks-install-retry-cleanup",
         "coveredByTaskIds": [
-          "t5",
-          "t7"
+          "t12"
         ]
       },
       {
         "lldStrategyItem": "service-admission-is-durable-and-distinct-from-finite-preparation-drain",
         "coveredByTaskIds": [
-          "t6"
+          "t14"
         ]
       },
       {
-        "lldStrategyItem": "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn",
+        "lldStrategyItem": "explicit-install-retry-completes-cleanup-before-fresh-install",
         "coveredByTaskIds": [
-          "t6",
-          "t7"
+          "t13"
         ]
       },
       {
         "lldStrategyItem": "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener",
         "coveredByTaskIds": [
-          "t6"
+          "t14"
         ]
       },
       {
         "lldStrategyItem": "production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5",
         "coveredByTaskIds": [
-          "t8"
+          "t18"
         ]
       },
       {
         "lldStrategyItem": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions",
         "coveredByTaskIds": [
-          "t7",
-          "t10"
-        ]
-      },
-      {
-        "lldStrategyItem": "qualified-exact-ollama-payload-version-and-user-session-readiness-on-enabled-target",
-        "coveredByTaskIds": [
-          "t9"
-        ]
-      },
-      {
-        "lldStrategyItem": "existing-installation-reuse-and-decline-preserve-platform-state",
-        "coveredByTaskIds": [
-          "t9"
-        ]
-      },
-      {
-        "lldStrategyItem": "official-large-archive-streaming-and-library-layout-match-policy",
-        "coveredByTaskIds": [
-          "t9"
-        ]
-      },
-      {
-        "lldStrategyItem": "combined-s1-s2-s3-installer-regression-has-exact-coverage-and-confirmed-cleanup",
-        "coveredByTaskIds": [
-          "t10"
-        ]
-      },
-      {
-        "lldStrategyItem": "published-control-payload-includes-real-dependency-adapter-without-application-boot-imports",
-        "coveredByTaskIds": [
-          "t8",
-          "t10"
-        ]
-      },
-      {
-        "lldStrategyItem": "terminal-install-upgrade-consent-and-ready-before-tui-regressions",
-        "coveredByTaskIds": [
-          "t7",
-          "t10"
+          "t13",
+          "t14"
         ]
       },
       {
         "lldStrategyItem": "inspection-and-reconciliation-share-three-second-bound-without-payload-hashing",
         "coveredByTaskIds": [
-          "t11"
+          "t16"
         ]
       },
       {
         "lldStrategyItem": "receipt-closure-and-layout-errors-block-reuse-without-content-rehash",
         "coveredByTaskIds": [
-          "t11"
+          "t16"
         ]
       },
       {
         "lldStrategyItem": "same-size-installed-content-change-does-not-trigger-digest-reverification",
         "coveredByTaskIds": [
-          "t11"
+          "t16"
         ]
       },
       {
         "lldStrategyItem": "archive-digest-mismatch-still-rejects-live-acquisition",
         "coveredByTaskIds": [
-          "t11"
+          "t15"
         ]
       },
       {
         "lldStrategyItem": "reuse-and-service-admission-never-rehash-installed-files",
         "coveredByTaskIds": [
-          "t11"
+          "t16"
+        ]
+      },
+      {
+        "lldStrategyItem": "install-retry-requires-explicit-terminal-admission-and-original-install-intent",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "upgrade-retry-never-enters-install-cleanup-or-changes-selected-release",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect",
+        "coveredByTaskIds": [
+          "t12",
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first",
+        "coveredByTaskIds": [
+          "t12",
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "sighup-sigterm-and-sigkill-at-preparation-and-handoff-preserve-correct-evidence",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "qualified-in-process-lock-proof-excludes-live-inherited-and-unknown-actors",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "late-settlement-records-true-outcome-and-completes-disposal-under-held-handle",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "policy-change-reconciles-exact-accepted-copy-without-current-policy-substitution",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "fresh-bundle-peer-validates-durable-descriptor-without-resolve-map",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "decline-creates-no-dependency-context-record-or-process-and-remains-certain",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "supervisor-log-validation-and-pre-spawn-failures-have-bounded-not-started-diagnostics",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "production-worker-dispatch-argv-path-and-sanitized-environment-with-seeded-sentinels",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "supervisor-death-does-not-imply-retained-service-death-or-authorize-replay",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "retained-service-cancellation-is-explicit-and-total-deadline-bounds-readiness",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "zip-extraction-uses-verified-descriptor-across-path-swap-and-positive-close",
+        "coveredByTaskIds": [
+          "t15"
+        ]
+      },
+      {
+        "lldStrategyItem": "immutable-record-publication-never-replaces-existing-target-and-cleans-owned-temp",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "invalid-receipt-closure-layout-reject-with-specific-code-and-zero-transport-calls",
+        "coveredByTaskIds": [
+          "t16"
+        ]
+      },
+      {
+        "lldStrategyItem": "payload-read-sentinel-covers-sync-async-stream-and-path-read-entrypoints",
+        "coveredByTaskIds": [
+          "t16"
+        ]
+      },
+      {
+        "lldStrategyItem": "redirect-target-local-listener-is-never-contacted",
+        "coveredByTaskIds": [
+          "t16"
+        ]
+      },
+      {
+        "lldStrategyItem": "coding-cli-advice-emitted-once-and-install-spawn-sentinels-remain-zero",
+        "coveredByTaskIds": [
+          "t16"
+        ]
+      },
+      {
+        "lldStrategyItem": "hostile-tar-zstd-zip-boundary-matrix-rejects-before-unsafe-write",
+        "coveredByTaskIds": [
+          "t15"
+        ]
+      },
+      {
+        "lldStrategyItem": "alias-copy-cancellation-closes-before-owned-cleanup",
+        "coveredByTaskIds": [
+          "t15"
+        ]
+      },
+      {
+        "lldStrategyItem": "qualified-exact-ollama-payload-version-and-user-session-readiness-on-enabled-target",
+        "coveredByTaskIds": [
+          "t17"
+        ]
+      },
+      {
+        "lldStrategyItem": "existing-installation-reuse-and-decline-preserve-platform-state",
+        "coveredByTaskIds": [
+          "t17"
+        ]
+      },
+      {
+        "lldStrategyItem": "official-large-archive-streaming-and-library-layout-match-policy",
+        "coveredByTaskIds": [
+          "t17"
         ]
       },
       {
         "lldStrategyItem": "native-large-payload-inspection-avoids-content-reads-within-three-seconds",
         "coveredByTaskIds": [
-          "t9"
+          "t17"
+        ]
+      },
+      {
+        "lldStrategyItem": "native-platform-glibc-translation-and-upstream-digest-provenance-are-observed",
+        "coveredByTaskIds": [
+          "t17"
+        ]
+      },
+      {
+        "lldStrategyItem": "native-write-observations-and-cache-advice-are-recorded-with-limits",
+        "coveredByTaskIds": [
+          "t17"
+        ]
+      },
+      {
+        "lldStrategyItem": "combined-s1-s2-s3-installer-regression-has-exact-coverage-and-confirmed-cleanup",
+        "coveredByTaskIds": [
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "published-control-payload-includes-real-dependency-adapter-without-application-boot-imports",
+        "coveredByTaskIds": [
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "terminal-install-upgrade-consent-and-ready-before-tui-regressions",
+        "coveredByTaskIds": [
+          "t18"
         ]
       }
     ]
@@ -805,6 +1391,60 @@
       "id": "c13",
       "kind": "stakeholder",
       "ref": "User correction, 2026-11-25: remove redundant second installed-file hashing check; S3 LLD revision5 approved."
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#summary",
+      "quotedText": "Approved revision6: explicit install Retry, owned cleanup then fresh install, never UPDATE; grouped manual-review corrections."
+    },
+    {
+      "id": "c15",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#9-references",
+      "quotedText": "c93 exact manual-review source docs/plans/s3-manual-review-feedback-2026-11-25.md and c94 owner decision; keep corrections in existing S3."
+    },
+    {
+      "id": "c16",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#3-data-model-changes",
+      "quotedText": "Install retry cleanup evidence, historical accepted policy, true late disposal and atomic no-replace records."
+    },
+    {
+      "id": "c17",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#2-contract-details",
+      "quotedText": "Terminal-admitted InstallerManager.retryInstall and fresh durable bundle descriptor; reject updates and other-owner candidate/lifecycle artifacts."
+    },
+    {
+      "id": "c18",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#6-error-paths",
+      "quotedText": "Supervisor pre-spawn failure, signals/process death, service retention, owner loss and total/readiness deadline."
+    },
+    {
+      "id": "c19",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#7-test-strategy",
+      "quotedText": "Verified ZIP descriptor lifetime and risk-focused tar/zstd/ZIP/alias-copy cancellation boundary cases."
+    },
+    {
+      "id": "c20",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#7-test-strategy",
+      "quotedText": "Non-vacuous zero-transport/specific-code/read-sentinel/env/redirect/agent assertions, actual publication paths and robust synchronization."
+    },
+    {
+      "id": "c21",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#7-test-strategy",
+      "quotedText": "Live native qualification from observed platform/glibc/translation and independent upstream asset digest evidence, scoped writes/cache advice with limits."
+    },
+    {
+      "id": "c22",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#7-test-strategy",
+      "quotedText": "Surrounding tests per task, final composed regression after all tasks; canonical coordinator, current fingerprints, positive admission/close/disposal audit and human final BUILD approval."
     }
   ]
 }

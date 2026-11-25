@@ -1,0 +1,706 @@
+{
+  "kind": "s3-composed-installer-validation",
+  "runId": "1ceabce5-def9-4d72-9280-0281c093cbbb",
+  "sourceCommit": "8e2534b48dea18c279756c1661c3ffe0c6b0b40b",
+  "runtimeVersion": "v22.22.1",
+  "runtimeExecutable": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node",
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 600000,
+    "runMs": 5400000,
+    "cleanupMs": 5000
+  },
+  "requestedConcurrency": 1,
+  "effectiveConcurrency": 1,
+  "incomplete": false,
+  "diagnosticFlags": [
+    "DEBUG"
+  ],
+  "liveTests": "unset",
+  "inputFingerprint": "71e868c117ac3f65710e0f93e4afc541e8cc1d744e00272525cb572c43b2b078",
+  "outputFingerprint": "d5bedf31d406b9c39f86666ec2d7633b141c2233aeda359f2c1c580d319b8101",
+  "counts": {
+    "tests": 152,
+    "pass": 152,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "files": [
+    {
+      "file": "scripts/__tests__/build-script.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/0-scripts___tests___build-script.test.ts.log"
+    },
+    {
+      "file": "scripts/__tests__/forbidden-spawn-scan.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/1-scripts___tests___forbidden-spawn-scan.test.ts.log"
+    },
+    {
+      "file": "scripts/__tests__/test-harness-coordinator.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/2-scripts___tests___test-harness-coordinator.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/bootstrap.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/3-src_installer___tests___bootstrap.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/bridge-protocol.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/4-src_installer___tests___bridge-protocol.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/bundle.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/5-src_installer___tests___bundle.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/contracts.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/6-src_installer___tests___contracts.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/controller-store.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 7,
+          "pass": 7,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/7-src_installer___tests___controller-store.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dependencies.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/8-src_installer___tests___dependencies.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dependency-integration.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/9-src_installer___tests___dependency-integration.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dependency-policy.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/10-src_installer___tests___dependency-policy.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dev-complete-payload.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/11-src_installer___tests___dev-complete-payload.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dev-git.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/12-src_installer___tests___dev-git.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dev-manager.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/13-src_installer___tests___dev-manager.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dev-metadata.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/14-src_installer___tests___dev-metadata.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dev-payload.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/15-src_installer___tests___dev-payload.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dev-recovery.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/16-src_installer___tests___dev-recovery.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dev-toolchain.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/17-src_installer___tests___dev-toolchain.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/dev-worker.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 7,
+          "pass": 7,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/18-src_installer___tests___dev-worker.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/foundation-payload.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/19-src_installer___tests___foundation-payload.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/installed-dev.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/20-src_installer___tests___installed-dev.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/location.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/21-src_installer___tests___location.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/manager.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 14,
+          "pass": 14,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/22-src_installer___tests___manager.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-archive.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/23-src_installer___tests___ollama-archive.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-catalog.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/24-src_installer___tests___ollama-catalog.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-prepare.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/25-src_installer___tests___ollama-prepare.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-service.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/26-src_installer___tests___ollama-service.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-tar.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/27-src_installer___tests___ollama-tar.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/ollama-validation.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/28-src_installer___tests___ollama-validation.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/operation-control.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/29-src_installer___tests___operation-control.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/production-peers.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/30-src_installer___tests___production-peers.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/publisher.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/31-src_installer___tests___publisher.test.ts.log"
+    },
+    {
+      "file": "src/installer/__tests__/terminal-install.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/32-src_installer___tests___terminal-install.test.ts.log"
+    },
+    {
+      "file": "src/shared/__tests__/installation-home.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "log": ".insrc/tmp/test-harness/runs/1ceabce5-def9-4d72-9280-0281c093cbbb/33-src_shared___tests___installation-home.test.ts.log"
+    }
+  ],
+  "cleanup": {
+    "confirmedClosed": true,
+    "interrupted": false,
+    "cancellationErrors": [],
+    "evidenceErrors": [],
+    "childCloseJournal": "child-results.jsonl",
+    "closureMode": "owned-groups"
+  },
+  "journalCounts": {
+    "child-admissions": 43,
+    "child-results": 43,
+    "child-disposals": 43
+  },
+  "postRunAudit": {
+    "testFile": "scripts/__tests__/installer-s2-qualification.test.ts",
+    "status": "pass",
+    "note": "Reused existing dynamic installer audit against the current 34-file S1/S2/S3 selection, after all coordinator actors closed; historical S2 filename retained."
+  },
+  "supersededRun": {
+    "runId": "bf8214e7-3377-4b93-baff-d25becf3c08c",
+    "testsPassed": 152,
+    "audit": "failed: INSRC_BUILD_CONFIRM_CLOSURE was omitted; cleanup mode legacy lacks required admission/disposal evidence. Repeated with owned-group flag; no source changes."
+  },
+  "nativeQualification": {
+    "status": "pass",
+    "policySha256": "4e02734bed1f3c1eac80a4fc517b99030659cb749a7144401f116f83248a35aa",
+    "observed": {
+      "nativeInstallSeconds": 81.79360738199999,
+      "executableVersion": "0.40.18",
+      "apiVersion": "0.40.18",
+      "privateNode": "22.22.1",
+      "modelFiles": 0,
+      "declinePreservedDependencyFiles": true,
+      "reusePreservedAttemptRecords": true,
+      "finitePreparationAndHandoffClosed": true,
+      "stageDisposed": true,
+      "retainedService": true,
+      "endpointOwnership": "unproven",
+      "fullDaemonInstallation": false,
+      "warmFreshInspectionMs": 29.987932999999998,
+      "coldFreshInspectionMs": 35.997912000000014,
+      "inspectionReadCharacters": 39507
+    },
+    "targets": [
+      {
+        "os": "linux",
+        "arch": "arm64",
+        "baseline": "glibc-2.35",
+        "status": "qualified",
+        "reason": "Exact official live acquisition, archive/layout validation, user-only service startup, decline/reuse and fresh no-rehash inspection passed on native ARM64 glibc2.35."
+      },
+      {
+        "os": "linux",
+        "arch": "x64",
+        "status": "pending",
+        "reason": "No native x64 runner provisioned in this session; OrbStack amd64 on this ARM host would be translated evidence.",
+        "manualGuidance": "Download an official matching Linux archive from https://github.com/ollama/ollama/releases. Extract the complete bin/ and lib/ layout with an available zstd-capable tool into a new user-owned directory such as ~/.local/opt/ollama. Run its absolute bin/ollama path with serve in a terminal; no sudo, system installer or service registration. If the matching CPU/baseline payload or user-level extraction tool is unavailable, keep the route pending; do not substitute translated qualification."
+      },
+      {
+        "os": "darwin",
+        "arch": "arm64",
+        "status": "pending",
+        "reason": "Existing UTM VM insrc-macos-arm64 failed to restore with permission denied and remains stopped; user informed.",
+        "manualGuidance": "Obtain the official macOS payload from https://github.com/ollama/ollama/releases and place Ollama.app in ~/Applications. Run ~/Applications/Ollama.app/Contents/Resources/ollama serve in a terminal; decline system Applications/global CLI-link prompts. Do not bypass quarantine or request elevation. Verify OS/CPU requirements in https://docs.ollama.com/macos; this manual route is not native installer qualification."
+      },
+      {
+        "os": "darwin",
+        "arch": "x64",
+        "status": "pending",
+        "reason": "No native Intel Mac runner provisioned; this host is ARM64.",
+        "manualGuidance": "Obtain the official macOS payload from https://github.com/ollama/ollama/releases and place Ollama.app in ~/Applications. Run ~/Applications/Ollama.app/Contents/Resources/ollama serve in a terminal; decline system Applications/global CLI-link prompts. Do not bypass quarantine or request elevation. Verify OS/CPU requirements in https://docs.ollama.com/macos; this manual route is not native installer qualification."
+      },
+      {
+        "os": "win32",
+        "arch": "arm64",
+        "status": "pending",
+        "reason": "No Windows ARM64 VM is registered in UTM.",
+        "manualGuidance": "Obtain a matching official standalone CLI ZIP, when available, from https://github.com/ollama/ollama/releases. Extract it completely, including libraries, into %LOCALAPPDATA%\\Ollama\\manual. In PowerShell run & \"$env:LOCALAPPDATA\\Ollama\\manual\\ollama.exe\" serve in a terminal. No Administrator, PATH edits or system service. If only another CPU build is available, keep native qualification pending rather than claiming emulation is native. See https://docs.ollama.com/windows."
+      },
+      {
+        "os": "win32",
+        "arch": "x64",
+        "status": "pending",
+        "reason": "No native Windows x64 runner provisioned in this session.",
+        "manualGuidance": "Obtain a matching official standalone CLI ZIP, when available, from https://github.com/ollama/ollama/releases. Extract it completely, including libraries, into %LOCALAPPDATA%\\Ollama\\manual. In PowerShell run & \"$env:LOCALAPPDATA\\Ollama\\manual\\ollama.exe\" serve in a terminal. No Administrator, PATH edits or system service. If only another CPU build is available, keep native qualification pending rather than claiming emulation is native. See https://docs.ollama.com/windows."
+      }
+    ]
+  },
+  "limits": [
+    "Only Linux ARM64/glibc2.35 Ollama auto-install is natively qualified; five other targets remain pending with manual user-level routes.",
+    "This completes S3 dependencies, not S4/S5 daemon lifecycle/migrations or IDE/end-to-end installation.",
+    "Approved live Node delivery/packaging corrections remain S1/S2 work.",
+    "Host daemon and host Ollama were not modified; disposable OrbStack VM is stopped.",
+    "Generated S3 sequence source inspected; browser rendering not verified."
+  ],
+  "humanBuildApproval": "pending"
+}

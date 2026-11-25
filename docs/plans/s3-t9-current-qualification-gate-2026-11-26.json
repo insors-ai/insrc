@@ -1,0 +1,45 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "t9",
+    "passed": true,
+    "checks": [
+      {
+        "check": "Provision/use a disposable Linux ARM64 OrbStack environment and actually install the exact official payload with the selected private Node toolchain, exercising large archive/library layout, executable version and user-session readiness without models/elevation/global writes.",
+        "satisfied": true,
+        "evidence": "The 2026-11-26 evidence directory contains running/stopped OrbStack records and native-install.json: native ARM64 Ubuntu 22.04.5/glibc 2.35, UID 501, private Node 22.22.1, successful 73.89-second installation, CLI/API version 0.40.18, 49 files totaling 4,005,889,908 bytes, and zero models. Recorded service paths/environment are private; observed ~/.ollama and /tmp metadata remained unchanged."
+      },
+      {
+        "check": "Record exact version/URL/SHA256/compressed-expanded sizes/target-baseline/native-versus-translated status, decoder limits, private filesystem/argv/env/log results, reuse/decline and finite cleanup/retained-service evidence; enable Linux auto-install only for the route actually qualified.",
+        "satisfied": true,
+        "evidence": "qualification.json, raw installation records, archive-layout.json and ollama-catalog.ts record the exact official URL, SHA256 63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6, 1,704,011,634 compressed bytes, expanded sizes and bounded decoder policy. Raw records include private serve argv/environment, bounded owner-only logs, unchanged reuse/decline records, two positive finite closures, stage disposal and retained service. Only linux/arm64/glibc-2.35 is enabled."
+      },
+      {
+        "check": "A Linux payload/decoder/platform failure is a real story blocker requiring diagnosis or user-directed design correction, not a fabricated pass or silent removal of Linux support.",
+        "satisfied": true,
+        "evidence": "Historical cold-inspection and readiness failures remain recorded as failures. The README explains the approved no-rehash correction and transient-probe timer diagnosis; the timer fix has a regression test. Current raw native installation and inspection records demonstrate success, and Linux remains enabled."
+      },
+      {
+        "check": "For each planned darwin/linux/win32 × arm64/x64 target, record either native exact-policy payload qualification before offer enablement or a concrete pending/unavailable/unsupported reason and manual user-level guidance. Use the existing macOS ARM64 UTM guest and genuine available Windows/native-x64 runners for dependency-only validation; translated evidence is explicitly labeled and cannot certify native gaps. A missing optional environment cannot silently enable a route or hide the required Linux result.",
+        "satisfied": true,
+        "evidence": "The six-row qualification matrix preserves every target. Five remain pending with specific runner limitations, including the existing UTM guest's permission-denied restore, and platform-specific private manual serve guidance. ARM-host x64 translation is explicitly excluded from native qualification. Catalog tests assert exactly one qualified route and guidance for every pending target."
+      },
+      {
+        "check": "Do not mutate/restart installed host daemon/Ollama or claim full daemon installation, migration, IDE, signing or complete S8 platform-matrix qualification. Preserve all Linux/macOS/Windows targets in the plan and evidence table.",
+        "satisfied": true,
+        "evidence": "The qualification harness operates in a named isolated guest/private home and asserts absence of a daemon releases directory. Records explicitly state fullDaemonInstallation=false and endpointOwnership=unproven; cleanup stops the guest rather than controlling host services. Documentation retains all six targets and limits claims to dependency qualification. Task changes concern installer qualification, guidance, catalog and the diagnosed readiness issue."
+      },
+      {
+        "check": "Re-run fresh-process inspection on the actual multi-GB private payload with the corrected no-rehash code; record total inspection latency and absence of full payload content reads under the existing three-second target. Preserve historical cold full-hash failure as superseded evidence, never relabel it passed. Enable only the currently qualified route.",
+        "satisfied": true,
+        "evidence": "Fresh inspection records report 44.81 ms warm and 45.28 ms after per-file cache advice, with 55,697 read characters against the 4.01-GB payload. The harness asserts total inspection below 3,000 ms, bounded reads and unchanged attempt records; installed-tree verification uses metadata and bounded executable headers. All 50 recorded source/script hashes match the current tree. Historical cold timeout remains failed, and cache-advice limitations are explicit. The daemon-passed catalog tests enforce the single native route; raw harness results substantiate all four reported live checks."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "Current source and raw native evidence satisfy all acceptance checks and required test meanings; only the qualified Linux ARM64/glibc-2.35 route is enabled.",
+    "testsPassed": true,
+    "typecheckClean": true
+  },
+  "passed": true,
+  "commentSync": "comment sync on insors-ai/insrc#285: recorded 0, posted 0"
+}

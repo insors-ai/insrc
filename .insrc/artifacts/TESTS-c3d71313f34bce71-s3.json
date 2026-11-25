@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 42,
-        "contentHash": "daf89f67ad9471c89c694ba9e6d149320b263413fa70138e730d0b34d5964897",
-        "at": "2026-11-25T20:22:24.671Z",
+        "number": 43,
+        "contentHash": "61c62c5f6b0305349c7a18389546f8fd64f6c235a8b296aac85c9d3f49847748",
+        "at": "2026-11-25T20:24:36.769Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "c3d71313f34bce71",
     "storyId": "s3",
     "createdAt": "2026-11-25T02:01:50.011Z",
-    "updatedAt": "2026-11-25T20:22:24.648Z",
+    "updatedAt": "2026-11-25T20:24:36.749Z",
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
-    "revision": 42
+    "revision": 43
   },
   "body": {
     "tasks": [
@@ -969,8 +969,8 @@
       },
       {
         "taskId": "t9",
-        "commit": "94a2a2ac7",
-        "ranAt": "2026-11-25T19:57:38.222Z",
+        "commit": "fa394ad92",
+        "ranAt": "2026-11-25T20:24:36.749Z",
         "testsPassed": true,
         "tests": [
           {
@@ -981,7 +981,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json (historical native run dated 2026-11-25; T16 changes mapping only; T17 owns current requalification)"
+              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-26/qualification.json; current T17 final native run, supported by raw install/machine/upstream/cache/inspection/source-hash files and stopped VM record"
             }
           },
           {
@@ -992,7 +992,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json (historical native run dated 2026-11-25; T16 changes mapping only; T17 owns current requalification)"
+              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-26/qualification.json; current T17 final native run, supported by raw install/machine/upstream/cache/inspection/source-hash files and stopped VM record"
             }
           },
           {
@@ -1003,7 +1003,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json (historical native run dated 2026-11-25; T16 changes mapping only; T17 owns current requalification)"
+              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-26/qualification.json; current T17 final native run, supported by raw install/machine/upstream/cache/inspection/source-hash files and stopped VM record"
             }
           },
           {
@@ -1032,7 +1032,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json (historical native run dated 2026-11-25; T16 changes mapping only; T17 owns current requalification)"
+              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-26/qualification.json; current T17 final native run, supported by raw install/machine/upstream/cache/inspection/source-hash files and stopped VM record"
             }
           }
         ],
@@ -1041,7 +1041,7 @@
             "file": "src/installer/__tests__/ollama-catalog.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3108,
+            "durationMs": 3246,
             "titles": [
               {
                 "title": "enabled-target-policy-requires-matching-native-evidence-and-mandatory-linux-route",

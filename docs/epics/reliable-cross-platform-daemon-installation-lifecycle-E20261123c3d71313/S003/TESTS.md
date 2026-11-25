@@ -315,19 +315,19 @@ Run at 2026-11-25T13:49:58.938Z on commit `60a3752db`. Tests check: **passed**. 
 
 ## t9
 
-Run at 2026-11-25T19:57:38.222Z on commit `94a2a2ac7`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 4 reported by the builder and not run by the gate.
+Run at 2026-11-25T20:24:36.749Z on commit `fa394ad92`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 4 reported by the builder and not run by the gate.
 
 **live: qualified-exact-ollama-payload-version-and-user-session-readiness-on-enabled-target**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json (historical native run dated 2026-11-25; T16 changes mapping only; T17 owns current requalification)
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-26/qualification.json; current T17 final native run, supported by raw install/machine/upstream/cache/inspection/source-hash files and stopped VM record
 
 **live: existing-installation-reuse-and-decline-preserve-platform-state**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json (historical native run dated 2026-11-25; T16 changes mapping only; T17 owns current requalification)
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-26/qualification.json; current T17 final native run, supported by raw install/machine/upstream/cache/inspection/source-hash files and stopped VM record
 
 **live: official-large-archive-streaming-and-library-layout-match-policy**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json (historical native run dated 2026-11-25; T16 changes mapping only; T17 owns current requalification)
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-26/qualification.json; current T17 final native run, supported by raw install/machine/upstream/cache/inspection/source-hash files and stopped VM record
 
 **unit: enabled-target-policy-requires-matching-native-evidence-and-mandatory-linux-route**
 
@@ -338,13 +338,13 @@ Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-
 
 **live: native-large-payload-inspection-avoids-content-reads-within-three-seconds**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json (historical native run dated 2026-11-25; T16 changes mapping only; T17 owns current requalification)
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-26/qualification.json; current T17 final native run, supported by raw install/machine/upstream/cache/inspection/source-hash files and stopped VM record
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/installer/__tests__/ollama-catalog.test.ts` | 0 | 2 | 3.1 s |  |
+| `src/installer/__tests__/ollama-catalog.test.ts` | 0 | 2 | 3.2 s |  |
 
 ## t10
 

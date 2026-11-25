@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { createRequire } from 'node:module';
-import type { Readable } from 'node:stream';
+import { Readable } from 'node:stream';
 import { ZipFile } from 'yazl';
 import { zstdCompressSync } from 'node:zlib';
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
@@ -21,6 +21,10 @@ async function zip(files: Member[], compress = false) {
   const done = once(output.outputStream, 'end');
   for (const file of files) output.addBuffer(file.bytes, file.path, { mode: file.mode ?? 0o100644, compress });
   output.end(); await done; return Buffer.concat(parts);
+}
+async function streamedZip(compress: boolean) {
+  const zip = new ZipFile(), parts: Buffer[] = []; zip.outputStream.on('data', (part: Buffer) => parts.push(part)); const done = once(zip.outputStream, 'end');
+  zip.addReadStream(Readable.from([Buffer.alloc(4096, 1)]), 'safe.txt', { compress, mode: 0o100644 }); zip.end(); await done; return Buffer.concat(parts);
 }
 function executable(os: OllamaPolicy['target']['os'], arm = true) {
   const data = Buffer.alloc(512);
@@ -149,6 +153,12 @@ function trailingDeflateBytes(bytes: Buffer): Buffer {
   data.writeUInt32LE(compressed + 3, 18); data.writeUInt32LE(compressed + 3, central + 20); data.writeUInt32LE(central + 3, end + 16);
   return Buffer.concat([data.subarray(0, insert), Buffer.from([1, 2, 3]), data.subarray(insert)]);
 }
+function centralExtra(bytes: Buffer, extra: Buffer): Buffer {
+  const data = Buffer.from(bytes), end = data.length - 22, central = data.readUInt32LE(end + 16), name = data.readUInt16LE(central + 28), count = data.readUInt16LE(central + 30);
+  const insert = central + 46 + name + count;
+  data.writeUInt16LE(count + extra.length, central + 30); data.writeUInt32LE(data.readUInt32LE(end + 12) + extra.length, end + 12);
+  return Buffer.concat([data.subarray(0, insert), extra, data.subarray(insert)]);
+}
 test('zip-and-layout-escapes-collisions-and-abort-preserve-existing-bytes', async () => {
   const f = fixture(); let timer: ReturnType<typeof setInterval> | undefined;
   try {
@@ -159,6 +169,12 @@ test('zip-and-layout-escapes-collisions-and-abort-preserve-existing-bytes', asyn
     const trailing = trailingDeflateBytes(deflated), trailingInput = f.input(trailing);
     await assert.rejects(extractOllamaZip(trailingInput.archive, trailingInput.stage, policy(trailing)), /compressed consumption/);
     assert.deepEqual(readdirSync(trailingInput.stage), []);
+    for (const compressed of [false, true]) {
+      const bytes = await streamedZip(compressed), x = f.input(bytes); assert.equal((await extractOllamaZip(x.archive, x.stage, policy(bytes))).files.length, 1);
+      const invalid = Buffer.from(bytes), central = invalid.readUInt32LE(invalid.length - 6);
+      assert.equal(invalid.readUInt32LE(central - 16), 0x08074b50); invalid[central - 12]! ^= 1;
+      const bad = f.input(invalid); await assert.rejects(extractOllamaZip(bad.archive, bad.stage, policy(invalid)), /descriptor/); assert.deepEqual(readdirSync(bad.stage), []);
+    }
     for (const name of ['../a.txt', '/bad.txt', 'C:/a.txt', 'ads:byte', 'CON.file', 'bad\\name']) {
       const data = Buffer.from(base.toString('latin1').replaceAll('safe.txt', name), 'latin1'), x = f.input(data);
       await assert.rejects(extractOllamaZip(x.archive, x.stage, policy(data))); assert.equal(existsSync(join(f.root, 'a.txt')), false);
@@ -171,6 +187,10 @@ test('zip-and-layout-escapes-collisions-and-abort-preserve-existing-bytes', asyn
       mutate(base, (b, i, central) => { if (!central) b[i + 30]! ^= 1; }),
       mutate(base, (b, i, central) => { if (!central) b.writeUInt32LE(0xffffffff, i + 22); }),
       mutate(zipped64, (b, i, central) => { if (!central) b.writeBigUInt64LE(100n, i + 30 + b.readUInt16LE(i + 26) + 4); }),
+      centralExtra(base, Buffer.from([1])), centralExtra(base, Buffer.from([0x99, 0x99, 0, 0, 0x99, 0x99, 0, 0])),
+      mutate(base, (b, i, central) => { if (central) b.writeUInt16LE(1, i + 34); }),
+      (() => { const data = Buffer.from(base); data.writeUInt16LE(0, data.length - 14); return data; })(),
+      (() => { const data = Buffer.from(base); const end = data.length - 22; data.writeUInt32LE(data.readUInt32LE(end + 12) + 1, end + 12); return data; })(),
       mutate(base, (b, i, central) => { if (central) b.writeUInt32LE((b.readUInt32LE(i + 16) ^ 1) >>> 0, i + 16); }), base.subarray(0, base.length - 5),
       mutate(base, (b, i, central) => { const offset = central ? 16 : 14; b.writeUInt32LE((b.readUInt32LE(i + offset) ^ 1) >>> 0, i + offset); }),
       await zip([{ path: 'lib/alias', bytes: Buffer.from('../../escape'), mode: 0o120777 }]),

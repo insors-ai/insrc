@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1795613684348-xxohki",
+    "runId": "wf-1795622684271-4t6oq9",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-25T13:37:22.255Z",
+    "createdAt": "2026-11-25T16:11:56.629Z",
     "attribution": {
       "outputs": [
         {
@@ -14,7 +14,7 @@
         }
       ]
     },
-    "elapsedMs": 157610,
+    "elapsedMs": 432025,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
@@ -34,9 +34,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 5,
-        "contentHash": "07021c97bb5b1d541aa3ce7915f5715bd414ce962d2813589c8aa8a1c0d539af",
-        "at": "2026-11-25T13:37:22.382Z",
+        "number": 6,
+        "contentHash": "48cd6073615b9e033060991d82c83f2ea79439e23bef555d3137fe0e43ef57e5",
+        "at": "2026-11-25T16:11:56.749Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -45,13 +45,13 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 5,
+        "revision": 6,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-25T13:38:12.068Z"
+        "at": "2026-11-25T16:28:57.920Z"
       }
     },
     "envelope": {
@@ -59,7 +59,7 @@
       "references": [],
       "attachments": []
     },
-    "revision": 5
+    "revision": 6
   },
   "body": {
     "hldContextSlice": {
@@ -252,7 +252,7 @@
     },
     "summary": {
       "audience": "technical",
-      "prose": "S3 checks dependency availability, offers an exact consent-bound live Ollama download, and recommends coding-agent CLIs without installing them. It verifies the official archive during acquisition and validates safe extraction before publication. Subsequent inspection, reconciliation, reuse and service admission use bounded receipt, identity, closure and filesystem metadata checks without rereading installed file contents for hashes. The existing three-second aggregate inspection target remains; the unapproved twenty-second reconciliation proposal is withdrawn."
+      "prose": "S3 provides consent-bound live Ollama setup and read-only dependency checks. Following manual review, an interrupted install requires explicit Retry: complete safe owned cleanup, retire the old operation, then run a fresh install; this policy never applies to updates. Durable accepted policy/descriptor data, complete late disposal, retained-service reporting and verified ZIP descriptor continuity close recovery gaps, with stronger tests and observed native provenance."
     },
     "contractDetails": {
       "surfaceLevel": "internal-shared",
@@ -308,11 +308,12 @@
             "Shared DependencyReport/DependencyDecision/ManagerRequest JSON schemas and protocol versions remain unchanged. Existing fixture implementations remain source compatible with optional internal parameters."
           ],
           "postconditions": [
-            "Decline performs no mutation, lookup commands or service start and returns the still-unmet report.",
+            "Decline performs no dependency context/attempt-record creation, filesystem mutation, download, command execution or service start. Ordinary manager bookkeeping is separate and a certain decline never becomes an uncertain dependency installation.",
             "Acceptance recomputes the offer immediately before mutation, then prepares an immutable private payload. No installer may overwrite an existing Ollama installation or replace an already available service.",
             "Cancellation and EOF propagate to all finite preparation work; only the explicitly consented, recorded long-lived Ollama service is exempt from finite preparation drain after its handoff boundary.",
             "A private dependency-uncertain failure is preserved as blocked by narrow manager integration; inspect/stop and daemon shutdown behavior are unchanged.",
-            "All read-only inspection, including recorded-attempt reconciliation, shares the existing three-second aggregate deadline and cancellation. Never rehash installed payload files during inspection, reconciliation, reuse or service admission. Validate bounded canonical receipt/inventory metadata, pinned policy/version/target/archive identity, finite-closure/admission bindings and filesystem structure/size/mode/link state. A valid receipt means verified acquisition and closed preparation, not ongoing cryptographic integrity of installed bytes. Expiry/invalid metadata remains unavailable and grants no new mutation."
+            "All read-only inspection, including recorded-attempt reconciliation, shares the existing three-second aggregate deadline and cancellation. Never rehash installed payload files during inspection, reconciliation, reuse or service admission. Validate bounded canonical receipt/inventory metadata, pinned policy/version/target/archive identity, finite-closure/admission bindings and filesystem structure/size/mode/link state. A valid receipt means verified acquisition and closed preparation, not ongoing cryptographic integrity of installed bytes. Expiry/invalid metadata remains unavailable and grants no new mutation.",
+            "Historical reconciliation uses the exact persisted accepted policy rather than the current catalog. Inspection is read-only and never cleans attempts. Install-only explicit Retry cleans owned interrupted preparation before a fresh ordinary install; update/migration recovery does not enter this path."
           ]
         },
         {
@@ -408,7 +409,61 @@
           ],
           "postconditions": [
             "Existing stopped Ollama displays manual start guidance with no automatic start/reinstall.",
-            "Thread optional signal into dependency probes; mutation context is supplied only by the lock-owning InstallerManager. Preserve existing post-ready lock release, TUI launch, cancellation and retry behavior."
+            "Thread signal, EOF, SIGINT, SIGHUP and SIGTERM through cooperative finite abort/drain. Preserve lock release/TUI handoff. Explicit Retry completes owned cleanup before invoking ordinary installation with a fresh operation and current consent; no partial-candidate resume.",
+            "For interrupted install show operation identity and Retry install? [y/N]. Only affirmative terminal input authorizes cleanup; no automatic cleanup or separate Discard UX. Original upgrade intent, selected daemon release, shutdown or daemon migration/activation admission never enters S3 cleanup. Existing non-install same-candidate/hook recovery remains."
+          ]
+        },
+        {
+          "name": "InstallerManager",
+          "signature": "InstallerManager.retryInstall(admission: TerminalAdmission, interruptedOperationId: string, signal?: AbortSignal): Promise<void>",
+          "parameters": [
+            {
+              "name": "admission",
+              "type": "TerminalAdmission",
+              "purpose": "Existing terminal capability after explicit Retry input; never an IDE flag or public ManagerRequest action.",
+              "optional": false
+            },
+            {
+              "name": "interruptedOperationId",
+              "type": "string",
+              "purpose": "Exact original install whose owned preparation must be cleaned.",
+              "optional": false
+            },
+            {
+              "name": "signal",
+              "type": "AbortSignal",
+              "purpose": "Bound cleanup; cancellation prevents fresh install.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Cleanup completed and old operation durably retired. Terminal then invokes ordinary install with fresh identity; this method never installs or resumes the partial candidate."
+          },
+          "errors": [
+            {
+              "type": "phase-conflict",
+              "condition": "Original intent is not install, active release exists, operation differs or recovery belongs to later lifecycle/migration."
+            },
+            {
+              "type": "dependency-uncertain",
+              "condition": "Actor, accepted policy, namespace, publication or cleanup completion cannot be proven."
+            },
+            {
+              "type": "cancelled",
+              "condition": "Cleanup aborted; no new installation admitted."
+            }
+          ],
+          "preconditions": [
+            "Acquire existing installation lock, verify exact canonical home/id and durable intent.action=install, preparing interruption, no selected daemon release and no shutdown/migration/activation admission. Reconcile dependency service admission separately without replay/deletion.",
+            "Only S3-owned preparation can be cleaned. Another delivery/lifecycle/hook owner's unresolved work blocks; do not invent general uninstall/reset or S2 cleanup policy.",
+            "Require positive finite closure, or precisely qualified in-process-only proof: bound immutable actor record with externalActors=0; same anchored non-inherited native lock acquired before admission, held through all admitted async work/disposal, no external actors; reacquire and retain that lock throughout cleanup. PID/age, health or a generic free lock is insufficient."
+          ],
+          "postconditions": [
+            "Bounded durable cleanup plan and per-item completions survive death and make repeated explicit Retry idempotent. No new install/download/extract/publish/spawn/lifecycle operation until cleanup succeeds.",
+            "Remove only proven-owned temporary stages, archives and temp records; preserve bounded historical diagnostics, intentional services/models/logs and valid installed dependency payloads. Unknown/foreign evidence remains blocked. Unadmitted partial publication requires exact ownership and finite closure before removal.",
+            "Retire old operation only after cleanup completion. Terminal uses a fresh operation/attempt and normal inspection/offer/consent; no old consent authorizes changed policy or release.",
+            "Original action=upgrade is rejected before cleanup writes. Updates retain existing same-candidate/hook recovery; no update reset."
           ]
         }
       ]
@@ -417,7 +472,7 @@
       {
         "entity": "Dependency operation context and integration boundary",
         "change": "new",
-        "details": "Proposed internal-only types live beside DependencyPort in src/installer/peer-contracts.ts. DependencyProbeContext contains optional signal; DependencyOperationContext adds operationId, attemptNonce, assertCurrent():void and progress(stage,detail):void. The manager establishes/persists the preparing intent before accepting dependency side effects, and owns all controller updates. The adapter writes only its private dependency attempt/receipt files. It never receives ControllerStore, a release publication lease or lifecycle/migration authority. The optional API addition preserves fixture callers and all sc3/sc2 wire shapes. On dependency-uncertain the manager retains blocked preparation rather than clearing it; explicit same-operation reconciliation first inspects the recorded dependency attempt without starting a second actor. This is narrow wiring in src/installer/manager.ts, not a new scheduler or replacement lifecycle.",
+        "details": "Proposed internal-only types live beside DependencyPort in src/installer/peer-contracts.ts. DependencyProbeContext contains optional signal; DependencyOperationContext adds operationId, attemptNonce, assertCurrent():void and progress(stage,detail):void. The manager establishes/persists the preparing intent before accepting dependency side effects, and owns all controller updates. The adapter writes only its private dependency attempt/receipt files. It never receives ControllerStore, a release publication lease or lifecycle/migration authority. The optional API addition preserves fixture callers and all sc3/sc2 wire shapes. On dependency-uncertain the manager retains blocked preparation rather than clearing it; explicit same-operation reconciliation first inspects the recorded dependency attempt without starting a second actor. This is narrow wiring in src/installer/manager.ts, not a new scheduler or replacement lifecycle. Create dependency mutation context/attempt only for choice=install, never decline. Internal terminal retry consumes existing controller/terminal ownership; no new public action.",
         "callSites": [
           "src/installer/peer-contracts.ts",
           "src/installer/manager.ts",
@@ -447,7 +502,7 @@
       {
         "entity": "Private payload, receipt and filesystem ownership",
         "change": "new",
-        "details": "One installation owns zero or more immutable deps/ollama/<version>/<target>/<asset-digest> payloads and at most one accepted finite dependency preparation attempt under its installation lock. Each private attempt references exactly one qualified policy/offer and owns its isolated staging, bounded logs and atomic receipt; receipts never contain application DB data, credentials or a global service definition. Derive all paths below the canonical installation home; validate ancestors, user ownership and link/reparse-point state before writes. Stream exact-byte/digest download; do not reuse the S1 bundle compressed limit blindly because Ollama asset policy may differ. Finite preparation has an explicit 20-minute overall deadline, 30-second readiness deadline, 5-second cleanup deadline and bounded log/output limits; no background task queue or implicit retry. Check cancellation/current-owner before and after awaits and immediately before publication or spawn. Fsync files and bottom-up directories plus source/destination parents using the existing filesystem-only durability helpers and non-replacing native publication. A same-ID existing payload is reusable only after bounded canonical receipt/inventory identity, successful preparation closure and target/layout/metadata verification; conflicting records or unsafe/missing files never overwrite. Installed bytes are not rehashed. Hashing the small canonical inventory record remains permitted to bind existing closure/admission records; this does not read payload contents. Streaming member hashes already recorded while writing may remain for schema compatibility, but no second full-file content verification pass runs after archive acquisition. Failed/cancelled unpublished staging is removed only after its finite admitted actors positively close. Retain uncertain artifacts and block a second mutation; do not infer ownership from PID, age, a free lock or a log line.",
+        "details": "One installation owns zero or more immutable deps/ollama/<version>/<target>/<asset-digest> payloads and at most one accepted finite dependency preparation attempt under its installation lock. Each private attempt references exactly one qualified policy/offer and owns its isolated staging, bounded logs and atomic receipt; receipts never contain application DB data, credentials or a global service definition. Derive all paths below the canonical installation home; validate ancestors, user ownership and link/reparse-point state before writes. Stream exact-byte/digest download; do not reuse the S1 bundle compressed limit blindly because Ollama asset policy may differ. Finite preparation has an explicit 20-minute overall deadline, 30-second readiness deadline, 5-second cleanup deadline and bounded log/output limits; no background task queue or implicit retry. Check cancellation/current-owner before and after awaits and immediately before publication or spawn. Fsync files and bottom-up directories plus source/destination parents using the existing filesystem-only durability helpers and non-replacing native publication. A same-ID existing payload is reusable only after bounded canonical receipt/inventory identity, successful preparation closure and target/layout/metadata verification; conflicting records or unsafe/missing files never overwrite. Installed bytes are not rehashed. Hashing the small canonical inventory record remains permitted to bind existing closure/admission records; this does not read payload contents. Streaming member hashes already recorded while writing may remain for schema compatibility, but no second full-file content verification pass runs after archive acquisition. Failed/cancelled unpublished staging is removed only after its finite admitted actors positively close. Retain uncertain artifacts and block a second mutation. Explicit install retry may dispose only with positive closure or the precisely qualified in-process-only protocol below, never PID/age/generic free-lock inference.",
         "callSites": [
           "src/installer/durability.ts",
           "src/installer/manager.ts",
@@ -468,7 +523,7 @@
       {
         "entity": "Consented Ollama service handoff and interrupted attempts",
         "change": "new",
-        "details": "The missing-Ollama offer explicitly covers installation plus a user-session serve process with local-only binding, private bounded logs and a model directory under the selected dependency home. Reuse any healthy configured existing service without launching or stopping it. Publish the archive-verified, safely extracted payload and validate its receipt/closure/metadata before recording service-start admission; check cancellation immediately before spawn. Launch only the qualified absolute Ollama executable with an argv array and sanitized explicit environment (including scoped OLLAMA_HOST/OLLAMA_MODELS), no shell/system service/global PATH edits or implicit models. The service is intentionally retained after its recorded handoff, including installer/TUI exit; finite preparation drain must not wait for that long-lived process. Before admission cancellation prevents start; after admission cancellation stops installation progress, preserves truthful installed/unverified state and does not promise rollback or terminate an existing/reused service. Store the admission intent before spawn and outcome/readiness atomically; startup failure/port races never authorize stopping another listener. A healthy /api/version response establishes availability, not cryptographic process ownership. Record whether availability was reused or startup was admitted; do not label an arbitrary listener as owned. After manager death, inspect bounded receipt/inventory metadata, finite closure and endpoint without replaying spawn/download; already ready service is reusable, a stopped published binary gets manual guidance, and unresolved finite actors or an ambiguous in-progress launch remain unavailable/blocked until reconciled. Same-operation recovery must reconcile these facts before ordinary manager continuation, never start a second unconfirmed service. A discarded/failed dependency attempt cannot change selected daemon release or invoke lifecycle/migrations. The exact finite-actor guarantee remains admitted actors, retained owned groups and cooperating descendants; no arbitrary descendant isolation claim.",
+        "details": "Preserve disclosed retained user-session serve, absolute executable, sanitized explicit environment, bounded private logs, endpoint/model paths and no-model/no-elevation rules. Durable admission/launch/outcome is separate from finite preparation/handoff. SIGINT/SIGHUP/SIGTERM/EOF cooperate with bounded abort/drain; later explicit recovery handles process death. A stale finite handoff marker cannot erase valid retained-service facts or truthful availability; health alone is not ownership. Never replay ambiguous spawn or stop/delete a retained/foreign service or its payload/models/logs. Use identical pre/post-admission regular-file/nlink/header checks. Pre-spawn failures including log creation and supervisor validation produce bound not-started evidence when positively known and bounded persisted diagnostics; uncertain launch never becomes an invented exit. Supervisor death while service might live is distinct from installer death. Readiness deadline=min(overallEndsAt,readinessEndsAt); distinguish owner loss, abort, overall deadline and startup failure. Cancellation/failure after admission discloses retained Ollama. Install-only explicit Retry cleans finite preparation then invokes a fresh install. Update cleanup is excluded and S4/S5 govern later daemon lifecycle/migration.",
         "callSites": [
           "src/installer/manager.ts",
           "src/installer/peer-contracts.ts",
@@ -497,6 +552,41 @@
           "src/installer/ollama-service.ts",
           "src/installer/dependencies.ts"
         ]
+      },
+      {
+        "entity": "Install retry and historical accepted policy",
+        "change": "new",
+        "details": "Private versioned relationships: one original install owns zero or more attempts; each attempt binds exactly one accepted policy copy and actor admission, zero/one closure and cleanup/disposal completion. A schemaVersion=1 install cleanup record binds installationId, originalOperationId, originalAction='install', attempt identity/policy hashes, bounded canonical relative targets, preserved-target classifications and immutable per-item completions. Derive targets from validated owned records, never arbitrary paths/globs. Retain matching actor locks through cleanup, parent flush and completion writes. New strict attempt format persists accepted policy; legacy v1 closure remains readable without inventing policy. A historical copy must validate structural bounds plus exact bound policy digest and authorizes historical reconciliation/cleanup only, never a new current offer or execution. Legacy missing policy can come only from an exactly bound service frame or exact hash-matching catalog; otherwise diagnose unsupported evidence. Cleanup is idempotent across death, preserves diagnostic history and finishes before old controller retirement/new install. No automatic recovery, separate discard or partial-install resume. Foreign/unknown files remain blocked. This S3 capability covers interrupted dependency preparation; later candidate/lifecycle/migration cleanup requires the owning contract and cannot be guessed.",
+        "callSites": [
+          "src/installer/ollama-records.ts",
+          "src/installer/ollama-prepare.ts",
+          "src/installer/manager.ts",
+          "src/installer/terminal-install.ts"
+        ]
+      },
+      {
+        "entity": "Late disposal, no-replace records and durable bundle descriptor",
+        "change": "invariant-change",
+        "details": "Late finite promise settlement records the actual prepared/failed/cancelled outcome and performs bounded cleanup/disposal under the retained handle. Remove failed unpublished stages; preserve complete published dependencies. No publication/start after cancellation/owner loss. Closed-undisposed evidence, uncertain publication and exact recognized temp files become explicit retry inputs; unknown files never silently deleted. Remove temp files on known write failure after descriptor close; retain uncertain close/publication. Publish immutable records via the existing native same-volume exclusive no-replace primitive, qualifying regular-file use; existsSync+replace is insufficient. Persist complete parsed bundle descriptor in versioned private accepted-offer data; fresh peers validate canonical digest/manifest/target/delivery instead of relying on factory-local Map. Fresh install Retry resolves normal current offer after cleanup, never uses old data to authorize a replacement. Existing update same-candidate recovery can consume exact durable descriptor but never enters install cleanup; unavailable legacy exact data fails closed rather than fetching latest. Keep interrupted state until cleanup or existing recovery positively completes.",
+        "callSites": [
+          "src/installer/bundle-delivery.ts",
+          "src/installer/peer-contracts.ts",
+          "src/installer/manager.ts",
+          "src/installer/ollama-records.ts",
+          "src/installer/ollama-prepare.ts"
+        ]
+      },
+      {
+        "entity": "ZIP continuity and qualification evidence",
+        "change": "invariant-change",
+        "details": "Verify ZIP hash/envelope and extract with yauzl.fromFd on the same descriptor retained until actual ZIP close; no path reopen. Preserve cancellation/size/path bounds. System-ancestor aliases get actionable blocker; retain S1 canonical-home ownership and do not silently relax links. Emit coding-agent advice once; never install/auth/spawn agent CLIs. Qualification observes os.machine(), process.arch/platform, uid>0, Node version/executable, process.report glibcVersionRuntime, raw /etc/os-release and meaningful translation check, representing unknown honestly. Bind asset digest/size to independent official release digest/checksum or mark provenance pending. Capture scoped before/after install home, ~/.ollama and relevant temp paths, service argv/env, cache-advice action/result and observational limits. No claim of complete write confinement/full cache eviction from partial snapshots; no models/elevation/host-daemon changes.",
+        "callSites": [
+          "src/installer/ollama-prepare.ts",
+          "src/installer/ollama-records.ts",
+          "src/installer/terminal-entry.ts",
+          "src/installer/terminal-install.ts",
+          "scripts/qualify-ollama.mjs"
+        ]
       }
     ],
     "interactionWithShared": [
@@ -508,7 +598,7 @@
       {
         "contractId": "sc2",
         "role": "consumes",
-        "howDetails": "Use existing lock-owning manager preparation and terminal admission. Narrow internal context/progress and blocked dependency evidence preserve its sole controller writer and cancellation boundaries; ordinary lifecycle/inspect/stop behavior is unchanged."
+        "howDetails": "Use existing lock-owning manager preparation and terminal admission. Narrow internal context/progress and blocked dependency evidence preserve its sole controller writer and cancellation boundaries; ordinary lifecycle/inspect/stop behavior is unchanged. Narrow terminal install Retry verifies original durable action and cleans owned preparation before a fresh install. Public ManagerAction unchanged; update cleanup and hook policy excluded."
       },
       {
         "contractId": "sc3",
@@ -566,10 +656,10 @@
           "recoverable": true
         },
         {
-          "scenario": "Interrupted dependency preparation on a later explicit operation",
-          "detection": "Read and validate private attempt/receipt identities and stage under the installation lock; inspect existing payload metadata/required bounded headers and endpoint without content rehashing without replaying download/spawn. Distinguish a completely closed failed attempt, validated published binary, admitted retained service and unresolved finite actors.",
-          "response": "Reconcile the same operation before ordinary continuation. Reuse validated ready service; show manual guidance for a proven stopped binary; retain blocked state for unknown work/ambiguous launch. No automatic new service, new payload or changed consent.",
-          "userImpact": "Retry cannot silently duplicate uncertain work or overwrite a working installation.",
+          "scenario": "Interrupted install preparation awaiting explicit Retry",
+          "detection": "Under installation lock, validate original durable install intent, operation/home/attempt bindings, accepted policy, finite closure or the qualified in-process-only admission/lock protocol; distinguish retained service admission from finite parent handoff.",
+          "response": "Inspect only reports interruption. Explicit terminal Retry completes bounded idempotent cleanup of owned abandoned preparation, durably retires the original operation, then terminal starts normal installation with a fresh operation and current consent. No partial candidate continuation, automatic cleanup or update reset. Unknown closure/publication or incomplete cleanup remains blocked and starts nothing.",
+          "userImpact": "User sees cleanup progress before installation begins; no manual deletion of private files is the supported recovery path.",
           "recoverable": true
         },
         {
@@ -584,6 +674,41 @@
           "detection": "The shared three-second aggregate deadline expires, cancellation occurs, or canonical receipt/inventory/closure/target/layout metadata is invalid. No installed-file content hash is computed.",
           "response": "Return unavailable/cancelled with a bounded diagnostic, preserve retained evidence and existing uncertainty gates, and admit no automatic download, publication or service start. Do not extend to twenty seconds or introduce deep hashing workers.",
           "userImpact": "Inspection stays bounded and avoids reading multi-GB payloads; genuine record or ownership uncertainty still blocks mutation.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Install cleanup interrupted, foreign evidence found, or cleanup deadline exceeded",
+          "detection": "Compare per-item completion records and exact owned paths under live manager/actor locks; detect path/link/identity changes, resource-close uncertainty, missing durable completion or cancellation/deadline.",
+          "response": "Retain unfinished cleanup and bounded diagnostics, admit no new download/publication/spawn/install. A later explicit Retry resumes missing cleanup steps only; do not mark old operation finished before all cleanup items are disposed or classified as preserved installed dependency.",
+          "userImpact": "Retry remains blocked with exact unresolved item; repeated Retry does not duplicate installation.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Attempted use of install cleanup for UPDATE or later daemon work",
+          "detection": "Original durable intent.action is upgrade, activeReleaseId exists, or shutdown/daemon migration/activation admission/candidate recovery falls outside S3 dependency preparation.",
+          "response": "Reject before cleanup writes; leave all update state, selected release, hook data and lifecycle evidence intact. Route existing same-candidate/hook-governed recovery unchanged; S3 does not invent a reset policy.",
+          "userImpact": "Install retry cannot erase an existing installation or restart an interrupted update from scratch.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Historical accepted policy differs from current catalog",
+          "detection": "Validate persisted accepted policy against bound policySha256, exact installation/attempt paths and schema limits; detect absent/invalid legacy policy separately.",
+          "response": "Use exact accepted policy for historical reconciliation/cleanup. Never substitute latest policy; new install obtains current normal offer. Legacy absence without an exact already bound copy reports an actionable unsupported-evidence blocker.",
+          "userImpact": "Catalog updates do not invalidate a well-bound old attempt; new side effects still require current consent.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Supervisor fails before spawn or its controller dies after service admission",
+          "detection": "Bound supervisor diagnostic/outcome and identical entrypoint checks establish not-started versus launch/admission ambiguity; service-health result is independent of finite parent closure.",
+          "response": "Persist not-started only when certain; retain ambiguous launch and running service, with bounded diagnosis. Do not replay spawn or erase service facts because a finite marker lacks closure. Cancellation after admission says service may remain. Bound readiness by overall deadline and identify owner loss separately.",
+          "userImpact": "No permanent wedge from positively known pre-spawn failure; existing/retained service is preserved.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Fresh bundle peer rehydrates accepted offer",
+          "detection": "Parse versioned durable complete descriptor, recompute canonical digest and compare manifest/target/delivery/acceptance binding instead of factory-local Map.",
+          "response": "Validate exact accepted data for existing same-candidate recovery; missing/invalid legacy data blocks without fetch-latest. Install Retry uses descriptor only for history/cleanup and resolves an ordinary fresh offer afterward.",
+          "userImpact": "Fresh-process recovery no longer depends on reusing a JavaScript peer instance; install cleanup remains excluded from updates.",
           "recoverable": true
         }
       ],
@@ -623,6 +748,26 @@
         {
           "input": "Cancellation or receipt/inventory identity tampering during bounded reconciliation",
           "expected": "Return unavailable/cancelled with positive resource closure and no late success, changed offer, download, publication or spawn. Download digest failures still reject acquisition; same-size installed content changes are not detected by hashing."
+        },
+        {
+          "input": "Terminal closes with SIGHUP/SIGTERM during finite download or readiness, or process receives SIGKILL.",
+          "expected": "Cooperative signals drain original finite work; hard death leaves durable facts. Next launch does no cleanup until explicit Retry for original install. The complete cleanup gate precedes fresh install; retained services remain and duplicate spawn is forbidden."
+        },
+        {
+          "input": "Finite work settles after its bounded caller has already returned uncertainty.",
+          "expected": "The original still-owning actor records the actual outcome, finishes bounded disposal under retained handle and records closure. This is completion of its original cleanup, not permission for later automatic recovery."
+        },
+        {
+          "input": "Ollama install offer is declined and the terminal dies before ordinary manager finish.",
+          "expected": "No dependency context/attempt exists; do not convert a certain decline into dependency-uncertain. Ordinary operation accounting remains separate."
+        },
+        {
+          "input": "A complete admitted Ollama service is healthy when an install retry begins.",
+          "expected": "Cleanup temporary install work without terminating service or deleting its payload/models/logs; the fresh ordinary install may detect and reuse this already installed dependency. This is not resuming a partial install."
+        },
+        {
+          "input": "Cleanup completes but the process dies before new install begins.",
+          "expected": "Old operation completion and cleanup evidence remain durable; next explicit retry/ordinary invocation cannot duplicate cleanup or begin twice. New install identity and consent are still obtained through normal terminal admission."
         }
       ],
       "invariantsToPreserve": [
@@ -649,11 +794,15 @@
         {
           "text": "Official archive size/SHA-256 remains mandatory on live download. Installed payload contents are not rehashed during staged second-pass validation, reuse, inspect/reconciliation or service admission; small metadata record digests and bounded target headers remain. No twenty-second inspection phase.",
           "source": "c90"
+        },
+        {
+          "text": "Owner decision 2026-11-25: explicit Retry only; finish cleanup then install anew. Applies to INSTALL, never UPDATE. No separate Discard UI, startup cleanup or partial-candidate resume.",
+          "source": "c94"
         }
       ]
     },
     "testStrategy": {
-      "testFramework": "node:test + node:assert/strict with canonical *.test.ts coordinator under verified Node 22; reuse src/installer/__tests__ fixture conventions. Run only surrounding tests per task, then one combined S1/S2/S3 installer regression after all tasks. No unrelated backend sweep or host daemon/Ollama mutation.",
+      "testFramework": "node:test + node:assert/strict with canonical *.test.ts coordinator under verified Node 22; reuse src/installer/__tests__ fixture conventions. Run only surrounding tests per task, then one combined S1/S2/S3 installer regression after all tasks. No unrelated backend sweep or host daemon/Ollama mutation. Revised evidence must be regenerated after fixes; preserve prior passing packet as historical. Final scoped regression uses INSRC_BUILD_CONFIRM_CLOSURE=1 with serial coordinator and exact file/admission/close/disposal audit. Human BUILD approval only after all tasks, no per-task approval.",
       "testLevels": [
         {
           "level": "contract",
@@ -681,9 +830,9 @@
             "internal-archive-links-materialize-only-qualified-contained-files",
             "download-size-digest-layout-and-fsync-failures-never-report-ready",
             "cancellation-and-eof-block-later-publication-or-service-admission",
-            "finite-actor-closure-uncertainty-blocks-retry-and-cleanup",
+            "unknown-actor-proof-blocks-install-retry-cleanup",
             "service-admission-is-durable-and-distinct-from-finite-preparation-drain",
-            "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn",
+            "explicit-install-retry-completes-cleanup-before-fresh-install",
             "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener",
             "production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5",
             "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions",
@@ -691,12 +840,38 @@
             "receipt-closure-and-layout-errors-block-reuse-without-content-rehash",
             "same-size-installed-content-change-does-not-trigger-digest-reverification",
             "archive-digest-mismatch-still-rejects-live-acquisition",
-            "reuse-and-service-admission-never-rehash-installed-files"
+            "reuse-and-service-admission-never-rehash-installed-files",
+            "install-retry-requires-explicit-terminal-admission-and-original-install-intent",
+            "upgrade-retry-never-enters-install-cleanup-or-changes-selected-release",
+            "cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect",
+            "repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first",
+            "sighup-sigterm-and-sigkill-at-preparation-and-handoff-preserve-correct-evidence",
+            "qualified-in-process-lock-proof-excludes-live-inherited-and-unknown-actors",
+            "late-settlement-records-true-outcome-and-completes-disposal-under-held-handle",
+            "policy-change-reconciles-exact-accepted-copy-without-current-policy-substitution",
+            "fresh-bundle-peer-validates-durable-descriptor-without-resolve-map",
+            "decline-creates-no-dependency-context-record-or-process-and-remains-certain",
+            "supervisor-log-validation-and-pre-spawn-failures-have-bounded-not-started-diagnostics",
+            "production-worker-dispatch-argv-path-and-sanitized-environment-with-seeded-sentinels",
+            "supervisor-death-does-not-imply-retained-service-death-or-authorize-replay",
+            "retained-service-cancellation-is-explicit-and-total-deadline-bounds-readiness",
+            "zip-extraction-uses-verified-descriptor-across-path-swap-and-positive-close",
+            "immutable-record-publication-never-replaces-existing-target-and-cleans-owned-temp",
+            "invalid-receipt-closure-layout-reject-with-specific-code-and-zero-transport-calls",
+            "payload-read-sentinel-covers-sync-async-stream-and-path-read-entrypoints",
+            "redirect-target-local-listener-is-never-contacted",
+            "coding-cli-advice-emitted-once-and-install-spawn-sentinels-remain-zero",
+            "hostile-tar-zstd-zip-boundary-matrix-rejects-before-unsafe-write",
+            "alias-copy-cancellation-closes-before-owned-cleanup"
           ],
           "fixturesNeeded": [
             "Tiny exact-hash ZIP/tar.zst payloads, qualified internal-alias layouts, malformed frame headers/stream truncation/output bombs, injected fsync/no-replace failures, controlled executable and loopback server with argv/env/log capture.",
             "Manager/terminal fixtures with real S1/S2 control/store/download helpers and explicit S4/S5 fixture peers only in tests. Actor admission/close/disposal and retained-service checkpoint evidence.",
-            "Payload content-read/hash sentinel covering inspection, reconciliation, same-ID reuse and service admission; bounded metadata/target-header reads allowed. Same-size changed installed bytes demonstrate no hash revalidation; receipt/closure/link/size/layout tampering still fails. Slow metadata/HTTP and abort/late-settlement sentinels exercise the single aggregate deadline."
+            "Payload content-read/hash sentinel covering inspection, reconciliation, same-ID reuse and service admission; bounded metadata/target-header reads allowed. Same-size changed installed bytes demonstrate no hash revalidation; receipt/closure/link/size/layout tampering still fails. Slow metadata/HTTP and abort/late-settlement sentinels exercise the single aggregate deadline.",
+            "Separate real Node22 child processes with explicit ready/admission events for signal-death tests, retaining no host-service actors; hook/barrier-based ordering instead of tight wall-clock sleeps/partial JSON polling. Safe test time margins and bounded joins.",
+            "Fresh manager AND freshly constructed peers across restart. Old catalog/new catalog pairs; existing service and unknown/live actor cohorts; repeated cleanup crash points. Install-versus-upgrade snapshots assert no update deletions/writes.",
+            "Patch all practical payload content-read APIs (fs.promises.open/readFile, openSync/readFileSync, createReadStream); assert zero invalid-evidence download calls and exact InstallerError codes. Seed harmless credential/NODE_OPTIONS parent values and restore them. Use a second local version listener as redirect target and assert request count=0. Check actual stage/publication destinations.",
+            "Archive vectors: tar GNU L/K, base256/negative, PAX size, padding/end blocks, link-data, setuid normalization, nested inventory; zstd reserved/dictionary/content-size/skippable/decoder mismatch; ZIP ZIP64 descriptor, EOCD-in-comment, Unicode extra, gaps/overlaps, verified-fd swap. Assert intended validation path/error, not incidental EEXIST. Cancellation during alias copy."
           ]
         },
         {
@@ -706,13 +881,16 @@
             "qualified-exact-ollama-payload-version-and-user-session-readiness-on-enabled-target",
             "existing-installation-reuse-and-decline-preserve-platform-state",
             "official-large-archive-streaming-and-library-layout-match-policy",
-            "native-large-payload-inspection-avoids-content-reads-within-three-seconds"
+            "native-large-payload-inspection-avoids-content-reads-within-three-seconds",
+            "native-platform-glibc-translation-and-upstream-digest-provenance-are-observed",
+            "native-write-observations-and-cache-advice-are-recorded-with-limits"
           ],
           "fixturesNeeded": [
             "Linux ARM64 OrbStack disposable VM as the first Linux route; native Linux x64 runner or explicitly recorded translation plus native follow-up.",
             "Existing macOS ARM64 UTM disposable guest; separate macOS x64 and Windows ARM64/x64 runners/guests when available. Unavailable targets remain pending, with no fake passed evidence.",
             "Per-target receipt recording official URL/hash/bytes/version, native/translated status, archive limits, executable/library probe, no-elevation sentinels, endpoint readiness and cleanup/service intent.",
-            "Native large-payload inspection records total time and payload read behavior, with cold/warm owned-file cache conditions if available. No global cache drop, host mutation or model work. Historical cold full-hash failure remains evidence of the removed behavior, not a current pass."
+            "Native large-payload inspection records total time and payload read behavior, with cold/warm owned-file cache conditions if available. No global cache drop, host mutation or model work. Historical cold full-hash failure remains evidence of the removed behavior, not a current pass.",
+            "Generate qualification summary from raw driver output: os.machine/process.report/os-release, uid>0 without fixed uid501, raw translation check and provenance source. Record independent official digest/checksum evidence and mark absent proof pending. Scoped ~/.ollama/tmp/home before-after observations, exact cache advice/result; do not claim complete filesystem isolation or cache eviction."
           ]
         },
         {
@@ -736,7 +914,11 @@
             "accepted-official-payload-is-user-only-and-discloses-install-and-start",
             "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state",
             "hostile-archive-and-large-zstd-window-fail-before-unsafe-write-or-allocation",
-            "qualified-exact-ollama-payload-version-and-user-session-readiness-on-enabled-target"
+            "qualified-exact-ollama-payload-version-and-user-session-readiness-on-enabled-target",
+            "install-retry-requires-explicit-terminal-admission-and-original-install-intent",
+            "upgrade-retry-never-enters-install-cleanup-or-changes-selected-release",
+            "zip-extraction-uses-verified-descriptor-across-path-swap-and-positive-close",
+            "native-platform-glibc-translation-and-upstream-digest-provenance-are-observed"
           ]
         },
         {
@@ -748,20 +930,43 @@
             "stopped-existing-ollama-has-manual-guidance-without-start-action",
             "download-size-digest-layout-and-fsync-failures-never-report-ready",
             "cancellation-and-eof-block-later-publication-or-service-admission",
-            "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn",
+            "explicit-install-retry-completes-cleanup-before-fresh-install",
             "inspection-and-reconciliation-share-three-second-bound-without-payload-hashing",
             "receipt-closure-and-layout-errors-block-reuse-without-content-rehash",
             "native-large-payload-inspection-avoids-content-reads-within-three-seconds",
             "same-size-installed-content-change-does-not-trigger-digest-reverification",
             "archive-digest-mismatch-still-rejects-live-acquisition",
-            "reuse-and-service-admission-never-rehash-installed-files"
+            "reuse-and-service-admission-never-rehash-installed-files",
+            "install-retry-requires-explicit-terminal-admission-and-original-install-intent",
+            "upgrade-retry-never-enters-install-cleanup-or-changes-selected-release",
+            "cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect",
+            "repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first",
+            "sighup-sigterm-and-sigkill-at-preparation-and-handoff-preserve-correct-evidence",
+            "qualified-in-process-lock-proof-excludes-live-inherited-and-unknown-actors",
+            "late-settlement-records-true-outcome-and-completes-disposal-under-held-handle",
+            "policy-change-reconciles-exact-accepted-copy-without-current-policy-substitution",
+            "fresh-bundle-peer-validates-durable-descriptor-without-resolve-map",
+            "decline-creates-no-dependency-context-record-or-process-and-remains-certain",
+            "supervisor-log-validation-and-pre-spawn-failures-have-bounded-not-started-diagnostics",
+            "production-worker-dispatch-argv-path-and-sanitized-environment-with-seeded-sentinels",
+            "supervisor-death-does-not-imply-retained-service-death-or-authorize-replay",
+            "retained-service-cancellation-is-explicit-and-total-deadline-bounds-readiness",
+            "zip-extraction-uses-verified-descriptor-across-path-swap-and-positive-close",
+            "immutable-record-publication-never-replaces-existing-target-and-cleans-owned-temp",
+            "invalid-receipt-closure-layout-reject-with-specific-code-and-zero-transport-calls",
+            "payload-read-sentinel-covers-sync-async-stream-and-path-read-entrypoints",
+            "redirect-target-local-listener-is-never-contacted",
+            "hostile-tar-zstd-zip-boundary-matrix-rejects-before-unsafe-write",
+            "alias-copy-cancellation-closes-before-owned-cleanup",
+            "native-write-observations-and-cache-advice-are-recorded-with-limits"
           ]
         },
         {
           "criterionId": "ac3",
           "provingTests": [
             "agent-zero-one-many-detection-never-spawns-auth-model-or-install",
-            "inspect-and-decline-have-zero-mutation-or-process-side-effects"
+            "inspect-and-decline-have-zero-mutation-or-process-side-effects",
+            "coding-cli-advice-emitted-once-and-install-spawn-sentinels-remain-zero"
           ]
         }
       ]
@@ -769,152 +974,143 @@
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Existing receipts with metadata-only installed validation",
-        "oneLineSummary": "Verify the downloaded archive once; retain existing receipts and closure bindings without rehashing installed bytes.",
-        "approach": "Keep DependencyPort and existing attempt/inventory/receipt/service records. Live acquisition checks the exact compressed archive digest and size; safe extraction validates bounds, contained paths and target layout. Installed reuse, reconciliation and service admission validate bounded record identities, closure/admission bindings and filesystem metadata/required headers, with no full-file content digest or multi-GB read. Retain the existing three-second aggregate inspection target and cancellation behavior. No new wire fields or trust cache.",
+        "name": "Install-only cleanup gate before a fresh terminal install",
+        "oneLineSummary": "Keep public schemas; one explicit terminal retry retires owned interrupted preparation before a new install.",
+        "approach": "Add a narrow internal terminal-admitted install-retry cleanup capability around the existing manager/store and S3 owned dependency records. Validate original durable intent.action=install under the existing installation lock, prove each finite actor closed (or qualified in-process-only lock protocol), record bounded idempotent cleanup, then retire the old operation. The terminal starts an ordinary install with a fresh operation/attempt and fresh dependency consent where needed only after cleanup completes. No separate Discard UX, automatic cleanup, partial-candidate resume, or update cleanup. Persist accepted policy/descriptor and closure/disposal outcomes; retain intentional services and diagnostic records. Use existing native no-replace support and verified ZIP descriptor lifetime.",
         "pros": [
-          "Smallest correction reusing implemented record and recovery boundaries.",
-          "Removes payload-size-dependent read amplification without extending inspection deadline.",
-          "Preserves fresh download integrity and no-duplicate-actor recovery checks."
+          "Small internal integration preserves public action and IDE boundaries.",
+          "Owner-selected cleanup-before-install ordering is directly observable and testable.",
+          "Independent update/migration recovery and retained service facts stay separate."
         ],
         "cons": [
-          "Same-size content changes to already installed private files are not detected by ordinary inspection; metadata validation is not cryptographic content integrity."
+          "Ambiguous/legacy actors still block cleanup until positive closure can be established.",
+          "Later-phase lifecycle/migration cleanup remains with owning peers and cannot be guessed by S3."
         ],
-        "costEstimate": "S"
+        "costEstimate": "M"
       },
       {
         "id": "a2",
-        "name": "Read only health and a new consolidated preparation certificate",
-        "oneLineSummary": "Introduce a new compact certificate to replace current inventory/receipt reconciliation.",
-        "approach": "Keep public dependency wire contracts, but add a new private versioned preparation certificate containing the pinned archive identity and closed attempt/service state. Inspection uses that certificate plus endpoint health and no payload hashing; existing records require explicit conversion/compatibility handling before use.",
+        "name": "Dedicated private install recovery coordinator and journal",
+        "oneLineSummary": "A separate internal recovery component orchestrates the same explicit cleanup-then-install policy.",
+        "approach": "Introduce a private versioned install-recovery coordinator with plan/execute/validate journal and typed dependency/delivery participants, invoked only by the terminal after validating original install intent. It persists a complete cleanup graph then hands control to a new ordinary installation after all participants close. It cannot change S1 publication, S2 dev preparation or S5 hook policies; absent participant proof blocks. No public schema change or update recovery alteration.",
         "pros": [
-          "Could reduce record fan-out for historical attempts."
+          "Central journal makes multi-phase recovery progress explicit.",
+          "Clear separation of recovery bookkeeping from ordinary manager operations."
         ],
         "cons": [
-          "Adds another durable record format and conversion path without a demonstrated need.",
-          "Duplicates existing identity and closure evidence already implemented."
+          "Adds a coordinator/participant abstraction beyond the observed S3 needs.",
+          "More journal compatibility and crash states to maintain than narrow reuse."
         ],
-        "costEstimate": "M",
-        "reasonRejected": "Can satisfy contracts but adds unnecessary certificate compatibility and durability work."
+        "costEstimate": "L",
+        "reasonRejected": "Could satisfy the same constraints but adds a generic recovery coordinator without a demonstrated need in this dependency story."
       }
     ],
     "chosenAlternative": "a1",
     "openQuestions": [],
     "sequenceDefinition": {
-      "narrative": "Accepted missing-Ollama path only: the existing terminal captures exact consent, the lock-owning manager admits bounded private preparation, and durable publication precedes the explicit retained user-session service boundary. Reuse, decline, cancellation and interruption follow the state/error tables; S4/S5 lifecycle and migration internals are outside this diagram. Read-only inspection and recorded-attempt reconciliation share the three-second aggregate target and validate bounded metadata/closure plus endpoint health without hashing installed payload contents. Downloaded archive SHA-256 remains mandatory.",
+      "narrative": "Install-only explicit retry ordering from the owner decision: read-only detection never cleans. Human Retry admits guarded owned cleanup, all cleanup must complete before the original operation is retired, and only then does the terminal enter ordinary installation with a fresh operation/consent. This S3 gate covers dependency preparation before candidate/dev-worker/daemon lifecycle admission; update and later hook recovery remain outside it. Record relationships/cardinality and compatibility are documented in the data model.",
       "participants": [
         {
           "id": "user",
           "label": "Human engineer",
-          "description": "Provides explicit consent in the shared visible terminal."
+          "description": "Explicitly chooses Retry install; no automatic or separate discard action."
         },
         {
           "id": "terminal",
           "label": "Shared terminal installer",
-          "description": "Displays the exact offer and forwards the existing decision; owns all prompts."
+          "description": "Same manual/IDE terminal script owns prompts and fresh-install admission."
         },
         {
           "id": "manager",
           "label": "InstallerManager",
-          "description": "Owns installation lock, operation identity, cancellation and all controller writes."
+          "description": "Sole controller writer verifies original install intent and owns mutation lock."
         },
         {
           "id": "dependency",
-          "label": "S3 dependency adapter",
-          "description": "Read-only detection and consent-bound private Ollama preparation; no release/lifecycle authority."
+          "label": "S3 owned preparation cleanup",
+          "description": "Validates attempt/accepted policy and positive or qualified actor closure; cannot reset other stories."
         },
         {
           "id": "files",
-          "label": "Private dependency filesystem",
-          "description": "Bounded staging, complete inventory, durable immutable payload and attempt receipt."
-        },
-        {
-          "id": "ollama",
-          "label": "Ollama user-session service",
-          "description": "Long-lived process only after disclosed acceptance and recorded service admission; distinct from finite work."
+          "label": "Private install evidence and staging",
+          "description": "Bound cleanup plan, immutable completions, temporary stages and preserved diagnostic records."
         }
       ],
       "messages": [
         {
           "from": "terminal",
-          "to": "dependency",
-          "label": "inspect: bounded metadata/closure + health, three-second aggregate",
-          "description": "No writes/downloads/spawns or installed-file rehashing; validate existing sc3 report and canonical receipt/attempt/closure bindings. Required structure/size/mode/link state and target headers are bounded checks, not cryptographic payload integrity."
+          "to": "manager",
+          "label": "Read-only inspection of interrupted operation",
+          "description": "No cleanup, mutation, download or spawn during inspection; aggregate three-second target unchanged."
         },
         {
-          "from": "dependency",
+          "from": "manager",
           "to": "terminal",
-          "label": "Missing + exact version/destination offer + side-effect disclosure",
+          "label": "Interrupted original install requires explicit Retry",
           "kind": "return",
-          "description": "Offer binds qualified target/hash/paths/endpoint/start policy; unsupported targets have diagnostic guidance instead."
+          "description": "Include exact id and diagnostics; upgrade/candidate/lifecycle recovery is not offered this cleanup path."
         },
         {
           "from": "user",
           "to": "terminal",
-          "label": "Explicit install-and-start acceptance",
-          "description": "Default is no; IDE flags and installOllama do not substitute for this input."
+          "label": "Retry install: explicit yes",
+          "description": "Default no. Closing the terminal starts nothing."
         },
         {
           "from": "terminal",
           "to": "manager",
-          "label": "Existing install/upgrade + exact DependencyDecision",
-          "description": "Same S1 terminal admission and cancellation path, no new public action."
+          "label": "retryInstall with terminal capability and original id",
+          "description": "Acquire existing exclusive mutation lock; validate durable action=install, preparing phase, no selected release/candidate/dev-worker/daemon admission. Reject before cleanup otherwise."
         },
         {
           "from": "manager",
           "to": "dependency",
-          "label": "decide under live owner and recorded preparing intent",
-          "description": "Private operation context binds identity, cancellation and progress. Recheck exact consent/current state before mutation."
+          "label": "Validate accepted policy and finite actor proof",
+          "description": "Hold exact actor locks; require durable closure or qualified in-process-only protocol. PID/age/health/generic lock inference is insufficient."
         },
         {
           "from": "dependency",
           "to": "files",
-          "label": "Verify download, bounded extraction, inventory and finite cleanup",
-          "description": "No privileged installer, model work or existing-payload overwrite. Uncertain finite work blocks later mutation. Verify the archive digest during acquisition; no second full extracted-file content hash pass."
-        },
-        {
-          "from": "dependency",
-          "to": "files",
-          "label": "Fsync and exclusively publish immutable dependency payload",
-          "description": "Files/directories/parents are durable before ready evidence; conflicts fail closed."
-        },
-        {
-          "from": "dependency",
-          "to": "files",
-          "label": "Record accepted service-start admission before spawn",
-          "description": "Cancellation checked immediately before admission/spawn. This marks intentionally retained work separately from finite preparation."
-        },
-        {
-          "from": "dependency",
-          "to": "ollama",
-          "label": "Absolute qualified executable + explicit user-only serve environment",
-          "description": "No shell/global PATH/system service/model download. Existing healthy service is reused instead of launched."
-        },
-        {
-          "from": "dependency",
-          "to": "ollama",
-          "label": "Bounded loopback /api/version readiness probe",
-          "description": "Availability is checked without claiming cryptographic endpoint/process ownership or stopping another listener."
+          "label": "Complete bounded idempotent cleanup items",
+          "description": "Remove only exact owned abandoned temporary work after closure; durable per-item completions. Preserve installed dependencies, retained services/models/logs and diagnostics; unknown evidence blocks."
         },
         {
           "from": "dependency",
           "to": "manager",
-          "label": "Schema-validated dependency report",
+          "label": "Every cleanup item complete or intentionally preserved",
           "kind": "return",
-          "description": "Only verified availability is ready; failures/cancellation remain truthful and preserve incumbent daemon state."
+          "description": "Failure/deadline/cancellation returns blocked; no new installation side effects may occur."
+        },
+        {
+          "from": "manager",
+          "to": "files",
+          "label": "Durably retire original install operation",
+          "description": "Must follow cleanup completion; crash recovery repeats only missing safe steps."
         },
         {
           "from": "manager",
           "to": "terminal",
-          "label": "Continue through existing required sibling-port admission",
+          "label": "Cleanup complete; release lock",
           "kind": "return",
-          "description": "S4/S5 must provide actual lifecycle/migration behavior before full installation can reach ready; no fixture substitutes."
+          "description": "Cleanup method does not install or resume the partial candidate."
+        },
+        {
+          "from": "terminal",
+          "to": "user",
+          "label": "Ordinary fresh install inspection and current consent",
+          "description": "New operation/attempt, normal current release resolution and exact dependency offer if needed; existing complete service may be detected normally."
+        },
+        {
+          "from": "terminal",
+          "to": "manager",
+          "label": "Normal install with fresh identity",
+          "description": "Normal lock admission/capability/release/readiness/TUI rules apply; never old update intent or partial-candidate continuation."
         }
       ],
       "truncations": [
         {
           "atParticipant": "manager",
-          "note": "S4/S5 readiness/migration and S1 ready/lock-release/TUI handoff retain their existing contracts and are not designed by S3."
+          "note": "S1/S2 delivery/publication, S4 lifecycle and S5 migrations retain their contracts; S3 cannot reset their admitted candidate/worker/data state. UPDATE never enters this cleanup gate."
         }
       ]
     },
@@ -1035,6 +1231,24 @@
       "kind": "prior-artifact",
       "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md",
       "quotedText": "Approved revision7: live Node/Ollama delivery, runtime referenced outside payloads, existing three-second inspection target."
+    },
+    {
+      "id": "c93",
+      "kind": "doc",
+      "ref": "docs/plans/s3-manual-review-feedback-2026-11-25.md",
+      "quotedText": "Changes requested; recovery findings 1–4 require a coherent design; exact original feedback archived with SHA-256 bb1dd84cf5755d92cce1aad4cc07b95a1f2589f9ad6dad32b00798c19b54cbad."
+    },
+    {
+      "id": "c94",
+      "kind": "stakeholder",
+      "ref": "User decision, 2026-11-25: explicit retry, on retry complete cleanup and then install. only applies to install NOT UPDATE",
+      "quotedText": "explicit retry, on retry complete cleanup and then install. only applies to install NOT UPDATE"
+    },
+    {
+      "id": "c95",
+      "kind": "analyze-bundle",
+      "ref": "src/installer/manager.ts",
+      "quotedText": "Completed installer-scope symbol/model/usage/action/test/entrypoint analyzer. Stored original intent distinguishes install from upgrade. Graph incomplete (21 ignored relationships); actual manager/peer/record/native source inspected to supplement."
     }
   ]
 }

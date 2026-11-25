@@ -223,8 +223,35 @@ privateRuntimeTest(import.meta.url, 'temporary-disposal-intent-survives-unlink-c
     const names = readdirSync(dirname(s.record)), intent = names.find(n => /\.retry-temp-[a-f0-9]{64}\.json$/.test(n));
     assert.ok(intent); assert.equal(existsSync(join(dirname(s.record), intent.replace(/\.json$/, '.done.json'))), false);
     assert.equal(JSON.parse(readFileSync(join(dirname(s.record), intent), 'utf8')).purpose, 'temporary-record-disposal');
+    await assert.rejects(closedOllamaAttempts(f.location), { code: 'dependency-uncertain' });
+    let downloads = 0;
+    const fresh = () => prepareOllama(f.location, s.policy, s.offer, f.context('b'.repeat(64)),
+      { recheck: f.recheck, transport: async () => { downloads++; return f.transport(); } });
+    await assert.rejects(fresh(), { code: 'dependency-uncertain' });
+    assert.equal(downloads, 0); assert.equal(existsSync(s.offer.destination), false);
     await cleanupOllamaInstallAttempt(f.location, retry(f));
     assert.equal(existsSync(join(dirname(s.record), intent.replace(/\.json$/, '.done.json'))), true);
+    assert.equal((await closedOllamaAttempts(f.location)).length, 1);
+    await fresh(); assert.equal(downloads, 1); assert.equal(existsSync(s.offer.destination), true);
+  } finally { await f.cleanup(); }
+});
+
+privateRuntimeTest(import.meta.url, 'malformed-or-incomplete-retry-journals-block-fresh-preparation', async () => {
+  const f = await ollamaFixture();
+  try {
+    const s = await seed(f); await cleanupOllamaInstallAttempt(f.location, retry(f));
+    let downloads = 0;
+    for (const suffix of ['retry', 'retry-done']) {
+      const file = s.record.replace(/\.json$/, `.${suffix}.json`), original = readFileSync(file);
+      for (const value of ['{incomplete', canonicalJson({ ...JSON.parse(original.toString('utf8')), identitySha256: '0'.repeat(64) })]) {
+        writeFileSync(file, value);
+        await assert.rejects(closedOllamaAttempts(f.location), { code: 'dependency-uncertain' });
+        await assert.rejects(prepareOllama(f.location, s.policy, s.offer, f.context('b'.repeat(64)),
+          { recheck: f.recheck, transport: async () => { downloads++; return f.transport(); } }), { code: 'dependency-uncertain' });
+        assert.equal(downloads, 0); assert.equal(existsSync(s.offer.destination), false);
+        writeFileSync(file, original);
+      }
+    }
     assert.equal((await closedOllamaAttempts(f.location)).length, 1);
   } finally { await f.cleanup(); }
 });

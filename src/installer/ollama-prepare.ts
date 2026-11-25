@@ -20,7 +20,7 @@ import type { DependencyAttemptIdentity, OllamaOffer, OllamaPolicy } from './oll
 import { closurePath, DEPENDENCY_INVENTORY_LIMIT, dependencyLockIdentity, dependencyPath, dependencyUncertain, ensureDependencyDirectory,
   parseBoundOllamaAttempt, parseOllamaAttempt, parseOllamaClosure, parseOllamaInventory, parseOllamaReceipt, readDependencyRecord, writeDependencyRecord } from './ollama-records.js';
 import type { OllamaAttempt, OllamaClosure, OllamaReceipt } from './ollama-records.js';
-import { cleanupPath, disposedPath, disposeOllamaStage, retainUncertainOllamaHandle } from './ollama-cleanup.js';
+import { assertOllamaRetryClosed, cleanupPath, disposedPath, disposeOllamaStage, retainUncertainOllamaHandle } from './ollama-cleanup.js';
 
 export const OLLAMA_PREPARATION_MS = 20 * 60 * 1000, OLLAMA_CLEANUP_MS = 5000;
 /** Read-only phases cannot continue into mutation after their caller returns.
@@ -106,6 +106,7 @@ export async function closedOllamaAttempts(location: InstallationLocation, signa
       if (canonicalJson(cleanup) !== canonicalJson({ schemaVersion: 1, identitySha256: digest(canonicalJson(attempt.identity)), purpose: 'private-stage-disposal' })) throw dependencyUncertain('Dependency cleanup admission differs');
       const disposed = json(await readDependencyRecord(location, disposedPath(file)));
       if (canonicalJson(disposed) !== canonicalJson({ schemaVersion: 1, identitySha256: digest(canonicalJson(attempt.identity)), closed: true, stageRemoved: true })) throw dependencyUncertain('Dependency disposal closure is unconfirmed');
+      await assertOllamaRetryClosed(location, attempt, files, signal);
       result.push(attempt);
     }
   }

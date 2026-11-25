@@ -5,14 +5,14 @@ import { basename, dirname, join, relative } from 'node:path';
 import type { InstallationLocation } from './contracts.js';
 import type { DependencyOperationContext } from './peer-contracts.js';
 import type { OllamaPolicy } from './ollama-policy.js';
-import { dependencyAttemptPaths, ollamaPolicySha256 } from './ollama-policy.js';
+import { dependencyAttemptPaths } from './ollama-policy.js';
 import { requireDependencyRetry } from './dependency-context.js';
 import { controlBinding } from './native.js';
 import { canonicalJson, digest } from './release-descriptor.js';
 import { flushDirectory } from './durability.js';
 import { acceptedOllamaPolicy, checkDependencyParents, closurePath, dependencyLockIdentity, dependencyPath, dependencyUncertain, parseBoundOllamaAttempt,
   parseOllamaClosure, readDependencyRecord } from './ollama-records.js';
-import { disposeOllamaStage, ensureOllamaRecord, retainUncertainOllamaHandle } from './ollama-cleanup.js';
+import { disposeOllamaStage, ensureOllamaRecord, ollamaRetryPlan, ollamaTemporaryRecordName, retainUncertainOllamaHandle } from './ollama-cleanup.js';
 import { assertOllamaReadsClosed, closedOllamaAttempts, OLLAMA_CLEANUP_MS, verifyPreparedOllama } from './ollama-prepare.js';
 
 export interface OllamaRetryOptions {
@@ -71,11 +71,7 @@ export async function cleanupOllamaInstallAttempt(location: InstallationLocation
       throw dependencyUncertain('Actor lacks positive closure or a qualified in-process admission');
     }
     const directory = dirname(record), nonce = basename(record, '.json');
-    const fixed = [nonce, ...['closed', 'cleanup', 'disposed', 'retry', 'retry-done'].map(s => `${nonce}.${s}`)];
-    const plan = { schemaVersion: 1, installationId: location.installationId, originalOperationId: context.operationId,
-      originalAction: 'install', identitySha256, policySha256: ollamaPolicySha256(policy),
-      stageRelativePath: identity.stageRelativePath, temporaryRecordBases: fixed.map(s => `${s}.json`), temporaryCompletionAlgorithm: 'sha256-temp-basename-v1',
-      proof: closure ? 'positive-finite-closure' : 'qualified-in-process-native-v1' };
+    const plan = ollamaRetryPlan(attempt, closure ? 'positive-finite-closure' : 'qualified-in-process-native-v1');
     // A repeat after death must retain the original proof, even after the
     // first recovery has written the explicit cancelled closure.
     const planFile = record.replace(/\.json$/, '.retry.json');
@@ -100,7 +96,7 @@ export async function cleanupOllamaInstallAttempt(location: InstallationLocation
     await disposeOllamaStage(location, identity, policy, handle, current, options.beforeDisposal, options.beforeRemove, options.afterRemoval); current();
     const names = await readdir(directory); current();
     if (names.length > 1024) throw dependencyUncertain('Recovery record inventory exceeds bound');
-    const temporary = new RegExp(`^${nonce}(?:\\.(?:closed|cleanup|disposed|retry|retry-done|retry-temp-[a-f0-9]{64}(?:\\.done)?))?\\.json\\.[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}\\.tmp$`);
+    const temporary = ollamaTemporaryRecordName(nonce);
     const tempItems = new Set(names.filter(name => temporary.test(name)));
     // Persist intent BEFORE unlink, so a crash in the unlink/completion gap
     // can later reconcile absence and still write the per-item completion.

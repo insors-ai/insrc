@@ -1,8 +1,7 @@
 /** Finite dependency disposal only: no controller, service or install authority. */
 import { existsSync } from 'node:fs';
 import { lstat, readdir, rmdir, unlink } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
-import { relative } from 'node:path';
+import { basename, dirname, join, relative } from 'node:path';
 import type { InstallationLocation } from './contracts.js';
 import type { DependencyAttemptIdentity, OllamaPolicy } from './ollama-policy.js';
 import { controlBinding } from './native.js';
@@ -10,6 +9,7 @@ import { privateOllamaDirectory } from './ollama-layout.js';
 import { canonicalJson, digest } from './release-descriptor.js';
 import { flushParents } from './durability.js';
 import { dependencyPath, dependencyUncertain, readDependencyRecord, writeDependencyRecord } from './ollama-records.js';
+import type { OllamaAttempt } from './ollama-records.js';
 
 // An unconfirmed resource may still be active. Keep its native lock reachable
 // until process exit; GC must not make this cohort appear positively closed.
@@ -17,6 +17,63 @@ const uncertainHandles = new Set<object>();
 export function retainUncertainOllamaHandle(handle: object): void { uncertainHandles.add(handle); }
 export const disposedPath = (file: string) => file.replace(/\.json$/, '.disposed.json');
 export const cleanupPath = (file: string) => file.replace(/\.json$/, '.cleanup.json');
+export function ollamaTemporaryRecordName(nonce: string): RegExp {
+  return new RegExp(`^${nonce}(?:\\.(?:closed|cleanup|disposed|retry|retry-done|retry-temp-[a-f0-9]{64}(?:\\.done)?))?\\.json\\.[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}\\.tmp$`);
+}
+export function ollamaRetryPlan(attempt: OllamaAttempt, proof: 'positive-finite-closure' | 'qualified-in-process-native-v1') {
+  const id = attempt.identity, nonce = basename(id.recordRelativePath, '.json');
+  return { schemaVersion: 1, installationId: id.installationId, originalOperationId: id.operationId, originalAction: 'install',
+    identitySha256: digest(canonicalJson(id)), policySha256: id.policySha256, stageRelativePath: id.stageRelativePath,
+    temporaryRecordBases: [nonce, ...['closed', 'cleanup', 'disposed', 'retry', 'retry-done'].map(s => `${nonce}.${s}`)].map(s => `${s}.json`),
+    temporaryCompletionAlgorithm: 'sha256-temp-basename-v1', proof };
+}
+async function jsonRecord(location: InstallationLocation, file: string, signal?: AbortSignal): Promise<unknown> {
+  const bytes = await readDependencyRecord(location, file); signal?.throwIfAborted();
+  try {
+    const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes), value: unknown = JSON.parse(text);
+    if (text === canonicalJson(value)) return value;
+  } catch { /* Preserve malformed evidence. */ }
+  throw dependencyUncertain('Retry disposal evidence is not canonical');
+}
+/** Read-only admission gate: the finite-stage certificate does not stand in
+ * for a completed explicit retry. Every declared temporary item must close. */
+export async function assertOllamaRetryClosed(location: InstallationLocation, attempt: OllamaAttempt,
+  names: string[], signal?: AbortSignal): Promise<void> {
+  const id = attempt.identity, record = dependencyPath(location, id.recordRelativePath), nonce = basename(record, '.json'), directory = dirname(record);
+  const journals = names.filter(name => name.startsWith(`${nonce}.retry`));
+  const planFile = record.replace(/\.json$/, '.retry.json');
+  if (!existsSync(planFile)) {
+    if (journals.length) throw dependencyUncertain('Retry disposal journals lack their exact admission');
+    return;
+  }
+  const plan = await jsonRecord(location, planFile, signal) as { proof?: unknown } | null;
+  if (!plan || (plan.proof !== 'positive-finite-closure' && plan.proof !== 'qualified-in-process-native-v1')
+    || (plan.proof === 'qualified-in-process-native-v1' && attempt.schemaVersion !== 2)
+    || canonicalJson(plan) !== canonicalJson(ollamaRetryPlan(attempt, plan.proof))) throw dependencyUncertain('Retry disposal admission differs from its attempt');
+  const identitySha256 = digest(canonicalJson(id));
+  const done = await jsonRecord(location, record.replace(/\.json$/, '.retry-done.json'), signal);
+  if (canonicalJson(done) !== canonicalJson({ schemaVersion: 1, identitySha256, stageRemoved: true, temporaryRecordsRemoved: true })) {
+    throw dependencyUncertain('Explicit retry cleanup is not durably complete');
+  }
+  const itemName = new RegExp(`^${nonce}\\.retry-temp-([a-f0-9]{64})(?:\\.done)?\\.json$`);
+  const seen = new Set<string>();
+  for (const name of journals) {
+    signal?.throwIfAborted(); const match = itemName.exec(name);
+    if (!match || seen.has(match[1]!)) continue;
+    seen.add(match[1]!);
+    const intentFile = join(directory, `${nonce}.retry-temp-${match[1]}.json`);
+    const item = await jsonRecord(location, intentFile, signal) as { fileRelativePath?: unknown } | null;
+    if (!item || typeof item.fileRelativePath !== 'string') throw dependencyUncertain('Temporary disposal admission is malformed');
+    const file = dependencyPath(location, item.fileRelativePath), tempName = basename(file);
+    if (dirname(file) !== directory || !ollamaTemporaryRecordName(nonce).test(tempName) || digest(tempName) !== match[1]
+      || canonicalJson(item) !== canonicalJson({ schemaVersion: 1, identitySha256, fileRelativePath: item.fileRelativePath, purpose: 'temporary-record-disposal' })
+      || existsSync(file)) throw dependencyUncertain('Temporary disposal target is not positively removed');
+    const completion = await jsonRecord(location, intentFile.replace(/\.json$/, '.done.json'), signal);
+    if (canonicalJson(completion) !== canonicalJson({ schemaVersion: 1, identitySha256, fileRelativePath: item.fileRelativePath, removed: true })) {
+      throw dependencyUncertain('Temporary disposal completion differs from its admitted item');
+    }
+  }
+}
 
 export async function ensureOllamaRecord(location: InstallationLocation, handle: object, file: string, value: unknown): Promise<void> {
   if (!existsSync(file)) { writeDependencyRecord(location, handle, file, value); return; }

@@ -84,6 +84,7 @@ export async function extractOllamaTarZstd(archive: string, destination: string,
   const policy = parseOllamaPolicy(policyInput); signal?.throwIfAborted();
   const root = await lstat(destination);
   if (!root.isDirectory() || root.isSymbolicLink() || (typeof process.getuid === 'function' && root.uid !== process.getuid())
+    || (process.platform !== 'win32' && (root.mode & 0o077) !== 0)
     || (await readdir(destination)).length) throw unsafe('Expected empty owned extraction directory');
   // A linked ancestor must not turn a private stage into an external write.
   let parent = destination;

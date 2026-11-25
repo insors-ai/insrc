@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import type { Readable } from 'node:stream';
 import { constants, zstdCompressSync } from 'node:zlib';
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -52,13 +52,23 @@ test('linux-zstd-large-window-truncation-and-output-bombs-refuse-before-unsafe-w
       if (invalid === huge) assert.deepEqual(readdirSync(x.destination), [], 'window must be rejected before output/allocation');
     }
     const corruptChecksum = Buffer.from(good); corruptChecksum[corruptChecksum.length - 1]! ^= 1;
-    await assert.rejects(decode(corruptChecksum), /checksum/);
+    await assert.rejects(decode(corruptChecksum), { code: 'archive-unsafe' });
     const wrongDigest = policy(good); wrongDigest.asset.sha256 = '0'.repeat(64);
     await assert.rejects(decode(good, wrongDigest), /digest/);
     // Unknown-size RLE block expands beyond the limit without declaring an FCS.
     const header = Buffer.from([0x28, 0xb5, 0x2f, 0xfd, 0, 7 << 3]), block = Buffer.alloc(3); block.writeUIntLE((131072 << 3) | 3, 0, 3);
     const bomb = Buffer.concat([header, block, Buffer.from([0])]);
     await assert.rejects(decode(bomb, policy(bomb, 1024)), /output.*bound/);
+    const malformed = Buffer.from([0x28, 0xb5, 0x2f, 0xfd, 0x20, 0, 5, 0, 0]);
+    await assert.rejects(decode(malformed), /block/);
+    // Declares literals but omits the required sequence-count field.
+    const missingSequences = Buffer.from([0x28, 0xb5, 0x2f, 0xfd, 0x20, 0, 21, 0, 0, 8, 0x61]);
+    await assert.rejects(decode(missingSequences));
+    if (process.platform !== 'win32') {
+      const permissive = f.input(good); chmodSync(permissive.destination, 0o777);
+      await assert.rejects(extractOllamaTarZstd(permissive.file, permissive.destination, policy(good)), /owned extraction/);
+      assert.deepEqual(readdirSync(permissive.destination), []);
+    }
   } finally { f.cleanup(); }
 });
 

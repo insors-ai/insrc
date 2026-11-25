@@ -21,7 +21,9 @@ if (process.env.INSRC_TEST_SERVICE_MODE !== 'slow') {
   server.on('error', () => { clearInterval(timer); process.stderr.write('fixture bind failed\n'); process.exitCode = 1; });
   server.listen(Number(url.port), url.hostname.replace(/^\[|\]$/g, ''), () => {
     writeFileSync(join(state, 'ready'), 'available');
-    process.stdout.write(Buffer.alloc(3 * 1024 * 1024, 65));
-    process.stderr.write(Buffer.alloc(128 * 1024, 66));
+    if (process.env.INSRC_TEST_SERVICE_MODE !== 'silent') {
+      process.stdout.write(Buffer.alloc(3 * 1024 * 1024, 65));
+      process.stderr.write(Buffer.alloc(128 * 1024, 66));
+    } else process.stdout.write('fixture-ready\n');
   });
 }

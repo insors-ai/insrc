@@ -9,7 +9,7 @@ import { parseInstaller, parseManagerRequest, parseReleaseManifest } from './sch
 import { canonicalJson, digest, parseReleaseDescriptor } from './release-descriptor.js';
 import type { PreparedCandidate, PreparationLease } from './bundle.js';
 import type { DeliveryPort, DependencyOperationContext, LaunchAdmission, ManagerPeers, MigrationEvidence, PreparedReleaseOffer, ReadyEvidence, ShutdownCompletion, ShutdownRequest } from './peer-contracts.js';
-import { createDependencyOperationContext, createDependencyRetryContext } from './dependency-context.js';
+import { createDependencyOperationContext, createDependencyRetryContext, RETAINED_DEPENDENCY_NOTICE } from './dependency-context.js';
 import { acceptResolvedDevSource, devUpgradeOfferId, parseDevDelivery, parseDevPreparation, parseDevReleaseReceipt, parseDevSourceOffer } from './dev.js';
 import type { DevPreparationRecord, DevSourceOffer, PreparationContext } from './dev.js';
 import { BUNDLE_LIMITS } from './release-descriptor.js';
@@ -27,6 +27,7 @@ interface Active {
   checkCancellation(): void;
   candidate?: PreparedCandidate | undefined; admission?: LaunchAdmission | undefined; shutdown?: ShutdownRequest | undefined;
   previousResult?: OperationRecord | undefined; started: boolean; disrupted: boolean; interruptedPhase?: OperationRecord['phase'] | undefined; immediate?: Promise<void> | undefined;
+  dependencyServiceAdmitted?: boolean | undefined;
 }
 export class InstallerManager {
   #active: Active | undefined;
@@ -250,7 +251,10 @@ export class InstallerManager {
     const record = { schemaVersion: 1 as const, operationId: active.request.operationId, installationId: this.location.installationId, attemptNonce: randomBytes(32).toString('hex'), decision };
     active.store.writeOperationData(active.request.operationId, 'dependency', record);
     return createDependencyOperationContext(this.location, this.target.os, { operationId: record.operationId, attemptNonce: record.attemptNonce, signal, assertCurrent,
-      progress: (stage, detail) => { assertCurrent(); this.progress(this.#event(active, { ...active.snapshot.operation!, message: `${stage}: ${detail}` }, 'progress')); } });
+      progress: (stage, detail) => {
+        if (stage === 'ollama-service-admitted') active.dependencyServiceAdmitted = true;
+        assertCurrent(); this.progress(this.#event(active, { ...active.snapshot.operation!, message: `${stage}: ${detail}` }, 'progress'));
+      } });
   }
   #acceptedOffer(active: Active): PreparedReleaseOffer {
     const value = active.store.readOperationData(active.request.operationId, 'release-offer') as { schemaVersion?: unknown; offer?: unknown; kind?: unknown; descriptor?: unknown; descriptorSha256?: unknown } | undefined;
@@ -569,7 +573,9 @@ export class InstallerManager {
       return this.#finish(active, { ...active.snapshot.operation!, phase: 'ready', errorCode: undefined, message: undefined }, true);
     } catch (error) {
       if (active?.started || (active && request.action === 'retry-migration')) {
-        const detail = error instanceof Error ? error.message.replace(/[\x00-\x1f\x7f]/g, ' ').slice(0, 3500) || 'Operation failed' : 'Operation failed', code = error instanceof InstallerError ? error.code : 'operation-failed';
+        const base = error instanceof Error ? error.message.replace(/[\x00-\x1f\x7f]/g, ' ').slice(0, 3000) || 'Operation failed' : 'Operation failed';
+        const detail = active.dependencyServiceAdmitted && !base.includes(RETAINED_DEPENDENCY_NOTICE) ? `${base} ${RETAINED_DEPENDENCY_NOTICE}` : base;
+        const code = error instanceof InstallerError ? error.code : 'operation-failed';
         const blocked = active.disrupted || code === 'preparation-uncertain' || code === 'dependency-uncertain';
         const failed: OperationRecord = { ...active.snapshot.operation, operationId: request.operationId, phase: blocked ? 'blocked' : 'preparing', errorCode: code, message: detail };
         if (blocked) {

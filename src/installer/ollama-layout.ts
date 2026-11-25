@@ -113,10 +113,12 @@ export async function verifyOllamaTree(root: string, files: InventoryFile[], pol
 }
 
 /** Inspect target binary headers; do not execute setup, GUI or foreign code. */
-async function verifyOllamaExecutable(path: string, policy: OllamaPolicy, library = false): Promise<void> {
+export async function verifyOllamaExecutable(path: string, policy: OllamaPolicy, library = false): Promise<void> {
   const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
     const stat = await file.stat();
+    if (!stat.isFile() || stat.nlink !== 1 || (process.platform !== 'win32' && !library && !(stat.mode & 0o111))
+      || (process.platform === 'win32' && !controlBinding().safePath(path, false, false))) throw archiveUnsafe('Dependency executable is not a contained regular file');
     const read = async (offset: number, count: number) => {
       if (!Number.isSafeInteger(offset) || offset < 0 || offset + count > stat.size) throw archiveUnsafe('Truncated dependency executable');
       const data = Buffer.alloc(count); let got = 0;

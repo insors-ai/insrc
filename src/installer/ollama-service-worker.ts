@@ -11,8 +11,10 @@ import { dependencyPath, dependencyUncertain, parseOllamaInventory, parseOllamaR
 import { controlBinding } from './native.js';
 import { closeOwnedDescriptor } from './owned-file.js';
 import { flushDirectory } from './durability.js';
-import { parseServiceFrame, serviceFact, serviceJson, servicePaths, SERVICE_FRAME_LIMIT } from './ollama-service-records.js';
+import { parseServiceFrame, serviceDiagnostic, serviceFact, serviceJson, servicePaths, SERVICE_FRAME_LIMIT } from './ollama-service-records.js';
 import type { OllamaServiceFrame } from './ollama-service-records.js';
+import { verifyOllamaExecutable } from './ollama-layout.js';
+import { ollamaCloseUncertain, retainUncertainOllamaHandle } from './ollama-cleanup.js';
 
 const LOG_BYTES = 1024 * 1024;
 /** Two owned 1 MiB files. Never truncate an unknown predecessor or follow links. */
@@ -74,9 +76,10 @@ export async function executeOllamaServiceWorker(location: InstallationLocation,
     || dependencyPath(location, frame.attempt.identity.recordRelativePath) !== record) throw dependencyUncertain('Service supervisor location/target differs');
   const admission = serviceJson(await readDependencyRecord(location, paths.admission));
   if (canonicalJson(admission) !== canonicalJson(frame.admission)) throw dependencyUncertain('Service input differs from durable admission');
-  const handle = controlBinding().acquire(paths.lock); let log: ServiceLog | undefined;
+  const handle = controlBinding().acquire(paths.lock); let log: ServiceLog | undefined, keepHandle = false, ownsPreSpawn = false, spawnAttempted = false;
   try {
     if (existsSync(paths.launch) || existsSync(paths.exit)) throw dependencyUncertain('A service launch cannot be replayed');
+    ownsPreSpawn = true;
     const payload = dependencyPath(location, frame.attempt.identity.payloadRelativePath), executable = join(payload, frame.policy.layout.executable);
     const raw = await readDependencyRecord(location, join(payload, 'inventory.json'), DEPENDENCY_INVENTORY_LIMIT), receipt = parseOllamaReceipt(serviceJson(await readDependencyRecord(location, join(payload, '.ollama-receipt.json'))));
     const inventory = parseOllamaInventory(serviceJson(raw));
@@ -86,13 +89,14 @@ export async function executeOllamaServiceWorker(location: InstallationLocation,
       || receipt.version !== frame.policy.version || !inventory.files.some(file => file.path === frame.policy.layout.executable)) throw dependencyUncertain('Published service payload identity differs');
     const cli = lstatSync(executable);
     if (!cli.isFile() || cli.isSymbolicLink() || cli.nlink !== 1 || (process.platform === 'win32' && !controlBinding().safePath(executable, false, false))) throw dependencyUncertain('Service CLI is not a contained regular file');
-    writeDependencyRecord(location, handle, paths.launch, serviceFact(frame.admission, 'launch-admitted'));
+    await verifyOllamaExecutable(executable, frame.policy);
     log = new ServiceLog(dependencyPath(location, frame.policy.logsRelativePath), frame.admission.nonce);
+    writeDependencyRecord(location, handle, paths.launch, serviceFact(frame.admission, 'launch-admitted'));
     let child: ChildProcess;
-    try { child = (options.launch ?? ((command, args, settings) => spawn(command, args, settings)))(executable, ['serve'], {
+    try { spawnAttempted = true; child = (options.launch ?? ((command, args, settings) => spawn(command, args, settings)))(executable, ['serve'], {
       cwd: payload, env: ollamaServiceEnvironment(frame, process.env), stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true,
     }); } catch (cause) { writeDependencyRecord(location, handle, paths.exit, serviceFact(frame.admission, 'not-started')); throw cause; }
-    let spawned = false, recordingFailure: unknown, loggingFailure: unknown;
+    let spawned = false, recordingFailure: unknown, loggingFailure: unknown, spawnFailure: unknown;
     const logFailed = (cause: unknown) => {
       loggingFailure ??= cause; log!.discard();
       if (!existsSync(paths.logError)) try { writeDependencyRecord(location, handle, paths.logError, serviceFact(frame.admission, 'unverified')); } catch (error) { recordingFailure ??= error; }
@@ -104,14 +108,30 @@ export async function executeOllamaServiceWorker(location: InstallationLocation,
       child.once('spawn', () => { spawned = true;
         try { writeDependencyRecord(location, handle, paths.running, serviceFact(frame.admission, 'spawned')); } catch (cause) { recordingFailure = cause; }
       });
-      child.on('error', () => {});
+      child.on('error', cause => { spawnFailure ??= cause; });
       child.once('close', (code, signal) => {
         try {
           log!.close(); log = undefined;
           writeDependencyRecord(location, handle, paths.exit, serviceFact(frame.admission, spawned ? 'closed' : 'not-started', { code, signal }));
+          if (spawnFailure && !existsSync(paths.diagnostic)) writeDependencyRecord(location, handle, paths.diagnostic, serviceDiagnostic(frame.admission, spawned ? 'supervisor' : 'pre-spawn', spawnFailure));
           if (recordingFailure || loggingFailure) reject(dependencyUncertain('Service exited after bounded evidence/log failure', recordingFailure ?? loggingFailure)); else resolve();
         } catch (cause) { reject(cause); }
       });
     });
-  } finally { try { log?.close(); } finally { controlBinding().close(handle); } }
+  } catch (cause) {
+    if (ollamaCloseUncertain(cause)) { keepHandle = true; retainUncertainOllamaHandle(handle); }
+    else {
+      // Validation/log creation failed before invoking spawn. This is positive
+      // not-started evidence, unlike a supervisor disappearing after launch.
+      try {
+        if (ownsPreSpawn && !spawnAttempted && !existsSync(paths.exit)) writeDependencyRecord(location, handle, paths.exit, serviceFact(frame.admission, 'not-started'));
+        if (!existsSync(paths.diagnostic)) writeDependencyRecord(location, handle, paths.diagnostic, serviceDiagnostic(frame.admission, spawnAttempted ? 'supervisor' : 'pre-spawn', cause));
+      } catch (failure) { if (ollamaCloseUncertain(failure)) { keepHandle = true; retainUncertainOllamaHandle(handle); } throw failure; }
+    }
+    throw cause;
+  } finally {
+    try { log?.close(); }
+    catch (cause) { if (ollamaCloseUncertain(cause)) { keepHandle = true; retainUncertainOllamaHandle(handle); } throw cause; }
+    finally { if (!keepHandle) controlBinding().close(handle); }
+  }
 }

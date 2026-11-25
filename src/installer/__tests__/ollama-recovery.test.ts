@@ -103,6 +103,35 @@ privateRuntimeTest(import.meta.url, 'unknown-actor-proof-blocks-install-retry-cl
   } finally { await f.cleanup(); }
 });
 
+privateRuntimeTest(import.meta.url, 'explicit-retry-closes-qualified-dead-handoff-and-owned-temporary-writes', async () => {
+  const f = await ollamaFixture();
+  try {
+    const s = await seed(f), handoff = s.record.replace(/\.json$/, `.handoff-${'b'.repeat(32)}.json`), lock = controlBinding().acquire(`${s.record}.lock`);
+    const record = { schemaVersion: 1, identitySha256: digest(canonicalJson(s.attempt.identity)), nonce: 'b'.repeat(32), actor: 'finite-service-handoff' };
+    try { writeDependencyRecord(f.location, lock, handoff, record); } finally { controlBinding().close(lock); }
+    const temporary = [`${handoff}.${randomUUID()}.tmp`, `${closurePath(handoff)}.${randomUUID()}.tmp`];
+    for (const file of temporary) writeFileSync(file, 'interrupted handoff write', { mode: 0o600 });
+    await assert.rejects(closedOllamaAttempts(f.location), { code: 'dependency-uncertain' });
+    await cleanupOllamaInstallAttempt(f.location, retry(f));
+    assert.ok(temporary.every(file => !existsSync(file)));
+    assert.equal(readFileSync(handoff, 'utf8'), canonicalJson(record)); assert.equal(readFileSync(closurePath(handoff), 'utf8'), canonicalJson({ ...record, closed: true }));
+    assert.equal((await closedOllamaAttempts(f.location)).length, 1); assert.equal(existsSync(s.stage), false);
+  } finally { await f.cleanup(); }
+});
+
+privateRuntimeTest(import.meta.url, 'legacy-preparation-closure-does-not-authorize-unknown-handoff-disposal', async () => {
+  const f = await ollamaFixture();
+  try {
+    const s = await seed(f), { policy: _policy, lockProtocol: _protocol, lockIdentity: _lock, ...old } = s.attempt as Extract<OllamaAttempt, { schemaVersion: 2 }>;
+    writeFileSync(s.record, canonicalJson({ ...old, schemaVersion: 1 }), { mode: 0o600 });
+    writeFileSync(closurePath(s.record), canonicalJson({ schemaVersion: 1, identitySha256: digest(canonicalJson(s.attempt.identity)), closed: true, outcome: 'cancelled' }), { mode: 0o600 });
+    const handoff = s.record.replace(/\.json$/, `.handoff-${'b'.repeat(32)}.json`), temporary = `${handoff}.${randomUUID()}.tmp`;
+    writeFileSync(temporary, 'unknown legacy finite handoff writer', { mode: 0o600 });
+    await assert.rejects(cleanupOllamaInstallAttempt(f.location, retry(f), s.policy), { code: 'dependency-uncertain' });
+    assert.equal(readFileSync(temporary, 'utf8'), 'unknown legacy finite handoff writer'); assert.equal(existsSync(closurePath(handoff)), false);
+  } finally { await f.cleanup(); }
+});
+
 privateRuntimeTest(import.meta.url, 'legacy-closed-attempt-copied-to-another-home-cannot-authorize-deletion', async () => {
   const f = await ollamaFixture('same-installation'), foreign = await ollamaFixture('same-installation');
   try {
@@ -311,7 +340,7 @@ privateRuntimeTest(import.meta.url, 'malformed-or-incomplete-retry-journals-bloc
 privateRuntimeTest(import.meta.url, 'orphan-evidence-in-empty-attempt-directory-blocks-fresh-preparation', async () => {
   for (const suffix of ['retry', 'retry-done', `retry-temp-${'c'.repeat(64)}`, `retry-temp-${'c'.repeat(64)}.done`,
     'closed', 'cleanup', 'disposed', 'published', 'service', 'service-input', 'service-launch', 'service-running',
-    'service-exit', 'service-result', 'service-log-error', `handoff-${'c'.repeat(32)}`, `handoff-${'c'.repeat(32)}.closed`]) {
+    'service-exit', 'service-result', 'service-log-error', 'service-diagnostic', `handoff-${'c'.repeat(32)}`, `handoff-${'c'.repeat(32)}.closed`]) {
     const f = await ollamaFixture();
     try {
       const { policy, offer } = await f.input(), nonce = 'a'.repeat(64), context = f.context();

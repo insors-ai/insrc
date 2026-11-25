@@ -64,7 +64,8 @@ async function untilAbort<T>(promise: Promise<T>, signal: AbortSignal): Promise<
 }
 
 /** Read-only positive closure census. A free lock, PID or age grants nothing. */
-export async function closedOllamaAttempts(location: InstallationLocation, signal?: AbortSignal, currentHandoff?: string): Promise<OllamaAttempt[]> {
+export async function closedOllamaAttempts(location: InstallationLocation, signal?: AbortSignal, currentHandoff?: string,
+  retainedFacts?: ((attempt: OllamaAttempt, record: string) => Promise<boolean>) | undefined): Promise<OllamaAttempt[]> {
   try {
   signal?.throwIfAborted();
   const root = dependencyPath(location, 'deps/ollama/.attempts');
@@ -87,15 +88,19 @@ export async function closedOllamaAttempts(location: InstallationLocation, signa
           const admissionFile = join(directory, `${handoff[1]}.handoff-${handoff[2]}.json`);
           const expected = { schemaVersion: 1, identitySha256: digest(canonicalJson(attempt.identity)), nonce: handoff[2], actor: 'finite-service-handoff' };
           if (canonicalJson(json(await readDependencyRecord(location, admissionFile))) !== canonicalJson(expected)) throw dependencyUncertain('Finite handoff admission differs');
-          if (admissionFile !== currentHandoff
-            && canonicalJson(json(await readDependencyRecord(location, closurePath(admissionFile)))) !== canonicalJson({ ...expected, closed: true })) throw dependencyUncertain('Finite service handoff lacks positive closure');
+          if (admissionFile !== currentHandoff) {
+            const closedFile = closurePath(admissionFile);
+            if (existsSync(closedFile)) {
+              if (canonicalJson(json(await readDependencyRecord(location, closedFile))) !== canonicalJson({ ...expected, closed: true })) throw dependencyUncertain('Finite service handoff closure differs');
+            } else if (!retainedFacts || !await retainedFacts(attempt, file)) throw dependencyUncertain('Finite service handoff lacks positive closure');
+          }
           continue;
         }
         if (/^[A-Za-z0-9_-]{32,128}\.(?:json|service)\.lock$/.test(name)) {
           const info = lstatSync(join(directory, name)); if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1
             || (process.platform !== 'win32' && (info.uid !== process.getuid?.() || (info.mode & 0o077)))) throw dependencyUncertain('Unsafe dependency attempt lock'); continue;
         }
-        const evidence = /^([A-Za-z0-9_-]{32,128})\.(?:closed|cleanup|disposed|retry|retry-done|retry-temp-[a-f0-9]{64}(?:\.done)?|published|service|service-input|service-launch|service-running|service-exit|service-result|service-log-error)\.json$/.exec(name);
+        const evidence = /^([A-Za-z0-9_-]{32,128})\.(?:closed|cleanup|disposed|retry|retry-done|retry-temp-[a-f0-9]{64}(?:\.done)?|published|service|service-input|service-launch|service-running|service-exit|service-result|service-log-error|service-diagnostic)\.json$/.exec(name);
         if (!evidence) throw dependencyUncertain('Unrecognized dependency attempt evidence');
         // Never silently ignore an orphan journal. Its base must be part of
         // this census and pass the full finite/disposal/retry validation below.

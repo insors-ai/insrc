@@ -184,3 +184,14 @@ privateRuntimeTest(import.meta.url, 'real-install-retry-waits-for-owned-actor-cl
     assert.equal(readFileSync(join(i.home, 'application-data'), 'utf8'), 'retain'); assert.deepEqual(i.count(), { launches: 0, downloads: 0 });
   } finally { release(); await i.cleanup(); }
 });
+
+privateRuntimeTest(import.meta.url, 'cancellation-after-ready-dependency-report-still-discloses-retained-service', async () => {
+  const i = await integrated(), cancel = new AbortController(), terminal = ui(['yes', 'yes', 'yes']);
+  try {
+    const decide = i.f.peers.dependencies!.decide;
+    i.f.peers.dependencies!.decide = async (...args) => { const report = await decide(...args); assert.equal(report.ollama, 'ready'); cancel.abort(); return report; };
+    const result = await runTerminalInstall({ location: i.location, target: i.target, peers: i.f.peers, ui: terminal, operationId: 'cancel-after-ready-report', signal: cancel.signal });
+    assert.equal(result.kind, 'cancelled'); assert.match(terminal.output.join(''), /accepted.*may remain running or unverified/);
+    assert.deepEqual(i.count(), { launches: 1, downloads: 1 }); assert.equal(i.f.state.migrations.length, 0); assert.equal(i.f.state.activations.length, 0);
+  } finally { await i.cleanup(); }
+});

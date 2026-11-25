@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import type { ChildProcess } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, lstatSync, unlinkSync, writeFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { existsSync, linkSync, mkdirSync, readFileSync, readdirSync, lstatSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -14,6 +15,9 @@ import { canonicalJson, digest } from '../release-descriptor.js';
 import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
 import { privateRuntimeTest } from './_private-runtime-test.js';
 import { observeOllamaReads } from './_ollama-read-sentinel.js';
+import { executeOllamaServiceWorker } from '../ollama-service-worker.js';
+import { cleanupOllamaInstallAttempt } from '../ollama-recovery.js';
+import { createDependencyRetryContext } from '../dependency-context.js';
 
 function serviceTest(title: string, run: () => Promise<void>): void {
   privateRuntimeTest(import.meta.url, title, run);
@@ -95,7 +99,10 @@ serviceTest('transient-presence-probe-timeout-preserves-service-readiness-window
 
 serviceTest('service-admission-is-durable-and-distinct-from-finite-preparation-drain', async () => {
   const f = await fixture();
+  const keys = ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'MISTRAL_API_KEY', 'NODE_OPTIONS', 'NODE_PATH'];
+  const saved = keys.map(key => process.env[key]);
   try {
+    for (const key of keys) process.env[key] = key === 'NODE_OPTIONS' ? '--no-warnings' : 'harmless-test-sentinel';
     const report = await startOllamaService(f.location, f.prepared, f.context(), f.service); assert.equal(report.ollama, 'ready'); assert.equal(f.count(), 1);
     assert.equal((await closedOllamaAttempts(f.location)).length, 1, 'retained service is not an unclosed preparation actor');
     assert.equal(f.children[0]!.exitCode, null); assert.equal(readFileSync(join(f.home, 'application-data'), 'utf8'), 'retain');
@@ -111,7 +118,7 @@ serviceTest('service-admission-is-durable-and-distinct-from-finite-preparation-d
     for (const file of files) { const size = lstatSync(join(logs, file)).size; assert.ok(size <= 1024 * 1024); bytes += size; }
     assert.ok(bytes <= 2 * 1024 * 1024); assert.equal(readFileSync(join(f.state, 'last-request'), 'utf8'), 'GET /api/version');
     assert.equal(existsSync(join(f.home, 'releases')), false);
-  } finally { await f.cleanup(); }
+  } finally { keys.forEach((key, i) => { if (saved[i] === undefined) delete process.env[key]; else process.env[key] = saved[i]; }); await f.cleanup(); }
 });
 
 serviceTest('interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn', async () => {
@@ -212,4 +219,70 @@ serviceTest('service-admission-cancellation-retains-only-explicitly-accepted-ser
     assert.equal(JSON.parse(readFileSync(after.paths.admission, 'utf8')).retained, true);
     assert.equal(canonicalJson(JSON.parse(readFileSync(after.paths.admission, 'utf8'))), readFileSync(after.paths.admission, 'utf8'));
   } finally { await after.cleanup(); }
+});
+
+serviceTest('supervisor-log-validation-and-pre-spawn-failures-have-bounded-not-started-diagnostics', async () => {
+  for (const kind of ['log', 'linked-cli', 'header', 'receipt', 'spawn-throw', 'spawn-error']) {
+    const f = await fixture(); let spawns = 0;
+    try {
+      const report = await startOllamaService(f.location, f.prepared, f.context(), { ...f.service,
+        launch: async frame => {
+          if (kind === 'log') writeFileSync(join(f.prepared.offer.logsDirectory, `ollama-${frame.admission.nonce}.log`), 'preserve predecessor', { mode: 0o600 });
+          if (kind === 'linked-cli') linkSync(join(f.prepared.directory, f.prepared.policy.layout.executable), join(f.root, 'linked-cli'));
+          if (kind === 'header') writeFileSync(join(f.prepared.directory, f.prepared.policy.layout.executable), Buffer.alloc(512));
+          if (kind === 'receipt') writeFileSync(join(f.prepared.directory, '.ollama-receipt.json'), '{}');
+          const worker = executeOllamaServiceWorker(f.location, f.prepared.identity.recordRelativePath, { target: f.target,
+            launch() { spawns++; if (kind === 'spawn-error') return spawn(join(f.root, 'missing-executable'), []); throw Object.assign(new Error('owned synchronous spawn fixture'), { code: 'EACCES' }); } });
+          if (kind === 'spawn-error') await worker;
+          else await assert.rejects(worker, (error: unknown) => {
+            const value = error as { code: string; message: string };
+            assert.equal(value.code, kind === 'header' ? 'archive-unsafe' : kind === 'receipt' ? 'schema-invalid' : kind === 'spawn-throw' ? 'EACCES' : 'dependency-uncertain');
+            return true;
+          });
+          return { started: true };
+        } });
+      assert.notEqual(report.ollama, 'ready'); assert.equal(spawns, kind.startsWith('spawn-') ? 1 : 0);
+      const exit = JSON.parse(readFileSync(f.paths.exit, 'utf8')); assert.equal(exit.state, 'not-started'); assert.equal(exit.endpointOwnership, 'unproven');
+      const diagnostic = JSON.parse(readFileSync(f.paths.diagnostic, 'utf8'));
+      assert.equal(diagnostic.admissionSha256, exit.admissionSha256); assert.ok(lstatSync(f.paths.diagnostic).size < 4096);
+      assert.equal(diagnostic.stage, kind === 'spawn-throw' ? 'supervisor' : 'pre-spawn');
+      assert.equal(existsSync(f.paths.running), false); assert.equal(existsSync(f.paths.launch), kind.startsWith('spawn-'));
+      if (kind === 'log') assert.equal(readFileSync(join(f.prepared.offer.logsDirectory, `ollama-${JSON.parse(readFileSync(f.paths.admission, 'utf8')).nonce}.log`), 'utf8'), 'preserve predecessor');
+    } finally { await f.cleanup(); }
+  }
+});
+
+serviceTest('retained-service-cancellation-is-explicit-and-total-deadline-bounds-readiness', async () => {
+  for (const kind of ['overall', 'owner', 'abort', 'startup']) {
+    const f = await fixture(), cancel = new AbortController();
+    try {
+      const prepared = kind === 'overall' ? { ...f.prepared, preparationDeadline: performance.now() + 700 } : f.prepared;
+      const started = performance.now(), run = startOllamaService(f.location, prepared, f.context('a'.repeat(64), cancel.signal), { ...f.service, readinessMs: 8000,
+        launch: async () => { if (kind === 'owner') f.loseOwner(); if (kind === 'abort') cancel.abort(); if (kind === 'startup') throw new Error('known fixture startup error'); return { started: true }; } });
+      if (kind === 'overall') {
+        const report = await run; assert.equal(report.ollama, 'unavailable'); assert.ok(report.blockers.some(text => text.includes('Overall preparation deadline expired')));
+        assert.ok(performance.now() - started < 4000, 'overall deadline must end well before the eight-second readiness window');
+      } else await assert.rejects(run, (error: unknown) => {
+        const value = error as { code: string; message: string };
+        assert.equal(value.code, kind === 'owner' ? 'dependency-owner-lost' : kind === 'abort' ? 'cancelled' : 'dependency-start-failed');
+        assert.match(value.message, /accepted.*may remain/); assert.doesNotMatch(value.message, /readiness deadline/); return true;
+      });
+      assert.equal(existsSync(f.paths.admission), true); assert.equal(existsSync(f.paths.exit), false, 'ambiguous launch cannot invent a service exit');
+    } finally { await f.cleanup(); }
+  }
+});
+
+serviceTest('retained-facts-survive-stale-finite-marker-without-repair-or-replay', async () => {
+  const f = await fixture();
+  try {
+    await startOllamaService(f.location, f.prepared, f.context(), f.service);
+    const directory = dirname(f.record), closed = readdirSync(directory).find(name => /\.handoff-[a-f0-9]{32}\.closed\.json$/.test(name)); assert.ok(closed);
+    unlinkSync(join(directory, closed));
+    const before = attemptBytes(directory);
+    assert.equal((await f.inspectFresh()).ollama, 'ready'); assert.deepEqual(attemptBytes(directory), before, 'read-only inspection does not repair markers');
+    await assert.rejects(closedOllamaAttempts(f.location), { code: 'dependency-uncertain' }, 'strict finite census still requires positive closure');
+    await cleanupOllamaInstallAttempt(f.location, createDependencyRetryContext(f.location, f.target.os, { ...f.context() }), f.policy);
+    assert.equal((await closedOllamaAttempts(f.location)).length, 1); assert.equal(f.count(), 1); assert.equal(f.children[0]!.exitCode, null);
+    assert.equal((await f.inspectFresh()).ollama, 'ready'); assert.equal(existsSync(f.prepared.directory), true);
+  } finally { await f.cleanup(); }
 });

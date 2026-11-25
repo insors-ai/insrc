@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a58444cc-14bb-4e0c-808a-49c7958ae23c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-25T16:36:51.242Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Close supervisor signal and retained-service reporting gaps",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#290",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fdacfe1c954891f88692770a9e3d2662f42bf0e27e66456e2f5435c62c1a4a06",
+        "at": "2026-11-25T16:36:51.242Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T16:36:51.249Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Close supervisor signal and retained-service reporting gaps",
+    "summary": "Make finite signal drain, production worker launch and retained Ollama facts truthful across failures and process death without terminating services or controlling the host daemon.",
+    "size": "M",
+    "order": 14,
+    "acceptanceChecks": [
+      "Route EOF/SIGINT/SIGHUP/SIGTERM into cooperative finite abort/drain with bounded completion and diagnostic output. Process-death tests exercise preparation and handoff, including SIGKILL, without relying on cooperative handlers to prove hard-death closure.",
+      "Durable service admission/launch/outcome remains separate from finite handoff markers. A stale marker does not suppress valid retained facts or truthful availability. Health never proves ownership; ambiguous launch forbids duplicate spawn and service/payload removal.",
+      "Make pre/post-admission entrypoint regular-file/nlink/header checks identical. Known pre-spawn failures (including log creation/validation) record bound not-started outcome and bounded diagnostic file; unknown launches never get fabricated exit receipts.",
+      "Exercise production detached launchWorker and valid --ollama-service-worker dispatch with actual argv/relative path boundaries. Test supervisor death with service possibly alive and preserve admitted service. Use isolated owned test actors and positive closure evidence.",
+      "Seed harmless credentials/NODE_OPTIONS in parent environment before spawn and restore afterward; child allowlist must strip them. Cancellation/failure after admission explicitly says Ollama may remain.",
+      "Use min(overall, readiness) deadline and distinguish owner loss, abort, overall timeout and startup failure. Task-local service/terminal/worker tests pass without host daemon/Ollama changes."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "cancellation-and-eof-block-later-publication-or-service-admission"
+      },
+      {
+        "level": "integration",
+        "name": "service-admission-is-durable-and-distinct-from-finite-preparation-drain"
+      },
+      {
+        "level": "integration",
+        "name": "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener"
+      },
+      {
+        "level": "integration",
+        "name": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions"
+      },
+      {
+        "level": "integration",
+        "name": "sighup-sigterm-and-sigkill-at-preparation-and-handoff-preserve-correct-evidence"
+      },
+      {
+        "level": "integration",
+        "name": "supervisor-log-validation-and-pre-spawn-failures-have-bounded-not-started-diagnostics"
+      },
+      {
+        "level": "integration",
+        "name": "production-worker-dispatch-argv-path-and-sanitized-environment-with-seeded-sentinels"
+      },
+      {
+        "level": "integration",
+        "name": "supervisor-death-does-not-imply-retained-service-death-or-authorize-replay"
+      },
+      {
+        "level": "integration",
+        "name": "retained-service-cancellation-is-explicit-and-total-deadline-bounds-readiness"
+      }
+    ],
+    "planTaskId": "t14"
+  },
+  "citations": []
+}

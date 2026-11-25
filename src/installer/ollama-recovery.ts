@@ -101,6 +101,9 @@ export async function cleanupOllamaInstallAttempt(location: InstallationLocation
     if (names.length > 1024) throw dependencyUncertain('Recovery record inventory exceeds bound');
     const temporary = ollamaTemporaryRecordName(nonce);
     const tempItems = new Set(names.filter(name => temporary.test(name)));
+    if ([...tempItems].some(name => name.includes('.handoff-')) && (attempt.schemaVersion !== 2 || attempt.lockProtocol !== 'in-process-native-v1')) {
+      throw dependencyUncertain('Legacy finite handoff temporary files lack qualified death proof');
+    }
     // Persist intent BEFORE unlink, so a crash in the unlink/completion gap
     // can later reconcile absence and still write the per-item completion.
     for (const name of names) if (new RegExp(`^${nonce}\\.retry-temp-[a-f0-9]{64}\\.json$`).test(name)) {
@@ -126,6 +129,19 @@ export async function cleanupOllamaInstallAttempt(location: InstallationLocation
       }
       await ensureOllamaRecord(location, handle, intentFile.replace(/\.json$/, '.done.json'),
         { schemaVersion: 1, identitySha256, fileRelativePath, removed: true }); current();
+    }
+    // The same anchored, non-inherited lock spans every finite handoff. Only
+    // explicit Retry may close hard-dead handoffs; retained services are never
+    // terminated, removed, or inferred dead from this finite actor's closure.
+    for (const name of await readdir(directory)) {
+      current();
+      const match = new RegExp(`^${nonce}\\.handoff-([a-f0-9]{32})\\.json$`).exec(name);
+      if (!match) continue;
+      const file = join(directory, name), expected = { schemaVersion: 1, identitySha256, nonce: match[1], actor: 'finite-service-handoff' };
+      if (canonicalJson(await read(location, file)) !== canonicalJson(expected)) throw dependencyUncertain('Finite handoff admission differs during Retry');
+      const closed = closurePath(file);
+      if (!existsSync(closed) && (attempt.schemaVersion !== 2 || attempt.lockProtocol !== 'in-process-native-v1')) throw dependencyUncertain('Legacy handoff has no qualified death proof');
+      await ensureOllamaRecord(location, handle, closed, { ...expected, closed: true }); current();
     }
     await ensureOllamaRecord(location, handle, record.replace(/\.json$/, '.retry-done.json'),
       { schemaVersion: 1, identitySha256, stageRemoved: true, temporaryRecordsRemoved: true }); current();

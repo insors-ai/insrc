@@ -20,6 +20,9 @@ export interface OllamaServiceFact {
   schemaVersion: 1; admissionSha256: string; state: 'launch-admitted' | 'spawned' | 'not-started' | 'closed' | 'ready' | 'unverified';
   endpointOwnership: 'unproven'; code?: number | null | undefined; signal?: string | null | undefined;
 }
+export interface OllamaServiceDiagnostic {
+  schemaVersion: 1; admissionSha256: string; stage: 'pre-spawn' | 'supervisor'; code: string; message: string;
+}
 export const SERVICE_FRAME_LIMIT = 1024 * 1024;
 const ajv = new Ajv({ strict: true, coerceTypes: false, useDefaults: false, removeAdditional: false });
 const admissionSchema = object({ schemaVersion: { const: 1 }, kind: { const: 'user-session-ollama' }, identitySha256: hash, policySha256: hash,
@@ -30,10 +33,12 @@ const admissionValidator = ajv.compile<OllamaServiceAdmission>(admissionSchema);
 const factValidator = ajv.compile<OllamaServiceFact>(object({ schemaVersion: { const: 1 }, admissionSha256: hash,
   state: { enum: ['launch-admitted', 'spawned', 'not-started', 'closed', 'ready', 'unverified'] }, endpointOwnership: { const: 'unproven' },
   code: { type: ['integer', 'null'] }, signal: { type: ['string', 'null'], maxLength: 32 } }, ['schemaVersion', 'admissionSha256', 'state', 'endpointOwnership']));
+const diagnosticValidator = ajv.compile<OllamaServiceDiagnostic>(object({ schemaVersion: { const: 1 }, admissionSha256: hash,
+  stage: { enum: ['pre-spawn', 'supervisor'] }, code: { type: 'string', minLength: 1, maxLength: 128 }, message: { type: 'string', minLength: 1, maxLength: 2048 } }));
 export function servicePaths(record: string) {
   const base = record.replace(/\.json$/, '');
   return { admission: `${base}.service.json`, frame: `${base}.service-input.json`, lock: `${base}.service.lock`,
-    launch: `${base}.service-launch.json`, running: `${base}.service-running.json`, exit: `${base}.service-exit.json`, result: `${base}.service-result.json`, logError: `${base}.service-log-error.json` };
+    launch: `${base}.service-launch.json`, running: `${base}.service-running.json`, exit: `${base}.service-exit.json`, result: `${base}.service-result.json`, logError: `${base}.service-log-error.json`, diagnostic: `${base}.service-diagnostic.json` };
 }
 export function serviceAdmission(attempt: OllamaAttempt, inventorySha256: string, nonce: string): OllamaServiceAdmission {
   return parseDevRecord(admissionValidator, { schemaVersion: 1, kind: 'user-session-ollama', identitySha256: digest(canonicalJson(attempt.identity)),
@@ -51,6 +56,16 @@ export function serviceFact(admission: OllamaServiceAdmission, state: OllamaServ
 export function parseServiceFact(admission: OllamaServiceAdmission, input: unknown): OllamaServiceFact {
   const fact = parseDevRecord(factValidator, input);
   if (fact.admissionSha256 !== digest(canonicalJson(admission))) throw dependencyUncertain('Retained service fact binding differs'); return fact;
+}
+export function serviceDiagnostic(admission: OllamaServiceAdmission, stage: OllamaServiceDiagnostic['stage'], error: unknown): OllamaServiceDiagnostic {
+  const code = (error as { code?: unknown } | undefined)?.code;
+  return parseDevRecord(diagnosticValidator, { schemaVersion: 1, admissionSha256: digest(canonicalJson(admission)), stage,
+    code: typeof code === 'string' && /^[A-Za-z0-9._-]{1,128}$/.test(code) ? code : 'service-supervisor-failed',
+    message: (error instanceof Error ? error.message : 'Service supervisor failed').replace(/[\x00-\x1f\x7f]/g, ' ').slice(0, 2048) || 'Service supervisor failed' });
+}
+export function parseServiceDiagnostic(admission: OllamaServiceAdmission, input: unknown): OllamaServiceDiagnostic {
+  const value = parseDevRecord(diagnosticValidator, input);
+  if (value.admissionSha256 !== digest(canonicalJson(admission))) throw dependencyUncertain('Supervisor diagnostic belongs to another admission'); return value;
 }
 export function serviceJson(bytes: Buffer): unknown {
   try { const value = new TextDecoder('utf-8', { fatal: true }).decode(bytes), parsed: unknown = JSON.parse(value);

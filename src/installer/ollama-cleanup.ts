@@ -31,7 +31,7 @@ export function ollamaCloseUncertain(error: unknown): boolean {
 export const disposedPath = (file: string) => file.replace(/\.json$/, '.disposed.json');
 export const cleanupPath = (file: string) => file.replace(/\.json$/, '.cleanup.json');
 export function ollamaTemporaryRecordName(nonce: string): RegExp {
-  return new RegExp(`^${nonce}(?:\\.(?:closed|cleanup|disposed|retry|retry-done|retry-temp-[a-f0-9]{64}(?:\\.done)?))?\\.json\\.[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}\\.tmp$`);
+  return new RegExp(`^${nonce}(?:\\.(?:closed|cleanup|disposed|retry|retry-done|retry-temp-[a-f0-9]{64}(?:\\.done)?|handoff-[a-f0-9]{32}(?:\\.closed)?))?\\.json\\.[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}\\.tmp$`);
 }
 export function ollamaRetryPlan(attempt: OllamaAttempt, proof: 'positive-finite-closure' | 'qualified-in-process-native-v1') {
   const id = attempt.identity, nonce = basename(id.recordRelativePath, '.json');

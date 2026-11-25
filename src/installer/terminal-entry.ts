@@ -13,6 +13,7 @@ import { DevWorkerInput, executeDevWorker } from './dev-worker.js';
 import { createDevPreparationWork, verifyDevPayload } from './dev-payload.js';
 import { join } from 'node:path';
 import { runTerminalInstall } from './terminal-install.js';
+import { terminalAbort } from './terminal-abort.js';
 import { InstallerManager } from './manager.js';
 import { executeOllamaServiceWorker } from './ollama-service-worker.js';
 import { launchInstalledTui, selectInstalledTui } from './installed-launcher.js';
@@ -68,13 +69,14 @@ export async function terminalMain(args = process.argv.slice(2)): Promise<void> 
     const exit = await launchInstalledTui(selected); process.exitCode = exit.code ?? 1; return;
   }
   const terminal = createInterface({ input: process.stdin, output: process.stdout, terminal: true });
-  let closing = false;
-  const abort = new AbortController(); terminal.on('close', () => { if (!closing) abort.abort(); }); terminal.on('SIGINT', () => { abort.abort(); terminal.close(); });
-  const result = await runTerminalInstall({ location, target, peers, operationId, signal: abort.signal, ui: {
-    streams: process, ask: question => terminal.question(question, { signal: abort.signal }),
-    write: message => { process.stdout.write(message); }, close: () => { closing = true; terminal.close(); },
-  } });
-  process.exitCode = result.code;
+  const abort = terminalAbort(terminal, message => { process.stdout.write(message); });
+  try {
+    const result = await runTerminalInstall({ location, target, peers, operationId, signal: abort.signal, ui: {
+      streams: process, ask: question => terminal.question(question, { signal: abort.signal }),
+      write: message => { process.stdout.write(message); }, close: () => abort.close(),
+    } });
+    process.exitCode = result.code;
+  } finally { abort.dispose(); }
 }
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   terminalMain().catch(error => { process.stderr.write(`${error instanceof InstallerError ? error.code : 'install-failed'}: ${error instanceof Error ? error.message : 'Installation failed'}\n`); process.exitCode = 1; });

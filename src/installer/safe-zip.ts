@@ -10,6 +10,7 @@ import { InstallerError } from './contracts.js';
 import { assertRelativeFile } from './location.js';
 import { BUNDLE_LIMITS, digest, parseInventory } from './release-descriptor.js';
 import type { PayloadInventory, ReleaseDescriptor } from './release-descriptor.js';
+import { closeOwnedFile } from './owned-file.js';
 export type ExtractionLimits = typeof BUNDLE_LIMITS extends infer T ? { [K in keyof T]: number } : never;
 const unsafe = (message: string): InstallerError => new InstallerError('archive-unsafe', message);
 export async function readBoundedFile(path: string, limit: number): Promise<Buffer> {
@@ -21,7 +22,7 @@ export async function readBoundedFile(path: string, limit: number): Promise<Buff
     const bytes = Buffer.alloc(stat.size + 1); let count = 0;
     while (count < bytes.length) { const result = await file.read(bytes, count, bytes.length - count, null); if (!result.bytesRead) break; count += result.bytesRead; }
     if (count > stat.size) throw unsafe('Record grew during read'); return bytes.subarray(0, count);
-  } finally { await file.close(); }
+  } finally { await closeOwnedFile(file); }
 }
 export async function extractSafeZip(archive: string, destination: string, descriptor: ReleaseDescriptor, options: { signal?: AbortSignal | undefined; limits?: Partial<ExtractionLimits> | undefined } = {}): Promise<PayloadInventory> {
   const limits = { ...BUNDLE_LIMITS, ...options.limits };

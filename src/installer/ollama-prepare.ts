@@ -1,0 +1,250 @@
+/** One consented, finite private preparation; service admission is separate. */
+import { existsSync, lstatSync } from 'node:fs';
+import { lstat, readdir, rm } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { InstallerError } from './contracts.js';
+import type { InstallationLocation } from './contracts.js';
+import type { DependencyOperationContext } from './peer-contracts.js';
+import type { DependencyInspection } from './dependencies.js';
+import { requireDependencyOperation } from './dependency-context.js';
+import { canonicalJson, digest } from './release-descriptor.js';
+import type { InventoryFile } from './release-descriptor.js';
+import { controlBinding } from './native.js';
+import { downloadBoundedAsset } from './download.js';
+import type { DownloadTransport } from './download.js';
+import { flushFile, flushParents, flushDirectoryTree } from './durability.js';
+import { extractOllamaArchive } from './ollama-archive.js';
+import { privateOllamaDirectory, verifyOllamaTree } from './ollama-layout.js';
+import { dependencyAttemptIdentity, ollamaPolicySha256, parseOllamaPolicy, OLLAMA_LIMITS } from './ollama-policy.js';
+import type { DependencyAttemptIdentity, OllamaOffer, OllamaPolicy } from './ollama-policy.js';
+import { closurePath, DEPENDENCY_INVENTORY_LIMIT, dependencyPath, dependencyUncertain, ensureDependencyDirectory,
+  parseBoundOllamaAttempt, parseOllamaAttempt, parseOllamaClosure, parseOllamaInventory, parseOllamaReceipt, readDependencyRecord, writeDependencyRecord } from './ollama-records.js';
+import type { OllamaAttempt, OllamaClosure, OllamaReceipt } from './ollama-records.js';
+
+export const OLLAMA_PREPARATION_MS = 20 * 60 * 1000, OLLAMA_CLEANUP_MS = 5000;
+export interface PreparedOllama {
+  directory: string; identity: DependencyAttemptIdentity; policy: OllamaPolicy; offer: OllamaOffer; inventorySha256: string; files: InventoryFile[];
+}
+export interface OllamaPrepareOptions {
+  /** Internal read-only production inspection, never a wire-selected callback. */
+  recheck(signal: AbortSignal): Promise<DependencyInspection>;
+  transport?: DownloadTransport | undefined;
+  /** Narrow deterministic fault/deadline seams; production uses the defaults. */
+  prepareMs?: number | undefined; cleanupMs?: number | undefined;
+  flushFile?: ((file: string) => void) | undefined;
+  beforeFiniteClose?: (() => Promise<void>) | undefined;
+  publish?: ((handle: object, from: string, to: string) => void) | undefined;
+}
+function json(bytes: Buffer): unknown {
+  try { const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes), value: unknown = JSON.parse(text);
+    if (canonicalJson(value) !== text) throw new Error('Noncanonical dependency evidence'); return value;
+  } catch (cause) { throw dependencyUncertain('Malformed dependency evidence', cause); }
+}
+const disposedPath = (file: string) => file.replace(/\.json$/, '.disposed.json');
+const cleanupPath = (file: string) => file.replace(/\.json$/, '.cleanup.json');
+async function within<T>(promise: Promise<T>, ms: number): Promise<{ value: T } | undefined> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try { return await Promise.race([promise.then(value => ({ value })), new Promise<undefined>(resolve => { timer = setTimeout(() => resolve(undefined), ms); })]); }
+  finally { if (timer) clearTimeout(timer); }
+}
+async function untilAbort<T>(promise: Promise<T>, signal: AbortSignal): Promise<{ value: T } | undefined> {
+  let cancel: (() => void) | undefined;
+  try { return await Promise.race([promise.then(value => ({ value })), new Promise<undefined>(resolve => { cancel = () => resolve(undefined); signal.addEventListener('abort', cancel, { once: true }); if (signal.aborted) cancel(); })]); }
+  finally { if (cancel) signal.removeEventListener('abort', cancel); }
+}
+
+/** Read-only positive closure census. A free lock, PID or age grants nothing. */
+export async function closedOllamaAttempts(location: InstallationLocation): Promise<OllamaAttempt[]> {
+  try {
+  const root = dependencyPath(location, 'deps/ollama/.attempts');
+  if (existsSync(root)) await privateOllamaDirectory(root);
+  const operations = existsSync(root) ? await readdir(root) : [], result: OllamaAttempt[] = [];
+  if (operations.length > 128) throw dependencyUncertain('Dependency operation evidence exceeds bound');
+  for (const operation of operations) {
+    const directory = join(root, operation); await privateOllamaDirectory(directory);
+    const files = await readdir(directory);
+    if (files.length > 1024) throw dependencyUncertain('Dependency attempt evidence exceeds bound');
+    for (const name of files) {
+      if (!/^[A-Za-z0-9_-]{32,128}\.json$/.test(name)) {
+        if (/^[A-Za-z0-9_-]{32,128}\.json\.lock$/.test(name)) {
+          const info = lstatSync(join(directory, name)); if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1
+            || (process.platform !== 'win32' && (info.uid !== process.getuid?.() || (info.mode & 0o077)))) throw dependencyUncertain('Unsafe dependency attempt lock'); continue;
+        }
+        if (!/^[A-Za-z0-9_-]{32,128}\.(?:closed|cleanup|disposed|published|service|service-result)\.json$/.test(name)) throw dependencyUncertain('Unrecognized dependency attempt evidence');
+        continue;
+      }
+      if (result.length >= 128) throw dependencyUncertain('Dependency attempt history exceeds bound');
+      const file = join(directory, name), attempt = parseBoundOllamaAttempt(location, json(await readDependencyRecord(location, file)));
+      if (dependencyPath(location, attempt.identity.recordRelativePath) !== file) throw dependencyUncertain('Dependency evidence path binding differs');
+      parseOllamaClosure(attempt.identity, json(await readDependencyRecord(location, closurePath(file))));
+      const cleanup = json(await readDependencyRecord(location, cleanupPath(file)));
+      if (canonicalJson(cleanup) !== canonicalJson({ schemaVersion: 1, identitySha256: digest(canonicalJson(attempt.identity)), purpose: 'private-stage-disposal' })) throw dependencyUncertain('Dependency cleanup admission differs');
+      const disposed = json(await readDependencyRecord(location, disposedPath(file)));
+      if (canonicalJson(disposed) !== canonicalJson({ schemaVersion: 1, identitySha256: digest(canonicalJson(attempt.identity)), closed: true, stageRemoved: true })) throw dependencyUncertain('Dependency disposal closure is unconfirmed');
+      result.push(attempt);
+    }
+  }
+  const staging = dependencyPath(location, 'deps/ollama/.staging');
+  if (existsSync(staging)) {
+    await privateOllamaDirectory(staging); const operations = await readdir(staging);
+    if (operations.length > 128) throw dependencyUncertain('Excessive retained dependency staging');
+    for (const operation of operations) {
+      const path = join(staging, operation); await privateOllamaDirectory(path);
+      // Every fully disposed attempt must be absent. An unrecorded retained
+      // stage is equally uncertain, irrespective of its age or a free lock.
+      if ((await readdir(path)).length) throw dependencyUncertain('Retained dependency stage lacks confirmed disposal');
+    }
+  }
+  return result;
+  } catch (cause) { throw dependencyUncertain('Dependency finite/disposal evidence cannot establish closure', cause); }
+}
+
+export async function verifyPreparedOllama(location: InstallationLocation, policyInput: OllamaPolicy,
+  directory: string, signal?: AbortSignal): Promise<{ files: InventoryFile[]; inventorySha256: string }> {
+  const policy = parseOllamaPolicy(policyInput);
+  const raw = await readDependencyRecord(location, join(directory, 'inventory.json'), DEPENDENCY_INVENTORY_LIMIT);
+  signal?.throwIfAborted(); const inventory = parseOllamaInventory(json(raw)), inventorySha256 = digest(raw);
+  if (raw.toString('utf8') !== canonicalJson(inventory)) throw dependencyUncertain('Dependency inventory is not canonical');
+  const receipt = parseOllamaReceipt(json(await readDependencyRecord(location, join(directory, '.ollama-receipt.json'))));
+  const expected: OllamaReceipt = { schemaVersion: 1, installationId: location.installationId, policySha256: ollamaPolicySha256(policy), assetSha256: policy.asset.sha256,
+    version: policy.version, target: policy.target, inventorySha256 };
+  if (canonicalJson(receipt) !== canonicalJson(expected)) throw dependencyUncertain('Dependency payload receipt differs');
+  await verifyOllamaTree(directory, inventory.files, policy, signal, { records: true }); return { files: inventory.files, inventorySha256 };
+}
+
+/** Exact offer is re-observed before any mutation and immediately before publish.
+ * Only this private namespace is writable; no release/controller is supplied. */
+export async function prepareOllama(location: InstallationLocation, policyInput: OllamaPolicy, offerInput: OllamaOffer,
+  contextInput: DependencyOperationContext, options: OllamaPrepareOptions): Promise<PreparedOllama> {
+  const context = requireDependencyOperation(location, contextInput), policy = parseOllamaPolicy(policyInput);
+  const offer = structuredClone(offerInput), identity = dependencyAttemptIdentity(location, policy, offer, context);
+  if (policy.target.os !== process.platform || policy.target.arch !== process.arch) throw new InstallerError('runtime-invalid', 'Dependency preparation requires its native private target runtime');
+  const prepareMs = options.prepareMs ?? OLLAMA_PREPARATION_MS, cleanupMs = options.cleanupMs ?? OLLAMA_CLEANUP_MS;
+  if (!Number.isInteger(prepareMs) || prepareMs < 1 || prepareMs > OLLAMA_PREPARATION_MS || !Number.isInteger(cleanupMs) || cleanupMs < 1 || cleanupMs > OLLAMA_CLEANUP_MS) throw dependencyUncertain('Invalid dependency work budget');
+  const endsAt = performance.now() + prepareMs;
+  const deadline = new AbortController(), timer = setTimeout(() => deadline.abort(), prepareMs);
+  const ownerWatch = setInterval(() => { try { context.assertCurrent(); } catch { deadline.abort(); } }, 100); ownerWatch.unref();
+  const signal = AbortSignal.any([deadline.signal, ...(context.signal ? [context.signal] : [])]);
+  const current = () => { context.assertCurrent(); if (performance.now() >= endsAt) deadline.abort(); if (signal.aborted) throw new InstallerError('cancelled', deadline.signal.aborted ? 'Dependency preparation deadline/owner check ended' : 'Dependency preparation cancelled'); };
+  const record = dependencyPath(location, identity.recordRelativePath), stage = dependencyPath(location, identity.stageRelativePath), payload = join(stage, 'payload');
+  const directory = dependencyPath(location, identity.payloadRelativePath);
+  let handle: object | undefined, keepHandle = false, published = false, uncertainPublication = false, admitted = false;
+  let closed: OllamaClosure | undefined;
+  const certificate = (outcome: OllamaClosure['outcome'], inventorySha256?: string): OllamaClosure => ({ schemaVersion: 1, identitySha256: digest(canonicalJson(identity)), closed: true, outcome, ...(inventorySha256 ? { inventorySha256 } : {}) });
+  const assertConsent = async () => {
+    current(); const observed = await untilAbort(options.recheck(signal), signal); current();
+    if (!observed) throw new InstallerError('cancelled', 'Dependency consent recheck cancelled'); const check = observed.value;
+    if (!check.report.runtimeReady || !check.offer || canonicalJson(check.offer) !== canonicalJson(offer) || check.endpoint !== policy.endpoint) throw new InstallerError('dependency-offer-stale', 'The exact dependency offer or local state changed; request consent again');
+  };
+  const cleanup = async () => {
+    const cleanupEndsAt = performance.now() + cleanupMs;
+    if (!closed || !handle) throw dependencyUncertain('Dependency cleanup lacks positive finite closure');
+    writeDependencyRecord(location, handle, cleanupPath(record), { schemaVersion: 1, identitySha256: closed.identitySha256, purpose: 'private-stage-disposal' });
+    const removal = (async () => {
+    if (existsSync(stage)) {
+      await privateOllamaDirectory(stage); // Only a derived, still-private stage.
+      let count = 0;
+      const inspect = async (path: string, depth = 0): Promise<void> => {
+        if (depth > 65) throw dependencyUncertain('Private dependency cleanup depth exceeds bound');
+        for (const name of await readdir(path)) {
+          if (++count > policy.limits.files * 2 + 8) throw dependencyUncertain('Private dependency cleanup count exceeds bound');
+          const file = join(path, name), info = await lstat(file);
+          if (info.isSymbolicLink() || (!info.isDirectory() && !info.isFile()) || (info.isFile() && info.nlink !== 1)
+            || (process.platform === 'win32' && !controlBinding().safePath(file, info.isDirectory(), info.isDirectory()))) throw dependencyUncertain('Private dependency cleanup tree is uncertain');
+          if (info.isDirectory()) await inspect(file, depth + 1);
+        }
+      };
+      await inspect(stage);
+    }
+      await rm(stage, { recursive: true, force: true }); flushParents(dirname(stage), location.home);
+      writeDependencyRecord(location, handle!, disposedPath(record), { schemaVersion: 1, identitySha256: closed!.identitySha256, closed: true, stageRemoved: true });
+    })();
+    let result: Awaited<ReturnType<typeof within<void>>>;
+    try { result = await within(removal, Math.max(1, cleanupEndsAt - performance.now())); } catch (cause) { throw dependencyUncertain('Dependency cleanup closure is unconfirmed', cause); }
+    if (!result) {
+      keepHandle = true; void removal.catch(() => {}).finally(() => controlBinding().close(handle!));
+      throw dependencyUncertain('Dependency cleanup exceeded its closure budget; evidence retained');
+    }
+    if (performance.now() > cleanupEndsAt) throw dependencyUncertain('Dependency cleanup completed after its budget; inspect its recorded closure');
+  };
+  try {
+    current(); const prior = await untilAbort(closedOllamaAttempts(location), signal); current();
+    if (existsSync(directory)) {
+      const existing = await verifyPreparedOllama(location, policy, directory, signal), check = await options.recheck(signal); current();
+      let matching = false;
+      for (const attempt of prior?.value ?? []) {
+        if (attempt.identity.offerId !== identity.offerId || attempt.identity.policySha256 !== identity.policySha256) continue;
+        const file = dependencyPath(location, attempt.identity.recordRelativePath);
+        const closure = parseOllamaClosure(attempt.identity, json(await readDependencyRecord(location, closurePath(file)))); current();
+        if (closure.outcome === 'prepared' && closure.inventorySha256 === existing.inventorySha256) matching = true;
+      }
+      if (!matching) throw dependencyUncertain('Existing dependency inventory lacks matching positive preparation evidence');
+      if (!check.report.runtimeReady || !check.policy || ollamaPolicySha256(check.policy) !== offer.policySha256 || check.endpoint !== offer.endpoint
+        || (check.report.ollama !== 'ready' && check.executable !== join(directory, policy.layout.executable))) throw new InstallerError('dependency-offer-stale', 'Existing payload or local endpoint differs');
+      return { directory, policy, offer, identity, ...existing };
+    }
+    await assertConsent();
+    ensureDependencyDirectory(location, 'deps/ollama', current);
+    ensureDependencyDirectory(location, `deps/ollama/.attempts/${identity.operationId}`, current);
+    ensureDependencyDirectory(location, `deps/ollama/.staging/${identity.operationId}`, current);
+    current(); handle = controlBinding().acquire(`${record}.lock`);
+    if (existsSync(record) || existsSync(stage)) throw dependencyUncertain('Dependency attempt already exists; reconcile instead of replaying');
+    const attempt: OllamaAttempt = { schemaVersion: 1, identity, absence: offer.absence, actor: 'in-process-preparation', externalActors: 0 };
+    parseOllamaAttempt(location, policy, attempt); writeDependencyRecord(location, handle, record, attempt); admitted = true;
+    ensureDependencyDirectory(location, identity.stageRelativePath, current);
+    ensureDependencyDirectory(location, `${identity.stageRelativePath}/payload`, current);
+    const work = async () => {
+      current(); context.progress('dependency-download', `Downloading exact Ollama ${policy.version} payload`);
+      await downloadBoundedAsset(policy.asset, join(stage, 'payload.download'), OLLAMA_LIMITS.compressed, signal, options.transport); current();
+      context.progress('dependency-extract', 'Validating bounded private Ollama payload');
+      const files = await extractOllamaArchive(join(stage, 'payload.download'), payload, policy, signal); current();
+      const inventory = { schemaVersion: 1 as const, files }, encoded = canonicalJson(inventory), inventorySha256 = digest(encoded);
+      parseOllamaInventory(inventory);
+      writeDependencyRecord(location, handle!, join(payload, 'inventory.json'), inventory, DEPENDENCY_INVENTORY_LIMIT);
+      const receipt: OllamaReceipt = { schemaVersion: 1, installationId: location.installationId, policySha256: offer.policySha256,
+        assetSha256: policy.asset.sha256, version: policy.version, target: policy.target, inventorySha256 };
+      current(); writeDependencyRecord(location, handle!, join(payload, '.ollama-receipt.json'), receipt);
+      for (const file of files) { current(); (options.flushFile ?? flushFile)(join(payload, file.path)); }
+      current(); (options.flushFile ?? flushFile)(join(payload, 'inventory.json')); (options.flushFile ?? flushFile)(join(payload, '.ollama-receipt.json'));
+      await flushDirectoryTree(payload, signal); current(); await verifyPreparedOllama(location, policy, payload, signal); current();
+      if (options.beforeFiniteClose) await options.beforeFiniteClose(); current(); return { files, inventorySha256 };
+    };
+    const finite = work().then(value => ({ value }), error => ({ error }));
+    let settled = await untilAbort(finite, signal);
+    if (!settled) settled = await within(finite, cleanupMs);
+    if (!settled) {
+      keepHandle = true;
+      void finite.then(result => {
+        if ('error' in result && (result.error as { code?: string } | undefined)?.code === 'resource-close-uncertain') return;
+        writeDependencyRecord(location, handle!, closurePath(record), certificate('cancelled'));
+      }).catch(() => {}).finally(() => controlBinding().close(handle!));
+      throw dependencyUncertain('Admitted dependency preparation closure is unconfirmed; retain stage and block retry');
+    }
+    const outcome = settled.value;
+    if ('error' in outcome && (outcome.error as { code?: string } | undefined)?.code === 'resource-close-uncertain') throw dependencyUncertain('A dependency resource did not positively close; retain evidence', outcome.error);
+    closed = 'value' in outcome ? certificate('prepared', outcome.value.inventorySha256) : certificate(signal.aborted ? 'cancelled' : 'failed');
+    writeDependencyRecord(location, handle, closurePath(record), closed);
+    if ('error' in outcome) { await cleanup(); throw outcome.error; }
+    try {
+      ensureDependencyDirectory(location, identity.payloadRelativePath.split('/').slice(0, -1).join('/'), current);
+      context.progress('dependency-publish', 'Publishing verified immutable private Ollama payload');
+      await assertConsent();
+      current(); if (existsSync(directory)) throw new InstallerError('dependency-offer-stale', 'Private payload destination is no longer absent');
+      current(); uncertainPublication = true;
+      try { (options.publish ?? ((owner, from, to) => controlBinding().publishDirectory(owner, from, to)))(handle, payload, directory); }
+      catch (cause) { if ((cause as NodeJS.ErrnoException).code === 'candidate-exists') { uncertainPublication = false; throw new InstallerError('dependency-offer-stale', 'Private dependency destination changed before exclusive publication', { cause }); } throw cause; }
+      published = true; flushParents(directory, location.home); flushParents(dirname(payload), location.home); uncertainPublication = false;
+      current(); await verifyPreparedOllama(location, policy, directory, signal); current();
+    } catch (cause) {
+      if (uncertainPublication) throw dependencyUncertain('Dependency publication/durability is uncertain; retain evidence for reconciliation', cause);
+      await cleanup(); throw cause;
+    }
+    await cleanup(); current();
+    return { directory, policy, offer, identity, files: outcome.value.files, inventorySha256: outcome.value.inventorySha256 };
+  } catch (cause) {
+    if ((cause as { code?: string } | undefined)?.code === 'resource-close-uncertain') throw dependencyUncertain('Dependency resource closure is unconfirmed; retain evidence', cause);
+    if (admitted && !closed && !keepHandle) throw dependencyUncertain('Dependency admission has no positive closure; retain its evidence', cause);
+    if (cause instanceof InstallerError) throw cause;
+    throw new InstallerError(published ? 'dependency-uncertain' : signal.aborted ? 'cancelled' : 'dependency-prepare-failed', 'Private dependency preparation did not complete', { cause });
+  } finally { clearTimeout(timer); clearInterval(ownerWatch); deadline.abort(); if (handle && !keepHandle) controlBinding().close(handle); }
+}

@@ -140,10 +140,15 @@ export function dependencyAttemptIdentity(location: InstallationLocation, policy
   const operation = requireDependencyOperation(location, context), policy = parseOllamaPolicy(policyInput);
   const expected = createOllamaOffer(location, policy, offer.absence);
   if (!expected || canonicalJson(expected) !== canonicalJson(offer)) throw new InstallerError('dependency-offer-stale', 'Dependency offer differs from its policy/installation');
-  const stageRelativePath = `deps/ollama/.staging/${operation.operationId}/${operation.attemptNonce}`;
-  const recordRelativePath = `deps/ollama/.attempts/${operation.operationId}/${operation.attemptNonce}.json`;
-  assertRelativeFile(stageRelativePath); assertRelativeFile(recordRelativePath);
   return freeze({ schemaVersion: 1, installationId: location.installationId, operationId: operation.operationId,
     attemptNonce: operation.attemptNonce, offerId: offer.id, policySha256: offer.policySha256,
-    payloadRelativePath: ollamaPayloadRelativePath(policy), stageRelativePath, recordRelativePath });
+    payloadRelativePath: ollamaPayloadRelativePath(policy), ...dependencyAttemptPaths(operation.operationId, operation.attemptNonce) });
+}
+/** Read-only reconciliation derives paths without minting a manager capability. */
+export function dependencyAttemptPaths(operationId: string, attemptNonce: string) {
+  assertToken(operationId);
+  if (!/^[A-Za-z0-9_-]{32,128}$/.test(attemptNonce)) throw new InstallerError('dependency-context-invalid', 'Invalid dependency attempt nonce');
+  const stageRelativePath = `deps/ollama/.staging/${operationId}/${attemptNonce}`;
+  const recordRelativePath = `deps/ollama/.attempts/${operationId}/${attemptNonce}.json`;
+  assertRelativeFile(stageRelativePath); assertRelativeFile(recordRelativePath); return { stageRelativePath, recordRelativePath };
 }

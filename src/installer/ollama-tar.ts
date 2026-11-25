@@ -10,6 +10,7 @@ import type { InventoryFile } from './release-descriptor.js';
 import { parseOllamaPolicy } from './ollama-policy.js';
 import type { OllamaPolicy } from './ollama-policy.js';
 import { decodeOllamaZstd } from './ollama-zstd.js';
+import { closeOwnedFile } from './owned-file.js';
 
 export interface OllamaArchiveAlias { path: string; target: string; kind: 'file' | 'symlink' }
 export interface OllamaExtracted { files: InventoryFile[]; aliases: OllamaArchiveAlias[] }
@@ -175,7 +176,7 @@ export async function extractOllamaTarZstd(archive: string, destination: string,
             while (written < chunk.length) { signal?.throwIfAborted(); const result = await current.write(chunk, written, chunk.length - written); if (!result.bytesWritten) throw unsafe('Short tar payload write'); written += result.bytesWritten; }
             remaining -= chunk.length;
           }
-          await current.close(); current = undefined; files.push({ path: name, bytes: size, mode: mode & 0o111 ? 0o755 : 0o644, sha256: hash.digest('hex') });
+          await closeOwnedFile(current); current = undefined; files.push({ path: name, bytes: size, mode: mode & 0o111 ? 0o755 : 0o644, sha256: hash.digest('hex') });
         }
       }
       const padding = (512 - size % 512) % 512;
@@ -187,5 +188,5 @@ export async function extractOllamaTarZstd(archive: string, destination: string,
     if (signal?.aborted) throw new InstallerError('cancelled', 'Ollama extraction cancelled', { cause });
     if (cause instanceof InstallerError) throw cause;
     throw new InstallerError('archive-unsafe', 'Malformed bounded tar payload', { cause });
-  } finally { try { await current?.close(); } finally { try { if (reader && !reader.ended) await reader.iterator.return?.(); } finally { await source.close(); } } }
+  } finally { try { await closeOwnedFile(current); } finally { try { if (reader && !reader.ended) await reader.iterator.return?.(); } finally { await closeOwnedFile(source); } } }
 }

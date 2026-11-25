@@ -1,4 +1,4 @@
-/** Read-only dependency adapter. Mutating preparation is supplied by later S3 tasks. */
+/** Read-only inspection and exact-consented private dependency preparation. */
 import { constants } from 'node:fs';
 import type { Stats } from 'node:fs';
 import { access, lstat, open, readdir, realpath, stat } from 'node:fs/promises';
@@ -15,6 +15,8 @@ import { runtimeArchive, runtimePolicy } from './runtime-policy.js';
 import { createOllamaOffer, ollamaEndpoint, ollamaPayloadRelativePath, parseOllamaPolicy } from './ollama-policy.js';
 import type { OllamaOffer, OllamaPolicy } from './ollama-policy.js';
 import { requireDependencyOperation } from './dependency-context.js';
+import { prepareOllama } from './ollama-prepare.js';
+import type { OllamaPrepareOptions } from './ollama-prepare.js';
 
 export interface DependencyReadIo {
   realpath(file: string): Promise<string>;
@@ -54,6 +56,7 @@ export interface DependencyOptions {
   /** Narrow trusted test seams; not selected from requests or environment. */
   io?: DependencyReadIo | undefined;
   budgetMs?: number | undefined;
+  preparation?: Omit<OllamaPrepareOptions, 'recheck'> | undefined;
 }
 export interface DependencyInspection {
   report: DependencyReport; endpoint?: string | undefined; executable?: string | undefined;
@@ -323,7 +326,8 @@ export async function inspectDependencies(location: InstallationLocation, target
   } finally { if (aborted) signal.removeEventListener('abort', aborted); clearTimeout(timer); closed.abort(); }
 }
 
-/** Construction is pure. Only inspect/decline are available before the owning preparation tasks. */
+/** Construction is pure. Preparation alone truthfully reports a stopped binary;
+ * the owning service task supplies the separately consented retained handoff. */
 export function dependencyPort(targetInput: Target, locationInput: InstallationLocation, input: DependencyOptions): DependencyPort {
   const target = parseInstaller('target', targetInput), location = { ...locationInput, home: normalizeHome(locationInput.home, target.os) };
   const options = { ...input, environment: { ...(input.environment ?? process.env) }, policies: input.policies?.map(parseOllamaPolicy) };
@@ -334,11 +338,14 @@ export function dependencyPort(targetInput: Target, locationInput: InstallationL
     async inspect(requested, context) { check(requested); return (await inspectDependencies(location, target, options, context)).report; },
     async decide(requested, decision, context) {
       check(requested); const parsed = parseInstaller('dependencyDecision', decision);
-      if (parsed.choice === 'install') requireDependencyOperation(location, context);
+      const operation = parsed.choice === 'install' ? requireDependencyOperation(location, context) : undefined;
       const current = await inspectDependencies(location, target, options, context);
       if (current.offer?.id !== parsed.offerId) throw new InstallerError('dependency-offer-stale', 'Dependency consent differs from the current exact offer');
       if (parsed.choice === 'decline') return current.report;
-      throw new InstallerError('capability-unavailable', 'Ollama payload preparation requires the owning S3 preparation implementation');
+      if (!current.policy || !current.offer || !operation) throw new InstallerError('dependency-offer-stale', 'Qualified dependency preparation is unavailable');
+      await prepareOllama(location, current.policy, current.offer, operation, { ...options.preparation,
+        recheck: signal => inspectDependencies(location, target, options, { signal }) });
+      operation.assertCurrent(); return (await inspectDependencies(location, target, options, operation)).report;
     },
   };
 }

@@ -11,6 +11,7 @@ import type { OllamaPolicy } from './ollama-policy.js';
 import type { InventoryFile } from './release-descriptor.js';
 import type { OllamaExtracted } from './ollama-tar.js';
 import { controlBinding } from './native.js';
+import { closeOwnedFile } from './owned-file.js';
 
 export const archiveUnsafe = (message: string) => new InstallerError('archive-unsafe', message);
 const fold = (path: string) => path.normalize('NFC').toLowerCase();
@@ -70,7 +71,7 @@ async function hashFile(root: string, file: InventoryFile, signal?: AbortSignal)
       bytes += result.bytesRead; if (bytes > file.bytes) throw archiveUnsafe('Dependency file grew'); hash.update(buffer.subarray(0, result.bytesRead));
     }
     if (bytes !== file.bytes || hash.digest('hex') !== file.sha256) throw archiveUnsafe('Dependency file digest differs');
-  } finally { await handle.close(); }
+  } finally { await closeOwnedFile(handle); }
 }
 /** Complete tree verification under S3 limits, also used by immutable retries. */
 export async function verifyOllamaTree(root: string, files: InventoryFile[], policyInput: OllamaPolicy,
@@ -155,7 +156,7 @@ async function verifyOllamaExecutable(path: string, policy: OllamaPolicy, librar
       }
     }
     if (!valid) throw archiveUnsafe(`Dependency ${library ? 'library' : 'executable'} does not match target binary layout`);
-  } finally { await file.close(); }
+  } finally { await closeOwnedFile(file); }
 }
 
 /** Resolve a bounded virtual file tree first, then copy regular bytes only. */
@@ -232,7 +233,7 @@ export async function materializeOllamaAliases(root: string, input: OllamaExtrac
         let offset = 0; while (offset < part.bytesRead) { signal?.throwIfAborted(); const result = await output.write(buffer, offset, part.bytesRead - offset); if (!result.bytesWritten) throw archiveUnsafe('Short alias write'); offset += result.bytesWritten; }
       }
       if (total !== value.record.bytes) throw archiveUnsafe('Alias source truncated');
-    } finally { try { await output?.close(); } finally { await source.close(); } }
+    } finally { try { await closeOwnedFile(output); } finally { await closeOwnedFile(source); } }
   }
   const result = [...files.values()].map(value => value.record).sort((a, b) => a.path.localeCompare(b.path));
   await verifyOllamaTree(root, result, policy, signal); return result;

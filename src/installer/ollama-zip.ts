@@ -14,6 +14,7 @@ import type { OllamaPolicy } from './ollama-policy.js';
 import type { OllamaExtracted } from './ollama-tar.js';
 import { archiveUnsafe, OllamaArchivePaths, ollamaMemberPath, ollamaParents, privateOllamaDirectory } from './ollama-layout.js';
 import { controlBinding } from './native.js';
+import { closeOwnedFile } from './owned-file.js';
 
 function extraFields(bytes: Buffer): Map<number, Buffer> {
   const fields = new Map<number, Buffer>(); let offset = 0;
@@ -134,7 +135,7 @@ export async function extractOllamaZip(archive: string, destination: string, pol
     }
     if (bytes !== policy.asset.bytes || hash.digest('hex') !== policy.asset.sha256) throw archiveUnsafe('Dependency ZIP identity differs');
     envelope = await directoryEnvelope(source, info.size, policy.limits.files, signal);
-  } finally { await source.close(); }
+  } finally { await closeOwnedFile(source); }
   const zip = await new Promise<ZipFile>((resolve, reject) => yauzl.open(archive, { lazyEntries: true, strictFileNames: true, validateEntrySizes: true, autoClose: false }, (error, value) => error ? reject(error) : resolve(value!)));
   const closed = new Promise<void>(resolve => zip.once('close', resolve));
   let failure: unknown, pending: { resolve(entry: Entry | null): void; reject(error: unknown): void } | undefined, input: Readable | undefined;
@@ -223,7 +224,7 @@ export async function extractOllamaZip(archive: string, destination: string, pol
             result.files.push({ path: item.name, bytes, sha256, mode: item.mode });
           } else verified.set(item.name, sha256);
         }
-      } finally { try { await output?.close(); } finally { input.destroy(); rawInput.destroy(); await piped; input = undefined; } }
+      } finally { try { await closeOwnedFile(output); } finally { input.destroy(); rawInput.destroy(); await piped; input = undefined; } }
     }
     }
     return result;

@@ -62,7 +62,7 @@ async function untilAbort<T>(promise: Promise<T>, signal: AbortSignal): Promise<
 }
 
 /** Read-only positive closure census. A free lock, PID or age grants nothing. */
-export async function closedOllamaAttempts(location: InstallationLocation, signal?: AbortSignal): Promise<OllamaAttempt[]> {
+export async function closedOllamaAttempts(location: InstallationLocation, signal?: AbortSignal, currentHandoff?: string): Promise<OllamaAttempt[]> {
   try {
   signal?.throwIfAborted();
   const root = dependencyPath(location, 'deps/ollama/.attempts');
@@ -77,6 +77,17 @@ export async function closedOllamaAttempts(location: InstallationLocation, signa
     for (const name of files) {
       signal?.throwIfAborted();
       if (!/^[A-Za-z0-9_-]{32,128}\.json$/.test(name)) {
+        const handoff = /^([A-Za-z0-9_-]{32,128})\.handoff-([a-f0-9]{32})(\.closed)?\.json$/.exec(name);
+        if (handoff) {
+          const file = join(directory, `${handoff[1]}.json`), attempt = parseBoundOllamaAttempt(location, json(await readDependencyRecord(location, file)));
+          if (dependencyPath(location, attempt.identity.recordRelativePath) !== file) throw dependencyUncertain('Finite handoff attempt path differs');
+          const admissionFile = join(directory, `${handoff[1]}.handoff-${handoff[2]}.json`);
+          const expected = { schemaVersion: 1, identitySha256: digest(canonicalJson(attempt.identity)), nonce: handoff[2], actor: 'finite-service-handoff' };
+          if (canonicalJson(json(await readDependencyRecord(location, admissionFile))) !== canonicalJson(expected)) throw dependencyUncertain('Finite handoff admission differs');
+          if (admissionFile !== currentHandoff
+            && canonicalJson(json(await readDependencyRecord(location, closurePath(admissionFile)))) !== canonicalJson({ ...expected, closed: true })) throw dependencyUncertain('Finite service handoff lacks positive closure');
+          continue;
+        }
         if (/^[A-Za-z0-9_-]{32,128}\.(?:json|service)\.lock$/.test(name)) {
           const info = lstatSync(join(directory, name)); if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1
             || (process.platform !== 'win32' && (info.uid !== process.getuid?.() || (info.mode & 0o077)))) throw dependencyUncertain('Unsafe dependency attempt lock'); continue;

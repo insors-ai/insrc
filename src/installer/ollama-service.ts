@@ -9,7 +9,7 @@ import type { DependencyOperationContext } from './peer-contracts.js';
 import type { DependencyInspection } from './dependencies.js';
 import { requireDependencyOperation } from './dependency-context.js';
 import { parseInstaller } from './schemas.js';
-import { canonicalJson } from './release-descriptor.js';
+import { canonicalJson, digest } from './release-descriptor.js';
 import { privateRuntimeEnvironment } from './runtime-policy.js';
 import { dependencyAttemptIdentity, ollamaPolicySha256 } from './ollama-policy.js';
 import type { OllamaPolicy } from './ollama-policy.js';
@@ -118,9 +118,16 @@ export async function startOllamaService(location: InstallationLocation, prepare
   const probe = async () => { const bound = setTimeout(() => deadline.abort(), 3000);
     try { return await options.recheck(signal); } finally { clearTimeout(bound); } };
   const record = dependencyPath(location, identity.recordRelativePath), paths = servicePaths(record);
+  const handoffNonce = randomBytes(16).toString('hex'), handoffFile = record.replace(/\.json$/, `.handoff-${handoffNonce}.json`);
+  const handoff = { schemaVersion: 1, identitySha256: digest(canonicalJson(identity)), nonce: handoffNonce, actor: 'finite-service-handoff' };
+  let handoffAdmitted = false, keepHandle = false;
   let admitted = false, handle: object | undefined, last: DependencyReport | undefined, frame: OllamaServiceFrame | undefined;
   const work = async () => {
-    current(); await closedOllamaAttempts(location, signal); current();
+    current();
+    try { handle = controlBinding().acquire(`${record}.lock`); }
+    catch (cause) { throw dependencyUncertain('Another finite service handoff has not closed', cause); }
+    current(); writeDependencyRecord(location, handle, handoffFile, handoff); handoffAdmitted = true;
+    current(); await closedOllamaAttempts(location, signal, handoffFile); current();
     const attempt = parseOllamaAttempt(location, prepared.policy, serviceJson(await readDependencyRecord(location, record))); current();
     const verified = await verifyPreparedOllama(location, prepared.policy, prepared.directory, signal); current();
     if (verified.inventorySha256 !== prepared.inventorySha256) throw dependencyUncertain('Service payload changed after preparation');
@@ -138,7 +145,6 @@ export async function startOllamaService(location: InstallationLocation, prepare
       const file = lstatSync(options.workerEntrypoint);
       if (!isAbsolute(options.workerEntrypoint) || !file.isFile() || file.isSymbolicLink()) throw dependencyUncertain('Qualified service supervisor is unavailable');
     }
-    handle = controlBinding().acquire(`${record}.lock`);
     ensureDependencyDirectory(location, prepared.policy.modelsRelativePath, current);
     ensureDependencyDirectory(location, `${dirname(prepared.policy.modelsRelativePath).replaceAll('\\', '/')}/tmp`, current);
     ensureDependencyDirectory(location, prepared.policy.logsRelativePath, current);
@@ -168,7 +174,16 @@ export async function startOllamaService(location: InstallationLocation, prepare
       try { result = await Promise.race([pending, new Promise<undefined>(resolve => { drainTimer = setTimeout(() => resolve(undefined), cleanupMs); })]); }
       finally { if (drainTimer) clearTimeout(drainTimer); }
     }
-    if (!result) throw dependencyUncertain('Service handoff finite probes did not positively close; accepted service intent is retained');
+    if (!result) {
+      keepHandle = true;
+      void pending.then(closed => {
+        if ('error' in closed && (closed.error as { code?: string } | undefined)?.code === 'resource-close-uncertain') return;
+        if (handoffAdmitted && handle) writeDependencyRecord(location, handle, closurePath(handoffFile), { ...handoff, closed: true });
+      }).catch(() => {}).finally(() => { if (handle) controlBinding().close(handle); });
+      throw dependencyUncertain('Service handoff finite probes did not positively close; retain handoff evidence and any accepted service intent');
+    }
+    if (!('error' in result && (result.error as { code?: string } | undefined)?.code === 'resource-close-uncertain') && handoffAdmitted && handle)
+      writeDependencyRecord(location, handle, closurePath(handoffFile), { ...handoff, closed: true });
     if ('error' in result) {
       if ((result.error as { code?: string } | undefined)?.code === 'resource-close-uncertain') throw dependencyUncertain('Service handoff resource closure is unconfirmed', result.error);
       if (signal.aborted && admitted && frame && handle && !existsSync(paths.result)) writeDependencyRecord(location, handle, paths.result, serviceFact(frame.admission, 'unverified'));
@@ -178,5 +193,5 @@ export async function startOllamaService(location: InstallationLocation, prepare
       throw result.error;
     }
     return parseInstaller('dependencyReport', result.value);
-  } finally { signal.removeEventListener('abort', abort); clearTimeout(timer); clearInterval(owner); deadline.abort(); if (handle) controlBinding().close(handle); }
+  } finally { signal.removeEventListener('abort', abort); clearTimeout(timer); clearInterval(owner); deadline.abort(); if (handle && !keepHandle) controlBinding().close(handle); }
 }

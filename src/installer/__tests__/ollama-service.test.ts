@@ -9,7 +9,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { ollamaFixture } from './_ollama-fixture.js';
 import { prepareOllama, closedOllamaAttempts } from '../ollama-prepare.js';
 import { startOllamaService } from '../ollama-service.js';
-import { servicePaths } from '../ollama-service-records.js';
+import { serviceAdmission, servicePaths } from '../ollama-service-records.js';
 import { dependencyPort } from '../dependencies.js';
 import { canonicalJson, digest } from '../release-descriptor.js';
 import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
@@ -54,8 +54,8 @@ async function fixture() {
     if (children.some(child => child.exitCode === null && child.signalCode === null)) { mkdirSync(state, { recursive: true }); writeFileSync(join(state, 'stop'), 'close owned fixture'); }
     for (const child of children) if (child.exitCode === null && child.signalCode === null) await once(child, 'close');
   };
-  const inspectFresh = async () => {
-    const child = spawnFixture(process.execPath, [inspector, paths.frame], { stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child);
+  const inspectFresh = async (framePath = paths.frame) => {
+    const child = spawnFixture(process.execPath, [inspector, framePath], { stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child);
     let result = '', diagnostic = ''; child.stdout!.on('data', (data: Buffer) => { result += data.toString(); assert.ok(result.length <= 16384); }); child.stderr!.on('data', (data: Buffer) => { diagnostic = (diagnostic + data.toString()).slice(-8192); });
     assert.deepEqual(await once(child, 'close'), [0, null], diagnostic); return JSON.parse(result) as { ollama: string; recommendations: string[] };
   };
@@ -163,6 +163,27 @@ serviceTest('service-admission-cancellation-retains-only-explicitly-accepted-ser
     await assert.rejects(startOllamaService(before.location, before.prepared, owner, before.service), { code: 'cancelled' });
     assert.equal(before.count(), 0); assert.equal(existsSync(before.paths.admission), false);
   } finally { await before.cleanup(); }
+  const stalled = await fixture(); let release: (() => void) | undefined;
+  try {
+    const cancel = new AbortController(), owner = stalled.context('a'.repeat(64), cancel.signal);
+    const check = await stalled.recheck(new AbortController().signal);
+    let entered = false;
+    const pending = startOllamaService(stalled.location, stalled.prepared, owner, { ...stalled.service, cleanupMs: 20,
+      recheck: async () => { entered = true; await new Promise<void>(resolve => { release = resolve; }); return check; } });
+    const rejected = assert.rejects(pending, { code: 'dependency-uncertain' });
+    await until(() => entered); cancel.abort(); await rejected;
+    assert.equal(existsSync(stalled.paths.admission), false); assert.equal(stalled.count(), 0);
+    const input = join(stalled.root, 'inspection-input.json'), attempt = JSON.parse(readFileSync(stalled.record, 'utf8'));
+    writeFileSync(input, canonicalJson({ schemaVersion: 1, location: stalled.location, policy: stalled.prepared.policy, attempt,
+      admission: serviceAdmission(attempt, stalled.prepared.inventorySha256, 'e'.repeat(64)) }));
+    assert.equal((await stalled.inspectFresh(input)).ollama, 'unavailable', 'a new process cannot bypass the unclosed finite handoff');
+    await assert.rejects(startOllamaService(stalled.location, stalled.prepared, stalled.context(), stalled.service), { code: 'dependency-uncertain' });
+    assert.equal(stalled.count(), 0);
+    release();
+    const directory = dirname(stalled.record);
+    await until(() => readdirSync(directory).some(name => /\.handoff-[a-f0-9]{32}\.closed\.json$/.test(name)));
+    assert.equal((await stalled.inspectFresh(input)).ollama, 'installed-not-running', 'only positive late closure clears the finite-work block');
+  } finally { release?.(); await stalled.cleanup(); }
   const after = await fixture();
   try {
     const cancel = new AbortController();

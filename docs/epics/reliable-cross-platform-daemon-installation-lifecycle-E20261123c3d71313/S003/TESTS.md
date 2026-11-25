@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 99 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
+**Totals:** 114 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -626,3 +626,68 @@ Run at 2026-11-25T19:15:00.130Z on commit `be434767d`. Tests check: **passed**. 
 | `src/installer/__tests__/ollama-service.test.ts` | 0 | 10 | 35.7 s |  |
 | `src/installer/__tests__/ollama-signals.test.ts` | 0 | 1 | 7.1 s |  |
 | `src/installer/__tests__/terminal-abort.test.ts` | 0 | 2 | 0.5 s |  |
+
+## t15
+
+Run at 2026-11-25T19:41:56.944Z on commit `079a1f46f`. Tests check: **passed**. 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: hostile-archive-and-large-zstd-window-fail-before-unsafe-write-or-allocation**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | linux-zstd-large-window-truncation-and-output-bombs-refuse-before-unsafe-write | `src/installer/__tests__/ollama-tar.test.ts` |
+| pass | zstd-reserved-dictionary-size-skippable-and-dual-decoder-boundary-matrix | `src/installer/__tests__/ollama-archive-matrix.test.ts` |
+
+**integration: internal-archive-links-materialize-only-qualified-contained-files**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | internal-archive-links-materialize-only-qualified-contained-files | `src/installer/__tests__/ollama-archive.test.ts` |
+
+**integration: download-size-digest-layout-and-fsync-failures-never-report-ready**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | download-size-digest-layout-and-fsync-failures-never-report-ready | `src/installer/__tests__/ollama-prepare.test.ts` |
+
+**integration: archive-digest-mismatch-still-rejects-live-acquisition**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | archive-digest-mismatch-still-rejects-live-acquisition | `src/installer/__tests__/ollama-validation.test.ts` |
+
+**integration: zip-extraction-uses-verified-descriptor-across-path-swap-and-positive-close**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | zip-extraction-uses-verified-descriptor-across-path-swap-and-positive-close | `src/installer/__tests__/ollama-zip-boundaries.test.ts` |
+| pass | cancelled-zip-waits-for-pending-descriptor-read-before-positive-close | `src/installer/__tests__/ollama-zip-boundaries.test.ts` |
+| pass | zip-close-error-is-resource-uncertainty-and-never-false-completion | `src/installer/__tests__/ollama-zip-boundaries.test.ts` |
+| pass | abort-during-zip-close-cancels-after-positive-descriptor-release | `src/installer/__tests__/ollama-zip-boundaries.test.ts` |
+| pass | zip-cancellation-cannot-erase-unclosed-output-resource-evidence | `src/installer/__tests__/ollama-zip-boundaries.test.ts` |
+| pass | large-deflated-zip-consumes-coalesced-output-with-fixed-read-bounds | `src/installer/__tests__/ollama-zip-boundaries.test.ts` |
+
+**integration: hostile-tar-zstd-zip-boundary-matrix-rejects-before-unsafe-write**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | tar-gnu-numeric-pax-padding-terminator-and-reserved-name-boundary-matrix | `src/installer/__tests__/ollama-archive-matrix.test.ts` |
+| pass | zstd-reserved-dictionary-size-skippable-and-dual-decoder-boundary-matrix | `src/installer/__tests__/ollama-archive-matrix.test.ts` |
+| pass | zip64-descriptor-comment-unicode-gap-and-overlap-boundary-matrix | `src/installer/__tests__/ollama-archive-matrix.test.ts` |
+
+**integration: alias-copy-cancellation-closes-before-owned-cleanup**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | alias-copy-cancellation-closes-before-owned-cleanup | `src/installer/__tests__/ollama-archive-matrix.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/installer/__tests__/ollama-archive-matrix.test.ts` | 0 | 4 | 9.9 s |  |
+| `src/installer/__tests__/ollama-archive.test.ts` | 0 | 3 | 7.2 s |  |
+| `src/installer/__tests__/ollama-prepare.test.ts` | 0 | 5 | 14.1 s |  |
+| `src/installer/__tests__/ollama-tar.test.ts` | 0 | 3 | 7.6 s |  |
+| `src/installer/__tests__/ollama-validation.test.ts` | 0 | 4 | 11.4 s |  |
+| `src/installer/__tests__/ollama-zip-boundaries.test.ts` | 0 | 6 | 14.6 s |  |

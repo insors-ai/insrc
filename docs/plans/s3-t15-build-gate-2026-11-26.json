@@ -1,0 +1,39 @@
+{
+  "next": "done",
+  "passed": true,
+  "verdict": {
+    "taskId": "t15",
+    "passed": true,
+    "checks": [
+      {
+        "check": "Hash/envelope validation and yauzl.fromFd extraction use the same open descriptor through actual ZIP close, with explicit positive close ownership and cancellation; no path reopen/swap window.",
+        "satisfied": true,
+        "evidence": "ollama-zip.ts hashes, validates the envelope and calls yauzl.fromFd using one fd. Failed initialization closes the caller-owned descriptor; successful extraction drains pending reads and awaits ZIP close. Tests prove same-size pathname replacement extracts original bytes, exactly one close produces EBADF, pending reads delay cancellation completion, and close faults retain resource uncertainty."
+      },
+      {
+        "check": "Add hostile tar GNU L/K/base256-negative/PAX-size/padding/endmarker/link-data/setuid/nested-inventory vectors and zstd reserved/dictionary/content-size/skippable/dual-decoder mismatch vectors. Assert intended validation codes/paths instead of incidental EEXIST.",
+        "satisfied": true,
+        "evidence": "ollama-archive-matrix.test.ts contains all listed vectors, including GNU traversal, negative base256, invalid/oversized PAX sizes, malformed padding/terminators and link data. Positive cases verify setuid normalization and nested inventory isolation. Zstd cases mutate the specified boundaries and inject decoder divergence. Rejections assert exact codes and matching validation messages."
+      },
+      {
+        "check": "Cover ZIP64 descriptors, EOCD signature in comment, Unicode extra names, gap/overlap and verified-fd path swap, plus cancellation during alias copy. Preserve byte/file/memory/path bounds and contained publication.",
+        "satisfied": true,
+        "evidence": "ZIP tests exercise genuine 64-bit descriptors and corruption, ambiguous/unambiguous EOCD comments, Unicode name agreement/disagreement, gaps, overlap and verified-fd replacement. Alias cancellation occurs after an actual copy write and verifies both handles close, disposal completes and offer.destination remains absent. Existing directory, metadata, byte, file, path and checksum controls remain; reads are bounded to 64 KiB."
+      },
+      {
+        "check": "Check real destination/stage/publication paths and safe event-based synchronization/margins in archive tests. No fixture can pass a no-publication assertion against an unused path.",
+        "satisfied": true,
+        "evidence": "Unused releases-absence assertions were removed. GNU traversal checks the actual payload parent; prepare tests inspect offer.destination, receipt and executable inode. Cancellation uses completed-write/positive-close barriers, and queued-read cancellation uses an explicit callback barrier. Composed prepare tests verify real publication and stage disposal."
+      },
+      {
+        "check": "Run only archive/tar/ZIP/prepare surrounding selectors and relevant packaging/scanner checks for changed ownership paths; defer combined installer suite to final task.",
+        "satisfied": true,
+        "evidence": "Daemon results pass all six focused files and typecheck; inspected required test bodies exercise their named behavior. Recorded run 3609bb10-51da-4507-84f2-6ab27a433137 additionally shows passing forbidden-spawn scanner and production-peers packaging checks, with complete coverage and confirmed closure. Its selectedFiles contains only the eight surrounding files."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "Both t15 commits are confined to ZIP ownership, surrounding archive tests, fixtures and task evidence; all acceptance checks are supported by repository code and recorded passing results.",
+    "testsPassed": true,
+    "typecheckClean": true
+  }
+}

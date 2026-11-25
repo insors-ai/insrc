@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 35,
-        "contentHash": "02670a77a1a4ab2f5c834d52b2a2b64f958b3a826d6533047afa31ac40df85a5",
-        "at": "2026-11-25T19:15:00.152Z",
+        "number": 37,
+        "contentHash": "01d33a7b532757d2ab9c9e55861b67e89184c1d9ce3a3e0232cb428f59f45ef1",
+        "at": "2026-11-25T19:41:56.979Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "c3d71313f34bce71",
     "storyId": "s3",
     "createdAt": "2026-11-25T02:01:50.011Z",
-    "updatedAt": "2026-11-25T19:15:00.130Z",
+    "updatedAt": "2026-11-25T19:41:56.944Z",
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
-    "revision": 35
+    "revision": 37
   },
   "body": {
     "tasks": [
@@ -2268,6 +2268,301 @@
               },
               {
                 "title": "normal-terminal-close-removes-install-handlers-before-tui-handoff",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t15",
+        "commit": "079a1f46f",
+        "ranAt": "2026-11-25T19:41:56.944Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "hostile-archive-and-large-zstd-window-fail-before-unsafe-write-or-allocation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-tar.test.ts",
+                "title": "linux-zstd-large-window-truncation-and-output-bombs-refuse-before-unsafe-write",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-archive-matrix.test.ts",
+                "title": "zstd-reserved-dictionary-size-skippable-and-dual-decoder-boundary-matrix",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "internal-archive-links-materialize-only-qualified-contained-files",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-archive.test.ts",
+                "title": "internal-archive-links-materialize-only-qualified-contained-files",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "download-size-digest-layout-and-fsync-failures-never-report-ready",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-prepare.test.ts",
+                "title": "download-size-digest-layout-and-fsync-failures-never-report-ready",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "archive-digest-mismatch-still-rejects-live-acquisition",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-validation.test.ts",
+                "title": "archive-digest-mismatch-still-rejects-live-acquisition",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "zip-extraction-uses-verified-descriptor-across-path-swap-and-positive-close",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-zip-boundaries.test.ts",
+                "title": "zip-extraction-uses-verified-descriptor-across-path-swap-and-positive-close",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-zip-boundaries.test.ts",
+                "title": "cancelled-zip-waits-for-pending-descriptor-read-before-positive-close",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-zip-boundaries.test.ts",
+                "title": "zip-close-error-is-resource-uncertainty-and-never-false-completion",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-zip-boundaries.test.ts",
+                "title": "abort-during-zip-close-cancels-after-positive-descriptor-release",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-zip-boundaries.test.ts",
+                "title": "zip-cancellation-cannot-erase-unclosed-output-resource-evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-zip-boundaries.test.ts",
+                "title": "large-deflated-zip-consumes-coalesced-output-with-fixed-read-bounds",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "hostile-tar-zstd-zip-boundary-matrix-rejects-before-unsafe-write",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-archive-matrix.test.ts",
+                "title": "tar-gnu-numeric-pax-padding-terminator-and-reserved-name-boundary-matrix",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-archive-matrix.test.ts",
+                "title": "zstd-reserved-dictionary-size-skippable-and-dual-decoder-boundary-matrix",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-archive-matrix.test.ts",
+                "title": "zip64-descriptor-comment-unicode-gap-and-overlap-boundary-matrix",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "alias-copy-cancellation-closes-before-owned-cleanup",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-archive-matrix.test.ts",
+                "title": "alias-copy-cancellation-closes-before-owned-cleanup",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/ollama-archive-matrix.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9946,
+            "titles": [
+              {
+                "title": "tar-gnu-numeric-pax-padding-terminator-and-reserved-name-boundary-matrix",
+                "result": "pass"
+              },
+              {
+                "title": "zstd-reserved-dictionary-size-skippable-and-dual-decoder-boundary-matrix",
+                "result": "pass"
+              },
+              {
+                "title": "zip64-descriptor-comment-unicode-gap-and-overlap-boundary-matrix",
+                "result": "pass"
+              },
+              {
+                "title": "alias-copy-cancellation-closes-before-owned-cleanup",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-archive.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7233,
+            "titles": [
+              {
+                "title": "qualified-zip-app-layout-requires-correct-executable-and-library-closure",
+                "result": "pass"
+              },
+              {
+                "title": "internal-archive-links-materialize-only-qualified-contained-files",
+                "result": "pass"
+              },
+              {
+                "title": "zip-and-layout-escapes-collisions-and-abort-preserve-existing-bytes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-prepare.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 14135,
+            "titles": [
+              {
+                "title": "stale-forged-and-cross-home-offers-reject-before-mutation",
+                "result": "pass"
+              },
+              {
+                "title": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state",
+                "result": "pass"
+              },
+              {
+                "title": "download-size-digest-layout-and-fsync-failures-never-report-ready",
+                "result": "pass"
+              },
+              {
+                "title": "finite-actor-closure-uncertainty-blocks-retry-and-cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "private-preparation-cancellation-blocks-later-publication",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-tar.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7636,
+            "titles": [
+              {
+                "title": "linux-zstd-large-window-truncation-and-output-bombs-refuse-before-unsafe-write",
+                "result": "pass"
+              },
+              {
+                "title": "linux-tar-path-collision-device-and-link-escape-inputs-stay-contained",
+                "result": "pass"
+              },
+              {
+                "title": "stream-decoding-cancellation-yields-and-leaves-no-published-payload",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-validation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11398,
+            "titles": [
+              {
+                "title": "inspection-and-reconciliation-share-three-second-bound-without-payload-hashing",
+                "result": "pass"
+              },
+              {
+                "title": "same-size-installed-content-change-does-not-trigger-digest-reverification",
+                "result": "pass"
+              },
+              {
+                "title": "receipt-closure-and-layout-errors-block-reuse-without-content-rehash",
+                "result": "pass"
+              },
+              {
+                "title": "archive-digest-mismatch-still-rejects-live-acquisition",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-zip-boundaries.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 14587,
+            "titles": [
+              {
+                "title": "zip-extraction-uses-verified-descriptor-across-path-swap-and-positive-close",
+                "result": "pass"
+              },
+              {
+                "title": "cancelled-zip-waits-for-pending-descriptor-read-before-positive-close",
+                "result": "pass"
+              },
+              {
+                "title": "zip-close-error-is-resource-uncertainty-and-never-false-completion",
+                "result": "pass"
+              },
+              {
+                "title": "abort-during-zip-close-cancels-after-positive-descriptor-release",
+                "result": "pass"
+              },
+              {
+                "title": "zip-cancellation-cannot-erase-unclosed-output-resource-evidence",
+                "result": "pass"
+              },
+              {
+                "title": "large-deflated-zip-consumes-coalesced-output-with-fixed-read-bounds",
                 "result": "pass"
               }
             ],

@@ -24,3 +24,5 @@ No full backend or combined installer suite was run. No host daemon/Ollama chang
 The first tracked round passed tests/typecheck and the descriptor/archive checks, but identified two inaccurate path assertions. GNU traversal now checks the actual payload parent/escaped target. Prepared-payload conflict now asserts the actual offer.destination remains present, its CLI inode/tampered bytes and receipt remain unchanged, and transport calls remain zero with the intended archive-unsafe error. The unrelated home/releases absence check was removed.
 
 Focused matrix/prepare run `85a3e464-d774-4d4b-a4f0-db48ca35f14b`: 9/9 passed, zero failure/skip/cancel with confirmed owned-group closure. Tracked revalidation follows.
+
+The second registered gate returned passed=true against `079a1f46f`: all five acceptance checks, all seven mapped test subjects and typecheck passed. The compact verdict is `docs/plans/s3-t15-build-gate-2026-11-26.json`; the workflow BUILD/TESTS ledger records the authoritative result. T16–T18 and final story approval remain pending.

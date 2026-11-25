@@ -413,7 +413,13 @@ test('run with repoPath=B while the test harness\'s own ambient cwd is A: checkp
 		// runSecurityReview bound the wrong path, this would genuinely resolve
 		// to A (or throw with no match at all), not silently pass.
 		_setResolveForCwdForTests(async () => null);
-		_setRunSecurityCodePassForTests(async () => []);
+		// round 1 must produce a finding: reconcileRound short-circuits with NO
+		// resolveRepoRoot call at all when priorFindings is empty (reconciliation.ts),
+		// so an empty round 1 would leave reconciliation's own isolation unexercised.
+		// classify is overridden (only that, never resolveRepoRoot) purely to avoid
+		// a real LLM dispatch -- reconciliation's OWN resolveRepoRoot is left real.
+		_setReconciliationDepsForTests({ classify: async (_id, prior) => prior.map(() => 'still-open') });
+		_setRunSecurityCodePassForTests(async (_r, _t, _m, round) => round === 1 ? [finding('f-round1')] : []);
 		const identity = await realContentIdentity(repoB);
 		const report = await runInStepContext({ cwd: repoA }, () =>
 			runSecurityReview(repoB, targets, { reviewId: `r-${randomUUID()}`, modelSelection, advisoryEvidence: evidenceFor(identity), now: '2026-11-25T00:00:00.000Z', epicHash: '6666666666666666', storyId: 's3' }),

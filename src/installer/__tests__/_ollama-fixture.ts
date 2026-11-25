@@ -8,7 +8,7 @@ import { zstdCompressSync } from 'node:zlib';
 import { mkdtempSync, mkdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { tmpdir } from 'node:os';
-import { dependencyReadIo, inspectDependencies } from '../dependencies.js';
+import { dependencyReadIo, inspectDependencies, inspectDependenciesClosed } from '../dependencies.js';
 import type { DependencyOptions } from '../dependencies.js';
 import { createDependencyOperationContext } from '../dependency-context.js';
 import { digest } from '../release-descriptor.js';
@@ -59,7 +59,7 @@ export async function ollamaFixture() {
   let owned = true;
   const context = (nonce = 'a'.repeat(64), signal?: AbortSignal) => createDependencyOperationContext(location, target.os, { operationId: 'prepare-operation', attemptNonce: nonce, signal,
     assertCurrent() { if (!owned) throw new Error('fixture manager ownership lost'); }, progress() {} });
-  const recheck = (signal: AbortSignal) => inspectDependencies(location, target, options, { signal });
+  const recheck = (signal: AbortSignal) => inspectDependenciesClosed(location, target, options, { signal });
   const input = async () => { const result = await inspectDependencies(location, target, options); assert.ok(result.offer, JSON.stringify(result.report)); return { policy: result.policy!, offer: result.offer }; };
   return { root, home, bin, target, location, bytes, policy, options, server, endpoint, port, context, recheck, input,
     setPolicy(value: OllamaPolicy) { policy = qualifyFixturePolicy(value); options.policies = [policy]; },

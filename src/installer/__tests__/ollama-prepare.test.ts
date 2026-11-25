@@ -134,6 +134,30 @@ test('finite-actor-closure-uncertainty-blocks-retry-and-cleanup', async () => {
     release(); await closed; await new Promise<void>(resolve => setImmediate(resolve));
     await prepareOllama(f.location, policy, offer, f.context(), { recheck: f.recheck, transport: async () => { throw new Error('verified reuse cannot download'); } });
   } finally { cancel.abort(); release(); if (verificationStarted) await closed; await f.cleanup(); }
+  const production = await ollamaFixture(), probeCancel = new AbortController();
+  let releaseProbe!: () => void, probeFinished!: () => void, probeStarted = false;
+  const probeWait = new Promise<void>(resolve => { releaseProbe = resolve; }), probeClosed = new Promise<void>(resolve => { probeFinished = resolve; });
+  try {
+    const { policy, offer } = await production.input(), io = production.options.io!; let roots = 0, downloads = 0;
+    production.options.io = { ...io, async realpath(file) {
+      if (file === production.options.runtimeDirectory && ++roots === 3) {
+        probeStarted = true; probeCancel.abort();
+        try { await probeWait; return await io.realpath(file); } finally { probeFinished(); }
+      }
+      return io.realpath(file);
+    } };
+    const port = dependencyPort(production.target, production.location, { ...production.options, preparation: { cleanupMs: 40, prepareMs: 5000,
+      transport: async () => { downloads++; return production.transport(); } } });
+    const owner = production.context('a'.repeat(64), probeCancel.signal), id = dependencyAttemptIdentity(production.location, policy, offer, owner);
+    await assert.rejects(port.decide(production.location, { choice: 'install', offerId: offer.id }, owner), { code: 'dependency-uncertain' });
+    assert.equal(probeStarted, true); assert.equal(downloads, 1); assert.equal(existsSync(offer.destination), false);
+    const record = join(production.home, id.recordRelativePath);
+    assert.equal(JSON.parse(readFileSync(record.replace(/\.json$/, '.closed.json'), 'utf8')).outcome, 'prepared');
+    assert.equal(existsSync(record.replace(/\.json$/, '.cleanup.json')), false, 'an unclosed production probe cannot authorize cleanup');
+    assert.equal(existsSync(join(production.home, id.stageRelativePath)), true);
+    await assert.rejects(port.decide(production.location, { choice: 'install', offerId: offer.id }, production.context('b'.repeat(64))), { code: 'dependency-uncertain' });
+    assert.equal(downloads, 1); releaseProbe(); await probeClosed; await new Promise<void>(resolve => setImmediate(resolve));
+  } finally { probeCancel.abort(); releaseProbe(); if (probeStarted) await probeClosed; await production.cleanup(); }
 });
 
 test('private-preparation-cancellation-blocks-later-publication', async () => {

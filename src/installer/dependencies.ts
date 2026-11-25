@@ -17,6 +17,7 @@ import type { OllamaOffer, OllamaPolicy } from './ollama-policy.js';
 import { requireDependencyOperation } from './dependency-context.js';
 import { prepareOllama } from './ollama-prepare.js';
 import type { OllamaPrepareOptions } from './ollama-prepare.js';
+import { closeOwnedFile } from './owned-file.js';
 
 export interface DependencyReadIo {
   realpath(file: string): Promise<string>;
@@ -44,7 +45,7 @@ export const dependencyReadIo: DependencyReadIo = {
         chunks.push(buffer.subarray(0, bytesRead));
       }
       return Buffer.concat(chunks);
-    } finally { await handle.close(); }
+    } finally { await closeOwnedFile(handle); }
   },
 };
 export interface DependencyOptions {
@@ -68,6 +69,7 @@ const diagnostic = (error: unknown): string => {
   return typeof code === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(code) ? code : 'probe-failed';
 };
 const missing = (error: unknown) => (error as NodeJS.ErrnoException)?.code === 'ENOENT';
+const requireProbeClosure = (error: unknown): void => { if ((error as { code?: string } | undefined)?.code === 'resource-close-uncertain') throw error; };
 const isObject = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
 
 /** S1 supplies an already authenticated runtime root. Unlike the synchronous
@@ -109,27 +111,35 @@ export async function probeOllamaVersion(endpoint: string, signal: AbortSignal):
   for (const hostname of addresses) {
     signal.throwIfAborted();
     last = await new Promise<OllamaProbe>(resolve => {
+      let outcome: OllamaProbe | undefined, requestClosed = false, responseClosed = true;
+      const finish = (value?: OllamaProbe) => {
+        outcome ??= value;
+        if (requestClosed && responseClosed) resolve(outcome ?? { state: 'unavailable', diagnostic: 'version request closed before response completed' });
+      };
       const request = get({ hostname, port: url.port, path: '/api/version', method: 'GET', agent: false, signal,
         headers: { accept: 'application/json', 'user-agent': 'insrc-installer/1' } }, response => {
-        if (response.statusCode !== 200) { response.destroy(); resolve({ state: 'unavailable', diagnostic: `HTTP ${response.statusCode ?? 0}` }); return; }
+        responseClosed = false; response.once('close', () => { responseClosed = true; finish(); });
+        response.on('error', error => finish({ state: 'unavailable', diagnostic: diagnostic(error) }));
+        if (response.statusCode !== 200) { finish({ state: 'unavailable', diagnostic: `HTTP ${response.statusCode ?? 0}` }); response.destroy(); return; }
         let size = 0; const chunks: Buffer[] = [];
         response.on('data', (chunk: Buffer) => {
           size += chunk.length;
-          if (size > 16 * 1024) { response.destroy(); resolve({ state: 'unavailable', diagnostic: 'version response exceeds 16 KiB' }); }
+          if (size > 16 * 1024) { finish({ state: 'unavailable', diagnostic: 'version response exceeds 16 KiB' }); response.destroy(); }
           else chunks.push(chunk);
         });
-        response.on('error', error => resolve({ state: 'unavailable', diagnostic: diagnostic(error) }));
         response.on('end', () => {
           try {
             const value: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8'));
             if (!isObject(value) || typeof value['version'] !== 'string' || value['version'].length > 128
               || !/^\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?$/.test(value['version'])) throw new Error('invalid version');
-            resolve({ state: 'ready', version: value['version'] });
-          } catch { resolve({ state: 'unavailable', diagnostic: 'malformed Ollama version response' }); }
+            finish({ state: 'ready', version: value['version'] });
+          } catch { finish({ state: 'unavailable', diagnostic: 'malformed Ollama version response' }); }
         });
       });
-      request.on('error', error => resolve({ state: diagnostic(error) === 'ECONNREFUSED' ? 'refused' : 'unavailable', diagnostic: diagnostic(error) }));
+      request.on('error', error => finish({ state: diagnostic(error) === 'ECONNREFUSED' ? 'refused' : 'unavailable', diagnostic: diagnostic(error) }));
+      request.once('close', () => { requestClosed = true; finish(); });
     });
+    signal.throwIfAborted();
     if (last.state !== 'refused') return last;
   }
   return last;
@@ -243,6 +253,16 @@ async function privateOllamaCandidates(location: InstallationLocation, target: T
 
 export async function inspectDependencies(location: InstallationLocation, target: Target, options: DependencyOptions,
   context: DependencyProbeContext = {}): Promise<DependencyInspection> {
+  return inspectDependencyWork(location, target, options, context, false);
+}
+/** Mutation callers bound this promise and drain it. It never claims closure
+ * merely because the public three-second report has already settled. */
+export async function inspectDependenciesClosed(location: InstallationLocation, target: Target, options: DependencyOptions,
+  context: DependencyProbeContext = {}): Promise<DependencyInspection> {
+  return inspectDependencyWork(location, target, options, context, true);
+}
+async function inspectDependencyWork(location: InstallationLocation, target: Target, options: DependencyOptions,
+  context: DependencyProbeContext, waitForClosure: boolean): Promise<DependencyInspection> {
   assertToken(location.installationId); const home = normalizeHome(location.home, target.os);
   const budget = options.budgetMs ?? 3000;
   if (!Number.isInteger(budget) || budget < 1 || budget > 3000) throw new InstallerError('dependency-probe-failed', 'Invalid dependency inspection budget');
@@ -260,7 +280,7 @@ export async function inspectDependencies(location: InstallationLocation, target
   const work = async (): Promise<DependencyInspection> => {
     signal.throwIfAborted();
     try { await verifyProbeRuntime(options.runtimeDirectory, target, io, signal); signal.throwIfAborted(); report.runtimeReady = true; }
-    catch { signal.throwIfAborted(); report.blockers.push('Private Node runtime or target provenance is invalid; use the selected verified installer runtime.'); }
+    catch (error) { requireProbeClosure(error); signal.throwIfAborted(); report.blockers.push('Private Node runtime or target provenance is invalid; use the selected verified installer runtime.'); }
     const policies = options.policies ?? [];
     if (policies.length > 32) throw new InstallerError('dependency-policy-invalid', 'Dependency policy catalog exceeds bound');
     const matching = policies.map(parseOllamaPolicy).filter(p => canonicalJson(p.target) === canonicalJson(target));
@@ -268,7 +288,7 @@ export async function inspectDependencies(location: InstallationLocation, target
     const policy = matching[0];
     const availability = async (): Promise<{ endpoint?: string; service: OllamaProbe }> => {
       try { const endpoint = await configuredEndpoint(home, io, signal); return { endpoint, service: await probeOllamaVersion(endpoint, signal) }; }
-      catch (error) { signal.throwIfAborted(); return { service: { state: 'unavailable', diagnostic: `local configuration/probe failed (${diagnostic(error)})` } }; }
+      catch (error) { requireProbeClosure(error); signal.throwIfAborted(); return { service: { state: 'unavailable', diagnostic: `local configuration/probe failed (${diagnostic(error)})` } }; }
     };
     const executables = async () => {
       for (const name of ['claude', 'codex', 'vibe'] as const) {
@@ -276,7 +296,7 @@ export async function inspectDependencies(location: InstallationLocation, target
           const plan = executableCandidates(name, env, target.os, userHome), found = await lookup(plan.paths, io, signal, target.os);
           signal.throwIfAborted(); report.agents[name] = !!found.executable;
           if (!found.complete || plan.diagnostics.length) note(`${name} ${found.executable ? 'was detected, but some search candidates could not be inspected' : 'was not detected; search was incomplete'}.`);
-        } catch { signal.throwIfAborted(); note(`${name} lookup is incomplete; executable presence may be unknown.`); }
+        } catch (error) { requireProbeClosure(error); signal.throwIfAborted(); note(`${name} lookup is incomplete; executable presence may be unknown.`); }
       }
       try {
         const plan = executableCandidates('ollama', env, target.os, userHome);
@@ -284,10 +304,16 @@ export async function inspectDependencies(location: InstallationLocation, target
         if (policy) plan.paths.push(posixOrNative(home, `${ollamaPayloadRelativePath(policy)}/${policy.layout.executable}`));
         const found = await lookup([...new Set(plan.paths)], io, signal, target.os);
         return { ...found, complete: found.complete && (!plan.diagnostics.length || !!found.executable), searchSha256: digest(canonicalJson(plan.paths)) };
-      } catch { signal.throwIfAborted(); return { complete: false, executable: undefined, searchSha256: digest('incomplete') }; }
+      } catch (error) { requireProbeClosure(error); signal.throwIfAborted(); return { complete: false, executable: undefined, searchSha256: digest('incomplete') }; }
     };
     // Independent HTTP and filesystem probes only; no LLM/provider can be reached here.
-    const [{ endpoint, service }, binary] = await Promise.all([availability(), executables()]); signal.throwIfAborted();
+    const probes = await Promise.allSettled([availability(), executables()]);
+    for (const probe of probes) if (probe.status === 'rejected') requireProbeClosure(probe.reason);
+    signal.throwIfAborted();
+    const [availabilityResult, executableResult] = probes;
+    if (availabilityResult.status === 'rejected') throw availabilityResult.reason;
+    if (executableResult.status === 'rejected') throw executableResult.reason;
+    const { endpoint, service } = availabilityResult.value, binary = executableResult.value;
     if (service.state === 'ready') report.ollama = 'ready';
     else if (service.state === 'unavailable' || (!binary.complete && !binary.executable)) {
       report.ollama = 'unavailable'; report.blockers.push(`Ollama availability is uncertain: ${service.state === 'unavailable' ? service.diagnostic : 'executable lookup incomplete'}.`);
@@ -313,9 +339,11 @@ export async function inspectDependencies(location: InstallationLocation, target
     } else if (report.ollama === 'missing') note('Automatic user-level Ollama installation is not qualified for this exact target/configuration; install Ollama manually and retry.');
     return { report: finish(), endpoint, executable: binary.executable, policy, offer };
   };
+  const pendingWork = work(), closure = pendingWork.then(() => {}, error => { requireProbeClosure(error); });
+  void closure.catch(() => {});
   let aborted: (() => void) | undefined;
   try {
-    return await Promise.race([work(), new Promise<never>((_resolve, reject) => {
+    return await Promise.race([pendingWork, new Promise<never>((_resolve, reject) => {
       aborted = () => reject(signal.reason); signal.addEventListener('abort', aborted, { once: true }); if (signal.aborted) aborted();
     })]);
   } catch (error) {
@@ -323,7 +351,7 @@ export async function inspectDependencies(location: InstallationLocation, target
     report.ollama = 'unavailable'; report.ollamaInstallOffer = undefined;
     report.blockers.push(deadline.signal.aborted ? 'Dependency inspection exceeded its aggregate deadline; some presence checks may be incomplete.' : `Dependency inspection failed (${diagnostic(error)}); availability is unknown.`);
     return { report: finish() };
-  } finally { if (aborted) signal.removeEventListener('abort', aborted); clearTimeout(timer); closed.abort(); }
+  } finally { if (aborted) signal.removeEventListener('abort', aborted); clearTimeout(timer); closed.abort(); if (waitForClosure) await closure; }
 }
 
 /** Construction is pure. Preparation alone truthfully reports a stopped binary;
@@ -344,7 +372,7 @@ export function dependencyPort(targetInput: Target, locationInput: InstallationL
       if (parsed.choice === 'decline') return current.report;
       if (!current.policy || !current.offer || !operation) throw new InstallerError('dependency-offer-stale', 'Qualified dependency preparation is unavailable');
       await prepareOllama(location, current.policy, current.offer, operation, { ...options.preparation,
-        recheck: signal => inspectDependencies(location, target, options, { signal }) });
+        recheck: signal => inspectDependenciesClosed(location, target, options, { signal }) });
       operation.assertCurrent(); return (await inspectDependencies(location, target, options, operation)).report;
     },
   };

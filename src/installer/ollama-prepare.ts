@@ -29,7 +29,8 @@ export interface PreparedOllama {
   directory: string; identity: DependencyAttemptIdentity; policy: OllamaPolicy; offer: OllamaOffer; inventorySha256: string; files: InventoryFile[];
 }
 export interface OllamaPrepareOptions {
-  /** Internal read-only production inspection, never a wire-selected callback. */
+  /** Internal read-only inspection which settles only after probe closure
+   * (inspectDependenciesClosed), never a wire-selected callback. */
   recheck(signal: AbortSignal): Promise<DependencyInspection>;
   transport?: DownloadTransport | undefined;
   /** Narrow deterministic fault/deadline seams; production uses the defaults. */
@@ -155,8 +156,12 @@ export async function prepareOllama(location: InstallationLocation, policyInput:
   let handle: object | undefined, keepHandle = false, published = false, uncertainPublication = false, admitted = false;
   let closed: OllamaClosure | undefined;
   const certificate = (outcome: OllamaClosure['outcome'], inventorySha256?: string): OllamaClosure => ({ schemaVersion: 1, identitySha256: digest(canonicalJson(identity)), closed: true, outcome, ...(inventorySha256 ? { inventorySha256 } : {}) });
+  const closedProbe = async () => {
+    const probeDeadline = setTimeout(() => deadline.abort(), 3000);
+    try { return await options.recheck(signal); } finally { clearTimeout(probeDeadline); }
+  };
   const assertConsent = async () => {
-    const check = await boundedRead(() => options.recheck(signal));
+    const check = await boundedRead(closedProbe);
     if (!check.report.runtimeReady || !check.offer || canonicalJson(check.offer) !== canonicalJson(offer) || check.endpoint !== policy.endpoint) throw new InstallerError('dependency-offer-stale', 'The exact dependency offer or local state changed; request consent again');
   };
   const cleanup = async () => {
@@ -197,7 +202,7 @@ export async function prepareOllama(location: InstallationLocation, policyInput:
     if (existsSync(directory)) {
       return await boundedRead(async () => {
       const existing = await (options.verifyExisting ?? verifyPreparedOllama)(location, policy, directory, signal); current();
-      const check = await options.recheck(signal); current();
+      const check = await closedProbe(); current();
       let matching = false;
       for (const attempt of prior) {
         if (attempt.identity.offerId !== identity.offerId || attempt.identity.policySha256 !== identity.policySha256
@@ -268,6 +273,7 @@ export async function prepareOllama(location: InstallationLocation, policyInput:
       current();
     } catch (cause) {
       if (uncertainPublication) throw dependencyUncertain('Dependency publication/durability is uncertain; retain evidence for reconciliation', cause);
+      if (pendingReads.has(readKey)) throw dependencyUncertain('Dependency probe closure is unconfirmed; retain the private stage', cause);
       await cleanup(); throw cause;
     }
     await cleanup(); current();

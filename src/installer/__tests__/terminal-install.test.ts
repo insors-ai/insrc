@@ -11,6 +11,7 @@ import { runTerminalInstall } from '../terminal-install.js';
 import type { TerminalInstallOptions, TerminalUI } from '../terminal-install.js';
 import { publishInstalledLauncher, retryCommand } from '../installed-launcher.js';
 import { managerFixture } from './_manager-fixture.js';
+import { node22Fixture } from './_runtime-fixture.js';
 import type { DependencyReport, ManagerEvent } from '../contracts.js';
 
 function setup(fresh = true) {
@@ -60,8 +61,10 @@ test('terminal installer requires all TTY streams and absent dev adapter fails e
 test('ready commit and lock release precede same terminal installed TUI', { timeout: 45_000 }, async () => {
   const f = setup(), children: ChildProcess[] = [], terminal = ui(['', '', '', 'yes']);
   let daemon: ChildProcess | undefined;
+  let node: Awaited<ReturnType<typeof node22Fixture>> | undefined;
   try {
-    const runtime = join(f.next.directory, 'tools/node/bin/node'); mkdirSync(dirname(runtime), { recursive: true }); copyFileSync(process.execPath, runtime, constants.COPYFILE_FICLONE);
+    node = await node22Fixture();
+    const runtime = join(f.next.directory, 'tools/node/bin/node'); mkdirSync(dirname(runtime), { recursive: true }); copyFileSync(node.executable, runtime, constants.COPYFILE_FICLONE);
     const entry = join(f.next.directory, f.next.manifest.tuiEntry); mkdirSync(dirname(entry), { recursive: true });
     const paths = new URL('../../../out/shared/paths.js', import.meta.url).href;
     const storeModule = new URL('../../../out/installer/controller-store.js', import.meta.url).href;
@@ -82,7 +85,7 @@ test('ready commit and lock release precede same terminal installed TUI', { time
     const before = readFileSync(join(f.home, 'install/controller.json'), 'utf8');
     const duplicate = await runTerminalInstall(options(f, ui([]))); assert.equal(duplicate.kind, 'already-completed'); assert.equal(readFileSync(join(f.home, 'install/controller.json'), 'utf8'), before);
     const closed = once(daemon!, 'close'); daemon!.stdin!.end('close\n'); assert.deepEqual(await closed, [0, null]);
-  } finally { await stopOwnedChildren(children); f.cleanup(); }
+  } finally { await stopOwnedChildren(children); node?.cleanup(); f.cleanup(); }
 });
 
 test('cancel install failure and post install TUI error preserve correct outcome', async () => {

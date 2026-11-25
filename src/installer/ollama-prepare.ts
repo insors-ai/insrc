@@ -22,6 +22,9 @@ import { closurePath, DEPENDENCY_INVENTORY_LIMIT, dependencyPath, dependencyUnce
 import type { OllamaAttempt, OllamaClosure, OllamaReceipt } from './ollama-records.js';
 
 export const OLLAMA_PREPARATION_MS = 20 * 60 * 1000, OLLAMA_CLEANUP_MS = 5000;
+/** Read-only phases cannot continue into mutation after their caller returns.
+ * Keep an unclosed phase registered until its actual promise closes. */
+const pendingReads = new Map<string, Promise<unknown>>();
 export interface PreparedOllama {
   directory: string; identity: DependencyAttemptIdentity; policy: OllamaPolicy; offer: OllamaOffer; inventorySha256: string; files: InventoryFile[];
 }
@@ -33,7 +36,9 @@ export interface OllamaPrepareOptions {
   prepareMs?: number | undefined; cleanupMs?: number | undefined;
   flushFile?: ((file: string) => void) | undefined;
   beforeFiniteClose?: (() => Promise<void>) | undefined;
+  beforeStageDisposal?: (() => Promise<void>) | undefined;
   publish?: ((handle: object, from: string, to: string) => void) | undefined;
+  verifyExisting?: typeof verifyPreparedOllama | undefined;
 }
 function json(bytes: Buffer): unknown {
   try { const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes), value: unknown = JSON.parse(text);
@@ -43,6 +48,7 @@ function json(bytes: Buffer): unknown {
 const disposedPath = (file: string) => file.replace(/\.json$/, '.disposed.json');
 const cleanupPath = (file: string) => file.replace(/\.json$/, '.cleanup.json');
 async function within<T>(promise: Promise<T>, ms: number): Promise<{ value: T } | undefined> {
+  if (ms <= 0) return undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
   try { return await Promise.race([promise.then(value => ({ value })), new Promise<undefined>(resolve => { timer = setTimeout(() => resolve(undefined), ms); })]); }
   finally { if (timer) clearTimeout(timer); }
@@ -125,22 +131,41 @@ export async function prepareOllama(location: InstallationLocation, policyInput:
   const deadline = new AbortController(), timer = setTimeout(() => deadline.abort(), prepareMs);
   const ownerWatch = setInterval(() => { try { context.assertCurrent(); } catch { deadline.abort(); } }, 100); ownerWatch.unref();
   const signal = AbortSignal.any([deadline.signal, ...(context.signal ? [context.signal] : [])]);
+  let cleanupEndsAt: number | undefined;
+  const startCleanup = () => { cleanupEndsAt ??= performance.now() + cleanupMs; };
+  signal.addEventListener('abort', startCleanup, { once: true }); if (signal.aborted) startCleanup();
+  const remainingCleanup = () => { startCleanup(); return Math.max(0, cleanupEndsAt! - performance.now()); };
   const current = () => { context.assertCurrent(); if (performance.now() >= endsAt) deadline.abort(); if (signal.aborted) throw new InstallerError('cancelled', deadline.signal.aborted ? 'Dependency preparation deadline/owner check ended' : 'Dependency preparation cancelled'); };
+  const readKey = `${location.installationId}\0${location.home}`;
+  const boundedRead = async <T>(work: () => Promise<T>): Promise<T> => {
+    current(); if (pendingReads.has(readKey)) throw dependencyUncertain('A prior dependency read has not positively closed');
+    const task = Promise.resolve().then(work).then(value => ({ value }), error => ({ error })); pendingReads.set(readKey, task);
+    void task.then(result => {
+      if ('error' in result && (result.error as { code?: string } | undefined)?.code === 'resource-close-uncertain') return;
+      if (pendingReads.get(readKey) === task) pendingReads.delete(readKey);
+    });
+    let settled = await untilAbort(task, signal);
+    if (!settled) settled = await within(task, remainingCleanup());
+    if (!settled) throw dependencyUncertain('Dependency read closure exceeded the shared drain/cleanup deadline');
+    if ('error' in settled.value) throw settled.value.error;
+    current(); return settled.value.value;
+  };
   const record = dependencyPath(location, identity.recordRelativePath), stage = dependencyPath(location, identity.stageRelativePath), payload = join(stage, 'payload');
   const directory = dependencyPath(location, identity.payloadRelativePath);
   let handle: object | undefined, keepHandle = false, published = false, uncertainPublication = false, admitted = false;
   let closed: OllamaClosure | undefined;
   const certificate = (outcome: OllamaClosure['outcome'], inventorySha256?: string): OllamaClosure => ({ schemaVersion: 1, identitySha256: digest(canonicalJson(identity)), closed: true, outcome, ...(inventorySha256 ? { inventorySha256 } : {}) });
   const assertConsent = async () => {
-    current(); const observed = await untilAbort(options.recheck(signal), signal); current();
-    if (!observed) throw new InstallerError('cancelled', 'Dependency consent recheck cancelled'); const check = observed.value;
+    const check = await boundedRead(() => options.recheck(signal));
     if (!check.report.runtimeReady || !check.offer || canonicalJson(check.offer) !== canonicalJson(offer) || check.endpoint !== policy.endpoint) throw new InstallerError('dependency-offer-stale', 'The exact dependency offer or local state changed; request consent again');
   };
   const cleanup = async () => {
-    const cleanupEndsAt = performance.now() + cleanupMs;
     if (!closed || !handle) throw dependencyUncertain('Dependency cleanup lacks positive finite closure');
+    if (remainingCleanup() <= 0) throw dependencyUncertain('Dependency cleanup has no remaining shared closure budget; retain stage');
     writeDependencyRecord(location, handle, cleanupPath(record), { schemaVersion: 1, identitySha256: closed.identitySha256, purpose: 'private-stage-disposal' });
+    if (remainingCleanup() <= 0) throw dependencyUncertain('Cleanup admission exhausted its shared budget; retain stage');
     const removal = (async () => {
+    if (options.beforeStageDisposal) await options.beforeStageDisposal();
     if (existsSync(stage)) {
       await privateOllamaDirectory(stage); // Only a derived, still-private stage.
       let count = 0;
@@ -160,20 +185,23 @@ export async function prepareOllama(location: InstallationLocation, policyInput:
       writeDependencyRecord(location, handle!, disposedPath(record), { schemaVersion: 1, identitySha256: closed!.identitySha256, closed: true, stageRemoved: true });
     })();
     let result: Awaited<ReturnType<typeof within<void>>>;
-    try { result = await within(removal, Math.max(1, cleanupEndsAt - performance.now())); } catch (cause) { throw dependencyUncertain('Dependency cleanup closure is unconfirmed', cause); }
+    try { result = await within(removal, remainingCleanup()); } catch (cause) { throw dependencyUncertain('Dependency cleanup closure is unconfirmed', cause); }
     if (!result) {
       keepHandle = true; void removal.catch(() => {}).finally(() => controlBinding().close(handle!));
       throw dependencyUncertain('Dependency cleanup exceeded its closure budget; evidence retained');
     }
-    if (performance.now() > cleanupEndsAt) throw dependencyUncertain('Dependency cleanup completed after its budget; inspect its recorded closure');
+    if (performance.now() > cleanupEndsAt!) throw dependencyUncertain('Dependency cleanup completed after its shared budget; inspect its recorded closure');
   };
   try {
-    current(); const prior = await untilAbort(closedOllamaAttempts(location), signal); current();
+    const prior = await boundedRead(() => closedOllamaAttempts(location));
     if (existsSync(directory)) {
-      const existing = await verifyPreparedOllama(location, policy, directory, signal), check = await options.recheck(signal); current();
+      return await boundedRead(async () => {
+      const existing = await (options.verifyExisting ?? verifyPreparedOllama)(location, policy, directory, signal); current();
+      const check = await options.recheck(signal); current();
       let matching = false;
-      for (const attempt of prior?.value ?? []) {
-        if (attempt.identity.offerId !== identity.offerId || attempt.identity.policySha256 !== identity.policySha256) continue;
+      for (const attempt of prior) {
+        if (attempt.identity.offerId !== identity.offerId || attempt.identity.policySha256 !== identity.policySha256
+          || attempt.identity.operationId !== identity.operationId || attempt.identity.attemptNonce !== identity.attemptNonce) continue;
         const file = dependencyPath(location, attempt.identity.recordRelativePath);
         const closure = parseOllamaClosure(attempt.identity, json(await readDependencyRecord(location, closurePath(file)))); current();
         if (closure.outcome === 'prepared' && closure.inventorySha256 === existing.inventorySha256) matching = true;
@@ -182,6 +210,7 @@ export async function prepareOllama(location: InstallationLocation, policyInput:
       if (!check.report.runtimeReady || !check.policy || ollamaPolicySha256(check.policy) !== offer.policySha256 || check.endpoint !== offer.endpoint
         || (check.report.ollama !== 'ready' && check.executable !== join(directory, policy.layout.executable))) throw new InstallerError('dependency-offer-stale', 'Existing payload or local endpoint differs');
       return { directory, policy, offer, identity, ...existing };
+      });
     }
     await assertConsent();
     ensureDependencyDirectory(location, 'deps/ollama', current);
@@ -211,7 +240,7 @@ export async function prepareOllama(location: InstallationLocation, policyInput:
     };
     const finite = work().then(value => ({ value }), error => ({ error }));
     let settled = await untilAbort(finite, signal);
-    if (!settled) settled = await within(finite, cleanupMs);
+    if (!settled) settled = await within(finite, remainingCleanup());
     if (!settled) {
       keepHandle = true;
       void finite.then(result => {
@@ -234,7 +263,9 @@ export async function prepareOllama(location: InstallationLocation, policyInput:
       try { (options.publish ?? ((owner, from, to) => controlBinding().publishDirectory(owner, from, to)))(handle, payload, directory); }
       catch (cause) { if ((cause as NodeJS.ErrnoException).code === 'candidate-exists') { uncertainPublication = false; throw new InstallerError('dependency-offer-stale', 'Private dependency destination changed before exclusive publication', { cause }); } throw cause; }
       published = true; flushParents(directory, location.home); flushParents(dirname(payload), location.home); uncertainPublication = false;
-      current(); await verifyPreparedOllama(location, policy, directory, signal); current();
+      // The complete closed tree was verified before the same-volume exclusive
+      // rename. Rename preserves those bytes; avoid another admitted read here.
+      current();
     } catch (cause) {
       if (uncertainPublication) throw dependencyUncertain('Dependency publication/durability is uncertain; retain evidence for reconciliation', cause);
       await cleanup(); throw cause;
@@ -246,5 +277,5 @@ export async function prepareOllama(location: InstallationLocation, policyInput:
     if (admitted && !closed && !keepHandle) throw dependencyUncertain('Dependency admission has no positive closure; retain its evidence', cause);
     if (cause instanceof InstallerError) throw cause;
     throw new InstallerError(published ? 'dependency-uncertain' : signal.aborted ? 'cancelled' : 'dependency-prepare-failed', 'Private dependency preparation did not complete', { cause });
-  } finally { clearTimeout(timer); clearInterval(ownerWatch); deadline.abort(); if (handle && !keepHandle) controlBinding().close(handle); }
+  } finally { clearTimeout(timer); clearInterval(ownerWatch); deadline.abort(); signal.removeEventListener('abort', startCleanup); if (handle && !keepHandle) controlBinding().close(handle); }
 }

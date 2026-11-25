@@ -119,6 +119,21 @@ test('finite-actor-closure-uncertainty-blocks-retry-and-cleanup', async () => {
     await assert.rejects(closedOllamaAttempts(f.location), { code: 'dependency-uncertain' });
   } finally { cancel.abort(); release(); await delay(10); await f.cleanup(); }
   }
+  const f = await ollamaFixture(), cancel = new AbortController(); let release!: () => void, finished!: () => void;
+  let verificationStarted = false;
+  const pending = new Promise<void>(resolve => { release = resolve; }), closed = new Promise<void>(resolve => { finished = resolve; });
+  try {
+    const { policy, offer } = await f.input();
+    await prepareOllama(f.location, policy, offer, f.context(), { recheck: f.recheck, transport: f.transport });
+    const inode = lstatSync(join(offer.destination, policy.layout.executable)).ino, started = performance.now();
+    await assert.rejects(prepareOllama(f.location, policy, offer, f.context('a'.repeat(64), cancel.signal), { recheck: f.recheck, transport: f.transport,
+      prepareMs: 5000, cleanupMs: 40, async verifyExisting(...args) { verificationStarted = true; cancel.abort(); try { await pending; return await verifyPreparedOllama(...args); } finally { finished(); } } }), { code: 'dependency-uncertain' });
+    assert.ok(performance.now() - started < 1000, 'stalled reuse verification has bounded cancellation/drain');
+    await assert.rejects(prepareOllama(f.location, policy, offer, f.context(), { recheck: f.recheck, transport: f.transport }), { code: 'dependency-uncertain' });
+    assert.equal(lstatSync(join(offer.destination, policy.layout.executable)).ino, inode);
+    release(); await closed; await new Promise<void>(resolve => setImmediate(resolve));
+    await prepareOllama(f.location, policy, offer, f.context(), { recheck: f.recheck, transport: async () => { throw new Error('verified reuse cannot download'); } });
+  } finally { cancel.abort(); release(); if (verificationStarted) await closed; await f.cleanup(); }
 });
 
 test('private-preparation-cancellation-blocks-later-publication', async () => {
@@ -134,4 +149,18 @@ test('private-preparation-cancellation-blocks-later-publication', async () => {
       const stage = join(f.home, 'deps/ollama/.staging/prepare-operation'); assert.deepEqual(readdirSync(stage), []);
     } finally { await f.cleanup(); }
   }
+  const f = await ollamaFixture(), cancel = new AbortController(); let release!: () => void;
+  const disposal = new Promise<void>(resolve => { release = resolve; }); let cancelledAt = 0;
+  let record = '';
+  try {
+    const { policy, offer } = await f.input(), owner = f.context('a'.repeat(64), cancel.signal);
+    record = join(f.home, dependencyAttemptIdentity(f.location, policy, offer, owner).recordRelativePath);
+    await assert.rejects(prepareOllama(f.location, policy, offer, owner, { recheck: f.recheck, transport: f.transport, cleanupMs: 250,
+      async beforeFiniteClose() { cancelledAt = performance.now(); cancel.abort(); await delay(175); }, beforeStageDisposal: () => disposal }), { code: 'dependency-uncertain' });
+    assert.ok(performance.now() - cancelledAt < 350, 'finite drain and disposal share one 250 ms budget');
+    assert.equal(existsSync(record.replace(/\.json$/, '.disposed.json')), false); assert.equal(existsSync(offer.destination), false);
+    release(); const disposed = record.replace(/\.json$/, '.disposed.json'), end = performance.now() + 5000;
+    while (!existsSync(disposed) && performance.now() < end) await delay(5);
+    assert.equal(existsSync(disposed), true); assert.equal((await closedOllamaAttempts(f.location)).length, 1);
+  } finally { cancel.abort(); release(); await delay(10); await f.cleanup(); }
 });

@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1795545958919-wlh1tq",
+    "runId": "wf-1795613951642-ko36ut",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-24T18:51:51.618Z",
+    "createdAt": "2026-11-25T13:40:52.824Z",
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
     "attribution": {
       "outputs": [
@@ -15,21 +15,21 @@
         }
       ]
     },
-    "elapsedMs": 352299,
+    "elapsedMs": 100827,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "c3d71313f34bce71",
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
     "storyId": "s3",
-    "lldRunId": "wf-1795544885792-xw1ws3",
-    "lldEffectiveHash": "acb12724c31638094f715440e8d7679ed70268700c5e10e1d06197fb93ace475",
+    "lldRunId": "wf-1795613684348-xxohki",
+    "lldEffectiveHash": "ca69fcdcd2b019a9f896c3de33519f2abd2ac93ed18efe96c628ba08dee66d48",
     "authoredBy": "controller",
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "67835729a874a34d2d8ddeefa01c74854a5c13cabb367213a6af8f37ea3ea7ac",
-        "at": "2026-11-24T18:51:51.718Z",
+        "number": 2,
+        "contentHash": "1f3f0aa648ff00adeab30f7ac368928a54519843c08ec8f8946986414b5d5989",
+        "at": "2026-11-25T13:40:52.922Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -38,27 +38,27 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 1,
+        "revision": 2,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-25T01:51:50.140Z"
+        "at": "2026-11-25T13:45:10.033Z"
       }
     },
-    "revision": 1,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
-    "rangeBase": "155f7f92ceb6fd198fcc30570700a04ce80e5049"
+    "revision": 2,
+    "rangeBase": "373d9268391f598f3d1b0d57dbbacae424dbe8f1"
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Build the production dependency adapter on the completed installer foundation, with truthful read-only checks, exact terminal consent, bounded platform payload preparation and a durable user-session Ollama handoff. Ten ordered tasks separate the two extraction paths, publication, service behavior and manager/packaging integration; Linux ARM64 auto-install must pass real OrbStack qualification before enablement. Run surrounding tests for each task, then one complete S1/S2/S3 installer regression after implementation; final human BUILD approval follows story validation."
+      "prose": "Preserve S3 task identities and completed implementation history while applying approved LLD revision5. Add one coherent follow-up task t11 to remove repeated installed-file hashing and retain archive verification, bounded metadata/closure checks and the three-second aggregate inspection target. Run its surrounding tests, then requalify the exact Linux route in t9 and run the combined S1/S2/S3 installer regression in t10. Node runtime packaging corrections remain S1/S2-owned; final story BUILD approval follows all task validation."
     },
     "tasks": [
       {
@@ -214,7 +214,7 @@
       {
         "id": "t5",
         "title": "Prepare and durably publish immutable private Ollama payloads",
-        "summary": "Implement consent-rechecked bounded download, private staging, complete inventory/receipt verification, finite owned-work drain and exclusive durable publication under the manager-supplied S3 context.",
+        "summary": "Implement consent-rechecked bounded download, private staging, bounded inventory/receipt identity validation, finite owned-work drain and exclusive durable publication under the manager-supplied S3 context.",
         "size": "M",
         "order": 5,
         "dependsOn": [
@@ -226,7 +226,7 @@
         "acceptanceChecks": [
           "Production install acceptance requires valid manager-owned operation context and exact current offer; recompute before first side effect and immediately before publication; policy/path/endpoint/existing-install races reject stale.",
           "Download enforces exact bytes/SHA256/HTTPS and S3 asset limits without inheriting an inappropriate S1 bundle cap; overall finite preparation deadline is 20 minutes and cleanup deadline is 5 seconds with bounded diagnostics.",
-          "Derive contained user-owned staging, payload and attempt paths from the selected home; complete inventory/layout verification precedes publication and same-id reuse requires all receipt/inventory/target bytes to agree.",
+          "Derive contained user-owned staging, payload and attempt paths from the selected home; safe inventory/layout validation precedes publication and same-id reuse requires receipt/inventory/target metadata and positive preparation closure to agree; t11 removes redundant installed-content rereads.",
           "Flush payload/receipt files, bottom-up directories and source/destination parents using existing filesystem-only durability and non-replacing publication; publication/fsync uncertainty never becomes false success or overwrite.",
           "Abort/EOF/current-owner loss prevents later admission, drains finite work and deletes only proven-private unpublished staging after positive closure. Unknown admitted/cooperating actor closure retains evidence and returns dependency-uncertain for manager blocking.",
           "Adapter writes private dependency records only; incumbent daemon release/data/running intent and existing Ollama binaries/services remain untouched."
@@ -385,20 +385,69 @@
         ]
       },
       {
+        "id": "t11",
+        "title": "Remove repeated installed-file hashing from dependency validation",
+        "summary": "Apply the approved S3 verification boundary across staged second-pass validation, installed reuse, reconciliation and service admission. Keep live archive SHA-256 and bounded metadata/layout/header/closure checks without changing public contracts or adding a deep-verification phase.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t5",
+          "t6",
+          "t7",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "Verify exact official compressed archive size/SHA-256 during live acquisition and reject mismatch before publication; preserve bounded contained extraction and qualified layout/target-header checks.",
+          "Remove full-file content hash rereads of staged/extracted/installed Ollama payloads from validation, same-ID reuse, fresh read-only inspection/reconciliation and service admission. Existing streaming member hashes may remain for inventory schema compatibility; small inventory-record digests remain for identity binding.",
+          "Retain canonical bounded receipt/inventory/policy/version/target/archive identity and positive preparation/finite-handoff closure/admission bindings. Preserve safe path/ancestor/link/reparse/regular-file/size/mode/required-layout checks and bounded target header reads. Invalid or uncertain evidence blocks mutation without automatic re-download, overwrite or spawn.",
+          "Read-only inspection and recorded-attempt reconciliation use one aggregate three-second cancellation-aware budget; no twenty-second extension, digest cache, new certificate, parallel hashing worker or new wire field.",
+          "Tests demonstrate no full installed-content reads in inspection/reconciliation/reuse/service admission, including same-size content changes that no longer trigger digest verification; receipt/closure/layout/size/link errors still fail and cancelled/late work never authorizes mutation.",
+          "Preserve stop bypass, terminal exact consent, intentionally retained service semantics and manager ownership. Do not modify Node verification, S1/S2 packaging or host daemon/Ollama. Record this as a corrective follow-up; completed t1-t8 evidence remains historical."
+        ],
+        "derivedFrom": [
+          "c12",
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "inspection-and-reconciliation-share-three-second-bound-without-payload-hashing"
+          },
+          {
+            "level": "integration",
+            "name": "receipt-closure-and-layout-errors-block-reuse-without-content-rehash"
+          },
+          {
+            "level": "integration",
+            "name": "same-size-installed-content-change-does-not-trigger-digest-reverification"
+          },
+          {
+            "level": "integration",
+            "name": "archive-digest-mismatch-still-rejects-live-acquisition"
+          },
+          {
+            "level": "integration",
+            "name": "reuse-and-service-admission-never-rehash-installed-files"
+          }
+        ]
+      },
+      {
         "id": "t9",
         "title": "Qualify the Linux OrbStack dependency route and gate other exact targets",
         "summary": "Exercise the completed S3 adapter with a pinned official Ollama payload in a disposable Linux ARM64 OrbStack guest, enable that exact passing route, and record evidence/limitations for the planned macOS/Windows/native-x64 routes.",
         "size": "L",
-        "order": 9,
+        "order": 10,
         "dependsOn": [
-          "t8"
+          "t8",
+          "t11"
         ],
         "acceptanceChecks": [
           "Provision/use a disposable Linux ARM64 OrbStack environment and actually install the exact official payload with the selected private Node toolchain, exercising large archive/library layout, executable version and user-session readiness without models/elevation/global writes.",
           "Record exact version/URL/SHA256/compressed-expanded sizes/target-baseline/native-versus-translated status, decoder limits, private filesystem/argv/env/log results, reuse/decline and finite cleanup/retained-service evidence; enable Linux auto-install only for the route actually qualified.",
           "A Linux payload/decoder/platform failure is a real story blocker requiring diagnosis or user-directed design correction, not a fabricated pass or silent removal of Linux support.",
           "For each planned darwin/linux/win32 × arm64/x64 target, record either native exact-policy payload qualification before offer enablement or a concrete pending/unavailable/unsupported reason and manual user-level guidance. Use the existing macOS ARM64 UTM guest and genuine available Windows/native-x64 runners for dependency-only validation; translated evidence is explicitly labeled and cannot certify native gaps. A missing optional environment cannot silently enable a route or hide the required Linux result.",
-          "Do not mutate/restart installed host daemon/Ollama or claim full daemon installation, migration, IDE, signing or complete S8 platform-matrix qualification. Preserve all Linux/macOS/Windows targets in the plan and evidence table."
+          "Do not mutate/restart installed host daemon/Ollama or claim full daemon installation, migration, IDE, signing or complete S8 platform-matrix qualification. Preserve all Linux/macOS/Windows targets in the plan and evidence table.",
+          "Re-run fresh-process inspection on the actual multi-GB private payload with the corrected no-rehash code; record total inspection latency and absence of full payload content reads under the existing three-second target. Preserve historical cold full-hash failure as superseded evidence, never relabel it passed. Enable only the currently qualified route."
         ],
         "derivedFrom": [
           "c5",
@@ -422,6 +471,10 @@
           {
             "level": "unit",
             "name": "enabled-target-policy-requires-matching-native-evidence-and-mandatory-linux-route"
+          },
+          {
+            "level": "live",
+            "name": "native-large-payload-inspection-avoids-content-reads-within-three-seconds"
           }
         ]
       },
@@ -430,7 +483,7 @@
         "title": "Run the final composed installer regression and reconcile evidence",
         "summary": "After all implementation and route-qualification tasks, run the complete scoped S1/S2/S3 installer regression once and record exact coverage/fingerprints/build/cleanup evidence plus current limitations.",
         "size": "M",
-        "order": 10,
+        "order": 11,
         "dependsOn": [
           "t1",
           "t2",
@@ -440,10 +493,11 @@
           "t6",
           "t7",
           "t8",
-          "t9"
+          "t9",
+          "t11"
         ],
         "acceptanceChecks": [
-          "Run the canonical Node 22 installer test selection only after t1–t9 are built and task-local checks pass, including all S1/S2/S3 installer files, installation-home, relevant build/scanner/coordinator and packaging regression cases; no unrelated backend sweep.",
+          "Run the canonical Node 22 installer test selection only after t1–t9 plus t11 are built and task-local checks pass, including all S1/S2/S3 installer files, installation-home, relevant build/scanner/coordinator and packaging regression cases; no unrelated backend sweep.",
           "The final audit reconciles exact selected files, discovered/executed test counts with zero skips/failures/cancellations, current source/output fingerprints, successful canonical build and per-admission close/disposal journals with confirmed finite-work cleanup. Include the split archive paths and current S3 production packaging/qualification evidence in the recorded selection and audit.",
           "Keep intentionally retained dependency-service evidence separate from finite actor closure; fixture tests clean their owned services explicitly and never leave unaccounted work.",
           "Record real Linux OrbStack exact-route evidence and any separately qualified target results/limits; passing fakes/native host tests do not claim unsupported target/VM/IDE/migration qualification.",
@@ -635,6 +689,42 @@
           "t7",
           "t10"
         ]
+      },
+      {
+        "lldStrategyItem": "inspection-and-reconciliation-share-three-second-bound-without-payload-hashing",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "receipt-closure-and-layout-errors-block-reuse-without-content-rehash",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "same-size-installed-content-change-does-not-trigger-digest-reverification",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "archive-digest-mismatch-still-rejects-live-acquisition",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "reuse-and-service-admission-never-rehash-installed-files",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "native-large-payload-inspection-avoids-content-reads-within-three-seconds",
+        "coveredByTaskIds": [
+          "t9"
+        ]
       }
     ]
   },
@@ -704,6 +794,17 @@
       "kind": "prior-artifact",
       "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md#7-test-strategy",
       "quotedText": "Live target qualification: mandatory first Linux ARM64 OrbStack route, separate macOS UTM/Windows/native-x64 evidence and no enabled target inferred from fixtures."
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md",
+      "quotedText": "Approved revision5 installed dependency trust boundary: archive digest verified at acquisition, bounded metadata/closure/health thereafter, three-second aggregate inspection."
+    },
+    {
+      "id": "c13",
+      "kind": "stakeholder",
+      "ref": "User correction, 2026-11-25: remove redundant second installed-file hashing check; S3 LLD revision5 approved."
     }
   ]
 }

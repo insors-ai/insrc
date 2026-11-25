@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import type { Server, IncomingMessage, ServerResponse } from 'node:http';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { once } from 'node:events';
-import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -137,6 +137,20 @@ test('agent-zero-one-many-detection-never-spawns-auth-model-or-install', async (
     const windows = executableCandidates('codex', { Path: 'C:\\Tools;D:\\Other Tools', PATHEXT: '.EXE;.CMD;.PS1' }, 'win32', 'C:\\Users\\Engineer');
     assert.ok(windows.paths.includes('D:\\Other Tools\\codex.cmd')); assert.ok(windows.paths.includes('C:\\Tools\\codex.ps1'));
     assert.ok(executableCandidates('vibe', { PATH: '.:/absolute' }, 'linux', '/home/user').diagnostics.length);
+    const denied = join(f.root, 'denied'), io: DependencyReadIo = { ...f.options.io!, async stat(file) {
+      if (file.startsWith(denied + '/')) throw errno('EACCES'); return f.options.io!.stat(file);
+    } };
+    report = (await inspectDependencies(f.location, target, { ...f.options, io, environment: { PATH: `${denied}:${f.bin}` } })).report;
+    assert.equal(report.agents.codex, true); assert.ok(report.recommendations.some(line => line.includes('codex') && line.includes('could not be inspected')));
+    // App presence alone is not CLI presence. The actual packaged CLI path is
+    // independently exercised as a filesystem fixture, not native Mac evidence.
+    const app = join(f.root, 'Applications/ChatGPT.app/Contents'); mkdirSync(join(app, 'MacOS'), { recursive: true });
+    writeFileSync(join(app, 'MacOS/ChatGPT'), 'GUI only', { mode: 0o755 });
+    const darwin = { ...target, os: 'darwin' as const }, noPath = { ...f.options, environment: { PATH: '' } };
+    assert.equal((await inspectDependencies(f.location, darwin, noPath)).report.agents.codex, false);
+    mkdirSync(join(app, 'Resources/codex-cli/bin'), { recursive: true });
+    writeFileSync(join(app, 'Resources/codex-cli/bin/codex'), '#!/bin/sh\nexit 99\n', { mode: 0o755 });
+    assert.equal((await inspectDependencies(f.location, darwin, noPath)).report.agents.codex, true);
   } finally { await f.cleanup(); }
 });
 
@@ -148,6 +162,21 @@ test('private-runtime-provenance-rejects-path-node-and-wrong-target', async () =
     assert.equal((await inspectDependencies(f.location, target, { ...f.options, runtimeDirectory: f.bin })).report.runtimeReady, false);
     const wrong = { ...target, arch: target.arch === 'arm64' ? 'x64' as const : 'arm64' as const };
     assert.equal((await inspectDependencies(f.location, wrong, f.options)).report.runtimeReady, false);
+    for (const bad of ['npm', 'headers']) {
+      const io: DependencyReadIo = { ...f.options.io!, async read(file, limit, signal) {
+        if (bad === 'npm' && file.endsWith('/npm/package.json')) return Buffer.from('{"version":"99.0.0"}');
+        if (bad === 'headers' && file.endsWith('/node_version.h')) return Buffer.from('#define NODE_MAJOR_VERSION 99');
+        return f.options.io!.read(file, limit, signal);
+      } };
+      assert.equal((await inspectDependencies(f.location, target, { ...f.options, io })).report.runtimeReady, false, bad);
+    }
+    let readsAfterSlowRuntime = 0;
+    const delayed: DependencyReadIo = { ...f.options.io!, async realpath(file) { await delay(100); return f.options.io!.realpath(file); },
+      async read(file, limit, signal) { readsAfterSlowRuntime++; return f.options.io!.read(file, limit, signal); } };
+    const start = performance.now();
+    assert.equal((await inspectDependencies(f.location, target, { ...f.options, io: delayed, budgetMs: 20 })).report.runtimeReady, false);
+    assert.ok(performance.now() - start < 300, 'runtime verification itself must obey the aggregate deadline');
+    await delay(120); assert.equal(readsAfterSlowRuntime, 0, 'no later reads are admitted after a timed-out runtime identity lookup');
     const cancel = new AbortController(); cancel.abort();
     await assert.rejects(inspectDependencies(f.location, target, f.options, { signal: cancel.signal }), { code: 'cancelled' });
     assert.equal(existsSync(join(f.root, 'spawned')), false);

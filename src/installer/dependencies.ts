@@ -1,22 +1,23 @@
 /** Read-only dependency adapter. Mutating preparation is supplied by later S3 tasks. */
 import { constants } from 'node:fs';
 import type { Stats } from 'node:fs';
-import { access, lstat, open, readdir, stat } from 'node:fs/promises';
+import { access, lstat, open, readdir, realpath, stat } from 'node:fs/promises';
 import { get } from 'node:http';
 import { homedir } from 'node:os';
 import { posix, win32 } from 'node:path';
-import { InstallerError } from './contracts.js';
+import { InstallerError, PRIVATE_NODE_VERSION } from './contracts.js';
 import type { DependencyReport, InstallationLocation, Target } from './contracts.js';
 import type { DependencyPort, DependencyProbeContext } from './peer-contracts.js';
 import { assertToken, normalizeHome } from './location.js';
 import { canonicalJson, digest } from './release-descriptor.js';
 import { parseInstaller } from './schemas.js';
-import { verifyDevToolchain } from './dev-toolchain.js';
+import { runtimeArchive, runtimePolicy } from './runtime-policy.js';
 import { createOllamaOffer, ollamaEndpoint, ollamaPayloadRelativePath, parseOllamaPolicy } from './ollama-policy.js';
 import type { OllamaOffer, OllamaPolicy } from './ollama-policy.js';
 import { requireDependencyOperation } from './dependency-context.js';
 
 export interface DependencyReadIo {
+  realpath(file: string): Promise<string>;
   stat(file: string): Promise<Stats>;
   lstat(file: string): Promise<Stats>;
   access(file: string, mode: number): Promise<void>;
@@ -24,8 +25,9 @@ export interface DependencyReadIo {
   read(file: string, limit: number, signal: AbortSignal): Promise<Buffer>;
 }
 export const dependencyReadIo: DependencyReadIo = {
-  stat: file => stat(file), lstat: file => lstat(file), access, readdir: file => readdir(file),
+  realpath, stat: file => stat(file), lstat: file => lstat(file), access, readdir: file => readdir(file),
   async read(file, limit, signal) {
+    signal.throwIfAborted();
     const handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW);
     try {
       const info = await handle.stat();
@@ -64,6 +66,37 @@ const diagnostic = (error: unknown): string => {
 };
 const missing = (error: unknown) => (error as NodeJS.ErrnoException)?.code === 'ENOENT';
 const isObject = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
+
+/** S1 supplies an already authenticated runtime root. Unlike the synchronous
+ * build verifier, every filesystem read here participates in the probe deadline. */
+async function verifyProbeRuntime(directory: string, target: Target, io: DependencyReadIo, signal: AbortSignal): Promise<void> {
+  runtimeArchive(target);
+  if (process.version !== `v${PRIVATE_NODE_VERSION}` || process.platform !== target.os || process.arch !== target.arch) throw new InstallerError('runtime-invalid', 'Wrong private runtime/target');
+  const path = target.os === 'win32' ? win32 : posix;
+  signal.throwIfAborted(); const root = await io.realpath(normalizeHome(directory, target.os)); signal.throwIfAborted();
+  const node = await io.realpath(process.execPath); signal.throwIfAborted();
+  if (node !== path.join(root, target.os === 'win32' ? 'node.exe' : 'bin/node')) throw new InstallerError('runtime-invalid', 'Current process is not the selected private Node');
+  const regular = async (name: string) => {
+    const file = path.join(root, name); let current = file;
+    while (true) {
+      signal.throwIfAborted(); const info = await io.lstat(current); signal.throwIfAborted();
+      if (info.isSymbolicLink() || (current === file ? !info.isFile() : !info.isDirectory())) throw new InstallerError('runtime-invalid', 'Private runtime contains a linked or non-regular path');
+      if (current === root) break; current = path.dirname(current);
+    }
+    return file;
+  };
+  const npmRoot = target.os === 'win32' ? 'node_modules/npm' : 'lib/node_modules/npm';
+  await regular(target.os === 'win32' ? 'node.exe' : 'bin/node');
+  for (const file of [`${npmRoot}/bin/npm-cli.js`, `${npmRoot}/bin/npx-cli.js`, `${npmRoot}/node_modules/node-gyp/bin/node-gyp.js`,
+    'include/node/common.gypi', 'include/node/config.gypi', 'include/node/node_api.h', ...(target.os === 'win32' ? [`${target.arch}/node.lib`] : [])]) await regular(file);
+  const metadata = await io.read(await regular(`${npmRoot}/package.json`), 128 * 1024, signal); signal.throwIfAborted();
+  const npm: unknown = JSON.parse(metadata.toString('utf8'));
+  if (!isObject(npm) || npm['version'] !== runtimePolicy.npmVersion) throw new InstallerError('runtime-invalid', 'Private npm version differs');
+  const header = (await io.read(await regular('include/node/node_version.h'), 64 * 1024, signal)).toString('utf8'); signal.throwIfAborted();
+  if (['MAJOR', 'MINOR', 'PATCH'].map(key => new RegExp(`^#define NODE_${key}_VERSION\\s+(\\d+)`, 'm').exec(header)?.[1]).join('.') !== runtimePolicy.headersVersion) {
+    throw new InstallerError('runtime-invalid', 'Private Node headers differ');
+  }
+}
 
 /** Literal loopback only; even a reconfigured localhost DNS cannot reach a remote host. */
 export async function probeOllamaVersion(endpoint: string, signal: AbortSignal): Promise<OllamaProbe> {
@@ -120,6 +153,13 @@ export function executableCandidates(name: 'ollama' | 'claude' | 'codex' | 'vibe
   }
   valid.push(path.join(userHome, '.local/bin'), path.join(userHome, '.npm-global/bin'));
   const candidates = valid.flatMap(directory => suffixes.map(suffix => path.join(directory, name + suffix)));
+  if (os === 'darwin' && name === 'codex') {
+    // This is the actual packaged CLI, not the ChatGPT GUI executable. No
+    // Claude/Vibe desktop executable is guessed to be a coding CLI.
+    for (const applications of ['/Applications', path.join(userHome, 'Applications')]) {
+      candidates.push(path.join(applications, 'ChatGPT.app/Contents/Resources/codex-cli/bin/codex'));
+    }
+  }
   if (name === 'ollama') {
     if (os === 'darwin') candidates.push('/Applications/Ollama.app/Contents/Resources/ollama', path.join(userHome, 'Applications/Ollama.app/Contents/Resources/ollama'));
     if (os === 'win32') {
@@ -152,7 +192,7 @@ async function lookup(paths: string[], io: DependencyReadIo, signal: AbortSignal
       const info = await io.stat(path); signal.throwIfAborted();
       if (!info.isFile()) { complete = false; continue; }
       await io.access(path, os === 'win32' ? constants.F_OK : constants.X_OK); signal.throwIfAborted();
-      return { executable: path, complete: true };
+      return { executable: path, complete };
     } catch (error) { signal.throwIfAborted(); if (!missing(error) && (error as NodeJS.ErrnoException).code !== 'ENOTDIR') complete = false; }
   }
   return { complete };
@@ -203,11 +243,11 @@ export async function inspectDependencies(location: InstallationLocation, target
   assertToken(location.installationId); const home = normalizeHome(location.home, target.os);
   const budget = options.budgetMs ?? 3000;
   if (!Number.isInteger(budget) || budget < 1 || budget > 3000) throw new InstallerError('dependency-probe-failed', 'Invalid dependency inspection budget');
+  const io = options.io ?? dependencyReadIo, env = options.environment ?? process.env;
+  const userHome = normalizeHome(options.userHome ?? homedir(), target.os);
   const deadline = new AbortController(), closed = new AbortController();
   const timer = setTimeout(() => deadline.abort(new InstallerError('dependency-probe-timeout', 'Inspection deadline exceeded')), budget);
   const signal = AbortSignal.any([deadline.signal, closed.signal, ...(context.signal ? [context.signal] : [])]);
-  const io = options.io ?? dependencyReadIo, env = options.environment ?? process.env;
-  const userHome = normalizeHome(options.userHome ?? homedir(), target.os);
   const report: DependencyReport = { runtimeReady: false, ollama: 'unavailable', agents: { claude: false, codex: false, vibe: false }, recommendations: [], blockers: [] };
   const note = (message: string) => { if (report.recommendations.length < 28) report.recommendations.push(message); };
   const finish = (): DependencyReport => {
@@ -216,8 +256,8 @@ export async function inspectDependencies(location: InstallationLocation, target
   };
   const work = async (): Promise<DependencyInspection> => {
     signal.throwIfAborted();
-    try { verifyDevToolchain(options.runtimeDirectory, target); report.runtimeReady = true; }
-    catch { report.blockers.push('Private Node runtime or target provenance is invalid; use the selected verified installer runtime.'); }
+    try { await verifyProbeRuntime(options.runtimeDirectory, target, io, signal); signal.throwIfAborted(); report.runtimeReady = true; }
+    catch { signal.throwIfAborted(); report.blockers.push('Private Node runtime or target provenance is invalid; use the selected verified installer runtime.'); }
     const policies = options.policies ?? [];
     if (policies.length > 32) throw new InstallerError('dependency-policy-invalid', 'Dependency policy catalog exceeds bound');
     const matching = policies.map(parseOllamaPolicy).filter(p => canonicalJson(p.target) === canonicalJson(target));
@@ -232,7 +272,7 @@ export async function inspectDependencies(location: InstallationLocation, target
         try {
           const plan = executableCandidates(name, env, target.os, userHome), found = await lookup(plan.paths, io, signal, target.os);
           signal.throwIfAborted(); report.agents[name] = !!found.executable;
-          if (!found.complete || plan.diagnostics.length) note(`${name} lookup is incomplete; executable presence may be unknown.`);
+          if (!found.complete || plan.diagnostics.length) note(`${name} ${found.executable ? 'was detected, but some search candidates could not be inspected' : 'was not detected; search was incomplete'}.`);
         } catch { signal.throwIfAborted(); note(`${name} lookup is incomplete; executable presence may be unknown.`); }
       }
       try {
@@ -246,11 +286,12 @@ export async function inspectDependencies(location: InstallationLocation, target
     // Independent HTTP and filesystem probes only; no LLM/provider can be reached here.
     const [{ endpoint, service }, binary] = await Promise.all([availability(), executables()]); signal.throwIfAborted();
     if (service.state === 'ready') report.ollama = 'ready';
-    else if (service.state === 'unavailable' || !binary.complete) {
+    else if (service.state === 'unavailable' || (!binary.complete && !binary.executable)) {
       report.ollama = 'unavailable'; report.blockers.push(`Ollama availability is uncertain: ${service.state === 'unavailable' ? service.diagnostic : 'executable lookup incomplete'}.`);
     } else if (binary.executable) {
       report.ollama = 'installed-not-running'; report.blockers.push('Ollama is installed but its configured local service is not running.');
       note(`Start Ollama manually using its executable: ${target.os === 'win32' ? '& ' : ''}'${binary.executable.replaceAll("'", target.os === 'win32' ? "''" : "'\\''")}' serve`);
+      if (!binary.complete) note('Ollama was detected, but some executable search candidates could not be inspected.');
     } else {
       report.ollama = 'missing'; report.blockers.push('Ollama is missing; its local service requirement is unmet.');
     }

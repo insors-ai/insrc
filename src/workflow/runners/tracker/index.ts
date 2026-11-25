@@ -150,6 +150,15 @@ export const pushExecuteRunner: StepRunner = {
 			// the currently configured gh target — confirms candidates for legacy
 			// claims whose own persisted target is unknown (round-8 MED)
 			const ghTarget = `${c.gh.owner}/${c.gh.repo}`;
+			// REVIEW round-12: a saved ref is only adoptable if it targets BOTH
+			// the claim's recorded gh target (when present) and the currently
+			// configured one — validated BEFORE any mutation prompt is emitted.
+			const refTargetsRepo = (ref: string, target: string): boolean => ref.startsWith(`${target}#`);
+			const savedRefTargetsOk = (saved: string, cl: PendingCreateClaim): boolean => {
+				const claimTarget = cl.ghOwner !== undefined && cl.ghRepo !== undefined ? `${cl.ghOwner}/${cl.ghRepo}` : undefined;
+				if (claimTarget !== undefined && !refTargetsRepo(saved, claimTarget)) return false;
+				return refTargetsRepo(saved, ghTarget);
+			};
 			// REVIEW round-9/10: discovery at the create decision. The context
 			// snapshot is used ONLY for read-only adoption paths; it is NEVER
 			// trusted to authorize a create (round-10 HIGH-1: an earlier empty
@@ -200,6 +209,14 @@ export const pushExecuteRunner: StepRunner = {
 						// recovery identity — adopt it; a conflicting discovery refuses.
 						const saved = claimResult.claim.state === 'created' ? claimResult.claim.issueRef : undefined;
 						if (saved !== undefined) {
+							// REVIEW round-12 HIGH: validate the saved ref against the claim's
+							// recorded target AND the configured target before any prompt.
+							if (!savedRefTargetsOk(saved, claimResult.claim)) {
+								return refused(`saved ref ${saved} does not target the recorded/configured repository (configured ${ghTarget}) — claim left untouched; human resolves`);
+							}
+							// REVIEW round-12 MED: ambiguity refuses BEFORE remote work (LLD
+							// multiple-match rule), even when a saved ref exists.
+							if (!reconciled.ok && reconciled.verifiedCount > 1) return refused(reconciled.reason);
 							if (reconciled.ok && reconciled.ref !== saved) {
 								return refused(`discovered ${reconciled.ref} conflicts with the created claim's recorded ref ${saved} — claim left untouched; human resolves`);
 							}
@@ -222,7 +239,19 @@ export const pushExecuteRunner: StepRunner = {
 					// discovery result refuses while preserving the claim.
 					if (rt.claim.state === 'created' && rt.claim.issueRef !== undefined) {
 						const saved = rt.claim.issueRef;
+						// REVIEW round-12 HIGH: validate the saved ref against the claim's
+						// recorded target AND the configured target BEFORE emitting any
+						// mutation prompt — a cross-repo saved ref refuses here, not at
+						// finalize after the execution turn.
+						if (!savedRefTargetsOk(saved, rt.claim)) {
+							return refused(`saved ref ${saved} does not target the recorded claim target / configured ${ghTarget} — claim ${pendingCreatePath(ctx.intent.repoPath, c.epicHash)} preserved; human resolves`);
+						}
 						const discovered = reconcileClaim(rt.claim, candidates, ghTarget);
+						// REVIEW round-12 MED: multiple verified matches refuse BEFORE any
+						// remote work (LLD multiple-match rule), even with a saved ref.
+						if (!discovered.ok && discovered.verifiedCount > 1) {
+							return refused(`${discovered.reason} — ambiguous discovery with a saved ref ${saved}; claim preserved; human resolves`);
+						}
 						if (discovered.ok && discovered.ref !== saved) {
 							return refused(`discovered ${discovered.ref} conflicts with the created claim's recorded ref ${saved} — claim ${pendingCreatePath(ctx.intent.repoPath, c.epicHash)} preserved; human resolves`);
 						}

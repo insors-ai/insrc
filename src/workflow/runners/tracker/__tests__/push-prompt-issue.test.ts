@@ -690,6 +690,81 @@ test('REVIEW round-11 HIGH — a created claim\'s saved issueRef is the recovery
 	}
 });
 
+test('REVIEW round-12 — saved-ref adoption validates the target repo before any prompt (HIGH) and refuses ambiguous discovery before remote work (MED)', async () => {
+	const { pushExecuteRunner } = await import('../index.js');
+	const { readClaim } = await import('../../../tracker/pending-create-claim.js');
+	const { artifactJsonPath, issueArtifactId } = await import('../../../storage.js');
+	const { markApprovedSync } = await import('../../../__tests__/lifecycle-fixtures.js');
+	const { mkdirSync, mkdtempSync, rmSync, writeFileSync } = await import('node:fs');
+	const { tmpdir } = await import('node:os');
+	const { join } = await import('node:path');
+
+	const H = '5f9d4ab4c90c0b4c';
+	const MARKER = `<!-- insrc:artifact ISSUE-${H} -->`;
+	const mk = (claimTarget: { ghOwner: string; ghRepo: string }, issueRef: string) => {
+		const repo = mkdtempSync(join(tmpdir(), 'insrc-r12-'));
+		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		writeFileSync(join(repo, 'repo-config.json'), JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
+		process.env['INSRC_REPO_CONFIG'] = join(repo, 'repo-config.json');
+		const issue = artifactJsonPath(repo, issueArtifactId(H));
+		writeFileSync(issue, JSON.stringify({ meta: { workflow: 'issue', runId: 'i', schemaVersion: 1, issueHash: H, epicHash: H, epicSlug: 's', createdAt: '2026-11-16T07:14:04.399Z', epicCreatedAt: '2026-11-16T07:14:04.399Z', standalone: true }, body: { title: 'T', reproduction: 'r', rootCause: 'c', fixIntent: 'f' }, citations: [] }));
+		markApprovedSync(issue);
+		writeFileSync(join(repo, '.insrc', 'artifacts', `PENDING-CREATE-${H}.json`), JSON.stringify({
+			epicHash: H, runId: 'run-OLD', owner: 'run:run-OLD', repo, version: 2, ...claimTarget,
+			title: 'T', marker: MARKER, state: 'created', issueRef, fence: 1,
+			createdAt: '2020-01-01T00:00:00.000Z', heartbeatAt: '2020-01-01T00:00:00.000Z',
+		}));
+		return { repo, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+	};
+	const ctxOf = (repo: string) => ({
+		intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } },
+		runId: 'run-B',
+		stepOutputs: { s1: { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] } },
+	}) as never;
+
+	// HIGH: created claim recorded old/repo#41, config is acme/demo -> refuse BEFORE any prompt
+	{
+		const fx = mk({ ghOwner: 'old', ghRepo: 'repo' }, 'old/repo#41');
+		try {
+			setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [] }));
+			const out = await pushExecuteRunner.run(ctxOf(fx.repo)) as { type: string; message?: string; prompt?: string };
+			assert.equal(out.type, 'error', 'cross-repo saved ref refuses before the mutation prompt');
+			assert.match(out.message ?? '', /does not target the recorded claim target \/ configured acme\/demo/);
+			assert.ok(!out.prompt, 'no prompt emitted — finalize never sees the mismatch after an execution turn');
+			const claim = readClaim(fx.repo, H);
+			assert.equal(claim?.issueRef, 'old/repo#41', 'claim preserved');
+			assert.equal(claim?.ghOwner, 'old');
+		} finally { fx.cleanup(); }
+	}
+	// MED: created claim acme/demo#41, discovery finds TWO verified matches (#41 + #42) -> refuse ambiguity before remote work
+	{
+		const fx = mk({ ghOwner: 'acme', ghRepo: 'demo' }, 'acme/demo#41');
+		try {
+			setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [
+				{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#41' },
+				{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T (dup)`, target: 'acme/demo', ref: 'acme/demo#42' },
+			] }));
+			const out = await pushExecuteRunner.run(ctxOf(fx.repo)) as { type: string; message?: string; prompt?: string };
+			assert.equal(out.type, 'error', 'ambiguous discovery with a saved ref refuses (LLD multiple-match rule)');
+			assert.match(out.message ?? '', /2 marker-verified candidates/);
+			assert.ok(!out.prompt, 'no mutation prompt dispatched');
+			assert.equal(readClaim(fx.repo, H)?.issueRef, 'acme/demo#41', 'saved ref preserved');
+		} finally { fx.cleanup(); }
+	}
+	// positive: created claim acme/demo#41, discovery finds the SAME ref -> adopt #41
+	{
+		const fx = mk({ ghOwner: 'acme', ghRepo: 'demo' }, 'acme/demo#41');
+		try {
+			setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#41' }] }));
+			const out = await pushExecuteRunner.run(ctxOf(fx.repo)) as { type: string; userTurn?: string; prompt?: string };
+			assert.equal(out.type, 'llm-pause');
+			assert.ok(out.userTurn!.includes('ADOPT the recorded on the created claim issue `acme/demo#41`'), out.userTurn!);
+			assert.ok(!out.prompt!.includes('Create exactly ONE issue'));
+			assert.equal(readClaim(fx.repo, H)?.issueRef, 'acme/demo#41');
+		} finally { fx.cleanup(); }
+	}
+});
+
 test('REVIEW round-4 — HIGH-1: durable-ref recheck + claim create are one mutex hold; MED: adoption runs the adoption prompt (llm-pause), not a bare refs output', async () => {
 	const { pushExecuteRunner } = await import('../index.js');
 	setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [] }));   // round-10: create decisions take a fresh live lookup

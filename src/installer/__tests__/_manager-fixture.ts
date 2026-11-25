@@ -8,13 +8,13 @@ import { InstallerManager } from '../manager.js';
 import type { ManagerPeers, LaunchAdmission, MigrationExitReceipt, ShutdownRequest, DaemonObservation } from '../peer-contracts.js';
 import type { PreparedCandidate } from '../bundle.js';
 import type { Target, ManagerEvent } from '../contracts.js';
-export function managerFixture(existingHome?: string) {
+export function managerFixture(existingHome?: string, initialize = !existingHome) {
   const home = existingHome ?? mkdtempSync(join(realpathSync(tmpdir()), 'insrc-mgr-'));
   const location = resolveInstallationLocation('fixture', { home });
   const target: Target = { os: process.platform as Target['os'], arch: process.arch as Target['arch'], baseline: 'fixture' };
   const candidate = (releaseId: string): PreparedCandidate => ({ releaseId, directory: join(home, 'releases', releaseId), descriptorSha256: digest(releaseId + 'descriptor'), inventorySha256: digest(releaseId + 'inventory'), payloadSha256: digest(releaseId + 'payload'), manifest: { schemaVersion: 1, releaseId, sourceCommit: 'a'.repeat(40), target, runtime: { version: '22.22.1', target, sha256: 'b'.repeat(64), relativeExecutable: target.os === 'win32' ? 'node.exe' : 'bin/node' }, payloadSha256: digest(releaseId + 'payload'), daemonEntry: 'out/daemon/index.js', managerEntry: 'manager.mjs', tuiEntry: 'out/cli/index.js', protocolVersion: 1, compatiblePredecessors: ['old'], migrations: [] } });
   const old = candidate('old'), next = candidate('next');
-  if (!existingHome) {
+  if (initialize) {
     for (const item of [old, next]) { mkdirSync(item.directory, { recursive: true, mode: 0o700 }); writeFileSync(join(item.directory, 'marker'), item.releaseId); }
     const store = ControllerStore.acquire(location);
     store.commit({ schemaVersion: 1, revision: 0, installation: { schemaVersion: 1, installationId: 'fixture', dataHome: home, activeReleaseId: 'old', delivery: { mode: 'bundle', repository: 'insors-ai/insrc', channel: 'stable' } }, lastResult: { operationId: 'previous', phase: 'ready', candidateId: 'old' } }, null); store.close();

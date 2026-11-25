@@ -68,13 +68,14 @@ export async function runTerminalInstall(options: TerminalInstallOptions): Promi
       if (mode === 'dev' && !peers.dev) throw new InstallerError('capability-unavailable', 'Dev delivery requires the owning s2 adapter');
     }
     if (!peers.dependencies || !peers.lifecycle || !peers.migrations) throw new InstallerError('capability-unavailable', 'Dependency, lifecycle/readiness and migration adapters are required');
-    const report = parseInstaller('dependencyReport', await peers.dependencies.inspect(location));
+    const report = parseInstaller('dependencyReport', await peers.dependencies.inspect(location, { signal: options.signal }));
+    checkCancellation();
     for (const recommendation of report.recommendations) ui.write(`${recommendation}\n`);
     if (!Object.values(report.agents).some(Boolean)) ui.write('Recommend installing at least one coding CLI: Claude Code, Codex or Mistral Vibe.\n');
     let decision: DependencyDecision | undefined;
     if (report.ollamaInstallOffer) {
       const offer = report.ollamaInstallOffer;
-      decision = { offerId: offer.id, choice: affirmative(await ask(`Install Ollama ${offer.version} at ${offer.destination}? [y/N] `)) ? 'install' : 'decline' };
+      decision = { offerId: offer.id, choice: affirmative(await ask(`Install and start Ollama ${offer.version} at ${offer.destination}? [y/N] `)) ? 'install' : 'decline' };
     }
     if (!affirmative(await ask(`${upgrading ? 'Upgrade' : 'Install'} this installation at ${location.home}? [y/N] `))) return { kind: 'cancelled', code: 130 };
     ready = upgrading
@@ -84,7 +85,7 @@ export async function runTerminalInstall(options: TerminalInstallOptions): Promi
     if (ready.state.phase !== 'ready' || ready.state.errorCode || !ready.state.candidateId) throw new InstallerError(ready.state.errorCode ?? 'installation-blocked', ready.state.message ?? 'Installation did not reach verified readiness');
   } catch (error) {
     const cancelled = error instanceof Error && (error.name === 'AbortError' || error.name === 'TerminalClosedError' || error instanceof InstallerError && error.code === 'cancelled');
-    try { ui.write(cancelled ? 'Installation cancelled.\n' : `${error instanceof InstallerError ? error.code : 'install-failed'}: ${error instanceof Error ? error.message : 'Installation failed'}\n`); } catch { /* The terminal may already be closed; never retry the operation. */ }
+    try { ui.write(cancelled ? `Installation cancelled.${ready?.state.message ? '\n' + ready.state.message : ''}\n` : `${error instanceof InstallerError ? error.code : 'install-failed'}: ${error instanceof Error ? error.message : 'Installation failed'}\n`); } catch { /* The terminal may already be closed; never retry the operation. */ }
     return { kind: cancelled ? 'cancelled' : 'failed', code: cancelled ? 130 : 1, event: ready, errorCode: error instanceof InstallerError ? error.code : undefined };
   } finally { ui.close(); }
   // Manager returned only after ready commit and native lock release. No

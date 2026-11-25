@@ -30,7 +30,7 @@ export function qualifyFixturePolicy(policy: OllamaPolicy): OllamaPolicy {
   const copy = structuredClone(policy); copy.qualification = { policySha256: ollamaPolicySha256(copy), native: true, evidence: 'fixtures/not-native-evidence.json', checks: { version: true, readiness: true, reuse: true, decline: true, userOnly: true } }; return copy;
 }
 /** No native Ollama executable is run here. Real native qualification is t9. */
-export async function ollamaFixture() {
+export async function ollamaFixture(installationId = 'ollama-preparation') {
   const root = mkdtempSync(join(realpathSync(tmpdir()), 'iop-')), home = join(root, 'home'), bin = join(root, 'bin');
   mkdirSync(home, { mode: 0o700 }); mkdirSync(bin, { mode: 0o700 }); if (process.platform === 'win32') { controlBinding().protect(root); controlBinding().protect(home); }
   const target: Target = { os: process.platform as Target['os'], arch: process.arch as Target['arch'], baseline: 'fixture' };
@@ -47,7 +47,7 @@ export async function ollamaFixture() {
   server.listen(0, '127.0.0.1'); await once(server, 'listening'); const address = server.address(); assert.ok(address && typeof address === 'object');
   const port = address.port, endpoint = `http://127.0.0.1:${port}`; await new Promise<void>(resolve => server.close(() => resolve()));
   writeFileSync(join(home, 'config.json'), JSON.stringify({ models: { local: { host: endpoint } } })); writeFileSync(join(home, 'application-data'), 'retain');
-  const location = resolveInstallationLocation('ollama-preparation', { home });
+  const location = resolveInstallationLocation(installationId, { home });
   let policy: OllamaPolicy = qualifyFixturePolicy({ schemaVersion: 1, target, version: '0.0.1-fixture',
     asset: { url: `https://github.com/ollama/ollama/releases/download/v0.0.1-fixture/ollama.${target.os === 'linux' ? 'tar.zst' : 'zip'}`, sha256: digest(bytes), bytes: bytes.length, format: target.os === 'linux' ? 'tar.zst' : 'zip' },
     limits: { expandedBytes: 1024 * 1024, fileBytes: 512 * 1024, files: 128, windowBytes: 2 ** 25 }, layout: { executable, requiredFiles: [executable, 'lib/data.dat'], aliases: [] },

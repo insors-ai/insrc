@@ -1,4 +1,3 @@
-import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import type { ChildProcess } from 'node:child_process';
@@ -13,23 +12,10 @@ import { serviceAdmission, servicePaths } from '../ollama-service-records.js';
 import { dependencyPort } from '../dependencies.js';
 import { canonicalJson, digest } from '../release-descriptor.js';
 import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
-import { completeNode22Fixture } from './_runtime-fixture.js';
+import { privateRuntimeTest } from './_private-runtime-test.js';
 
-// The tracked gate may use the host Node. Execute the unchanged production
-// runtime checks in the complete verified Node fixture, never weaken them.
 function serviceTest(title: string, run: () => Promise<void>): void {
-  test(title, async () => {
-    if (process.version === 'v22.22.1') return run();
-    const runtime = await completeNode22Fixture(), children: ChildProcess[] = [];
-    try {
-      const child = spawnFixture(runtime.executable, ['--import', 'tsx', '--test', '--test-name-pattern', `^${title}$`, fileURLToPath(import.meta.url)],
-        { env: { ...process.env, NODE_OPTIONS: '', NODE_PATH: '', NODE_TEST_CONTEXT: undefined }, stdio: ['ignore', 'pipe', 'pipe'] });
-      children.push(child); let output = '';
-      for (const stream of [child.stdout!, child.stderr!]) stream.on('data', bytes => { output = (output + String(bytes)).slice(-32768); });
-      assert.deepEqual(await once(child, 'close'), [0, null], output);
-      assert.match(output, /^# pass 1$/m);
-    } finally { await stopOwnedChildren(children); runtime.cleanup(); }
-  });
+  privateRuntimeTest(import.meta.url, title, run);
 }
 
 const driver = fileURLToPath(new URL('./ollama-service-worker-fixture.mjs', import.meta.url));

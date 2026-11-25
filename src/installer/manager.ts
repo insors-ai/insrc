@@ -7,7 +7,8 @@ import type { ControllerInspection } from './controller-store.js';
 import { parseInstaller, parseManagerRequest, parseReleaseManifest } from './schemas.js';
 import { canonicalJson, digest } from './release-descriptor.js';
 import type { PreparedCandidate, PreparationLease } from './bundle.js';
-import type { DeliveryPort, LaunchAdmission, ManagerPeers, MigrationEvidence, PreparedReleaseOffer, ReadyEvidence, ShutdownCompletion, ShutdownRequest } from './peer-contracts.js';
+import type { DeliveryPort, DependencyOperationContext, LaunchAdmission, ManagerPeers, MigrationEvidence, PreparedReleaseOffer, ReadyEvidence, ShutdownCompletion, ShutdownRequest } from './peer-contracts.js';
+import { createDependencyOperationContext } from './dependency-context.js';
 import { acceptResolvedDevSource, devUpgradeOfferId, parseDevDelivery, parseDevPreparation, parseDevReleaseReceipt, parseDevSourceOffer } from './dev.js';
 import type { DevPreparationRecord, DevSourceOffer, PreparationContext } from './dev.js';
 import { BUNDLE_LIMITS } from './release-descriptor.js';
@@ -134,6 +135,33 @@ export class InstallerManager {
       if (offer.kind !== 'dev-source') throw new Error('wrong source mode');
       return offer;
     } catch (cause) { throw new InstallerError('preparation-uncertain', 'Original accepted source cannot be recovered', { cause }); }
+  }
+  #dependencyAttempt(active: Active): { schemaVersion: 1; operationId: string; installationId: string; attemptNonce: string; decision: DependencyDecision } | undefined {
+    const input = active.store.readOperationData(active.request.operationId, 'dependency');
+    if (input === undefined) return undefined;
+    const record = input as { schemaVersion: 1; operationId: string; installationId: string; attemptNonce: string; decision: DependencyDecision };
+    try {
+      if (!record || Object.keys(record).sort().join(',') !== 'attemptNonce,decision,installationId,operationId,schemaVersion'
+        || record.schemaVersion !== 1 || record.operationId !== active.request.operationId || record.installationId !== this.location.installationId || !hash(record.attemptNonce)) throw new Error('binding differs');
+      parseInstaller('dependencyDecision', record.decision); return record;
+    } catch (cause) { throw new InstallerError('dependency-uncertain', 'Recorded dependency intent cannot be reconciled', { cause }); }
+  }
+  #dependencyContext(active: Active, decision: DependencyDecision, signal?: AbortSignal): DependencyOperationContext {
+    const assertCurrent = () => {
+      this.#assertCurrent(active); active.checkCancellation();
+      if (active.snapshot.operation?.phase !== 'preparing') fail('dependency-uncertain', 'Dependency mutation requires its live preparing owner');
+    };
+    assertCurrent();
+    if (this.#dependencyAttempt(active)) fail('dependency-uncertain', 'Recorded dependency work must be inspected without replay');
+    const record = { schemaVersion: 1 as const, operationId: active.request.operationId, installationId: this.location.installationId, attemptNonce: randomBytes(32).toString('hex'), decision };
+    active.store.writeOperationData(active.request.operationId, 'dependency', record);
+    return createDependencyOperationContext(this.location, this.target.os, { operationId: record.operationId, attemptNonce: record.attemptNonce, signal, assertCurrent,
+      progress: (stage, detail) => { assertCurrent(); this.progress(this.#event(active, { ...active.snapshot.operation!, message: `${stage}: ${detail}` }, 'progress')); } });
+  }
+  #acceptedOffer(active: Active): PreparedReleaseOffer {
+    const value = active.store.readOperationData(active.request.operationId, 'release-offer') as { schemaVersion?: unknown; offer?: unknown } | undefined;
+    if (!value || value.schemaVersion !== 1 || Object.keys(value).sort().join(',') !== 'offer,schemaVersion') fail('dependency-uncertain', 'Original release offer is unavailable after dependency interruption');
+    return this.#offer(value.offer as PreparedReleaseOffer, active.snapshot.installation.delivery, active.snapshot.installation.activeReleaseId);
   }
   /** Typed metadata capability bound to this exact live manager lease/revision.
    * Peers never receive the controller writer or an arbitrary metadata filename. */
@@ -316,28 +344,57 @@ export class InstallerManager {
         return this.#finish(active, { ...active.snapshot.operation!, phase: 'stopped', errorCode: undefined, message: undefined });
       }
       const delivery = this.#delivery(initial.installation.delivery);
-      let report = parseInstaller('dependencyReport', await this.peers.dependencies!.inspect(this.location));
-      checkCancellation();
-      if (decision) { parseInstaller('dependencyDecision', decision); if (!['install', 'upgrade'].includes(request.action) || report.ollamaInstallOffer?.id !== decision.offerId) fail('dependency-offer-stale', 'Dependency consent does not match the terminal offer'); report = parseInstaller('dependencyReport', await this.peers.dependencies!.decide(this.location, decision)); }
-      checkCancellation();
-      if (!report.runtimeReady || report.blockers.length) fail('dependency-blocked', report.blockers.join('; ') || 'Private runtime is unavailable');
       let migrate = request.action === 'upgrade' || request.action === 'install';
+      let offer: PreparedReleaseOffer | undefined;
+      if (!recovering) {
+        if (migrate) {
+          offer = this.#offer(await delivery.resolve(initial.installation.delivery), initial.installation.delivery, initial.installation.activeReleaseId);
+          if (request.action === 'upgrade') {
+            if (offer.kind === 'dev-source') acceptResolvedDevSource(this.location, initial.installation.activeReleaseId, offer, request.acceptedOfferId!);
+            else if (request.acceptedOfferId !== this.#offerId(offer, initial.installation.delivery, initial.installation.activeReleaseId)) fail('offer-stale', 'Upgrade acceptance differs from the exact current offer');
+          }
+        }
+        checkCancellation(); store.assertHeld();
+        if (inspected.kind === 'missing') store.commit(initial, null);
+        store.writeOperationData(request.operationId, 'intent', request);
+        this.#update(active, 'preparing', { predecessorId: initial.installation.activeReleaseId });
+        if (offer) store.writeOperationData(request.operationId, 'release-offer', { schemaVersion: 1, offer });
+        if (offer?.kind === 'dev-source') store.writeOperationData(request.operationId, 'dev-source', { schemaVersion: 1, sourceOffer: offer });
+      }
+      const dependencyAttempt = this.#dependencyAttempt(active);
+      this.#assertCurrent(active); checkCancellation();
+      let report = parseInstaller('dependencyReport', await this.peers.dependencies!.inspect(this.location, { signal }));
+      this.#assertCurrent(active); checkCancellation();
+      if (decision) {
+        parseInstaller('dependencyDecision', decision);
+        if (!['install', 'upgrade'].includes(request.action) || report.ollamaInstallOffer?.id !== decision.offerId) fail('dependency-offer-stale', 'Dependency consent does not match the terminal offer');
+        const context = this.#dependencyContext(active, decision, signal); context.assertCurrent();
+        report = parseInstaller('dependencyReport', await this.peers.dependencies!.decide(this.location, decision, context));
+        context.assertCurrent();
+      }
+      this.#assertCurrent(active); checkCancellation();
+      if (!report.runtimeReady || report.blockers.length) fail(recovering && dependencyAttempt ? 'dependency-uncertain' : 'dependency-blocked', report.blockers.join('; ') || 'Private runtime is unavailable');
       if (request.action === 'retry-migration') {
         const stored = store.readOperationData(request.operationId, 'candidate') as { releaseId?: unknown; descriptorSha256?: unknown; payloadSha256?: unknown; inventorySha256?: unknown } | undefined;
-        if (stored === undefined && initial.installation.delivery.mode === 'dev') {
+        if (stored === undefined && (initial.installation.delivery.mode === 'dev' || dependencyAttempt)) {
           if (active.interruptedPhase !== 'preparing' || !['install', 'upgrade'].includes(intent!.action)
             || active.snapshot.operation?.candidateId !== undefined || store.readOperationData(request.operationId, 'admission') !== undefined
             || store.readOperationData(request.operationId, 'shutdown') !== undefined
-            || active.snapshot.operation?.predecessorId !== initial.installation.activeReleaseId || !delivery.resumePreparation) fail('preparation-uncertain', 'Recovery is not a pre-publication dev preparation');
-          const source = this.#acceptedSource(active);
-          if (intent!.action === 'upgrade' && intent!.acceptedOfferId !== this.#offerId(source, initial.installation.delivery, initial.installation.activeReleaseId)) fail('preparation-uncertain', 'Original source consent differs from the interrupted operation');
+            || active.snapshot.operation?.predecessorId !== initial.installation.activeReleaseId) fail('preparation-uncertain', 'Recovery is not a pre-publication preparation');
+          const accepted = initial.installation.delivery.mode === 'dev' ? this.#acceptedSource(active) : this.#acceptedOffer(active);
+          if (intent!.action === 'upgrade' && intent!.acceptedOfferId !== this.#offerId(accepted, initial.installation.delivery, initial.installation.activeReleaseId)) fail('preparation-uncertain', 'Original release consent differs from the interrupted operation');
           // No candidate, shutdown or launch admission existed: data/lifecycle
           // disruption has not begun. Unknown preparation still blocks below.
           active.disrupted = false;
           this.#update(active, 'preparing', { errorCode: undefined, message: undefined });
-          active.candidate = await delivery.resumePreparation(this.#lease(active, signal), this.#preparation(active, source, signal));
+          const source = accepted.kind === 'dev-source' ? accepted : undefined;
+          const preparation = this.#preparation(active, source, signal);
+          if (source && (store.readOperationData(request.operationId, 'dev-preparation') !== undefined || !dependencyAttempt)) {
+            if (!delivery.resumePreparation) fail('preparation-uncertain', 'Dev preparation recovery is unavailable');
+            active.candidate = await delivery.resumePreparation(this.#lease(active, signal), preparation);
+          } else active.candidate = await delivery.prepare(this.#lease(active, signal), accepted, preparation);
           await this.#verify(active, active.candidate); checkCancellation();
-          await this.#acceptedCandidate(active, source);
+          await this.#acceptedCandidate(active, accepted);
           store.writeOperationData(request.operationId, 'candidate', { releaseId: active.candidate.releaseId, descriptorSha256: active.candidate.descriptorSha256, payloadSha256: active.candidate.payloadSha256, inventorySha256: active.candidate.inventorySha256 });
           this.#update(active, 'preparing', { candidateId: active.candidate.releaseId });
           await this.#quiesce(active, intent!.shutdownMode);
@@ -368,19 +425,7 @@ export class InstallerManager {
           }
         }
       } else {
-        let offer;
-        if (migrate) {
-          offer = this.#offer(await delivery.resolve(initial.installation.delivery), initial.installation.delivery, initial.installation.activeReleaseId);
-          if (request.action === 'upgrade') {
-            if (offer.kind === 'dev-source') acceptResolvedDevSource(this.location, initial.installation.activeReleaseId, offer, request.acceptedOfferId!);
-            else if (request.acceptedOfferId !== this.#offerId(offer, initial.installation.delivery, initial.installation.activeReleaseId)) fail('offer-stale', 'Upgrade acceptance differs from the exact current offer');
-          }
-        }
         checkCancellation();
-        if (inspected.kind === 'missing') store.commit(initial, null);
-        store.writeOperationData(request.operationId, 'intent', request);
-        this.#update(active, 'preparing', { predecessorId: initial.installation.activeReleaseId });
-        if (offer?.kind === 'dev-source') store.writeOperationData(request.operationId, 'dev-source', { schemaVersion: 1, sourceOffer: offer });
         active.candidate = offer ? await delivery.prepare(this.#lease(active, signal), offer, this.#preparation(active, offer.kind === 'dev-source' ? offer : undefined, signal)) : await delivery.open(this.location, initial.installation.activeReleaseId ?? fail('install-required', 'No selected release'));
         await this.#verify(active, active.candidate);
         checkCancellation();
@@ -407,7 +452,7 @@ export class InstallerManager {
     } catch (error) {
       if (active?.started || (active && request.action === 'retry-migration')) {
         const detail = error instanceof Error ? error.message.replace(/[\x00-\x1f\x7f]/g, ' ').slice(0, 3500) || 'Operation failed' : 'Operation failed', code = error instanceof InstallerError ? error.code : 'operation-failed';
-        const blocked = active.disrupted || code === 'preparation-uncertain';
+        const blocked = active.disrupted || code === 'preparation-uncertain' || code === 'dependency-uncertain';
         const failed: OperationRecord = { ...active.snapshot.operation, operationId: request.operationId, phase: blocked ? 'blocked' : 'preparing', errorCode: code, message: detail };
         if (blocked) {
           // Preserve the interrupted phase before publishing blocked; later retries

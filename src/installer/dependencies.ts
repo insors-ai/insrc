@@ -340,6 +340,7 @@ async function inspectDependencyWork(location: InstallationLocation, target: Tar
       report.ollamaInstallOffer = { id: offer.id, destination: offer.destination, version: offer.version };
       note(`Accepting this offer installs and starts a user-session Ollama service at ${offer.endpoint}.`);
       note(`Models stay at ${offer.modelsDirectory}; logs stay at ${offer.logsDirectory}. No models are downloaded automatically.`);
+      note(`Ollama support files and temporary data stay at ${(target.os === 'win32' ? win32 : posix).dirname(offer.modelsDirectory)}.`);
     } else if (report.ollama === 'missing') note('Automatic user-level Ollama installation is not qualified for this exact target/configuration; install Ollama manually and retry.');
     const inspection = { report: finish(), endpoint, executable: binary.executable, policy, offer };
     return evidence ? evidence(inspection, signal) : inspection;

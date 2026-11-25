@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 114 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
+**Totals:** 129 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -315,38 +315,36 @@ Run at 2026-11-25T13:49:58.938Z on commit `60a3752db`. Tests check: **passed**. 
 
 ## t9
 
-Run at 2026-11-25T14:14:45.347Z on commit `8e2534b48`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 4 reported by the builder and not run by the gate.
+Run at 2026-11-25T19:57:38.222Z on commit `94a2a2ac7`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 4 reported by the builder and not run by the gate.
 
 **live: qualified-exact-ollama-payload-version-and-user-session-readiness-on-enabled-target**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json (historical native run dated 2026-11-25; T16 changes mapping only; T17 owns current requalification)
 
 **live: existing-installation-reuse-and-decline-preserve-platform-state**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json (historical native run dated 2026-11-25; T16 changes mapping only; T17 owns current requalification)
 
 **live: official-large-archive-streaming-and-library-layout-match-policy**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json (historical native run dated 2026-11-25; T16 changes mapping only; T17 owns current requalification)
 
 **unit: enabled-target-policy-requires-matching-native-evidence-and-mandatory-linux-route**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | enabled-target-policy-requires-matching-native-evidence-and-mandatory-linux-route | `src/installer/__tests__/ollama-catalog.test.ts` |
-| pass | transient-presence-probe-timeout-preserves-service-readiness-window | `src/installer/__tests__/ollama-service.test.ts` |
 | pass | manual-user-level-guidance-preserves-disabled-target-status | `src/installer/__tests__/ollama-catalog.test.ts` |
 
 **live: native-large-payload-inspection-avoids-content-reads-within-three-seconds**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json (historical native run dated 2026-11-25; T16 changes mapping only; T17 owns current requalification)
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/installer/__tests__/ollama-catalog.test.ts` | 0 | 2 | 3 s |  |
-| `src/installer/__tests__/ollama-service.test.ts` | 0 | 6 | 22.2 s |  |
+| `src/installer/__tests__/ollama-catalog.test.ts` | 0 | 2 | 3.1 s |  |
 
 ## t10
 
@@ -552,7 +550,7 @@ Run at 2026-11-25T18:07:52.061Z on commit `ecfd94321`. Tests check: **passed**. 
 
 ## t14
 
-Run at 2026-11-25T19:15:00.130Z on commit `be434767d`. Tests check: **passed**. 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-25T20:01:14.040Z on commit `94a2a2ac7`. Tests check: **passed**. 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: cancellation-and-eof-block-later-publication-or-service-admission**
 
@@ -615,15 +613,16 @@ Run at 2026-11-25T19:15:00.130Z on commit `be434767d`. Tests check: **passed**. 
 | :--- | :--- | :--- |
 | pass | retained-service-cancellation-is-explicit-and-total-deadline-bounds-readiness | `src/installer/__tests__/ollama-service.test.ts` |
 | pass | cancellation-after-ready-dependency-report-still-discloses-retained-service | `src/installer/__tests__/dependency-integration.test.ts` |
+| pass | transient-presence-probe-timeout-preserves-service-readiness-window | `src/installer/__tests__/ollama-service.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/installer/__tests__/dependency-integration.test.ts` | 0 | 6 | 18.2 s |  |
-| `src/installer/__tests__/ollama-production-worker.test.ts` | 0 | 3 | 10.4 s |  |
-| `src/installer/__tests__/ollama-recovery.test.ts` | 0 | 19 | 47.1 s |  |
-| `src/installer/__tests__/ollama-service.test.ts` | 0 | 10 | 35.7 s |  |
+| `src/installer/__tests__/dependency-integration.test.ts` | 0 | 6 | 17.5 s |  |
+| `src/installer/__tests__/ollama-production-worker.test.ts` | 0 | 3 | 11 s |  |
+| `src/installer/__tests__/ollama-recovery.test.ts` | 0 | 19 | 48.1 s |  |
+| `src/installer/__tests__/ollama-service.test.ts` | 0 | 10 | 36.5 s |  |
 | `src/installer/__tests__/ollama-signals.test.ts` | 0 | 1 | 7.1 s |  |
 | `src/installer/__tests__/terminal-abort.test.ts` | 0 | 2 | 0.5 s |  |
 
@@ -691,3 +690,98 @@ Run at 2026-11-25T19:41:56.944Z on commit `079a1f46f`. Tests check: **passed**. 
 | `src/installer/__tests__/ollama-tar.test.ts` | 0 | 3 | 7.6 s |  |
 | `src/installer/__tests__/ollama-validation.test.ts` | 0 | 4 | 11.4 s |  |
 | `src/installer/__tests__/ollama-zip-boundaries.test.ts` | 0 | 6 | 14.6 s |  |
+
+## t16
+
+Run at 2026-11-25T20:04:10.480Z on commit `94a2a2ac7`. Tests check: **passed**. 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable | `src/installer/__tests__/dependencies.test.ts` |
+
+**integration: healthy-service-without-path-binary-is-reused**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | healthy-service-without-path-binary-is-reused | `src/installer/__tests__/dependencies.test.ts` |
+
+**integration: inspect-and-decline-have-zero-mutation-or-process-side-effects**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | inspect-and-decline-have-zero-mutation-or-process-side-effects | `src/installer/__tests__/dependencies.test.ts` |
+
+**integration: stopped-existing-ollama-has-manual-guidance-without-start-action**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | stopped-existing-ollama-has-manual-guidance-without-start-action | `src/installer/__tests__/dependencies.test.ts` |
+| pass | ancestor-alias-blocker-preserves-canonical-home-authority | `src/installer/__tests__/dependencies.test.ts` |
+
+**integration: agent-zero-one-many-detection-never-spawns-auth-model-or-install**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | agent-zero-one-many-detection-never-spawns-auth-model-or-install | `src/installer/__tests__/dependencies.test.ts` |
+
+**integration: inspection-and-reconciliation-share-three-second-bound-without-payload-hashing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | inspection-and-reconciliation-share-three-second-bound-without-payload-hashing | `src/installer/__tests__/ollama-validation.test.ts` |
+| pass | private-preparation-cancellation-blocks-later-publication | `src/installer/__tests__/ollama-prepare.test.ts` |
+
+**integration: receipt-closure-and-layout-errors-block-reuse-without-content-rehash**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | receipt-closure-and-layout-errors-block-reuse-without-content-rehash | `src/installer/__tests__/ollama-validation.test.ts` |
+
+**integration: same-size-installed-content-change-does-not-trigger-digest-reverification**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | same-size-installed-content-change-does-not-trigger-digest-reverification | `src/installer/__tests__/ollama-validation.test.ts` |
+
+**integration: reuse-and-service-admission-never-rehash-installed-files**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | reuse-and-service-admission-never-rehash-installed-files | `src/installer/__tests__/ollama-service.test.ts` |
+
+**integration: invalid-receipt-closure-layout-reject-with-specific-code-and-zero-transport-calls**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | receipt-closure-and-layout-errors-block-reuse-without-content-rehash | `src/installer/__tests__/ollama-validation.test.ts` |
+
+**integration: payload-read-sentinel-covers-sync-async-stream-and-path-read-entrypoints**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | payload-read-sentinel-covers-sync-async-stream-and-path-read-entrypoints | `src/installer/__tests__/ollama-read-sentinel.test.ts` |
+
+**integration: redirect-target-local-listener-is-never-contacted**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | redirect-target-local-listener-is-never-contacted | `src/installer/__tests__/dependencies.test.ts` |
+
+**integration: coding-cli-advice-emitted-once-and-install-spawn-sentinels-remain-zero**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | coding-cli-advice-emitted-once-and-install-spawn-sentinels-remain-zero | `src/installer/__tests__/terminal-install.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/installer/__tests__/dependencies.test.ts` | 0 | 8 | 19.1 s |  |
+| `src/installer/__tests__/ollama-prepare.test.ts` | 0 | 5 | 17 s |  |
+| `src/installer/__tests__/ollama-read-sentinel.test.ts` | 0 | 1 | 0.6 s |  |
+| `src/installer/__tests__/ollama-service.test.ts` | 0 | 10 | 38.2 s |  |
+| `src/installer/__tests__/ollama-validation.test.ts` | 0 | 4 | 11.7 s |  |
+| `src/installer/__tests__/terminal-install.test.ts` | 0 | 10 | 4.1 s |  |

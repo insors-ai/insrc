@@ -1,0 +1,45 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "t16",
+    "passed": true,
+    "checks": [
+      {
+        "check": "Invalid receipt/closure/layout tests assert exact intended error codes and zero transport calls; a throwing download stub cannot mask accidental redownload. Preserve acquisition SHA checks and metadata-only installed validation.",
+        "satisfied": true,
+        "evidence": "ollama-validation.test.ts asserts dependency-uncertain for receipt/closure and archive-unsafe for layout/size/link/mode. Its working transport increments downloads, followed by an explicit zero assertion. Same-size reuse and independent acquisition-digest rejection remain covered. Daemon reports these tests passed."
+      },
+      {
+        "check": "Expand content-read sentinel over practical sync/async/stream/path APIs and retain same-size-content cases. Demonstrate bounded metadata/header allowance without full installed-content reads.",
+        "satisfied": true,
+        "evidence": "The sentinel covers sync/callback/promise opens, positional/vectored reads, FileHandles, streams, and string/Buffer/URL/fd paths. Its dedicated test exercises allowed metadata and bounded headers alongside rejected whole-content reads. Validation and service tests retain same-size payload mutations under observation; daemon reports passes."
+      },
+      {
+        "check": "Use second loopback listener returning a valid version to prove redirect/remote target is never contacted; assert listener count zero instead of relying on external.invalid DNS failure.",
+        "satisfied": true,
+        "evidence": "dependencies.test.ts creates a second local listener returning version 0.5.1. Redirects target its 127.0.0.1 address; both redirect and disallowed configured-endpoint cases assert contacts === 0 and unchanged source request counts. Daemon reports the named test passed."
+      },
+      {
+        "check": "Provide actionable unsupported-ancestor-alias blocker while preserving S1 canonical-home/link ownership. Emit agent recommendation once and assert no coding CLI install/auth/spawn for zero/one/many presence cases.",
+        "satisfied": true,
+        "evidence": "Detection reports the linked ancestor and advises a canonical physical --home. The alias test asserts home-invalid, no offer, preserved symlink and unchanged tree; location ownership code is untouched. Detection and terminal tests cover zero/one/three agents, exact advisory counts, and zero calls across seven subprocess entrypoints."
+      },
+      {
+        "check": "Replace tight wall-clock or half-written-JSON polling with hooks/events or safe margins in touched prepare/detection/validation tests; assertions must prove claimed behavior.",
+        "satisfied": true,
+        "evidence": "Detection uses explicit release/completion barriers; reconciliation awaits sentinel drain. Preparation waits for immutable disposal publication through fs.watch before reading closure JSON. The shared cleanup-budget test distinguishes a 3000 ms shared budget from at least 5000 ms separate budgets using a 4500 ms threshold."
+      },
+      {
+        "check": "Correct TESTS traceability: transient readiness timeout maps to its service test; never-installs-agent assertions are real. Run surrounding detection/validation/policy/terminal selectors only.",
+        "satisfied": true,
+        "evidence": "TESTS.md and its JSON artifact map transient-presence-probe-timeout-preserves-service-readiness-window to ollama-service.test.ts under retained-service readiness/deadline coverage. Never-installs-agent tests now enforce subprocess counters. Reported runs stay within surrounding installer selectors; all required named mappings exercise their claimed behavior and passed in the daemon results."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "The t16 commit is confined to detection diagnostics, advisory deduplication, test sentinels/assertions, and task evidence; all acceptance checks are supported by repository inspection and passing daemon checks.",
+    "testsPassed": true,
+    "typecheckClean": true
+  },
+  "passed": true,
+  "commentSync": "comment sync on insors-ai/insrc#292: recorded 0, posted 0"
+}

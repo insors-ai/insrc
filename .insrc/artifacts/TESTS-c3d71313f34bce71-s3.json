@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 37,
-        "contentHash": "01d33a7b532757d2ab9c9e55861b67e89184c1d9ce3a3e0232cb428f59f45ef1",
-        "at": "2026-11-25T19:41:56.979Z",
+        "number": 40,
+        "contentHash": "96ac8da30e41f25ebf8c71561b8546184a32f1a7730f08d690b5c968adf0c0b7",
+        "at": "2026-11-25T20:04:10.502Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "c3d71313f34bce71",
     "storyId": "s3",
     "createdAt": "2026-11-25T02:01:50.011Z",
-    "updatedAt": "2026-11-25T19:41:56.944Z",
+    "updatedAt": "2026-11-25T20:04:10.480Z",
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
-    "revision": 37
+    "revision": 40
   },
   "body": {
     "tasks": [
@@ -969,8 +969,8 @@
       },
       {
         "taskId": "t9",
-        "commit": "8e2534b48",
-        "ranAt": "2026-11-25T14:14:45.347Z",
+        "commit": "94a2a2ac7",
+        "ranAt": "2026-11-25T19:57:38.222Z",
         "testsPassed": true,
         "tests": [
           {
@@ -981,7 +981,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json"
+              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json (historical native run dated 2026-11-25; T16 changes mapping only; T17 owns current requalification)"
             }
           },
           {
@@ -992,7 +992,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json"
+              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json (historical native run dated 2026-11-25; T16 changes mapping only; T17 owns current requalification)"
             }
           },
           {
@@ -1003,7 +1003,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json"
+              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json (historical native run dated 2026-11-25; T16 changes mapping only; T17 owns current requalification)"
             }
           },
           {
@@ -1014,11 +1014,6 @@
               {
                 "file": "src/installer/__tests__/ollama-catalog.test.ts",
                 "title": "enabled-target-policy-requires-matching-native-evidence-and-mandatory-linux-route",
-                "result": "pass"
-              },
-              {
-                "file": "src/installer/__tests__/ollama-service.test.ts",
-                "title": "transient-presence-probe-timeout-preserves-service-readiness-window",
                 "result": "pass"
               },
               {
@@ -1037,7 +1032,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json"
+              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json (historical native run dated 2026-11-25; T16 changes mapping only; T17 owns current requalification)"
             }
           }
         ],
@@ -1046,7 +1041,7 @@
             "file": "src/installer/__tests__/ollama-catalog.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3043,
+            "durationMs": 3108,
             "titles": [
               {
                 "title": "enabled-target-policy-requires-matching-native-evidence-and-mandatory-linux-route",
@@ -1054,39 +1049,6 @@
               },
               {
                 "title": "manual-user-level-guidance-preserves-disabled-target-status",
-                "result": "pass"
-              }
-            ],
-            "otherFailures": []
-          },
-          {
-            "file": "src/installer/__tests__/ollama-service.test.ts",
-            "exitCode": 0,
-            "timedOut": false,
-            "durationMs": 22159,
-            "titles": [
-              {
-                "title": "reuse-and-service-admission-never-rehash-installed-files",
-                "result": "pass"
-              },
-              {
-                "title": "transient-presence-probe-timeout-preserves-service-readiness-window",
-                "result": "pass"
-              },
-              {
-                "title": "service-admission-is-durable-and-distinct-from-finite-preparation-drain",
-                "result": "pass"
-              },
-              {
-                "title": "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn",
-                "result": "pass"
-              },
-              {
-                "title": "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener",
-                "result": "pass"
-              },
-              {
-                "title": "service-admission-cancellation-retains-only-explicitly-accepted-service-intent",
                 "result": "pass"
               }
             ],
@@ -1892,8 +1854,8 @@
       },
       {
         "taskId": "t14",
-        "commit": "be434767d",
-        "ranAt": "2026-11-25T19:15:00.130Z",
+        "commit": "94a2a2ac7",
+        "ranAt": "2026-11-25T20:01:14.040Z",
         "testsPassed": true,
         "tests": [
           {
@@ -2049,6 +2011,11 @@
                 "file": "src/installer/__tests__/dependency-integration.test.ts",
                 "title": "cancellation-after-ready-dependency-report-still-discloses-retained-service",
                 "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-service.test.ts",
+                "title": "transient-presence-probe-timeout-preserves-service-readiness-window",
+                "result": "pass"
               }
             ],
             "files": []
@@ -2059,7 +2026,7 @@
             "file": "src/installer/__tests__/dependency-integration.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 18241,
+            "durationMs": 17492,
             "titles": [
               {
                 "title": "accepted-official-payload-is-user-only-and-discloses-install-and-start",
@@ -2092,7 +2059,7 @@
             "file": "src/installer/__tests__/ollama-production-worker.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 10355,
+            "durationMs": 10992,
             "titles": [
               {
                 "title": "production-worker-dispatch-argv-path-and-sanitized-environment-with-seeded-sentinels",
@@ -2113,7 +2080,7 @@
             "file": "src/installer/__tests__/ollama-recovery.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 47148,
+            "durationMs": 48102,
             "titles": [
               {
                 "title": "qualified-in-process-lock-proof-excludes-live-inherited-and-unknown-actors",
@@ -2198,7 +2165,7 @@
             "file": "src/installer/__tests__/ollama-service.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 35706,
+            "durationMs": 36451,
             "titles": [
               {
                 "title": "reuse-and-service-admission-never-rehash-installed-files",
@@ -2247,7 +2214,7 @@
             "file": "src/installer/__tests__/ollama-signals.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 7130,
+            "durationMs": 7074,
             "titles": [
               {
                 "title": "sighup-sigterm-and-sigkill-at-preparation-and-handoff-preserve-correct-evidence",
@@ -2260,7 +2227,7 @@
             "file": "src/installer/__tests__/terminal-abort.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 460,
+            "durationMs": 453,
             "titles": [
               {
                 "title": "terminal-eof-and-interrupt-request-one-drain-and-restore-handlers",
@@ -2563,6 +2530,401 @@
               },
               {
                 "title": "large-deflated-zip-consumes-coalesced-output-with-fixed-read-bounds",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "94a2a2ac7",
+        "ranAt": "2026-11-25T20:04:10.480Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependencies.test.ts",
+                "title": "dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "healthy-service-without-path-binary-is-reused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependencies.test.ts",
+                "title": "healthy-service-without-path-binary-is-reused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "inspect-and-decline-have-zero-mutation-or-process-side-effects",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependencies.test.ts",
+                "title": "inspect-and-decline-have-zero-mutation-or-process-side-effects",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "stopped-existing-ollama-has-manual-guidance-without-start-action",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependencies.test.ts",
+                "title": "stopped-existing-ollama-has-manual-guidance-without-start-action",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dependencies.test.ts",
+                "title": "ancestor-alias-blocker-preserves-canonical-home-authority",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "agent-zero-one-many-detection-never-spawns-auth-model-or-install",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependencies.test.ts",
+                "title": "agent-zero-one-many-detection-never-spawns-auth-model-or-install",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "inspection-and-reconciliation-share-three-second-bound-without-payload-hashing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-validation.test.ts",
+                "title": "inspection-and-reconciliation-share-three-second-bound-without-payload-hashing",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-prepare.test.ts",
+                "title": "private-preparation-cancellation-blocks-later-publication",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "receipt-closure-and-layout-errors-block-reuse-without-content-rehash",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-validation.test.ts",
+                "title": "receipt-closure-and-layout-errors-block-reuse-without-content-rehash",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "same-size-installed-content-change-does-not-trigger-digest-reverification",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-validation.test.ts",
+                "title": "same-size-installed-content-change-does-not-trigger-digest-reverification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reuse-and-service-admission-never-rehash-installed-files",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-service.test.ts",
+                "title": "reuse-and-service-admission-never-rehash-installed-files",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "invalid-receipt-closure-layout-reject-with-specific-code-and-zero-transport-calls",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-validation.test.ts",
+                "title": "receipt-closure-and-layout-errors-block-reuse-without-content-rehash",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "payload-read-sentinel-covers-sync-async-stream-and-path-read-entrypoints",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-read-sentinel.test.ts",
+                "title": "payload-read-sentinel-covers-sync-async-stream-and-path-read-entrypoints",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "redirect-target-local-listener-is-never-contacted",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependencies.test.ts",
+                "title": "redirect-target-local-listener-is-never-contacted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "coding-cli-advice-emitted-once-and-install-spawn-sentinels-remain-zero",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/terminal-install.test.ts",
+                "title": "coding-cli-advice-emitted-once-and-install-spawn-sentinels-remain-zero",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/dependencies.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 19144,
+            "titles": [
+              {
+                "title": "dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "healthy-service-without-path-binary-is-reused",
+                "result": "pass"
+              },
+              {
+                "title": "inspect-and-decline-have-zero-mutation-or-process-side-effects",
+                "result": "pass"
+              },
+              {
+                "title": "stopped-existing-ollama-has-manual-guidance-without-start-action",
+                "result": "pass"
+              },
+              {
+                "title": "agent-zero-one-many-detection-never-spawns-auth-model-or-install",
+                "result": "pass"
+              },
+              {
+                "title": "private-runtime-provenance-rejects-path-node-and-wrong-target",
+                "result": "pass"
+              },
+              {
+                "title": "redirect-target-local-listener-is-never-contacted",
+                "result": "pass"
+              },
+              {
+                "title": "ancestor-alias-blocker-preserves-canonical-home-authority",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-prepare.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 17019,
+            "titles": [
+              {
+                "title": "stale-forged-and-cross-home-offers-reject-before-mutation",
+                "result": "pass"
+              },
+              {
+                "title": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state",
+                "result": "pass"
+              },
+              {
+                "title": "download-size-digest-layout-and-fsync-failures-never-report-ready",
+                "result": "pass"
+              },
+              {
+                "title": "finite-actor-closure-uncertainty-blocks-retry-and-cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "private-preparation-cancellation-blocks-later-publication",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-read-sentinel.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 576,
+            "titles": [
+              {
+                "title": "payload-read-sentinel-covers-sync-async-stream-and-path-read-entrypoints",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 38233,
+            "titles": [
+              {
+                "title": "reuse-and-service-admission-never-rehash-installed-files",
+                "result": "pass"
+              },
+              {
+                "title": "transient-presence-probe-timeout-preserves-service-readiness-window",
+                "result": "pass"
+              },
+              {
+                "title": "service-admission-is-durable-and-distinct-from-finite-preparation-drain",
+                "result": "pass"
+              },
+              {
+                "title": "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn",
+                "result": "pass"
+              },
+              {
+                "title": "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener",
+                "result": "pass"
+              },
+              {
+                "title": "service-admission-cancellation-retains-only-explicitly-accepted-service-intent",
+                "result": "pass"
+              },
+              {
+                "title": "supervisor-log-validation-and-pre-spawn-failures-have-bounded-not-started-diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "retained-service-cancellation-is-explicit-and-total-deadline-bounds-readiness",
+                "result": "pass"
+              },
+              {
+                "title": "pre-launch-failure-and-cancelled-failed-spawn-keep-bound-not-started-diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "retained-facts-survive-stale-finite-marker-without-repair-or-replay",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-validation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11699,
+            "titles": [
+              {
+                "title": "inspection-and-reconciliation-share-three-second-bound-without-payload-hashing",
+                "result": "pass"
+              },
+              {
+                "title": "same-size-installed-content-change-does-not-trigger-digest-reverification",
+                "result": "pass"
+              },
+              {
+                "title": "receipt-closure-and-layout-errors-block-reuse-without-content-rehash",
+                "result": "pass"
+              },
+              {
+                "title": "archive-digest-mismatch-still-rejects-live-acquisition",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/terminal-install.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4123,
+            "titles": [
+              {
+                "title": "terminal installer requires all TTY streams and absent dev adapter fails explicitly",
+                "result": "pass"
+              },
+              {
+                "title": "ready commit and lock release precede same terminal installed TUI",
+                "result": "pass"
+              },
+              {
+                "title": "cancel install failure and post install TUI error preserve correct outcome",
+                "result": "pass"
+              },
+              {
+                "title": "terminal consent binds exact dependency offer and never installs coding CLIs",
+                "result": "pass"
+              },
+              {
+                "title": "installed launcher preserves existing files and quotes exact private-runtime retry",
+                "result": "pass"
+              },
+              {
+                "title": "terminal cancellation settles owned work and suppresses later TUI handoff",
+                "result": "pass"
+              },
+              {
+                "title": "terminal upgrade retains delivery and rejects stale dependency consent before disruption",
+                "result": "pass"
+              },
+              {
+                "title": "successor upgrade replaces its owned launcher and preserves ready selection",
+                "result": "pass"
+              },
+              {
+                "title": "saved installer selects candidate control runtime and exact post-install retry",
+                "result": "pass"
+              },
+              {
+                "title": "coding-cli-advice-emitted-once-and-install-spawn-sentinels-remain-zero",
                 "result": "pass"
               }
             ],

@@ -27,6 +27,7 @@ export const OLLAMA_PREPARATION_MS = 20 * 60 * 1000, OLLAMA_CLEANUP_MS = 5000;
 const pendingReads = new Map<string, Promise<unknown>>();
 export interface PreparedOllama {
   directory: string; identity: DependencyAttemptIdentity; policy: OllamaPolicy; offer: OllamaOffer; inventorySha256: string; files: InventoryFile[];
+  preparationDeadline: number;
 }
 export interface OllamaPrepareOptions {
   /** Internal read-only inspection which settles only after probe closure
@@ -61,27 +62,31 @@ async function untilAbort<T>(promise: Promise<T>, signal: AbortSignal): Promise<
 }
 
 /** Read-only positive closure census. A free lock, PID or age grants nothing. */
-export async function closedOllamaAttempts(location: InstallationLocation): Promise<OllamaAttempt[]> {
+export async function closedOllamaAttempts(location: InstallationLocation, signal?: AbortSignal): Promise<OllamaAttempt[]> {
   try {
+  signal?.throwIfAborted();
   const root = dependencyPath(location, 'deps/ollama/.attempts');
   if (existsSync(root)) await privateOllamaDirectory(root);
   const operations = existsSync(root) ? await readdir(root) : [], result: OllamaAttempt[] = [];
   if (operations.length > 128) throw dependencyUncertain('Dependency operation evidence exceeds bound');
   for (const operation of operations) {
+    signal?.throwIfAborted();
     const directory = join(root, operation); await privateOllamaDirectory(directory);
     const files = await readdir(directory);
     if (files.length > 1024) throw dependencyUncertain('Dependency attempt evidence exceeds bound');
     for (const name of files) {
+      signal?.throwIfAborted();
       if (!/^[A-Za-z0-9_-]{32,128}\.json$/.test(name)) {
-        if (/^[A-Za-z0-9_-]{32,128}\.json\.lock$/.test(name)) {
+        if (/^[A-Za-z0-9_-]{32,128}\.(?:json|service)\.lock$/.test(name)) {
           const info = lstatSync(join(directory, name)); if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1
             || (process.platform !== 'win32' && (info.uid !== process.getuid?.() || (info.mode & 0o077)))) throw dependencyUncertain('Unsafe dependency attempt lock'); continue;
         }
-        if (!/^[A-Za-z0-9_-]{32,128}\.(?:closed|cleanup|disposed|published|service|service-result)\.json$/.test(name)) throw dependencyUncertain('Unrecognized dependency attempt evidence');
+        if (!/^[A-Za-z0-9_-]{32,128}\.(?:closed|cleanup|disposed|published|service|service-input|service-launch|service-running|service-exit|service-result|service-log-error)\.json$/.test(name)) throw dependencyUncertain('Unrecognized dependency attempt evidence');
         continue;
       }
       if (result.length >= 128) throw dependencyUncertain('Dependency attempt history exceeds bound');
       const file = join(directory, name), attempt = parseBoundOllamaAttempt(location, json(await readDependencyRecord(location, file)));
+      signal?.throwIfAborted();
       if (dependencyPath(location, attempt.identity.recordRelativePath) !== file) throw dependencyUncertain('Dependency evidence path binding differs');
       parseOllamaClosure(attempt.identity, json(await readDependencyRecord(location, closurePath(file))));
       const cleanup = json(await readDependencyRecord(location, cleanupPath(file)));
@@ -96,6 +101,7 @@ export async function closedOllamaAttempts(location: InstallationLocation): Prom
     await privateOllamaDirectory(staging); const operations = await readdir(staging);
     if (operations.length > 128) throw dependencyUncertain('Excessive retained dependency staging');
     for (const operation of operations) {
+      signal?.throwIfAborted();
       const path = join(staging, operation); await privateOllamaDirectory(path);
       // Every fully disposed attempt must be absent. An unrecorded retained
       // stage is equally uncertain, irrespective of its age or a free lock.
@@ -198,7 +204,7 @@ export async function prepareOllama(location: InstallationLocation, policyInput:
     if (performance.now() > cleanupEndsAt!) throw dependencyUncertain('Dependency cleanup completed after its shared budget; inspect its recorded closure');
   };
   try {
-    const prior = await boundedRead(() => closedOllamaAttempts(location));
+    const prior = await boundedRead(() => closedOllamaAttempts(location, signal));
     if (existsSync(directory)) {
       return await boundedRead(async () => {
       const existing = await (options.verifyExisting ?? verifyPreparedOllama)(location, policy, directory, signal); current();
@@ -214,7 +220,7 @@ export async function prepareOllama(location: InstallationLocation, policyInput:
       if (!matching) throw dependencyUncertain('Existing dependency inventory lacks matching positive preparation evidence');
       if (!check.report.runtimeReady || !check.policy || ollamaPolicySha256(check.policy) !== offer.policySha256 || check.endpoint !== offer.endpoint
         || (check.report.ollama !== 'ready' && check.executable !== join(directory, policy.layout.executable))) throw new InstallerError('dependency-offer-stale', 'Existing payload or local endpoint differs');
-      return { directory, policy, offer, identity, ...existing };
+      return { directory, policy, offer, identity, preparationDeadline: endsAt, ...existing };
       });
     }
     await assertConsent();
@@ -277,7 +283,7 @@ export async function prepareOllama(location: InstallationLocation, policyInput:
       await cleanup(); throw cause;
     }
     await cleanup(); current();
-    return { directory, policy, offer, identity, files: outcome.value.files, inventorySha256: outcome.value.inventorySha256 };
+    return { directory, policy, offer, identity, preparationDeadline: endsAt, files: outcome.value.files, inventorySha256: outcome.value.inventorySha256 };
   } catch (cause) {
     if ((cause as { code?: string } | undefined)?.code === 'resource-close-uncertain') throw dependencyUncertain('Dependency resource closure is unconfirmed; retain evidence', cause);
     if (admitted && !closed && !keepHandle) throw dependencyUncertain('Dependency admission has no positive closure; retain its evidence', cause);

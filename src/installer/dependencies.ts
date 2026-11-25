@@ -18,6 +18,8 @@ import { requireDependencyOperation } from './dependency-context.js';
 import { prepareOllama } from './ollama-prepare.js';
 import type { OllamaPrepareOptions } from './ollama-prepare.js';
 import { closeOwnedFile } from './owned-file.js';
+import { startOllamaService, reconcileOllamaDependencies } from './ollama-service.js';
+import type { OllamaServiceOptions } from './ollama-service.js';
 
 export interface DependencyReadIo {
   realpath(file: string): Promise<string>;
@@ -58,6 +60,7 @@ export interface DependencyOptions {
   io?: DependencyReadIo | undefined;
   budgetMs?: number | undefined;
   preparation?: Omit<OllamaPrepareOptions, 'recheck'> | undefined;
+  service?: Omit<OllamaServiceOptions, 'recheck'> | undefined;
 }
 export interface DependencyInspection {
   report: DependencyReport; endpoint?: string | undefined; executable?: string | undefined;
@@ -262,7 +265,8 @@ export async function inspectDependenciesClosed(location: InstallationLocation, 
   return inspectDependencyWork(location, target, options, context, true);
 }
 async function inspectDependencyWork(location: InstallationLocation, target: Target, options: DependencyOptions,
-  context: DependencyProbeContext, waitForClosure: boolean): Promise<DependencyInspection> {
+  context: DependencyProbeContext, waitForClosure: boolean,
+  evidence?: ((inspection: DependencyInspection, signal: AbortSignal) => Promise<DependencyInspection>) | undefined): Promise<DependencyInspection> {
   assertToken(location.installationId); const home = normalizeHome(location.home, target.os);
   const budget = options.budgetMs ?? 3000;
   if (!Number.isInteger(budget) || budget < 1 || budget > 3000) throw new InstallerError('dependency-probe-failed', 'Invalid dependency inspection budget');
@@ -337,7 +341,8 @@ async function inspectDependencyWork(location: InstallationLocation, target: Tar
       note(`Accepting this offer installs and starts a user-session Ollama service at ${offer.endpoint}.`);
       note(`Models stay at ${offer.modelsDirectory}; logs stay at ${offer.logsDirectory}. No models are downloaded automatically.`);
     } else if (report.ollama === 'missing') note('Automatic user-level Ollama installation is not qualified for this exact target/configuration; install Ollama manually and retry.');
-    return { report: finish(), endpoint, executable: binary.executable, policy, offer };
+    const inspection = { report: finish(), endpoint, executable: binary.executable, policy, offer };
+    return evidence ? evidence(inspection, signal) : inspection;
   };
   const pendingWork = work(), closure = pendingWork.then(() => {}, error => { requireProbeClosure(error); });
   void closure.catch(() => {});
@@ -363,7 +368,8 @@ export function dependencyPort(targetInput: Target, locationInput: InstallationL
     if (requested.installationId !== location.installationId || normalizeHome(requested.home, target.os) !== location.home) throw new InstallerError('identity-mismatch', 'Dependency adapter belongs to another installation');
   };
   return {
-    async inspect(requested, context) { check(requested); return (await inspectDependencies(location, target, options, context)).report; },
+    async inspect(requested, context) { check(requested); return (await inspectDependencyWork(location, target, options, context ?? {}, false,
+      (inspection, signal) => reconcileOllamaDependencies(location, inspection.policy, inspection, signal))).report; },
     async decide(requested, decision, context) {
       check(requested); const parsed = parseInstaller('dependencyDecision', decision);
       const operation = parsed.choice === 'install' ? requireDependencyOperation(location, context) : undefined;
@@ -371,7 +377,9 @@ export function dependencyPort(targetInput: Target, locationInput: InstallationL
       if (current.offer?.id !== parsed.offerId) throw new InstallerError('dependency-offer-stale', 'Dependency consent differs from the current exact offer');
       if (parsed.choice === 'decline') return current.report;
       if (!current.policy || !current.offer || !operation) throw new InstallerError('dependency-offer-stale', 'Qualified dependency preparation is unavailable');
-      await prepareOllama(location, current.policy, current.offer, operation, { ...options.preparation,
+      const prepared = await prepareOllama(location, current.policy, current.offer, operation, { ...options.preparation,
+        recheck: signal => inspectDependenciesClosed(location, target, options, { signal }) });
+      if (options.service) return startOllamaService(location, prepared, operation, { ...options.service,
         recheck: signal => inspectDependenciesClosed(location, target, options, { signal }) });
       operation.assertCurrent(); return (await inspectDependencies(location, target, options, operation)).report;
     },

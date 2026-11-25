@@ -17,7 +17,7 @@ import { privateRuntimeTest } from './_private-runtime-test.js';
 import { observeOllamaReads } from './_ollama-read-sentinel.js';
 import { executeOllamaServiceWorker } from '../ollama-service-worker.js';
 import { cleanupOllamaInstallAttempt } from '../ollama-recovery.js';
-import { createDependencyRetryContext } from '../dependency-context.js';
+import { createDependencyOperationContext, createDependencyRetryContext } from '../dependency-context.js';
 
 function serviceTest(title: string, run: () => Promise<void>): void {
   privateRuntimeTest(import.meta.url, title, run);
@@ -268,6 +268,28 @@ serviceTest('retained-service-cancellation-is-explicit-and-total-deadline-bounds
         assert.match(value.message, /accepted.*may remain/); assert.doesNotMatch(value.message, /readiness deadline/); return true;
       });
       assert.equal(existsSync(f.paths.admission), true); assert.equal(existsSync(f.paths.exit), false, 'ambiguous launch cannot invent a service exit');
+    } finally { await f.cleanup(); }
+  }
+});
+
+serviceTest('pre-launch-failure-and-cancelled-failed-spawn-keep-bound-not-started-diagnostics', async () => {
+  for (const kind of ['cancel-after-admission', 'callback-failure', 'owner-after-admission', 'cancel-not-started', 'owner-not-started']) {
+    const f = await fixture(), cancel = new AbortController(); let calls = 0;
+    try {
+      const context = createDependencyOperationContext(f.location, f.target.os, { ...f.context('a'.repeat(64), cancel.signal), progress(stage) {
+        if (stage !== 'ollama-service-admitted') return;
+        if (kind === 'cancel-after-admission') cancel.abort();
+        if (kind === 'owner-after-admission') f.loseOwner();
+        if (kind === 'callback-failure') throw new Error('fixture failure immediately after admission');
+      } });
+      await assert.rejects(startOllamaService(f.location, f.prepared, context, { ...f.service, launch: async () => {
+        calls++; if (kind === 'cancel-not-started') cancel.abort(); if (kind === 'owner-not-started') f.loseOwner(); return { started: false };
+      } }), { code: kind.startsWith('cancel') ? 'cancelled' : kind.startsWith('owner') ? 'dependency-owner-lost' : 'dependency-start-failed' });
+      assert.equal(calls, kind.endsWith('not-started') ? 1 : 0);
+      const result = JSON.parse(readFileSync(f.paths.result, 'utf8')), diagnostic = JSON.parse(readFileSync(f.paths.diagnostic, 'utf8'));
+      assert.equal(result.state, 'not-started'); assert.equal(diagnostic.admissionSha256, result.admissionSha256); assert.equal(diagnostic.stage, 'pre-spawn');
+      if (kind.endsWith('not-started')) assert.equal(diagnostic.code, 'service-supervisor-not-started');
+      assert.ok(lstatSync(f.paths.diagnostic).size < 4096); assert.equal(existsSync(f.paths.launch), false); assert.equal(existsSync(f.paths.running), false); assert.equal(existsSync(f.paths.exit), false);
     } finally { await f.cleanup(); }
   }
 });

@@ -27,3 +27,9 @@ The production dispatch case uses the actual detached launcher and published tar
 The initial compressed large native fixture exposed the ZIP reader's rejection of a coalesced output chunk larger than 64 KiB. Stored ZIP members allow the worker-specific qualification to exercise its intended boundary. The streaming edge case is retained for the already approved t15 archive-hardening batch; it is not claimed fixed here. Earlier worker runs also exposed test ownership mistakes (joining an intentionally unref'ed child and passing a production child to spawnFixture cleanup); the successful test now refs only its captured test worker, observes its real close and preserves production detached behavior.
 
 The registered task gate follows this commit. No full backend suite or final story approval has been performed.
+
+## First tracked verdict follow-up
+
+The registered gate passed all mapped tests and typecheck but found two missing failure-ordering paths. Known not-started outcomes and their bound diagnostics are now written before cancellation/owner checks; failure immediately after durable admission also writes both records. Cancellation cannot turn a confirmed failed spawn into unverified. Unknown invoked launches still receive no invented exit.
+
+The regression covers cancellation, callback failure and owner loss immediately after admission, plus cancellation/owner loss accompanying a positively failed launch. Current canonical focused run `4130f938-3623-4e18-9ccd-4040014898e5`: 10/10 service tests passed, zero failed/skipped/cancelled with confirmed owned-group closure. Tracked revalidation follows.

@@ -147,6 +147,11 @@ export async function startOllamaService(location: InstallationLocation, prepare
   const handoff = { schemaVersion: 1, identitySha256: digest(canonicalJson(identity)), nonce: handoffNonce, actor: 'finite-service-handoff' };
   let handoffAdmitted = false, keepHandle = false;
   let admitted = false, launchInvoked = false, handle: object | undefined, last: DependencyReport | undefined, frame: OllamaServiceFrame | undefined;
+  const notStarted = (cause: unknown) => {
+    if (!admitted || !frame || !handle) throw dependencyUncertain('Not-started reporting lacks its bound admission');
+    if (!existsSync(paths.result)) writeDependencyRecord(location, handle, paths.result, serviceFact(frame.admission, 'not-started'));
+    if (!existsSync(paths.diagnostic)) writeDependencyRecord(location, handle, paths.diagnostic, serviceDiagnostic(frame.admission, 'pre-spawn', cause));
+  };
   const work = async () => {
     current();
     try { handle = controlBinding().acquire(`${record}.lock`); }
@@ -184,17 +189,17 @@ export async function startOllamaService(location: InstallationLocation, prepare
     })))(frame, record); }
     catch (cause) {
       if (!options.launch && !supervisorStarted) {
-        writeDependencyRecord(location, handle, paths.result, serviceFact(admission, 'not-started'));
-        writeDependencyRecord(location, handle, paths.diagnostic, serviceDiagnostic(admission, 'pre-spawn', cause));
+        notStarted(cause);
       }
       throw cause;
     }
-    current();
     if (!launched.started) {
-      writeDependencyRecord(location, handle, paths.result, serviceFact(admission, 'not-started'));
-      writeDependencyRecord(location, handle, paths.diagnostic, serviceDiagnostic(admission, 'pre-spawn', new InstallerError('service-supervisor-not-started', 'Ollama supervisor did not start')));
+      // Record positive launch failure before checking cancellation/owner loss.
+      // Neither can turn known not-started evidence into an ambiguous launch.
+      notStarted(new InstallerError('service-supervisor-not-started', 'Ollama supervisor did not start'));
       current(); return unavailable(check.report, 'Ollama supervisor did not start; inspect the private installation and retry inspection.');
     }
+    current();
     while (true) {
       check = await probe(); current(); last = check.report;
       const state = await serviceState(frame, record, check.report, signal); current();
@@ -226,7 +231,7 @@ export async function startOllamaService(location: InstallationLocation, prepare
       writeDependencyRecord(location, handle, closurePath(handoffFile), { ...handoff, closed: true });
     if ('error' in result) {
       if (ollamaCloseUncertain(result.error)) { keepHandle = true; if (handle) retainUncertainOllamaHandle(handle); throw dependencyUncertain(`Service handoff resource closure is unconfirmed.${admitted ? ' ' + OLLAMA_RETAINED_NOTICE : ''}`, result.error); }
-      if (admitted && frame && handle && !launchInvoked && !existsSync(paths.result)) writeDependencyRecord(location, handle, paths.result, serviceFact(frame.admission, 'not-started'));
+      if (admitted && !launchInvoked) notStarted(result.error);
       if (signal.aborted && admitted && frame && handle && !existsSync(paths.result)) writeDependencyRecord(location, handle, paths.result, serviceFact(frame.admission, 'unverified'));
       if (context.signal?.aborted) throw new InstallerError('cancelled', admitted ? 'Ollama start was accepted and may remain running or unverified; installer continuation was cancelled' : 'Installation cancelled before Ollama service admission');
       if (ownerLoss) throw new InstallerError('dependency-owner-lost', `Installation owner was lost; service handoff stopped.${admitted ? ' ' + OLLAMA_RETAINED_NOTICE : ''}`, { cause: ownerLoss });

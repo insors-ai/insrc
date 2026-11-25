@@ -24,9 +24,16 @@ export interface DeliveryPort {
 }
 export interface BundleReleaseOffer { kind: 'bundle'; manifest: ReleaseManifest; descriptorSha256: string }
 export type PreparedReleaseOffer = BundleReleaseOffer | DevSourceOffer;
+/** Private TypeScript capabilities only; these are never accepted on the wire. */
+export interface DependencyProbeContext { signal?: AbortSignal | undefined }
+export interface DependencyOperationContext extends DependencyProbeContext {
+  operationId: string; attemptNonce: string;
+  assertCurrent(): void;
+  progress(stage: string, detail: string): void;
+}
 export interface DependencyPort {
-  inspect(location: InstallationLocation): Promise<DependencyReport>;
-  decide(location: InstallationLocation, decision: DependencyDecision): Promise<DependencyReport>;
+  inspect(location: InstallationLocation, context?: DependencyProbeContext): Promise<DependencyReport>;
+  decide(location: InstallationLocation, decision: DependencyDecision, context?: DependencyOperationContext): Promise<DependencyReport>;
 }
 export interface LifecyclePort {
   observe(location: InstallationLocation): Promise<DaemonObservation>;

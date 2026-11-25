@@ -21,6 +21,7 @@ import {
 	READ_ONLY_SESSION_READ_TOOLS, ReadOnlySessionTimeoutError, CliStallError, CODEX_FIRST_OUTPUT_MS, InputTooLargeError,
 } from '../cli-provider.js';
 import { UnqualifiedCapabilityPolicyError } from '../../../shared/types.js';
+import { _captureCapabilityPolicyAttemptsForTests, _stopCapturingCapabilityPolicyAttemptsForTests } from '../cli-provider.js';
 
 const SCHEMA = { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } } };
 
@@ -699,12 +700,14 @@ test("without effort every argv is byte-identical to today's", async () => {
 
 test('capabilityPolicy omitted defaults to write-sandboxed, which every provider (including codex) is qualified for -- today\'s exact dispatch is unaffected', async () => {
 	const f = fakeCli([{ out: codexOk('{"ok":true}') }]);
+	const attempts = _captureCapabilityPolicyAttemptsForTests();
 	try {
 		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
 		const res = await p.runReadOnlySession<{ ok: boolean }>('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000 });
 		assert.deepEqual(res, { ok: true });
 		assert.equal(f.calls().length, 1);
-	} finally { f.cleanup(); }
+		assert.deepEqual(attempts, ['write-sandboxed', 'write-sandboxed'], 'the outer attempt and the inner codex-loop attempt both resolve the omitted policy to write-sandboxed');
+	} finally { _stopCapturingCapabilityPolicyAttemptsForTests(); f.cleanup(); }
 });
 
 test("runReadOnlySession rejects an unqualified provider's strict-read-analyze request before spawning any subprocess", async () => {
@@ -732,12 +735,14 @@ test('runReadOnlySession dispatches normally for a qualified provider requesting
 
 test("readOnlySessionOnce's retry attempt carries the identical capabilityPolicy value as the original call", async () => {
 	const f = fakeCli([{ fail: 'API Error: overloaded' }, { out: claudeOk({ ok: true }) }]);
+	const attempts = _captureCapabilityPolicyAttemptsForTests();
 	try {
 		const p = new CliProvider({ kind: 'claude', binPath: f.bin });
 		const res = await p.runReadOnlySession<{ ok: boolean }>('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, capabilityPolicy: 'strict-read-analyze' });
 		assert.deepEqual(res, { ok: true });
 		assert.equal(f.calls().length, 2, 'the first attempt and the one retry, both counted -- neither rejected for an unqualified policy');
-	} finally { f.cleanup(); }
+		assert.deepEqual(attempts, ['strict-read-analyze', 'strict-read-analyze'], 'both the original attempt and its retry carry the identical capabilityPolicy value');
+	} finally { _stopCapturingCapabilityPolicyAttemptsForTests(); f.cleanup(); }
 });
 
 test("readOnlySessionOnce's unsafe-MCP-server retry loop carries the identical capabilityPolicy across every attempt, even for codex under 'write-sandboxed' (the only policy codex qualifies for)", async () => {
@@ -746,6 +751,7 @@ test("readOnlySessionOnce's unsafe-MCP-server retry loop carries the identical c
 		{ out: codexOk('{"ok":true}') },
 	]);
 	process.env['INSRC_FAKE_DISCOVERY_SERVERS'] = JSON.stringify([{ name: 'insrc', enabled: true }, { name: 'unsafe-x', enabled: false }, { name: 'safe-y', enabled: false }]);
+	const attempts = _captureCapabilityPolicyAttemptsForTests();
 	try {
 		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
 		assert.deepEqual(
@@ -753,6 +759,8 @@ test("readOnlySessionOnce's unsafe-MCP-server retry loop carries the identical c
 			{ ok: true },
 		);
 		assert.equal(f.calls().length, 2, 'the first attempt and exactly one retry, both succeeding under the same explicit capabilityPolicy');
-	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; f.cleanup(); }
+		// One outer-loop push, then two inner unsafe-MCP-server-loop pushes (the failed attempt and its retry) -- all 'write-sandboxed'.
+		assert.deepEqual(attempts, ['write-sandboxed', 'write-sandboxed', 'write-sandboxed'], 'every attempt in both loops carries the identical capabilityPolicy value');
+	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; _stopCapturingCapabilityPolicyAttemptsForTests(); f.cleanup(); }
 });
 

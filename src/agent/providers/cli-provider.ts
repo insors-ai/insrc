@@ -110,6 +110,20 @@ export class ReadOnlySessionTimeoutError extends Error {
 	}
 }
 
+/** Test-only observation of the resolved capabilityPolicy on every
+ *  runReadOnlySession dispatch attempt (both the outer transient-retry loop
+ *  and the inner unsafe-MCP-server-exclusion retry loop), in order -- so a
+ *  test can assert the value is identical across every attempt, not just
+ *  infer it from a successful outcome. */
+let capabilityPolicyAttemptsForTests: (string | undefined)[] | undefined;
+export function _captureCapabilityPolicyAttemptsForTests(): (string | undefined)[] {
+	capabilityPolicyAttemptsForTests = [];
+	return capabilityPolicyAttemptsForTests;
+}
+export function _stopCapturingCapabilityPolicyAttemptsForTests(): void {
+	capabilityPolicyAttemptsForTests = undefined;
+}
+
 /** The built-in tools a read-only session may use: reading only. */
 export const READ_ONLY_SESSION_READ_TOOLS: readonly string[] = ['Read', 'Grep', 'Glob'];
 /** The insrc analyze tools a read-only session may call for drill-down. */
@@ -733,6 +747,7 @@ export class CliProvider implements LLMProvider {
 			assertConnectionProviderAdmission(opts.connectionExecution);
 			const remainingMs = opts.deadlineMs - (Date.now() - startedAt);
 			if (remainingMs <= 0) throw new ReadOnlySessionTimeoutError(opts.deadlineMs);
+			capabilityPolicyAttemptsForTests?.push(capabilityPolicy);
 			try {
 				return await this.readOnlySessionOnce<T>(prompt, schema, {
 					cwd: opts.cwd, timeoutMs: remainingMs, watchStall: true, capabilityPolicy,
@@ -824,6 +839,7 @@ export class CliProvider implements LLMProvider {
 				// attempt spreads the SAME `exec` object (capabilityPolicy was resolved once,
 				// before readOnlySessionOnce was ever called) -- no attempt recomputes or
 				// substitutes a different value.
+				capabilityPolicyAttemptsForTests?.push(exec.capabilityPolicy);
 				try {
 					({ agentText: text } = await this.runCodex(codexReadOnlySessionArgs(schemaPath, exec.cwd, this.modelArgs(), attemptServers), prompt, { ...exec, timeoutMs: attemptTimeoutMs }));
 					break;

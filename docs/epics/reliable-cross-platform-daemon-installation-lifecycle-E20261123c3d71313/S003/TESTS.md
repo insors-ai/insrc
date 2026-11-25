@@ -837,7 +837,7 @@ Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-
 
 ## t18
 
-Run at 2026-11-25T21:02:40.581Z on commit `69f9dc03d`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
+Run at 2026-11-25T21:05:48.240Z on commit `66f834202`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
 
 **integration: private-runtime-provenance-rejects-path-node-and-wrong-target**
 
@@ -881,6 +881,6 @@ Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `scripts/__tests__/installer-s2-qualification.test.ts` | 0 | 1 | 1.3 s |  |
-| `src/installer/__tests__/dependencies.test.ts` | 0 | 8 | 18 s |  |
-| `src/installer/__tests__/production-peers.test.ts` | 0 | 3 | 7.4 s |  |
-| `src/installer/__tests__/terminal-install.test.ts` | 0 | 10 | 3.6 s |  |
+| `src/installer/__tests__/dependencies.test.ts` | 0 | 8 | 19.2 s |  |
+| `src/installer/__tests__/production-peers.test.ts` | 0 | 3 | 8 s |  |
+| `src/installer/__tests__/terminal-install.test.ts` | 0 | 10 | 3.7 s |  |

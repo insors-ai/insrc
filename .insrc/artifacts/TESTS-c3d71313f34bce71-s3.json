@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 44,
-        "contentHash": "b3ff160fb30dde855e80e254b06ca72f86c9a5db10e4ef3c56407642b3c6f4a4",
-        "at": "2026-11-25T21:02:40.601Z",
+        "number": 45,
+        "contentHash": "3c37eaa18791c7ef9290455d5eaa902621fcc9e3a009a0479c9c5af7561c1c5c",
+        "at": "2026-11-25T21:05:48.261Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "c3d71313f34bce71",
     "storyId": "s3",
     "createdAt": "2026-11-25T02:01:50.011Z",
-    "updatedAt": "2026-11-25T21:02:40.581Z",
+    "updatedAt": "2026-11-25T21:05:48.240Z",
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
-    "revision": 44
+    "revision": 45
   },
   "body": {
     "tasks": [
@@ -3111,8 +3111,8 @@
       },
       {
         "taskId": "t18",
-        "commit": "69f9dc03d",
-        "ranAt": "2026-11-25T21:02:40.581Z",
+        "commit": "66f834202",
+        "ranAt": "2026-11-25T21:05:48.240Z",
         "testsPassed": true,
         "tests": [
           {
@@ -3203,7 +3203,7 @@
             "file": "scripts/__tests__/installer-s2-qualification.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1276,
+            "durationMs": 1329,
             "titles": [
               {
                 "title": "combined-s1-s2-s3-installer-regression-has-exact-coverage-and-confirmed-cleanup",
@@ -3216,7 +3216,7 @@
             "file": "src/installer/__tests__/dependencies.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 17957,
+            "durationMs": 19169,
             "titles": [
               {
                 "title": "dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable",
@@ -3257,7 +3257,7 @@
             "file": "src/installer/__tests__/production-peers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 7360,
+            "durationMs": 8035,
             "titles": [
               {
                 "title": "production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5",
@@ -3278,7 +3278,7 @@
             "file": "src/installer/__tests__/terminal-install.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3582,
+            "durationMs": 3657,
             "titles": [
               {
                 "title": "terminal installer requires all TTY streams and absent dev adapter fails explicitly",

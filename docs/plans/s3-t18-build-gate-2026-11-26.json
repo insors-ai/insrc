@@ -1,0 +1,50 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "t18",
+    "passed": false,
+    "checks": [
+      {
+        "check": "Canonical Node22 build and one final all-installer plus installation-home/build/scanner/coordinator regression after t12–t17. Set INSRC_BUILD_CONFIRM_CLOSURE=1 and --concurrency=1; no unrelated backend sweep or per-task full suite.",
+        "satisfied": true,
+        "evidence": "Run 3cdda64a-f71b-40ea-a4c7-336a32dce819 records Node v22.22.1, buildExitCode 0, concurrency 1 and exactly 44 scoped files. Cleanup records owned-groups closure, which requires INSRC_BUILD_CONFIRM_CLOSURE=1."
+      },
+      {
+        "check": "Audit exact selected/discovered/executed counts with zero unexplained skips/failures/cancellations; current source/output fingerprints; matching unique admission/close/disposal sets, confirmed finite closure and no unaccounted owned work.",
+        "satisfied": true,
+        "evidence": "The passing qualification test compares discovered, selected and executed files, current source/output fingerprints, raw TAP totals and matching unique actor sets. Raw records contain 44 executed files and 53 unique entries in each ownership journal. Audit reports 209 passes, zero failures/cancellations/skips/todos, empty actors and confirmed closure."
+      },
+      {
+        "check": "Keep retained-service admissions separate from finite actor closure. Account/clean isolated fixture actors without any PID/kill daemon fallback or host-service mutation.",
+        "satisfied": true,
+        "evidence": "Correction and native records separate retained service admission from finite closure; cleanup-vm.json records the isolated VM stopped. Interrupted-run evidence preserves its incomplete status, accounts for 22 root actors and two nested closures, and records a read-only owned-group query rather than daemon termination."
+      },
+      {
+        "check": "Update BUILD/TESTS mapping and revised native/inspection evidence; identify the prior152/152 packet as pre-review history, preserve it unchanged, and map every finding to corrected files/tests or an honest pending qualification limit.",
+        "satisfied": true,
+        "evidence": "BUILD now summarizes the 209/209 regression and TESTS maps t18 results. The correction table covers findings 1–15 and T1–T8, with Linux ARM64 qualification and five pending routes explicitly bounded. Independently checked all 488 original packet manifest entries: zero hash mismatches."
+      },
+      {
+        "check": "Keep approved sequence/ownership docs aligned and prepare a fresh /tmp/.insrc manual-review packet/delta with commits, changed files, epic/HLD/LLD/PLAN trail and raw test/native evidence. Automated review endpoints remain unavailable; do not invent CR registration or request per-task human BUILD approvals.",
+        "satisfied": true,
+        "evidence": "The post-fixes packet contains commits, file lists, patches, document trail, approved design snapshots and raw regression/native evidence. All 519 manifest entries match their hashes. Ownership alignment and rendering limits are documented; no CR or per-task approval is claimed. Required test bodies exercise provenance rejection, production composition, bundled dependency inspection, consent and ready-before-TUI ordering; referenced raw TAP logs show passes."
+      },
+      {
+        "check": "Only after all tasks validate, present final story BUILD for specific human approval using available supported flow; report any known disabled-review presentation gate accurately.",
+        "satisfied": false,
+        "evidence": "The presentation limitation is accurately documented, but successful presentation remains outstanding. Packet evidence/gates/s3-build-presentation-result.json returns presented: [] and notPending for S003/BUILD.md. README explicitly says this prevents requesting human approval. A failed supported presentation attempt does not establish that the required final BUILD was presented."
+      },
+      {
+        "check": "Do not renumber/reissue/rebuild completed t1–t11 as if newly failed. Their original test evidence remains historical, while t12–t18 supply current revision validation; every current LLD strategy item maps to an executing corrective/qualification/final task.",
+        "satisfied": true,
+        "evidence": "Original task numbering and historical evidence remain intact. PLAN's strategy coverage table maps current items to t12–t18, while the correction map explicitly identifies the original 152/152 packet as pre-review history."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "Regression, mappings and packet evidence are verified, but final supported BUILD presentation remains blocked and incomplete.",
+    "testsPassed": true,
+    "typecheckClean": true
+  },
+  "passed": false,
+  "commentSync": "comment sync on insors-ai/insrc#294: recorded 0, posted 0"
+}

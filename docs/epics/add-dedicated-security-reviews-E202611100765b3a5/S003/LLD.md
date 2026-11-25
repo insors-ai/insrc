@@ -6,32 +6,34 @@
 
 **Epic:** `add-dedicated-security-reviews`
 **HLD base run:** `wf-1795324517306-yi2irl`
-**HLD effective hash:** `60b05edbecc2...`
+**HLD effective hash:** `4da1f568aafd...`
 **Tracker:** [insors-ai/insrc#228](https://github.com/insors-ai/insrc/issues/228)
 
-This revision makes no functional or contract change to s3. It carries a single HLD text correction: nonFunctional.security's sentence describing s3's dispatch access level no longer matches the capabilityPolicy fail-closed gate added by the prior pending amendment (LLD revision 6), so this amendment corrects that one sentence via a properly-shaped nonFunctional.retarget proposal.
+This amendment restores the concrete capabilityPolicy design the user mandated after finding the codex gap: s3's security code pass must run only under a provider that can enforce a declared, fail-closed capability policy, never a silently weaker guarantee. It adds an optional capabilityPolicy field to the shared ReadOnlySessionOpts contract both CLI and Ollama providers implement, a qualification table naming which providers can enforce the strict policy today, and a new error that rejects an unqualified provider before any inference starts.
 
 ## Contents
 
 1. [Epic impact analysis](#1-epic-impact-analysis)
 2. [HLD context](#2-hld-context)
 3. [Contract details](#3-contract-details)
-4. [Interaction with shared contracts](#4-interaction-with-shared-contracts)
-5. [Error paths](#5-error-paths)
-6. [Test strategy](#6-test-strategy)
-7. [Alternatives considered](#7-alternatives-considered)
-8. [References](#8-references)
+4. [Data model changes](#4-data-model-changes)
+5. [Interaction with shared contracts](#5-interaction-with-shared-contracts)
+6. [Error paths](#6-error-paths)
+7. [Test strategy](#7-test-strategy)
+8. [Alternatives considered](#8-alternatives-considered)
+9. [References](#9-references)
 
 ## 1. Epic impact analysis
 
 **Stories covered:** `s1`, `s2`
 
-No change from the prior amendment's own epicImpact finding: s1's SecurityModelSelection resolution and s2's dependency-advisory collection are both untouched by this purely textual HLD correction. This second amendment does not reopen, re-validate, or touch either Story's own files, tests, or BUILD records in any way -- it exists solely to carry a correctly-shaped nonFunctional.retarget proposal that the prior amendment attempt failed to express in the applier's real schema.
+Unchanged from prior amendments: s1's SecurityModelSelection resolution (src/config/role-taxonomy.ts) and s2's dependency-advisory collection (src/workflow/security-review/collect-dependency-advisories.ts) are both untouched by this amendment. This amendment only restores the concrete capabilityPolicy design that was lost from revision 6/7's contractDetails -- it adds no new consumption of s1's or s2's contracts beyond what the already-approved LLD already specifies (s1's SecurityModelSelection.provider field is read, unchanged, to know which qualification-table entry applies).
 
 **Sources:**
 - /home/subho/work/dev/insors/insrc/.insrc/artifacts/BUILD-0765b3a578e43eec-s1.json
 - /home/subho/work/dev/insors/insrc/.insrc/artifacts/BUILD-0765b3a578e43eec-s2.json
-- /home/subho/work/dev/insors/insrc/.insrc/artifacts/HLD-0765b3a578e43eec.json
+- /home/subho/work/dev/insors/insrc/.insrc/artifacts/LLD-0765b3a578e43eec-s3.json
+- /home/subho/work/dev/insors/insrc/.insrc/artifacts/AMD-0765b3a578e43eec-1.json
 
 ## 2. HLD context
 
@@ -56,77 +58,148 @@ function runSecurityReview(request: SecurityReviewStepRequest): Promise<Security
 ```
 
 **Parameters:**
-- `request: SecurityReviewStepRequest` — The insrc_security_review_step phase='start' request (targets/repo/optional epicHash+storyId, or a confirm_wait resumption with state+proceed).
+- `request: SecurityReviewStepRequest` — The insrc_security_review_step phase='start' request.
 
-**Returns:** `Promise<SecurityReviewStepResponse>` — Either a confirm_wait pause (stale index) or the terminal done response carrying the SecurityReviewReport and its markdown rendering.
+**Returns:** `Promise<SecurityReviewStepResponse>` — Either a confirm_wait pause or the terminal done response carrying the SecurityReviewReport.
+
+**Errors:**
+- `UnqualifiedCapabilityPolicyError` when s1's resolved provider is not on the qualification table for strict-read-analyze; propagates out of runSecurityReview unchanged, surfaced to the caller as the review's own failure rather than a silently weaker or substituted review.
 
 **Preconditions:**
 - s1's SecurityModelSelection and s2's SecurityAdvisoryEvidence are both available for the pinned contentIdentity.
 
 **Postconditions:**
-- Unchanged by this amendment: the code-vulnerability pass is dispatched through CliProvider.runReadOnlySession under the capabilityPolicy gate introduced by the prior pending amendment (LLD revision 6); this amendment makes no change to that dispatch, only to the HLD's own descriptive text.
+- The code-vulnerability pass is dispatched through CliProvider.runReadOnlySession with capabilityPolicy:'strict-read-analyze'; a qualified provider runs normally, an unqualified one never starts inference.
 
-## 4. Interaction with shared contracts
+## 4. Data model changes
+
+### 4.1 `ReadOnlySessionOpts` — field-add
+
+Adds `readonly capabilityPolicy?: 'write-sandboxed' | 'strict-read-analyze'` to the shared interface both CliProvider and OllamaProvider implement. Omitted (undefined) is equivalent to 'write-sandboxed', the existing behavior every current caller keeps unchanged. 'strict-read-analyze' is the policy s3's security code pass requests on its one call site; no other caller in the codebase sets it today.
+
+```
+export interface ReadOnlySessionOpts {
+  readonly mode?: 'bounded' | undefined;
+  readonly connectionExecution?: ConnectionExecutionContext | undefined;
+  readonly cwd: string;
+  readonly deadlineMs: number;
+  readonly internalRetry?: boolean | undefined;
+  readonly stallMs?: number | undefined;
+  readonly signal?: AbortSignal | undefined;
++ readonly capabilityPolicy?: 'write-sandboxed' | 'strict-read-analyze' | undefined;
+}
+```
+
+**Call sites:**
+- `src/shared/types.ts:244-259`
+- `src/agent/providers/cli-provider.ts:715-752`
+- `src/agent/providers/cli-provider.ts:760-843`
+- `src/agent/providers/ollama.ts:783-823`
+- `src/workflow/security-review/security-round-hooks.ts:51`
+
+### 4.2 `UnqualifiedCapabilityPolicyError` — new
+
+A new Error subclass thrown by a provider's runReadOnlySession BEFORE building session args or spawning any CLI subprocess, when opts.capabilityPolicy==='strict-read-analyze' is requested but the dispatched provider is not on the qualification table for that policy. The message names the provider (e.g. 'cli-codex') and the missing capability so the failure is actionable, not generic. It is never caught and silently downgraded to a weaker policy or a different provider/model than the one SecurityModelSelection pinned -- it propagates to the caller as the review's own failure. The existing unsafe-MCP-server retry loop inside CliProvider.readOnlySessionOnce must not retry past this error: the qualification check runs once, before the retry loop even starts, so no retry attempt can run with capabilityPolicy silently dropped.
+
+**Call sites:**
+- `src/agent/providers/cli-provider.ts:715-752`
+- `src/agent/providers/cli-provider.ts:760-843`
+
+### 4.3 `CapabilityQualificationTable` — new
+
+A small, hardcoded lookup (new file src/agent/providers/capability-qualification.ts) mapping a provider kind to whether it is qualified for 'strict-read-analyze' today: 'cli-claude' is qualified (claudeReadOnlySessionArgs already builds a real --tools/--allowedTools declarative allowlist restricting native built-in tools, src/agent/providers/cli-provider.ts:126-129); 'cli-codex' is NOT qualified (codexReadOnlySessionArgs only sets --sandbox read-only plus per-MCP-server enable/disable, src/agent/providers/cli-provider.ts:267-280 -- no native built-in-tool restriction exists for codex at all, so it cannot enforce the strict policy); 'ollama' is qualified trivially (OllamaProvider.runReadOnlySession performs no native tool-calling in this mode at all, so there is no tool surface to restrict). The table is a static today-only allow/deny list, not a live capability probe -- qualifying codex by investigating its native-tool-disable flags and verifying them by real behavioral testing, tied to CLI version + effective config and requalified on upgrade, is explicitly deferred future work, not built by this amendment.
+
+**Call sites:**
+- `src/agent/providers/cli-provider.ts:715-752`
+- `src/agent/providers/cli-provider.ts:126-129`
+- `src/agent/providers/cli-provider.ts:267-280`
+
+## 5. Interaction with shared contracts
 
 | Contract | Role | How |
 | :--- | :--- | :--- |
-| `sc3` | implements | Unchanged by this amendment. s3 continues to own sc3 (SecurityReviewEntryPoint) exactly as specified in the prior LLD revision; this amendment touches no part of sc3's shape or behavior. |
-| `sc1` | consumes | Unchanged by this amendment. s3 continues to consume s1's SecurityModelSelection to pick the dispatch model/provider. |
-| `sc2` | consumes | Unchanged by this amendment. s3 continues to consume s2's SecurityAdvisoryEvidence, verifying contentIdentity before trusting it. |
+| `sc3` | implements | sc3's SecurityReviewEntryPoint shape is unchanged; runSecurityReview's new UnqualifiedCapabilityPolicyError path surfaces as the review's own failure, documented on the API entry above. |
+| `sc1` | consumes | s3 reads SecurityModelSelection.provider (unchanged shape) to know which CapabilityQualificationTable entry governs the dispatch; s1's contract itself is not modified. |
+| `sc2` | consumes | Unaffected by this amendment; s3 still consumes SecurityAdvisoryEvidence exactly as the approved LLD already specifies, with no interaction with the capabilityPolicy mechanism. |
 
-## 5. Error paths
+## 6. Error paths
+
+**Error cases**
+
+- **s1's SecurityModelSelection pins provider:'cli-codex' and runSecurityCodePass requests capabilityPolicy:'strict-read-analyze'.** (terminal)
+  - Detection: CliProvider.runReadOnlySession checks the CapabilityQualificationTable for the dispatched provider before building codexReadOnlySessionArgs or spawning any subprocess; 'cli-codex' is not on the qualified list for 'strict-read-analyze'.
+  - Response: Throws UnqualifiedCapabilityPolicyError naming 'cli-codex' and 'strict-read-analyze' before any inference starts; no subprocess is spawned, no partial session args are built, no retry is attempted.
+  - User impact: The security review fails with an actionable error identifying exactly which provider/policy combination is unqualified, instead of silently running an unenforced review or silently substituting a different provider/model than the one s1 pinned.
+- **The unsafe-MCP-server retry loop inside CliProvider.readOnlySessionOnce would otherwise retry a transient failure after a strict-read-analyze session has already started.** (recoverable)
+  - Detection: The qualification check happens once, before readOnlySessionOnce's retry loop is entered at all -- there is no code path inside the retry loop that re-evaluates or drops capabilityPolicy, since it is read once from the original opts and passed through unchanged on every attempt.
+  - Response: Every retry attempt (if any) carries the identical capabilityPolicy value as the first attempt; a provider that was qualified on attempt 1 cannot become unqualified mid-retry, and an unqualified provider never reaches the retry loop in the first place.
+  - User impact: No observable difference to the user from the retry mechanics already built under Epic a9ae072ce3b7b794 -- this amendment only guarantees the policy itself is never weakened across retries.
 
 **Edge cases**
 
 | Input | Expected |
 | :--- | :--- |
-| The prior pending amendment (LLD revision 6, capabilityPolicy) is rejected or revised before this amendment is applied. | This amendment's oldTarget is matched against the HLD's CURRENT nonFunctional.security text at apply time; if the capabilityPolicy amendment was not yet applied, this amendment's oldTarget string (which assumes the original, unamended text) still matches the HLD as it stands today, since nonFunctional.retarget amendments are applied independently and in the order they are approved -- so this amendment can be approved and applied regardless of the other amendment's outcome, as long as the HLD's nonFunctional.security text has not already diverged from oldTarget by some other change. |
+| capabilityPolicy is omitted entirely (every existing caller: the generic build-validate judge, and any future caller that does not request the strict policy). | Treated exactly as 'write-sandboxed' -- today's existing behavior, completely unchanged. No qualification check runs at all when capabilityPolicy is undefined. |
+| s1's SecurityModelSelection pins provider:'ollama' (a locally-run model, not a CLI) with capabilityPolicy:'strict-read-analyze' requested. | Qualified trivially -- OllamaProvider.runReadOnlySession performs no native tool-calling in this mode at all, so there is no tool surface the strict policy could be violated by; the qualification table marks 'ollama' qualified and dispatch proceeds normally. |
+| A future second caller (outside s3) sets capabilityPolicy:'strict-read-analyze' against 'cli-claude'. | Qualified -- claudeReadOnlySessionArgs already builds the real --tools/--allowedTools allowlist; the shared check passes for any caller, not just s3, since the guarantee lives in the shared ReadOnlySessionOpts contract rather than s3's own call site (the explicit reason a1 was chosen over a3 at s3). |
 
-## 6. Test strategy
+## 7. Test strategy
 
 **Test framework:** `vitest`
 
 **Test levels**
 
-- **contract** — Confirm the HLD nonFunctional.security amendment, once applied, no longer contradicts the LLD's own (already-built) capabilityPolicy fail-closed gate text -- a documentation-consistency check, not a code test, since this amendment makes no functional change.
-  - Subjects: `HLD-0765b3a578e43eec.json body.nonFunctional.security (post-amendment)`, `LLD-0765b3a578e43eec-s3.json / S003/LLD.md (capabilityPolicy design, revision 6)`
+- **unit** — Verify the fail-closed qualification gate rejects an unqualified provider before any inference, and that a qualified provider dispatches unchanged.
+  - Subjects: `CapabilityQualificationTable lookup for 'cli-claude' (qualified), 'cli-codex' (not qualified), 'ollama' (qualified trivially)`, `CliProvider.runReadOnlySession throwing UnqualifiedCapabilityPolicyError for an unqualified provider + capabilityPolicy:'strict-read-analyze' before spawning any subprocess`, `CliProvider.runReadOnlySession dispatching normally for a qualified provider + capabilityPolicy:'strict-read-analyze'`, `ReadOnlySessionOpts with capabilityPolicy omitted behaving identically to today (no qualification check runs)`
+- **unit** — Verify capabilityPolicy is never dropped or weakened across the existing unsafe-MCP-server retry loop.
+  - Subjects: `CliProvider.readOnlySessionOnce's retry attempts all carrying the identical capabilityPolicy value as the original call`
 
 **Acceptance mapping**
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac3` | `Pre-existing: ac3 is already proven by s3's own BUILD/tests (unchanged by this amendment, which touches only the HLD's descriptive text, not s3's code or behavior).` |
+| `ac3` | `unit: CapabilityQualificationTable + CliProvider.runReadOnlySession fail-closed rejection of an unqualified provider under capabilityPolicy:'strict-read-analyze' (this amendment's own concrete test, carrying ac3's existing proof that the report shape itself -- SecurityFinding/VerificationReceipt -- is unaffected).` |
 
-## 7. Alternatives considered
+## 8. Alternatives considered
 
-### 7.1 a1: Single-sentence in-place correction — **CHOSEN**
+### 8.1 a1: Shared optional capabilityPolicy field + hardcoded qualification table + fail-closed error class — **CHOSEN**
 
-Replace only the one sentence about s3's dispatch access level; leave every other sentence of nonFunctional.security byte-for-byte identical.
+Add an additive, optional `capabilityPolicy` field to ReadOnlySessionOpts; qualify providers via a small hardcoded table; reject unqualified providers before inference with a new error type.
 
-Keep the entire nonFunctional.security paragraph as-is except the sentence about s3's dispatch access level is replaced with a sentence describing the new fail-closed capabilityPolicy gate (LLD revision 6): the pinned provider must be on an explicit qualification record for strict-read-analyze before any inference starts, or the pass fails closed with a named error, never silently substituting a provider; notes this is a capability-policy admission gate, not the network/filesystem sandboxing k2 rules out, and that the generic build-validate judge session keeps its own prior write-sandboxed behavior unaffected.
+Add `capabilityPolicy?: 'write-sandboxed' | 'strict-read-analyze'` to the shared ReadOnlySessionOpts interface (src/shared/types.ts), consumed identically by CliProvider and OllamaProvider. Add a new `UnqualifiedCapabilityPolicyError` class. Add a small qualification table (new file src/agent/providers/capability-qualification.ts) mapping provider kind -> whether it is qualified for 'strict-read-analyze' today: cli-claude qualified (real --tools/--allowedTools allowlist already exists), cli-codex NOT qualified (no native-tool restriction flag exists), ollama qualified trivially (no tool-calling surface in this mode at all). CliProvider.runReadOnlySession checks the table BEFORE building session args or spawning the CLI subprocess when opts.capabilityPolicy==='strict-read-analyze'; an unqualified provider throws UnqualifiedCapabilityPolicyError naming the provider and the missing capability, instead of spawning anything. The existing unsafe-MCP-server retry loop in readOnlySessionOnce is unchanged in its retry mechanics but must carry opts (including capabilityPolicy) unchanged into every retry attempt -- no code path drops it. runSecurityCodePass passes capabilityPolicy:'strict-read-analyze' on its one call site; the generic build-validate judge passes no capabilityPolicy at all (undefined is treated as 'write-sandboxed', today's existing behavior, so every other caller of runReadOnlySession is unaffected).
 
-### 7.2 a2: Leave the HLD text as-is; record the tension as an openQuestion instead
+### 8.2 a2: Per-provider capabilityPolicy parameter plus a live self-test probe
 
-Don't amend the HLD at all; flag the contradiction as an open question for a future HLD revision.
+Instead of a hardcoded table, run a live behavioral self-test (attempt a forbidden operation) on every strict-read-analyze request to verify qualification dynamically.
 
-Skip the nonFunctional.retarget amendment entirely and instead record an openQuestion on this LLD noting the HLD's nonFunctional.security text is now stale, to be resolved whenever the HLD is next revised.
+Same capabilityPolicy field and fail-closed error, but instead of a static table, CliProvider would spawn a lightweight preflight CLI invocation attempting a forbidden operation (shell exec, file write) and verifying it is refused, before every strict-read-analyze session, caching the result keyed by CLI version + effective config.
 
-**Rejected because:** Meets every constraint trivially, but fails the user's explicit instruction to fix the contradiction now.
+**Rejected because:** Satisfies every constraint as well as a1, but at L cost for a live-probe capability the user explicitly deferred as future work -- unnecessary scope for what this amendment needs to restore today.
 
-### 7.3 a3: Rewrite the full nonFunctional.security paragraph
+### 8.3 a3: No new shared field; branch on provider kind directly inside runSecurityCodePass
 
-Rewrite the entire paragraph from scratch for flow, not just the one stale sentence.
+Skip the shared ReadOnlySessionOpts change; have s3's own runSecurityCodePass inspect modelSelection.provider and refuse codex itself, without touching the provider layer at all.
 
-Replace the whole nonFunctional.security text with a freshly composed paragraph covering the same ground in a single, newly-written narrative rather than a minimal edit.
+runSecurityCodePass checks `if (modelSelection.provider === 'cli-codex') throw new Error(...)` before calling runReadOnlySession, with no change to ReadOnlySessionOpts, CliProvider, or OllamaProvider.
 
-**Rejected because:** Meets every constraint as well as a1, but at unnecessary cost of re-touching unrelated sentences.
+**Rejected because:** Cheapest, but does not satisfy the user's explicit mandate that the guarantee live in the shared ReadOnlySessionOpts contract, not just in one call site.
 
-## 8. References
+## 9. References
 
-- **[[c1]]** `doc` `.insrc/artifacts/HLD-0765b3a578e43eec.json#body.nonFunctional.security`
-- **[[c2]]** `doc` `docs/epics/add-dedicated-security-reviews-E202611100765b3a5/S003/LLD.md`
+- **[[c1]]** `code` `src/shared/types.ts:244-259`
+- **[[c2]]** `code` `src/agent/providers/cli-provider.ts:126-129`
+- **[[c3]]** `code` `src/agent/providers/cli-provider.ts:267-280`
+- **[[c4]]** `code` `src/agent/providers/cli-provider.ts:715-752`
+- **[[c5]]** `code` `src/agent/providers/cli-provider.ts:760-843`
+- **[[c6]]** `code` `src/agent/providers/ollama.ts:783-823`
+- **[[c7]]** `code` `src/workflow/security-review/security-round-hooks.ts:62`
 
 ## Citations
 
-- **[[c1]]** `doc` `.insrc/artifacts/HLD-0765b3a578e43eec.json#body.nonFunctional.security`
-- **[[c2]]** `doc` `docs/epics/add-dedicated-security-reviews-E202611100765b3a5/S003/LLD.md`
+- **[[c1]]** `code` `src/shared/types.ts:244-259`
+- **[[c2]]** `code` `src/agent/providers/cli-provider.ts:126-129`
+- **[[c3]]** `code` `src/agent/providers/cli-provider.ts:267-280`
+- **[[c4]]** `code` `src/agent/providers/cli-provider.ts:715-752`
+- **[[c5]]** `code` `src/agent/providers/cli-provider.ts:760-843`
+- **[[c6]]** `code` `src/agent/providers/ollama.ts:783-823`
+- **[[c7]]** `code` `src/workflow/security-review/security-round-hooks.ts:62`

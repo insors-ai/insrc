@@ -32,13 +32,15 @@ import { readTrackerMeta } from '../../tracker/refs.js';
 import { unitIssueOf } from '../../tracker/unit-head.js';
 import type { IssueArtifact } from '../../artifacts/issue.js';
 import { IMPLIED_ISSUE_STORY_ID, issueArtifactId } from '../../storage.js';
-import { acquireClaimMutex, CLAIM_VERSION, claimCreateIntent, markClaimCreatedFence, markClaimDispatched, pendingCreatePath, quarantineDeadClaim, readClaim, reconcileClaim, takeoverAbandonedClaim } from '../../tracker/pending-create-claim.js';
+import { acquireClaimMutex, CLAIM_VERSION, claimCreateIntent, markClaimCreatedFence, markClaimDispatched, pendingCreatePath, quarantineDeadClaim, readClaim, reconcileClaim, takeoverAbandonedClaim, updateClaimTarget, type PendingCreateClaim } from '../../tracker/pending-create-claim.js';
 
 import {
 	assemblePostContext,
 	assemblePushContext,
 	assembleSyncContext,
+	lookupIssueCandidates,
 } from './context.js';
+import type { PushContext } from './schemas.js';
 import { epicMembershipLabel } from '../../tracker/conventions.js';
 import {
 	trackerChecklistSchema,
@@ -127,9 +129,9 @@ export const pushExecuteRunner: StepRunner = {
 			// step output — an 'output' would flow into checklist.verify as refs
 			// and be masked by a schema failure at finalize. `type:'error'`
 			// aborts the run with the actionable resolution text intact.
-			const refused = (reason: string) => ({
+			const refused = (reason: string, code = 'pending-create-unresolved') => ({
 				type: 'error' as const,
-				code: 'pending-create-unresolved',
+				code,
 				message: `tracker.push: unresolved pending-create claim — ${reason}`,
 				retryable: false,
 			});
@@ -148,6 +150,26 @@ export const pushExecuteRunner: StepRunner = {
 			// the currently configured gh target — confirms candidates for legacy
 			// claims whose own persisted target is unknown (round-8 MED)
 			const ghTarget = `${c.gh.owner}/${c.gh.repo}`;
+			// REVIEW round-9 HIGH-1: discovery result at the create decision — a
+			// COMPLETE lookup (the context snapshot, or a live recheck when the
+			// snapshot failed) establishes absence; a FAILED lookup never does.
+			const resolveCandidates = async (): Promise<{ complete: true; candidates: NonNullable<PushContext['remoteCandidates']> } | { complete: false; reason: string }> => {
+				if (c.remoteCandidates !== undefined) return { complete: true, candidates: c.remoteCandidates };
+				const disc = await lookupIssueCandidates(ctx.intent.repoPath, c.gh.owner, c.gh.repo, c.epicHash, c.epicTitle);
+				if (disc.ok) return { complete: true, candidates: disc.candidates };
+				return { complete: false, reason: disc.reason };
+			};
+			// REVIEW round-9 HIGH-2: if the gh config changed after the claim was
+			// written, retarget the claim under the mutex (fence+runId checked)
+			// BEFORE reconciling — never create in a different repository than the
+			// one recorded on the claim.
+			const retargetIfNeeded = async (active: PendingCreateClaim, fence: number): Promise<{ claim: PendingCreateClaim; fence: number }> => {
+				if (active.ghOwner === undefined || active.ghRepo === undefined) return { claim: active, fence };
+				if (`${active.ghOwner}/${active.ghRepo}` === ghTarget) return { claim: active, fence };
+				const committed = await updateClaimTarget(ctx.intent.repoPath, c.epicHash, fence, ctx.runId, c.gh.owner, c.gh.repo);
+				const fresh = readClaim(ctx.intent.repoPath, c.epicHash);
+				return { claim: fresh ?? { ...active, ghOwner: c.gh.owner, ghRepo: c.gh.repo, fence: committed }, fence: committed };
+			};
 			const claimResult = claim;
 			if (issue !== undefined && claimResult !== undefined) {
 				if (!claimResult.claimed) {
@@ -156,34 +178,46 @@ export const pushExecuteRunner: StepRunner = {
 					// may advance the fence or carry it (round-6 HIGH-1).
 					quarantineDeadClaim(ctx.intent.repoPath, c.epicHash);
 					const took = await takeoverAbandonedClaim(ctx.intent.repoPath, c.epicHash, ctx.runId, Date.now());
+					const disc = await resolveCandidates();
 					if (took === undefined) {
 						// LIVE foreign claim: read-only reconcile + adoption prompt.
 						// No fence carried, no claim mutation — finalization refuses
 						// while the claim is present without a carried fence (fail
 						// closed) and proceeds plainly once the owner released it.
-						const reconciled = reconcileClaim(claimResult.claim, c.remoteCandidates ?? [], ghTarget);
+						if (!disc.complete) return refused(`remote discovery failed (${disc.reason}) — cannot verify adoption without a complete lookup; claim left untouched`, 'pending-create-discovery-failed');
+						const reconciled = reconcileClaim(claimResult.claim, disc.candidates, ghTarget);
 						if (!reconciled.ok) return refused(reconciled.reason);
 						return adoptionPause(reconciled.ref, 'marker-verified');
 					}
-					// we own the taken-over claim
-					const reconciled = reconcileClaim(took, c.remoteCandidates ?? [], ghTarget);
+					// we own the taken-over claim — retarget first if the gh config
+					// changed (round-9 HIGH-2), then reconcile against the new target
+					const rt = await retargetIfNeeded(took, took.fence);
+					if (!disc.complete) return refused(`remote discovery failed (${disc.reason}) — claim retained; neither reconciliation nor a create is authorized without a complete lookup`, 'pending-create-discovery-failed');
+					const reconciled = reconcileClaim(rt.claim, disc.candidates, ghTarget);
+					if (reconciled.ok) {
+						// exactly one marker+target-verified candidate: mark the claim
+						// 'created' under the mutex (fence- + run-checked) and carry
+						// the COMMITTED fence (round-2 HIGH-1). The claim is RETAINED
+						// until the ref is durably persisted — finalize releases it.
+						const markedFence = await markClaimCreatedFence(ctx.intent.repoPath, c.epicHash, rt.fence, reconciled.ref, undefined, ctx.runId);
+						setFence(markedFence);
+						return adoptionPause(reconciled.ref, 'marker-verified');
+					}
 					if (!reconciled.ok) {
 						// REVIEW round-6 HIGH-2: a 'pending' v2 claim that was NEVER
 						// dispatched (no dispatchedAt) with ZERO marker-verified remote
-						// candidates is a CONFIRMED pre-dispatch failure — the session
-						// stopped before `gh issue create`. This run owns the claim, so
-						// recover by dispatching the create now (duplicate protection
-						// holds: nothing was dispatched and no verified remote issue
-						// exists). Fall through to the normal create dispatch below with
-						// our own committed fence.
+						// candidates — under a COMPLETE lookup — is a CONFIRMED
+						// pre-dispatch failure: the session stopped before
+						// `gh issue create`. This run owns the claim, so recover by
+						// dispatching the create now (duplicate protection holds:
+						// nothing was dispatched and no verified remote issue exists).
 						// REVIEW round-7 HIGH-1: only a v2 claim (CLAIM_VERSION) proves
-						// pre-dispatch — a LEGACY claim (no version field) has UNKNOWN
-						// dispatch history (an older runner may have created the remote
-						// issue without recording dispatchedAt), so it must take the
-						// refusal path, never the create path.
-						if (reconciled.verifiedCount === 0 && took.state === 'pending' && took.dispatchedAt === undefined && took.version === CLAIM_VERSION) {
-							const committedFence = await markClaimDispatched(ctx.intent.repoPath, c.epicHash, took.fence, ctx.runId);
+						// pre-dispatch — a LEGACY claim (no version) has UNKNOWN
+						// dispatch history, so it takes the refusal path, never create.
+						if (reconciled.verifiedCount === 0 && rt.claim.state === 'pending' && rt.claim.dispatchedAt === undefined && rt.claim.version === CLAIM_VERSION) {
+							const committedFence = await markClaimDispatched(ctx.intent.repoPath, c.epicHash, rt.fence, ctx.runId);
 							setFence(committedFence);
+							// fall through to the normal create dispatch below
 						} else {
 							// ambiguous remote outcome (create dispatched but the response
 							// was lost, legacy claim with unknown dispatch history, or >1
@@ -193,37 +227,32 @@ export const pushExecuteRunner: StepRunner = {
 							// CONFIRMED absence only; a confirmed remote ref is adopted by
 							// recording it on the work item, and the next run's durable-ref
 							// branch adopts with 0 creates). Duplicate protection preserved.
-							return refused(`${reconciled.reason} — claim ${pendingCreatePath(ctx.intent.repoPath, c.epicHash)} retained (state ${took.state}, dispatched ${took.dispatchedAt !== undefined}, version ${took.version ?? 'legacy'}). Resolution: if the remote issue is CONFIRMED on GitHub, record its ref on the work item (ISSUE meta.tracker.issueRef / head binding) and retry — the next run adopts it with 0 creates; delete the claim file ONLY after confirming NO remote issue exists (confirmed absence)`);
+							return refused(`${reconciled.reason} — claim ${pendingCreatePath(ctx.intent.repoPath, c.epicHash)} retained (state ${rt.claim.state}, dispatched ${rt.claim.dispatchedAt !== undefined}, version ${rt.claim.version ?? 'legacy'}). Resolution: if the remote issue is CONFIRMED on GitHub, record its ref on the work item (ISSUE meta.tracker.issueRef / head binding) and retry — the next run adopts it with 0 creates; delete the claim file ONLY after confirming NO remote issue exists (confirmed absence)`);
 						}
-					} else {
-						// reconciled to exactly one marker+target-verified candidate:
-						// mark the claim 'created' under the mutex (fence- + run-checked)
-						// and carry the COMMITTED fence for finalization (round-2
-						// HIGH-1). The claim is RETAINED until the ref is durably
-						// persisted and the heads bound — finalize releases it.
-						const markedFence = await markClaimCreatedFence(ctx.intent.repoPath, c.epicHash, took.fence, reconciled.ref, undefined, ctx.runId);
-						setFence(markedFence);
-						return adoptionPause(reconciled.ref, 'marker-verified');
 					}
 				} else {
-					// winner — REVIEW round-8 HIGH-1: BEFORE dispatching a create,
-					// reconcile the remote candidates already collected in context.
+					// winner — REVIEW round-8 HIGH-1 + round-9: BEFORE dispatching a
+					// create, retarget the claim if the gh config changed (HIGH-2),
+					// then reconcile remote candidates under a COMPLETE discovery
+					// (context snapshot, or a live recheck at this decision — HIGH-1).
 					// An existing marker+target-verified issue means ADOPT, never
-					// create (the claim can be fresh after claim removal or loss of
-					// local tracker state while the remote issue already exists).
-					// Ambiguous (>1 verified) refuses; 0 verified is safe to create.
-					const pre = reconcileClaim(claimResult.claim, c.remoteCandidates ?? [], ghTarget);
+					// create; >1 verified refuses; only 0 verified under a complete
+					// lookup authorizes create.
+					const rt = await retargetIfNeeded(claimResult.claim, claimResult.claim.fence);
+					const disc = await resolveCandidates();
+					if (!disc.complete) return refused(`remote discovery failed (${disc.reason}) — a failed lookup is not absence; no create dispatched`, 'pending-create-discovery-failed');
+					const pre = reconcileClaim(rt.claim, disc.candidates, ghTarget);
 					if (pre.ok) {
-						const markedFence = await markClaimCreatedFence(ctx.intent.repoPath, c.epicHash, claimResult.claim.fence, pre.ref, undefined, ctx.runId);
+						const markedFence = await markClaimCreatedFence(ctx.intent.repoPath, c.epicHash, rt.fence, pre.ref, undefined, ctx.runId);
 						setFence(markedFence);
 						return adoptionPause(pre.ref, 'marker-verified');
 					}
-					if (!pre.ok && pre.verifiedCount > 1) return refused(pre.reason);
-					// 0 verified candidates: record dispatch + heartbeat under the
-					// mutex (fence- + run-checked), then dispatch. The COMMITTED
-					// fence rides in the context so finalization can fence the whole
-					// persistence op (round-2 HIGH-1: carry the token committed).
-					const committedFence = await markClaimDispatched(ctx.intent.repoPath, c.epicHash, claimResult.claim.fence, ctx.runId);
+					if (pre.verifiedCount > 1) return refused(pre.reason);
+					// 0 verified candidates under a COMPLETE lookup: record dispatch +
+					// heartbeat under the mutex (fence- + run-checked), then dispatch.
+					// The COMMITTED fence rides in the context so finalization can
+					// fence the whole persistence op (round-2 HIGH-1).
+					const committedFence = await markClaimDispatched(ctx.intent.repoPath, c.epicHash, rt.fence, ctx.runId);
 					setFence(committedFence);
 				}
 			}

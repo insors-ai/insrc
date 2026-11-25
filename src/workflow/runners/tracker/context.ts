@@ -126,26 +126,17 @@ export async function assemblePushContext(ctx: StepRunnerContext): Promise<PushC
 	// ISSUE-5f9d4ab4c90c0b4c s1/t6: surface remote candidates matching the ISSUE
 	// body title so a run that finds a pending-create claim can reconcile by
 	// marker+target (verifyRecoveryCandidate) without injecting anything.
+	// REVIEW round-9 HIGH-1: a lookup is either COMPLETE (ok:true — an empty
+	// candidate list means absence was established) or FAILED (ok:false). A
+	// failed or partial lookup is surfaced via remoteDiscoveryError and never
+	// collapses to "zero candidates", because the create decision would then
+	// authorize a duplicate create during a lookup failure.
 	let remoteCandidates: PushContext['remoteCandidates'];
+	let remoteDiscoveryError: string | undefined;
 	if (headKind === 'issue') {
-		try {
-			const port = createGithubTracker(gh.owner, gh.repo, { repoPath: ctx.intent.repoPath });
-			const byTitle = await port.findIssuesByTitleToken(`${ArtifactIds.make({ kind: 'ISSUE', epicHash })}`);
-			if (byTitle.ok) {
-				const bodies = await Promise.all(byTitle.value.map(async ref => {
-					const b = await port.issueOps.readBody(ref);
-					return { ref, body: b.ok ? b.value : '' };
-				}));
-				// REVIEW HIGH-1: candidate titles are the actual remote titles (the
-				// creation payload's ISSUE-<hash> — title), so verification matches
-				// what the normal push actually created.
-				// REVIEW round-6 MED: the candidate's target is the ACTUAL owner/repo
-				// parsed from its ref (`owner/repo#N`), never the local checkout
-				// path — verifyRecoveryCandidate compares it against the gh target
-				// persisted on the claim.
-				remoteCandidates = byTitle.value.map((ref, i) => ({ title: bodies[i]!.body.split('\n')[1] ?? issue!.body.title, body: bodies[i]!.body, target: ref.slice(0, ref.indexOf('#')), ref }));
-			}
-		} catch { remoteCandidates = undefined; }
+		const disc = await lookupIssueCandidates(ctx.intent.repoPath, gh.owner, gh.repo, epicHash, issue!.body.title);
+		if (disc.ok) remoteCandidates = disc.candidates;
+		else remoteDiscoveryError = disc.reason;
 	}
 
 	return {
@@ -163,7 +154,61 @@ export async function assemblePushContext(ctx: StepRunnerContext): Promise<PushC
 		force,
 		...(Object.keys(existing).length > 0 ? { existingRefs: existing } : {}),
 		...(remoteCandidates !== undefined ? { remoteCandidates } : {}),
+		...(remoteDiscoveryError !== undefined ? { remoteDiscoveryError } : {}),
 	};
+}
+
+// ---------------------------------------------------------------------------
+// Remote candidate discovery (ISSUE title token) — complete-or-failed
+// ---------------------------------------------------------------------------
+
+export type IssueCandidateLookup =
+	| { readonly ok: true; readonly candidates: readonly { readonly title: string; readonly body: string; readonly target: string; readonly ref: string }[] }
+	| { readonly ok: false; readonly reason: string };
+
+async function lookupIssueCandidatesDefault(repoPath: string, owner: string, repo: string, epicHash: string, fallbackTitle: string): Promise<IssueCandidateLookup> {
+	try {
+		const port = createGithubTracker(owner, repo, { repoPath });
+		const byTitle = await port.findIssuesByTitleToken(`${ArtifactIds.make({ kind: 'ISSUE', epicHash })}`);
+		if (!byTitle.ok) return { ok: false, reason: `title-token lookup failed: ${byTitle.reason}` };
+		const bodies = await Promise.all(byTitle.value.map(async ref => {
+			const b = await port.issueOps.readBody(ref);
+			return { ref, body: b.ok ? b.value : undefined };
+		}));
+		// a partial read makes the lookup INCOMPLETE — never report absence
+		if (bodies.some(b => b.body === undefined)) return { ok: false, reason: 'a candidate body read failed — the lookup is incomplete' };
+		return {
+			ok: true,
+			candidates: byTitle.value.map((ref, i) => ({
+				// REVIEW HIGH-1: candidate titles are the actual remote titles (the
+				// creation payload's ISSUE-<hash> — title), so verification matches
+				// what the normal push actually created.
+				// REVIEW round-6 MED: the candidate's target is the ACTUAL owner/repo
+				// parsed from its ref (`owner/repo#N`), never the local checkout path.
+				title: bodies[i]!.body!.split('\n')[1] ?? fallbackTitle,
+				body: bodies[i]!.body!,
+				target: ref.slice(0, ref.indexOf('#')),
+				ref,
+			})),
+		};
+	} catch (err) {
+		return { ok: false, reason: err instanceof Error ? err.message : String(err) };
+	}
+}
+
+let lookupImpl: typeof lookupIssueCandidatesDefault = lookupIssueCandidatesDefault;
+
+/** Test hook: override the remote-candidate lookup (offline probes); pass
+ *  undefined to restore the real gh-backed lookup. */
+export function setIssueCandidateLookupForTests(fn: typeof lookupIssueCandidatesDefault | undefined): void {
+	lookupImpl = fn ?? lookupIssueCandidatesDefault;
+}
+
+/** Remote candidate discovery for the ISSUE title token — complete or failed,
+ *  never silently empty. Used by context assembly and re-checked live at the
+ *  create decision (REVIEW round-9 HIGH-1). */
+export function lookupIssueCandidates(repoPath: string, owner: string, repo: string, epicHash: string, fallbackTitle: string): Promise<IssueCandidateLookup> {
+	return lookupImpl(repoPath, owner, repo, epicHash, fallbackTitle);
 }
 
 // ---------------------------------------------------------------------------

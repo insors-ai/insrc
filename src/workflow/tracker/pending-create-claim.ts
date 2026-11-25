@@ -331,6 +331,21 @@ export async function markClaimDispatched(repoPath: string, epicHash: string, ex
 	return committed;
 }
 
+/** Retarget the claim's persisted GitHub owner/repo when the repo
+ *  configuration changed after the claim was written (REVIEW round-9
+ *  HIGH-2): fence- + run-checked under the mutex, so the create decision
+ *  reconciles against the NEW target instead of creating in a different
+ *  repository than the one recorded on the claim. Returns the COMMITTED
+ *  fence. */
+export async function updateClaimTarget(repoPath: string, epicHash: string, expectedFence: number, runId: string, ghOwner: string, ghRepo: string): Promise<number> {
+	let committed = expectedFence;
+	await withClaim(repoPath, epicHash, expectedFence, (claim, commit) => {
+		commit({ ...claim, ghOwner, ghRepo });
+		committed = claim.fence + 1;
+	}, undefined, runId);
+	return committed;
+}
+
 /** Mark the claim 'created' with the remote ref (fence-checked, under mutex).
  *  Returns the COMMITTED fence (expectedFence + 1). */
 export async function markClaimCreated(repoPath: string, epicHash: string, expectedFence: number, issueRef: string, authority?: ((repo: string, id: string, run: () => Promise<unknown>) => Promise<unknown>) | undefined, runId?: string | undefined): Promise<number> {

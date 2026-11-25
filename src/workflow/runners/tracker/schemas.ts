@@ -154,13 +154,21 @@ export interface PushContext {
 	};
 	/** ISSUE-5f9d4ab4c90c0b4c s1/t6: remote issues matching the claim's
 	 *  title, surfaced for marker+target reconciliation when a pending-create
-	 *  claim already exists (the loser adopts, never creates). */
+	 *  claim already exists (the loser adopts, never creates).
+	 *  REVIEW round-9 HIGH-1: present only when discovery SUCCEEDED and was
+	 *  COMPLETE — an empty array means absence was established; an ABSENT
+	 *  field (with `remoteDiscoveryError` set) means the lookup failed and
+	 *  absence is UNKNOWN — the create decision must recheck live. */
 	readonly remoteCandidates?: readonly {
 		readonly title:  string;
 		readonly body:   string;
 		readonly target: string;
 		readonly ref:    string;
 	}[];
+	/** Set when remote discovery FAILED at context assembly (then
+	 *  `remoteCandidates` is absent). A failed lookup must never be read as
+	 *  zero matches. */
+	readonly remoteDiscoveryError?: string;
 }
 
 export interface SyncContext {

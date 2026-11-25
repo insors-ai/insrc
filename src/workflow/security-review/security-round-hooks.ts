@@ -66,7 +66,7 @@ function codePassPrompt(targets: ReviewTargets): string {
  * restriction) is rejected before inference with UnqualifiedCapabilityPolicyError,
  * propagated unchanged, never silently downgraded or swapped to another provider.
  */
-export async function runSecurityCodePass(repoPath: string, targets: ReviewTargets, modelSelection: SecurityModelSelection & { readonly status: 'configured' }, round: number): Promise<readonly SecurityFinding[]> {
+export async function runSecurityCodePass(repoPath: string, targets: ReviewTargets, modelSelection: SecurityModelSelection & { readonly status: 'configured' }, round: number, reviewId?: string): Promise<readonly SecurityFinding[]> {
 	const registry = getModelRegistry();
 	const kind = registry.cliKind(modelSelection.provider);
 	if (kind === undefined) { throw new Error(`runSecurityCodePass: '${modelSelection.provider}' is not a CLI-backed family`); }
@@ -78,7 +78,7 @@ export async function runSecurityCodePass(repoPath: string, targets: ReviewTarge
 	const connectionExecution = currentStepContext()?.connectionExecution;
 	const provider = familyProvider(registry, modelSelection.provider, model, { effort: modelSelection.effort }, connectionExecution) as CliProvider;
 
-	log.info({ repoPath, round, modelId: modelSelection.modelId, provider: modelSelection.provider }, 'runSecurityCodePass: dispatching the code-vulnerability pass');
+	log.info({ repoPath, round, reviewId, modelId: modelSelection.modelId, provider: modelSelection.provider }, 'runSecurityCodePass: dispatching the code-vulnerability pass');
 	const reply = await provider.runReadOnlySession<SecurityCodePassReply>(
 		codePassPrompt(targets),
 		replySchemaFor(kind),
@@ -98,11 +98,11 @@ export function _setRunSecurityCodePassForTests(fn?: typeof runSecurityCodePass)
 /**
  * The hooks object runSecurityReview passes into runReviewRound -- ground is
  * a true no-op (a security-only review has no general code-quality pass);
- * security delegates to runSecurityCodePass with the factory's own closed-over
- * args, ignoring the targets/round runReviewRound itself would otherwise pass
- * (it always matches what this review was started with). reviewId is logging
- * context only (runSecurityCodePass's own LLD signature carries no reviewId
- * parameter) -- used here so it is never silently dropped.
+ * security delegates to runSecurityCodePass bound to the factory's own
+ * closed-over repoPath/targets/modelSelection/reviewId, ignoring the
+ * targets/round runReviewRound itself would otherwise pass for targets (it
+ * always matches what this review was started with) while still forwarding
+ * its own round.
  */
 export function buildSecurityRoundHooks(repoPath: string, targets: ReviewTargets, modelSelection: SecurityModelSelection & { readonly status: 'configured' }, reviewId: string): RoundDriverHooks<SecurityFinding> {
 	return {
@@ -111,7 +111,7 @@ export function buildSecurityRoundHooks(repoPath: string, targets: ReviewTargets
 		ground: async () => [],
 		security: (_targets, round) => {
 			log.info({ reviewId, round }, 'buildSecurityRoundHooks: security hook invoked');
-			return dispatchCodePass(repoPath, targets, modelSelection, round);
+			return dispatchCodePass(repoPath, targets, modelSelection, round, reviewId);
 		},
 	};
 }

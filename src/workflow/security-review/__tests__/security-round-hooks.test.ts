@@ -23,8 +23,8 @@ test("buildSecurityRoundHooks: hooks.ground always resolves to [] without I/O; h
 	const bogusRepoPath = '/does/not/exist/' + Math.random().toString(36).slice(2);
 	const targets = { entries: [{ path: 'this-file-does-not-exist.ts' }] };
 	let captured: unknown;
-	_setRunSecurityCodePassForTests(async (repoPath, calledTargets, calledModelSelection, round) => {
-		captured = { repoPath, calledTargets, calledModelSelection, round };
+	_setRunSecurityCodePassForTests(async (repoPath, calledTargets, calledModelSelection, round, reviewId) => {
+		captured = { repoPath, calledTargets, calledModelSelection, round, reviewId };
 		return [];
 	});
 	try {
@@ -37,7 +37,7 @@ test("buildSecurityRoundHooks: hooks.ground always resolves to [] without I/O; h
 
 		assert.ok(hooks.security);
 		await hooks.security(targets, 2);
-		assert.deepEqual(captured, { repoPath: bogusRepoPath, calledTargets: targets, calledModelSelection: modelSelection, round: 2 });
+		assert.deepEqual(captured, { repoPath: bogusRepoPath, calledTargets: targets, calledModelSelection: modelSelection, round: 2, reviewId: 'review-1' });
 	} finally {
 		_setRunSecurityCodePassForTests();
 	}

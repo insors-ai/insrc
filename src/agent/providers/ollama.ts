@@ -27,6 +27,8 @@ import { emitStructuredAnswer, runReadOnlyToolLoop, ToolLoopDeadlineError } from
 import { ReadOnlySessionTimeoutError } from './cli-provider.js';
 import { ModelCallFailedError } from './model-call-error.js';
 import { validateAgainstSchema, withStructuredRetry } from './structured-output.js';
+import { UnqualifiedCapabilityPolicyError } from '../../shared/types.js';
+import { isQualifiedForCapabilityPolicy } from './capability-qualification.js';
 
 const log = getLogger('ollama');
 
@@ -782,6 +784,12 @@ export class OllamaProvider implements LLMProvider {
    */
   async runReadOnlySession<T>(prompt: string, schema: StructuredSchema, opts: ReadOnlySessionOpts): Promise<T> {
 		assertConnectionProviderAdmission(opts.connectionExecution, this);
+		// Fail closed, before any tool-loop turn starts: an unqualified policy
+		// request is refused outright, not silently run with a weaker guarantee.
+		const capabilityPolicy = opts.capabilityPolicy ?? 'write-sandboxed';
+		if (!isQualifiedForCapabilityPolicy('ollama', capabilityPolicy)) {
+			throw new UnqualifiedCapabilityPolicyError('ollama', capabilityPolicy);
+		}
     const closingInstruction = 'Now give your final answer: ONLY a JSON object matching this JSON Schema -- no prose, no fenced block.\n\n' + JSON.stringify(schema);
     const deadlineAt = Date.now() + opts.deadlineMs;
     const timer = new AbortController();

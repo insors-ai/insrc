@@ -256,6 +256,23 @@ export interface ReadOnlySessionOpts {
   readonly stallMs?: number | undefined;
   /** Cancels the session. */
   readonly signal?: AbortSignal | undefined;
+  /** `'strict-read-analyze'`: the provider must enforce a declared, verified
+   *  tool-restriction policy before this session starts, or refuse with
+   *  {@link UnqualifiedCapabilityPolicyError} rather than run unenforced.
+   *  Omitted (or `'write-sandboxed'`): today's existing behavior -- no
+   *  capability-policy check runs. */
+  readonly capabilityPolicy?: 'write-sandboxed' | 'strict-read-analyze' | undefined;
+}
+
+/** Thrown by {@link LLMProvider.runReadOnlySession} before any inference
+ *  starts when `opts.capabilityPolicy` is requested but the dispatched
+ *  provider is not on the qualification table for that policy -- fail
+ *  closed, never a silent downgrade or provider substitution. */
+export class UnqualifiedCapabilityPolicyError extends Error {
+  constructor(provider: string, policy: string) {
+    super(`provider '${provider}' is not qualified to enforce capabilityPolicy '${policy}'`);
+    this.name = 'UnqualifiedCapabilityPolicyError';
+  }
 }
 
 /**

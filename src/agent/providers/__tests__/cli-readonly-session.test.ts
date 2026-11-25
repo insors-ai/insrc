@@ -20,6 +20,7 @@ import {
 	CodexMcpServerOverrideUnsafeError, CodexProjectMcpServersUnexcludableError, READ_ONLY_SESSION_ANALYZE_TOOLS,
 	READ_ONLY_SESSION_READ_TOOLS, ReadOnlySessionTimeoutError, CliStallError, CODEX_FIRST_OUTPUT_MS, InputTooLargeError,
 } from '../cli-provider.js';
+import { UnqualifiedCapabilityPolicyError } from '../../../shared/types.js';
 
 const SCHEMA = { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } } };
 
@@ -692,4 +693,49 @@ test("without effort every argv is byte-identical to today's", async () => {
 		await new CliProvider({ kind: 'claude', binPath: c.bin }).complete([{ role: 'user', content: 'hi' }]);
 		assert.deepEqual(c.calls()[0]!.argv, ['--print', '--output-format', 'json']);
 	} finally { c.cleanup(); }
+});
+
+// --- capabilityPolicy (s3/t2, Epic add-dedicated-security-reviews) -------------
+
+test('capabilityPolicy omitted behaves identically to today: no qualification check runs, codex dispatches normally', async () => {
+	const f = fakeCli([{ out: codexOk('{"ok":true}') }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
+		const res = await p.runReadOnlySession<{ ok: boolean }>('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000 });
+		assert.deepEqual(res, { ok: true });
+		assert.equal(f.calls().length, 1);
+	} finally { f.cleanup(); }
+});
+
+test("runReadOnlySession rejects an unqualified provider's strict-read-analyze request before spawning any subprocess", async () => {
+	const f = fakeCli([{ out: codexOk('{"ok":true}') }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
+		await assert.rejects(
+			p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, capabilityPolicy: 'strict-read-analyze' }),
+			(e: unknown) => e instanceof UnqualifiedCapabilityPolicyError && /codex/.test(e.message) && /strict-read-analyze/.test(e.message),
+		);
+		assert.equal(f.calls().length, 0, 'no subprocess was spawned');
+		assert.equal(f.mcpListCalls(), 0, 'not even codex mcp discovery ran');
+	} finally { f.cleanup(); }
+});
+
+test('runReadOnlySession dispatches normally for a qualified provider requesting strict-read-analyze', async () => {
+	const f = fakeCli([{ out: claudeOk({ ok: true }) }]);
+	try {
+		const p = new CliProvider({ kind: 'claude', binPath: f.bin });
+		const res = await p.runReadOnlySession<{ ok: boolean }>('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, capabilityPolicy: 'strict-read-analyze' });
+		assert.deepEqual(res, { ok: true });
+		assert.equal(f.calls().length, 1);
+	} finally { f.cleanup(); }
+});
+
+test("readOnlySessionOnce's retry attempt carries the identical capabilityPolicy value as the original call", async () => {
+	const f = fakeCli([{ fail: 'API Error: overloaded' }, { out: claudeOk({ ok: true }) }]);
+	try {
+		const p = new CliProvider({ kind: 'claude', binPath: f.bin });
+		const res = await p.runReadOnlySession<{ ok: boolean }>('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, capabilityPolicy: 'strict-read-analyze' });
+		assert.deepEqual(res, { ok: true });
+		assert.equal(f.calls().length, 2, 'the first attempt and the one retry, both counted -- neither rejected for an unqualified policy');
+	} finally { f.cleanup(); }
 });

@@ -58,9 +58,13 @@ function codePassPrompt(targets: ReviewTargets): string {
 
 /**
  * Dispatches round `round`'s code-vulnerability pass through
- * CliProvider.runReadOnlySession, using s1's pinned model. The CLI's own
- * tool restriction (READ_ONLY_SESSION_READ_TOOLS + READ_ONLY_SESSION_ANALYZE_TOOLS)
- * applies to every runReadOnlySession call unconditionally -- never configured here.
+ * CliProvider.runReadOnlySession, using s1's pinned model, requesting
+ * capabilityPolicy:'strict-read-analyze'. A security code pass starts only
+ * when the selected provider can enforce that policy (claudeReadOnlySessionArgs'
+ * real --tools/--allowedTools allowlist, or Ollama's equivalent tool-loop
+ * allowlist) -- an unqualified provider (e.g. codex, which sets no native-tool
+ * restriction) is rejected before inference with UnqualifiedCapabilityPolicyError,
+ * propagated unchanged, never silently downgraded or swapped to another provider.
  */
 export async function runSecurityCodePass(repoPath: string, targets: ReviewTargets, modelSelection: SecurityModelSelection & { readonly status: 'configured' }, round: number): Promise<readonly SecurityFinding[]> {
 	const registry = getModelRegistry();
@@ -78,7 +82,7 @@ export async function runSecurityCodePass(repoPath: string, targets: ReviewTarge
 	const reply = await provider.runReadOnlySession<SecurityCodePassReply>(
 		codePassPrompt(targets),
 		replySchemaFor(kind),
-		{ cwd: repoPath, deadlineMs: 10 * 60_000, ...(connectionExecution !== undefined ? { connectionExecution } : {}) },
+		{ cwd: repoPath, deadlineMs: 10 * 60_000, capabilityPolicy: 'strict-read-analyze', ...(connectionExecution !== undefined ? { connectionExecution } : {}) },
 	);
 	return reply.findings.map(raw => parseSecurityFindingReply(kind, raw));
 }

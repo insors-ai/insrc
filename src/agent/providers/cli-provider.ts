@@ -64,6 +64,8 @@ import type {
 	StructuredCompletionOpts,
 	StructuredSchema,
 } from '../../shared/types.js';
+import { UnqualifiedCapabilityPolicyError } from '../../shared/types.js';
+import { isQualifiedForCapabilityPolicy } from './capability-qualification.js';
 import type { TierEffort } from '../../config/analyze.js';
 import { getLogger } from '../../shared/logger.js';
 import { runInProcessGroup } from '../../shared/process-group.js';
@@ -714,6 +716,12 @@ export class CliProvider implements LLMProvider {
 	 */
 	async runReadOnlySession<T>(prompt: string, schema: StructuredSchema, opts: ReadOnlySessionOpts): Promise<T> {
 		assertConnectionProviderAdmission(opts.connectionExecution);
+		// Fail closed, before anything else (including the deadline check and the
+		// retry loop below): an unqualified provider never spawns a subprocess at all.
+		const capabilityPolicy = opts.capabilityPolicy ?? 'write-sandboxed';
+		if (!isQualifiedForCapabilityPolicy(this.kind, capabilityPolicy)) {
+			throw new UnqualifiedCapabilityPolicyError(this.kind, capabilityPolicy);
+		}
     // Preserve the bounded caller's expired-deadline error without starting a process.
     if ((opts.mode === undefined || opts.mode === 'bounded') && Number.isFinite(opts.deadlineMs) && opts.deadlineMs <= 0) throw new ReadOnlySessionTimeoutError(opts.deadlineMs);
 		const startedAt = Date.now();

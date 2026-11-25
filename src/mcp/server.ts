@@ -210,6 +210,17 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 	// demand in the handler (never stored). `registerAndRecord` has the exact
 	// signature of `server.registerTool`, so the callsites below are unchanged
 	// apart from the name.
+	// A strict-read-analyze CLI session's --mcp-config launches THIS process with
+	// INSRC_MCP_TOOL_ALLOWLIST set (see cli-provider.ts's strictMcpConfig) so
+	// only the named tools stay enabled -- --allowedTools on the CLI side only
+	// pre-approves specific tools without a permission prompt, it never excludes
+	// the REST of this server's own tools from being loaded/callable; disabling
+	// every other tool here is what actually closes that surface.
+	const toolAllowlist = process.env['INSRC_MCP_TOOL_ALLOWLIST'];
+	const allowedTools = toolAllowlist !== undefined && toolAllowlist.length > 0
+		? new Set(toolAllowlist.split(',').map(t => t.trim()).filter(t => t.length > 0))
+		: undefined;
+
 	const schemaRecords = new Map<string, InsrcToolSchemaRecord>();
 	const registerTool = server.registerTool.bind(server);
 	const registerAndRecord: typeof server.registerTool = ((
@@ -220,6 +231,9 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 		// The design protocol rejects unknown top-level fields rather than letting Zod strip them.
 		const runtimeConfig=name==='insrc_review_step'?{...config,inputSchema:z.object(config.inputSchema??{}).strict()}:config;
 		const result = (registerTool as (...a: unknown[]) => unknown)(name, runtimeConfig, ...rest);
+		if (allowedTools !== undefined && !allowedTools.has(name)) {
+			(result as { disable: () => void }).disable();
+		}
 		const meta = TOOL_SCHEMA_META[name] ?? {};
 		schemaRecords.set(name, {
 			name,

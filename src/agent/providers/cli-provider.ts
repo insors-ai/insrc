@@ -160,17 +160,22 @@ export const READ_ONLY_SESSION_VIBE_TOOL_NAMES: readonly string[] = ['read_file'
  * The MCP config a 'strict-read-analyze' claude session is confined to: ONLY
  * the insrc server (so the two analyze tools in READ_ONLY_SESSION_ANALYZE_TOOLS
  * stay reachable), launched the same way `mcp-register.ts`'s own `claude mcp
- * add` wiring launches it (`node <insrc-mcp.js>`, no extra args/env) -- one
- * launch spec, never a second drifting copy. `--tools` alone only restricts
- * claude's BUILT-IN tools (confirmed against the installed CLI's own
- * `--help`); it has no effect on which MCP servers are loaded or callable, so
- * without this, every OTHER MCP server configured for the user/project would
- * still be loaded and callable by an unlisted tool call -- `--allowedTools`
- * merely pre-approves specific tools without a permission prompt, it does not
- * exclude the rest.
+ * add` wiring launches it (`node <insrc-mcp.js>`), but with
+ * INSRC_MCP_TOOL_ALLOWLIST set -- server.ts's own registerAndRecord disables
+ * every OTHER registered tool (insrc_build_step, insrc_workflow_approve, ...)
+ * when that env var is set, so the insrc server itself exposes ONLY the two
+ * analyze tools in this mode. `--tools` alone only restricts claude's
+ * BUILT-IN tools (confirmed against the installed CLI's own `--help`); it has
+ * no effect on which MCP servers are loaded or callable, so without
+ * --strict-mcp-config + this --mcp-config, every OTHER MCP server configured
+ * for the user/project would still be loaded and callable by an unlisted tool
+ * call, AND the insrc server's own non-analyze tools would still be reachable
+ * too -- `--allowedTools` merely pre-approves specific tools without a
+ * permission prompt, it does not exclude the rest.
  */
-function strictMcpConfig(): { mcpServers: Record<string, { command: string; args: readonly string[] }> } {
-	return { mcpServers: { insrc: { command: 'node', args: [join(daemonInstallRoot(), 'out', 'bin', 'insrc-mcp.js')] } } };
+function strictMcpConfig(): { mcpServers: Record<string, { command: string; args: readonly string[]; env: Record<string, string> }> } {
+	const allowlist = READ_ONLY_SESSION_ANALYZE_TOOLS.map(t => t.replace(/^mcp__insrc__/, '')).join(',');
+	return { mcpServers: { insrc: { command: 'node', args: [join(daemonInstallRoot(), 'out', 'bin', 'insrc-mcp.js')], env: { INSRC_MCP_TOOL_ALLOWLIST: allowlist } } } };
 }
 
 /** Read-only sessions expose file reads and analysis tools only. `capabilityPolicy`

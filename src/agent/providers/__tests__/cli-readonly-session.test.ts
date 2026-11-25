@@ -779,8 +779,13 @@ test("a qualified claude session under capabilityPolicy:'strict-read-analyze' ac
 		assert.ok(strict!.argv.includes('--strict-mcp-config'), "strict-read-analyze's argv carries --strict-mcp-config");
 		const mcpConfigIndex = strict!.argv.indexOf('--mcp-config');
 		assert.ok(mcpConfigIndex >= 0, "strict-read-analyze's argv carries --mcp-config");
-		const mcpConfig = JSON.parse(strict!.argv[mcpConfigIndex + 1]!) as { mcpServers: Record<string, unknown> };
+		const mcpConfig = JSON.parse(strict!.argv[mcpConfigIndex + 1]!) as { mcpServers: Record<string, { env?: Record<string, string> }> };
 		assert.deepEqual(Object.keys(mcpConfig.mcpServers), ['insrc'], '--mcp-config names ONLY the insrc server, excluding every other configured MCP server');
+		assert.deepEqual(
+			mcpConfig.mcpServers['insrc']!.env?.['INSRC_MCP_TOOL_ALLOWLIST']?.split(',').sort(),
+			['insrc_analyze', 'insrc_analyze_step'],
+			'the insrc server itself is launched with INSRC_MCP_TOOL_ALLOWLIST, so its OWN non-analyze tools (insrc_build_step, insrc_workflow_approve, ...) are disabled too -- --allowedTools alone never excludes them',
+		);
 		assert.equal(sandboxed!.argv.includes('--strict-mcp-config'), false, "write-sandboxed's argv carries no MCP scoping at all (today's unchanged behavior)");
 		assert.equal(sandboxed!.argv.includes('--mcp-config'), false);
 	} finally { f.cleanup(); }

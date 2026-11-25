@@ -96,7 +96,8 @@ export async function extractOllamaTarZstd(archive: string, destination: string,
   const source = await open(archive, constants.O_RDONLY | constants.O_NOFOLLOW);
   let reader: TarBytes | undefined, current: FileHandle | undefined;
   const files: InventoryFile[] = [], aliases: OllamaArchiveAlias[] = [], components = new Map<string, { path: string; directory: boolean }>(), seen = new Set<string>();
-  let entries = 0, declared = 0, zeros = 0, pending: Record<string, string> = {}, longName: string | undefined, longLink: string | undefined;
+  let entries = 0, declared = 0, zeros = 0, metadataBytes = 0, controls = 0;
+  let pending: Record<string, string> = {}, longName: string | undefined, longLink: string | undefined;
   const register = (name: string, directory: boolean) => {
     const parts = name.split('/');
     for (let index = 0; index < parts.length; index++) {
@@ -144,11 +145,14 @@ export async function extractOllamaTarZstd(archive: string, destination: string,
       if (!Number.isSafeInteger(size) || size > (control ? 65536 : policy.limits.fileBytes) || declared + size > policy.limits.expandedBytes) throw unsafe('Tar member/metadata exceeds policy');
       declared += size;
       if (control) {
+        metadataBytes += size;
+        if (++controls > 16 || metadataBytes > 65536) throw unsafe('Cumulative tar metadata exceeds bound');
         const data = (await reader.take(size))!;
         if (type === 'x') pending = { ...pending, ...pax(data) };
         else if (type === 'g') { const global = pax(data); if (['path', 'linkpath', 'size'].some(key => global[key] !== undefined)) throw unsafe('Structural global PAX attributes unsupported'); }
         else { const value = field(data, 0, data.length); if (type === 'L') longName = value; else longLink = value; }
       } else {
+        metadataBytes = 0; controls = 0;
         const directory = type === '5', prefix = magic === 'ustar' ? field(header, 345, 155) : '';
         const name = memberName(pending['path'] ?? longName ?? (prefix ? `${prefix}/` : '') + field(header, 0, 100), directory);
         const link = pending['linkpath'] ?? longLink ?? field(header, 157, 100);

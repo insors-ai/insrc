@@ -69,6 +69,19 @@ test('linux-zstd-large-window-truncation-and-output-bombs-refuse-before-unsafe-w
       await assert.rejects(extractOllamaTarZstd(permissive.file, permissive.destination, policy(good)), /owned extraction/);
       assert.deepEqual(readdirSync(permissive.destination), []);
     }
+    const paxLine = (key: string) => {
+      const body = ` ${key}=${'x'.repeat(40000)}\n`; let size = body.length + 1;
+      while (String(size).length + body.length !== size) size = String(size).length + body.length;
+      return Buffer.from(String(size) + body);
+    };
+    for (const entries of [
+      [{ name: 'pax1', type: 'pax-header', data: paxLine('SCHILY.xattr.one') }, { name: 'pax2', type: 'pax-header', data: paxLine('SCHILY.xattr.two') }],
+      Array.from({ length: 17 }, (_, i) => ({ name: `pax${i}`, type: 'pax-header', data: Buffer.alloc(0) })),
+    ]) {
+      const encoded = compress(await archive(entries)), x = f.input(encoded);
+      await assert.rejects(extractOllamaTarZstd(x.file, x.destination, policy(encoded)), /Cumulative tar metadata/);
+      assert.deepEqual(readdirSync(x.destination), []);
+    }
   } finally { f.cleanup(); }
 });
 

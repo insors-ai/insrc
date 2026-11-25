@@ -2927,7 +2927,7 @@ async function finalizeTracker(
 	}
 
 	// Read gh config from the s1 output (deterministic bundle).
-	const s1 = stepOutputs['s1'] as { gh?: { owner?: string; repo?: string }; epicHash?: string; epicSlug?: string } | undefined;
+	const s1 = stepOutputs['s1'] as { gh?: { owner?: string; repo?: string }; epicHash?: string; epicSlug?: string; headKind?: string } | undefined;
 	if (s1 === undefined || typeof s1.gh !== 'object' || typeof s1.gh.owner !== 'string' || typeof s1.gh.repo !== 'string' || typeof s1.epicHash !== 'string') {
 		return { ok: false, failure: schemaFailure(`s1 context bundle is missing gh + epicHash`) };
 	}
@@ -2960,6 +2960,15 @@ async function finalizeTracker(
 	// the execution turn, and persisting tracker meta into an unapproved head
 	// would write state the approval gate never saw.
 	const liveHead = readDefinitionHead(intent.repoPath, epicHash);
+	// REVIEW round-17 HIGH: the assembled context's headKind must match the
+	// LIVE head's kind at finalize — if a readable DEF now wins the
+	// DEF-then-ISSUE first-readable-wins race, the ISSUE checks below are
+	// skipped and the write (and a push's claim release) would run against
+	// the replacement head. Refuse before persistence or claim cleanup.
+	const ctxHeadKind = s1.headKind;
+	if (ctxHeadKind === 'issue' && liveHead?.kind !== 'issue') {
+		return { ok: false, failure: schemaFailure(`${intent.workflow} context was assembled for an ISSUE head but the live head for ${epicHash} now resolves to ${liveHead === undefined ? 'no readable head' : `kind '${liveHead.kind}'`} — refusing to persist against a changed head; re-run ${intent.workflow}`) };
+	}
 	if (intent.workflow !== 'tracker.post' && liveHead?.kind === 'issue' && approvalStateOf(liveHead.artifact.meta) !== 'approved') {
 		return { ok: false, failure: schemaFailure(`ISSUE head for ${epicHash} is not approved at finalize — refusing to persist tracker meta into an unapproved head; re-approve and re-run`) };
 	}
@@ -3006,7 +3015,7 @@ async function finalizeTracker(
 		const pushRefs = typedRefs as TrackerPushRefs;
 		if (durableEpic !== undefined && durableEpic === pushRefs.epicRef) {
 			// idempotent completion: the publication this run carried already landed
-			mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs);
+			mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs, ctxHeadKind);
 		} else {
 			return { ok: false, failure: schemaFailure(`carried claim fence ${expectedFence} has no claim and durable ref ${durableEpic ?? '(none)'} != ${pushRefs.epicRef} — displaced/completed owner refused`) };
 		}
@@ -3028,7 +3037,7 @@ async function finalizeTracker(
 								throw new Error(`locked claim ref ${lockedClaim.issueRef} != returned epicRef ${pushRefs.epicRef} — refusing to persist a different issue than the marker-verified recovery`);
 							}
 						}
-						mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs);
+						mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs, ctxHeadKind);
 						// Only AFTER the refs are durably persisted and the heads bound
 						// is the claim released (HIGH-2) — unlink directly, we already
 						// hold the mutex (releaseClaim would re-acquire and deadlock).
@@ -3041,7 +3050,7 @@ async function finalizeTracker(
 				}
 			} else {
 				// no claim and no carried fence: plain persistence (DEF heads, sync, tests)
-				mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs);
+				mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs, ctxHeadKind);
 			}
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
@@ -3105,6 +3114,7 @@ function mutateEpicTrackerMeta(
 	epicHash:   string,
 	workflow:   string,
 	refs:       TrackerPushRefs | TrackerSyncRefs | TrackerPostRefs,
+	expectedHeadKind?: string | undefined,
 ): void {
 	if (workflow === 'tracker.post') return;   // no-op for post
 	// REVIEW round-2 HIGH-3: fence validation now happens in withOwnedFence,
@@ -3113,6 +3123,13 @@ function mutateEpicTrackerMeta(
 	// rule the context assemblers use, so persistence and reads never diverge.
 	const head = readDefinitionHead(repoPath, epicHash);
 	const headKind = head?.kind ?? 'def';
+	// REVIEW round-17 HIGH: re-verify the head kind AT THE WRITE — inside the
+	// caller's ownership boundary (withOwnedFence for claim runs) — so a head
+	// swapped between finalize's checks and the persistence cannot retarget
+	// the write, and a push cannot release its claim after writing a replacement.
+	if (expectedHeadKind !== undefined && headKind !== expectedHeadKind) {
+		throw new Error(`head kind changed since the context was assembled: expected '${expectedHeadKind}' but the live head for ${epicHash} is '${headKind}' — refusing to persist tracker meta into a replacement head`);
+	}
 	const headJson = head !== undefined ? definitionHeadJsonPath(repoPath, epicHash) : artifactJsonPath(repoPath, defineArtifactId(epicHash));
 	const raw = readFileSync(headJson, 'utf8');
 	const artifact = JSON.parse(raw) as { meta?: { epicSlug?: string; tracker?: Record<string, unknown> } };

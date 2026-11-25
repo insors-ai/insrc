@@ -39,6 +39,7 @@ import {
 	assemblePushContext,
 	assembleSyncContext,
 } from './context.js';
+import { epicMembershipLabel } from '../../tracker/conventions.js';
 import {
 	trackerChecklistSchema,
 	trackerPostExecuteSchema,
@@ -420,13 +421,18 @@ const ISSUE_CONVENTIONS_BLOCK = [
 /** ISSUE-5f9d4ab4c90c0b4c s1/t3: the single-issue push prompt for an
  *  ISSUE-anchored work item (headKind 'issue'). ONE issue, the prerendered
  *  ISSUE markdown as the single authoritative body, labels epicLabel +
- *  `epic:<slug>` only — no story label, no sub-issues, no `## Stories`
+ *  epicMembershipLabel(slug) (the canonical length-bounded `epic:<slug>`) —
+ *  no story label, no sub-issues, no `## Stories`
  *  task-list rewrite, no `**Epic:**` back-reference (those are DEF-only and
  *  would self-reference the single issue). Adoption of an existing
  *  `existingRefs.epicRef` is allowed WITHOUT --force: labels are additive via
  *  the singular `--add-label` (gh_issue_edit maps addLabels to it), only body
  *  edits need --force. */
 function pushPromptIssue(c: Awaited<ReturnType<typeof assemblePushContext>>): string {
+	// REVIEW round-5 MED: the membership label must be the canonical
+	// epicMembershipLabel(slug) (length-bounded + hashed for long slugs) — the
+	// same identity the deterministic create and registry queries use.
+	const membership = epicMembershipLabel(c.epicSlug);
 	return [
 		'You are running the `execute` step of `tracker.push` for an ISSUE-anchored work item.',
 		'',
@@ -435,10 +441,10 @@ function pushPromptIssue(c: Awaited<ReturnType<typeof assemblePushContext>>): st
 		ISSUE_CONVENTIONS_BLOCK,
 		'',
 		'ORDER OF OPERATIONS:',
-		`  1. Ensure the labels \`${c.gh.epicLabel}\` and \`epic:${c.epicSlug}\` exist (create missing ones idempotently, e.g. \`gh label create --force\`).`,
+		`  1. Ensure the labels \`${c.gh.epicLabel}\` and \`${membership}\` exist (create missing ones idempotently, e.g. \`gh label create --force\`).`,
 		...(c.existingRefs?.epicRef !== undefined ? [
 			`  2. ADOPT the existing issue ${c.existingRefs.epicRef} — do NOT create a duplicate.`,
-			`     Add the labels idempotently: \`gh issue edit <N> --add-label "${c.gh.epicLabel},epic:${c.epicSlug}"\` (the singular --add-label flag; the plural --add-labels is rejected by gh). Labels are additive and need no --force.`,
+			`     Add the labels idempotently: \`gh issue edit <N> --add-label "${c.gh.epicLabel},${membership}"\` (the singular --add-label flag; the plural --add-labels is rejected by gh). Labels are additive and need no --force.`,
 			// REVIEW-5f9d4ab4c90c0b4c MED-2: the ISSUE adoption path must vary with
 			// c.force exactly like the DEF branch does.
 			...(c.force
@@ -448,7 +454,7 @@ function pushPromptIssue(c: Awaited<ReturnType<typeof assemblePushContext>>): st
 			'  2. Create exactly ONE issue for this work item.',
 			`     Title: ${JSON.stringify(c.epicTitle)}`,
 			'     Body: the prerendered markdown below, VERBATIM (it is the single authoritative body).',
-			`     Labels on create: \`${c.gh.epicLabel}\`, \`epic:${c.epicSlug}\`.`,
+			`     Labels on create: \`${c.gh.epicLabel}\`, \`${membership}\`.`,
 		]),
 		`  ${c.existingRefs?.epicRef !== undefined ? '3' : '3'}. ${c.gh.useMilestones ? `Create milestone \`${c.epicSlug}\` and attach the issue.` : 'Skip milestone creation (useMilestones=false).'}`,
 		'',
@@ -535,13 +541,14 @@ function taskPushBlock(c: Awaited<ReturnType<typeof assemblePushContext>>): stri
  *  (storyLabelled, taskList, backRef, task*, subIssue, taskCoverage) pass by
  *  construction: there are no stories/tasks/back-references to check. */
 function pushVerifyPromptIssue(c: Awaited<ReturnType<typeof assemblePushContext>>): string {
+	const membership = epicMembershipLabel(c.epicSlug);   // round-5 MED: canonical label
 	return [
 		'You are running the `checklist.verify` step of `tracker.push` for an ISSUE-anchored work item.',
 		'',
 		`Verify the single issue on \`${c.gh.owner}/${c.gh.repo}\` (use \`gh issue view --json labels,body,state\`).`,
 		'',
 		'CHECKLIST ITEMS (grade each pass/fail):',
-		`  issueLabelled: The issue has \`${c.gh.epicLabel}\` and \`epic:${c.epicSlug}\` labels.`,
+		`  issueLabelled: The issue has \`${c.gh.epicLabel}\` and \`${membership}\` labels.`,
 		'  bodyMatches:   The issue body matches the prerendered markdown given in the execute step VERBATIM (or was left untouched on adoption).',
 		'  singleIssue:   Exactly ONE issue exists for this work item — no duplicates were created (the returned epicRef and storyRefs.s1 are the same ref).',
 		...(c.gh.useMilestones ? [`  milestone:     Milestone \`${c.epicSlug}\` exists and the issue is attached.`] : ['  milestone:     (skipped — useMilestones=false)']),

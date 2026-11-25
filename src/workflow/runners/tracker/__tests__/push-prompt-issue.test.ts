@@ -19,6 +19,8 @@ import assert from 'node:assert/strict';
 
 import { pushPrompt, pushVerifyPrompt } from '../index.js';
 import type { PushContext } from '../schemas.js';
+import { deriveSlug } from '../../../slug.js';
+import { epicMembershipLabel } from '../../../tracker/conventions.js';
 
 const GH = { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' };
 
@@ -177,6 +179,45 @@ test('src/workflow/runners/tracker/index.ts pushPrompt/pushVerifyPrompt — head
 	assert.ok(forced.includes('FORCE MODE') && forced.includes('overwrite the body'), 'force:true overwrites the body');
 	assert.ok(unforced.includes('Do NOT edit the body') && unforced.includes('preserve it as-is'), 'force:false preserves the body');
 	assert.notEqual(forced, unforced, 'the two prompts differ');
+});
+
+test('REVIEW round-5 MED — ISSUE execute/verify use the canonical epicMembershipLabel for a long slug; raw epic:<slug> (over the 50-char cap) appears nowhere in the ISSUE prompts', () => {
+	// Real slug derivation, as the review reproduced offline.
+	const focus = 'interoperability synchronization configuration reconciliation authorization tracking';
+	const slug = deriveSlug(focus);
+	assert.equal(slug, 'interoperability-synchronization-configuration-reconciliatio');
+	assert.equal(slug.length, 60, 'valid slug permitted by deriveSlug');
+	const canonical = epicMembershipLabel(slug);
+	assert.equal(canonical, 'epic:interoperability-synchronization-confi-b51a1b', 'pinned canonical label (readable prefix + sha256 tail)');
+	assert.ok(canonical.length <= 50, 'canonical label fits the GitHub 50-char cap');
+	const raw = `epic:${slug}`;
+	assert.ok(raw.length > 50, 'the raw label would overflow the cap — this is the bug');
+
+	const long = { ...issueContext(), epicSlug: slug };
+
+	// execute, create path: ensure-labels + labels-on-create
+	const create = pushPrompt(long);
+	assert.ok(create.includes(`Ensure the labels \`${GH.epicLabel}\` and \`${canonical}\` exist`), 'ensure-labels carries the canonical label');
+	assert.ok(create.includes(`Labels on create: \`${GH.epicLabel}\`, \`${canonical}\`.`), 'create-labels carries the canonical label');
+	assert.ok(!create.includes(raw), 'raw over-cap label absent from the ISSUE execute (create) prompt');
+
+	// execute, adoption path: singular --add-label
+	const adopt = pushPrompt({ ...long, existingRefs: { epicRef: 'acme/demo#42', storyRefs: { s1: 'acme/demo#42' } }, force: false });
+	assert.ok(adopt.includes(`--add-label "${GH.epicLabel},${canonical}"`), 'adoption adds the canonical label');
+	assert.ok(!adopt.includes(raw), 'raw over-cap label absent from the ISSUE execute (adopt) prompt');
+
+	// verify: issueLabelled checklist item
+	const verify = pushVerifyPrompt(long);
+	assert.ok(verify.includes(`issueLabelled: The issue has \`${GH.epicLabel}\` and \`${canonical}\` labels.`), 'verify grades the canonical label');
+	assert.ok(!verify.includes(raw), 'raw over-cap label absent from the ISSUE verify prompt');
+
+	// short slugs are unchanged by the canonical helper (identity for <=50)
+	assert.equal(epicMembershipLabel('issue-item'), 'epic:issue-item');
+
+	// DEF branch is preserved as-is: its baseline still emits the raw
+	// epic:<slug> (byte-identity requirement covers the DEF prompt only).
+	const defLong = pushPrompt({ ...defContext(), epicSlug: slug });
+	assert.ok(defLong.includes(`\`epic:${slug}\``), 'DEF prompt baseline keeps the raw epic:<slug>');
 });
 
 test('REVIEW round-4 — HIGH-1: durable-ref recheck + claim create are one mutex hold; MED: adoption runs the adoption prompt (llm-pause), not a bare refs output', async () => {

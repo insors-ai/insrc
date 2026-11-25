@@ -1,5 +1,183 @@
 import type { OllamaPolicy } from './ollama-policy.js';
+import { parseOllamaPolicy } from './ollama-policy.js';
 
-/** Release-owned exact policies only. Task 9 enables each route after native
- * qualification; absence means manual user-level guidance, never latest/PATH install. */
-export const ollamaPolicies: readonly OllamaPolicy[] = Object.freeze([]);
+/** Exact official policies enabled only by recorded native qualification.
+ * Unlisted targets retain manual user-level guidance. No dependency bytes ship here. */
+export const ollamaPolicies: readonly OllamaPolicy[] = Object.freeze([parseOllamaPolicy({
+  "schemaVersion": 1,
+  "target": {
+    "os": "linux",
+    "arch": "arm64",
+    "baseline": "glibc-2.35"
+  },
+  "version": "0.40.18",
+  "asset": {
+    "url": "https://github.com/ollama/ollama/releases/download/v0.40.18/ollama-linux-arm64.tar.zst",
+    "sha256": "63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6",
+    "bytes": 1704011634,
+    "format": "tar.zst"
+  },
+  "limits": {
+    "expandedBytes": 5368709120,
+    "fileBytes": 1073741824,
+    "files": 128,
+    "windowBytes": 8388608
+  },
+  "layout": {
+    "executable": "bin/ollama",
+    "requiredFiles": [
+      "bin/ollama",
+      "lib/ollama/CPP_HTTPLIB_LICENSE",
+      "lib/ollama/GO_LICENSE",
+      "lib/ollama/LLAMA_CPP_LICENSE",
+      "lib/ollama/LLAMA_CPP_VENDORS_LICENSE",
+      "lib/ollama/cuda_v12/libcublas.so.12",
+      "lib/ollama/cuda_v12/libcublas.so.12.8.5.5",
+      "lib/ollama/cuda_v12/libcublasLt.so.12",
+      "lib/ollama/cuda_v12/libcublasLt.so.12.8.5.5",
+      "lib/ollama/cuda_v12/libcudart.so.12",
+      "lib/ollama/cuda_v12/libcudart.so.12.8.90",
+      "lib/ollama/cuda_v12/libggml-cuda.so",
+      "lib/ollama/cuda_v13/libcublas.so.13",
+      "lib/ollama/cuda_v13/libcublas.so.13.1.1.3",
+      "lib/ollama/cuda_v13/libcublasLt.so.13",
+      "lib/ollama/cuda_v13/libcublasLt.so.13.1.1.3",
+      "lib/ollama/cuda_v13/libcudart.so.13",
+      "lib/ollama/cuda_v13/libcudart.so.13.0.96",
+      "lib/ollama/cuda_v13/libggml-cuda.so",
+      "lib/ollama/libggml-base.so",
+      "lib/ollama/libggml-base.so.1",
+      "lib/ollama/libggml-base.so.1.0.0",
+      "lib/ollama/libggml-cpu-armv8.0_1.so",
+      "lib/ollama/libggml-cpu-armv8.2_1.so",
+      "lib/ollama/libggml-cpu-armv8.2_2.so",
+      "lib/ollama/libggml-cpu-armv8.2_3.so",
+      "lib/ollama/libggml-cpu-armv8.6_1.so",
+      "lib/ollama/libggml-cpu-armv8.6_2.so",
+      "lib/ollama/libggml-cpu-armv9.2_1.so",
+      "lib/ollama/libggml-cpu-armv9.2_2.so",
+      "lib/ollama/libggml.so",
+      "lib/ollama/libggml.so.1",
+      "lib/ollama/libggml.so.1.0.0",
+      "lib/ollama/libgomp.so.1",
+      "lib/ollama/libgomp.so.1.0.0",
+      "lib/ollama/libllama-common.so",
+      "lib/ollama/libllama-common.so.1",
+      "lib/ollama/libllama-common.so.1.0.0",
+      "lib/ollama/libllama-quantize-impl.so",
+      "lib/ollama/libllama-server-impl.so",
+      "lib/ollama/libllama.so",
+      "lib/ollama/libllama.so.1",
+      "lib/ollama/libllama.so.1.0.0",
+      "lib/ollama/libmtmd.so",
+      "lib/ollama/libmtmd.so.1",
+      "lib/ollama/libmtmd.so.1.0.0",
+      "lib/ollama/libomp.so",
+      "lib/ollama/llama-quantize",
+      "lib/ollama/llama-server"
+    ],
+    "aliases": [
+      {
+        "path": "lib/ollama/cuda_v12/libcublas.so.12",
+        "target": "lib/ollama/cuda_v12/libcublas.so.12.8.5.5",
+        "kind": "file"
+      },
+      {
+        "path": "lib/ollama/cuda_v12/libcublasLt.so.12",
+        "target": "lib/ollama/cuda_v12/libcublasLt.so.12.8.5.5",
+        "kind": "file"
+      },
+      {
+        "path": "lib/ollama/cuda_v12/libcudart.so.12",
+        "target": "lib/ollama/cuda_v12/libcudart.so.12.8.90",
+        "kind": "file"
+      },
+      {
+        "path": "lib/ollama/cuda_v13/libcublas.so.13",
+        "target": "lib/ollama/cuda_v13/libcublas.so.13.1.1.3",
+        "kind": "file"
+      },
+      {
+        "path": "lib/ollama/cuda_v13/libcublasLt.so.13",
+        "target": "lib/ollama/cuda_v13/libcublasLt.so.13.1.1.3",
+        "kind": "file"
+      },
+      {
+        "path": "lib/ollama/cuda_v13/libcudart.so.13",
+        "target": "lib/ollama/cuda_v13/libcudart.so.13.0.96",
+        "kind": "file"
+      },
+      {
+        "path": "lib/ollama/libggml-base.so",
+        "target": "lib/ollama/libggml-base.so.1",
+        "kind": "file"
+      },
+      {
+        "path": "lib/ollama/libggml-base.so.1",
+        "target": "lib/ollama/libggml-base.so.1.0.0",
+        "kind": "file"
+      },
+      {
+        "path": "lib/ollama/libggml.so",
+        "target": "lib/ollama/libggml.so.1",
+        "kind": "file"
+      },
+      {
+        "path": "lib/ollama/libggml.so.1",
+        "target": "lib/ollama/libggml.so.1.0.0",
+        "kind": "file"
+      },
+      {
+        "path": "lib/ollama/libgomp.so.1",
+        "target": "lib/ollama/libgomp.so.1.0.0",
+        "kind": "file"
+      },
+      {
+        "path": "lib/ollama/libllama-common.so",
+        "target": "lib/ollama/libllama-common.so.1",
+        "kind": "file"
+      },
+      {
+        "path": "lib/ollama/libllama-common.so.1",
+        "target": "lib/ollama/libllama-common.so.1.0.0",
+        "kind": "file"
+      },
+      {
+        "path": "lib/ollama/libllama.so",
+        "target": "lib/ollama/libllama.so.1",
+        "kind": "file"
+      },
+      {
+        "path": "lib/ollama/libllama.so.1",
+        "target": "lib/ollama/libllama.so.1.0.0",
+        "kind": "file"
+      },
+      {
+        "path": "lib/ollama/libmtmd.so",
+        "target": "lib/ollama/libmtmd.so.1",
+        "kind": "file"
+      },
+      {
+        "path": "lib/ollama/libmtmd.so.1",
+        "target": "lib/ollama/libmtmd.so.1.0.0",
+        "kind": "file"
+      }
+    ]
+  },
+  "endpoint": "http://localhost:11434",
+  "modelsRelativePath": "deps/ollama/data/models",
+  "logsRelativePath": "deps/ollama/logs/server",
+  "start": true,
+  "qualification": {
+    "policySha256": "4e02734bed1f3c1eac80a4fc517b99030659cb749a7144401f116f83248a35aa",
+    "native": true,
+    "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json",
+    "checks": {
+      "version": true,
+      "readiness": true,
+      "reuse": true,
+      "decline": true,
+      "userOnly": true
+    }
+  }
+})]);

@@ -1,0 +1,23 @@
+{"kind":"progress","stage":"dependency-download","detail":"Downloading exact Ollama 0.40.18 payload"}
+{"kind":"progress","stage":"dependency-extract","detail":"Validating bounded private Ollama payload"}
+{"kind":"progress","stage":"dependency-publish","detail":"Publishing verified immutable private Ollama payload"}
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: {"runtimeReady":true,"ollama":"unavailable","agents":{"claude":false,"codex":false,"vibe":false},"recommendations":["Recommend installing at least one coding CLI: Claude Code, Codex or Mistral Vibe."],"blockers":["Ollama is installed but its configured local service is not running.","Accepted Ollama service did not establish readiness within its deadline; inspect private logs and retry inspection."]}
++ actual - expected
+
++ 'unavailable'
+- 'ready'
+
+    at file:///home/insrctest/qualification/control-nohash/qualify.mjs:14998:14 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 'unavailable',
+  expected: 'ready',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.22.1

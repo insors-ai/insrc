@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "status": "blocked",
+  "status": "pass",
   "date": "2026-11-25",
   "task": "c3d71313f34bce71/s3/t9",
-  "catalogEnabled": false,
+  "catalogEnabled": true,
   "machine": {
     "name": "insrc-s3-ollama-arm64",
     "id": "01M89AR4V9SBYTBK2DHGZXCSK7",
@@ -36,7 +36,7 @@
     "checksum": "XXH64"
   },
   "observed": {
-    "nativeInstallSeconds": 147.107248816,
+    "nativeInstallSeconds": 81.79360738199999,
     "executableVersion": "0.40.18",
     "apiVersion": "0.40.18",
     "privateNode": "22.22.1",
@@ -48,20 +48,18 @@
     "retainedService": true,
     "endpointOwnership": "unproven",
     "fullDaemonInstallation": false,
-    "originalFullVerificationMs": 4333.961948,
-    "oneMiBFullVerificationMs": 4134.629115999999,
-    "warmFreshInspectionMs": 2096.609279,
-    "coldFreshInspection": "unavailable: exceeded 3000 ms aggregate deadline after dropping only the owned payload file caches with posix_fadvise"
+    "warmFreshInspectionMs": 29.987932999999998,
+    "coldFreshInspectionMs": 35.997912000000014,
+    "inspectionReadCharacters": 39507
   },
-  "qualificationCandidate": "Native run used explicitly provisional, non-shipped eligibility metadata to exercise the exact policy. No release route has been enabled; this is not a final pass certificate.",
-  "proposedCorrection": "Keep configuration/runtime/executable/HTTP presence probes at 3 seconds. Give complete recorded private-payload reconciliation a separate 20-second deadline with cancellation and positive closure; retain every digest/layout/receipt check. No wire-schema or initial IDE reachability change.",
+  "qualificationCandidate": "Initial native acquisition exercised the exact policy with explicitly provisional non-shipped eligibility metadata; only this observed passing result authorizes the shipped policy. The qualifying asset/target/policy hash is unchanged.",
   "targets": [
     {
       "os": "linux",
       "arch": "arm64",
       "baseline": "glibc-2.35",
-      "status": "blocked",
-      "reason": "Official install/start/version/layout/decline/reuse passed; fresh cold-cache inspection cannot finish full 4.01 GB digest verification inside the approved 3-second aggregate deadline."
+      "status": "qualified",
+      "reason": "Exact official live acquisition, archive/layout validation, user-only service startup, decline/reuse and fresh no-rehash inspection passed on native ARM64 glibc2.35."
     },
     {
       "os": "linux",
@@ -93,5 +91,34 @@
       "status": "pending",
       "reason": "No native Windows x64 runner provisioned in this session."
     }
-  ]
+  ],
+  "historicalFullHashFailure": {
+    "status": "blocked",
+    "observed": {
+      "nativeInstallSeconds": 147.107248816,
+      "executableVersion": "0.40.18",
+      "apiVersion": "0.40.18",
+      "privateNode": "22.22.1",
+      "modelFiles": 0,
+      "declinePreservedDependencyFiles": true,
+      "reusePreservedAttemptRecords": true,
+      "finitePreparationAndHandoffClosed": true,
+      "stageDisposed": true,
+      "retainedService": true,
+      "endpointOwnership": "unproven",
+      "fullDaemonInstallation": false,
+      "originalFullVerificationMs": 4333.961948,
+      "oneMiBFullVerificationMs": 4134.629115999999,
+      "warmFreshInspectionMs": 2096.609279,
+      "coldFreshInspection": "unavailable: exceeded 3000 ms aggregate deadline after dropping only the owned payload file caches with posix_fadvise"
+    },
+    "proposedCorrection": "Keep configuration/runtime/executable/HTTP presence probes at 3 seconds. Give complete recorded private-payload reconciliation a separate 20-second deadline with cancellation and positive closure; retain every digest/layout/receipt check. No wire-schema or initial IDE reachability change.",
+    "supersededBy": "Approved S3 LLD revision5: remove repeated installed-file content hashing; preserve acquisition archive integrity and bounded metadata/closure checks. Twenty-second extension was never approved."
+  },
+  "readinessCorrection": {
+    "firstRerun": "Archive verified/published, but per-probe timer cancelled the shared readiness controller after three seconds; service listened after about one second and a later inspection passed. This attempt is preserved as failed, not relabelled passed.",
+    "fix": "Production closed rechecks own their three-second budgets; their transient unavailable result does not cancel the entire thirty-second service readiness window. Added transient-presence-probe-timeout-preserves-service-readiness-window regression.",
+    "passingFreshRun": "native-no-rehash-install.json"
+  },
+  "cleanup": "Named isolated VM stopped after collection; retained Ollama service ended at VM boundary. Host daemon/Ollama unchanged; no insrc daemon shutdown claim."
 }

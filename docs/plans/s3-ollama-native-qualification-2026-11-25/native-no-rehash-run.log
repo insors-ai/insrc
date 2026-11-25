@@ -1,0 +1,4 @@
+{"kind":"progress","stage":"dependency-download","detail":"Downloading exact Ollama 0.40.18 payload"}
+{"kind":"progress","stage":"dependency-extract","detail":"Validating bounded private Ollama payload"}
+{"kind":"progress","stage":"dependency-publish","detail":"Publishing verified immutable private Ollama payload"}
+{"kind":"native-install.json","status":"pass","elapsedMs":81793.60738199999}

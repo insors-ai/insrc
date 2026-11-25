@@ -115,8 +115,9 @@ export async function startOllamaService(location: InstallationLocation, prepare
   const owner = setInterval(() => { try { context.assertCurrent(); } catch { deadline.abort(); } }, 100); owner.unref();
   let readinessEndsAt: number | undefined;
   const current = () => { context.assertCurrent(); if (performance.now() >= (readinessEndsAt ?? prepared.preparationDeadline)) deadline.abort(); signal.throwIfAborted(); };
-  const probe = async () => { const bound = setTimeout(() => deadline.abort(), 3000);
-    try { return await options.recheck(signal); } finally { clearTimeout(bound); } };
+  // Production rechecks own their three-second probe budget and confirm closure.
+  // A transient probe timeout must not cancel the whole readiness window.
+  const probe = () => options.recheck(signal);
   const record = dependencyPath(location, identity.recordRelativePath), paths = servicePaths(record);
   const handoffNonce = randomBytes(16).toString('hex'), handoffFile = record.replace(/\.json$/, `.handoff-${handoffNonce}.json`);
   const handoff = { schemaVersion: 1, identitySha256: digest(canonicalJson(identity)), nonce: handoffNonce, actor: 'finite-service-handoff' };

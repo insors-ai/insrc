@@ -77,6 +77,22 @@ serviceTest('reuse-and-service-admission-never-rehash-installed-files', async ()
   } finally { observer.restore(); await f.cleanup(); }
 });
 
+serviceTest('transient-presence-probe-timeout-preserves-service-readiness-window', async () => {
+  const f = await fixture(); let probes = 0;
+  try {
+    const report = await startOllamaService(f.location, f.prepared, f.context(), { ...f.service, readinessMs: 8000,
+      recheck: async signal => {
+        if (++probes === 2) {
+          await delay(3100, undefined, { signal });
+          const check = await f.recheck(signal);
+          return { ...check, report: { ...check.report, ollama: 'unavailable', blockers: ['Transient presence-probe deadline'] } };
+        }
+        return f.recheck(signal);
+      } });
+    assert.equal(report.ollama, 'ready'); assert.ok(probes >= 3); assert.equal(f.count(), 1);
+  } finally { await f.cleanup(); }
+});
+
 serviceTest('service-admission-is-durable-and-distinct-from-finite-preparation-drain', async () => {
   const f = await fixture();
   try {

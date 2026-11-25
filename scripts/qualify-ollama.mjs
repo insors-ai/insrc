@@ -44,11 +44,15 @@ if (phase === 'benchmark') {
   save('verification-benchmark.json', { status: 'measured', elapsedMs: performance.now() - started, inventorySha256: verified.inventorySha256,
     bytes: verified.files.reduce((sum, file) => sum + file.bytes, 0) });
 } else if (phase === 'inspect') {
-  const before = snapshot(join(location.home, 'deps/ollama/.attempts')), started = performance.now();
+  const ioBytes = () => Number(/^rchar:\s*(\d+)$/m.exec(readFileSync('/proc/self/io', 'utf8'))?.[1]);
+  const before = snapshot(join(location.home, 'deps/ollama/.attempts')), readBefore = ioBytes(), started = performance.now();
   const report = await productionPeers(policy.target, location).dependencies.inspect(location);
+  const elapsedMs = performance.now() - started, readCharacters = ioBytes() - readBefore;
   assert.equal(report.ollama, 'ready', JSON.stringify(report)); assert.equal(report.runtimeReady, true);
+  assert.ok(elapsedMs < 3000, 'aggregate inspection target');
+  assert.ok(Number.isSafeInteger(readCharacters) && readCharacters < 16 * 1024 * 1024, 'inspection must not reread the multi-GB installed payload');
   assert.deepEqual(snapshot(join(location.home, 'deps/ollama/.attempts')), before);
-  save('fresh-inspection.json', { status: 'pass', elapsedMs: performance.now() - started, report, attemptsUnchanged: true });
+  save('fresh-inspection.json', { status: 'pass', elapsedMs, readCharacters, report, attemptsUnchanged: true });
 } else {
   const store = ControllerStore.acquire(location);
   try {

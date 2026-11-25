@@ -1,0 +1,8 @@
+{
+  "src/installer/ollama-layout.ts": "1637cbb704633e649c6c4638d0de6929f091444f24bdfbac43ec041d1d843175",
+  "src/installer/ollama-service.ts": "96e5d4d9ac4f9d0a55eb2321723e5274c6d7d619f432131fc3b3704dbbfa8cd4",
+  "scripts/qualify-ollama.mjs": "bc399157696c0e7825cf0c4f38aa9b3d38f9f4169d62dc55818944fb0ac7f7dc",
+  ".insrc/tmp/s3-qualified-native/bootstrap.mjs": "6a4a104f91f15edcc82402f5860c1c1af7aa3ebf286d67b63b423a43df773889",
+  ".insrc/tmp/s3-qualified-native/qualify.mjs": "b28bcad369cf8db8cfb46c1d402e3e975b162213f4eec7e01e16fb2feeef4077",
+  ".insrc/tmp/s3-qualified-native/control.node": "50bc90852ba66254c98e188df5a8f603263c108229692b2e1530e07e8762e837"
+}

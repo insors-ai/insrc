@@ -1,0 +1,20 @@
+{
+  "status": "pass",
+  "elapsedMs": 29.987932999999998,
+  "readCharacters": 38665,
+  "report": {
+    "runtimeReady": true,
+    "ollama": "ready",
+    "agents": {
+      "claude": false,
+      "codex": false,
+      "vibe": false
+    },
+    "recommendations": [
+      "Recommend installing at least one coding CLI: Claude Code, Codex or Mistral Vibe.",
+      "Existing Ollama availability is reused; endpoint process ownership is unproven."
+    ],
+    "blockers": []
+  },
+  "attemptsUnchanged": true
+}

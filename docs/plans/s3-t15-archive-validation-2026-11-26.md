@@ -18,3 +18,9 @@ Decoder output is consumed with reads bounded to 64 KiB. This fixes the legitima
 - Alias cancellation occurs after a real copy write, positively observes source/output close, and composes through prepareOllama to prove disposal and absence at the actual dependency publication destination. An incumbent application release remains unchanged. Older unused root/releases assertions were removed; partial-file polling was replaced with real write/close barriers.
 
 No full backend or combined installer suite was run. No host daemon/Ollama changes or native target enablement occurred. Archive-format fixtures are not native Linux/Windows installation qualification; those claims remain t17-owned. The registered task gate follows this commit; final story approval remains pending.
+
+## Real-path assertion correction
+
+The first tracked round passed tests/typecheck and the descriptor/archive checks, but identified two inaccurate path assertions. GNU traversal now checks the actual payload parent/escaped target. Prepared-payload conflict now asserts the actual offer.destination remains present, its CLI inode/tampered bytes and receipt remain unchanged, and transport calls remain zero with the intended archive-unsafe error. The unrelated home/releases absence check was removed.
+
+Focused matrix/prepare run `85a3e464-d774-4d4b-a4f0-db48ca35f14b`: 9/9 passed, zero failure/skip/cancel with confirmed owned-group closure. Tracked revalidation follows.

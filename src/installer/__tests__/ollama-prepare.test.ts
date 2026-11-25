@@ -89,8 +89,11 @@ privateRuntimeTest(import.meta.url, 'download-size-digest-layout-and-fsync-failu
     const cli = join(prepared.directory, policy.layout.executable), inode = lstatSync(cli).ino;
     const reused = await prepareOllama(f.location, policy, offer, context, { recheck: f.recheck, transport: async () => { throw new Error('reuse cannot download'); } });
     assert.equal(reused.inventorySha256, prepared.inventorySha256); assert.equal(lstatSync(cli).ino, inode);
-    writeFileSync(cli, 'tampered'); await assert.rejects(prepareOllama(f.location, policy, offer, context, { recheck: f.recheck, transport: f.transport }));
-    assert.equal(readFileSync(cli, 'utf8'), 'tampered'); assert.equal(existsSync(join(f.home, 'releases')), false);
+    const receipt = readFileSync(join(offer.destination, '.ollama-receipt.json')); let redownloads = 0;
+    writeFileSync(cli, 'tampered'); await assert.rejects(prepareOllama(f.location, policy, offer, context, { recheck: f.recheck,
+      transport: async () => { redownloads++; return f.transport(); } }), { code: 'archive-unsafe' });
+    assert.equal(redownloads, 0); assert.equal(prepared.directory, offer.destination); assert.equal(existsSync(offer.destination), true);
+    assert.equal(readFileSync(cli, 'utf8'), 'tampered'); assert.equal(lstatSync(cli).ino, inode); assert.deepEqual(readFileSync(join(offer.destination, '.ollama-receipt.json')), receipt);
   } finally { await f.cleanup(); }
 });
 

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import io from 'node:fs/promises';
 import { once } from 'node:events';
 import { syncBuiltinESMExports } from 'node:module';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { Readable } from 'node:stream';
 import { crc32, zstdCompressSync } from 'node:zlib';
 import { Decompress } from 'fzstd';
@@ -58,7 +58,8 @@ privateRuntimeTest(import.meta.url, 'tar-gnu-numeric-pax-padding-terminator-and-
     for (const item of cases) {
       const bytes = zstdCompressSync(item.raw), input = f.input(bytes);
       await rejects(extractOllamaTarZstd(input.archive, input.stage, boundaryPolicy(bytes, 'tar.zst')), item.code, item.pattern);
-      assert.equal(fs.existsSync(join(f.home, 'escaped')), false); f.preserved();
+      if (item.code === 'path-invalid') assert.equal(fs.existsSync(join(dirname(input.stage), 'escaped')), false, 'the actual ../escaped target outside this payload must remain absent');
+      f.preserved();
     }
   } finally { f.cleanup(); }
 });

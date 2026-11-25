@@ -61,6 +61,10 @@ const INPUTS: Record<string, Record<string, unknown>> = {
 	insrc_build_step:       { phase: 'implement', target: 's1/t1', repo: REPO },
 	insrc_review_step:      { phase: 'start', reviewId: 'unavailable', attempt: 1, artifactPath: join(REPO, 'docs', 'stub', 's1.md'), repo: REPO },
 	insrc_code_review_step: { phase: 'start', reviewId: 'unavailable', attempt: 1, epicHash: 'abcdabcdabcdabcd', storyId: 's1', repo: REPO },
+	// a target naming a file that does not exist guarantees isIndexStale sees it
+	// as stale regardless of the repo's own lastIndexed watermark -- confirm_wait
+	// every time, with no model call, matching every other INPUTS entry here.
+	insrc_security_review_step: { phase: 'start', repoPath: REPO, targets: { entries: [{ path: 'does-not-exist.ts' }] } },
 	insrc_triage:           { phase: 'start', focus: 'add a flag', repo: REPO },
 };
 

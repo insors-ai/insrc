@@ -112,6 +112,7 @@ a multi-turn tool). Call `insrc_guide({ workflow })` for a workflow's procedure.
 | `insrc_build_step` | Drive the build stage (`implement` → `validate`) that turns an approved LLD/plan into code. |
 | `insrc_review_step` | Retained endpoint; fails immediately: design review is being rewritten. |
 | `insrc_code_review_step` | Retained endpoint; fails immediately: code review is being rewritten. |
+| `insrc_security_review_step` | Run a dedicated two-round, dependency-advisory-aware security review over given targets; pauses with `confirm_wait` on a stale index. |
 | `insrc_workflow_approve` | Approve a pending artifact by `artifactPath` (or `epicHash` to batch) — only on the user's explicit yes. |
 | `insrc_present` | Declare the documents (artifact ids or repo-relative paths) you are asking the user to review, so the chat opens them — call it before asking for approval. |
 | `insrc_schema` | Return any insrc_* tool's registered input shape + accepted phases. |

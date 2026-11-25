@@ -5,7 +5,7 @@
 
 /**
  * The step host, the daemon's `step.call` stream request (Epic c2ba6fa6,
- * Story s11, task t8). The seven real handlers run against a temporary store;
+ * Story s11, task t8). The eight real handlers run against a temporary store;
  * the daemon requests they make go to stand-in handler maps through the
  * in-daemon client. No daemon process, no model.
  */
@@ -84,7 +84,7 @@ test("step host: done frame carries the handler's envelope unchanged; unknown to
 	}
 	assert.equal(seen.length, 1);
 
-	// The table holds exactly the seven tools.
+	// The table holds exactly the eight tools.
 	assert.deepEqual(Object.keys(stepToolTable()).sort(), [...STEP_TOOL_NAMES].sort());
 });
 
@@ -132,7 +132,7 @@ function normalised(env: StepEnvelope): unknown {
 	return { ...env, content: [{ ...env.content[0], text: body }] };
 }
 
-test('equivalence: each of the seven tools through step.call returns the same envelope as the handler called directly on the same temporary store', { timeout: 120_000 }, async () => {
+test('equivalence: each of the eight tools through step.call returns the same envelope as the handler called directly on the same temporary store', { timeout: 120_000 }, async () => {
 	const home = mkdtempSync(join(tmpdir(), 'insrc-step-host-'));
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-step-host-repo-'));
 	const envBefore = process.env['INSRC_REPO'];
@@ -151,6 +151,7 @@ test('equivalence: each of the seven tools through step.call returns the same en
 			insrc_analyze_step:     { phase: 'start', focus: 'how does x work', repo },
 			insrc_workflow_step:    { phase: 'start', workflow: 'issue', focus: 'add a flag to the cli', repo },
 			insrc_build_step:       { phase: 'implement', target: 's1/t1', repo },
+			insrc_security_review_step: { phase: 'start', repoPath: repo, targets: { entries: [{ path: 's1.md' }] } },
 			insrc_triage:           { phase: 'start', focus: 'add a flag', repo },
 		};
 		assert.deepEqual(Object.keys(inputs).sort(), STEP_TOOL_NAMES.filter(n => !['insrc_review_step', 'insrc_code_review_step'].includes(n)).sort(), 'every available tool is compared');

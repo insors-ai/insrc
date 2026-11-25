@@ -245,7 +245,7 @@ export class Router {
 		if (request.trustedContext?.connectionSession !== undefined || request.trustedContext?.connectionExecution?.mode === 'session-memory'
 			|| ['codeReview.run', 'codeReview.grounding', 'codeReview.freshness', 'workflow.review', 'workflow.reviewArtifact', 'workflow.resolveFinding'].includes(request.method)
             || MAIN_DAEMON_TASK_REVIEW_METHODS.has(request.method) || MAIN_DAEMON_DESIGN_REVIEW_METHODS.has(request.method)
-			|| request.method === 'step.call' && ['insrc_code_review_step','insrc_review_step'].includes(String((request.params as { tool?: unknown } | null)?.tool))
+			|| request.method === 'step.call' && ['insrc_code_review_step','insrc_review_step','insrc_security_review_step'].includes(String((request.params as { tool?: unknown } | null)?.tool))
 			|| MAIN_DAEMON_CONNECTION_METHODS.has(request.method) || MAIN_THREAD_STATE_METHODS.has(request.method) || cls === undefined || !this.opts.routed.has(cls)) return this.local(request, deliver);
 		if (cls === 'session' && this.sessions !== undefined) return this.dispatchSession(request, deliver, dropped);
 		const target = this.opts.registry.targetFor(cls);

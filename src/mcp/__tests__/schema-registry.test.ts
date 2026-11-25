@@ -2,7 +2,7 @@
  * Integration tests for the sc1 tool-schema registry that
  * `buildInsrcMcpServerWithRegistry` records at registration time. Proves:
  *  - the registry key set equals the actually-registered insrc_* tool set
- *    (all 13, incl. the self-registered insrc_schema), and validTools matches;
+ *    (all 14, incl. the self-registered insrc_schema), and validTools matches;
  *  - every recorded rawShape converts to JSON Schema without throwing (so the
  *    conversion error path never fires for the shipped shapes) — the schema is
  *    derived from the real registered shape (k1), not a stub;
@@ -32,6 +32,7 @@ const EXPECTED_TOOLS = [
 	'insrc_present',
 	'insrc_review_step',
 	'insrc_schema',
+	'insrc_security_review_step',
 	'insrc_triage',
 	'insrc_workflow_approve',
 	'insrc_workflow_run',
@@ -48,13 +49,14 @@ const EXPECTED_PHASES: Record<string, string[]> = {
 	insrc_build_step: ['implement', 'validate'],
 	insrc_review_step: ['start','progress','assignment','plan','impact','activity','result','recover','failure','cancel'],
 	insrc_code_review_step: ['start', 'resume', 'progress', 'cancel', 'publish', 'assignment', 'scope', 'activity', 'result'],
+	insrc_security_review_step: ['start'],
 	insrc_triage: ['start', 'classify'],
 	insrc_workflow_run: ['start', 'poll', 'abort'],
 };
 
 const PHASELESS_TOOLS = [ 'insrc_analyze', 'insrc_workflow_approve', 'insrc_docgen', 'insrc_schema', 'insrc_guide', 'insrc_present'];
 
-test('registry key set == registered tool set (all 13 incl. insrc_schema)', () => {
+test('registry key set == registered tool set (all 14 incl. insrc_schema)', () => {
 	const { schemaRegistry } = buildInsrcMcpServerWithRegistry();
 	assert.deepEqual([...schemaRegistry.keys()].sort(), EXPECTED_TOOLS);
 });

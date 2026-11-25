@@ -183,6 +183,7 @@ export const STEP_TOOL_NAMES = [
 	'insrc_build_step',
 	'insrc_review_step',
 	'insrc_code_review_step',
+	'insrc_security_review_step',
 	'insrc_triage',
 ] as const;
 export type StepToolName = typeof STEP_TOOL_NAMES[number];

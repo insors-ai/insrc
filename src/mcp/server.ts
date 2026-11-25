@@ -86,6 +86,7 @@ const TOOL_SCHEMA_META: Readonly<Record<string, { phases?: string[]; dynamicNote
 	},
 	insrc_review_step: { phases: [...DESIGN_REVIEW_PHASES] },
 	insrc_code_review_step: { phases: [...CODE_REVIEW_PHASES] },
+	insrc_security_review_step: { phases: ['start'] },
 	insrc_triage: {
 		phases: ['start', 'classify'],
 	},
@@ -681,6 +682,41 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 	 description: 'Code review functionality is being rewritten. This compatibility endpoint always returns an error without starting work.',
 	 inputSchema: CODE_REVIEW_INPUT,
 	}, async (args, extra) => reviews.call(args, detectClient(server.server.getClientVersion()?.name), extra.signal));
+
+	// -------------------------------------------------------------------
+	// insrc_security_review_step — sc3's dedicated security-review entry point
+	// (Epic add-dedicated-security-reviews, s3/t6). A fresh request checks the
+	// repo's graph-index freshness before anything runs, pausing with
+	// {next:'confirm_wait', state, guidance} when stale; a resumed call
+	// ({state, proceed}) either waits for a fresh index or runs degraded.
+	// Routed ONLY to handleSecurityReviewStep, via the same step.call
+	// forwarding every other live step tool uses.
+	// -------------------------------------------------------------------
+	registerAndRecord(
+		'insrc_security_review_step',
+		{
+			title: 'Run a dedicated security review',
+			description:
+				'Runs a two-round, dependency-advisory-aware security review over the given ' +
+				'targets. phase=\'start\' with { repoPath, targets, epicHash?, storyId? } on a ' +
+				'fresh request. If the repo\'s graph index is stale for one or more targets, ' +
+				'returns { next:\'confirm_wait\', state, guidance } before anything else runs -- ' +
+				'ask the user whether to wait for a fresh index or run degraded, then call again ' +
+				'with phase=\'start\', the same state, and { proceed }. Either way the terminal ' +
+				'reply is { next:\'done\', report, markdown }.',
+			inputSchema: {
+				phase: z.literal('start').describe('The only phase this tool has.'),
+				repoPath: z.string().describe('Only for a fresh request. Absolute path of the registered repo to review.').optional(),
+				targets: z.object({ entries: z.array(z.object({ path: z.string() })) })
+					.describe('Only for a fresh request. The files the review covers.').optional(),
+				epicHash: z.string().describe('Only for a fresh request. Threaded unchanged into the persisted receipt.').optional(),
+				storyId: z.string().describe('Only for a fresh request. Threaded unchanged into the persisted receipt.').optional(),
+				state: z.string().describe('Only for a resumed call: the opaque continuation token from the confirm_wait reply.').optional(),
+				proceed: z.boolean().describe('Only for a resumed call. true: wait for a fresh index before running. false: run degraded against the index as-is.').optional(),
+			},
+		},
+		async (rawArgs, extra) => forward('insrc_security_review_step', rawArgs, extra),
+	);
 
 	// -------------------------------------------------------------------
 	// insrc_triage — controller-driven size classifier + workflow-entry router.

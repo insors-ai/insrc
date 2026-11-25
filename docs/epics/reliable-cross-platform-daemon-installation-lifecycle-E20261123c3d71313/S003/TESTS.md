@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 66 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
+**Totals:** 82 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -459,3 +459,93 @@ Run at 2026-11-25T17:27:30.533Z on commit `e580dbaa7`. Tests check: **passed**. 
 | `src/installer/__tests__/ollama-prepare.test.ts` | 0 | 5 | 15.3 s |  |
 | `src/installer/__tests__/ollama-recovery.test.ts` | 0 | 17 | 43.8 s |  |
 | `src/installer/__tests__/ollama-service.test.ts` | 0 | 6 | 22.8 s |  |
+
+## t13
+
+Run at 2026-11-25T18:07:52.061Z on commit `ecfd94321`. Tests check: **passed**. 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: inspect-and-decline-have-zero-mutation-or-process-side-effects**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | inspect-and-decline-have-zero-mutation-or-process-side-effects | `src/installer/__tests__/dependencies.test.ts` |
+
+**integration: stale-forged-and-cross-home-offers-reject-before-mutation**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | stale-forged-and-cross-home-offers-reject-before-mutation | `src/installer/__tests__/ollama-prepare.test.ts` |
+
+**integration: accepted-official-payload-is-user-only-and-discloses-install-and-start**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | accepted-official-payload-is-user-only-and-discloses-install-and-start | `src/installer/__tests__/dependency-integration.test.ts` |
+
+**integration: consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state | `src/installer/__tests__/ollama-prepare.test.ts` |
+
+**integration: explicit-install-retry-completes-cleanup-before-fresh-install**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | explicit-install-retry-completes-cleanup-before-fresh-install | `src/installer/__tests__/install-retry.test.ts` |
+| pass | real-install-retry-waits-for-owned-actor-closure-and-cleans-original-policy | `src/installer/__tests__/dependency-integration.test.ts` |
+
+**integration: terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions | `src/installer/__tests__/dependency-integration.test.ts` |
+
+**integration: install-retry-requires-explicit-terminal-admission-and-original-install-intent**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | install-retry-requires-explicit-terminal-admission-and-original-install-intent | `src/installer/__tests__/install-retry.test.ts` |
+| pass | install-cleanup-rejects-every-other-owner-admission-before-writes | `src/installer/__tests__/install-retry.test.ts` |
+
+**integration: upgrade-retry-never-enters-install-cleanup-or-changes-selected-release**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | upgrade-retry-never-enters-install-cleanup-or-changes-selected-release | `src/installer/__tests__/install-retry.test.ts` |
+
+**integration: cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect | `src/installer/__tests__/install-retry.test.ts` |
+
+**integration: repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first | `src/installer/__tests__/install-retry.test.ts` |
+| pass | actual-cleanup-process-death-retries-missing-items-with-fresh-manager-and-delivery | `src/installer/__tests__/install-retry.test.ts` |
+
+**integration: fresh-bundle-peer-validates-durable-descriptor-without-resolve-map**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | fresh-bundle-peer-validates-durable-descriptor-without-resolve-map | `src/installer/__tests__/bundle-recovery.test.ts` |
+| pass | private-release-offer-bound-supports-full-descriptors-without-widening-other-records | `src/installer/__tests__/bundle-recovery.test.ts` |
+
+**integration: decline-creates-no-dependency-context-record-or-process-and-remains-certain**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | decline-creates-no-dependency-context-record-or-process-and-remains-certain | `src/installer/__tests__/install-retry.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/installer/__tests__/bundle-recovery.test.ts` | 0 | 2 | 38.8 s |  |
+| `src/installer/__tests__/dependencies.test.ts` | 0 | 6 | 14.3 s |  |
+| `src/installer/__tests__/dependency-integration.test.ts` | 0 | 5 | 13.9 s |  |
+| `src/installer/__tests__/install-retry.test.ts` | 0 | 8 | 21.8 s |  |
+| `src/installer/__tests__/ollama-prepare.test.ts` | 0 | 5 | 14.8 s |  |

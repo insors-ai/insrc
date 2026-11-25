@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 31,
-        "contentHash": "6688cabce214d061f292682c6a85abfa29bac1506ee4b8162571f495abccddf5",
-        "at": "2026-11-25T17:27:30.557Z",
+        "number": 33,
+        "contentHash": "917ceea4a757362b026b3145b30a2710b9e28c27297ad9d451e4ab8ff9426e8c",
+        "at": "2026-11-25T18:07:52.081Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "c3d71313f34bce71",
     "storyId": "s3",
     "createdAt": "2026-11-25T02:01:50.011Z",
-    "updatedAt": "2026-11-25T17:27:30.533Z",
+    "updatedAt": "2026-11-25T18:07:52.061Z",
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
-    "revision": 31
+    "revision": 33
   },
   "body": {
     "tasks": [
@@ -1548,6 +1548,341 @@
               },
               {
                 "title": "service-admission-cancellation-retains-only-explicitly-accepted-service-intent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "ecfd94321",
+        "ranAt": "2026-11-25T18:07:52.061Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "inspect-and-decline-have-zero-mutation-or-process-side-effects",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependencies.test.ts",
+                "title": "inspect-and-decline-have-zero-mutation-or-process-side-effects",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "stale-forged-and-cross-home-offers-reject-before-mutation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-prepare.test.ts",
+                "title": "stale-forged-and-cross-home-offers-reject-before-mutation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "accepted-official-payload-is-user-only-and-discloses-install-and-start",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependency-integration.test.ts",
+                "title": "accepted-official-payload-is-user-only-and-discloses-install-and-start",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-prepare.test.ts",
+                "title": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "explicit-install-retry-completes-cleanup-before-fresh-install",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/install-retry.test.ts",
+                "title": "explicit-install-retry-completes-cleanup-before-fresh-install",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dependency-integration.test.ts",
+                "title": "real-install-retry-waits-for-owned-actor-closure-and-cleans-original-policy",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependency-integration.test.ts",
+                "title": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "install-retry-requires-explicit-terminal-admission-and-original-install-intent",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/install-retry.test.ts",
+                "title": "install-retry-requires-explicit-terminal-admission-and-original-install-intent",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/install-retry.test.ts",
+                "title": "install-cleanup-rejects-every-other-owner-admission-before-writes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "upgrade-retry-never-enters-install-cleanup-or-changes-selected-release",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/install-retry.test.ts",
+                "title": "upgrade-retry-never-enters-install-cleanup-or-changes-selected-release",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/install-retry.test.ts",
+                "title": "cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/install-retry.test.ts",
+                "title": "repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/install-retry.test.ts",
+                "title": "actual-cleanup-process-death-retries-missing-items-with-fresh-manager-and-delivery",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "fresh-bundle-peer-validates-durable-descriptor-without-resolve-map",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/bundle-recovery.test.ts",
+                "title": "fresh-bundle-peer-validates-durable-descriptor-without-resolve-map",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bundle-recovery.test.ts",
+                "title": "private-release-offer-bound-supports-full-descriptors-without-widening-other-records",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "decline-creates-no-dependency-context-record-or-process-and-remains-certain",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/install-retry.test.ts",
+                "title": "decline-creates-no-dependency-context-record-or-process-and-remains-certain",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/bundle-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 38813,
+            "titles": [
+              {
+                "title": "fresh-bundle-peer-validates-durable-descriptor-without-resolve-map",
+                "result": "pass"
+              },
+              {
+                "title": "private-release-offer-bound-supports-full-descriptors-without-widening-other-records",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/dependencies.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 14288,
+            "titles": [
+              {
+                "title": "dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "healthy-service-without-path-binary-is-reused",
+                "result": "pass"
+              },
+              {
+                "title": "inspect-and-decline-have-zero-mutation-or-process-side-effects",
+                "result": "pass"
+              },
+              {
+                "title": "stopped-existing-ollama-has-manual-guidance-without-start-action",
+                "result": "pass"
+              },
+              {
+                "title": "agent-zero-one-many-detection-never-spawns-auth-model-or-install",
+                "result": "pass"
+              },
+              {
+                "title": "private-runtime-provenance-rejects-path-node-and-wrong-target",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/dependency-integration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13933,
+            "titles": [
+              {
+                "title": "accepted-official-payload-is-user-only-and-discloses-install-and-start",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation-and-eof-block-later-publication-or-service-admission",
+                "result": "pass"
+              },
+              {
+                "title": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions",
+                "result": "pass"
+              },
+              {
+                "title": "dependency-uncertain-recovery-preserves-operation-and-prevents-duplicate-side-effects",
+                "result": "pass"
+              },
+              {
+                "title": "real-install-retry-waits-for-owned-actor-closure-and-cleans-original-policy",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/install-retry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 21792,
+            "titles": [
+              {
+                "title": "explicit-install-retry-completes-cleanup-before-fresh-install",
+                "result": "pass"
+              },
+              {
+                "title": "install-retry-requires-explicit-terminal-admission-and-original-install-intent",
+                "result": "pass"
+              },
+              {
+                "title": "upgrade-retry-never-enters-install-cleanup-or-changes-selected-release",
+                "result": "pass"
+              },
+              {
+                "title": "install-cleanup-rejects-every-other-owner-admission-before-writes",
+                "result": "pass"
+              },
+              {
+                "title": "cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect",
+                "result": "pass"
+              },
+              {
+                "title": "repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first",
+                "result": "pass"
+              },
+              {
+                "title": "decline-creates-no-dependency-context-record-or-process-and-remains-certain",
+                "result": "pass"
+              },
+              {
+                "title": "actual-cleanup-process-death-retries-missing-items-with-fresh-manager-and-delivery",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-prepare.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 14843,
+            "titles": [
+              {
+                "title": "stale-forged-and-cross-home-offers-reject-before-mutation",
+                "result": "pass"
+              },
+              {
+                "title": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state",
+                "result": "pass"
+              },
+              {
+                "title": "download-size-digest-layout-and-fsync-failures-never-report-ready",
+                "result": "pass"
+              },
+              {
+                "title": "finite-actor-closure-uncertainty-blocks-retry-and-cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "private-preparation-cancellation-blocks-later-publication",
                 "result": "pass"
               }
             ],

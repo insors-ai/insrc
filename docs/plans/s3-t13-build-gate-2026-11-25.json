@@ -1,0 +1,54 @@
+{
+  "next": "done",
+  "passed": true,
+  "verdict": {
+    "taskId": "t13",
+    "passed": true,
+    "checks": [
+      {
+        "check": "Add approved internal InstallerManager.retryInstall terminal capability without a new ManagerRequest action. Check original durable action=install, preparing phase, exact id/home, no selected release/candidate/dev-worker/shutdown/daemon admission before cleanup writes.",
+        "satisfied": true,
+        "evidence": "manager.ts:60–106 validates terminal capability, exact operation/install intent/home, preparing scope, and absence of selected release, candidate, dev/delivery preparation, shutdown and admission before invoking cleanup. Tests reject a forged capability and retry-install wire action."
+      },
+      {
+        "check": "Terminal defaults Retry install to no; inspection/startup/IDE flags never trigger cleanup and no separate Discard flow is added. On yes, finish all owned cleanup and retire the old operation before ordinary install with a new operation/attempt, normal release resolution and current dependency consent.",
+        "satisfied": true,
+        "evidence": "terminal-install.ts uses 'Retry install? [y/N]', awaits retryInstall, then generates a new UUID and follows ordinary installation. The explicit Retry test asserts cleanup-start → cleanup-done → resolve → current-offer decision → prepare → TUI, distinct operation/attempt identities, and preservation of the old dependency record. No Discard or wire cleanup action was added."
+      },
+      {
+        "check": "Cleanup failure, cancellation or process death blocks every new install/download/publication/service launch. Repeated explicit Retry completes missing cleanup steps idempotently. Preserve already installed dependencies/services as existing state found by normal fresh installation, not partial-work resume.",
+        "satisfied": true,
+        "evidence": "retryInstall retains the operation as blocked on failure and retires it only after cleanup and reconciliation. Failure/cancellation tests assert no fresh operation or preparation. The SIGKILL test interrupts real cleanup before completion; fresh peers finish missing temporary-file journals before resolving/installing. ollama-recovery.ts preserves verified published dependencies and does not resume partial installation."
+      },
+      {
+        "check": "Original upgrade intent never enters install cleanup. Existing update same-candidate acceptance, migration hooks, lifecycle, selected releases and installed daemon remain intact; later-stage install work with another owner blocks rather than inventing its reset policy.",
+        "satisfied": true,
+        "evidence": "The cleanup guard requires original action=install and excludes selected releases and later-owner records. Upgrade tests assert zero cleanup calls and unchanged controller/selected-release markers. Bundle recovery retains accepted candidate identity and exercises migration and activation without resolving latest."
+      },
+      {
+        "check": "Persist complete parsed descriptor in versioned private accepted-offer data and validate canonical digest/manifest/target/delivery on fresh bundle peer construction. No factory-local Map dependency, no resolve-latest substitution; invalid/unavailable legacy exact data fails closed.",
+        "satisfied": true,
+        "evidence": "manager.ts persists schemaVersion=2 complete descriptors; bundle-delivery.ts removes the offers Map and validates descriptor digest, manifest and target. Manager offer validation enforces bundle delivery and accepted upgrade identity. The fresh production bundle-peer test rejects tampered digest, wrong target and descriptor-less legacy data without downloads, then recovers the exact saved payload without discovery."
+      },
+      {
+        "check": "Create dependency context/attempt data only for install choice, not decline; certain decline survives interruption without dependency-uncertain. Do not clear disruption/blocked state before positive cleanup or existing recovery completion.",
+        "satisfied": true,
+        "evidence": "manager.ts creates dependency context only when choice==='install'; decline receives undefined context and creates no dependency record. Cancellation checks remain after decide, and dependency-uncertain recovery classification requires an existing attempt. Retry retains blocked state until positive completion; existing preparation recovery retains active.disrupted through candidate verification and acceptance. Decline tests assert dependency-blocked, absent dependency metadata/deps, and zero migration/activation."
+      },
+      {
+        "check": "Use fresh manager AND fresh delivery peers in restart tests. Assert strict cleanup-before-install event ordering, current-offer reconsent, cancellation/death/retry, decline-zero-dependency-writes and categorical upgrade exclusion. Preserve stop/TUI/terminal-only admission regressions.",
+        "satisfied": true,
+        "evidence": "All 12 required named tests exist and their assertions match the stated behaviors; the daemon reports each passed. Restart coverage constructs fresh production bundle adapters and, after actual cleanup-process death, fresh manager/delivery fixtures. Tests assert ordering, reconsent, cancellation, idempotent completion, decline without dependency writes, upgrade exclusion, stop bypassing dependencies, TUI ordering and terminal capability rejection."
+      },
+      {
+        "check": "Sentinels separately seed original upgrade intent, candidateId/durable candidate, admitted dev-preparation, shutdown and daemon migration/activation admission; every case rejects before cleanup writes. The fresh-install gate is confined to S3 dependency preparation and cannot substitute a different admitted HLD candidate.",
+        "satisfied": true,
+        "evidence": "install-cleanup-rejects-every-other-owner-admission-before-writes separately seeds upgrade intent, candidate-id, candidate, dev-preparation, delivery-preparation, shutdown, migration and activation admissions, later phase, foreign home and missing scope. Each asserts rejection, no cleanup events, unchanged controller and no completion marker. Manager guards require the dependency-before-delivery scope and prohibit admitted candidates."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "Both t13 commits are confined to installer Retry, durable offer recovery, supporting tests and task records; all acceptance checks are supported by repository evidence and daemon-passed validation.",
+    "testsPassed": true,
+    "typecheckClean": true
+  }
+}

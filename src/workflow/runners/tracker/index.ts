@@ -150,20 +150,30 @@ export const pushExecuteRunner: StepRunner = {
 			// the currently configured gh target — confirms candidates for legacy
 			// claims whose own persisted target is unknown (round-8 MED)
 			const ghTarget = `${c.gh.owner}/${c.gh.repo}`;
-			// REVIEW round-9 HIGH-1: discovery result at the create decision — a
-			// COMPLETE lookup (the context snapshot, or a live recheck when the
-			// snapshot failed) establishes absence; a FAILED lookup never does.
+			// REVIEW round-9/10: discovery at the create decision. The context
+			// snapshot is used ONLY for read-only adoption paths; it is NEVER
+			// trusted to authorize a create (round-10 HIGH-1: an earlier empty
+			// snapshot could hide an existing issue). Every create branch takes
+			// a FRESH, COMPLETE live lookup after claim acquisition.
+			const liveLookup = (): ReturnType<typeof lookupIssueCandidates> =>
+				lookupIssueCandidates(ctx.intent.repoPath, c.gh.owner, c.gh.repo, c.epicHash, c.epicTitle);
 			const resolveCandidates = async (): Promise<{ complete: true; candidates: NonNullable<PushContext['remoteCandidates']> } | { complete: false; reason: string }> => {
 				if (c.remoteCandidates !== undefined) return { complete: true, candidates: c.remoteCandidates };
-				const disc = await lookupIssueCandidates(ctx.intent.repoPath, c.gh.owner, c.gh.repo, c.epicHash, c.epicTitle);
+				const disc = await liveLookup();
 				if (disc.ok) return { complete: true, candidates: disc.candidates };
 				return { complete: false, reason: disc.reason };
 			};
-			// REVIEW round-9 HIGH-2: if the gh config changed after the claim was
-			// written, retarget the claim under the mutex (fence+runId checked)
-			// BEFORE reconciling — never create in a different repository than the
-			// one recorded on the claim.
+			// REVIEW round-9 HIGH-2 + round-10 HIGH-2: if the gh config changed
+			// after the claim was written, retarget the claim under the mutex
+			// (fence+runId checked) BEFORE reconciling — but ONLY a confirmed
+			// pre-dispatch claim (pending + never dispatched + v2). Dispatched,
+			// created and legacy claims keep their original target until their
+			// outcome is resolved — retargeting them would erase the destination
+			// of an unresolved create.
+			const isConfirmedPreDispatch = (cl: PendingCreateClaim): boolean =>
+				cl.state === 'pending' && cl.dispatchedAt === undefined && cl.version === CLAIM_VERSION;
 			const retargetIfNeeded = async (active: PendingCreateClaim, fence: number): Promise<{ claim: PendingCreateClaim; fence: number }> => {
+				if (!isConfirmedPreDispatch(active)) return { claim: active, fence };
 				if (active.ghOwner === undefined || active.ghRepo === undefined) return { claim: active, fence };
 				if (`${active.ghOwner}/${active.ghRepo}` === ghTarget) return { claim: active, fence };
 				const committed = await updateClaimTarget(ctx.intent.repoPath, c.epicHash, fence, ctx.runId, c.gh.owner, c.gh.repo);
@@ -190,10 +200,14 @@ export const pushExecuteRunner: StepRunner = {
 						return adoptionPause(reconciled.ref, 'marker-verified');
 					}
 					// we own the taken-over claim — retarget first if the gh config
-					// changed (round-9 HIGH-2), then reconcile against the new target
+					// changed AND the claim is confirmed pre-dispatch (round-9/10
+					// HIGH-2), then reconcile under a FRESH live lookup (round-10
+					// HIGH-1: the snapshot may only adopt, never authorize create).
 					const rt = await retargetIfNeeded(took, took.fence);
-					if (!disc.complete) return refused(`remote discovery failed (${disc.reason}) — claim retained; neither reconciliation nor a create is authorized without a complete lookup`, 'pending-create-discovery-failed');
-					const reconciled = reconcileClaim(rt.claim, disc.candidates, ghTarget);
+					const fresh = await liveLookup();
+					if (!fresh.ok && c.remoteCandidates === undefined) return refused(`remote discovery failed (${fresh.reason}) — claim retained; neither reconciliation nor a create is authorized without a complete lookup`, 'pending-create-discovery-failed');
+					const candidates = fresh.ok ? fresh.candidates : c.remoteCandidates!;
+					const reconciled = reconcileClaim(rt.claim, candidates, ghTarget);
 					if (reconciled.ok) {
 						// exactly one marker+target-verified candidate: mark the claim
 						// 'created' under the mutex (fence- + run-checked) and carry
@@ -214,7 +228,9 @@ export const pushExecuteRunner: StepRunner = {
 						// REVIEW round-7 HIGH-1: only a v2 claim (CLAIM_VERSION) proves
 						// pre-dispatch — a LEGACY claim (no version) has UNKNOWN
 						// dispatch history, so it takes the refusal path, never create.
-						if (reconciled.verifiedCount === 0 && rt.claim.state === 'pending' && rt.claim.dispatchedAt === undefined && rt.claim.version === CLAIM_VERSION) {
+						if (reconciled.verifiedCount === 0 && isConfirmedPreDispatch(rt.claim)) {
+								// round-10 HIGH-1: create is authorized ONLY by the fresh complete lookup taken after claim acquisition
+								if (!fresh.ok) return refused(`remote discovery failed (${fresh.reason}) — an empty earlier snapshot is not absence; no create dispatched`, 'pending-create-discovery-failed');
 							const committedFence = await markClaimDispatched(ctx.intent.repoPath, c.epicHash, rt.fence, ctx.runId);
 							setFence(committedFence);
 							// fall through to the normal create dispatch below
@@ -231,24 +247,26 @@ export const pushExecuteRunner: StepRunner = {
 						}
 					}
 				} else {
-					// winner — REVIEW round-8 HIGH-1 + round-9: BEFORE dispatching a
-					// create, retarget the claim if the gh config changed (HIGH-2),
-					// then reconcile remote candidates under a COMPLETE discovery
-					// (context snapshot, or a live recheck at this decision — HIGH-1).
-					// An existing marker+target-verified issue means ADOPT, never
-					// create; >1 verified refuses; only 0 verified under a complete
-					// lookup authorizes create.
+					// winner — REVIEW round-8 HIGH-1 + round-10 HIGH-1: BEFORE
+					// dispatching a create, retarget the claim if the gh config changed
+					// AND the claim is confirmed pre-dispatch (round-9/10 HIGH-2), then
+					// take a FRESH live lookup after claim acquisition and reconcile
+					// against it. The context snapshot may only ADOPT — an earlier
+					// empty snapshot never authorizes a create. An existing
+					// marker+target-verified issue means ADOPT; >1 verified refuses;
+					// only 0 verified under the fresh COMPLETE lookup authorizes create.
 					const rt = await retargetIfNeeded(claimResult.claim, claimResult.claim.fence);
-					const disc = await resolveCandidates();
-					if (!disc.complete) return refused(`remote discovery failed (${disc.reason}) — a failed lookup is not absence; no create dispatched`, 'pending-create-discovery-failed');
-					const pre = reconcileClaim(rt.claim, disc.candidates, ghTarget);
+					const fresh = await liveLookup();
+					const candidates = fresh.ok ? fresh.candidates : (c.remoteCandidates ?? []);
+					const pre = reconcileClaim(rt.claim, candidates, ghTarget);
 					if (pre.ok) {
 						const markedFence = await markClaimCreatedFence(ctx.intent.repoPath, c.epicHash, rt.fence, pre.ref, undefined, ctx.runId);
 						setFence(markedFence);
 						return adoptionPause(pre.ref, 'marker-verified');
 					}
 					if (pre.verifiedCount > 1) return refused(pre.reason);
-					// 0 verified candidates under a COMPLETE lookup: record dispatch +
+					if (!fresh.ok) return refused(`remote discovery failed (${fresh.reason}) — a failed lookup is not absence and an earlier snapshot cannot authorize a create; no create dispatched`, 'pending-create-discovery-failed');
+					// 0 verified under the fresh COMPLETE lookup: record dispatch +
 					// heartbeat under the mutex (fence- + run-checked), then dispatch.
 					// The COMMITTED fence rides in the context so finalization can
 					// fence the whole persistence op (round-2 HIGH-1).

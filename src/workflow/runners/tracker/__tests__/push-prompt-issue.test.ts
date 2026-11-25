@@ -21,6 +21,10 @@ import { pushPrompt, pushVerifyPrompt } from '../index.js';
 import type { PushContext } from '../schemas.js';
 import { deriveSlug } from '../../../slug.js';
 import { epicMembershipLabel } from '../../../tracker/conventions.js';
+import { afterEach } from 'node:test';
+import { setIssueCandidateLookupForTests } from '../context.js';
+
+afterEach(() => { setIssueCandidateLookupForTests(undefined); });
 
 const GH = { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' };
 
@@ -257,6 +261,7 @@ test('REVIEW round-6 HIGH-1 — a fresh competing owner (live claim) cannot adva
 
 test('REVIEW round-6 HIGH-2 — confirmed pre-dispatch failure recovers: stale never-dispatched claim + 0 verified candidates -> the new owner dispatches the create; runner-to-finalizer persists and releases the claim', async () => {
 	const { pushExecuteRunner } = await import('../index.js');
+	setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [] }));   // round-10: fresh complete lookup authorizes the recovery create
 	const { claimCreateIntent, readClaim } = await import('../../../tracker/pending-create-claim.js');
 	const { artifactJsonPath, issueArtifactId } = await import('../../../storage.js');
 	const { readTrackerMeta } = await import('../../../tracker/refs.js');
@@ -303,6 +308,7 @@ test('REVIEW round-6 HIGH-2 — confirmed pre-dispatch failure recovers: stale n
 
 test('REVIEW round-6 HIGH-2 — ambiguous outcome (dispatched but response lost, 0 candidates) refuses with an explicit resolution path, retains the claim, dispatches no create', async () => {
 	const { pushExecuteRunner } = await import('../index.js');
+	setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [] }));
 	const { claimCreateIntent, markClaimDispatched, readClaim } = await import('../../../tracker/pending-create-claim.js');
 	const { artifactJsonPath, issueArtifactId } = await import('../../../storage.js');
 	const { markApprovedSync } = await import('../../../__tests__/lifecycle-fixtures.js');
@@ -339,6 +345,7 @@ test('REVIEW round-6 HIGH-2 — ambiguous outcome (dispatched but response lost,
 
 test('REVIEW round-7 HIGH-1/HIGH-2 — a LEGACY claim (no version, unknown dispatch history) with 0 candidates is NEVER treated as pre-dispatch: refused with an adoption-first resolution path, no create dispatched', async () => {
 	const { pushExecuteRunner } = await import('../index.js');
+	setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [] }));
 	const { readClaim } = await import('../../../tracker/pending-create-claim.js');
 	const { artifactJsonPath, issueArtifactId } = await import('../../../storage.js');
 	const { markApprovedSync } = await import('../../../__tests__/lifecycle-fixtures.js');
@@ -387,6 +394,7 @@ test('REVIEW round-7 HIGH-1/HIGH-2 — a LEGACY claim (no version, unknown dispa
 
 test('REVIEW round-8 HIGH-1 — a FRESH winner with an existing marker-verified remote issue ADOPTS instead of creating (reconcile under the create decision)', async () => {
 	const { pushExecuteRunner } = await import('../index.js');
+	setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#42' }] }));
 	const { readClaim } = await import('../../../tracker/pending-create-claim.js');
 	const { artifactJsonPath, issueArtifactId } = await import('../../../storage.js');
 	const { markApprovedSync } = await import('../../../__tests__/lifecycle-fixtures.js');
@@ -495,6 +503,7 @@ test('REVIEW round-9 HIGH-1 — a FAILED discovery never authorizes a create: no
 
 test('REVIEW round-9 HIGH-2 — gh config changed after an undispatched v2 claim was written: the claim is retargeted under the mutex and reconciled against the NEW repo before any create (no cross-repo create)', async () => {
 	const { pushExecuteRunner } = await import('../index.js');
+	setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#42' }] }));
 	const { readClaim } = await import('../../../tracker/pending-create-claim.js');
 	const { artifactJsonPath, issueArtifactId } = await import('../../../storage.js');
 	const { markApprovedSync } = await import('../../../__tests__/lifecycle-fixtures.js');
@@ -535,8 +544,81 @@ test('REVIEW round-9 HIGH-2 — gh config changed after an undispatched v2 claim
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
+test('REVIEW round-10 HIGH-1 — an earlier EMPTY snapshot never authorizes a create: the fresh live lookup after claim acquisition finds the marker-verified issue -> adopt, no create prompt', async () => {
+	const { pushExecuteRunner } = await import('../index.js');
+	const { readClaim } = await import('../../../tracker/pending-create-claim.js');
+	const { artifactJsonPath, issueArtifactId } = await import('../../../storage.js');
+	const { markApprovedSync } = await import('../../../__tests__/lifecycle-fixtures.js');
+	const { mkdirSync, mkdtempSync, rmSync, writeFileSync } = await import('node:fs');
+	const { tmpdir } = await import('node:os');
+	const { join } = await import('node:path');
+
+	const H = '5f9d4ab4c90c0b4c';
+	const MARKER = `<!-- insrc:artifact ISSUE-${H} -->`;
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-r10-'));
+	try {
+		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		writeFileSync(join(repo, 'repo-config.json'), JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
+		process.env['INSRC_REPO_CONFIG'] = join(repo, 'repo-config.json');
+		const issue = artifactJsonPath(repo, issueArtifactId(H));
+		writeFileSync(issue, JSON.stringify({ meta: { workflow: 'issue', runId: 'i', schemaVersion: 1, issueHash: H, epicHash: H, epicSlug: 's', createdAt: '2026-11-16T07:14:04.399Z', epicCreatedAt: '2026-11-16T07:14:04.399Z', standalone: true }, body: { title: 'T', reproduction: 'r', rootCause: 'c', fixIntent: 'f' }, citations: [] }));
+		markApprovedSync(issue);
+		// the context snapshot is EMPTY (stale assembly) — but the fresh live
+		// lookup at the create decision finds the existing marker-verified issue
+		setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#42' }] }));
+		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[] };
+		const ctx = { intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } }, runId: 'run-W', stepOutputs: { s1 } } as never;
+		const out = await pushExecuteRunner.run(ctx) as { type: string; prompt?: string; userTurn?: string };
+		assert.equal(out.type, 'llm-pause');
+		assert.ok(!out.prompt!.includes('Create exactly ONE issue'), 'the empty snapshot did NOT authorize a duplicate create');
+		assert.ok(out.userTurn!.includes('ADOPT the marker-verified issue `acme/demo#42`'), out.userTurn!);
+		assert.equal(readClaim(repo, H)?.issueRef, 'acme/demo#42');
+		assert.equal(readClaim(repo, H)?.dispatchedAt, undefined, 'no create dispatched');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('REVIEW round-10 HIGH-2 — retargeting is restricted to confirmed pre-dispatch claims: a DISPATCHED v2 claim keeps its original target on gh-config change (no erasing the destination of an unresolved create)', async () => {
+	const { pushExecuteRunner } = await import('../index.js');
+	const { readClaim } = await import('../../../tracker/pending-create-claim.js');
+	const { artifactJsonPath, issueArtifactId } = await import('../../../storage.js');
+	const { markApprovedSync } = await import('../../../__tests__/lifecycle-fixtures.js');
+	const { mkdirSync, mkdtempSync, rmSync, writeFileSync } = await import('node:fs');
+	const { tmpdir } = await import('node:os');
+	const { join } = await import('node:path');
+
+	const H = '5f9d4ab4c90c0b4c';
+	const MARKER = `<!-- insrc:artifact ISSUE-${H} -->`;
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-r10b-'));
+	try {
+		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		writeFileSync(join(repo, 'repo-config.json'), JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
+		process.env['INSRC_REPO_CONFIG'] = join(repo, 'repo-config.json');
+		const issue = artifactJsonPath(repo, issueArtifactId(H));
+		writeFileSync(issue, JSON.stringify({ meta: { workflow: 'issue', runId: 'i', schemaVersion: 1, issueHash: H, epicHash: H, epicSlug: 's', createdAt: '2026-11-16T07:14:04.399Z', epicCreatedAt: '2026-11-16T07:14:04.399Z', standalone: true }, body: { title: 'T', reproduction: 'r', rootCause: 'c', fixIntent: 'f' }, citations: [] }));
+		markApprovedSync(issue);
+		// a v2 claim for old/repo that WAS dispatched (unresolved create in the
+		// old repo), now stale
+		writeFileSync(join(repo, '.insrc', 'artifacts', `PENDING-CREATE-${H}.json`), JSON.stringify({
+			epicHash: H, runId: 'run-OLD', owner: 'run:run-OLD', repo, version: 2, ghOwner: 'old', ghRepo: 'repo',
+			title: 'T', marker: MARKER, state: 'pending', fence: 1, dispatchedAt: '2020-01-01T00:01:00.000Z',
+			createdAt: '2020-01-01T00:00:00.000Z', heartbeatAt: '2020-01-01T00:01:00.000Z',
+		}));
+		setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#42' }] }));
+		const s1 = { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#42' }] };
+		const ctx = { intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } }, runId: 'run-B', stepOutputs: { s1 } } as never;
+		const out = await pushExecuteRunner.run(ctx) as { type: string; code?: string; prompt?: string };
+		assert.equal(out.type, 'error', 'dispatched claim in old repo + new config -> refuse, no create, no retarget');
+		assert.ok(!out.prompt, 'no create prompt dispatched');
+		const claim = readClaim(repo, H);
+		assert.equal(claim?.ghOwner, 'old', 'the original target is PRESERVED — not erased by retargeting');
+		assert.equal(claim?.ghRepo, 'repo');
+		assert.equal(claim?.dispatchedAt, '2020-01-01T00:01:00.000Z', 'dispatch history intact');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
 test('REVIEW round-4 — HIGH-1: durable-ref recheck + claim create are one mutex hold; MED: adoption runs the adoption prompt (llm-pause), not a bare refs output', async () => {
 	const { pushExecuteRunner } = await import('../index.js');
+	setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [] }));   // round-10: create decisions take a fresh live lookup
 	const { readClaim } = await import('../../../tracker/pending-create-claim.js');
 	const { artifactJsonPath, issueArtifactId } = await import('../../../storage.js');
 	const { bindUnitIssue } = await import('../../../tracker/link.js');

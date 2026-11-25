@@ -5,6 +5,7 @@ import type { DependencyOperationContext } from './peer-contracts.js';
 import { assertToken, normalizeHome } from './location.js';
 
 const owners = new WeakMap<DependencyOperationContext, { home: string; installationId: string; os: Target['os'] }>();
+const retries = new WeakSet<DependencyOperationContext>();
 
 /** Called by the lock owner, with its retained live-owner assertion. */
 export function createDependencyOperationContext(location: InstallationLocation, os: Target['os'],
@@ -45,4 +46,17 @@ export function requireDependencyOperation(location: InstallationLocation,
     throw new InstallerError('dependency-context-invalid', 'A live same-installation manager context is required');
   }
   context.assertCurrent(); return context;
+}
+
+/** The terminal's install-retry owner mints this only after checking the stored
+ * original install intent. Ordinary acceptance/probe capabilities cannot clean. */
+export function createDependencyRetryContext(location: InstallationLocation, os: Target['os'],
+  input: DependencyOperationContext): DependencyOperationContext {
+  const context = createDependencyOperationContext(location, os, input);
+  retries.add(context); return context;
+}
+export function requireDependencyRetry(location: InstallationLocation, input: DependencyOperationContext): DependencyOperationContext {
+  const context = requireDependencyOperation(location, input);
+  if (!retries.has(context)) throw new InstallerError('dependency-context-invalid', 'Explicit install-retry ownership is required for cleanup');
+  return context;
 }

@@ -120,7 +120,7 @@ serviceTest('interrupted-attempt-reconciles-existing-receipt-without-duplicate-d
     const restore = replacePayload(f);
     assert.equal((await dependencyPort(f.target, f.location, f.options).inspect(f.location)).ollama, 'unavailable', 'published preparation must match its closed inventory before admission');
     restore();
-    assert.equal((await dependencyPort(f.target, f.location, { ...f.options, policies: [] }).inspect(f.location)).ollama, 'unavailable', 'missing original policy cannot bypass published payload verification');
+    assert.equal((await dependencyPort(f.target, f.location, { ...f.options, policies: [] }).inspect(f.location)).ollama, 'installed-not-running', 'persisted accepted policy validates history without the current catalog');
     await startOllamaService(f.location, f.prepared, f.context(), f.service);
     const before = attemptBytes(join(f.home, 'deps/ollama/.attempts'));
     const fresh = dependencyPort(f.target, f.location, f.options);

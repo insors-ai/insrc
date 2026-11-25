@@ -1,6 +1,6 @@
 /** Bounded dependency evidence, without controller or daemon capabilities. */
 import { Ajv } from 'ajv';
-import { constants, existsSync, fsyncSync, lstatSync, mkdirSync, openSync, writeFileSync } from 'node:fs';
+import { constants, existsSync, fsyncSync, lstatSync, mkdirSync, openSync, unlinkSync, writeFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { dirname, join, relative } from 'node:path';
 import { InstallerError } from './contracts.js';
@@ -14,19 +14,26 @@ import type { PayloadInventory } from './release-descriptor.js';
 import { devObjectSchema as object, devHashSchema as hash, devTokenSchema as token, parseDevRecord } from './dev.js';
 import { installerSchemas } from './schemas.js';
 import { closeOwnedDescriptor } from './owned-file.js';
-import { createOllamaOffer, dependencyAttemptPaths, ollamaPayloadRelativePath, ollamaPolicySha256, OLLAMA_LIMITS } from './ollama-policy.js';
+import { createOllamaOffer, dependencyAttemptPaths, ollamaPayloadRelativePath, ollamaPolicySha256, parseOllamaPolicy, OLLAMA_LIMITS } from './ollama-policy.js';
 import type { DependencyAttemptIdentity, OllamaAbsence, OllamaPolicy } from './ollama-policy.js';
 export const DEPENDENCY_RECORD_LIMIT = 64 * 1024, DEPENDENCY_INVENTORY_LIMIT = 64 * 1024 * 1024;
-export interface OllamaAttempt { schemaVersion: 1; identity: DependencyAttemptIdentity; absence: OllamaAbsence; actor: 'in-process-preparation'; externalActors: 0 }
+interface AttemptIdentity { identity: DependencyAttemptIdentity; absence: OllamaAbsence; actor: 'in-process-preparation'; externalActors: 0 }
+export type OllamaAttempt = AttemptIdentity & ({ schemaVersion: 1 } | { schemaVersion: 2; policy: OllamaPolicy;
+  lockProtocol: 'in-process-native-v1'; lockIdentity: { device: string; inode: string } });
 export interface OllamaClosure { schemaVersion: 1; identitySha256: string; closed: true; outcome: 'prepared' | 'failed' | 'cancelled'; inventorySha256?: string | undefined }
 export interface OllamaReceipt { schemaVersion: 1; installationId: string; policySha256: string; assetSha256: string; version: string; target: OllamaPolicy['target']; inventorySha256: string }
 const path = { type: 'string', minLength: 1, maxLength: 1024 };
 const ajv = new Ajv({ strict: true, coerceTypes: false, useDefaults: false, removeAdditional: false });
-const attemptValidator = ajv.compile<OllamaAttempt>(object({ schemaVersion: { const: 1 }, identity: object({ schemaVersion: { const: 1 }, installationId: token,
+const attemptProperties = { identity: object({ schemaVersion: { const: 1 }, installationId: token,
   operationId: token, attemptNonce: { type: 'string', pattern: '^[A-Za-z0-9_-]{32,128}$' }, offerId: hash, policySha256: hash,
   payloadRelativePath: path, stageRelativePath: path, recordRelativePath: path }),
   absence: object({ binary: { const: 'missing' }, endpoint: { const: 'refused' }, destination: { const: 'absent' }, searchSha256: hash }),
-  actor: { const: 'in-process-preparation' }, externalActors: { const: 0 } }));
+  actor: { const: 'in-process-preparation' }, externalActors: { const: 0 } };
+const attemptValidator = ajv.compile<OllamaAttempt>({ oneOf: [
+  object({ schemaVersion: { const: 1 }, ...attemptProperties }),
+  object({ schemaVersion: { const: 2 }, ...attemptProperties, policy: { type: 'object' }, lockProtocol: { const: 'in-process-native-v1' },
+    lockIdentity: object({ device: { type: 'string', pattern: '^[0-9]{1,32}$' }, inode: { type: 'string', pattern: '^[0-9]{1,32}$' } }) }),
+] });
 const closureValidator = ajv.compile<OllamaClosure>(object({ schemaVersion: { const: 1 }, identitySha256: hash, closed: { const: true },
   outcome: { enum: ['prepared', 'failed', 'cancelled'] }, inventorySha256: hash }, ['schemaVersion', 'identitySha256', 'closed', 'outcome']));
 const receiptValidator = ajv.compile<OllamaReceipt>(object({ schemaVersion: { const: 1 }, installationId: token, policySha256: hash, assetSha256: hash,
@@ -34,6 +41,13 @@ const receiptValidator = ajv.compile<OllamaReceipt>(object({ schemaVersion: { co
 const inventoryValidator = ajv.compile<PayloadInventory>(object({ schemaVersion: { const: 1 }, files: { type: 'array', maxItems: OLLAMA_LIMITS.files,
   items: object({ path, bytes: { type: 'integer', minimum: 0, maximum: OLLAMA_LIMITS.fileBytes }, sha256: hash, mode: { enum: [0o644, 0o755] } }) } }));
 export const dependencyUncertain = (message: string, cause?: unknown) => new InstallerError('dependency-uncertain', message, { cause });
+export function dependencyLockIdentity(file: string): { device: string; inode: string } {
+  const info = lstatSync(file, { bigint: true });
+  if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1n
+    || (process.platform !== 'win32' && (info.uid !== BigInt(process.getuid!()) || (info.mode & 0o077n)))
+    || (process.platform === 'win32' && !controlBinding().safePath(file, false, false))) throw dependencyUncertain('Dependency lock is not private anchored evidence');
+  return { device: info.dev.toString(), inode: info.ino.toString() };
+}
 export function dependencyPath(location: InstallationLocation, name: string): string {
   assertRelativeFile(name); const result = join(location.home, name), part = relative(location.home, result);
   if (part.startsWith('..') || part === '') throw dependencyUncertain('Dependency path escapes its selected home'); return result;
@@ -79,8 +93,17 @@ export function writeDependencyRecord(location: InstallationLocation, handle: ob
   checkDependencyParents(location, file); const encoded = canonicalJson(value);
   if (Buffer.byteLength(encoded) > limit || existsSync(file)) throw dependencyUncertain('Dependency evidence is excessive or already admitted');
   const temp = `${file}.${randomUUID()}.tmp`, fd = openSync(temp, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600);
-  try { writeFileSync(fd, encoded); fsyncSync(fd); } finally { closeOwnedDescriptor(fd); }
-  controlBinding().replace(handle, temp, file); flushDirectory(dirname(file));
+  let closed = false;
+  try {
+    try { writeFileSync(fd, encoded); fsyncSync(fd); } finally { closeOwnedDescriptor(fd); closed = true; }
+    // The native same-volume exclusive rename also accepts regular files.
+    // A competing target can never be replaced, even after the existence check.
+    controlBinding().publishDirectory(handle, temp, file); flushDirectory(dirname(file));
+  } catch (cause) {
+    if (closed && existsSync(temp)) { unlinkSync(temp); flushDirectory(dirname(file)); }
+    if ((cause as { code?: string })?.code === 'resource-close-uncertain') throw cause;
+    throw dependencyUncertain('Dependency record publication failed without replacing existing evidence', cause);
+  }
 }
 export function parseOllamaAttempt(location: InstallationLocation, policy: OllamaPolicy, input: unknown): OllamaAttempt {
   const attempt = parseBoundOllamaAttempt(location, input), id = attempt.identity;
@@ -96,7 +119,19 @@ export function parseBoundOllamaAttempt(location: InstallationLocation, input: u
   const paths = dependencyAttemptPaths(id.operationId, id.attemptNonce);
   if (id.installationId !== location.installationId || paths.recordRelativePath !== id.recordRelativePath || paths.stageRelativePath !== id.stageRelativePath
     || !/^deps\/ollama\/\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?\/(?:linux|darwin|win32)-(?:arm64|x64)\/[a-f0-9]{64}$/.test(id.payloadRelativePath)) throw dependencyUncertain('Dependency historical attempt binding differs');
+  if (attempt.schemaVersion === 2) {
+    attempt.policy = parseOllamaPolicy(attempt.policy);
+    const offer = createOllamaOffer(location, attempt.policy, attempt.absence);
+    if (!offer || offer.id !== id.offerId || ollamaPolicySha256(attempt.policy) !== id.policySha256
+      || ollamaPayloadRelativePath(attempt.policy) !== id.payloadRelativePath) throw dependencyUncertain('Accepted historical policy differs from its attempt');
+  }
   return attempt;
+}
+/** Current catalog is only a compatibility source for exactly matching v1 data. */
+export function acceptedOllamaPolicy(attempt: OllamaAttempt, current?: OllamaPolicy): OllamaPolicy {
+  if (attempt.schemaVersion === 2) return attempt.policy;
+  if (current && ollamaPolicySha256(parseOllamaPolicy(current)) === attempt.identity.policySha256) return current;
+  throw dependencyUncertain('Historical dependency policy is unavailable; retain its evidence');
 }
 export function parseOllamaClosure(identity: DependencyAttemptIdentity, input: unknown): OllamaClosure {
   const closure = parseDevRecord(closureValidator, input, DEPENDENCY_RECORD_LIMIT);

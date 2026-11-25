@@ -15,7 +15,7 @@ import { dependencyAttemptIdentity, ollamaPolicySha256 } from './ollama-policy.j
 import type { OllamaPolicy } from './ollama-policy.js';
 import { closedOllamaAttempts, verifyPreparedOllama } from './ollama-prepare.js';
 import type { PreparedOllama } from './ollama-prepare.js';
-import { closurePath, dependencyPath, dependencyUncertain, ensureDependencyDirectory, parseOllamaAttempt, parseOllamaClosure, readDependencyRecord, writeDependencyRecord } from './ollama-records.js';
+import { acceptedOllamaPolicy, closurePath, dependencyPath, dependencyUncertain, ensureDependencyDirectory, parseOllamaAttempt, parseOllamaClosure, readDependencyRecord, writeDependencyRecord } from './ollama-records.js';
 import { controlBinding } from './native.js';
 import { parseServiceFact, parseServiceFrame, serviceAdmission, serviceFact, serviceJson, servicePaths, SERVICE_FRAME_LIMIT } from './ollama-service-records.js';
 import type { OllamaServiceFact, OllamaServiceFrame } from './ollama-service-records.js';
@@ -76,8 +76,8 @@ export async function reconcileOllamaDependencies(location: InstallationLocation
         // Closed abandoned preparations without a published tree grant no start.
         const payload = dependencyPath(location, attempt.identity.payloadRelativePath);
         if (existsSync(payload)) {
-          if (!policy || attempt.identity.policySha256 !== ollamaPolicySha256(policy)) throw dependencyUncertain('Published interrupted preparation has no matching accepted policy for verification');
-          const verified = await verifyPreparedOllama(location, policy, payload, signal); signal.throwIfAborted();
+          const accepted = acceptedOllamaPolicy(attempt, policy);
+          const verified = await verifyPreparedOllama(location, accepted, payload, signal); signal.throwIfAborted();
           if (closure.outcome !== 'prepared' || verified.inventorySha256 !== closure.inventorySha256) throw dependencyUncertain('Published interrupted preparation differs from its durable inventory closure');
         }
       }

@@ -13,6 +13,8 @@ import { downloadBoundedAsset, downloadVerifiedAsset } from '../download.js';
 import { OLLAMA_LIMITS } from '../ollama-policy.js';
 import { ollamaFixture } from './_ollama-fixture.js';
 import type { DependencyOperationContext } from '../peer-contracts.js';
+import { createDependencyRetryContext } from '../dependency-context.js';
+import { cleanupOllamaInstallAttempt } from '../ollama-recovery.js';
 
 test('stale-forged-and-cross-home-offers-reject-before-mutation', async () => {
   const f = await ollamaFixture();
@@ -105,18 +107,23 @@ test('finite-actor-closure-uncertainty-blocks-retry-and-cleanup', async () => {
       transport: kind === 'cooperating-work' ? f.transport : async () => {
         const response = await f.transport(); response.body.once('close', () => cancel.abort());
         return { ...response, closed: kind === 'transport-close' ? blocked : Promise.reject(new Error('no positive transport closure')) };
-      }, prepareMs: 5000, cleanupMs: 20, ...(kind === 'cooperating-work' ? { beforeFiniteClose: () => { cancel.abort(); return blocked; } } : {}) }), { code: 'dependency-uncertain' });
+      }, prepareMs: 5000, cleanupMs: 150, ...(kind === 'cooperating-work' ? { beforeFiniteClose: () => { cancel.abort(); return blocked; } } : {}) }), { code: 'dependency-uncertain' });
     assert.equal(existsSync(join(f.home, identity.stageRelativePath)), true); assert.equal(existsSync(offer.destination), false);
     await assert.rejects(closedOllamaAttempts(f.location), { code: 'dependency-uncertain' });
     await assert.rejects(prepareOllama(f.location, policy, offer, f.context('b'.repeat(64)), { recheck: f.recheck, transport: async () => { throw new Error('no second actor'); } }), { code: 'dependency-uncertain' });
     release();
-    const closed = record.replace(/\.json$/, '.closed.json'), until = performance.now() + 1000;
+    const closed = record.replace(/\.json$/, '.closed.json'), until = performance.now() + 5000;
     if (kind !== 'transport-close-rejected') {
-      while (!existsSync(closed) && performance.now() < until) await delay(5);
+      const disposed = record.replace(/\.json$/, '.disposed.json');
+      while (!existsSync(disposed) && performance.now() < until) await delay(10);
       assert.equal(existsSync(closed), true); assert.equal(JSON.parse(readFileSync(closed, 'utf8')).outcome, 'cancelled');
+      assert.equal(existsSync(disposed), true); assert.equal((await closedOllamaAttempts(f.location)).length, 1);
     } else { await delay(10); assert.equal(existsSync(closed), false); }
-    assert.equal(existsSync(record.replace(/\.json$/, '.disposed.json')), false); assert.equal(existsSync(offer.destination), false);
-    await assert.rejects(closedOllamaAttempts(f.location), { code: 'dependency-uncertain' });
+    assert.equal(existsSync(offer.destination), false);
+    if (kind === 'transport-close-rejected') {
+      assert.equal(existsSync(record.replace(/\.json$/, '.disposed.json')), false);
+      await assert.rejects(closedOllamaAttempts(f.location), { code: 'dependency-uncertain' });
+    }
   } finally { cancel.abort(); release(); await delay(10); await f.cleanup(); }
   }
   const f = await ollamaFixture(), cancel = new AbortController(); let release!: () => void, finished!: () => void;
@@ -183,8 +190,15 @@ test('private-preparation-cancellation-blocks-later-publication', async () => {
       async beforeFiniteClose() { cancelledAt = performance.now(); cancel.abort(); await delay(175); }, beforeStageDisposal: () => disposal }), { code: 'dependency-uncertain' });
     assert.ok(performance.now() - cancelledAt < 350, 'finite drain and disposal share one 250 ms budget');
     assert.equal(existsSync(record.replace(/\.json$/, '.disposed.json')), false); assert.equal(existsSync(offer.destination), false);
-    release(); const disposed = record.replace(/\.json$/, '.disposed.json'), end = performance.now() + 5000;
-    while (!existsSync(disposed) && performance.now() < end) await delay(5);
+    release();
+    // The timed-out original cleanup stops before further deletes. Explicit
+    // Retry gets a fresh bounded cleanup budget after the old actor closes.
+    const end = performance.now() + 5000;
+    while (true) {
+      try { await cleanupOllamaInstallAttempt(f.location, createDependencyRetryContext(f.location, f.target.os, { ...f.context() })); break; }
+      catch (cause) { if (performance.now() >= end) throw cause; await delay(10); }
+    }
+    const disposed = record.replace(/\.json$/, '.disposed.json');
     assert.equal(existsSync(disposed), true); assert.equal((await closedOllamaAttempts(f.location)).length, 1);
   } finally { cancel.abort(); release(); await delay(10); await f.cleanup(); }
 });

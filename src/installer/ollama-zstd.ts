@@ -35,8 +35,8 @@ class Bytes {
   }
 }
 
-/** Streaming output is bounded by validated Zstd blocks (128 KiB). Concatenated
- * frames are independently guarded; optional frame checksums are verified too. */
+/** Streaming output is bounded by validated Zstd blocks (128 KiB). Only one
+ * qualified frame is accepted; optional frame checksums are verified too. */
 export async function* decodeOllamaZstd(input: AsyncIterable<Uint8Array>, policyInput: OllamaPolicy,
   signal?: AbortSignal): AsyncGenerator<Buffer> {
   const policy = parseOllamaPolicy(policyInput);
@@ -45,7 +45,7 @@ export async function* decodeOllamaZstd(input: AsyncIterable<Uint8Array>, policy
   try {
     while (true) {
       signal?.throwIfAborted(); const magic = await bytes.take(4, true); if (!magic) break;
-      if (++frames > policy.limits.files || magic.readUInt32LE() !== 0xfd2fb528) throw unsafe('Unsupported zstd frame or excessive frame count');
+      if (++frames > 1 || magic.readUInt32LE() !== 0xfd2fb528) throw unsafe('Unsupported or multiple zstd frames');
       const flag = (await bytes.take(1))![0]!;
       if (flag & 0x18) throw unsafe('Reserved zstd frame flags');
       const single = !!(flag & 0x20), checksum = !!(flag & 4), sizeFlag = flag >>> 6, dictionaryFlag = flag & 3;

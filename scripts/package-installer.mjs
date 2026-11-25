@@ -18,7 +18,7 @@ const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const ENTRIES = ['out/daemon/index.js', 'out/installer/manager-entry.js', 'out/installer/terminal-entry.js', 'out/cli/index.js'];
 const FORBIDDEN = /(?:^|\/)(?:src|out)\/(?:db|indexer|agent|daemon)\//;
 export function assertManagerBoundary(metafile) {
-  const packages = new Set(['yauzl', 'pend', 'ajv', 'fast-deep-equal', 'fast-uri', 'json-schema-traverse', 'require-from-string']);
+  const packages = new Set(['yauzl', 'pend', 'ajv', 'fast-deep-equal', 'fast-uri', 'json-schema-traverse', 'require-from-string', 'fzstd', 'xxhash-wasm']);
   for (const name of Object.keys(metafile.inputs)) {
     const normalized = name.replaceAll('\\', '/');
     if (FORBIDDEN.test(normalized)) throw new Error(`Installer imports application runtime: ${name}`);

@@ -43,7 +43,7 @@ test('linux-zstd-large-window-truncation-and-output-bombs-refuse-before-unsafe-w
     const contents = await archive([{ name: 'bin/ollama', data: Buffer.from('qualified fixture'), mode: 0o755 }]), good = compress(contents);
     for (const width of [1, 7, 65536]) assert.deepEqual(await decode(good, policy(good), width), contents);
     const multiple = Buffer.concat([compress(contents.subarray(0, 700)), compress(contents.subarray(700))]);
-    assert.deepEqual(await decode(multiple), contents);
+    await assert.rejects(decode(multiple), /multiple zstd frames/);
     const huge = Buffer.from([0x28, 0xb5, 0x2f, 0xfd, 0, 0x80, 1, 0, 0]);
     const secondHuge = Buffer.concat([compress(contents.subarray(0, 512)), huge]);
     for (const invalid of [huge, secondHuge, good.subarray(0, good.length - 1), Buffer.from([1, 2, 3, 4]), Buffer.concat([good, Buffer.from([1])])]) {

@@ -83,7 +83,7 @@ test('production payload closure rejects missing entrypoints and escaping worksp
 });
 
 test('bundled manager excludes DB indexer model imports and consumer npm build', () => {
-  assertManagerBoundary({ inputs: { 'out/installer/contracts.js': {}, 'node_modules/yauzl/index.js': {} }, outputs: { 'bootstrap.mjs': { imports: [{ path: 'node:fs', external: true }] } } });
+  assertManagerBoundary({ inputs: { 'out/installer/contracts.js': {}, 'node_modules/yauzl/index.js': {}, 'node_modules/fzstd/esm/index.mjs': {}, 'node_modules/xxhash-wasm/esm/xxhash-wasm.js': {} }, outputs: { 'bootstrap.mjs': { imports: [{ path: 'node:fs', external: true }] } } });
   for (const path of ['src/db/lmdb.ts', 'out/indexer/index.js', 'src/agent/providers/ollama.ts', 'out/daemon/index.js']) assert.throws(() => assertManagerBoundary({ inputs: { [path]: {} }, outputs: {} }), /application runtime/);
   assert.throws(() => assertManagerBoundary({ inputs: { 'node_modules/lmdb/index.js': {} }, outputs: {} }), /forbidden package/);
   assert.throws(() => assertManagerBoundary({ inputs: {}, outputs: { manager: { imports: [{ path: 'lmdb', external: true }] } } }), /unbundled dependency/);

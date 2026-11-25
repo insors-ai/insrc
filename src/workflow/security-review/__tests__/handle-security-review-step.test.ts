@@ -10,14 +10,27 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 import {
 	handleSecurityReviewStep, _setSecurityReviewStepDepsForTests,
 } from '../handle-security-review-step.js';
-import { ContentIdentityMismatchError, SecurityModelUnavailableError } from '../run-security-review.js';
+import { ContentIdentityMismatchError, SecurityModelUnavailableError, deriveReceiptIdentity } from '../run-security-review.js';
 import type { SecurityReviewReport } from '../run-security-review.js';
 import type { SecurityModelSelection } from '../../../config/analyze.js';
 import type { SecurityAdvisoryEvidence } from '../collect-dependency-advisories.js';
+import { registerGitTools } from '../../../daemon/tools/builtins/git/index.js';
+import { readReceiptRecord } from '../../review-round/receipt-record.js';
+import { _setCheckpointDepsForTests } from '../../review-round/checkpoint.js';
+import { _setReviewReportDepsForTests } from '../../review-round/review-report.js';
+import { _setReconciliationDepsForTests } from '../../review-round/reconciliation.js';
+import { _setContentIdentityDepsForTests, computeContentIdentity } from '../content-identity.js';
+import { _setRunSecurityCodePassForTests } from '../security-round-hooks.js';
+
+registerGitTools();
 
 const targets = { entries: [{ path: 'app.ts' }] };
 const modelSelection: SecurityModelSelection = { status: 'configured', provider: 'cli-claude', modelId: 'claude-opus' };
@@ -187,4 +200,65 @@ test('ContentIdentityMismatchError and SecurityModelUnavailableError from runSec
 			SecurityModelUnavailableError,
 		);
 	} finally { unwire(); }
+});
+
+// --- integration: a REAL runSecurityReview call, proving receipt persistence
+// (not a mocked runSecurityReview, unlike every test above) --------------
+
+function initRepo(): string {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-handle-security-review-step-'));
+	execFileSync('git', ['init', '-q'], { cwd: repo });
+	execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: repo });
+	execFileSync('git', ['config', 'user.name', 'test'], { cwd: repo });
+	writeFileSync(join(repo, 'app.ts'), 'export const x = 1;\n');
+	execFileSync('git', ['add', '.'], { cwd: repo });
+	execFileSync('git', ['commit', '-q', '-m', 'init'], { cwd: repo });
+	return repo;
+}
+
+function wireRealRunSecurityReview(repo: string): void {
+	_setContentIdentityDepsForTests(async candidate => candidate === repo);
+	_setCheckpointDepsForTests({ resolveRepoRoot: async () => repo });
+	_setReviewReportDepsForTests({ resolveRepoRoot: async () => repo });
+	_setReconciliationDepsForTests({ resolveRepoRoot: async () => repo, classify: async (_id, prior) => prior.map(() => 'still-open') });
+	_setRunSecurityCodePassForTests(async () => []);
+}
+
+function unwireReal(): void {
+	_setContentIdentityDepsForTests();
+	_setCheckpointDepsForTests();
+	_setReviewReportDepsForTests();
+	_setReconciliationDepsForTests();
+	_setRunSecurityCodePassForTests();
+}
+
+test('integration: handleSecurityReviewStep: a fresh-index request calls the REAL runSecurityReview; epicHash/storyId supplied on the request land unchanged in the persisted receipt, while an omitted pair is derived via deriveReceiptIdentity with standalone:true', async () => {
+	const repo = initRepo();
+	wireRealRunSecurityReview(repo);
+	try {
+		const identity = await computeContentIdentity(repo, targets);
+		// handleSecurityReviewStep resolves the model/advisories itself (per its
+		// own contract) -- only those two, plus the index-freshness check, are
+		// faked here; runSecurityReview itself is the REAL implementation.
+		_setSecurityReviewStepDepsForTests({
+			resolveRepoLastIndexedAt: async () => 2_000_000,
+			statMtimeMs: async () => 1_000_000,
+			resolveSecurityModel: async () => modelSelection,
+			collectDependencyAdvisories: async () => ({ ...evidence(), contentIdentity: identity }),
+		});
+
+		const explicit = await handleSecurityReviewStep({ phase: 'start', repoPath: repo, targets, epicHash: 'fedcba9876543210', storyId: 's3' }) as { next: string; report: SecurityReviewReport };
+		assert.equal(explicit.next, 'done');
+		const explicitRecord = readReceiptRecord(repo, 'fedcba9876543210', 's3');
+		assert.ok(explicitRecord);
+		assert.equal(explicitRecord.meta.standalone, undefined, 'explicit epicHash/storyId leaves standalone unset in the persisted receipt');
+		assert.equal(explicitRecord.body.receipts.length, 2);
+
+		const derived = await handleSecurityReviewStep({ phase: 'start', repoPath: repo, targets }) as { next: string; report: SecurityReviewReport };
+		assert.equal(derived.next, 'done');
+		const { epicHash: derivedEpicHash, storyId: derivedStoryId } = deriveReceiptIdentity(identity);
+		const derivedRecord = readReceiptRecord(repo, derivedEpicHash, derivedStoryId);
+		assert.ok(derivedRecord);
+		assert.equal(derivedRecord.meta.standalone, true, 'an omitted epicHash/storyId derives identity via deriveReceiptIdentity and sets standalone:true in the persisted receipt');
+	} finally { unwireReal(); unwire(); rmSync(repo, { recursive: true, force: true }); }
 });

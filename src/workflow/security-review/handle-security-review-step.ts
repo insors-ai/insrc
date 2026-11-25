@@ -28,10 +28,10 @@ import { collectDependencyAdvisories } from './collect-dependency-advisories.js'
 import { runSecurityReview, type SecurityReviewReport } from './run-security-review.js';
 
 const MODEL_PROBE_DEADLINE_MS = 15_000;
-/** Bounded wait for proceed:true -- a handful of short polls, never an
- *  unbounded loop; if the index is still stale when exhausted, the review
- *  still runs (degraded), exactly as a proceed:false call would. */
-const FRESHNESS_POLL_ATTEMPTS = 5;
+/** proceed:true genuinely WAITS for a fresh index -- unlike proceed:false, it
+ *  never silently runs degraded. Polls at this interval with no attempt cap;
+ *  the caller (a human, via confirm_wait) chose to wait, so this does not
+ *  second-guess that choice with a hidden timeout. */
 const FRESHNESS_POLL_INTERVAL_MS = 2_000;
 
 export interface SecurityReviewStepFreshRequest {
@@ -134,11 +134,9 @@ async function isIndexStale(repoPath: string, targets: ReviewTargets): Promise<b
 
 async function waitForFreshIndex(repoPath: string, targets: ReviewTargets): Promise<void> {
 	const sleep = testDeps.sleep ?? ((ms: number) => new Promise<void>(res => setTimeout(res, ms)));
-	for (let attempt = 0; attempt < FRESHNESS_POLL_ATTEMPTS; attempt++) {
-		if (!(await isIndexStale(repoPath, targets))) return;
+	while (await isIndexStale(repoPath, targets)) {
 		await sleep(FRESHNESS_POLL_INTERVAL_MS);
 	}
-	// Exhausted the bounded wait -- proceed anyway, same as proceed:false.
 }
 
 async function runToDone(repoPath: string, targets: ReviewTargets, epicHash: string | undefined, storyId: string | undefined): Promise<SecurityReviewStepDone> {

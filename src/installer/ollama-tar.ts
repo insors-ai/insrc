@@ -34,10 +34,9 @@ function numeric(header: Buffer, offset: number, size: number): number {
   if (result > BigInt(Number.MAX_SAFE_INTEGER)) throw unsafe('Oversized tar numeric value'); return Number(result);
 }
 function memberName(value: string, directory = false): string {
-  if (directory && value === '.') return '';
+  if (directory && (value === '.' || /^(?:\.\/)+$/.test(value))) return '';
   while (value.startsWith('./')) value = value.slice(2);
   if (directory && value.endsWith('/')) value = value.slice(0, -1);
-  if (!value && directory) return '';
   assertRelativeFile(value);
   if (value.split('/').length > 64 || ['.ollama-receipt.json', 'inventory.json', '.release.json', '.dev-release.json'].includes(value)) throw unsafe('Reserved or excessive tar path');
   return value;

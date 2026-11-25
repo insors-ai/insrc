@@ -99,6 +99,7 @@ test('linux-tar-path-collision-device-and-link-escape-inputs-stay-contained', as
     assert.equal(existsSync(join(x.destination, 'lib/alias')), false); assert.equal(existsSync(join(x.destination, 'lib/hard')), false);
     for (const entries of [
       [{ name: '../escaped', data }], [{ name: '/absolute', data }], [{ name: 'C:/drive', data }], [{ name: 'ads:stream', data }],
+      [{ name: '/', type: 'directory' }], [{ name: '//', type: 'directory' }], [{ name: './/', type: 'directory' }], [{ name: '', type: 'directory' }],
       [{ name: 'bin/ollama', data }, { name: 'BIN/other', data }], [{ name: 'bin/ollama', data }, { name: 'bin/ollama', data }],
       [{ name: 'lib/device', type: 'character-device' }], [{ name: 'lib/pipe', type: 'fifo' }],
       [{ name: 'lib/link', type: 'symlink', linkname: '../../escaped' }], [{ name: 'lib/link', type: 'link', linkname: '../escaped' }],

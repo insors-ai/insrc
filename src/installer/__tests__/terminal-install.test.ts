@@ -4,6 +4,8 @@ import { once } from 'node:events';
 import { constants, copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { forbidProcesses } from './_no-process-sentinel.js';
+import { CODING_CLI_RECOMMENDATION } from '../dependency-context.js';
 import type { ChildProcess } from 'node:child_process';
 import { spawnFixture, stopOwnedChildren, childLine } from '../../daemon/tools/__tests__/_proc.js';
 import { ControllerStore } from '../controller-store.js';
@@ -122,7 +124,7 @@ test('cancel install failure and post install TUI error preserve correct outcome
 });
 
 test('terminal consent binds exact dependency offer and never installs coding CLIs', async () => {
-  const f = setup();
+  const f = setup(), processes = forbidProcesses();
   try {
     const report: DependencyReport = { runtimeReady: true, ollama: 'missing', ollamaInstallOffer: { id: 'offer', destination: f.home, version: 'fixture-version' }, agents: { claude: false, codex: false, vibe: false }, recommendations: [], blockers: ['Ollama missing'] };
     f.peers.dependencies!.inspect = async () => report;
@@ -133,8 +135,9 @@ test('terminal consent binds exact dependency offer and never installs coding CL
     const declined = ui(['', '', '', 'no', 'yes']);
     f.peers.dependencies!.decide = async (_location, decision) => { decisions.push(decision); return report; };
     assert.equal((await runTerminalInstall(options(f, declined))).kind, 'failed'); assert.deepEqual(decisions, [{ offerId: 'offer', choice: 'decline' }]);
-    assert.match(declined.output.join(''), /at least one coding CLI/); assert.equal(f.state.activations.length, 0);
-  } finally { f.cleanup(); }
+    assert.equal(declined.output.filter(line => line.trim() === CODING_CLI_RECOMMENDATION).length, 1);
+    assert.equal(f.state.activations.length, 0); processes.assertUnused();
+  } finally { processes.restore(); f.cleanup(); }
 });
 
 test('installed launcher preserves existing files and quotes exact private-runtime retry', () => {
@@ -253,5 +256,20 @@ test('saved installer selects candidate control runtime and exact post-install r
       const current = f.manager().inspect(); assert.equal(current.kind, 'present');
       if (current.kind === 'present') assert.equal(current.snapshot.installation.activeReleaseId, 'next');
     } finally { f.cleanup(); }
+  }
+});
+
+test('coding-cli-advice-emitted-once-and-install-spawn-sentinels-remain-zero', async () => {
+  for (const count of [0, 1, 3]) for (const recommendations of [[], [CODING_CLI_RECOMMENDATION, CODING_CLI_RECOMMENDATION]]) {
+    const f = setup(), processes = forbidProcesses();
+    try {
+      f.peers.dependencies!.inspect = async () => ({ runtimeReady: true, ollama: 'ready',
+        agents: { claude: count > 0, codex: count > 1, vibe: count > 1 },
+        recommendations: count ? [] : recommendations, blockers: [] });
+      const terminal = ui(['', '', '', 'no']);
+      assert.equal((await runTerminalInstall(options(f, terminal))).kind, 'cancelled');
+      assert.equal(terminal.output.filter(line => line.trim() === CODING_CLI_RECOMMENDATION).length, count ? 0 : 1);
+      assert.equal(f.state.activations.length, 0); processes.assertUnused();
+    } finally { processes.restore(); f.cleanup(); }
   }
 });

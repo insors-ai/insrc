@@ -7,6 +7,7 @@ import { assertToken, normalizeHome } from './location.js';
 const owners = new WeakMap<DependencyOperationContext, { home: string; installationId: string; os: Target['os'] }>();
 const retries = new WeakSet<DependencyOperationContext>();
 export const RETAINED_DEPENDENCY_NOTICE = 'Ollama start was accepted and may remain running or unverified.';
+export const CODING_CLI_RECOMMENDATION = 'Recommend installing at least one coding CLI: Claude Code, Codex or Mistral Vibe.';
 
 /** Called by the lock owner, with its retained live-owner assertion. */
 export function createDependencyOperationContext(location: InstallationLocation, os: Target['os'],

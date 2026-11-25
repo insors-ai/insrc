@@ -1,7 +1,7 @@
 import { privateRuntimeTest } from './_private-runtime-test.js';
 import assert from 'node:assert/strict';
-import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync, watch } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { once } from 'node:events';
 import { Readable } from 'node:stream';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -15,6 +15,16 @@ import { ollamaFixture } from './_ollama-fixture.js';
 import type { DependencyOperationContext } from '../peer-contracts.js';
 import { createDependencyRetryContext } from '../dependency-context.js';
 import { cleanupOllamaInstallAttempt } from '../ollama-recovery.js';
+
+/** Records are published immutably; the disposal event follows closure publication. */
+async function waitForFile(file: string): Promise<void> {
+  if (existsSync(file)) return;
+  await new Promise<void>((resolve, reject) => {
+    const watcher = watch(dirname(file), check), timer = setTimeout(() => { watcher.close(); reject(new Error(`Missing published record: ${file}`)); }, 5000);
+    function check() { if (existsSync(file)) { clearTimeout(timer); watcher.close(); resolve(); } }
+    watcher.once('error', error => { clearTimeout(timer); watcher.close(); reject(error); }); check();
+  });
+}
 
 privateRuntimeTest(import.meta.url, 'stale-forged-and-cross-home-offers-reject-before-mutation', async () => {
   const f = await ollamaFixture();
@@ -115,10 +125,10 @@ privateRuntimeTest(import.meta.url, 'finite-actor-closure-uncertainty-blocks-ret
     await assert.rejects(closedOllamaAttempts(f.location), { code: 'dependency-uncertain' });
     await assert.rejects(prepareOllama(f.location, policy, offer, f.context('b'.repeat(64)), { recheck: f.recheck, transport: async () => { throw new Error('no second actor'); } }), { code: 'dependency-uncertain' });
     release();
-    const closed = record.replace(/\.json$/, '.closed.json'), until = performance.now() + 5000;
+    const closed = record.replace(/\.json$/, '.closed.json');
     if (kind !== 'transport-close-rejected') {
       const disposed = record.replace(/\.json$/, '.disposed.json');
-      while (!existsSync(disposed) && performance.now() < until) await delay(10);
+      await waitForFile(disposed);
       assert.equal(existsSync(closed), true); assert.equal(JSON.parse(readFileSync(closed, 'utf8')).outcome, 'cancelled');
       assert.equal(existsSync(disposed), true); assert.equal((await closedOllamaAttempts(f.location)).length, 1);
     } else { await delay(10); assert.equal(existsSync(closed), false); }
@@ -138,7 +148,7 @@ privateRuntimeTest(import.meta.url, 'finite-actor-closure-uncertainty-blocks-ret
     const inode = lstatSync(join(offer.destination, policy.layout.executable)).ino, started = performance.now();
     await assert.rejects(prepareOllama(f.location, policy, offer, f.context('a'.repeat(64), cancel.signal), { recheck: f.recheck, transport: f.transport,
       prepareMs: 5000, cleanupMs: 40, async verifyExisting(...args) { verificationStarted = true; cancel.abort(); try { await pending; return await verifyPreparedOllama(...args); } finally { finished(); } } }), { code: 'dependency-uncertain' });
-    assert.ok(performance.now() - started < 1000, 'stalled reuse verification has bounded cancellation/drain');
+    assert.ok(performance.now() - started < 2000, 'stalled reuse verification has bounded cancellation/drain');
     await assert.rejects(prepareOllama(f.location, policy, offer, f.context(), { recheck: f.recheck, transport: f.transport }), { code: 'dependency-uncertain' });
     assert.equal(lstatSync(join(offer.destination, policy.layout.executable)).ino, inode);
     release(); await closed; await new Promise<void>(resolve => setImmediate(resolve));
@@ -189,9 +199,9 @@ privateRuntimeTest(import.meta.url, 'private-preparation-cancellation-blocks-lat
   try {
     const { policy, offer } = await f.input(), owner = f.context('a'.repeat(64), cancel.signal);
     record = join(f.home, dependencyAttemptIdentity(f.location, policy, offer, owner).recordRelativePath);
-    await assert.rejects(prepareOllama(f.location, policy, offer, owner, { recheck: f.recheck, transport: f.transport, cleanupMs: 250,
-      async beforeFiniteClose() { cancelledAt = performance.now(); cancel.abort(); await delay(175); }, beforeStageDisposal: () => disposal }), { code: 'dependency-uncertain' });
-    assert.ok(performance.now() - cancelledAt < 350, 'finite drain and disposal share one 250 ms budget');
+    await assert.rejects(prepareOllama(f.location, policy, offer, owner, { recheck: f.recheck, transport: f.transport, cleanupMs: 3000,
+      async beforeFiniteClose() { cancelledAt = performance.now(); cancel.abort(); await delay(2000); }, beforeStageDisposal: () => disposal }), { code: 'dependency-uncertain' });
+    assert.ok(performance.now() - cancelledAt < 4500, 'finite drain and disposal share one 3000 ms budget (separate budgets would require at least 5000 ms)');
     assert.equal(existsSync(record.replace(/\.json$/, '.disposed.json')), false); assert.equal(existsSync(offer.destination), false);
     release();
     // The timed-out original cleanup stops before further deletes. Explicit

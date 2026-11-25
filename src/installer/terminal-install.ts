@@ -5,6 +5,7 @@ import { InstallerManager } from './manager.js';
 import type { ManagerPeers } from './peer-contracts.js';
 import { requireTerminal } from './terminal-admission.js';
 import { parseInstaller } from './schemas.js';
+import { CODING_CLI_RECOMMENDATION } from './dependency-context.js';
 import { launchInstalledTui, publishInstalledLauncher, retryCommand, selectInstalledTui } from './installed-launcher.js';
 import type { TuiExit, TuiSelection } from './installed-launcher.js';
 
@@ -83,8 +84,8 @@ export async function runTerminalInstall(options: TerminalInstallOptions): Promi
     if (!peers.dependencies || !peers.lifecycle || !peers.migrations) throw new InstallerError('capability-unavailable', 'Dependency, lifecycle/readiness and migration adapters are required');
     const report = parseInstaller('dependencyReport', await peers.dependencies.inspect(location, { signal: options.signal }));
     checkCancellation();
-    for (const recommendation of report.recommendations) ui.write(`${recommendation}\n`);
-    if (!Object.values(report.agents).some(Boolean)) ui.write('Recommend installing at least one coding CLI: Claude Code, Codex or Mistral Vibe.\n');
+    for (const recommendation of new Set(report.recommendations)) ui.write(`${recommendation}\n`);
+    if (!Object.values(report.agents).some(Boolean) && !report.recommendations.includes(CODING_CLI_RECOMMENDATION)) ui.write(`${CODING_CLI_RECOMMENDATION}\n`);
     let decision: DependencyDecision | undefined;
     if (report.ollamaInstallOffer) {
       const offer = report.ollamaInstallOffer;

@@ -14,7 +14,7 @@ import { parseInstaller } from './schemas.js';
 import { runtimeArchive, runtimePolicy } from './runtime-policy.js';
 import { createOllamaOffer, dependencyAttemptPaths, ollamaEndpoint, ollamaPayloadRelativePath, parseOllamaPolicy } from './ollama-policy.js';
 import type { OllamaOffer, OllamaPolicy } from './ollama-policy.js';
-import { requireDependencyOperation, requireDependencyRetry } from './dependency-context.js';
+import { CODING_CLI_RECOMMENDATION, requireDependencyOperation, requireDependencyRetry } from './dependency-context.js';
 import { assertOllamaReadsClosed, closedOllamaAttempts, prepareOllama } from './ollama-prepare.js';
 import { cleanupOllamaInstallAttempt } from './ollama-recovery.js';
 import { dependencyLockIdentity, dependencyPath, dependencyUncertain, readDependencyRecord } from './ollama-records.js';
@@ -228,7 +228,8 @@ async function privateOllamaCandidates(location: InstallationLocation, target: T
     signal.throwIfAborted();
     try {
       const info = await io.lstat(ancestor); signal.throwIfAborted();
-      if (info.isSymbolicLink() || !info.isDirectory()) throw new InstallerError('dependency-probe-failed', 'Private dependency ancestor is linked or malformed');
+      if (info.isSymbolicLink()) throw new InstallerError('dependency-home-alias', `Private dependency path has a linked ancestor: ${ancestor.slice(0, 512)}. Use a canonical physical installation home (--home) with real directory ancestors; aliases are not followed.`);
+      if (!info.isDirectory()) throw new InstallerError('dependency-probe-failed', 'Private dependency ancestor is malformed');
     } catch (error) { if (!missing(error)) throw error; }
     const parent = path.dirname(ancestor); if (parent === ancestor) break; ancestor = parent;
   }
@@ -283,7 +284,7 @@ async function inspectDependencyWork(location: InstallationLocation, target: Tar
   const report: DependencyReport = { runtimeReady: false, ollama: 'unavailable', agents: { claude: false, codex: false, vibe: false }, recommendations: [], blockers: [] };
   const note = (message: string) => { if (report.recommendations.length < 28) report.recommendations.push(message); };
   const finish = (): DependencyReport => {
-    if (!Object.values(report.agents).some(Boolean)) note('Recommend installing at least one coding CLI: Claude Code, Codex or Mistral Vibe.');
+    if (!Object.values(report.agents).some(Boolean) && !report.recommendations.includes(CODING_CLI_RECOMMENDATION)) note(CODING_CLI_RECOMMENDATION);
     return parseInstaller('dependencyReport', structuredClone(report));
   };
   const work = async (): Promise<DependencyInspection> => {
@@ -312,8 +313,11 @@ async function inspectDependencyWork(location: InstallationLocation, target: Tar
         plan.paths.push(...await privateOllamaCandidates(location, target, io, signal));
         if (policy) plan.paths.push(posixOrNative(home, `${ollamaPayloadRelativePath(policy)}/${policy.layout.executable}`));
         const found = await lookup([...new Set(plan.paths)], io, signal, target.os);
-        return { ...found, complete: found.complete && (!plan.diagnostics.length || !!found.executable), searchSha256: digest(canonicalJson(plan.paths)) };
-      } catch (error) { requireProbeClosure(error); signal.throwIfAborted(); return { complete: false, executable: undefined, searchSha256: digest('incomplete') }; }
+        return { ...found, complete: found.complete && (!plan.diagnostics.length || !!found.executable), searchSha256: digest(canonicalJson(plan.paths)), diagnostic: undefined as string | undefined };
+      } catch (error) {
+        requireProbeClosure(error); signal.throwIfAborted(); return { complete: false, executable: undefined, searchSha256: digest('incomplete'),
+          diagnostic: error instanceof InstallerError && error.code === 'dependency-home-alias' ? error.message : undefined };
+      }
     };
     // Independent HTTP and filesystem probes only; no LLM/provider can be reached here.
     const probes = await Promise.allSettled([availability(), executables()]);
@@ -323,7 +327,8 @@ async function inspectDependencyWork(location: InstallationLocation, target: Tar
     if (availabilityResult.status === 'rejected') throw availabilityResult.reason;
     if (executableResult.status === 'rejected') throw executableResult.reason;
     const { endpoint, service } = availabilityResult.value, binary = executableResult.value;
-    if (service.state === 'ready') report.ollama = 'ready';
+    if (binary.diagnostic) { report.ollama = 'unavailable'; report.blockers.push(binary.diagnostic); }
+    else if (service.state === 'ready') report.ollama = 'ready';
     else if (service.state === 'unavailable' || (!binary.complete && !binary.executable)) {
       report.ollama = 'unavailable'; report.blockers.push(`Ollama availability is uncertain: ${service.state === 'unavailable' ? service.diagnostic : 'executable lookup incomplete'}.`);
     } else if (binary.executable) {

@@ -1,0 +1,154 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-13511ece-24b6-4be7-88ed-8e29df94973c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-25T16:36:51.272Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Make detection diagnostics and validation tests non-vacuous",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t14",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t15",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#292",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "eca0fcfcbc5f53d68c3da96630fefd9506f7f86e3053def754f19cab037b65fd",
+        "at": "2026-11-25T16:36:51.272Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T16:36:51.280Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make detection diagnostics and validation tests non-vacuous",
+    "summary": "Strengthen no-rehash/read-only/redirect/agent assertions and actionable diagnostics, correcting the manual-review test findings without adding installation behavior.",
+    "size": "M",
+    "order": 16,
+    "acceptanceChecks": [
+      "Invalid receipt/closure/layout tests assert exact intended error codes and zero transport calls; a throwing download stub cannot mask accidental redownload. Preserve acquisition SHA checks and metadata-only installed validation.",
+      "Expand content-read sentinel over practical sync/async/stream/path APIs and retain same-size-content cases. Demonstrate bounded metadata/header allowance without full installed-content reads.",
+      "Use second loopback listener returning a valid version to prove redirect/remote target is never contacted; assert listener count zero instead of relying on external.invalid DNS failure.",
+      "Provide actionable unsupported-ancestor-alias blocker while preserving S1 canonical-home/link ownership. Emit agent recommendation once and assert no coding CLI install/auth/spawn for zero/one/many presence cases.",
+      "Replace tight wall-clock or half-written-JSON polling with hooks/events or safe margins in touched prepare/detection/validation tests; assertions must prove claimed behavior.",
+      "Correct TESTS traceability: transient readiness timeout maps to its service test; never-installs-agent assertions are real. Run surrounding detection/validation/policy/terminal selectors only."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable"
+      },
+      {
+        "level": "integration",
+        "name": "healthy-service-without-path-binary-is-reused"
+      },
+      {
+        "level": "integration",
+        "name": "inspect-and-decline-have-zero-mutation-or-process-side-effects"
+      },
+      {
+        "level": "integration",
+        "name": "stopped-existing-ollama-has-manual-guidance-without-start-action"
+      },
+      {
+        "level": "integration",
+        "name": "agent-zero-one-many-detection-never-spawns-auth-model-or-install"
+      },
+      {
+        "level": "integration",
+        "name": "inspection-and-reconciliation-share-three-second-bound-without-payload-hashing"
+      },
+      {
+        "level": "integration",
+        "name": "receipt-closure-and-layout-errors-block-reuse-without-content-rehash"
+      },
+      {
+        "level": "integration",
+        "name": "same-size-installed-content-change-does-not-trigger-digest-reverification"
+      },
+      {
+        "level": "integration",
+        "name": "reuse-and-service-admission-never-rehash-installed-files"
+      },
+      {
+        "level": "integration",
+        "name": "invalid-receipt-closure-layout-reject-with-specific-code-and-zero-transport-calls"
+      },
+      {
+        "level": "integration",
+        "name": "payload-read-sentinel-covers-sync-async-stream-and-path-read-entrypoints"
+      },
+      {
+        "level": "integration",
+        "name": "redirect-target-local-listener-is-never-contacted"
+      },
+      {
+        "level": "integration",
+        "name": "coding-cli-advice-emitted-once-and-install-spawn-sentinels-remain-zero"
+      }
+    ],
+    "planTaskId": "t16"
+  },
+  "citations": []
+}

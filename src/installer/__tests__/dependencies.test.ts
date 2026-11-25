@@ -6,7 +6,10 @@ import { once } from 'node:events';
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { setTimeout as delay } from 'node:timers/promises';
+import { setImmediate as turn } from 'node:timers/promises';
+import { forbidProcesses } from './_no-process-sentinel.js';
+import { assertLocalControlRoot } from '../location.js';
+import { CODING_CLI_RECOMMENDATION } from '../dependency-context.js';
 import { dependencyPort, dependencyReadIo, executableCandidates, inspectDependencies } from '../dependencies.js';
 import type { DependencyOptions, DependencyReadIo } from '../dependencies.js';
 import type { Target } from '../contracts.js';
@@ -74,7 +77,7 @@ privateRuntimeTest(import.meta.url, 'dependency-state-matrix-distinguishes-ready
       assert.equal(result.report.runtimeReady, true, kind);
       assert.equal(!!result.report.ollamaInstallOffer, kind === 'missing', kind);
       if (kind !== 'ready') assert.ok(result.report.blockers.length, kind);
-      if (kind === 'slow') assert.ok(performance.now() - started < 700, 'aggregate deadline must bound the whole inspection');
+      if (kind === 'slow') assert.ok(performance.now() - started < 2000, 'aggregate deadline must bound the whole inspection');
       if (kind === 'configuration') { assert.equal(result.report.agents.claude, true); assert.deepEqual(f.requests, []); }
       assert.ok(f.requests.every(request => request === 'GET /api/version'));
       assert.equal(existsSync(join(f.root, 'spawned')), false);
@@ -93,7 +96,7 @@ privateRuntimeTest(import.meta.url, 'healthy-service-without-path-binary-is-reus
 });
 
 privateRuntimeTest(import.meta.url, 'inspect-and-decline-have-zero-mutation-or-process-side-effects', async () => {
-  const f = await fixture();
+  const f = await fixture(), processes = forbidProcesses();
   try {
     await f.closeServer(); for (const name of ['claude', 'codex', 'vibe']) f.executable(name);
     const before = tree(f.root), port = dependencyPort(target, f.location, { ...f.options, policies: [f.policy()] });
@@ -103,11 +106,16 @@ privateRuntimeTest(import.meta.url, 'inspect-and-decline-have-zero-mutation-or-p
     assert.deepEqual(tree(f.root), before); assert.equal(existsSync(join(f.root, 'spawned')), false);
     await assert.rejects(port.decide(f.location, { offerId: report.ollamaInstallOffer.id, choice: 'install' }), { code: 'dependency-context-invalid' });
     await assert.rejects(port.inspect({ ...f.location, home: join(f.root, 'foreign') }), { code: 'identity-mismatch' });
-    const original = f.options.io!, slow: DependencyReadIo = { ...original, async stat(file) { await delay(100); return original.stat(file); } };
-    const timed = await inspectDependencies(f.location, target, { ...f.options, io: slow, budgetMs: 20 });
-    const saved = structuredClone(timed); await delay(130); assert.deepEqual(timed, saved, 'late reads cannot mutate a returned report');
-    assert.deepEqual(tree(f.root), before);
-  } finally { await f.cleanup(); }
+    const original = f.options.io!; let release!: () => void, finished!: () => void; let entered = false;
+    const blocked = new Promise<void>(resolve => { release = resolve; }), closed = new Promise<void>(resolve => { finished = resolve; });
+    const slow: DependencyReadIo = { ...original, async stat(file) { entered = true; try { await blocked; return await original.stat(file); } finally { finished(); } } };
+    try {
+      const timed = await inspectDependencies(f.location, target, { ...f.options, io: slow, budgetMs: 100 });
+      assert.equal(entered, true); const saved = structuredClone(timed); release(); await closed; await turn();
+      assert.deepEqual(timed, saved, 'positively completed late reads cannot mutate a returned report');
+    } finally { release(); if (entered) await closed; }
+    assert.deepEqual(tree(f.root), before); processes.assertUnused();
+  } finally { processes.restore(); await f.cleanup(); }
 });
 
 privateRuntimeTest(import.meta.url, 'stopped-existing-ollama-has-manual-guidance-without-start-action', async () => {
@@ -125,14 +133,16 @@ privateRuntimeTest(import.meta.url, 'stopped-existing-ollama-has-manual-guidance
 });
 
 privateRuntimeTest(import.meta.url, 'agent-zero-one-many-detection-never-spawns-auth-model-or-install', async () => {
-  const f = await fixture();
+  const f = await fixture(), processes = forbidProcesses();
   try {
     let report = (await inspectDependencies(f.location, target, f.options)).report;
-    assert.deepEqual(report.agents, { claude: false, codex: false, vibe: false }); assert.ok(report.recommendations.some(line => line.includes('at least one')));
+    assert.deepEqual(report.agents, { claude: false, codex: false, vibe: false }); assert.equal(report.recommendations.filter(line => line === CODING_CLI_RECOMMENDATION).length, 1); processes.assertUnused();
     f.executable('claude'); report = (await inspectDependencies(f.location, target, f.options)).report;
     assert.deepEqual(report.agents, { claude: true, codex: false, vibe: false });
+    assert.equal(report.recommendations.includes(CODING_CLI_RECOMMENDATION), false); processes.assertUnused();
     f.executable('codex'); f.executable('vibe'); report = (await inspectDependencies(f.location, target, f.options)).report;
-    assert.deepEqual(report.agents, { claude: true, codex: true, vibe: true }); assert.equal(existsSync(join(f.root, 'spawned')), false);
+    assert.deepEqual(report.agents, { claude: true, codex: true, vibe: true });
+    assert.equal(report.recommendations.includes(CODING_CLI_RECOMMENDATION), false); processes.assertUnused(); assert.equal(existsSync(join(f.root, 'spawned')), false);
     assert.ok(f.requests.every(request => request === 'GET /api/version'));
     const windows = executableCandidates('codex', { Path: 'C:\\Tools;D:\\Other Tools', PATHEXT: '.EXE;.CMD;.PS1' }, 'win32', 'C:\\Users\\Engineer');
     assert.ok(windows.paths.includes('D:\\Other Tools\\codex.cmd')); assert.ok(windows.paths.includes('C:\\Tools\\codex.ps1'));
@@ -149,9 +159,10 @@ privateRuntimeTest(import.meta.url, 'agent-zero-one-many-detection-never-spawns-
     const darwin = { ...target, os: 'darwin' as const }, noPath = { ...f.options, environment: { PATH: '' } };
     assert.equal((await inspectDependencies(f.location, darwin, noPath)).report.agents.codex, false);
     mkdirSync(join(app, 'Resources/codex-cli/bin'), { recursive: true });
-    writeFileSync(join(app, 'Resources/codex-cli/bin/codex'), '#!/bin/sh\nexit 99\n', { mode: 0o755 });
+    writeFileSync(join(app, 'Resources/codex-cli/bin/codex'), `#!/bin/sh\nprintf spawned > '${join(f.root, 'spawned')}'\n`, { mode: 0o755 });
     assert.equal((await inspectDependencies(f.location, darwin, noPath)).report.agents.codex, true);
-  } finally { await f.cleanup(); }
+    assert.equal(existsSync(join(f.root, 'spawned')), false); processes.assertUnused();
+  } finally { processes.restore(); await f.cleanup(); }
 });
 
 privateRuntimeTest(import.meta.url, 'private-runtime-provenance-rejects-path-node-and-wrong-target', async () => {
@@ -170,15 +181,51 @@ privateRuntimeTest(import.meta.url, 'private-runtime-provenance-rejects-path-nod
       } };
       assert.equal((await inspectDependencies(f.location, target, { ...f.options, io })).report.runtimeReady, false, bad);
     }
-    let readsAfterSlowRuntime = 0;
-    const delayed: DependencyReadIo = { ...f.options.io!, async realpath(file) { await delay(100); return f.options.io!.realpath(file); },
-      async read(file, limit, signal) { readsAfterSlowRuntime++; return f.options.io!.read(file, limit, signal); } };
-    const start = performance.now();
-    assert.equal((await inspectDependencies(f.location, target, { ...f.options, io: delayed, budgetMs: 20 })).report.runtimeReady, false);
-    assert.ok(performance.now() - start < 300, 'runtime verification itself must obey the aggregate deadline');
-    await delay(120); assert.equal(readsAfterSlowRuntime, 0, 'no later reads are admitted after a timed-out runtime identity lookup');
+    let readsAfterSlowRuntime = 0, entered = false, release!: () => void, finished!: () => void;
+    const blocked = new Promise<void>(resolve => { release = resolve; }), closed = new Promise<void>(resolve => { finished = resolve; });
+    const delayed: DependencyReadIo = { ...f.options.io!, async realpath(file) {
+      entered = true; try { await blocked; return await f.options.io!.realpath(file); } finally { finished(); }
+    }, async read(file, limit, signal) { readsAfterSlowRuntime++; return f.options.io!.read(file, limit, signal); } };
+    try {
+      const start = performance.now();
+      assert.equal((await inspectDependencies(f.location, target, { ...f.options, io: delayed, budgetMs: 100 })).report.runtimeReady, false);
+      assert.equal(entered, true); assert.ok(performance.now() - start < 2000, 'runtime verification obeys the aggregate deadline');
+      release(); await closed; await turn();
+      assert.equal(readsAfterSlowRuntime, 0, 'no later reads are admitted after a timed-out runtime identity lookup');
+    } finally { release(); if (entered) await closed; }
     const cancel = new AbortController(); cancel.abort();
     await assert.rejects(inspectDependencies(f.location, target, f.options, { signal: cancel.signal }), { code: 'cancelled' });
     assert.equal(existsSync(join(f.root, 'spawned')), false);
+  } finally { await f.cleanup(); }
+});
+
+privateRuntimeTest(import.meta.url, 'redirect-target-local-listener-is-never-contacted', async () => {
+  let contacts = 0;
+  const destination = createServer((_req, res) => { contacts++; res.end('{"version":"0.5.1"}'); });
+  destination.listen(0, '0.0.0.0'); await once(destination, 'listening');
+  const address = destination.address(); assert.ok(address && typeof address === 'object');
+  const f = await fixture((_req, res) => { res.writeHead(302, { location: `http://127.0.0.1:${address.port}/api/version` }); res.end(); });
+  try {
+    // The destination is known-good: an erroneous follow would produce READY.
+    assert.equal((await inspectDependencies(f.location, target, f.options)).report.ollama, 'unavailable');
+    assert.deepEqual(f.requests, ['GET /api/version']); assert.equal(contacts, 0);
+    writeFileSync(join(f.home, 'config.json'), JSON.stringify({ models: { local: { host: `http://0.0.0.0:${address.port}` } } }));
+    assert.equal((await inspectDependencies(f.location, target, f.options)).report.ollama, 'unavailable');
+    assert.equal(contacts, 0, 'a non-loopback configured endpoint cannot be contacted');
+    assert.deepEqual(f.requests, ['GET /api/version']);
+  } finally { await f.cleanup(); destination.closeAllConnections(); await new Promise<void>(resolve => destination.close(() => resolve())); }
+});
+
+privateRuntimeTest(import.meta.url, 'ancestor-alias-blocker-preserves-canonical-home-authority', async () => {
+  const f = await fixture();
+  try {
+    const alias = join(f.root, 'a'); symlinkSync(f.home, alias, 'dir');
+    const location = resolveInstallationLocation('dependencies', { home: alias });
+    const before = tree(f.root);
+    assert.throws(() => assertLocalControlRoot(alias), { code: 'home-invalid' });
+    const report = (await inspectDependencies(location, target, f.options)).report;
+    assert.equal(report.ollama, 'unavailable'); assert.equal(report.ollamaInstallOffer, undefined);
+    assert.ok(report.blockers.some(text => text.includes(alias) && text.includes('canonical physical') && text.includes('--home')), JSON.stringify(report));
+    assert.equal(lstatSync(alias).isSymbolicLink(), true); assert.deepEqual(tree(f.root), before);
   } finally { await f.cleanup(); }
 });

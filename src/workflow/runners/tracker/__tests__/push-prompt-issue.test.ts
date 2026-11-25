@@ -888,3 +888,79 @@ test('REVIEW round-13 HIGH — canonical ref parsing + configured-repo validatio
 		} finally { fx.cleanup(); }
 	}
 });
+
+test('REVIEW round-14 HIGH — the ISSUE execute branch is exhaustive: a missing/changed head refuses; a stale context ref no longer suppresses claim acquisition (the durable reread decides) and is scrubbed so the create prompt never names it; the generic prompt is reachable only after dispatch under an owned claim', async () => {
+	const { pushExecuteRunner } = await import('../index.js');
+	const { readClaim } = await import('../../../tracker/pending-create-claim.js');
+	const { artifactJsonPath, issueArtifactId } = await import('../../../storage.js');
+	const { markApprovedSync } = await import('../../../__tests__/lifecycle-fixtures.js');
+	const { mkdirSync, mkdtempSync, rmSync, writeFileSync, existsSync } = await import('node:fs');
+	const { tmpdir } = await import('node:os');
+	const { join } = await import('node:path');
+
+	const H = '5f9d4ab4c90c0b4c';
+	const mk = (withIssue = true) => {
+		const repo = mkdtempSync(join(tmpdir(), 'insrc-r14-'));
+		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		writeFileSync(join(repo, 'repo-config.json'), JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
+		process.env['INSRC_REPO_CONFIG'] = join(repo, 'repo-config.json');
+		let issue: string | undefined;
+		if (withIssue) {
+			issue = artifactJsonPath(repo, issueArtifactId(H));
+			writeFileSync(issue, JSON.stringify({ meta: { workflow: 'issue', runId: 'i', schemaVersion: 1, issueHash: H, epicHash: H, epicSlug: 's', createdAt: '2026-11-16T07:14:04.399Z', epicCreatedAt: '2026-11-16T07:14:04.399Z', standalone: true }, body: { title: 'T', reproduction: 'r', rootCause: 'c', fixIntent: 'f' }, citations: [] }));
+			markApprovedSync(issue);
+		}
+		return { repo, issue, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+	};
+	const ctxOf = (repo: string, existingRefs?: unknown) => ({
+		intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } },
+		runId: 'run-B',
+		stepOutputs: { s1: { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false, remoteCandidates: [] as unknown[], ...(existingRefs !== undefined ? { existingRefs } : {}) } },
+	}) as never;
+
+	// (a) stale context ref old/repo#41, NO durable ref, empty live discovery -> claim IS acquired (durable reread decides), dispatch recorded, create prompt WITHOUT the stale ref
+	{
+		const fx = mk();
+		try {
+			setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [] }));
+			const ctx = ctxOf(fx.repo, { epicRef: 'old/repo#41', storyRefs: { s1: 'old/repo#41' } });
+			const out = await pushExecuteRunner.run(ctx) as { type: string; prompt?: string; userTurn?: string };
+			assert.equal(out.type, 'llm-pause', 'falls through to the create prompt only because dispatch was recorded under an owned claim');
+			assert.ok(out.prompt!.includes('Create exactly ONE issue'), out.prompt!.slice(0, 200));
+			assert.ok(!out.prompt!.includes('old/repo#41'), 'the stale context ref is scrubbed from the prompt');
+			const claim = readClaim(fx.repo, H);
+			assert.ok(claim !== undefined && claim.runId === 'run-B', 'claim acquired despite the stale context ref');
+			assert.ok(claim!.dispatchedAt !== undefined, 'dispatch recorded before the create prompt');
+			const s1 = (ctx.stepOutputs as { s1: Record<string, unknown> }).s1;
+			assert.equal(s1['claimRunId'], 'run-B');
+			assert.ok(s1['claimFence'] !== undefined, 'owned fence carried for finalize');
+			assert.equal(s1['existingRefs'], undefined, 'stale existingRefs scrubbed from the step output');
+		} finally { fx.cleanup(); }
+	}
+	// (b) stale context ref + discovery finds acme/demo#42 -> validated adoption, not the stale ref
+	{
+		const fx = mk();
+		try {
+			const MARKER = `<!-- insrc:artifact ISSUE-${H} -->`;
+			setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [{ title: `ISSUE-${H} — T`, body: `${MARKER}\n# T`, target: 'acme/demo', ref: 'acme/demo#42' }] }));
+			const out = await pushExecuteRunner.run(ctxOf(fx.repo, { epicRef: 'old/repo#41', storyRefs: { s1: 'old/repo#41' } })) as { type: string; userTurn?: string; prompt?: string };
+			assert.equal(out.type, 'llm-pause');
+			assert.ok(out.userTurn!.includes('ADOPT the marker-verified issue `acme/demo#42`'), out.userTurn!);
+			assert.ok(!out.userTurn!.includes('old/repo#41'));
+		} finally { fx.cleanup(); }
+	}
+	// (c) ISSUE head missing after context assembly -> terminal error, no prompt, no claim
+	{
+		const fx = mk(false);
+		try {
+			setIssueCandidateLookupForTests(async () => ({ ok: true, candidates: [] }));
+			const out = await pushExecuteRunner.run(ctxOf(fx.repo)) as { type: string; code?: string; message?: string; prompt?: string };
+			assert.equal(out.type, 'error');
+			assert.equal(out.code, 'issue-head-missing');
+			assert.match(out.message ?? '', /missing or changed since the push context was assembled/);
+			assert.ok(!out.prompt, 'no mutation prompt without a head');
+			assert.equal(readClaim(fx.repo, H), undefined, 'no claim written');
+			assert.ok(!existsSync(join(fx.repo, '.insrc', 'artifacts', `PENDING-CREATE-${H}.json`)));
+		} finally { fx.cleanup(); }
+	}
+});

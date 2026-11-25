@@ -77,6 +77,18 @@ export const pushExecuteRunner: StepRunner = {
 		if (c.headKind === 'issue') {
 			const head = readDefinitionHead(ctx.intent.repoPath, c.epicHash);
 			const issue = head?.kind === 'issue' ? (head.artifact as IssueArtifact) : undefined;
+			// REVIEW round-14 HIGH: the push context was assembled for an ISSUE
+			// head; if the durable head is now missing or changed, the context is
+			// stale — refuse instead of falling through to a generic create/adopt
+			// prompt with no claim and no live lookup.
+			if (issue === undefined) {
+				return {
+					type: 'error' as const,
+					code: 'issue-head-missing',
+					message: `tracker.push: ISSUE head ${issueArtifactId(c.epicHash)} is missing or changed since the push context was assembled (readDefinitionHead returned ${head === undefined ? 'no head' : `kind '${head.kind}'`}) — re-run tracker.push so the context and head agree`,
+					retryable: false,
+				};
+			}
 			// REVIEW round-4 HIGH-1: the durable-ref recheck and the create-if-absent
 			// claim decision are ONE critical section under the claim mutex — the
 			// same serialization boundary finalization uses — so another process
@@ -87,7 +99,10 @@ export const pushExecuteRunner: StepRunner = {
 			try {
 				durableRef = unitIssueOf(ctx.intent.repoPath, c.epicHash)
 					?? (head?.kind === 'issue' ? readTrackerMeta(definitionHeadJsonPath(ctx.intent.repoPath, c.epicHash))?.issueRef : undefined);
-				if (issue !== undefined && durableRef === undefined && c.existingRefs?.epicRef === undefined) {
+				// REVIEW round-14 HIGH: the claim decision is made from the DURABLE
+				// reread only — a stale context ref (existingRefs.epicRef with no
+				// durable backing) must NOT suppress claim acquisition.
+				if (durableRef === undefined) {
 					const marker = `<!-- insrc:artifact ${issueArtifactId(c.epicHash)} -->`;
 					claim = claimCreateIntent(ctx.intent.repoPath, c.epicHash, ctx.runId, {
 						title: issue.body.title,
@@ -101,6 +116,12 @@ export const pushExecuteRunner: StepRunner = {
 				}
 			} finally {
 				mutex.release();
+			}
+			// REVIEW round-14 HIGH: the durable reread is authoritative — a context
+			// ref with no durable backing is stale; scrub it so the generic prompt
+			// below cannot instruct adopting a ref the durable state does not have.
+			if (durableRef === undefined && c.existingRefs?.epicRef !== undefined) {
+				delete (ctx.stepOutputs['s1'] as Record<string, unknown>)['existingRefs'];
 			}
 			// the currently configured gh target — confirms candidates for legacy
 			// claims whose own persisted target is unknown (round-8 MED)
@@ -349,7 +370,7 @@ export const pushExecuteRunner: StepRunner = {
 					setFence(committedFence);
 				}
 			}
-			if (issue !== undefined && claimResult === undefined) {
+			if (claimResult === undefined) {
 				// existingRefs seeded by the context: reconcile any retained claim
 				// toward adoption — carry a fence only on a successful takeover.
 				const existing = readClaim(ctx.intent.repoPath, c.epicHash);
@@ -357,6 +378,15 @@ export const pushExecuteRunner: StepRunner = {
 					const took = await takeoverAbandonedClaim(ctx.intent.repoPath, c.epicHash, ctx.runId, Date.now());
 					if (took !== undefined && took.runId === ctx.runId) setFence(took.fence);
 				}
+			}
+			// REVIEW round-14 HIGH: the ISSUE execute branch is EXHAUSTIVE — the
+			// generic mutation prompt below is reachable ONLY after recording
+			// dispatch under an OWNED claim this run (claimFence + claimRunId
+			// carried together). Every adoption path returned above through the
+			// validated adoptionPause boundary; any other fall-through refuses.
+			const s1o = ctx.stepOutputs['s1'] as Record<string, unknown>;
+			if (s1o['claimFence'] === undefined || s1o['claimRunId'] !== ctx.runId) {
+				return refused('reached the generic ISSUE mutation prompt without a validated adoption or a dispatched owned claim — the durable reread decides; re-run tracker.push', 'issue-fallthrough-refused');
 			}
 		}
 		return {

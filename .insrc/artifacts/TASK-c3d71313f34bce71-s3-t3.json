@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4128cb16-5b74-44cf-bff0-603c8c50509d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-25T01:51:51.632Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Implement bounded Linux zstd and tar decoding",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#279",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ee6d7eb14b8fc59b90a93daab97f4e6053bb52810bf31647a02f61fb755c2d6a",
+        "at": "2026-11-25T01:51:51.632Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T01:51:51.633Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement bounded Linux zstd and tar decoding",
+    "summary": "Add the pinned bundled fzstd streaming path and validated tar reader for official Linux payloads, reusing existing safe path/inventory patterns and returning controlled layout metadata for later qualified alias materialization.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Pin and bundle the decoder; validate zstd frame/window headers before allocation, enforce its 2^25-byte backreference limit and compressed/expanded/per-file/count/memory bounds, and fail closed on malformed/truncated/multiframe input.",
+      "Canonical tar members reject traversal, absolute/drive/UNC paths, ADS, collisions, device nodes and link escapes before any unsafe write; link metadata is never traversed or created as an on-disk archive link.",
+      "Bound parsing/output chunks and yield/check AbortSignal so cancellation and progress remain responsive; errors leave only contained private staging with no publication.",
+      "Linux extraction never invokes the privileged upstream installer, root/system decompressor, GPU driver setup or model work. Actual large official-archive qualification remains the later route task."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "linux-zstd-large-window-truncation-and-output-bombs-refuse-before-unsafe-write"
+      },
+      {
+        "level": "integration",
+        "name": "linux-tar-path-collision-device-and-link-escape-inputs-stay-contained"
+      },
+      {
+        "level": "integration",
+        "name": "stream-decoding-cancellation-yields-and-leaves-no-published-payload"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

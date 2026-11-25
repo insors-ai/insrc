@@ -1,0 +1,122 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-95187a58-816d-4592-a580-048c6d4b7f2a",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-25T13:45:12.141Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Remove repeated installed-file hashing from dependency validation",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#287",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "82eda2bdd9fb1c583ad4516754b5b2fbeb20999f89287081e4f27d61f3c48736",
+        "at": "2026-11-25T13:45:12.142Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T13:45:12.149Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Remove repeated installed-file hashing from dependency validation",
+    "summary": "Apply the approved S3 verification boundary across staged second-pass validation, installed reuse, reconciliation and service admission. Keep live archive SHA-256 and bounded metadata/layout/header/closure checks without changing public contracts or adding a deep-verification phase.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "Verify exact official compressed archive size/SHA-256 during live acquisition and reject mismatch before publication; preserve bounded contained extraction and qualified layout/target-header checks.",
+      "Remove full-file content hash rereads of staged/extracted/installed Ollama payloads from validation, same-ID reuse, fresh read-only inspection/reconciliation and service admission. Existing streaming member hashes may remain for inventory schema compatibility; small inventory-record digests remain for identity binding.",
+      "Retain canonical bounded receipt/inventory/policy/version/target/archive identity and positive preparation/finite-handoff closure/admission bindings. Preserve safe path/ancestor/link/reparse/regular-file/size/mode/required-layout checks and bounded target header reads. Invalid or uncertain evidence blocks mutation without automatic re-download, overwrite or spawn.",
+      "Read-only inspection and recorded-attempt reconciliation use one aggregate three-second cancellation-aware budget; no twenty-second extension, digest cache, new certificate, parallel hashing worker or new wire field.",
+      "Tests demonstrate no full installed-content reads in inspection/reconciliation/reuse/service admission, including same-size content changes that no longer trigger digest verification; receipt/closure/layout/size/link errors still fail and cancelled/late work never authorizes mutation.",
+      "Preserve stop bypass, terminal exact consent, intentionally retained service semantics and manager ownership. Do not modify Node verification, S1/S2 packaging or host daemon/Ollama. Record this as a corrective follow-up; completed t1-t8 evidence remains historical."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "inspection-and-reconciliation-share-three-second-bound-without-payload-hashing"
+      },
+      {
+        "level": "integration",
+        "name": "receipt-closure-and-layout-errors-block-reuse-without-content-rehash"
+      },
+      {
+        "level": "integration",
+        "name": "same-size-installed-content-change-does-not-trigger-digest-reverification"
+      },
+      {
+        "level": "integration",
+        "name": "archive-digest-mismatch-still-rejects-live-acquisition"
+      },
+      {
+        "level": "integration",
+        "name": "reuse-and-service-admission-never-rehash-installed-files"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a0e57390-2e88-400d-bf35-1aa47a3528fe",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-25T01:51:51.625Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Define private dependency context and qualified offer policy",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#277",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9b2440d360360bb857c32e04a8ee4c8d4dfcf9df72c9b1e5767ecde7c876c865",
+        "at": "2026-11-25T01:51:51.625Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T01:51:51.627Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define private dependency context and qualified offer policy",
+    "summary": "Add S3 private operation/probe context and schema-checked immutable Ollama policy/attempt identity helpers in the proposed dependency modules and existing internal peer contracts. Preserve all foundational wire schemas.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "DependencyReport, DependencyDecision, ManagerRequest and their JSON schemas/protocols remain unchanged; optional internal probe/operation context is source compatible with existing fixtures.",
+      "A qualified entry binds exact target/baseline/version/official immutable URL/SHA256/byte and extraction limits/layout/executable/endpoint/model-log paths/start intent; invalid, incomplete or unqualified entries never generate an offer.",
+      "Canonical offer id binds installation identity/home, target, destination, endpoint, effective side effects and current absence state; encode within the existing token bound.",
+      "Define operation/attempt identity and bounded progress/current-owner/signal context without exposing ControllerStore, release publication, lifecycle, migration or application-data capability."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "dependency-policy-and-offer-bind-exact-target-home-destination-and-side-effects"
+      },
+      {
+        "level": "unit",
+        "name": "private-context-preserves-public-wire-shapes-and-rejects-unowned-install"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-45d87852-2066-409d-8ff1-32dc15cad4de",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-25T01:51:51.646Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Integrate dependency context and exact consent into manager and terminal",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#283",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8ebb657d9e972f61d2de1aac77baf3e2bc0f27e46bab595c9f674dbbe54898a6",
+        "at": "2026-11-25T01:51:51.646Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T01:51:51.648Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Integrate dependency context and exact consent into manager and terminal",
+    "summary": "Thread S3 probe/mutation context through the existing terminal and lock-owning manager, record preparation before side effects, and preserve blocked recovery/cancellation with unchanged public request/report shapes.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Terminal displays version/destination/endpoint/start/model-log side effects and asks Install and start Ollama with default no; only its explicit existing DependencyDecision reaches mutation. IDE flags and ManagerRequest.installOllama cannot grant consent.",
+      "Manager persists the current operation/preparing intent and supplies bound operation/attempt/signal/current-owner/progress context before dependency mutation, while retaining sole controller ownership.",
+      "Recheck consent under lock, reject stale replacements without silent acceptance, preserve dependent cancellation before/after awaited probes/decision and before any later shutdown/publication/service start.",
+      "dependency-uncertain retains a blocked operation and private evidence instead of clearing it. Explicit same-operation recovery reconciles recorded dependency evidence before ordinary continuation and cannot duplicate unconfirmed work.",
+      "Preserve read-only inspect/check-upgrade semantics, stop/recovery bypass of dependency-health checks, actual sibling-port admission, immutable delivery/source identity, and existing ready/lock-release/TUI/cancellation/retry semantics."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "accepted-official-payload-is-user-only-and-discloses-install-and-start"
+      },
+      {
+        "level": "integration",
+        "name": "cancellation-and-eof-block-later-publication-or-service-admission"
+      },
+      {
+        "level": "integration",
+        "name": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions"
+      },
+      {
+        "level": "integration",
+        "name": "dependency-uncertain-recovery-preserves-operation-and-prevents-duplicate-side-effects"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

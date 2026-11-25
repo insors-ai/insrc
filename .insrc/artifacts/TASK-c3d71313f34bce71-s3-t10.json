@@ -1,0 +1,139 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e6c314a2-b62d-4897-8f23-7964c701bda8",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-25T01:51:51.662Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Run the final composed installer regression and reconcile evidence",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#286",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "df64b1f829eeeb72b460a53221e3cdf3fa6bee8e5f842e5fb1912d7f6abc4751",
+        "at": "2026-11-25T13:45:12.140Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T01:51:51.664Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Run the final composed installer regression and reconcile evidence",
+    "summary": "After all implementation and route-qualification tasks, run the complete scoped S1/S2/S3 installer regression once and record exact coverage/fingerprints/build/cleanup evidence plus current limitations.",
+    "size": "M",
+    "order": 11,
+    "acceptanceChecks": [
+      "Run the canonical Node 22 installer test selection only after t1–t9 plus t11 are built and task-local checks pass, including all S1/S2/S3 installer files, installation-home, relevant build/scanner/coordinator and packaging regression cases; no unrelated backend sweep.",
+      "The final audit reconciles exact selected files, discovered/executed test counts with zero skips/failures/cancellations, current source/output fingerprints, successful canonical build and per-admission close/disposal journals with confirmed finite-work cleanup. Include the split archive paths and current S3 production packaging/qualification evidence in the recorded selection and audit.",
+      "Keep intentionally retained dependency-service evidence separate from finite actor closure; fixture tests clean their owned services explicitly and never leave unaccounted work.",
+      "Record real Linux OrbStack exact-route evidence and any separately qualified target results/limits; passing fakes/native host tests do not claim unsupported target/VM/IDE/migration qualification.",
+      "Update story validation evidence and keep the relevant S3 sequence/ownership documentation aligned with any approved implementation refinements. Human final BUILD presentation/approval follows validation and is not a precondition of this task acceptance."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "combined-s1-s2-s3-installer-regression-has-exact-coverage-and-confirmed-cleanup"
+      },
+      {
+        "level": "integration",
+        "name": "terminal-install-upgrade-consent-and-ready-before-tui-regressions"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

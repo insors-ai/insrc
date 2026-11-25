@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b03c735b-f737-45cb-b4b2-e0c7016698a7",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-25T01:51:51.628Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Implement bounded read-only dependency and coding-agent detection",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#278",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "45eec5cd0492976222e73c32184459142830f8f071e7727eadadb71836f791e0",
+        "at": "2026-11-25T01:51:51.628Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T01:51:51.630Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement bounded read-only dependency and coding-agent detection",
+    "summary": "Build truthful runtime/Ollama state inspection and executable-only claude/codex/vibe detection behind the existing DependencyPort, without any installation or provider side effects.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Inspection completes within one 3-second aggregate budget, performs no writes/downloads/spawns, and uses exact owned runtime/target provenance rather than PATH Node/npm.",
+      "Loopback version GET has a 16 KiB response bound, no redirect/credential/remote-host fallback, and accurately distinguishes ready, installed-not-running, missing and unavailable across refused/slow/malformed/permission/configuration cases.",
+      "A ready endpoint without PATH Ollama is reused; a stopped existing binary gets quoted manual serve guidance without an install offer or invented start action; non-ready required dependencies remain visible blockers.",
+      "Bounded absolute candidate/PATH/PATHEXT and known user/macOS-app lookup reports zero/one/many agent binaries, with lookup diagnostics; never execute an agent, authenticate, call models, or make an agent a required blocker.",
+      "Offers appear only for qualified missing routes with clean private destination absence; decline returns unchanged unmet state without mutation."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable"
+      },
+      {
+        "level": "integration",
+        "name": "healthy-service-without-path-binary-is-reused"
+      },
+      {
+        "level": "integration",
+        "name": "inspect-and-decline-have-zero-mutation-or-process-side-effects"
+      },
+      {
+        "level": "unit",
+        "name": "stopped-existing-ollama-has-manual-guidance-without-start-action"
+      },
+      {
+        "level": "unit",
+        "name": "agent-zero-one-many-detection-never-spawns-auth-model-or-install"
+      },
+      {
+        "level": "unit",
+        "name": "private-runtime-provenance-rejects-path-node-and-wrong-target"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

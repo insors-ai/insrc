@@ -1,0 +1,1189 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 26,
+        "contentHash": "8f46ba2a53e14028f423216ed43b2b8a4e3e2ab76aa8311f2c7e599ddbd663b0",
+        "at": "2026-11-25T15:13:05.319Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s3",
+    "createdAt": "2026-11-25T02:01:50.011Z",
+    "updatedAt": "2026-11-25T15:13:05.297Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
+    "revision": 26
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "40f1b0cb5",
+        "ranAt": "2026-11-25T02:01:50.011Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "dependency-policy-and-offer-bind-exact-target-home-destination-and-side-effects",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependency-policy.test.ts",
+                "title": "dependency-policy-and-offer-bind-exact-target-home-destination-and-side-effects",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "private-context-preserves-public-wire-shapes-and-rejects-unowned-install",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependency-policy.test.ts",
+                "title": "private-context-preserves-public-wire-shapes-and-rejects-unowned-install",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/dependency-policy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 429,
+            "titles": [
+              {
+                "title": "dependency-policy-and-offer-bind-exact-target-home-destination-and-side-effects",
+                "result": "pass"
+              },
+              {
+                "title": "private-context-preserves-public-wire-shapes-and-rejects-unowned-install",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "799932404",
+        "ranAt": "2026-11-25T02:19:55.427Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependencies.test.ts",
+                "title": "dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "healthy-service-without-path-binary-is-reused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependencies.test.ts",
+                "title": "healthy-service-without-path-binary-is-reused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "inspect-and-decline-have-zero-mutation-or-process-side-effects",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependencies.test.ts",
+                "title": "inspect-and-decline-have-zero-mutation-or-process-side-effects",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "stopped-existing-ollama-has-manual-guidance-without-start-action",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependencies.test.ts",
+                "title": "stopped-existing-ollama-has-manual-guidance-without-start-action",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "agent-zero-one-many-detection-never-spawns-auth-model-or-install",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependencies.test.ts",
+                "title": "agent-zero-one-many-detection-never-spawns-auth-model-or-install",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "private-runtime-provenance-rejects-path-node-and-wrong-target",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependencies.test.ts",
+                "title": "private-runtime-provenance-rejects-path-node-and-wrong-target",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/dependencies.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 995,
+            "titles": [
+              {
+                "title": "dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "healthy-service-without-path-binary-is-reused",
+                "result": "pass"
+              },
+              {
+                "title": "inspect-and-decline-have-zero-mutation-or-process-side-effects",
+                "result": "pass"
+              },
+              {
+                "title": "stopped-existing-ollama-has-manual-guidance-without-start-action",
+                "result": "pass"
+              },
+              {
+                "title": "agent-zero-one-many-detection-never-spawns-auth-model-or-install",
+                "result": "pass"
+              },
+              {
+                "title": "private-runtime-provenance-rejects-path-node-and-wrong-target",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "0a3e75f20",
+        "ranAt": "2026-11-25T02:42:24.379Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "linux-zstd-large-window-truncation-and-output-bombs-refuse-before-unsafe-write",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-tar.test.ts",
+                "title": "linux-zstd-large-window-truncation-and-output-bombs-refuse-before-unsafe-write",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "linux-tar-path-collision-device-and-link-escape-inputs-stay-contained",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-tar.test.ts",
+                "title": "linux-tar-path-collision-device-and-link-escape-inputs-stay-contained",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "stream-decoding-cancellation-yields-and-leaves-no-published-payload",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-tar.test.ts",
+                "title": "stream-decoding-cancellation-yields-and-leaves-no-published-payload",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/ollama-tar.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 558,
+            "titles": [
+              {
+                "title": "linux-zstd-large-window-truncation-and-output-bombs-refuse-before-unsafe-write",
+                "result": "pass"
+              },
+              {
+                "title": "linux-tar-path-collision-device-and-link-escape-inputs-stay-contained",
+                "result": "pass"
+              },
+              {
+                "title": "stream-decoding-cancellation-yields-and-leaves-no-published-payload",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "3bf6dacc8",
+        "ranAt": "2026-11-25T03:11:23.291Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "qualified-zip-app-layout-requires-correct-executable-and-library-closure",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-archive.test.ts",
+                "title": "qualified-zip-app-layout-requires-correct-executable-and-library-closure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "internal-archive-links-materialize-only-qualified-contained-files",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-archive.test.ts",
+                "title": "internal-archive-links-materialize-only-qualified-contained-files",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "zip-and-layout-escapes-collisions-and-abort-preserve-existing-bytes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-archive.test.ts",
+                "title": "zip-and-layout-escapes-collisions-and-abort-preserve-existing-bytes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/ollama-archive.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 776,
+            "titles": [
+              {
+                "title": "qualified-zip-app-layout-requires-correct-executable-and-library-closure",
+                "result": "pass"
+              },
+              {
+                "title": "internal-archive-links-materialize-only-qualified-contained-files",
+                "result": "pass"
+              },
+              {
+                "title": "zip-and-layout-escapes-collisions-and-abort-preserve-existing-bytes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "75f18ecb4",
+        "ranAt": "2026-11-25T03:58:20.094Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "stale-forged-and-cross-home-offers-reject-before-mutation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-prepare.test.ts",
+                "title": "stale-forged-and-cross-home-offers-reject-before-mutation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-prepare.test.ts",
+                "title": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "download-size-digest-layout-and-fsync-failures-never-report-ready",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-prepare.test.ts",
+                "title": "download-size-digest-layout-and-fsync-failures-never-report-ready",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "finite-actor-closure-uncertainty-blocks-retry-and-cleanup",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-prepare.test.ts",
+                "title": "finite-actor-closure-uncertainty-blocks-retry-and-cleanup",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "private-preparation-cancellation-blocks-later-publication",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-prepare.test.ts",
+                "title": "private-preparation-cancellation-blocks-later-publication",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/ollama-prepare.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2326,
+            "titles": [
+              {
+                "title": "stale-forged-and-cross-home-offers-reject-before-mutation",
+                "result": "pass"
+              },
+              {
+                "title": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state",
+                "result": "pass"
+              },
+              {
+                "title": "download-size-digest-layout-and-fsync-failures-never-report-ready",
+                "result": "pass"
+              },
+              {
+                "title": "finite-actor-closure-uncertainty-blocks-retry-and-cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "private-preparation-cancellation-blocks-later-publication",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "230cffc6c",
+        "ranAt": "2026-11-25T11:58:40.245Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "service-admission-is-durable-and-distinct-from-finite-preparation-drain",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-service.test.ts",
+                "title": "service-admission-is-durable-and-distinct-from-finite-preparation-drain",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-service.test.ts",
+                "title": "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-service.test.ts",
+                "title": "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "service-admission-cancellation-retains-only-explicitly-accepted-service-intent",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-service.test.ts",
+                "title": "service-admission-cancellation-retains-only-explicitly-accepted-service-intent",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/ollama-service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13821,
+            "titles": [
+              {
+                "title": "service-admission-is-durable-and-distinct-from-finite-preparation-drain",
+                "result": "pass"
+              },
+              {
+                "title": "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn",
+                "result": "pass"
+              },
+              {
+                "title": "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener",
+                "result": "pass"
+              },
+              {
+                "title": "service-admission-cancellation-retains-only-explicitly-accepted-service-intent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "bb6fc62b0",
+        "ranAt": "2026-11-25T12:17:45.052Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "accepted-official-payload-is-user-only-and-discloses-install-and-start",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependency-integration.test.ts",
+                "title": "accepted-official-payload-is-user-only-and-discloses-install-and-start",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cancellation-and-eof-block-later-publication-or-service-admission",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependency-integration.test.ts",
+                "title": "cancellation-and-eof-block-later-publication-or-service-admission",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependency-integration.test.ts",
+                "title": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/manager.test.ts",
+                "title": "stop and interrupted stop recovery bypass dependency health and payload checks",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/terminal-install.test.ts",
+                "title": "ready commit and lock release precede same terminal installed TUI",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "dependency-uncertain-recovery-preserves-operation-and-prevents-duplicate-side-effects",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependency-integration.test.ts",
+                "title": "dependency-uncertain-recovery-preserves-operation-and-prevents-duplicate-side-effects",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/dependency-integration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13471,
+            "titles": [
+              {
+                "title": "accepted-official-payload-is-user-only-and-discloses-install-and-start",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation-and-eof-block-later-publication-or-service-admission",
+                "result": "pass"
+              },
+              {
+                "title": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions",
+                "result": "pass"
+              },
+              {
+                "title": "dependency-uncertain-recovery-preserves-operation-and-prevents-duplicate-side-effects",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/manager.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3506,
+            "titles": [
+              {
+                "title": "cancellation at pre-shutdown observation and control admission sends no shutdown",
+                "result": "pass"
+              },
+              {
+                "title": "install is rejected even with a forged source/bootstrap marker",
+                "result": "pass"
+              },
+              {
+                "title": "required peer admission and exact offer state transitions fail closed",
+                "result": "pass"
+              },
+              {
+                "title": "manager death and candidate journal receipt projections cannot start duplicate runner",
+                "result": "pass"
+              },
+              {
+                "title": "corrupt controller revisions and immutable candidate mismatches fail closed",
+                "result": "pass"
+              },
+              {
+                "title": "owned manager self exit leaves candidate running and recovery needs actual wrapper exit receipt",
+                "result": "pass"
+              },
+              {
+                "title": "ordinary manager executable rejects forged install and terminal entry rejects redirected streams",
+                "result": "pass"
+              },
+              {
+                "title": "preparation receives no controller writer and post-drain tampering blocks migration",
+                "result": "pass"
+              },
+              {
+                "title": "free lease or unreachable endpoint alone cannot authorize ordinary startup",
+                "result": "pass"
+              },
+              {
+                "title": "explicit failed-hook recovery requires real prior exit and owning hook retry policy",
+                "result": "pass"
+              },
+              {
+                "title": "late foreign revision cannot be overwritten by readiness or error persistence",
+                "result": "pass"
+              },
+              {
+                "title": "stop and interrupted stop recovery bypass dependency health and payload checks",
+                "result": "pass"
+              },
+              {
+                "title": "pre-admission manager self exit recovers install and upgrade without duplicate hooks",
+                "result": "pass"
+              },
+              {
+                "title": "missing launch metadata in a later phase cannot masquerade as preparation recovery",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/terminal-install.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3855,
+            "titles": [
+              {
+                "title": "terminal installer requires all TTY streams and absent dev adapter fails explicitly",
+                "result": "pass"
+              },
+              {
+                "title": "ready commit and lock release precede same terminal installed TUI",
+                "result": "pass"
+              },
+              {
+                "title": "cancel install failure and post install TUI error preserve correct outcome",
+                "result": "pass"
+              },
+              {
+                "title": "terminal consent binds exact dependency offer and never installs coding CLIs",
+                "result": "pass"
+              },
+              {
+                "title": "installed launcher preserves existing files and quotes exact private-runtime retry",
+                "result": "pass"
+              },
+              {
+                "title": "terminal cancellation settles owned work and suppresses later TUI handoff",
+                "result": "pass"
+              },
+              {
+                "title": "terminal upgrade retains delivery and rejects stale dependency consent before disruption",
+                "result": "pass"
+              },
+              {
+                "title": "successor upgrade replaces its owned launcher and preserves ready selection",
+                "result": "pass"
+              },
+              {
+                "title": "saved installer selects candidate control runtime and exact post-install retry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "9c6fbc1a8",
+        "ranAt": "2026-11-25T12:24:51.978Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/production-peers.test.ts",
+                "title": "production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/installed-dev.test.ts",
+                "title": "bundle-offer-receipt-and-required-sibling-admission-regressions-preserved",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "published-control-payload-includes-real-dependency-adapter-without-application-boot-imports",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/production-peers.test.ts",
+                "title": "published-control-payload-includes-real-dependency-adapter-without-application-boot-imports",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "both-control-entrypoints-use-identical-installation-bound-dependency-policy",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/production-peers.test.ts",
+                "title": "both-control-entrypoints-use-identical-installation-bound-dependency-policy",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/installed-dev.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 31346,
+            "titles": [
+              {
+                "title": "dev-open-verify-and-fresh-manager-reopen-never-fetch-or-build",
+                "result": "pass"
+              },
+              {
+                "title": "dev-common-handoff-selects-candidate-bootstrap-runtime-and-retains-mode",
+                "result": "pass"
+              },
+              {
+                "title": "bundle-offer-receipt-and-required-sibling-admission-regressions-preserved",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/production-peers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8795,
+            "titles": [
+              {
+                "title": "production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5",
+                "result": "pass"
+              },
+              {
+                "title": "published-control-payload-includes-real-dependency-adapter-without-application-boot-imports",
+                "result": "pass"
+              },
+              {
+                "title": "both-control-entrypoints-use-identical-installation-bound-dependency-policy",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "60a3752db",
+        "ranAt": "2026-11-25T13:49:58.938Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "inspection-and-reconciliation-share-three-second-bound-without-payload-hashing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-validation.test.ts",
+                "title": "inspection-and-reconciliation-share-three-second-bound-without-payload-hashing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "receipt-closure-and-layout-errors-block-reuse-without-content-rehash",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-validation.test.ts",
+                "title": "receipt-closure-and-layout-errors-block-reuse-without-content-rehash",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "same-size-installed-content-change-does-not-trigger-digest-reverification",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-validation.test.ts",
+                "title": "same-size-installed-content-change-does-not-trigger-digest-reverification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "archive-digest-mismatch-still-rejects-live-acquisition",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-validation.test.ts",
+                "title": "archive-digest-mismatch-still-rejects-live-acquisition",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reuse-and-service-admission-never-rehash-installed-files",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-service.test.ts",
+                "title": "reuse-and-service-admission-never-rehash-installed-files",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/ollama-service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 16759,
+            "titles": [
+              {
+                "title": "reuse-and-service-admission-never-rehash-installed-files",
+                "result": "pass"
+              },
+              {
+                "title": "service-admission-is-durable-and-distinct-from-finite-preparation-drain",
+                "result": "pass"
+              },
+              {
+                "title": "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn",
+                "result": "pass"
+              },
+              {
+                "title": "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener",
+                "result": "pass"
+              },
+              {
+                "title": "service-admission-cancellation-retains-only-explicitly-accepted-service-intent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-validation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11261,
+            "titles": [
+              {
+                "title": "inspection-and-reconciliation-share-three-second-bound-without-payload-hashing",
+                "result": "pass"
+              },
+              {
+                "title": "same-size-installed-content-change-does-not-trigger-digest-reverification",
+                "result": "pass"
+              },
+              {
+                "title": "receipt-closure-and-layout-errors-block-reuse-without-content-rehash",
+                "result": "pass"
+              },
+              {
+                "title": "archive-digest-mismatch-still-rejects-live-acquisition",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "8e2534b48",
+        "ranAt": "2026-11-25T14:14:45.347Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "qualified-exact-ollama-payload-version-and-user-session-readiness-on-enabled-target",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json"
+            }
+          },
+          {
+            "name": "existing-installation-reuse-and-decline-preserve-platform-state",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json"
+            }
+          },
+          {
+            "name": "official-large-archive-streaming-and-library-layout-match-policy",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json"
+            }
+          },
+          {
+            "name": "enabled-target-policy-requires-matching-native-evidence-and-mandatory-linux-route",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-catalog.test.ts",
+                "title": "enabled-target-policy-requires-matching-native-evidence-and-mandatory-linux-route",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-service.test.ts",
+                "title": "transient-presence-probe-timeout-preserves-service-readiness-window",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-catalog.test.ts",
+                "title": "manual-user-level-guidance-preserves-disabled-target-status",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "native-large-payload-inspection-avoids-content-reads-within-three-seconds",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json"
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/ollama-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3043,
+            "titles": [
+              {
+                "title": "enabled-target-policy-requires-matching-native-evidence-and-mandatory-linux-route",
+                "result": "pass"
+              },
+              {
+                "title": "manual-user-level-guidance-preserves-disabled-target-status",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 22159,
+            "titles": [
+              {
+                "title": "reuse-and-service-admission-never-rehash-installed-files",
+                "result": "pass"
+              },
+              {
+                "title": "transient-presence-probe-timeout-preserves-service-readiness-window",
+                "result": "pass"
+              },
+              {
+                "title": "service-admission-is-durable-and-distinct-from-finite-preparation-drain",
+                "result": "pass"
+              },
+              {
+                "title": "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn",
+                "result": "pass"
+              },
+              {
+                "title": "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener",
+                "result": "pass"
+              },
+              {
+                "title": "service-admission-cancellation-retains-only-explicitly-accepted-service-intent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "c3e167d66",
+        "ranAt": "2026-11-25T15:13:05.297Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "combined-s1-s2-s3-installer-regression-has-exact-coverage-and-confirmed-cleanup",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/s3-dependency-setup-validation-2026-11-25.json"
+            }
+          },
+          {
+            "name": "terminal-install-upgrade-consent-and-ready-before-tui-regressions",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/terminal-install.test.ts",
+                "title": "ready commit and lock release precede same terminal installed TUI",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/terminal-install.test.ts",
+                "title": "terminal consent binds exact dependency offer and never installs coding CLIs",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/terminal-install.test.ts",
+                "title": "terminal upgrade retains delivery and rejects stale dependency consent before disruption",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/terminal-install.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3686,
+            "titles": [
+              {
+                "title": "terminal installer requires all TTY streams and absent dev adapter fails explicitly",
+                "result": "pass"
+              },
+              {
+                "title": "ready commit and lock release precede same terminal installed TUI",
+                "result": "pass"
+              },
+              {
+                "title": "cancel install failure and post install TUI error preserve correct outcome",
+                "result": "pass"
+              },
+              {
+                "title": "terminal consent binds exact dependency offer and never installs coding CLIs",
+                "result": "pass"
+              },
+              {
+                "title": "installed launcher preserves existing files and quotes exact private-runtime retry",
+                "result": "pass"
+              },
+              {
+                "title": "terminal cancellation settles owned work and suppresses later TUI handoff",
+                "result": "pass"
+              },
+              {
+                "title": "terminal upgrade retains delivery and rejects stale dependency consent before disruption",
+                "result": "pass"
+              },
+              {
+                "title": "successor upgrade replaces its owned launcher and preserves ready selection",
+                "result": "pass"
+              },
+              {
+                "title": "saved installer selects candidate control runtime and exact post-install retry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

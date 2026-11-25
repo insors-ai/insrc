@@ -1,0 +1,122 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bfd39409-55a0-4412-9fa2-3e6f8ae00beb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-25T01:51:51.638Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Prepare and durably publish immutable private Ollama payloads",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#281",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "97af5ffa5e23ca2887b8caf9533a130d3f4766772b6d1e634a493c89a2dc273f",
+        "at": "2026-11-25T13:45:12.085Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T01:51:51.641Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Prepare and durably publish immutable private Ollama payloads",
+    "summary": "Implement consent-rechecked bounded download, private staging, bounded inventory/receipt identity validation, finite owned-work drain and exclusive durable publication under the manager-supplied S3 context.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Production install acceptance requires valid manager-owned operation context and exact current offer; recompute before first side effect and immediately before publication; policy/path/endpoint/existing-install races reject stale.",
+      "Download enforces exact bytes/SHA256/HTTPS and S3 asset limits without inheriting an inappropriate S1 bundle cap; overall finite preparation deadline is 20 minutes and cleanup deadline is 5 seconds with bounded diagnostics.",
+      "Derive contained user-owned staging, payload and attempt paths from the selected home; safe inventory/layout validation precedes publication and same-id reuse requires receipt/inventory/target metadata and positive preparation closure to agree; t11 removes redundant installed-content rereads.",
+      "Flush payload/receipt files, bottom-up directories and source/destination parents using existing filesystem-only durability and non-replacing publication; publication/fsync uncertainty never becomes false success or overwrite.",
+      "Abort/EOF/current-owner loss prevents later admission, drains finite work and deletes only proven-private unpublished staging after positive closure. Unknown admitted/cooperating actor closure retains evidence and returns dependency-uncertain for manager blocking.",
+      "Adapter writes private dependency records only; incumbent daemon release/data/running intent and existing Ollama binaries/services remain untouched."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "stale-forged-and-cross-home-offers-reject-before-mutation"
+      },
+      {
+        "level": "integration",
+        "name": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state"
+      },
+      {
+        "level": "integration",
+        "name": "download-size-digest-layout-and-fsync-failures-never-report-ready"
+      },
+      {
+        "level": "integration",
+        "name": "finite-actor-closure-uncertainty-blocks-retry-and-cleanup"
+      },
+      {
+        "level": "integration",
+        "name": "private-preparation-cancellation-blocks-later-publication"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-83eb2432-a94d-4c49-a1a9-243f4039d5a4",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-25T01:51:51.651Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Compose and package the real dependency adapter in both control entrypoints",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#284",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ebfae0408b511b8e7157e197e995b9fc966ea5cd49cd088519e427c2c6aa5212",
+        "at": "2026-11-25T01:51:51.651Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T01:51:51.653Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Compose and package the real dependency adapter in both control entrypoints",
+    "summary": "Wire S3 into productionPeers and package its policy/decoder/helpers into target-specific manager/bootstrap artifacts, retaining real S1/S2 delivery and explicit missing S4/S5 capabilities.",
+    "size": "S",
+    "order": 8,
+    "acceptanceChecks": [
+      "Both existing managerMain and terminalMain productionPeers callers obtain the same installation/target-bound production dependency adapter; factory construction performs no probes, writes, installs or provider boot.",
+      "Keep actual bundle/dev adapters and exact private-runtime provenance; lifecycle/migration peers remain absent until their owning stories supply them, with truthful capability-unavailable rather than fixture success.",
+      "Update only directly affected installed-dev composition/asset expectations; package the pinned decoder/policy and proposed dependency helpers without importing daemon/indexer/config-store/provider/DB application boot.",
+      "Fresh target-control process can load/inspect the S3 adapter through its private runtime with no host Node/npm/tool dependency, no broad spawn-scanner exemption and no changed daemon IPC or IDE install flow."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5"
+      },
+      {
+        "level": "smoke",
+        "name": "published-control-payload-includes-real-dependency-adapter-without-application-boot-imports"
+      },
+      {
+        "level": "integration",
+        "name": "both-control-entrypoints-use-identical-installation-bound-dependency-policy"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

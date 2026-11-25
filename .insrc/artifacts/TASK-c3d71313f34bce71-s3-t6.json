@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9e52e22c-098f-400f-aa09-3a229eb0eb5f",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-25T01:51:51.642Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Implement consented user-session service handoff and reconciliation",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#282",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f0d30c035f99384392fcea9cc8ba9307b62665da4f488be8d1dc0702d2bfc891",
+        "at": "2026-11-25T01:51:51.643Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T01:51:51.644Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement consented user-session service handoff and reconciliation",
+    "summary": "Start only the accepted qualified private Ollama executable, separate its intentional retained lifetime from finite preparation, and reconcile interrupted attempt/receipt/endpoint state without replaying uncertain work.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Verify the immutable published payload and reprobe existing service before durable service-start admission; a healthy existing service is reused without spawn, stop or replacement.",
+      "After explicit install-and-start consent and immediately rechecked cancellation/owner state, launch only the absolute qualified executable with argv and scoped sanitized OLLAMA_HOST/OLLAMA_MODELS/log environment; no shell, global PATH, system service or implicit models.",
+      "Record service admission before spawn and truthful outcome/readiness after it; a 30-second version probe checks availability, and spawn/exit/port/timeout errors never claim endpoint process ownership or authorize stopping another listener.",
+      "Finite preparation drain excludes only the explicitly recorded intentionally retained service; cancellation before admission forbids launch, while later cancellation halts installer continuation and describes retained installed/unverified service state without promising rollback.",
+      "Fresh-process inspection of interrupted attempts validates identities/inventory/receipt and current endpoint without automatic download/spawn. Reuse ready service, diagnose a proven stopped binary, and block unresolved finite actors or ambiguous admitted launch until evidence reconciles.",
+      "Retries do not create a second unconfirmed service or replace payload identity; no PID/age/free-lock/log-line inference, application DB access or daemon lifecycle operation is introduced."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "service-admission-is-durable-and-distinct-from-finite-preparation-drain"
+      },
+      {
+        "level": "integration",
+        "name": "interrupted-attempt-reconciles-existing-receipt-without-duplicate-download-or-spawn"
+      },
+      {
+        "level": "integration",
+        "name": "owned-service-start-port-conflict-and-readiness-failure-preserve-existing-listener"
+      },
+      {
+        "level": "integration",
+        "name": "service-admission-cancellation-retains-only-explicitly-accepted-service-intent"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

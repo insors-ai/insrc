@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-90b06a71-84c1-49bd-bf6e-e1b5faf5faa8",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-25T01:51:51.655Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Qualify the Linux OrbStack dependency route and gate other exact targets",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#285",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "ec29e664928409387123cd124944b165bf7c6564246b1d2297f5cadba4e4d802",
+        "at": "2026-11-25T13:45:12.126Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T01:51:51.659Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Qualify the Linux OrbStack dependency route and gate other exact targets",
+    "summary": "Exercise the completed S3 adapter with a pinned official Ollama payload in a disposable Linux ARM64 OrbStack guest, enable that exact passing route, and record evidence/limitations for the planned macOS/Windows/native-x64 routes.",
+    "size": "L",
+    "order": 10,
+    "acceptanceChecks": [
+      "Provision/use a disposable Linux ARM64 OrbStack environment and actually install the exact official payload with the selected private Node toolchain, exercising large archive/library layout, executable version and user-session readiness without models/elevation/global writes.",
+      "Record exact version/URL/SHA256/compressed-expanded sizes/target-baseline/native-versus-translated status, decoder limits, private filesystem/argv/env/log results, reuse/decline and finite cleanup/retained-service evidence; enable Linux auto-install only for the route actually qualified.",
+      "A Linux payload/decoder/platform failure is a real story blocker requiring diagnosis or user-directed design correction, not a fabricated pass or silent removal of Linux support.",
+      "For each planned darwin/linux/win32 × arm64/x64 target, record either native exact-policy payload qualification before offer enablement or a concrete pending/unavailable/unsupported reason and manual user-level guidance. Use the existing macOS ARM64 UTM guest and genuine available Windows/native-x64 runners for dependency-only validation; translated evidence is explicitly labeled and cannot certify native gaps. A missing optional environment cannot silently enable a route or hide the required Linux result.",
+      "Do not mutate/restart installed host daemon/Ollama or claim full daemon installation, migration, IDE, signing or complete S8 platform-matrix qualification. Preserve all Linux/macOS/Windows targets in the plan and evidence table.",
+      "Re-run fresh-process inspection on the actual multi-GB private payload with the corrected no-rehash code; record total inspection latency and absence of full payload content reads under the existing three-second target. Preserve historical cold full-hash failure as superseded evidence, never relabel it passed. Enable only the currently qualified route."
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "qualified-exact-ollama-payload-version-and-user-session-readiness-on-enabled-target"
+      },
+      {
+        "level": "live",
+        "name": "existing-installation-reuse-and-decline-preserve-platform-state"
+      },
+      {
+        "level": "live",
+        "name": "official-large-archive-streaming-and-library-layout-match-policy"
+      },
+      {
+        "level": "unit",
+        "name": "enabled-target-policy-requires-matching-native-evidence-and-mandatory-linux-route"
+      },
+      {
+        "level": "live",
+        "name": "native-large-payload-inspection-avoids-content-reads-within-three-seconds"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

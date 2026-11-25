@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-f559f4c7-748c-47de-b1a5-b1795c7537ed",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-25T13:18:35.841Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ed3ac53cff2d3c219a806f62b85358065b090cf0d1635167a3296f2931e90111",
+        "at": "2026-11-25T13:18:35.841Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T13:45:11.671Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-0765b3a578e43eec-1",
+    "epicSlug": "add-dedicated-security-reviews",
+    "hldBaseRunId": "wf-1795324517306-yi2irl",
+    "amendment": {
+      "type": "nonFunctional.retarget",
+      "property": "security",
+      "oldTarget": "s2 and s3 run with the SAME host access as the controller itself (explicit user direction: sandboxing or constraining the reviewer degrades the review's own accuracy, applied across this Epic's design) -- neither attempts network or filesystem confinement, and this codebase has no sandbox/network-namespace infrastructure to build such confinement on in any case. s2 records, per manager, which destination was actually reached and what was disclosed, attaching that to SecurityAdvisoryEvidence for audit; this is observability, not an enforced boundary, and is NOT a basis for refusing to run a manager. s2's per-manager input/mode mapping (manifest-scoped for npm/pnpm/yarn/cargo; the repository's own resolved environment for pip/pipenv/poetry, since pip-audit otherwise audits the ambient active environment; the repository's own module source for go, since govulncheck performs source-level analysis) is retained as a CORRECTNESS requirement -- pointing each tool at the right target -- not an isolation one; a manager outside that mapping is still an explicit coverage gap, because s2 cannot correctly target it, not because it cannot be confined. s3's code-vulnerability pass is dispatched through CliProvider.runReadOnlySession with the same access level every other CLI-backed session in this codebase already has; no additional credential/out-of-scope/MCP denial or negative-access test gates dispatch. contentIdentity remains a hard, non-negotiable CORRECTNESS invariant, unrelated to the access-level decision: s2 and s3 must operate against the exact same pinned content, computed by hashing the complete, required input set's actual bytes directly (never inferred from git status alone, which can miss a tracked file marked assume-unchanged) -- s3 recomputes and verifies this identity before trusting s2's evidence, refusing ONLY on an actual content mismatch.",
+      "newTarget": "s2 runs with the SAME host access as the controller itself (explicit user direction: sandboxing or constraining the reviewer degrades the review's own accuracy, applied across this Epic's design) -- it attempts no network or filesystem confinement, and this codebase has no sandbox/network-namespace infrastructure to build such confinement on in any case. s2 records, per manager, which destination was actually reached and what was disclosed, attaching that to SecurityAdvisoryEvidence for audit; this is observability, not an enforced boundary, and is NOT a basis for refusing to run a manager. s2's per-manager input/mode mapping (manifest-scoped for npm/pnpm/yarn/cargo; the repository's own resolved environment for pip/pipenv/poetry, since pip-audit otherwise audits the ambient active environment; the repository's own module source for go, since govulncheck performs source-level analysis) is retained as a CORRECTNESS requirement -- pointing each tool at the right target -- not an isolation one; a manager outside that mapping is still an explicit coverage gap, because s2 cannot correctly target it, not because it cannot be confined. s3's code-vulnerability pass is dispatched through CliProvider.runReadOnlySession under an explicit capabilityPolicy gate: the security role requires strict-read-analyze, and a provider that is not qualified to enforce that policy (including Codex, until its complete effective tool surface is qualified by real behavioral verification) is REJECTED before inference starts with an actionable error, never silently downgraded or swapped to another provider. The generic build-validate judge is unaffected -- it keeps its separately-accepted, weaker write-sandboxed default. Strict-mode retries never recover by leaving the effective capability set outside policy. contentIdentity remains a hard, non-negotiable CORRECTNESS invariant, unrelated to the access-level decision: s2 and s3 must operate against the exact same pinned content, computed by hashing the complete, required input set's actual bytes directly (never inferred from git status alone, which can miss a tracked file marked assume-unchanged) -- s3 recomputes and verifies this identity before trusting s2's evidence, refusing ONLY on an actual content mismatch.",
+      "breaking": false
+    },
+    "rationale": "The user explicitly asked to fix the HLD's own text, which still read as contradicting the LLD after the prior pending amendment (revision 6) added a fail-closed capabilityPolicy gate to s3's CliProvider.runReadOnlySession dispatch. This amendment carries no functional/contract change of its own -- it only corrects the one stale sentence describing s3's dispatch access level so the HLD and LLD stop contradicting each other.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1795612357735-2c87nm",
+      "storyId": "s3",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-11-25T13:18:35.839Z"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": ".insrc/artifacts/HLD-0765b3a578e43eec.json#body.nonFunctional.security"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/epics/add-dedicated-security-reviews-E202611100765b3a5/S003/LLD.md"
+    }
+  ]
+}

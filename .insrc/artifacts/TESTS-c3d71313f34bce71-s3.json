@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 43,
-        "contentHash": "61c62c5f6b0305349c7a18389546f8fd64f6c235a8b296aac85c9d3f49847748",
-        "at": "2026-11-25T20:24:36.769Z",
+        "number": 44,
+        "contentHash": "b3ff160fb30dde855e80e254b06ca72f86c9a5db10e4ef3c56407642b3c6f4a4",
+        "at": "2026-11-25T21:02:40.601Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "c3d71313f34bce71",
     "storyId": "s3",
     "createdAt": "2026-11-25T02:01:50.011Z",
-    "updatedAt": "2026-11-25T20:24:36.749Z",
+    "updatedAt": "2026-11-25T21:02:40.581Z",
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
-    "revision": 43
+    "revision": 44
   },
   "body": {
     "tasks": [
@@ -3102,6 +3102,222 @@
               },
               {
                 "title": "native-evidence-validator-rejects-raw-response-inconsistency",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t18",
+        "commit": "69f9dc03d",
+        "ranAt": "2026-11-25T21:02:40.581Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "private-runtime-provenance-rejects-path-node-and-wrong-target",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependencies.test.ts",
+                "title": "private-runtime-provenance-rejects-path-node-and-wrong-target",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/production-peers.test.ts",
+                "title": "production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "combined-s1-s2-s3-installer-regression-has-exact-coverage-and-confirmed-cleanup",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/installer-s2-qualification.test.ts",
+                "title": "combined-s1-s2-s3-installer-regression-has-exact-coverage-and-confirmed-cleanup",
+                "result": "pass"
+              }
+            ],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/s3-final-regression-2026-11-26.json; .insrc/tmp/s3-final-audit.log; raw final run 3cdda64a-f71b-40ea-a4c7-336a32dce819"
+            }
+          },
+          {
+            "name": "published-control-payload-includes-real-dependency-adapter-without-application-boot-imports",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/production-peers.test.ts",
+                "title": "published-control-payload-includes-real-dependency-adapter-without-application-boot-imports",
+                "result": "pass"
+              }
+            ],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/s3-final-regression-2026-11-26.json; final production-peers and publisher TAP logs"
+            }
+          },
+          {
+            "name": "terminal-install-upgrade-consent-and-ready-before-tui-regressions",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/terminal-install.test.ts",
+                "title": "ready commit and lock release precede same terminal installed TUI",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/terminal-install.test.ts",
+                "title": "terminal upgrade retains delivery and rejects stale dependency consent before disruption",
+                "result": "pass"
+              }
+            ],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/s3-final-regression-2026-11-26.json; final terminal-install and install-retry TAP logs"
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/installer-s2-qualification.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1276,
+            "titles": [
+              {
+                "title": "combined-s1-s2-s3-installer-regression-has-exact-coverage-and-confirmed-cleanup",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/dependencies.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 17957,
+            "titles": [
+              {
+                "title": "dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "healthy-service-without-path-binary-is-reused",
+                "result": "pass"
+              },
+              {
+                "title": "inspect-and-decline-have-zero-mutation-or-process-side-effects",
+                "result": "pass"
+              },
+              {
+                "title": "stopped-existing-ollama-has-manual-guidance-without-start-action",
+                "result": "pass"
+              },
+              {
+                "title": "agent-zero-one-many-detection-never-spawns-auth-model-or-install",
+                "result": "pass"
+              },
+              {
+                "title": "private-runtime-provenance-rejects-path-node-and-wrong-target",
+                "result": "pass"
+              },
+              {
+                "title": "redirect-target-local-listener-is-never-contacted",
+                "result": "pass"
+              },
+              {
+                "title": "ancestor-alias-blocker-preserves-canonical-home-authority",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/production-peers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7360,
+            "titles": [
+              {
+                "title": "production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5",
+                "result": "pass"
+              },
+              {
+                "title": "published-control-payload-includes-real-dependency-adapter-without-application-boot-imports",
+                "result": "pass"
+              },
+              {
+                "title": "both-control-entrypoints-use-identical-installation-bound-dependency-policy",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/terminal-install.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3582,
+            "titles": [
+              {
+                "title": "terminal installer requires all TTY streams and absent dev adapter fails explicitly",
+                "result": "pass"
+              },
+              {
+                "title": "ready commit and lock release precede same terminal installed TUI",
+                "result": "pass"
+              },
+              {
+                "title": "cancel install failure and post install TUI error preserve correct outcome",
+                "result": "pass"
+              },
+              {
+                "title": "terminal consent binds exact dependency offer and never installs coding CLIs",
+                "result": "pass"
+              },
+              {
+                "title": "installed launcher preserves existing files and quotes exact private-runtime retry",
+                "result": "pass"
+              },
+              {
+                "title": "terminal cancellation settles owned work and suppresses later TUI handoff",
+                "result": "pass"
+              },
+              {
+                "title": "terminal upgrade retains delivery and rejects stale dependency consent before disruption",
+                "result": "pass"
+              },
+              {
+                "title": "successor upgrade replaces its owned launcher and preserves ready selection",
+                "result": "pass"
+              },
+              {
+                "title": "saved installer selects candidate control runtime and exact post-install retry",
+                "result": "pass"
+              },
+              {
+                "title": "coding-cli-advice-emitted-once-and-install-spawn-sentinels-remain-zero",
                 "result": "pass"
               }
             ],

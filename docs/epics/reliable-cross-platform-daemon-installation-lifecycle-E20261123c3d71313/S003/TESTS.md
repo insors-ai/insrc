@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 134 pass, 0 fail, 0 skipped, 0 not found; 11 reported by the builder and not run by the gate.
+**Totals:** 140 pass, 0 fail, 0 skipped, 0 not found; 14 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -834,3 +834,53 @@ Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-
 | `src/installer/__tests__/dependency-integration.test.ts` | 0 | 6 | 17 s |  |
 | `src/installer/__tests__/ollama-catalog.test.ts` | 0 | 2 | 2.8 s |  |
 | `src/installer/__tests__/ollama-qualification.test.ts` | 0 | 2 | 0.4 s |  |
+
+## t18
+
+Run at 2026-11-25T21:02:40.581Z on commit `69f9dc03d`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
+
+**integration: private-runtime-provenance-rejects-path-node-and-wrong-target**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | private-runtime-provenance-rejects-path-node-and-wrong-target | `src/installer/__tests__/dependencies.test.ts` |
+
+**integration: production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5 | `src/installer/__tests__/production-peers.test.ts` |
+
+**smoke: combined-s1-s2-s3-installer-regression-has-exact-coverage-and-confirmed-cleanup**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | combined-s1-s2-s3-installer-regression-has-exact-coverage-and-confirmed-cleanup | `scripts/__tests__/installer-s2-qualification.test.ts` |
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-final-regression-2026-11-26.json; .insrc/tmp/s3-final-audit.log; raw final run 3cdda64a-f71b-40ea-a4c7-336a32dce819
+
+**smoke: published-control-payload-includes-real-dependency-adapter-without-application-boot-imports**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | published-control-payload-includes-real-dependency-adapter-without-application-boot-imports | `src/installer/__tests__/production-peers.test.ts` |
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-final-regression-2026-11-26.json; final production-peers and publisher TAP logs
+
+**smoke: terminal-install-upgrade-consent-and-ready-before-tui-regressions**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ready commit and lock release precede same terminal installed TUI | `src/installer/__tests__/terminal-install.test.ts` |
+| pass | terminal upgrade retains delivery and rejects stale dependency consent before disruption | `src/installer/__tests__/terminal-install.test.ts` |
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-final-regression-2026-11-26.json; final terminal-install and install-retry TAP logs
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `scripts/__tests__/installer-s2-qualification.test.ts` | 0 | 1 | 1.3 s |  |
+| `src/installer/__tests__/dependencies.test.ts` | 0 | 8 | 18 s |  |
+| `src/installer/__tests__/production-peers.test.ts` | 0 | 3 | 7.4 s |  |
+| `src/installer/__tests__/terminal-install.test.ts` | 0 | 10 | 3.6 s |  |

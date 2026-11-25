@@ -171,7 +171,7 @@ export const ollamaPolicies: readonly OllamaPolicy[] = Object.freeze([parseOllam
   "qualification": {
     "policySha256": "4e02734bed1f3c1eac80a4fc517b99030659cb749a7144401f116f83248a35aa",
     "native": true,
-    "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-25/qualification.json",
+    "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-26/qualification.json",
     "checks": {
       "version": true,
       "readiness": true,

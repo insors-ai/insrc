@@ -1,0 +1,1690 @@
+{
+  "status": "observed",
+  "before": [
+    {
+      "directory": "/home/insrctest/.insrc-s3-reviewed",
+      "entries": [
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed",
+          "bytes": 76,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637387823.4116,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/application-data",
+          "bytes": 48,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637381503.3762,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/config.json",
+          "bytes": 55,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637380335.7317,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps",
+          "bytes": 12,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637387824.2205,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama",
+          "bytes": 64,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637493247.23,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts",
+          "bytes": 30,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637387842.1873,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed",
+          "bytes": 2182,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637502120.3032,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.cleanup.json",
+          "bytes": 138,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637492569.2244,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.closed.json",
+          "bytes": 223,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637492346.2227,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.disposed.json",
+          "bytes": 137,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637492605.2249,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.handoff-6fa3736af1063e7d1802ade09bccbcf3.closed.json",
+          "bytes": 193,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637502119.3032,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.handoff-6fa3736af1063e7d1802ade09bccbcf3.json",
+          "bytes": 179,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637493146.2292,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.json",
+          "bytes": 5273,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637387853.4119,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.json.lock",
+          "bytes": 0,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637387849.4119,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.service-input.json",
+          "bytes": 10166,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637493264.2302,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.service-launch.json",
+          "bytes": 161,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637496087.2534,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.service-result.json",
+          "bytes": 151,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637502113.3032,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.service-running.json",
+          "bytes": 153,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637496148.254,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.service.json",
+          "bytes": 390,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637493266.2302,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.service.lock",
+          "bytes": 0,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637496082.2534,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.staging",
+          "bytes": 30,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637387845.9233,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.staging/native-reviewed",
+          "bytes": 0,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637492600.2246,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18",
+          "bytes": 22,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637492363.8027,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64",
+          "bytes": 128,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637492554.2244,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6",
+          "bytes": 80,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637492143.221,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/.ollama-receipt.json",
+          "bytes": 381,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637492140.221,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/bin",
+          "bytes": 12,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637456594.122,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/bin/ollama",
+          "bytes": 41714760,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637457319.9336,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/inventory.json",
+          "bytes": 7170,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637488476.1907,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib",
+          "bytes": 12,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637457322.1387,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama",
+          "bytes": 1244,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637487617.1836,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/CPP_HTTPLIB_LICENSE",
+          "bytes": 1075,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637457322.1387,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/GO_LICENSE",
+          "bytes": 137370,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637457323.9336,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/LLAMA_CPP_LICENSE",
+          "bytes": 1078,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637457323.9336,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/LLAMA_CPP_VENDORS_LICENSE",
+          "bytes": 7257,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637457324.9336,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12",
+          "bytes": 252,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637486314.1729,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libcublas.so.12",
+          "bytes": 115326664,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484559.1584,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libcublas.so.12.8.5.5",
+          "bytes": 115326664,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637464559.9932,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libcublasLt.so.12",
+          "bytes": 719833184,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637486312.1729,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libcublasLt.so.12.8.5.5",
+          "bytes": 719833184,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637474428.0747,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libcudart.so.12",
+          "bytes": 724096,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637486314.1729,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libcudart.so.12.8.90",
+          "bytes": 724096,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637457353.9338,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libggml-cuda.so",
+          "bytes": 527848544,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637462496.9763,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13",
+          "bytes": 252,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637486380.8428,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libcublas.so.13",
+          "bytes": 61910216,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637486378.1733,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libcublas.so.13.1.1.3",
+          "bytes": 61910216,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637483976.1536,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libcublasLt.so.13",
+          "bytes": 629945952,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487524.1829,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libcublasLt.so.13.1.1.3",
+          "bytes": 629945952,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637483430.149,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libcudart.so.13",
+          "bytes": 707752,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637486379.1733,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libcudart.so.13.0.96",
+          "bytes": 707752,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637474448.075,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libggml-cuda.so",
+          "bytes": 326259704,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637477249.098,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-base.so",
+          "bytes": 857424,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487529.1829,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-base.so.1",
+          "bytes": 857424,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487527.1829,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-base.so.1.0.0",
+          "bytes": 857424,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637483995.1536,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv8.0_1.so",
+          "bytes": 924008,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637484012.1538,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv8.2_1.so",
+          "bytes": 989216,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637484025.1538,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv8.2_2.so",
+          "bytes": 989216,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637484040.154,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv8.2_3.so",
+          "bytes": 989208,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637484053.154,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv8.6_1.so",
+          "bytes": 989160,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637484066.1543,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv8.6_2.so",
+          "bytes": 989160,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637484078.1543,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv9.2_1.so",
+          "bytes": 989160,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637484088.1545,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv9.2_2.so",
+          "bytes": 989160,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637484097.1545,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml.so",
+          "bytes": 266152,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487533.1829,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml.so.1",
+          "bytes": 266152,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487530.1829,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml.so.1.0.0",
+          "bytes": 266152,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484103.1545,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libgomp.so.1",
+          "bytes": 271136,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487540.1829,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libgomp.so.1.0.0",
+          "bytes": 271136,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484109.1545,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama-common.so",
+          "bytes": 5206176,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487585.1833,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama-common.so.1",
+          "bytes": 5206176,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487556.183,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama-common.so.1.0.0",
+          "bytes": 5206176,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484188.1553,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama-quantize-impl.so",
+          "bytes": 134088,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484191.1553,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama-server-impl.so",
+          "bytes": 3958576,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484245.1558,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama.so",
+          "bytes": 4421096,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487608.1836,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama.so.1",
+          "bytes": 4421096,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487602.1833,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama.so.1.0.0",
+          "bytes": 4421096,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484322.1565,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libmtmd.so",
+          "bytes": 2306888,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487621.1836,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libmtmd.so.1",
+          "bytes": 2306888,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487617.1836,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libmtmd.so.1.0.0",
+          "bytes": 2306888,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484362.1567,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libomp.so",
+          "bytes": 1231528,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484382.157,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/llama-quantize",
+          "bytes": 68216,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484383.157,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/llama-server",
+          "bytes": 68216,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484385.157,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/data",
+          "bytes": 32,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637498599.2742,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/data/.ollama",
+          "bytes": 58,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637501460.2979,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/data/.ollama/cache",
+          "bytes": 52,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637501465.2979,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/data/.ollama/cache/model-recommendations.json",
+          "bytes": 2067,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637501461.2979,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/data/.ollama/id_ed25519",
+          "bytes": 387,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637498602.2742,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/data/.ollama/id_ed25519.pub",
+          "bytes": 81,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637498602.2742,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/data/models",
+          "bytes": 10,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637499259.3606,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/data/models/blobs",
+          "bytes": 0,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637499258.2795,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/data/tmp",
+          "bytes": 0,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637493236.23,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/logs",
+          "bytes": 12,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637493253.23,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/logs/server",
+          "bytes": 150,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637496083.2534,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/logs/server/ollama-50691c2a3b352a3cde17294a0d2800b2c986854fa16e83be879ead7b3498b2b3.log",
+          "bytes": 3016,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637519556.426,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/install",
+          "bytes": 88,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637381482.376,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/install/controller.json",
+          "bytes": 324,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637381480.376,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/install/enrollment.json",
+          "bytes": 98,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637381471.376,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/install/operation.lock",
+          "bytes": 0,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637381469.376,
+          "kind": "file"
+        }
+      ],
+      "truncated": false
+    },
+    {
+      "directory": "/home/insrctest/.ollama",
+      "entries": [],
+      "truncated": false
+    },
+    {
+      "directory": "/tmp",
+      "entries": [
+        {
+          "path": "/tmp",
+          "bytes": 140,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637380286.473,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.ICE-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637196893.8179,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.Test-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637196893.9438,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.X11-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637196893.8179,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.XIM-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637196893.934,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.font-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637196893.939,
+          "kind": "directory"
+        }
+      ],
+      "truncated": false
+    }
+  ],
+  "after": [
+    {
+      "directory": "/home/insrctest/.insrc-s3-reviewed",
+      "entries": [
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed",
+          "bytes": 76,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637387823.4116,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/application-data",
+          "bytes": 48,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637381503.3762,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/config.json",
+          "bytes": 55,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637380335.7317,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps",
+          "bytes": 12,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637387824.2205,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama",
+          "bytes": 64,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637493247.23,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts",
+          "bytes": 30,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637387842.1873,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed",
+          "bytes": 2182,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637502120.3032,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.cleanup.json",
+          "bytes": 138,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637492569.2244,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.closed.json",
+          "bytes": 223,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637492346.2227,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.disposed.json",
+          "bytes": 137,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637492605.2249,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.handoff-6fa3736af1063e7d1802ade09bccbcf3.closed.json",
+          "bytes": 193,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637502119.3032,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.handoff-6fa3736af1063e7d1802ade09bccbcf3.json",
+          "bytes": 179,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637493146.2292,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.json",
+          "bytes": 5273,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637387853.4119,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.json.lock",
+          "bytes": 0,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637387849.4119,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.service-input.json",
+          "bytes": 10166,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637493264.2302,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.service-launch.json",
+          "bytes": 161,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637496087.2534,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.service-result.json",
+          "bytes": 151,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637502113.3032,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.service-running.json",
+          "bytes": 153,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637496148.254,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.service.json",
+          "bytes": 390,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637493266.2302,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.attempts/native-reviewed/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.service.lock",
+          "bytes": 0,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637496082.2534,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.staging",
+          "bytes": 30,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637387845.9233,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/.staging/native-reviewed",
+          "bytes": 0,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637492600.2246,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18",
+          "bytes": 22,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637492363.8027,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64",
+          "bytes": 128,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637492554.2244,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6",
+          "bytes": 80,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637492143.221,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/.ollama-receipt.json",
+          "bytes": 381,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637492140.221,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/bin",
+          "bytes": 12,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637456594.122,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/bin/ollama",
+          "bytes": 41714760,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637457319.9336,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/inventory.json",
+          "bytes": 7170,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637488476.1907,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib",
+          "bytes": 12,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637457322.1387,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama",
+          "bytes": 1244,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637487617.1836,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/CPP_HTTPLIB_LICENSE",
+          "bytes": 1075,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637457322.1387,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/GO_LICENSE",
+          "bytes": 137370,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637457323.9336,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/LLAMA_CPP_LICENSE",
+          "bytes": 1078,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637457323.9336,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/LLAMA_CPP_VENDORS_LICENSE",
+          "bytes": 7257,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637457324.9336,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12",
+          "bytes": 252,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637486314.1729,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libcublas.so.12",
+          "bytes": 115326664,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484559.1584,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libcublas.so.12.8.5.5",
+          "bytes": 115326664,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637464559.9932,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libcublasLt.so.12",
+          "bytes": 719833184,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637486312.1729,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libcublasLt.so.12.8.5.5",
+          "bytes": 719833184,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637474428.0747,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libcudart.so.12",
+          "bytes": 724096,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637486314.1729,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libcudart.so.12.8.90",
+          "bytes": 724096,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637457353.9338,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libggml-cuda.so",
+          "bytes": 527848544,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637462496.9763,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13",
+          "bytes": 252,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637486380.8428,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libcublas.so.13",
+          "bytes": 61910216,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637486378.1733,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libcublas.so.13.1.1.3",
+          "bytes": 61910216,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637483976.1536,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libcublasLt.so.13",
+          "bytes": 629945952,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487524.1829,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libcublasLt.so.13.1.1.3",
+          "bytes": 629945952,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637483430.149,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libcudart.so.13",
+          "bytes": 707752,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637486379.1733,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libcudart.so.13.0.96",
+          "bytes": 707752,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637474448.075,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libggml-cuda.so",
+          "bytes": 326259704,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637477249.098,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-base.so",
+          "bytes": 857424,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487529.1829,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-base.so.1",
+          "bytes": 857424,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487527.1829,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-base.so.1.0.0",
+          "bytes": 857424,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637483995.1536,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv8.0_1.so",
+          "bytes": 924008,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637484012.1538,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv8.2_1.so",
+          "bytes": 989216,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637484025.1538,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv8.2_2.so",
+          "bytes": 989216,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637484040.154,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv8.2_3.so",
+          "bytes": 989208,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637484053.154,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv8.6_1.so",
+          "bytes": 989160,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637484066.1543,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv8.6_2.so",
+          "bytes": 989160,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637484078.1543,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv9.2_1.so",
+          "bytes": 989160,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637484088.1545,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv9.2_2.so",
+          "bytes": 989160,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637484097.1545,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml.so",
+          "bytes": 266152,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487533.1829,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml.so.1",
+          "bytes": 266152,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487530.1829,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml.so.1.0.0",
+          "bytes": 266152,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484103.1545,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libgomp.so.1",
+          "bytes": 271136,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487540.1829,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libgomp.so.1.0.0",
+          "bytes": 271136,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484109.1545,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama-common.so",
+          "bytes": 5206176,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487585.1833,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama-common.so.1",
+          "bytes": 5206176,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487556.183,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama-common.so.1.0.0",
+          "bytes": 5206176,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484188.1553,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama-quantize-impl.so",
+          "bytes": 134088,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484191.1553,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama-server-impl.so",
+          "bytes": 3958576,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484245.1558,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama.so",
+          "bytes": 4421096,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487608.1836,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama.so.1",
+          "bytes": 4421096,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487602.1833,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama.so.1.0.0",
+          "bytes": 4421096,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484322.1565,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libmtmd.so",
+          "bytes": 2306888,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487621.1836,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libmtmd.so.1",
+          "bytes": 2306888,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637487617.1836,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libmtmd.so.1.0.0",
+          "bytes": 2306888,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484362.1567,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libomp.so",
+          "bytes": 1231528,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484382.157,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/llama-quantize",
+          "bytes": 68216,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484383.157,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/llama-server",
+          "bytes": 68216,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637484385.157,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/data",
+          "bytes": 32,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637498599.2742,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/data/.ollama",
+          "bytes": 58,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637501460.2979,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/data/.ollama/cache",
+          "bytes": 52,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637501465.2979,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/data/.ollama/cache/model-recommendations.json",
+          "bytes": 2067,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637501461.2979,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/data/.ollama/id_ed25519",
+          "bytes": 387,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637498602.2742,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/data/.ollama/id_ed25519.pub",
+          "bytes": 81,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637498602.2742,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/data/models",
+          "bytes": 10,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637499259.3606,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/data/models/blobs",
+          "bytes": 0,
+          "mode": 493,
+          "uid": 501,
+          "mtimeMs": 1795637499258.2795,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/data/tmp",
+          "bytes": 0,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637493236.23,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/logs",
+          "bytes": 12,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637493253.23,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/logs/server",
+          "bytes": 150,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637496083.2534,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/logs/server/ollama-50691c2a3b352a3cde17294a0d2800b2c986854fa16e83be879ead7b3498b2b3.log",
+          "bytes": 3016,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637519556.426,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/install",
+          "bytes": 88,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637381482.376,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/install/controller.json",
+          "bytes": 324,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637381480.376,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/install/enrollment.json",
+          "bytes": 98,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637381471.376,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed/install/operation.lock",
+          "bytes": 0,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637381469.376,
+          "kind": "file"
+        }
+      ],
+      "truncated": false
+    },
+    {
+      "directory": "/home/insrctest/.ollama",
+      "entries": [],
+      "truncated": false
+    },
+    {
+      "directory": "/tmp",
+      "entries": [
+        {
+          "path": "/tmp",
+          "bytes": 140,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637380286.473,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.ICE-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637196893.8179,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.Test-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637196893.9438,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.X11-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637196893.8179,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.XIM-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637196893.934,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.font-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637196893.939,
+          "kind": "directory"
+        }
+      ],
+      "truncated": false
+    }
+  ],
+  "limits": "Bounded before/after directory metadata only. This does not detect transient/deleted or metadata-preserving writes, trace syscalls, or prove exhaustive filesystem confinement. Shared temp activity may be unrelated. No payload content hashing is performed."
+}

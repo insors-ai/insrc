@@ -1,0 +1,130 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-368cbfb7-785d-4733-b696-0199d2303264",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-25T16:36:51.288Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Requalify exact Linux route with observed native and upstream provenance",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t14",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t15",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t16",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#293",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6f38ba4bb17dc30d3f0038bbd363b9943367d930b31a1da0a50c4fc0e8be7764",
+        "at": "2026-11-25T16:36:51.288Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T16:36:51.296Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Requalify exact Linux route with observed native and upstream provenance",
+    "summary": "Update the qualification driver and re-run the current Linux ARM64 dependency route in OrbStack, generating claims from observed raw evidence and independently attributed official asset identity.",
+    "size": "L",
+    "order": 17,
+    "acceptanceChecks": [
+      "Record observed os.machine/process.arch/platform, uid>0, Node executable/version, raw /etc/os-release, process.report glibcVersionRuntime and meaningful translation check. Never hardcode uid501 or hand-author native/glibc conclusions.",
+      "Capture independent official upstream asset digest/checksum source and raw supporting metadata, bind exact URL/version/bytes/SHA to it. If evidence unavailable, mark provenance/route qualification pending rather than inventing a match.",
+      "Record scoped before/after installation-home, ~/.ollama and relevant temp-path observations; private argv/env/log/zero-model/decline/reuse results. Record unprivileged cache-advice action/result and limits; no claim of global cache eviction or exhaustive filesystem-write proof.",
+      "Run exact pinned route under private Node22 in isolated OrbStack VM; verify large archive layout, service readiness, fresh-process inspection within three-second aggregate target and bounded payload-read behavior after corrections. Leave intentional service/finite actor status accounted and VM stopped afterward.",
+      "Preserve previous successful and failed evidence as historical pre-review runs. Generate revised qualification summary from raw script output, with current source hashes and correct test mapping. Only native-qualified exact routes are enabled; other Linux/macOS/Windows architectures keep explicit pending/manual guidance.",
+      "No elevation/model download/global cache drop/host daemon or host Ollama change; missing UTM/Windows/native-x64 evidence is reported honestly. Tests of the evidence validator prove wrong platform/glibc/digest/translation claims cannot enable a route."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "accepted-official-payload-is-user-only-and-discloses-install-and-start"
+      },
+      {
+        "level": "live",
+        "name": "qualified-exact-ollama-payload-version-and-user-session-readiness-on-enabled-target"
+      },
+      {
+        "level": "live",
+        "name": "existing-installation-reuse-and-decline-preserve-platform-state"
+      },
+      {
+        "level": "live",
+        "name": "official-large-archive-streaming-and-library-layout-match-policy"
+      },
+      {
+        "level": "live",
+        "name": "native-large-payload-inspection-avoids-content-reads-within-three-seconds"
+      },
+      {
+        "level": "live",
+        "name": "native-platform-glibc-translation-and-upstream-digest-provenance-are-observed"
+      },
+      {
+        "level": "live",
+        "name": "native-write-observations-and-cache-advice-are-recorded-with-limits"
+      }
+    ],
+    "planTaskId": "t17"
+  },
+  "citations": []
+}

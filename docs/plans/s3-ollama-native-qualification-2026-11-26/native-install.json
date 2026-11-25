@@ -1,0 +1,864 @@
+{
+  "status": "pass",
+  "machineObservation": {
+    "platform": "linux",
+    "arch": "arm64",
+    "machine": "aarch64",
+    "kernelRelease": "7.2.12-orbstack-00394-gbecdd6130068",
+    "uid": 501,
+    "node": {
+      "executable": "/home/insrctest/.insrc-s3/runtimes/node-v22.22.1-linux-arm64/bin/node",
+      "version": "v22.22.1",
+      "elfMachine": 183
+    },
+    "report": {
+      "arch": "arm64",
+      "osMachine": "aarch64",
+      "osName": "Linux",
+      "glibcVersionRuntime": "2.35"
+    },
+    "osRelease": "PRETTY_NAME=\"Ubuntu 22.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"22.04\"\nVERSION=\"22.04.5 LTS (Jammy Jellyfish)\"\nVERSION_CODENAME=jammy\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=jammy\n",
+    "cpuInfo": "processor\t: 0\nBogoMIPS\t: 48.00\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 asimddp sha512 asimdfhm dit uscat ilrcpc flagm sb dcpodp flagm2 frint i8mm bf16 ecv afp rpres\nCPU implementer\t: 0x61\nCPU architecture: 8\nCPU variant\t: 0x0\nCPU part\t: 0x000\nCPU revision\t: 0\n\nprocessor\t: 1\nBogoMIPS\t: 48.00\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 asimddp sha512 asimdfhm dit uscat ilrcpc flagm sb dcpodp flagm2 frint i8mm bf16 ecv afp rpres\nCPU implementer\t: 0x61\nCPU architecture: 8\nCPU variant\t: 0x0\nCPU part\t: 0x000\nCPU revision\t: 0\n\nprocessor\t: 2\nBogoMIPS\t: 48.00\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 asimddp sha512 asimdfhm dit uscat ilrcpc flagm sb dcpodp flagm2 frint i8mm bf16 ecv afp rpres\nCPU implementer\t: 0x61\nCPU architecture: 8\nCPU variant\t: 0x0\nCPU part\t: 0x000\nCPU revision\t: 0\n\nprocessor\t: 3\nBogoMIPS\t: 48.00\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 asimddp sha512 asimdfhm dit uscat ilrcpc flagm sb dcpodp flagm2 frint i8mm bf16 ecv afp rpres\nCPU implementer\t: 0x61\nCPU architecture: 8\nCPU variant\t: 0x0\nCPU part\t: 0x000\nCPU revision\t: 0\n\nprocessor\t: 4\nBogoMIPS\t: 48.00\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 asimddp sha512 asimdfhm dit uscat ilrcpc flagm sb dcpodp flagm2 frint i8mm bf16 ecv afp rpres\nCPU implementer\t: 0x61\nCPU architecture: 8\nCPU variant\t: 0x0\nCPU part\t: 0x000\nCPU revision\t: 0\n\nprocessor\t: 5\nBogoMIPS\t: 48.00\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 asimddp sha512 asimdfhm dit uscat ilrcpc flagm sb dcpodp flagm2 frint i8mm bf16 ecv afp rpres\nCPU implementer\t: 0x61\nCPU architecture: 8\nCPU variant\t: 0x0\nCPU part\t: 0x000\nCPU revision\t: 0\n\nprocessor\t: 6\nBogoMIPS\t: 48.00\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 asimddp sha512 asimdfhm dit uscat ilrcpc flagm sb dcpodp flagm2 frint i8mm bf16 ecv afp rpres\nCPU implementer\t: 0x61\nCPU architecture: 8\nCPU variant\t: 0x0\nCPU part\t: 0x000\nCPU revision\t: 0\n\nprocessor\t: 7\nBogoMIPS\t: 48.00\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 asimddp sha512 asimdfhm dit uscat ilrcpc flagm sb dcpodp flagm2 frint i8mm bf16 ecv afp rpres\nCPU implementer\t: 0x61\nCPU architecture: 8\nCPU variant\t: 0x0\nCPU part\t: 0x000\nCPU revision\t: 0\n\nprocessor\t: 8\nBogoMIPS\t: 48.00\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 asimddp sha512 asimdfhm dit uscat ilrcpc flagm sb dcpodp flagm2 frint i8mm bf16 ecv afp rpres\nCPU implementer\t: 0x61\nCPU architecture: 8\nCPU variant\t: 0x0\nCPU part\t: 0x000\nCPU revision\t: 0\n\nprocessor\t: 9\nBogoMIPS\t: 48.00\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 asimddp sha512 asimdfhm dit uscat ilrcpc flagm sb dcpodp flagm2 frint i8mm bf16 ecv afp rpres\nCPU implementer\t: 0x61\nCPU architecture: 8\nCPU variant\t: 0x0\nCPU part\t: 0x000\nCPU revision\t: 0\n\nprocessor\t: 10\nBogoMIPS\t: 48.00\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 asimddp sha512 asimdfhm dit uscat ilrcpc flagm sb dcpodp flagm2 frint i8mm bf16 ecv afp rpres\nCPU implementer\t: 0x61\nCPU architecture: 8\nCPU variant\t: 0x0\nCPU part\t: 0x000\nCPU revision\t: 0\n\nprocessor\t: 11\nBogoMIPS\t: 48.00\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 asimddp sha512 asimdfhm dit uscat ilrcpc flagm sb dcpodp flagm2 frint i8mm bf16 ecv afp rpres\nCPU implementer\t: 0x61\nCPU architecture: 8\nCPU variant\t: 0x0\nCPU part\t: 0x000\nCPU revision\t: 0\n\n",
+    "maps": "00400000-06679000 r-xp 00000000 00:26 26879                              /home/insrctest/.insrc-s3/runtimes/node-v22.22.1-linux-arm64/bin/node\n0668c000-06690000 r--p 0627c000 00:26 26879                              /home/insrctest/.insrc-s3/runtimes/node-v22.22.1-linux-arm64/bin/node\n06690000-066d1000 rw-p 06280000 00:26 26879                              /home/insrctest/.insrc-s3/runtimes/node-v22.22.1-linux-arm64/bin/node\n066d1000-06704000 rw-p 00000000 00:00 0 \n12645000-129f4000 rw-p 00000000 00:00 0                                  [heap]\n7283840000-7283880000 rw-p 00000000 00:00 0 \na178c40000-a178c80000 rw-p 00000000 00:00 0 \nbc907c0000-bc90800000 rw-p 00000000 00:00 0 \n11758c80000-11758cc0000 rw-p 00000000 00:00 0 \n1c8cc6c0000-1c8cc700000 rw-p 00000000 00:00 0 \n1cee99c0000-1cee9a00000 rw-p 00000000 00:00 0 \n2476c9c0000-2476ca00000 rw-p 00000000 00:00 0 \n2c17d980000-2c17d9c0000 rw-p 00000000 00:00 0 \n37192940000-37192980000 rw-p 00000000 00:00 0 \n3e6d9d80000-3e6d9dc0000 rw-p 00000000 00:00 0 \n4149e2c0000-4149e300000 rw-p 00000000 00:00 0 \n41a9f440000-41a9f480000 rw-p 00000000 00:00 0 \n451fa700000-451fa740000 rw-p 00000000 00:00 0 \n51965400000-51965440000 rw-p 00000000 00:00 0 \n6d014940000-6d014980000 rw-p 00000000 00:00 0 \n718c5140000-718c5180000 rw-p 00000000 00:00 0 \n8795e700000-8795e740000 rw-p 00000000 00:00 0 \n894021c0000-89402200000 rw-p 00000000 00:00 0 \n930ae8c0000-930ae900000 rw-p 00000000 00:00 0 \n96b36480000-96b364c0000 rw-p 00000000 00:00 0 \na2bdfb40000-a2bdfb80000 rw-p 00000000 00:00 0 \na4dd7600000-a4dd7640000 rw-p 00000000 00:00 0 \nac6498c0000-ac649900000 rw-p 00000000 00:00 0 \nb64fafc0000-b64fb000000 rw-p 00000000 00:00 0 \nb9aa0b00000-b9aa0b40000 rw-p 00000000 00:00 0 \nbb9b5e00000-bb9b5e40000 rw-p 00000000 00:00 0 \nbc6b6f40000-bc6b6f80000 rw-p 00000000 00:00 0 \nbcbcb240000-bcbcb280000 rw-p 00000000 00:00 0 \nc5c123c0000-c5c12400000 rw-p 00000000 00:00 0 \nca42ee40000-ca42ee42000 rw-p 00000000 00:00 0 \ncae2cd40000-cae2cd80000 rw-p 00000000 00:00 0 \nce190e00000-ce190e40000 rw-p 00000000 00:00 0 \nd32ea780000-d32ea7c0000 rw-p 00000000 00:00 0 \ne91d3900000-e91d3940000 rw-p 00000000 00:00 0 \nec74cc80000-ec74ccc0000 rw-p 00000000 00:00 0 \nf398bdc0000-f398be00000 rw-p 00000000 00:00 0 \n101269840000-101269880000 rw-p 00000000 00:00 0 \n1071ce040000-1071ce080000 rw-p 00000000 00:00 0 \n107895940000-107895980000 rw-p 00000000 00:00 0 \n10a8bb880000-10a8bb8c0000 rw-p 00000000 00:00 0 \n10e5cef40000-10e5cef80000 rw-p 00000000 00:00 0 \n10fa3b240000-10fa3b280000 rw-p 00000000 00:00 0 \n1152d3e00000-1152d3e40000 rw-p 00000000 00:00 0 \n11d116f40000-11d116f80000 rw-p 00000000 00:00 0 \n123403fc0000-123404000000 rw-p 00000000 00:00 0 \n12480bac0000-12480bb00000 rw-p 00000000 00:00 0 \n12cb87700000-12cb87740000 rw-p 00000000 00:00 0 \n135993fc0000-135994000000 rw-p 00000000 00:00 0 \n136e89f00000-136e89f40000 rw-p 00000000 00:00 0 \n1420fca80000-1420fcac0000 rw-p 00000000 00:00 0 \n152187280000-1521872c0000 rw-p 00000000 00:00 0 \n153f71b00000-153f71b40000 rw-p 00000000 00:00 0 \n155bcc780000-155bcc7c0000 rw-p 00000000 00:00 0 \n15e5fbbc0000-15e5fbc00000 rw-p 00000000 00:00 0 \n1624d83c0000-1624d8400000 rw-p 00000000 00:00 0 \n18afce700000-18afce740000 rw-p 00000000 00:00 0 \n18def6b40000-18def6b80000 rw-p 00000000 00:00 0 \n198f661c0000-198f66200000 rw-p 00000000 00:00 0 \n1998076c0000-199807700000 rw-p 00000000 00:00 0 \n19af07e80000-19af07ec0000 rw-p 00000000 00:00 0 \n1a1d10d40000-1a1d10d80000 rw-p 00000000 00:00 0 \n1a6507840000-1a6507880000 rw-p 00000000 00:00 0 \n1a911a240000-1a911a280000 rw-p 00000000 00:00 0 \n1a9d19e40000-1a9d19e80000 rw-p 00000000 00:00 0 \n1bc62ccc0000-1bc62cd00000 rw-p 00000000 00:00 0 \n1cbac6c80000-1cbac6cc0000 rw-p 00000000 00:00 0 \n1d236f900000-1d236f940000 rw-p 00000000 00:00 0 \n1d2e567c0000-1d2e56800000 rw-p 00000000 00:00 0 \n1db1ac240000-1db1ac280000 rw-p 00000000 00:00 0 \n1dbfc0bc0000-1dbfc0c00000 rw-p 00000000 00:00 0 \n1edaa73c0000-1edaa7400000 rw-p 00000000 00:00 0 \n1f5350800000-1f5350840000 rw-p 00000000 00:00 0 \n1fa185f40000-1fa185f80000 rw-p 00000000 00:00 0 \n1fcdaca80000-1fcdacac2000 rw-p 00000000 00:00 0 \n1fe9a80c0000-1fe9a8100000 rw-p 00000000 00:00 0 \n1febd1680000-1febd16c0000 rw-p 00000000 00:00 0 \n204c70d40000-204c70d80000 rw-p 00000000 00:00 0 \n20cb23d00000-20cb23d40000 rw-p 00000000 00:00 0 \n21856e9c0000-21856ea00000 rw-p 00000000 00:00 0 \n21ca9e0c0000-21ca9e100000 rw-p 00000000 00:00 0 \n21d30f240000-21d30f280000 rw-p 00000000 00:00 0 \n2201adec0000-2201adf00000 rw-p 00000000 00:00 0 \n221b08200000-221b08240000 rw-p 00000000 00:00 0 \n233010100000-233010140000 rw-p 00000000 00:00 0 \n236950b40000-236950b80000 rw-p 00000000 00:00 0 \n237c12700000-237c12740000 rw-p 00000000 00:00 0 \n238327700000-238327740000 rw-p 00000000 00:00 0 \n2406aec80000-2406aecc0000 rw-p 00000000 00:00 0 \n2410e3a80000-2410e3ac0000 rw-p 00000000 00:00 0 \n2446e0880000-2446e08c0000 rw-p 00000000 00:00 0 \n25146ad80000-25146adc0000 rw-p 00000000 00:00 0 \n268075440000-268075480000 rw-p 00000000 00:00 0 \n277a7c6c0000-277a7c76d000 rw-p 00000000 00:00 0 \n27a22c180000-27a22c1c0000 rw-p 00000000 00:00 0 \n28684afc0000-28684b000000 rw-p 00000000 00:00 0 \n28a68ad80000-28a68adc0000 rw-p 00000000 00:00 0 \n292ed8180000-292ed81c0000 rw-p 00000000 00:00 0 \n297e253c0000-297e25400000 rw-p 00000000 00:00 0 \n2b213e9c0000-2b213ea00000 rw-p 00000000 00:00 0 \n2b3c07480000-2b3c074c0000 rw-p 00000000 00:00 0 \n2b61f4dc0000-2b61f4e00000 r--p 00000000 00:00 0 \n2e753f980000-2e753f9c0000 rw-p 00000000 00:00 0 \n2e9e01500000-2e9e01540000 rw-p 00000000 00:00 0 \n2f551c440000-2f551c459000 rw-p 00000000 00:00 0 \n2fdff6440000-2fdff6480000 rw-p 00000000 00:00 0 \n302ad0680000-302ad06c0000 rw-p 00000000 00:00 0 \n303b23940000-303b23980000 rw-p 00000000 00:00 0 \n30b9aec00000-30b9aec16000 r--p 00000000 00:00 0 \n32ab81680000-32ab816c0000 rw-p 00000000 00:00 0 \n3301c6380000-3301c63c0000 rw-p 00000000 00:00 0 \n3374735c0000-337473600000 rw-p 00000000 00:00 0 \n342e074c0000-342e07500000 rw-p 00000000 00:00 0 \n35a0d5d80000-35a0d5dc0000 rw-p 00000000 00:00 0 \n36125e300000-36125e340000 rw-p 00000000 00:00 0 \n361cfff00000-361cfff40000 rw-p 00000000 00:00 0 \n378811580000-3788115c0000 rw-p 00000000 00:00 0 \n38f04fdc0000-38f04fe00000 rw-p 00000000 00:00 0 \n3905831c0000-390583200000 rw-p 00000000 00:00 0 \n39f3ed640000-39f3ed680000 rw-p 00000000 00:00 0 \n3a787d640000-3a787d680000 rw-p 00000000 00:00 0 \n3aa708e40000-3aa708e80000 rw-p 00000000 00:00 0 \n3b2456900000-3b2456940000 rw-p 00000000 00:00 0 \n3b360cec0000-3b360cf00000 rw-p 00000000 00:00 0 \n3b40a3280000-3b40a32c0000 rw-p 00000000 00:00 0 \n3d6ba7bc0000-3d6ba7c00000 rw-p 00000000 00:00 0 \n3dca49000000-3dca49040000 rw-p 00000000 00:00 0 \n3df046280000-3df0462c0000 rw-p 00000000 00:00 0 \n3e2b68740000-3e2b68780000 rw-p 00000000 00:00 0 \n3e8348800000-3e8348840000 rw-p 00000000 00:00 0 \nffff84000000-ffff842e5000 rw-p 00000000 00:00 0 \nffff842e5000-ffff88000000 ---p 00000000 00:00 0 \nffff8c000000-ffff8c2a0000 rw-p 00000000 00:00 0 \nffff8c2a0000-ffff90000000 ---p 00000000 00:00 0 \nffff90000000-ffff900eb000 rw-p 00000000 00:00 0 \nffff900eb000-ffff94000000 ---p 00000000 00:00 0 \nffff94000000-ffff941a9000 rw-p 00000000 00:00 0 \nffff941a9000-ffff98000000 ---p 00000000 00:00 0 \nffff98000000-ffff9831d000 rw-p 00000000 00:00 0 \nffff9831d000-ffff9c000000 ---p 00000000 00:00 0 \nffff9c000000-ffff9c002000 rw-p 00000000 00:00 0 \nffff9c002000-ffff9c003000 ---p 00000000 00:00 0 \nffff9c003000-ffff9c03f000 rwxp 00000000 00:00 0 \nffff9c03f000-ffff9c040000 ---p 00000000 00:00 0 \nffff9c040000-ffff9c042000 rw-p 00000000 00:00 0 \nffff9c042000-ffff9c043000 ---p 00000000 00:00 0 \nffff9c043000-ffff9c07f000 rwxp 00000000 00:00 0 \nffff9c07f000-ffff9c080000 ---p 00000000 00:00 0 \nffff9c080000-ffff9c082000 rw-p 00000000 00:00 0 \nffff9c082000-ffff9c083000 ---p 00000000 00:00 0 \nffff9c083000-ffff9c0bf000 rwxp 00000000 00:00 0 \nffff9c0bf000-ffff9c0c0000 ---p 00000000 00:00 0 \nffff9c0c0000-ffff9c0c2000 rw-p 00000000 00:00 0 \nffff9c0c2000-ffff9c0c3000 ---p 00000000 00:00 0 \nffff9c0c3000-ffff9c0ff000 rwxp 00000000 00:00 0 \nffff9c0ff000-ffffac000000 ---p 00000000 00:00 0 \nffffac000000-ffffac021000 rw-p 00000000 00:00 0 \nffffac021000-ffffb0000000 ---p 00000000 00:00 0 \nffffb0dde000-ffffb0dee000 ---p 00000000 00:00 0 \nffffb0dee000-ffffb15ee000 rw-p 00000000 00:00 0 \nffffb15ee000-ffffb15fe000 ---p 00000000 00:00 0 \nffffb15fe000-ffffb161e000 rw-p 00000000 00:00 0 \nffffb161e000-ffffb1660000 rw-p 00000000 00:00 0 \nffffb1660000-ffffb1664000 rw-p 00000000 00:00 0 \nffffb1664000-ffffb16e0000 ---p 00000000 00:00 0 \nffffb16e0000-ffffb16f0000 ---p 00000000 00:00 0 \nffffb16f0000-ffffb1ef0000 rw-p 00000000 00:00 0 \nffffb1ef0000-ffffb1f00000 ---p 00000000 00:00 0 \nffffb1f00000-ffffb2700000 rw-p 00000000 00:00 0 \nffffb2700000-ffffb2710000 ---p 00000000 00:00 0 \nffffb2710000-ffffb2f10000 rw-p 00000000 00:00 0 \nffffb2f10000-ffffb2f20000 ---p 00000000 00:00 0 \nffffb2f20000-ffffb3720000 rw-p 00000000 00:00 0 \nffffb3720000-ffffb3730000 ---p 00000000 00:00 0 \nffffb3730000-ffffb3f30000 rw-p 00000000 00:00 0 \nffffb3f30000-ffffb40be000 r-xp 00000000 00:26 1813                       /usr/lib/aarch64-linux-gnu/libc.so.6\nffffb40be000-ffffb40cd000 ---p 0018e000 00:26 1813                       /usr/lib/aarch64-linux-gnu/libc.so.6\nffffb40cd000-ffffb40d1000 r--p 0018d000 00:26 1813                       /usr/lib/aarch64-linux-gnu/libc.so.6\nffffb40d1000-ffffb40d3000 rw-p 00191000 00:26 1813                       /usr/lib/aarch64-linux-gnu/libc.so.6\nffffb40d3000-ffffb40df000 rw-p 00000000 00:00 0 \nffffb40e0000-ffffb40e1000 r-xp 00000000 00:26 1993                       /usr/lib/aarch64-linux-gnu/libpthread.so.0\nffffb40e1000-ffffb40f0000 ---p 00001000 00:26 1993                       /usr/lib/aarch64-linux-gnu/libpthread.so.0\nffffb40f0000-ffffb40f1000 r--p 00000000 00:26 1993                       /usr/lib/aarch64-linux-gnu/libpthread.so.0\nffffb40f1000-ffffb40f2000 rw-p 00001000 00:26 1993                       /usr/lib/aarch64-linux-gnu/libpthread.so.0\nffffb4100000-ffffb4114000 r-xp 00000000 00:26 1867                       /usr/lib/aarch64-linux-gnu/libgcc_s.so.1\nffffb4114000-ffffb4123000 ---p 00014000 00:26 1867                       /usr/lib/aarch64-linux-gnu/libgcc_s.so.1\nffffb4123000-ffffb4124000 r--p 00013000 00:26 1867                       /usr/lib/aarch64-linux-gnu/libgcc_s.so.1\nffffb4124000-ffffb4125000 rw-p 00014000 00:26 1867                       /usr/lib/aarch64-linux-gnu/libgcc_s.so.1\nffffb4130000-ffffb41b6000 r-xp 00000000 00:26 1933                       /usr/lib/aarch64-linux-gnu/libm.so.6\nffffb41b6000-ffffb41c5000 ---p 00086000 00:26 1933                       /usr/lib/aarch64-linux-gnu/libm.so.6\nffffb41c5000-ffffb41c6000 r--p 00085000 00:26 1933                       /usr/lib/aarch64-linux-gnu/libm.so.6\nffffb41c6000-ffffb41c7000 rw-p 00086000 00:26 1933                       /usr/lib/aarch64-linux-gnu/libm.so.6\nffffb41cc000-ffffb41d0000 rw-s 10000000 00:10 421279                     anon_inode:[io_uring]\nffffb41d0000-ffffb43db000 r-xp 00000000 00:26 2022                       /usr/lib/aarch64-linux-gnu/libstdc++.so.6.0.30\nffffb43db000-ffffb43eb000 ---p 0020b000 00:26 2022                       /usr/lib/aarch64-linux-gnu/libstdc++.so.6.0.30\nffffb43eb000-ffffb43f6000 r--p 0020b000 00:26 2022                       /usr/lib/aarch64-linux-gnu/libstdc++.so.6.0.30\nffffb43f6000-ffffb43f9000 rw-p 00216000 00:26 2022                       /usr/lib/aarch64-linux-gnu/libstdc++.so.6.0.30\nffffb43f9000-ffffb43fc000 rw-p 00000000 00:00 0 \nffffb43fc000-ffffb4400000 rw-s 10000000 00:10 424969                     anon_inode:[io_uring]\nffffb4400000-ffffb4401000 r-xp 00000000 00:26 1836                       /usr/lib/aarch64-linux-gnu/libdl.so.2\nffffb4401000-ffffb4410000 ---p 00001000 00:26 1836                       /usr/lib/aarch64-linux-gnu/libdl.so.2\nffffb4410000-ffffb4411000 r--p 00000000 00:26 1836                       /usr/lib/aarch64-linux-gnu/libdl.so.2\nffffb4411000-ffffb4412000 rw-p 00001000 00:26 1836                       /usr/lib/aarch64-linux-gnu/libdl.so.2\nffffb4412000-ffffb4415000 rw-s 00000000 00:10 421279                     anon_inode:[io_uring]\nffffb4415000-ffffb4418000 rw-s 00000000 00:10 424969                     anon_inode:[io_uring]\nffffb4418000-ffffb441c000 rw-s 10000000 00:10 421276                     anon_inode:[io_uring]\nffffb441c000-ffffb441f000 rw-p 00000000 00:00 0 \nffffb441f000-ffffb444a000 r-xp 00000000 00:26 1770                       /usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1\nffffb444c000-ffffb444e000 rw-p 00000000 00:00 0 \nffffb444e000-ffffb4451000 rw-s 00000000 00:10 421276                     anon_inode:[io_uring]\nffffb4451000-ffffb4453000 rw-p 00000000 00:00 0 \nffffb4453000-ffffb4457000 r--p 00000000 00:00 0                          [vvar]\nffffb4457000-ffffb4459000 r-xp 00000000 00:00 0                          [vdso]\nffffb4459000-ffffb445b000 r--p 0002a000 00:26 1770                       /usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1\nffffb445b000-ffffb445d000 rw-p 0002c000 00:26 1770                       /usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1\nffffe3ce9000-ffffe3d0a000 rw-p 00000000 00:00 0                          [stack]\n"
+  },
+  "provenance": {
+    "native": true,
+    "translated": false,
+    "glibc": "2.35",
+    "translationChecks": [
+      "kernel machine",
+      "Node process/report architecture",
+      "Node ELF machine",
+      "kernel CPU architecture",
+      "no mapped known translator"
+    ],
+    "limits": "Observed Linux process/kernel/ELF/CPU/map agreement in the named native OrbStack VM; not an adversarial hypervisor or exhaustive translator-detection proof.",
+    "upstream": {
+      "source": "https://api.github.com/repos/ollama/ollama/releases/tags/v0.40.18",
+      "fetchedAt": "2026-11-25T20:14:53.366Z",
+      "url": "https://github.com/ollama/ollama/releases/download/v0.40.18/ollama-linux-arm64.tar.zst",
+      "bytes": 1704011634,
+      "sha256": "63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6",
+      "assetId": 786274900
+    }
+  },
+  "policySha256": "4e02734bed1f3c1eac80a4fc517b99030659cb749a7144401f116f83248a35aa",
+  "asset": {
+    "url": "https://github.com/ollama/ollama/releases/download/v0.40.18/ollama-linux-arm64.tar.zst",
+    "sha256": "63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6",
+    "bytes": 1704011634,
+    "format": "tar.zst"
+  },
+  "target": {
+    "os": "linux",
+    "arch": "arm64",
+    "baseline": "glibc-2.35"
+  },
+  "node": {
+    "version": "v22.22.1",
+    "executable": "/home/insrctest/.insrc-s3/runtimes/node-v22.22.1-linux-arm64/bin/node"
+  },
+  "uid": 501,
+  "elapsedMs": 73887.20307999999,
+  "version": "ollama version is 0.40.18\n",
+  "availability": {
+    "state": "ready",
+    "version": "0.40.18"
+  },
+  "files": 49,
+  "materializedBytes": 4005889908,
+  "inventorySha256": "9e9680d4da283cc4ffa5f5222d558c43b445f532fce7d2a4e19ac3db4ffe5df6",
+  "observed": [
+    {
+      "executable": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/bin/ollama",
+      "argv": [
+        "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/bin/ollama",
+        "serve"
+      ],
+      "environment": {
+        "HOME": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/data",
+        "OLLAMA_HOST": "127.0.0.1:11434",
+        "OLLAMA_MODELS": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/data/models",
+        "PATH": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/bin:/home/insrctest/.insrc-s3/runtimes/node-v22.22.1-linux-arm64/bin:/usr/bin:/bin",
+        "TMPDIR": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/data/tmp"
+      }
+    }
+  ],
+  "logs": [
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/logs/server/ollama-330981bc05286228c73e949ec59c2d684846f9a950d0cc63c7ae8639149338b8.log",
+      "bytes": 2670,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1
+    }
+  ],
+  "modelFiles": 0,
+  "reusedWithoutMutation": true,
+  "applicationDataUnchanged": true,
+  "finiteEvidence": [
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/.attempts/native-reviewed-final/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.cleanup.json",
+      "bytes": 138,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "identitySha256": "14d59f5a53e54cc3658c538ef496b4b581a6c41cb37eea027c50d859eac1a9b6",
+        "purpose": "private-stage-disposal",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/.attempts/native-reviewed-final/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.closed.json",
+      "bytes": 223,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "closed": true,
+        "identitySha256": "14d59f5a53e54cc3658c538ef496b4b581a6c41cb37eea027c50d859eac1a9b6",
+        "inventorySha256": "9e9680d4da283cc4ffa5f5222d558c43b445f532fce7d2a4e19ac3db4ffe5df6",
+        "outcome": "prepared",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/.attempts/native-reviewed-final/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.disposed.json",
+      "bytes": 137,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "closed": true,
+        "identitySha256": "14d59f5a53e54cc3658c538ef496b4b581a6c41cb37eea027c50d859eac1a9b6",
+        "schemaVersion": 1,
+        "stageRemoved": true
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/.attempts/native-reviewed-final/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.handoff-089e1293f72db8e8e6227dae5d750f3d.closed.json",
+      "bytes": 193,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "actor": "finite-service-handoff",
+        "closed": true,
+        "identitySha256": "14d59f5a53e54cc3658c538ef496b4b581a6c41cb37eea027c50d859eac1a9b6",
+        "nonce": "089e1293f72db8e8e6227dae5d750f3d",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/.attempts/native-reviewed-final/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.handoff-089e1293f72db8e8e6227dae5d750f3d.json",
+      "bytes": 179,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "actor": "finite-service-handoff",
+        "identitySha256": "14d59f5a53e54cc3658c538ef496b4b581a6c41cb37eea027c50d859eac1a9b6",
+        "nonce": "089e1293f72db8e8e6227dae5d750f3d",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/.attempts/native-reviewed-final/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.json",
+      "bytes": 5297,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "absence": {
+          "binary": "missing",
+          "destination": "absent",
+          "endpoint": "refused",
+          "searchSha256": "48edbc8c5fd8bb0b61d0e5e7e7a1a94f72d2631925974a78fb9d4929d80da6d0"
+        },
+        "actor": "in-process-preparation",
+        "externalActors": 0,
+        "identity": {
+          "attemptNonce": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "installationId": "s3-reviewed-final",
+          "offerId": "29e8f8b353417ea996230a6ba51af737b97e58d0489bcf253edff79885a81f4c",
+          "operationId": "native-reviewed-final",
+          "payloadRelativePath": "deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6",
+          "policySha256": "4e02734bed1f3c1eac80a4fc517b99030659cb749a7144401f116f83248a35aa",
+          "recordRelativePath": "deps/ollama/.attempts/native-reviewed-final/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.json",
+          "schemaVersion": 1,
+          "stageRelativePath": "deps/ollama/.staging/native-reviewed-final/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "lockIdentity": {
+          "device": "57",
+          "inode": "33571"
+        },
+        "lockProtocol": "in-process-native-v1",
+        "policy": {
+          "asset": {
+            "bytes": 1704011634,
+            "format": "tar.zst",
+            "sha256": "63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6",
+            "url": "https://github.com/ollama/ollama/releases/download/v0.40.18/ollama-linux-arm64.tar.zst"
+          },
+          "endpoint": "http://localhost:11434",
+          "layout": {
+            "aliases": [
+              {
+                "kind": "file",
+                "path": "lib/ollama/cuda_v12/libcublas.so.12",
+                "target": "lib/ollama/cuda_v12/libcublas.so.12.8.5.5"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/cuda_v12/libcublasLt.so.12",
+                "target": "lib/ollama/cuda_v12/libcublasLt.so.12.8.5.5"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/cuda_v12/libcudart.so.12",
+                "target": "lib/ollama/cuda_v12/libcudart.so.12.8.90"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/cuda_v13/libcublas.so.13",
+                "target": "lib/ollama/cuda_v13/libcublas.so.13.1.1.3"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/cuda_v13/libcublasLt.so.13",
+                "target": "lib/ollama/cuda_v13/libcublasLt.so.13.1.1.3"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/cuda_v13/libcudart.so.13",
+                "target": "lib/ollama/cuda_v13/libcudart.so.13.0.96"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libggml-base.so",
+                "target": "lib/ollama/libggml-base.so.1"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libggml-base.so.1",
+                "target": "lib/ollama/libggml-base.so.1.0.0"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libggml.so",
+                "target": "lib/ollama/libggml.so.1"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libggml.so.1",
+                "target": "lib/ollama/libggml.so.1.0.0"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libgomp.so.1",
+                "target": "lib/ollama/libgomp.so.1.0.0"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libllama-common.so",
+                "target": "lib/ollama/libllama-common.so.1"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libllama-common.so.1",
+                "target": "lib/ollama/libllama-common.so.1.0.0"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libllama.so",
+                "target": "lib/ollama/libllama.so.1"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libllama.so.1",
+                "target": "lib/ollama/libllama.so.1.0.0"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libmtmd.so",
+                "target": "lib/ollama/libmtmd.so.1"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libmtmd.so.1",
+                "target": "lib/ollama/libmtmd.so.1.0.0"
+              }
+            ],
+            "executable": "bin/ollama",
+            "requiredFiles": [
+              "bin/ollama",
+              "lib/ollama/CPP_HTTPLIB_LICENSE",
+              "lib/ollama/GO_LICENSE",
+              "lib/ollama/LLAMA_CPP_LICENSE",
+              "lib/ollama/LLAMA_CPP_VENDORS_LICENSE",
+              "lib/ollama/cuda_v12/libcublas.so.12",
+              "lib/ollama/cuda_v12/libcublas.so.12.8.5.5",
+              "lib/ollama/cuda_v12/libcublasLt.so.12",
+              "lib/ollama/cuda_v12/libcublasLt.so.12.8.5.5",
+              "lib/ollama/cuda_v12/libcudart.so.12",
+              "lib/ollama/cuda_v12/libcudart.so.12.8.90",
+              "lib/ollama/cuda_v12/libggml-cuda.so",
+              "lib/ollama/cuda_v13/libcublas.so.13",
+              "lib/ollama/cuda_v13/libcublas.so.13.1.1.3",
+              "lib/ollama/cuda_v13/libcublasLt.so.13",
+              "lib/ollama/cuda_v13/libcublasLt.so.13.1.1.3",
+              "lib/ollama/cuda_v13/libcudart.so.13",
+              "lib/ollama/cuda_v13/libcudart.so.13.0.96",
+              "lib/ollama/cuda_v13/libggml-cuda.so",
+              "lib/ollama/libggml-base.so",
+              "lib/ollama/libggml-base.so.1",
+              "lib/ollama/libggml-base.so.1.0.0",
+              "lib/ollama/libggml-cpu-armv8.0_1.so",
+              "lib/ollama/libggml-cpu-armv8.2_1.so",
+              "lib/ollama/libggml-cpu-armv8.2_2.so",
+              "lib/ollama/libggml-cpu-armv8.2_3.so",
+              "lib/ollama/libggml-cpu-armv8.6_1.so",
+              "lib/ollama/libggml-cpu-armv8.6_2.so",
+              "lib/ollama/libggml-cpu-armv9.2_1.so",
+              "lib/ollama/libggml-cpu-armv9.2_2.so",
+              "lib/ollama/libggml.so",
+              "lib/ollama/libggml.so.1",
+              "lib/ollama/libggml.so.1.0.0",
+              "lib/ollama/libgomp.so.1",
+              "lib/ollama/libgomp.so.1.0.0",
+              "lib/ollama/libllama-common.so",
+              "lib/ollama/libllama-common.so.1",
+              "lib/ollama/libllama-common.so.1.0.0",
+              "lib/ollama/libllama-quantize-impl.so",
+              "lib/ollama/libllama-server-impl.so",
+              "lib/ollama/libllama.so",
+              "lib/ollama/libllama.so.1",
+              "lib/ollama/libllama.so.1.0.0",
+              "lib/ollama/libmtmd.so",
+              "lib/ollama/libmtmd.so.1",
+              "lib/ollama/libmtmd.so.1.0.0",
+              "lib/ollama/libomp.so",
+              "lib/ollama/llama-quantize",
+              "lib/ollama/llama-server"
+            ]
+          },
+          "limits": {
+            "expandedBytes": 5368709120,
+            "fileBytes": 1073741824,
+            "files": 128,
+            "windowBytes": 8388608
+          },
+          "logsRelativePath": "deps/ollama/logs/server",
+          "modelsRelativePath": "deps/ollama/data/models",
+          "qualification": {
+            "checks": {
+              "decline": true,
+              "readiness": true,
+              "reuse": true,
+              "userOnly": true,
+              "version": true
+            },
+            "evidence": "native-qualification/candidate-not-release.json",
+            "native": true,
+            "policySha256": "4e02734bed1f3c1eac80a4fc517b99030659cb749a7144401f116f83248a35aa"
+          },
+          "schemaVersion": 1,
+          "start": true,
+          "target": {
+            "arch": "arm64",
+            "baseline": "glibc-2.35",
+            "os": "linux"
+          },
+          "version": "0.40.18"
+        },
+        "schemaVersion": 2
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/.attempts/native-reviewed-final/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.json.lock",
+      "bytes": 0,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {}
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/.attempts/native-reviewed-final/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.service-input.json",
+      "bytes": 10214,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "admission": {
+          "identitySha256": "14d59f5a53e54cc3658c538ef496b4b581a6c41cb37eea027c50d859eac1a9b6",
+          "inventorySha256": "9e9680d4da283cc4ffa5f5222d558c43b445f532fce7d2a4e19ac3db4ffe5df6",
+          "kind": "user-session-ollama",
+          "nonce": "330981bc05286228c73e949ec59c2d684846f9a950d0cc63c7ae8639149338b8",
+          "policySha256": "4e02734bed1f3c1eac80a4fc517b99030659cb749a7144401f116f83248a35aa",
+          "retained": true,
+          "schemaVersion": 1
+        },
+        "attempt": {
+          "absence": {
+            "binary": "missing",
+            "destination": "absent",
+            "endpoint": "refused",
+            "searchSha256": "48edbc8c5fd8bb0b61d0e5e7e7a1a94f72d2631925974a78fb9d4929d80da6d0"
+          },
+          "actor": "in-process-preparation",
+          "externalActors": 0,
+          "identity": {
+            "attemptNonce": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "installationId": "s3-reviewed-final",
+            "offerId": "29e8f8b353417ea996230a6ba51af737b97e58d0489bcf253edff79885a81f4c",
+            "operationId": "native-reviewed-final",
+            "payloadRelativePath": "deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6",
+            "policySha256": "4e02734bed1f3c1eac80a4fc517b99030659cb749a7144401f116f83248a35aa",
+            "recordRelativePath": "deps/ollama/.attempts/native-reviewed-final/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.json",
+            "schemaVersion": 1,
+            "stageRelativePath": "deps/ollama/.staging/native-reviewed-final/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+          },
+          "lockIdentity": {
+            "device": "57",
+            "inode": "33571"
+          },
+          "lockProtocol": "in-process-native-v1",
+          "policy": {
+            "asset": {
+              "bytes": 1704011634,
+              "format": "tar.zst",
+              "sha256": "63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6",
+              "url": "https://github.com/ollama/ollama/releases/download/v0.40.18/ollama-linux-arm64.tar.zst"
+            },
+            "endpoint": "http://localhost:11434",
+            "layout": {
+              "aliases": [
+                {
+                  "kind": "file",
+                  "path": "lib/ollama/cuda_v12/libcublas.so.12",
+                  "target": "lib/ollama/cuda_v12/libcublas.so.12.8.5.5"
+                },
+                {
+                  "kind": "file",
+                  "path": "lib/ollama/cuda_v12/libcublasLt.so.12",
+                  "target": "lib/ollama/cuda_v12/libcublasLt.so.12.8.5.5"
+                },
+                {
+                  "kind": "file",
+                  "path": "lib/ollama/cuda_v12/libcudart.so.12",
+                  "target": "lib/ollama/cuda_v12/libcudart.so.12.8.90"
+                },
+                {
+                  "kind": "file",
+                  "path": "lib/ollama/cuda_v13/libcublas.so.13",
+                  "target": "lib/ollama/cuda_v13/libcublas.so.13.1.1.3"
+                },
+                {
+                  "kind": "file",
+                  "path": "lib/ollama/cuda_v13/libcublasLt.so.13",
+                  "target": "lib/ollama/cuda_v13/libcublasLt.so.13.1.1.3"
+                },
+                {
+                  "kind": "file",
+                  "path": "lib/ollama/cuda_v13/libcudart.so.13",
+                  "target": "lib/ollama/cuda_v13/libcudart.so.13.0.96"
+                },
+                {
+                  "kind": "file",
+                  "path": "lib/ollama/libggml-base.so",
+                  "target": "lib/ollama/libggml-base.so.1"
+                },
+                {
+                  "kind": "file",
+                  "path": "lib/ollama/libggml-base.so.1",
+                  "target": "lib/ollama/libggml-base.so.1.0.0"
+                },
+                {
+                  "kind": "file",
+                  "path": "lib/ollama/libggml.so",
+                  "target": "lib/ollama/libggml.so.1"
+                },
+                {
+                  "kind": "file",
+                  "path": "lib/ollama/libggml.so.1",
+                  "target": "lib/ollama/libggml.so.1.0.0"
+                },
+                {
+                  "kind": "file",
+                  "path": "lib/ollama/libgomp.so.1",
+                  "target": "lib/ollama/libgomp.so.1.0.0"
+                },
+                {
+                  "kind": "file",
+                  "path": "lib/ollama/libllama-common.so",
+                  "target": "lib/ollama/libllama-common.so.1"
+                },
+                {
+                  "kind": "file",
+                  "path": "lib/ollama/libllama-common.so.1",
+                  "target": "lib/ollama/libllama-common.so.1.0.0"
+                },
+                {
+                  "kind": "file",
+                  "path": "lib/ollama/libllama.so",
+                  "target": "lib/ollama/libllama.so.1"
+                },
+                {
+                  "kind": "file",
+                  "path": "lib/ollama/libllama.so.1",
+                  "target": "lib/ollama/libllama.so.1.0.0"
+                },
+                {
+                  "kind": "file",
+                  "path": "lib/ollama/libmtmd.so",
+                  "target": "lib/ollama/libmtmd.so.1"
+                },
+                {
+                  "kind": "file",
+                  "path": "lib/ollama/libmtmd.so.1",
+                  "target": "lib/ollama/libmtmd.so.1.0.0"
+                }
+              ],
+              "executable": "bin/ollama",
+              "requiredFiles": [
+                "bin/ollama",
+                "lib/ollama/CPP_HTTPLIB_LICENSE",
+                "lib/ollama/GO_LICENSE",
+                "lib/ollama/LLAMA_CPP_LICENSE",
+                "lib/ollama/LLAMA_CPP_VENDORS_LICENSE",
+                "lib/ollama/cuda_v12/libcublas.so.12",
+                "lib/ollama/cuda_v12/libcublas.so.12.8.5.5",
+                "lib/ollama/cuda_v12/libcublasLt.so.12",
+                "lib/ollama/cuda_v12/libcublasLt.so.12.8.5.5",
+                "lib/ollama/cuda_v12/libcudart.so.12",
+                "lib/ollama/cuda_v12/libcudart.so.12.8.90",
+                "lib/ollama/cuda_v12/libggml-cuda.so",
+                "lib/ollama/cuda_v13/libcublas.so.13",
+                "lib/ollama/cuda_v13/libcublas.so.13.1.1.3",
+                "lib/ollama/cuda_v13/libcublasLt.so.13",
+                "lib/ollama/cuda_v13/libcublasLt.so.13.1.1.3",
+                "lib/ollama/cuda_v13/libcudart.so.13",
+                "lib/ollama/cuda_v13/libcudart.so.13.0.96",
+                "lib/ollama/cuda_v13/libggml-cuda.so",
+                "lib/ollama/libggml-base.so",
+                "lib/ollama/libggml-base.so.1",
+                "lib/ollama/libggml-base.so.1.0.0",
+                "lib/ollama/libggml-cpu-armv8.0_1.so",
+                "lib/ollama/libggml-cpu-armv8.2_1.so",
+                "lib/ollama/libggml-cpu-armv8.2_2.so",
+                "lib/ollama/libggml-cpu-armv8.2_3.so",
+                "lib/ollama/libggml-cpu-armv8.6_1.so",
+                "lib/ollama/libggml-cpu-armv8.6_2.so",
+                "lib/ollama/libggml-cpu-armv9.2_1.so",
+                "lib/ollama/libggml-cpu-armv9.2_2.so",
+                "lib/ollama/libggml.so",
+                "lib/ollama/libggml.so.1",
+                "lib/ollama/libggml.so.1.0.0",
+                "lib/ollama/libgomp.so.1",
+                "lib/ollama/libgomp.so.1.0.0",
+                "lib/ollama/libllama-common.so",
+                "lib/ollama/libllama-common.so.1",
+                "lib/ollama/libllama-common.so.1.0.0",
+                "lib/ollama/libllama-quantize-impl.so",
+                "lib/ollama/libllama-server-impl.so",
+                "lib/ollama/libllama.so",
+                "lib/ollama/libllama.so.1",
+                "lib/ollama/libllama.so.1.0.0",
+                "lib/ollama/libmtmd.so",
+                "lib/ollama/libmtmd.so.1",
+                "lib/ollama/libmtmd.so.1.0.0",
+                "lib/ollama/libomp.so",
+                "lib/ollama/llama-quantize",
+                "lib/ollama/llama-server"
+              ]
+            },
+            "limits": {
+              "expandedBytes": 5368709120,
+              "fileBytes": 1073741824,
+              "files": 128,
+              "windowBytes": 8388608
+            },
+            "logsRelativePath": "deps/ollama/logs/server",
+            "modelsRelativePath": "deps/ollama/data/models",
+            "qualification": {
+              "checks": {
+                "decline": true,
+                "readiness": true,
+                "reuse": true,
+                "userOnly": true,
+                "version": true
+              },
+              "evidence": "native-qualification/candidate-not-release.json",
+              "native": true,
+              "policySha256": "4e02734bed1f3c1eac80a4fc517b99030659cb749a7144401f116f83248a35aa"
+            },
+            "schemaVersion": 1,
+            "start": true,
+            "target": {
+              "arch": "arm64",
+              "baseline": "glibc-2.35",
+              "os": "linux"
+            },
+            "version": "0.40.18"
+          },
+          "schemaVersion": 2
+        },
+        "location": {
+          "daemonEndpoint": {
+            "address": "/home/insrctest/.insrc-s3-reviewed-final/daemon.sock",
+            "installationId": "s3-reviewed-final",
+            "kind": "unix"
+          },
+          "home": "/home/insrctest/.insrc-s3-reviewed-final",
+          "installationId": "s3-reviewed-final"
+        },
+        "policy": {
+          "asset": {
+            "bytes": 1704011634,
+            "format": "tar.zst",
+            "sha256": "63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6",
+            "url": "https://github.com/ollama/ollama/releases/download/v0.40.18/ollama-linux-arm64.tar.zst"
+          },
+          "endpoint": "http://localhost:11434",
+          "layout": {
+            "aliases": [
+              {
+                "kind": "file",
+                "path": "lib/ollama/cuda_v12/libcublas.so.12",
+                "target": "lib/ollama/cuda_v12/libcublas.so.12.8.5.5"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/cuda_v12/libcublasLt.so.12",
+                "target": "lib/ollama/cuda_v12/libcublasLt.so.12.8.5.5"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/cuda_v12/libcudart.so.12",
+                "target": "lib/ollama/cuda_v12/libcudart.so.12.8.90"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/cuda_v13/libcublas.so.13",
+                "target": "lib/ollama/cuda_v13/libcublas.so.13.1.1.3"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/cuda_v13/libcublasLt.so.13",
+                "target": "lib/ollama/cuda_v13/libcublasLt.so.13.1.1.3"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/cuda_v13/libcudart.so.13",
+                "target": "lib/ollama/cuda_v13/libcudart.so.13.0.96"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libggml-base.so",
+                "target": "lib/ollama/libggml-base.so.1"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libggml-base.so.1",
+                "target": "lib/ollama/libggml-base.so.1.0.0"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libggml.so",
+                "target": "lib/ollama/libggml.so.1"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libggml.so.1",
+                "target": "lib/ollama/libggml.so.1.0.0"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libgomp.so.1",
+                "target": "lib/ollama/libgomp.so.1.0.0"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libllama-common.so",
+                "target": "lib/ollama/libllama-common.so.1"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libllama-common.so.1",
+                "target": "lib/ollama/libllama-common.so.1.0.0"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libllama.so",
+                "target": "lib/ollama/libllama.so.1"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libllama.so.1",
+                "target": "lib/ollama/libllama.so.1.0.0"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libmtmd.so",
+                "target": "lib/ollama/libmtmd.so.1"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libmtmd.so.1",
+                "target": "lib/ollama/libmtmd.so.1.0.0"
+              }
+            ],
+            "executable": "bin/ollama",
+            "requiredFiles": [
+              "bin/ollama",
+              "lib/ollama/CPP_HTTPLIB_LICENSE",
+              "lib/ollama/GO_LICENSE",
+              "lib/ollama/LLAMA_CPP_LICENSE",
+              "lib/ollama/LLAMA_CPP_VENDORS_LICENSE",
+              "lib/ollama/cuda_v12/libcublas.so.12",
+              "lib/ollama/cuda_v12/libcublas.so.12.8.5.5",
+              "lib/ollama/cuda_v12/libcublasLt.so.12",
+              "lib/ollama/cuda_v12/libcublasLt.so.12.8.5.5",
+              "lib/ollama/cuda_v12/libcudart.so.12",
+              "lib/ollama/cuda_v12/libcudart.so.12.8.90",
+              "lib/ollama/cuda_v12/libggml-cuda.so",
+              "lib/ollama/cuda_v13/libcublas.so.13",
+              "lib/ollama/cuda_v13/libcublas.so.13.1.1.3",
+              "lib/ollama/cuda_v13/libcublasLt.so.13",
+              "lib/ollama/cuda_v13/libcublasLt.so.13.1.1.3",
+              "lib/ollama/cuda_v13/libcudart.so.13",
+              "lib/ollama/cuda_v13/libcudart.so.13.0.96",
+              "lib/ollama/cuda_v13/libggml-cuda.so",
+              "lib/ollama/libggml-base.so",
+              "lib/ollama/libggml-base.so.1",
+              "lib/ollama/libggml-base.so.1.0.0",
+              "lib/ollama/libggml-cpu-armv8.0_1.so",
+              "lib/ollama/libggml-cpu-armv8.2_1.so",
+              "lib/ollama/libggml-cpu-armv8.2_2.so",
+              "lib/ollama/libggml-cpu-armv8.2_3.so",
+              "lib/ollama/libggml-cpu-armv8.6_1.so",
+              "lib/ollama/libggml-cpu-armv8.6_2.so",
+              "lib/ollama/libggml-cpu-armv9.2_1.so",
+              "lib/ollama/libggml-cpu-armv9.2_2.so",
+              "lib/ollama/libggml.so",
+              "lib/ollama/libggml.so.1",
+              "lib/ollama/libggml.so.1.0.0",
+              "lib/ollama/libgomp.so.1",
+              "lib/ollama/libgomp.so.1.0.0",
+              "lib/ollama/libllama-common.so",
+              "lib/ollama/libllama-common.so.1",
+              "lib/ollama/libllama-common.so.1.0.0",
+              "lib/ollama/libllama-quantize-impl.so",
+              "lib/ollama/libllama-server-impl.so",
+              "lib/ollama/libllama.so",
+              "lib/ollama/libllama.so.1",
+              "lib/ollama/libllama.so.1.0.0",
+              "lib/ollama/libmtmd.so",
+              "lib/ollama/libmtmd.so.1",
+              "lib/ollama/libmtmd.so.1.0.0",
+              "lib/ollama/libomp.so",
+              "lib/ollama/llama-quantize",
+              "lib/ollama/llama-server"
+            ]
+          },
+          "limits": {
+            "expandedBytes": 5368709120,
+            "fileBytes": 1073741824,
+            "files": 128,
+            "windowBytes": 8388608
+          },
+          "logsRelativePath": "deps/ollama/logs/server",
+          "modelsRelativePath": "deps/ollama/data/models",
+          "qualification": {
+            "checks": {
+              "decline": true,
+              "readiness": true,
+              "reuse": true,
+              "userOnly": true,
+              "version": true
+            },
+            "evidence": "native-qualification/candidate-not-release.json",
+            "native": true,
+            "policySha256": "4e02734bed1f3c1eac80a4fc517b99030659cb749a7144401f116f83248a35aa"
+          },
+          "schemaVersion": 1,
+          "start": true,
+          "target": {
+            "arch": "arm64",
+            "baseline": "glibc-2.35",
+            "os": "linux"
+          },
+          "version": "0.40.18"
+        },
+        "schemaVersion": 1
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/.attempts/native-reviewed-final/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.service-launch.json",
+      "bytes": 161,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "admissionSha256": "9798ac86e198333e004470d69966ab0ade43b76e8c05fe270c2be02d23795b3b",
+        "endpointOwnership": "unproven",
+        "schemaVersion": 1,
+        "state": "launch-admitted"
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/.attempts/native-reviewed-final/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.service-result.json",
+      "bytes": 151,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "admissionSha256": "9798ac86e198333e004470d69966ab0ade43b76e8c05fe270c2be02d23795b3b",
+        "endpointOwnership": "unproven",
+        "schemaVersion": 1,
+        "state": "ready"
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/.attempts/native-reviewed-final/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.service-running.json",
+      "bytes": 153,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "admissionSha256": "9798ac86e198333e004470d69966ab0ade43b76e8c05fe270c2be02d23795b3b",
+        "endpointOwnership": "unproven",
+        "schemaVersion": 1,
+        "state": "spawned"
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/.attempts/native-reviewed-final/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.service.json",
+      "bytes": 390,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "identitySha256": "14d59f5a53e54cc3658c538ef496b4b581a6c41cb37eea027c50d859eac1a9b6",
+        "inventorySha256": "9e9680d4da283cc4ffa5f5222d558c43b445f532fce7d2a4e19ac3db4ffe5df6",
+        "kind": "user-session-ollama",
+        "nonce": "330981bc05286228c73e949ec59c2d684846f9a950d0cc63c7ae8639149338b8",
+        "policySha256": "4e02734bed1f3c1eac80a4fc517b99030659cb749a7144401f116f83248a35aa",
+        "retained": true,
+        "schemaVersion": 1
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/.attempts/native-reviewed-final/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.service.lock",
+      "bytes": 0,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {}
+    }
+  ],
+  "retainedService": true,
+  "endpointOwnership": "unproven",
+  "fullDaemonInstallation": false
+}

@@ -5,6 +5,8 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, readlinkSync, writeFileSync } from 'node:fs';
+import { homedir, tmpdir } from 'node:os';
+import { observeLinuxMachine, fetchOfficialProvenance, validateNativeProvenance } from './ollama-qualification-evidence.mjs';
 import { dirname, join, resolve } from 'node:path';
 import { dependencyPort, probeOllamaVersion } from '../out/installer/dependencies.js';
 import { productionPeers, controlRuntimeDirectory } from '../out/installer/production-peers.js';
@@ -18,7 +20,7 @@ import { resolveInstallationLocation } from '../out/installer/location.js';
 import { canonicalJson } from '../out/installer/release-descriptor.js';
 
 const [phase, specPath] = process.argv.slice(2), spec = JSON.parse(readFileSync(resolve(specPath), 'utf8'));
-assert.ok(['decline', 'install', 'inspect', 'benchmark'].includes(phase));
+assert.ok(['decline', 'install', 'inspect', 'benchmark', 'cache-advice'].includes(phase));
 const policy = parseOllamaPolicy(spec.policy), location = resolveInstallationLocation(spec.installationId, { home: spec.home });
 assert.equal(process.getuid() > 0, true, 'qualification install must be unprivileged');
 const runtimeDirectory = controlRuntimeDirectory(policy.target);
@@ -37,8 +39,56 @@ function save(name, value) {
   writeFileSync(join(dirname(specPath), name), JSON.stringify(value, null, 2) + '\n', { mode: 0o600 });
   process.stdout.write(JSON.stringify({ kind: name, status: value.status, elapsedMs: value.elapsedMs, ollama: value.report?.ollama }) + '\n');
 }
+// Raw independent observations are captured before claiming target eligibility.
+const machineObservation = observeLinuxMachine();
+const upstream = await fetchOfficialProvenance(policy);
+const provenance = validateNativeProvenance(policy, machineObservation, upstream);
+save(`${phase}-machine.json`, machineObservation); save(`${phase}-upstream.json`, upstream);
+save(`${phase}-provenance.json`, provenance);
+function metadataTree(directory, maximum = 4096) {
+  const entries = []; let truncated = false;
+  function visit(path) {
+    if (!existsSync(path)) return;
+    if (entries.length >= maximum) { truncated = true; return; }
+    try {
+      const stat = lstatSync(path); entries.push({ path, bytes: stat.size, mode: stat.mode & 0o777, uid: stat.uid,
+        mtimeMs: stat.mtimeMs, kind: stat.isSymbolicLink() ? 'link' : stat.isDirectory() ? 'directory' : stat.isFile() ? 'file' : 'special',
+        ...(stat.isSymbolicLink() ? { target: readlinkSync(path) } : {}) });
+      if (stat.isDirectory()) for (const name of readdirSync(path).sort()) visit(join(path, name));
+    } catch (error) { entries.push({ path, error: error.code }); }
+  }
+  visit(directory); return { directory, entries, truncated };
+}
+const writeScopes = () => [metadataTree(location.home), metadataTree(join(homedir(), '.ollama')), metadataTree(tmpdir())];
+const beforeScopes = writeScopes();
+function saveWriteObservations() {
+  save(`${phase}-write-observations.json`, { status: 'observed', before: beforeScopes, after: writeScopes(),
+    limits: 'Bounded before/after directory metadata only. This does not detect transient/deleted or metadata-preserving writes, trace syscalls, or prove exhaustive filesystem confinement. Shared temp activity may be unrelated. No payload content hashing is performed.' });
+}
+process.once('beforeExit', saveWriteObservations);
 const port = dependencyPort(policy.target, location, { runtimeDirectory, policies: [policy], service: { workerEntrypoint: spec.bootstrap } });
-if (phase === 'benchmark') {
+if (phase === 'cache-advice') {
+  const attempts = await closedOllamaAttempts(location); assert.equal(attempts.length, 1);
+  const payload = join(location.home, attempts[0].identity.payloadRelativePath);
+  // Per-file unprivileged advice; never /proc/sys/vm/drop_caches or elevation.
+  const code = `import os,sys,json
+root=sys.argv[1]; results=[]
+for parent,dirs,files in os.walk(root):
+ for name in sorted(files):
+  path=os.path.join(parent,name)
+  if not os.path.isfile(path) or os.path.islink(path): continue
+  fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW)
+  try:
+   os.posix_fadvise(fd,0,0,os.POSIX_FADV_DONTNEED)
+   results.append({'path':path,'result':0})
+  finally: os.close(fd)
+print(json.dumps(results))`;
+  const action = spawnSync('python3', ['-c', code, payload], { encoding: 'utf8', timeout: 30000, maxBuffer: 65536 });
+  assert.equal(action.status, 0, action.stderr);
+  const results = JSON.parse(action.stdout); assert.ok(results.length > 0);
+  save('cache-advice.json', { status: 'pass', action: 'posix_fadvise(POSIX_FADV_DONTNEED)', uid: process.getuid(), payload, results,
+    limits: 'Unprivileged per-file advice only; success does not guarantee mapped pages are evicted. No global cache drop or global cold-cache claim.' });
+} else if (phase === 'benchmark') {
   const attempts = await closedOllamaAttempts(location), attempt = attempts[0]; assert.ok(attempt);
   const started = performance.now(), verified = await verifyPreparedOllama(location, policy, join(location.home, attempt.identity.payloadRelativePath));
   save('verification-benchmark.json', { status: 'measured', elapsedMs: performance.now() - started, inventorySha256: verified.inventorySha256,
@@ -106,7 +156,7 @@ if (phase === 'benchmark') {
       const reused = await port.inspect(location); assert.equal(reused.ollama, 'ready', JSON.stringify(reused));
       assert.deepEqual(snapshot(join(location.home, 'deps/ollama/.attempts')), evidence); assert.deepEqual(readFileSync(marker), markerBytes);
       assert.equal(existsSync(join(location.home, 'releases')), false, 'no full daemon installation is claimed');
-      save('native-install.json', { status: 'pass', policySha256: ollamaPolicySha256(policy), asset: policy.asset, target: policy.target,
+      save('native-install.json', { status: 'pass', machineObservation, provenance, policySha256: ollamaPolicySha256(policy), asset: policy.asset, target: policy.target,
         node: { version: process.version, executable: process.execPath }, uid: process.getuid(), elapsedMs: performance.now() - started,
         version: version.stdout + version.stderr, availability, files: verified.files.length, materializedBytes: verified.files.reduce((total, file) => total + file.bytes, 0),
         inventorySha256: verified.inventorySha256, observed, logs, modelFiles: 0, reusedWithoutMutation: true, applicationDataUnchanged: true,

@@ -1,0 +1,213 @@
+{
+  "status": "pass",
+  "action": "posix_fadvise(POSIX_FADV_DONTNEED)",
+  "uid": 501,
+  "payload": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6",
+  "results": [
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/.ollama-receipt.json",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/inventory.json",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/bin/ollama",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/CPP_HTTPLIB_LICENSE",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/GO_LICENSE",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/LLAMA_CPP_LICENSE",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/LLAMA_CPP_VENDORS_LICENSE",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-base.so",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-base.so.1",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-base.so.1.0.0",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv8.0_1.so",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv8.2_1.so",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv8.2_2.so",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv8.2_3.so",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv8.6_1.so",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv8.6_2.so",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv9.2_1.so",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml-cpu-armv9.2_2.so",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml.so",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml.so.1",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libggml.so.1.0.0",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libgomp.so.1",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libgomp.so.1.0.0",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama-common.so",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama-common.so.1",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama-common.so.1.0.0",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama-quantize-impl.so",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama-server-impl.so",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama.so",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama.so.1",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libllama.so.1.0.0",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libmtmd.so",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libmtmd.so.1",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libmtmd.so.1.0.0",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/libomp.so",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/llama-quantize",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/llama-server",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libcublas.so.12",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libcublas.so.12.8.5.5",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libcublasLt.so.12",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libcublasLt.so.12.8.5.5",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libcudart.so.12",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libcudart.so.12.8.90",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v12/libggml-cuda.so",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libcublas.so.13",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libcublas.so.13.1.1.3",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libcublasLt.so.13",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libcublasLt.so.13.1.1.3",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libcudart.so.13",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libcudart.so.13.0.96",
+      "result": 0
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3-reviewed-final/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/lib/ollama/cuda_v13/libggml-cuda.so",
+      "result": 0
+    }
+  ],
+  "limits": "Unprivileged per-file advice only; success does not guarantee mapped pages are evicted. No global cache drop or global cold-cache claim."
+}

@@ -6,6 +6,7 @@ import { ollamaPolicies } from '../ollama-catalog.js';
 import { ollamaPolicySha256, parseOllamaPolicy } from '../ollama-policy.js';
 import { dependencyPort } from '../dependencies.js';
 import { ollamaFixture } from './_ollama-fixture.js';
+import { validateNativeProvenance } from '../../../scripts/ollama-qualification-evidence.mjs';
 import { privateRuntimeTest } from './_private-runtime-test.js';
 
 test('enabled-target-policy-requires-matching-native-evidence-and-mandatory-linux-route', () => {
@@ -16,7 +17,15 @@ test('enabled-target-policy-requires-matching-native-evidence-and-mandatory-linu
     const evidence = JSON.parse(readFileSync(fileURLToPath(new URL(`../../../${qualified.evidence}`, import.meta.url)), 'utf8'));
     assert.equal(evidence.status, 'pass'); assert.equal(evidence.catalogEnabled, true);
     assert.equal(evidence.machine.native, true); assert.equal(evidence.machine.translated, false);
-    assert.equal(evidence.machine.arch, policy.target.arch); assert.equal(evidence.machine.glibc, '2.35'); assert.equal(evidence.machine.uid, 501);
+    assert.equal(evidence.machine.arch, policy.target.arch); assert.equal(evidence.machine.glibc, policy.target.baseline.replace('glibc-', '')); assert.ok(evidence.machine.uid > 0);
+    const directory = qualified.evidence.slice(0, qualified.evidence.lastIndexOf('/') + 1);
+    const raw = (name: string) => JSON.parse(readFileSync(fileURLToPath(new URL(`../../../${directory}${name}`, import.meta.url)), 'utf8'));
+    const derived = validateNativeProvenance(policy, raw('install-machine.json'), raw('install-upstream.json'));
+    assert.equal(derived.native, evidence.machine.native); assert.equal(derived.translated, evidence.machine.translated);
+    assert.equal(derived.glibc, evidence.machine.glibc); assert.equal(raw('install-machine.json').uid, evidence.machine.uid);
+    assert.equal(raw('cache-advice.json').status, 'pass');
+    assert.equal(raw('cleanup-vm.json').record.state, 'stopped');
+    assert.ok(raw('install-write-observations.json').limits.includes('not detect transient'));
     assert.equal(evidence.policySha256, ollamaPolicySha256(policy)); assert.equal(qualified.policySha256, evidence.policySha256);
     assert.deepEqual(evidence.asset, policy.asset); assert.equal(evidence.observed.privateNode, '22.22.1');
     assert.equal(evidence.observed.executableVersion, policy.version); assert.equal(evidence.observed.apiVersion, policy.version);

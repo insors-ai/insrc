@@ -1,0 +1,28 @@
+{
+  "status": "pass",
+  "report": {
+    "runtimeReady": true,
+    "ollama": "missing",
+    "agents": {
+      "claude": false,
+      "codex": false,
+      "vibe": false
+    },
+    "recommendations": [
+      "Accepting this offer installs and starts a user-session Ollama service at http://localhost:11434.",
+      "Models stay at /home/insrctest/.insrc-s3-reviewed/deps/ollama/data/models; logs stay at /home/insrctest/.insrc-s3-reviewed/deps/ollama/logs/server. No models are downloaded automatically.",
+      "Ollama support files and temporary data stay at /home/insrctest/.insrc-s3-reviewed/deps/ollama/data.",
+      "Recommend installing at least one coding CLI: Claude Code, Codex or Mistral Vibe."
+    ],
+    "blockers": [
+      "Ollama is missing; its local service requirement is unmet."
+    ],
+    "ollamaInstallOffer": {
+      "id": "05e39212a9790044525a83c062d479b609769f3a25ba110ec01e9c01d6a617d3",
+      "destination": "/home/insrctest/.insrc-s3-reviewed/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6",
+      "version": "0.40.18"
+    }
+  },
+  "dependencyFilesUnchanged": true,
+  "uid": 501
+}

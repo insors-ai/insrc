@@ -1,0 +1,33 @@
+{
+  "record": {
+    "id": "01M89AR4V9SBYTBK2DHGZXCSK7",
+    "name": "insrc-s3-ollama-arm64",
+    "image": {
+      "distro": "ubuntu",
+      "version": "jammy",
+      "arch": "arm64",
+      "variant": "default"
+    },
+    "config": {
+      "isolated": true,
+      "forward_ssh_agent": false,
+      "isolate_network": true,
+      "default_username": "insrctest",
+      "http_port": 0,
+      "https_port": 0,
+      "memory_limit_mib": 8192,
+      "cpu_limit": 2,
+      "disk_limit_bytes": 34359738368
+    },
+    "os_release": {
+      "name": "Ubuntu",
+      "version_id": "22.04",
+      "pretty_name": "Ubuntu 22.04.5 LTS"
+    },
+    "builtin": false,
+    "state": "running"
+  },
+  "disk_size": 23185297408,
+  "ip4": "192.168.139.244",
+  "ip6": "fd07:b51a:cc66:0:f8fc:29ff:fe36:61bc"
+}

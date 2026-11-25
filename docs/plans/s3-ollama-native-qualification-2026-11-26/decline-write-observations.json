@@ -1,0 +1,210 @@
+{
+  "status": "observed",
+  "before": [
+    {
+      "directory": "/home/insrctest/.insrc-s3-reviewed-final",
+      "entries": [
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed-final",
+          "bytes": 22,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637692044.1873,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed-final/config.json",
+          "bytes": 55,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637692044.1873,
+          "kind": "file"
+        }
+      ],
+      "truncated": false
+    },
+    {
+      "directory": "/home/insrctest/.ollama",
+      "entries": [],
+      "truncated": false
+    },
+    {
+      "directory": "/tmp",
+      "entries": [
+        {
+          "path": "/tmp",
+          "bytes": 140,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637691984.1997,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.ICE-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637691685.2502,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.Test-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637691685.4075,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.X11-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637691685.2502,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.XIM-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637691685.3892,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.font-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637691685.3984,
+          "kind": "directory"
+        }
+      ],
+      "truncated": false
+    }
+  ],
+  "after": [
+    {
+      "directory": "/home/insrctest/.insrc-s3-reviewed-final",
+      "entries": [
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed-final",
+          "bytes": 68,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637693037.121,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed-final/application-data",
+          "bytes": 48,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637693037.121,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed-final/config.json",
+          "bytes": 55,
+          "mode": 420,
+          "uid": 501,
+          "mtimeMs": 1795637692044.1873,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed-final/install",
+          "bytes": 88,
+          "mode": 448,
+          "uid": 501,
+          "mtimeMs": 1795637693022.1208,
+          "kind": "directory"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed-final/install/controller.json",
+          "bytes": 348,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637693020.1208,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed-final/install/enrollment.json",
+          "bytes": 110,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637693011.1206,
+          "kind": "file"
+        },
+        {
+          "path": "/home/insrctest/.insrc-s3-reviewed-final/install/operation.lock",
+          "bytes": 0,
+          "mode": 384,
+          "uid": 501,
+          "mtimeMs": 1795637693009.1206,
+          "kind": "file"
+        }
+      ],
+      "truncated": false
+    },
+    {
+      "directory": "/home/insrctest/.ollama",
+      "entries": [],
+      "truncated": false
+    },
+    {
+      "directory": "/tmp",
+      "entries": [
+        {
+          "path": "/tmp",
+          "bytes": 140,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637691984.1997,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.ICE-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637691685.2502,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.Test-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637691685.4075,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.X11-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637691685.2502,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.XIM-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637691685.3892,
+          "kind": "directory"
+        },
+        {
+          "path": "/tmp/.font-unix",
+          "bytes": 40,
+          "mode": 511,
+          "uid": 0,
+          "mtimeMs": 1795637691685.3984,
+          "kind": "directory"
+        }
+      ],
+      "truncated": false
+    }
+  ],
+  "limits": "Bounded before/after directory metadata only. This does not detect transient/deleted or metadata-preserving writes, trace syscalls, or prove exhaustive filesystem confinement. Shared temp activity may be unrelated. No payload content hashing is performed."
+}

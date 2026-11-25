@@ -6,7 +6,7 @@ import { fingerprint, inputFingerprint, REQUIRED_ARTIFACTS } from '../test-harne
 
 // Explicit post-run qualification, outside routine backend test discovery. A
 // live suite cannot certify its own final cleanup; all installer tests run first.
-test('combined-s1-s2-installer-regression-has-complete-coverage-and-confirmed-cleanup', () => {
+test('combined-s1-s2-s3-installer-regression-has-exact-coverage-and-confirmed-cleanup', () => {
   const root = realpathSync('.'), directory = 'src/installer/__tests__';
   const expected = [...readdirSync(join(root, directory))
     .filter(name => name.endsWith('.test.ts'))

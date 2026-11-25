@@ -1,0 +1,133 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d135d462-abbf-4c57-8964-e0eee462aec6",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-25T16:36:51.305Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Run final scoped regression and refresh manual review evidence",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t14",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t15",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t16",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t17",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#294",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e8daefcabdd24ed6e2904a8bf6818833a7967acd42ab3dbff33adbfc423f8e26",
+        "at": "2026-11-25T16:36:51.305Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T16:36:51.313Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run final scoped regression and refresh manual review evidence",
+    "summary": "After all corrective tasks and local checks, run one composed S1/S2/S3 installer regression, reconcile current evidence and generate an updated manual-review delta packet.",
+    "size": "M",
+    "order": 18,
+    "acceptanceChecks": [
+      "Canonical Node22 build and one final all-installer plus installation-home/build/scanner/coordinator regression after t12–t17. Set INSRC_BUILD_CONFIRM_CLOSURE=1 and --concurrency=1; no unrelated backend sweep or per-task full suite.",
+      "Audit exact selected/discovered/executed counts with zero unexplained skips/failures/cancellations; current source/output fingerprints; matching unique admission/close/disposal sets, confirmed finite closure and no unaccounted owned work.",
+      "Keep retained-service admissions separate from finite actor closure. Account/clean isolated fixture actors without any PID/kill daemon fallback or host-service mutation.",
+      "Update BUILD/TESTS mapping and revised native/inspection evidence; identify the prior152/152 packet as pre-review history, preserve it unchanged, and map every finding to corrected files/tests or an honest pending qualification limit.",
+      "Keep approved sequence/ownership docs aligned and prepare a fresh /tmp/.insrc manual-review packet/delta with commits, changed files, epic/HLD/LLD/PLAN trail and raw test/native evidence. Automated review endpoints remain unavailable; do not invent CR registration or request per-task human BUILD approvals.",
+      "Only after all tasks validate, present final story BUILD for specific human approval using available supported flow; report any known disabled-review presentation gate accurately.",
+      "Do not renumber/reissue/rebuild completed t1–t11 as if newly failed. Their original test evidence remains historical, while t12–t18 supply current revision validation; every current LLD strategy item maps to an executing corrective/qualification/final task."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "private-runtime-provenance-rejects-path-node-and-wrong-target"
+      },
+      {
+        "level": "integration",
+        "name": "production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5"
+      },
+      {
+        "level": "smoke",
+        "name": "combined-s1-s2-s3-installer-regression-has-exact-coverage-and-confirmed-cleanup"
+      },
+      {
+        "level": "smoke",
+        "name": "published-control-payload-includes-real-dependency-adapter-without-application-boot-imports"
+      },
+      {
+        "level": "smoke",
+        "name": "terminal-install-upgrade-consent-and-ready-before-tui-regressions"
+      }
+    ],
+    "planTaskId": "t18"
+  },
+  "citations": []
+}

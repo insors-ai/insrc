@@ -1,7 +1,6 @@
 /** Private S3 layout/inventory rules; S1 release ZIP acceptance is unchanged. */
 import { constants } from 'node:fs';
 import { lstat, mkdir, open, readdir } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
 import { setImmediate as yieldTurn } from 'node:timers/promises';
 import { dirname, join } from 'node:path';
 import { InstallerError } from './contracts.js';
@@ -56,7 +55,8 @@ export class OllamaArchivePaths {
     this.seen.add(key);
   }
 }
-async function hashFile(root: string, file: InventoryFile, signal?: AbortSignal): Promise<void> {
+async function verifyFileMetadata(root: string, file: InventoryFile, signal?: AbortSignal): Promise<void> {
+  signal?.throwIfAborted();
   ollamaMemberPath(file.path); const path = join(root, file.path), initial = await lstat(path);
   if (!initial.isFile() || initial.isSymbolicLink() || initial.nlink !== 1 || initial.size !== file.bytes) throw archiveUnsafe('Dependency file differs from inventory');
   if (process.platform === 'win32' && !controlBinding().safePath(path, false, false)) throw archiveUnsafe('Dependency file is a reparse point');
@@ -65,17 +65,12 @@ async function hashFile(root: string, file: InventoryFile, signal?: AbortSignal)
     const stat = await handle.stat();
     if (!stat.isFile() || stat.nlink !== 1 || stat.size !== file.bytes || stat.ino !== initial.ino || stat.dev !== initial.dev
       || (process.platform !== 'win32' && ((stat.mode & 0o111) ? 0o755 : 0o644) !== file.mode)) throw archiveUnsafe('Dependency file changed during verification');
-    // One bounded buffer, reused for the full digest. Larger reads avoid tens
-    // of thousands of async file calls when reconciling official multi-GB trees.
-    const hash = createHash('sha256'), buffer = Buffer.alloc(Math.min(1024 * 1024, Math.max(1, file.bytes))); let bytes = 0;
-    while (true) {
-      signal?.throwIfAborted(); const result = await handle.read(buffer, 0, buffer.length, null); if (!result.bytesRead) break;
-      bytes += result.bytesRead; if (bytes > file.bytes) throw archiveUnsafe('Dependency file grew'); hash.update(buffer.subarray(0, result.bytesRead));
-    }
-    if (bytes !== file.bytes || hash.digest('hex') !== file.sha256) throw archiveUnsafe('Dependency file digest differs');
+    // Acquisition verifies the archive digest. Later validation checks the
+    // recorded layout and metadata without reading installed file contents.
+    signal?.throwIfAborted();
   } finally { await closeOwnedFile(handle); }
 }
-/** Complete tree verification under S3 limits, also used by immutable retries. */
+/** Bounded layout/metadata validation, not installed-content integrity checking. */
 export async function verifyOllamaTree(root: string, files: InventoryFile[], policyInput: OllamaPolicy,
   signal?: AbortSignal, options: { records?: boolean; layout?: boolean } = {}): Promise<void> {
   const policy = parseOllamaPolicy(policyInput); await privateOllamaDirectory(root);
@@ -99,7 +94,7 @@ export async function verifyOllamaTree(root: string, files: InventoryFile[], pol
       }
       actual.add(path, false);
       const file = expected.get(path); if (!file) throw archiveUnsafe('Unrecorded dependency file');
-      await hashFile(root, file, signal); expected.delete(path);
+      await verifyFileMetadata(root, file, signal); expected.delete(path);
     }
   };
   await visit(root); if (expected.size) throw archiveUnsafe('Required dependency files are missing');

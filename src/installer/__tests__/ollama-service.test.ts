@@ -13,6 +13,7 @@ import { dependencyPort } from '../dependencies.js';
 import { canonicalJson, digest } from '../release-descriptor.js';
 import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
 import { privateRuntimeTest } from './_private-runtime-test.js';
+import { observeOllamaReads } from './_ollama-read-sentinel.js';
 
 function serviceTest(title: string, run: () => Promise<void>): void {
   privateRuntimeTest(import.meta.url, title, run);
@@ -61,6 +62,20 @@ function replacePayload(f: Awaited<ReturnType<typeof fixture>>): () => void {
   writeFileSync(dataFile, changed); writeFileSync(inventoryFile, replacedInventory); writeFileSync(receiptFile, canonicalJson(receipt));
   return () => { writeFileSync(dataFile, dataBytes); writeFileSync(inventoryFile, inventoryBytes); writeFileSync(receiptFile, receiptBytes); };
 }
+
+serviceTest('reuse-and-service-admission-never-rehash-installed-files', async () => {
+  const f = await fixture(), observer = observeOllamaReads(f.prepared.directory);
+  try {
+    const data = join(f.prepared.directory, 'lib/data.dat');
+    writeFileSync(data, Buffer.alloc(lstatSync(data).size, 3));
+    assert.equal((await startOllamaService(f.location, f.prepared, f.context(), f.service)).ollama, 'ready');
+    assert.equal((await dependencyPort(f.target, f.location, f.options).inspect(f.location)).ollama, 'ready');
+    const reused = await startOllamaService(f.location, f.prepared, f.context(), { ...f.service,
+      launch: async () => { throw new Error('retained service must not launch again'); } });
+    assert.equal(reused.ollama, 'ready'); assert.equal(f.count(), 1);
+    assert.ok(observer.reads.length > 0); assert.ok(observer.reads.every(read => read.file !== 'lib/data.dat'));
+  } finally { observer.restore(); await f.cleanup(); }
+});
 
 serviceTest('service-admission-is-durable-and-distinct-from-finite-preparation-drain', async () => {
   const f = await fixture();

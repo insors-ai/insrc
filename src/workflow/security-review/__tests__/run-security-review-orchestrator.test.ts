@@ -167,6 +167,21 @@ test("persists exactly ONE VerificationReceipt per round, both 'pass' on a clean
 	} finally { unwire(); rmSync(repo, { recursive: true, force: true }); }
 });
 
+test('SecurityReviewReport.effectiveModel matches the modelSelection actually passed in, even when it differs from this file\'s own baseline fixture modelSelection (standing in for "the repo\'s currently-configured tier default", which t4 itself never resolves or consults -- s1 owns that)', async () => {
+	const repo = initRepo();
+	wireRepo(repo);
+	_setRunSecurityCodePassForTests(async () => []);
+	try {
+		const identity = await realContentIdentity(repo);
+		const differingModelSelection: SecurityModelSelection & { status: 'configured' } = { status: 'configured', provider: 'cli-codex', modelId: 'a-non-default-model-id' };
+		assert.notDeepEqual(differingModelSelection, modelSelection, 'the two selections genuinely differ');
+		const report = await runSecurityReview(repo, targets, {
+			reviewId: `r-${randomUUID()}`, modelSelection: differingModelSelection, advisoryEvidence: evidenceFor(identity), now: '2026-11-25T00:00:00.000Z',
+		});
+		assert.deepEqual(report.effectiveModel, { provider: 'cli-codex', modelId: 'a-non-default-model-id' }, 'effectiveModel reflects the DIFFERING selection actually passed in, never the file\'s baseline');
+	} finally { unwire(); rmSync(repo, { recursive: true, force: true }); }
+});
+
 test("without epicHash/storyId, deriveReceiptIdentity's output is used and standalone:true is set", async () => {
 	const repo = initRepo();
 	wireRepo(repo);

@@ -229,17 +229,23 @@ export function runSecurityReview(
 
 		async function runRoundWithReceipt(round: number): Promise<{ findings: readonly SecurityFinding[]; receipt: VerificationReceipt }> {
 			const receiptId = `${opts.reviewId}-${attemptId}-round-${round}`;
+			let result: { readonly findings: readonly SecurityFinding[] };
 			try {
-				const result = await runReviewRound<SecurityFinding>(opts.reviewId, hooks, round, targets);
-				const receipt: VerificationReceipt = { id: receiptId, result: 'pass', ranAt: opts.now };
-				await persistVerificationReceipt(repoPath, { ...ident, now: opts.now, ...(explicitIdent ? {} : { standalone: true }) }, receipt);
-				await writeCheckpoint(opts.reviewId, { kind: 'round', ref: round });
-				return { findings: withReceiptId(result.findings, receiptId), receipt };
+				result = await runReviewRound<SecurityFinding>(opts.reviewId, hooks, round, targets);
 			} catch (err) {
 				const receipt: VerificationReceipt = { id: receiptId, result: 'fail', ranAt: opts.now };
 				await persistVerificationReceipt(repoPath, { ...ident, now: opts.now, ...(explicitIdent ? {} : { standalone: true }) }, receipt);
 				throw err;
 			}
+			// Outside the try/catch above: a failure persisting the pass receipt or
+			// writing the checkpoint is a DIFFERENT failure mode than the round's own
+			// execution failing, and must never re-persist a conflicting 'fail'
+			// receipt under the SAME id the pass receipt (if it was already written)
+			// already claimed -- it propagates as its own, distinct error instead.
+			const receipt: VerificationReceipt = { id: receiptId, result: 'pass', ranAt: opts.now };
+			await persistVerificationReceipt(repoPath, { ...ident, now: opts.now, ...(explicitIdent ? {} : { standalone: true }) }, receipt);
+			await writeCheckpoint(opts.reviewId, { kind: 'round', ref: round });
+			return { findings: withReceiptId(result.findings, receiptId), receipt };
 		}
 
 		const round1 = await runRoundWithReceipt(1);

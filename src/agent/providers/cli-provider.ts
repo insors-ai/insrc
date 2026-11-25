@@ -733,7 +733,7 @@ export class CliProvider implements LLMProvider {
 			if (remainingMs <= 0) throw new ReadOnlySessionTimeoutError(opts.deadlineMs);
 			try {
 				return await this.readOnlySessionOnce<T>(prompt, schema, {
-					cwd: opts.cwd, timeoutMs: remainingMs, watchStall: true,
+					cwd: opts.cwd, timeoutMs: remainingMs, watchStall: true, capabilityPolicy,
 					...(opts.stallMs !== undefined ? { stallMs: opts.stallMs } : {}),
 					...(opts.signal !== undefined ? { signal: opts.signal } : {}),
 				});
@@ -765,7 +765,7 @@ export class CliProvider implements LLMProvider {
   return registry.models('cli-vibe').filter(model => !rejected.has(model.id));
  }
 
-	private async readOnlySessionOnce<T>(prompt: string, schema: StructuredSchema, exec: ExecOverride & { cwd: string; timeoutMs: number; watchStall: boolean }): Promise<T> {
+	private async readOnlySessionOnce<T>(prompt: string, schema: StructuredSchema, exec: ExecOverride & { cwd: string; timeoutMs: number; watchStall: boolean; capabilityPolicy: 'write-sandboxed' | 'strict-read-analyze' }): Promise<T> {
 		if (this.kind === 'vibe') {
 			// Read-only: in headless mode `--enabled-tools` disables every other
 			// tool, and programmatic mode denies any call that would need an
@@ -818,6 +818,12 @@ export class CliProvider implements LLMProvider {
 			const maxAttempts = attemptServers.filter(s => s.name !== 'insrc').length + 1;
 			for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 				const attemptStartedAt = Date.now();
+				// The unsafe-MCP-server retry never drops or widens capabilityPolicy: the
+				// same exec.capabilityPolicy (set once, before the outer retry loop in
+				// runReadOnlySession) is re-asserted identically on every attempt here.
+				if (!isQualifiedForCapabilityPolicy(this.kind, exec.capabilityPolicy)) {
+					throw new UnqualifiedCapabilityPolicyError(this.kind, exec.capabilityPolicy);
+				}
 				try {
 					({ agentText: text } = await this.runCodex(codexReadOnlySessionArgs(schemaPath, exec.cwd, this.modelArgs(), attemptServers), prompt, { ...exec, timeoutMs: attemptTimeoutMs }));
 					break;

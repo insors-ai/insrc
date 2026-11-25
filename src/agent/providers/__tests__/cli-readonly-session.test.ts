@@ -697,7 +697,7 @@ test("without effort every argv is byte-identical to today's", async () => {
 
 // --- capabilityPolicy (s3/t2, Epic add-dedicated-security-reviews) -------------
 
-test('capabilityPolicy omitted behaves identically to today: no qualification check runs, codex dispatches normally', async () => {
+test('capabilityPolicy omitted defaults to write-sandboxed, which every provider (including codex) is qualified for -- today\'s exact dispatch is unaffected', async () => {
 	const f = fakeCli([{ out: codexOk('{"ok":true}') }]);
 	try {
 		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
@@ -739,3 +739,20 @@ test("readOnlySessionOnce's retry attempt carries the identical capabilityPolicy
 		assert.equal(f.calls().length, 2, 'the first attempt and the one retry, both counted -- neither rejected for an unqualified policy');
 	} finally { f.cleanup(); }
 });
+
+test("readOnlySessionOnce's unsafe-MCP-server retry loop carries the identical capabilityPolicy across every attempt, even for codex under 'write-sandboxed' (the only policy codex qualifies for)", async () => {
+	const f = fakeCli([
+		{ fail: 'Error loading config.toml: invalid transport in `mcp_servers.unsafe-x`', code: 1 },
+		{ out: codexOk('{"ok":true}') },
+	]);
+	process.env['INSRC_FAKE_DISCOVERY_SERVERS'] = JSON.stringify([{ name: 'insrc', enabled: true }, { name: 'unsafe-x', enabled: false }, { name: 'safe-y', enabled: false }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
+		assert.deepEqual(
+			await p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, internalRetry: false, capabilityPolicy: 'write-sandboxed' }),
+			{ ok: true },
+		);
+		assert.equal(f.calls().length, 2, 'the first attempt and exactly one retry, both succeeding under the same explicit capabilityPolicy');
+	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; f.cleanup(); }
+});
+

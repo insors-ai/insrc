@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 40,
-        "contentHash": "96ac8da30e41f25ebf8c71561b8546184a32f1a7730f08d690b5c968adf0c0b7",
-        "at": "2026-11-25T20:04:10.502Z",
+        "number": 42,
+        "contentHash": "daf89f67ad9471c89c694ba9e6d149320b263413fa70138e730d0b34d5964897",
+        "at": "2026-11-25T20:22:24.671Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "c3d71313f34bce71",
     "storyId": "s3",
     "createdAt": "2026-11-25T02:01:50.011Z",
-    "updatedAt": "2026-11-25T20:04:10.480Z",
+    "updatedAt": "2026-11-25T20:22:24.648Z",
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
-    "revision": 40
+    "revision": 42
   },
   "body": {
     "tasks": [
@@ -2925,6 +2925,183 @@
               },
               {
                 "title": "coding-cli-advice-emitted-once-and-install-spawn-sentinels-remain-zero",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t17",
+        "commit": "dfc25b808",
+        "ranAt": "2026-11-25T20:22:24.648Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "accepted-official-payload-is-user-only-and-discloses-install-and-start",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dependency-integration.test.ts",
+                "title": "accepted-official-payload-is-user-only-and-discloses-install-and-start",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "qualified-exact-ollama-payload-version-and-user-session-readiness-on-enabled-target",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-26/native-install.json; docs/plans/s3-ollama-native-qualification-2026-11-26/qualification.json"
+            }
+          },
+          {
+            "name": "existing-installation-reuse-and-decline-preserve-platform-state",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-26/decline.json; docs/plans/s3-ollama-native-qualification-2026-11-26/native-install.json"
+            }
+          },
+          {
+            "name": "official-large-archive-streaming-and-library-layout-match-policy",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-26/native-install.json; docs/plans/s3-ollama-native-qualification-2026-11-26/source-hashes.json"
+            }
+          },
+          {
+            "name": "native-large-payload-inspection-avoids-content-reads-within-three-seconds",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-26/fresh-inspection-after-cache-advice.json; docs/plans/s3-ollama-native-qualification-2026-11-26/cache-advice.json"
+            }
+          },
+          {
+            "name": "native-platform-glibc-translation-and-upstream-digest-provenance-are-observed",
+            "level": "live",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/ollama-qualification.test.ts",
+                "title": "native-evidence-validator-rejects-wrong-platform-glibc-digest-and-translated-observations",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-catalog.test.ts",
+                "title": "enabled-target-policy-requires-matching-native-evidence-and-mandatory-linux-route",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-catalog.test.ts",
+                "title": "manual-user-level-guidance-preserves-disabled-target-status",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-qualification.test.ts",
+                "title": "native-evidence-validator-rejects-raw-response-inconsistency",
+                "result": "pass"
+              }
+            ],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-26/install-machine.json; docs/plans/s3-ollama-native-qualification-2026-11-26/install-upstream.json; docs/plans/s3-ollama-native-qualification-2026-11-26/source-hashes.json"
+            }
+          },
+          {
+            "name": "native-write-observations-and-cache-advice-are-recorded-with-limits",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/s3-ollama-native-qualification-2026-11-26/install-write-observations.json; docs/plans/s3-ollama-native-qualification-2026-11-26/cache-advice.json; docs/plans/s3-ollama-native-qualification-2026-11-26/cleanup-vm.json"
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/dependency-integration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 16987,
+            "titles": [
+              {
+                "title": "accepted-official-payload-is-user-only-and-discloses-install-and-start",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation-and-eof-block-later-publication-or-service-admission",
+                "result": "pass"
+              },
+              {
+                "title": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions",
+                "result": "pass"
+              },
+              {
+                "title": "dependency-uncertain-recovery-preserves-operation-and-prevents-duplicate-side-effects",
+                "result": "pass"
+              },
+              {
+                "title": "real-install-retry-waits-for-owned-actor-closure-and-cleans-original-policy",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation-after-ready-dependency-report-still-discloses-retained-service",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2786,
+            "titles": [
+              {
+                "title": "enabled-target-policy-requires-matching-native-evidence-and-mandatory-linux-route",
+                "result": "pass"
+              },
+              {
+                "title": "manual-user-level-guidance-preserves-disabled-target-status",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-qualification.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 441,
+            "titles": [
+              {
+                "title": "native-evidence-validator-rejects-wrong-platform-glibc-digest-and-translated-observations",
+                "result": "pass"
+              },
+              {
+                "title": "native-evidence-validator-rejects-raw-response-inconsistency",
                 "result": "pass"
               }
             ],

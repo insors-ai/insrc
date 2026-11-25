@@ -1,0 +1,45 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "t17",
+    "passed": true,
+    "checks": [
+      {
+        "check": "Record observed os.machine/process.arch/platform, uid>0, Node executable/version, raw /etc/os-release, process.report glibcVersionRuntime and meaningful translation check. Never hardcode uid501 or hand-author native/glibc conclusions.",
+        "satisfied": true,
+        "evidence": "observeLinuxMachine collects actual process, kernel, ELF, CPU, maps and os-release observations. install-machine.json records Linux/aarch64/arm64, UID 501, private Node v22.22.1 and runtime glibc 2.35. validateNativeProvenance derives conclusions from agreement; UID validation requires >0 rather than 501."
+      },
+      {
+        "check": "Capture independent official upstream asset digest/checksum source and raw supporting metadata, bind exact URL/version/bytes/SHA to it. If evidence unavailable, mark provenance/route qualification pending rather than inventing a match.",
+        "satisfied": true,
+        "evidence": "install-upstream.json retains the independently fetched official GitHub release API response, HTTP headers and raw body. Raw and parsed metadata agree. The uploaded v0.40.18 ARM64 asset binds the exact URL, 1,704,011,634 bytes and SHA256 63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6. Missing or mismatched provenance prevents successful qualification."
+      },
+      {
+        "check": "Record scoped before/after installation-home, ~/.ollama and relevant temp-path observations; private argv/env/log/zero-model/decline/reuse results. Record unprivileged cache-advice action/result and limits; no claim of global cache eviction or exhaustive filesystem-write proof.",
+        "satisfied": true,
+        "evidence": "Decline/install/inspect observations contain untruncated before/after installation-home, ~/.ollama and /tmp snapshots; the latter two remain unchanged. native-install.json records private serve argv/environment, UID-owned mode-0600 bounded logs, zero models and reuse preservation; decline.json records unchanged dependency files. cache-advice.json records per-file unprivileged DONTNEED results and explicitly limits eviction claims. Filesystem observation limitations are explicit."
+      },
+      {
+        "check": "Run exact pinned route under private Node22 in isolated OrbStack VM; verify large archive layout, service readiness, fresh-process inspection within three-second aggregate target and bounded payload-read behavior after corrections. Leave intentional service/finite actor status accounted and VM stopped afterward.",
+        "satisfied": true,
+        "evidence": "Raw records identify the isolated ARM64 OrbStack VM and private Node22.22.1. native-install.json records exact pinned acquisition, 49 verified materialized files totaling 4,005,889,908 bytes, CLI/API version 0.40.18 and readiness. Fresh inspection took 45.28 ms after cache advice with 55,697 read characters. Preparation/handoff closure and stage disposal records exist; retained service ownership limitations are stated. cleanup-vm.json records the same VM stopped."
+      },
+      {
+        "check": "Preserve previous successful and failed evidence as historical pre-review runs. Generate revised qualification summary from raw script output, with current source hashes and correct test mapping. Only native-qualified exact routes are enabled; other Linux/macOS/Windows architectures keep explicit pending/manual guidance.",
+        "satisfied": true,
+        "evidence": "Previous 2026-11-25 evidence is unchanged; pre-catalog-run preserves the earlier run. The summary generator derives revised results from raw outputs. All 168 locally available source/dependency/output hashes checked match source-hashes.json; guest bundle hashes agree with recorded bundle hashes. S003/TESTS.md distinguishes daemon tests from builder live evidence. Catalog enables only Linux ARM64/glibc2.35; five other routes retain pending reasons and manual guidance."
+      },
+      {
+        "check": "No elevation/model download/global cache drop/host daemon or host Ollama change; missing UTM/Windows/native-x64 evidence is reported honestly. Tests of the evidence validator prove wrong platform/glibc/digest/translation claims cannot enable a route.",
+        "satisfied": true,
+        "evidence": "Driver requires positive UID, performs per-file cache advice and verifies empty models within the isolated guest. No elevation, global cache-drop or host-service mutation appears in the task changes. Missing runners and UTM permission limitations remain explicit. Daemon-passed validator tests independently mutate platform, glibc, digest, ELF/CPU and translator observations, and reject inconsistent raw responses; catalog tests bind enabled policy to validated raw evidence. The integration test exercises consent disclosures, installation/start and data preservation."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "All acceptance checks are supported by inspected code and raw evidence; task commits stay within qualification tooling, catalog evidence binding, tests and task records.",
+    "testsPassed": true,
+    "typecheckClean": true
+  },
+  "passed": true,
+  "commentSync": "comment sync on insors-ai/insrc#293: recorded 0, posted 0"
+}

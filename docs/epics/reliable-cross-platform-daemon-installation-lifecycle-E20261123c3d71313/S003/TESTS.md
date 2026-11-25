@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 129 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
+**Totals:** 134 pass, 0 fail, 0 skipped, 0 not found; 11 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -785,3 +785,52 @@ Run at 2026-11-25T20:04:10.480Z on commit `94a2a2ac7`. Tests check: **passed**. 
 | `src/installer/__tests__/ollama-service.test.ts` | 0 | 10 | 38.2 s |  |
 | `src/installer/__tests__/ollama-validation.test.ts` | 0 | 4 | 11.7 s |  |
 | `src/installer/__tests__/terminal-install.test.ts` | 0 | 10 | 4.1 s |  |
+
+## t17
+
+Run at 2026-11-25T20:22:24.648Z on commit `dfc25b808`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 6 reported by the builder and not run by the gate.
+
+**integration: accepted-official-payload-is-user-only-and-discloses-install-and-start**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | accepted-official-payload-is-user-only-and-discloses-install-and-start | `src/installer/__tests__/dependency-integration.test.ts` |
+
+**live: qualified-exact-ollama-payload-version-and-user-session-readiness-on-enabled-target**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-26/native-install.json; docs/plans/s3-ollama-native-qualification-2026-11-26/qualification.json
+
+**live: existing-installation-reuse-and-decline-preserve-platform-state**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-26/decline.json; docs/plans/s3-ollama-native-qualification-2026-11-26/native-install.json
+
+**live: official-large-archive-streaming-and-library-layout-match-policy**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-26/native-install.json; docs/plans/s3-ollama-native-qualification-2026-11-26/source-hashes.json
+
+**live: native-large-payload-inspection-avoids-content-reads-within-three-seconds**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-26/fresh-inspection-after-cache-advice.json; docs/plans/s3-ollama-native-qualification-2026-11-26/cache-advice.json
+
+**live: native-platform-glibc-translation-and-upstream-digest-provenance-are-observed**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | native-evidence-validator-rejects-wrong-platform-glibc-digest-and-translated-observations | `src/installer/__tests__/ollama-qualification.test.ts` |
+| pass | enabled-target-policy-requires-matching-native-evidence-and-mandatory-linux-route | `src/installer/__tests__/ollama-catalog.test.ts` |
+| pass | manual-user-level-guidance-preserves-disabled-target-status | `src/installer/__tests__/ollama-catalog.test.ts` |
+| pass | native-evidence-validator-rejects-raw-response-inconsistency | `src/installer/__tests__/ollama-qualification.test.ts` |
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-26/install-machine.json; docs/plans/s3-ollama-native-qualification-2026-11-26/install-upstream.json; docs/plans/s3-ollama-native-qualification-2026-11-26/source-hashes.json
+
+**live: native-write-observations-and-cache-advice-are-recorded-with-limits**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/s3-ollama-native-qualification-2026-11-26/install-write-observations.json; docs/plans/s3-ollama-native-qualification-2026-11-26/cache-advice.json; docs/plans/s3-ollama-native-qualification-2026-11-26/cleanup-vm.json
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/installer/__tests__/dependency-integration.test.ts` | 0 | 6 | 17 s |  |
+| `src/installer/__tests__/ollama-catalog.test.ts` | 0 | 2 | 2.8 s |  |
+| `src/installer/__tests__/ollama-qualification.test.ts` | 0 | 2 | 0.4 s |  |

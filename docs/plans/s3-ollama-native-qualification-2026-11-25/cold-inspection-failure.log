@@ -1,0 +1,20 @@
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: {"runtimeReady":true,"ollama":"unavailable","agents":{"claude":false,"codex":false,"vibe":false},"recommendations":["Recommend installing at least one coding CLI: Claude Code, Codex or Mistral Vibe.","Recommend installing at least one coding CLI: Claude Code, Codex or Mistral Vibe."],"blockers":["Dependency inspection exceeded its aggregate deadline; some presence checks may be incomplete."]}
++ actual - expected
+
++ 'unavailable'
+- 'ready'
+
+    at file:///home/insrctest/qualification/control/qualify.mjs:14964:10 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 'unavailable',
+  expected: 'ready',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.22.1

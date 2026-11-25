@@ -65,7 +65,9 @@ async function hashFile(root: string, file: InventoryFile, signal?: AbortSignal)
     const stat = await handle.stat();
     if (!stat.isFile() || stat.nlink !== 1 || stat.size !== file.bytes || stat.ino !== initial.ino || stat.dev !== initial.dev
       || (process.platform !== 'win32' && ((stat.mode & 0o111) ? 0o755 : 0o644) !== file.mode)) throw archiveUnsafe('Dependency file changed during verification');
-    const hash = createHash('sha256'), buffer = Buffer.alloc(65536); let bytes = 0;
+    // One bounded buffer, reused for the full digest. Larger reads avoid tens
+    // of thousands of async file calls when reconciling official multi-GB trees.
+    const hash = createHash('sha256'), buffer = Buffer.alloc(Math.min(1024 * 1024, Math.max(1, file.bytes))); let bytes = 0;
     while (true) {
       signal?.throwIfAborted(); const result = await handle.read(buffer, 0, buffer.length, null); if (!result.bytesRead) break;
       bytes += result.bytesRead; if (bytes > file.bytes) throw archiveUnsafe('Dependency file grew'); hash.update(buffer.subarray(0, result.bytesRead));

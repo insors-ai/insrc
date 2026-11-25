@@ -1,0 +1,363 @@
+{
+  "members": [
+    {
+      "name": "bin/ollama",
+      "kind": "file",
+      "bytes": 41714760,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/CPP_HTTPLIB_LICENSE",
+      "kind": "file",
+      "bytes": 1075,
+      "link": "",
+      "mode": 420
+    },
+    {
+      "name": "lib/ollama/GO_LICENSE",
+      "kind": "file",
+      "bytes": 137370,
+      "link": "",
+      "mode": 420
+    },
+    {
+      "name": "lib/ollama/LLAMA_CPP_LICENSE",
+      "kind": "file",
+      "bytes": 1078,
+      "link": "",
+      "mode": 420
+    },
+    {
+      "name": "lib/ollama/LLAMA_CPP_VENDORS_LICENSE",
+      "kind": "file",
+      "bytes": 7257,
+      "link": "",
+      "mode": 420
+    },
+    {
+      "name": "lib/ollama/cuda_v12",
+      "kind": "directory",
+      "bytes": 0,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/cuda_v12/libcudart.so.12.8.90",
+      "kind": "file",
+      "bytes": 724096,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/cuda_v12/libggml-cuda.so",
+      "kind": "file",
+      "bytes": 527848544,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/cuda_v12/libcublas.so.12.8.5.5",
+      "kind": "file",
+      "bytes": 115326664,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/cuda_v12/libcublas.so.12",
+      "kind": "symlink",
+      "bytes": 0,
+      "link": "libcublas.so.12.8.5.5",
+      "mode": 511
+    },
+    {
+      "name": "lib/ollama/cuda_v12/libcublasLt.so.12",
+      "kind": "symlink",
+      "bytes": 0,
+      "link": "libcublasLt.so.12.8.5.5",
+      "mode": 511
+    },
+    {
+      "name": "lib/ollama/cuda_v12/libcublasLt.so.12.8.5.5",
+      "kind": "file",
+      "bytes": 719833184,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/cuda_v12/libcudart.so.12",
+      "kind": "symlink",
+      "bytes": 0,
+      "link": "libcudart.so.12.8.90",
+      "mode": 511
+    },
+    {
+      "name": "lib/ollama/cuda_v13",
+      "kind": "directory",
+      "bytes": 0,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/cuda_v13/libcudart.so.13.0.96",
+      "kind": "file",
+      "bytes": 707752,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/cuda_v13/libggml-cuda.so",
+      "kind": "file",
+      "bytes": 326259704,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/cuda_v13/libcublasLt.so.13.1.1.3",
+      "kind": "file",
+      "bytes": 629945952,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/cuda_v13/libcublas.so.13",
+      "kind": "symlink",
+      "bytes": 0,
+      "link": "libcublas.so.13.1.1.3",
+      "mode": 511
+    },
+    {
+      "name": "lib/ollama/cuda_v13/libcudart.so.13",
+      "kind": "symlink",
+      "bytes": 0,
+      "link": "libcudart.so.13.0.96",
+      "mode": 511
+    },
+    {
+      "name": "lib/ollama/cuda_v13/libcublasLt.so.13",
+      "kind": "symlink",
+      "bytes": 0,
+      "link": "libcublasLt.so.13.1.1.3",
+      "mode": 511
+    },
+    {
+      "name": "lib/ollama/cuda_v13/libcublas.so.13.1.1.3",
+      "kind": "file",
+      "bytes": 61910216,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/libggml-base.so",
+      "kind": "symlink",
+      "bytes": 0,
+      "link": "libggml-base.so.1",
+      "mode": 511
+    },
+    {
+      "name": "lib/ollama/libggml-base.so.1",
+      "kind": "symlink",
+      "bytes": 0,
+      "link": "libggml-base.so.1.0.0",
+      "mode": 511
+    },
+    {
+      "name": "lib/ollama/libggml-base.so.1.0.0",
+      "kind": "file",
+      "bytes": 857424,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/libggml-cpu-armv8.0_1.so",
+      "kind": "file",
+      "bytes": 924008,
+      "link": "",
+      "mode": 420
+    },
+    {
+      "name": "lib/ollama/libggml-cpu-armv8.2_1.so",
+      "kind": "file",
+      "bytes": 989216,
+      "link": "",
+      "mode": 420
+    },
+    {
+      "name": "lib/ollama/libggml-cpu-armv8.2_2.so",
+      "kind": "file",
+      "bytes": 989216,
+      "link": "",
+      "mode": 420
+    },
+    {
+      "name": "lib/ollama/libggml-cpu-armv8.2_3.so",
+      "kind": "file",
+      "bytes": 989208,
+      "link": "",
+      "mode": 420
+    },
+    {
+      "name": "lib/ollama/libggml-cpu-armv8.6_1.so",
+      "kind": "file",
+      "bytes": 989160,
+      "link": "",
+      "mode": 420
+    },
+    {
+      "name": "lib/ollama/libggml-cpu-armv8.6_2.so",
+      "kind": "file",
+      "bytes": 989160,
+      "link": "",
+      "mode": 420
+    },
+    {
+      "name": "lib/ollama/libggml-cpu-armv9.2_1.so",
+      "kind": "file",
+      "bytes": 989160,
+      "link": "",
+      "mode": 420
+    },
+    {
+      "name": "lib/ollama/libggml-cpu-armv9.2_2.so",
+      "kind": "file",
+      "bytes": 989160,
+      "link": "",
+      "mode": 420
+    },
+    {
+      "name": "lib/ollama/libggml.so",
+      "kind": "symlink",
+      "bytes": 0,
+      "link": "libggml.so.1",
+      "mode": 511
+    },
+    {
+      "name": "lib/ollama/libggml.so.1",
+      "kind": "symlink",
+      "bytes": 0,
+      "link": "libggml.so.1.0.0",
+      "mode": 511
+    },
+    {
+      "name": "lib/ollama/libggml.so.1.0.0",
+      "kind": "file",
+      "bytes": 266152,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/libgomp.so.1",
+      "kind": "symlink",
+      "bytes": 0,
+      "link": "libgomp.so.1.0.0",
+      "mode": 511
+    },
+    {
+      "name": "lib/ollama/libgomp.so.1.0.0",
+      "kind": "file",
+      "bytes": 271136,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/libllama-common.so",
+      "kind": "symlink",
+      "bytes": 0,
+      "link": "libllama-common.so.1",
+      "mode": 511
+    },
+    {
+      "name": "lib/ollama/libllama-common.so.1",
+      "kind": "symlink",
+      "bytes": 0,
+      "link": "libllama-common.so.1.0.0",
+      "mode": 511
+    },
+    {
+      "name": "lib/ollama/libllama-common.so.1.0.0",
+      "kind": "file",
+      "bytes": 5206176,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/libllama-quantize-impl.so",
+      "kind": "file",
+      "bytes": 134088,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/libllama-server-impl.so",
+      "kind": "file",
+      "bytes": 3958576,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/libllama.so",
+      "kind": "symlink",
+      "bytes": 0,
+      "link": "libllama.so.1",
+      "mode": 511
+    },
+    {
+      "name": "lib/ollama/libllama.so.1",
+      "kind": "symlink",
+      "bytes": 0,
+      "link": "libllama.so.1.0.0",
+      "mode": 511
+    },
+    {
+      "name": "lib/ollama/libllama.so.1.0.0",
+      "kind": "file",
+      "bytes": 4421096,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/libmtmd.so",
+      "kind": "symlink",
+      "bytes": 0,
+      "link": "libmtmd.so.1",
+      "mode": 511
+    },
+    {
+      "name": "lib/ollama/libmtmd.so.1",
+      "kind": "symlink",
+      "bytes": 0,
+      "link": "libmtmd.so.1.0.0",
+      "mode": 511
+    },
+    {
+      "name": "lib/ollama/libmtmd.so.1.0.0",
+      "kind": "file",
+      "bytes": 2306888,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/libomp.so",
+      "kind": "file",
+      "bytes": 1231528,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/llama-quantize",
+      "kind": "file",
+      "bytes": 68216,
+      "link": "",
+      "mode": 493
+    },
+    {
+      "name": "lib/ollama/llama-server",
+      "kind": "file",
+      "bytes": 68216,
+      "link": "",
+      "mode": 493
+    }
+  ],
+  "regularBytes": 2451055436,
+  "regularFiles": 32
+}

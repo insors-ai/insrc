@@ -1,0 +1,5 @@
+{
+  "src/installer/ollama-layout.ts": "e38538fa2043712915cb78daa6bbdfcf070d8a4349e4015d7efa631df0bdd68f",
+  "scripts/qualify-ollama.mjs": "e9e9e7c254f2dfe5e1afa01e407ecf23fc4319c3d4eb6063131744d495fb1975",
+  "src/installer/native/control.c": "1722b934f118c800989bd7bb8a5a54057e5f211da03e9e32442dc9af5071213a"
+}

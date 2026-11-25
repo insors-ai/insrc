@@ -1,0 +1,456 @@
+{
+  "status": "pass",
+  "policySha256": "4e02734bed1f3c1eac80a4fc517b99030659cb749a7144401f116f83248a35aa",
+  "asset": {
+    "url": "https://github.com/ollama/ollama/releases/download/v0.40.18/ollama-linux-arm64.tar.zst",
+    "sha256": "63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6",
+    "bytes": 1704011634,
+    "format": "tar.zst"
+  },
+  "target": {
+    "os": "linux",
+    "arch": "arm64",
+    "baseline": "glibc-2.35"
+  },
+  "node": {
+    "version": "v22.22.1",
+    "executable": "/home/insrctest/.insrc-s3/runtimes/node-v22.22.1-linux-arm64/bin/node"
+  },
+  "uid": 501,
+  "elapsedMs": 147107.248816,
+  "version": "ollama version is 0.40.18\n",
+  "availability": {
+    "state": "ready",
+    "version": "0.40.18"
+  },
+  "files": 49,
+  "materializedBytes": 4005889908,
+  "inventorySha256": "9e9680d4da283cc4ffa5f5222d558c43b445f532fce7d2a4e19ac3db4ffe5df6",
+  "observed": [
+    {
+      "executable": "/home/insrctest/.insrc-s3/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/bin/ollama",
+      "argv": [
+        "/home/insrctest/.insrc-s3/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/bin/ollama",
+        "serve"
+      ],
+      "environment": {
+        "HOME": "/home/insrctest/.insrc-s3/deps/ollama/data",
+        "OLLAMA_HOST": "127.0.0.1:11434",
+        "OLLAMA_MODELS": "/home/insrctest/.insrc-s3/deps/ollama/data/models",
+        "PATH": "/home/insrctest/.insrc-s3/deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6/bin:/home/insrctest/.insrc-s3/runtimes/node-v22.22.1-linux-arm64/bin:/usr/bin:/bin",
+        "TMPDIR": "/home/insrctest/.insrc-s3/deps/ollama/data/tmp"
+      }
+    }
+  ],
+  "logs": [
+    {
+      "path": "/home/insrctest/.insrc-s3/deps/ollama/logs/server/ollama-466e66b5c7f09419721d43a7efd1f2656f46454af8a7b0b939a5802fa8372d4b.log",
+      "bytes": 2819,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1
+    }
+  ],
+  "modelFiles": 0,
+  "reusedWithoutMutation": true,
+  "applicationDataUnchanged": true,
+  "finiteEvidence": [
+    {
+      "path": "/home/insrctest/.insrc-s3/deps/ollama/.attempts/native-ollama/0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50.cleanup.json",
+      "bytes": 138,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "identitySha256": "1ad82869bcb68adc89eb9dcc67f076916ceca0ab0c48023f8f341c7fd4f5f123",
+        "purpose": "private-stage-disposal",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3/deps/ollama/.attempts/native-ollama/0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50.closed.json",
+      "bytes": 223,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "closed": true,
+        "identitySha256": "1ad82869bcb68adc89eb9dcc67f076916ceca0ab0c48023f8f341c7fd4f5f123",
+        "inventorySha256": "9e9680d4da283cc4ffa5f5222d558c43b445f532fce7d2a4e19ac3db4ffe5df6",
+        "outcome": "prepared",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3/deps/ollama/.attempts/native-ollama/0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50.disposed.json",
+      "bytes": 137,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "closed": true,
+        "identitySha256": "1ad82869bcb68adc89eb9dcc67f076916ceca0ab0c48023f8f341c7fd4f5f123",
+        "schemaVersion": 1,
+        "stageRemoved": true
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3/deps/ollama/.attempts/native-ollama/0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50.handoff-09ae81f9288cfa9b5db05d294dddfaac.closed.json",
+      "bytes": 193,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "actor": "finite-service-handoff",
+        "closed": true,
+        "identitySha256": "1ad82869bcb68adc89eb9dcc67f076916ceca0ab0c48023f8f341c7fd4f5f123",
+        "nonce": "09ae81f9288cfa9b5db05d294dddfaac",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3/deps/ollama/.attempts/native-ollama/0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50.handoff-09ae81f9288cfa9b5db05d294dddfaac.json",
+      "bytes": 179,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "actor": "finite-service-handoff",
+        "identitySha256": "1ad82869bcb68adc89eb9dcc67f076916ceca0ab0c48023f8f341c7fd4f5f123",
+        "nonce": "09ae81f9288cfa9b5db05d294dddfaac",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3/deps/ollama/.attempts/native-ollama/0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50.json",
+      "bytes": 944,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "absence": {
+          "binary": "missing",
+          "destination": "absent",
+          "endpoint": "refused",
+          "searchSha256": "e0b926efeefb58766c431e6eb8ba8e5652f0872d64a8e32db018da64fc2d316f"
+        },
+        "actor": "in-process-preparation",
+        "externalActors": 0,
+        "identity": {
+          "attemptNonce": "0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50",
+          "installationId": "s3-linux-qualification",
+          "offerId": "d0b4287c65168dae83a4e7b94870504979f43878a687943e181a9f37dffd9951",
+          "operationId": "native-ollama",
+          "payloadRelativePath": "deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6",
+          "policySha256": "4e02734bed1f3c1eac80a4fc517b99030659cb749a7144401f116f83248a35aa",
+          "recordRelativePath": "deps/ollama/.attempts/native-ollama/0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50.json",
+          "schemaVersion": 1,
+          "stageRelativePath": "deps/ollama/.staging/native-ollama/0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50"
+        },
+        "schemaVersion": 1
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3/deps/ollama/.attempts/native-ollama/0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50.json.lock",
+      "bytes": 0,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {}
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3/deps/ollama/.attempts/native-ollama/0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50.service-input.json",
+      "bytes": 5841,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "admission": {
+          "identitySha256": "1ad82869bcb68adc89eb9dcc67f076916ceca0ab0c48023f8f341c7fd4f5f123",
+          "inventorySha256": "9e9680d4da283cc4ffa5f5222d558c43b445f532fce7d2a4e19ac3db4ffe5df6",
+          "kind": "user-session-ollama",
+          "nonce": "466e66b5c7f09419721d43a7efd1f2656f46454af8a7b0b939a5802fa8372d4b",
+          "policySha256": "4e02734bed1f3c1eac80a4fc517b99030659cb749a7144401f116f83248a35aa",
+          "retained": true,
+          "schemaVersion": 1
+        },
+        "attempt": {
+          "absence": {
+            "binary": "missing",
+            "destination": "absent",
+            "endpoint": "refused",
+            "searchSha256": "e0b926efeefb58766c431e6eb8ba8e5652f0872d64a8e32db018da64fc2d316f"
+          },
+          "actor": "in-process-preparation",
+          "externalActors": 0,
+          "identity": {
+            "attemptNonce": "0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50",
+            "installationId": "s3-linux-qualification",
+            "offerId": "d0b4287c65168dae83a4e7b94870504979f43878a687943e181a9f37dffd9951",
+            "operationId": "native-ollama",
+            "payloadRelativePath": "deps/ollama/0.40.18/linux-arm64/63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6",
+            "policySha256": "4e02734bed1f3c1eac80a4fc517b99030659cb749a7144401f116f83248a35aa",
+            "recordRelativePath": "deps/ollama/.attempts/native-ollama/0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50.json",
+            "schemaVersion": 1,
+            "stageRelativePath": "deps/ollama/.staging/native-ollama/0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50"
+          },
+          "schemaVersion": 1
+        },
+        "location": {
+          "daemonEndpoint": {
+            "address": "/home/insrctest/.insrc-s3/daemon.sock",
+            "installationId": "s3-linux-qualification",
+            "kind": "unix"
+          },
+          "home": "/home/insrctest/.insrc-s3",
+          "installationId": "s3-linux-qualification"
+        },
+        "policy": {
+          "asset": {
+            "bytes": 1704011634,
+            "format": "tar.zst",
+            "sha256": "63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6",
+            "url": "https://github.com/ollama/ollama/releases/download/v0.40.18/ollama-linux-arm64.tar.zst"
+          },
+          "endpoint": "http://localhost:11434",
+          "layout": {
+            "aliases": [
+              {
+                "kind": "file",
+                "path": "lib/ollama/cuda_v12/libcublas.so.12",
+                "target": "lib/ollama/cuda_v12/libcublas.so.12.8.5.5"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/cuda_v12/libcublasLt.so.12",
+                "target": "lib/ollama/cuda_v12/libcublasLt.so.12.8.5.5"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/cuda_v12/libcudart.so.12",
+                "target": "lib/ollama/cuda_v12/libcudart.so.12.8.90"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/cuda_v13/libcublas.so.13",
+                "target": "lib/ollama/cuda_v13/libcublas.so.13.1.1.3"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/cuda_v13/libcublasLt.so.13",
+                "target": "lib/ollama/cuda_v13/libcublasLt.so.13.1.1.3"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/cuda_v13/libcudart.so.13",
+                "target": "lib/ollama/cuda_v13/libcudart.so.13.0.96"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libggml-base.so",
+                "target": "lib/ollama/libggml-base.so.1"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libggml-base.so.1",
+                "target": "lib/ollama/libggml-base.so.1.0.0"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libggml.so",
+                "target": "lib/ollama/libggml.so.1"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libggml.so.1",
+                "target": "lib/ollama/libggml.so.1.0.0"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libgomp.so.1",
+                "target": "lib/ollama/libgomp.so.1.0.0"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libllama-common.so",
+                "target": "lib/ollama/libllama-common.so.1"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libllama-common.so.1",
+                "target": "lib/ollama/libllama-common.so.1.0.0"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libllama.so",
+                "target": "lib/ollama/libllama.so.1"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libllama.so.1",
+                "target": "lib/ollama/libllama.so.1.0.0"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libmtmd.so",
+                "target": "lib/ollama/libmtmd.so.1"
+              },
+              {
+                "kind": "file",
+                "path": "lib/ollama/libmtmd.so.1",
+                "target": "lib/ollama/libmtmd.so.1.0.0"
+              }
+            ],
+            "executable": "bin/ollama",
+            "requiredFiles": [
+              "bin/ollama",
+              "lib/ollama/CPP_HTTPLIB_LICENSE",
+              "lib/ollama/GO_LICENSE",
+              "lib/ollama/LLAMA_CPP_LICENSE",
+              "lib/ollama/LLAMA_CPP_VENDORS_LICENSE",
+              "lib/ollama/cuda_v12/libcublas.so.12",
+              "lib/ollama/cuda_v12/libcublas.so.12.8.5.5",
+              "lib/ollama/cuda_v12/libcublasLt.so.12",
+              "lib/ollama/cuda_v12/libcublasLt.so.12.8.5.5",
+              "lib/ollama/cuda_v12/libcudart.so.12",
+              "lib/ollama/cuda_v12/libcudart.so.12.8.90",
+              "lib/ollama/cuda_v12/libggml-cuda.so",
+              "lib/ollama/cuda_v13/libcublas.so.13",
+              "lib/ollama/cuda_v13/libcublas.so.13.1.1.3",
+              "lib/ollama/cuda_v13/libcublasLt.so.13",
+              "lib/ollama/cuda_v13/libcublasLt.so.13.1.1.3",
+              "lib/ollama/cuda_v13/libcudart.so.13",
+              "lib/ollama/cuda_v13/libcudart.so.13.0.96",
+              "lib/ollama/cuda_v13/libggml-cuda.so",
+              "lib/ollama/libggml-base.so",
+              "lib/ollama/libggml-base.so.1",
+              "lib/ollama/libggml-base.so.1.0.0",
+              "lib/ollama/libggml-cpu-armv8.0_1.so",
+              "lib/ollama/libggml-cpu-armv8.2_1.so",
+              "lib/ollama/libggml-cpu-armv8.2_2.so",
+              "lib/ollama/libggml-cpu-armv8.2_3.so",
+              "lib/ollama/libggml-cpu-armv8.6_1.so",
+              "lib/ollama/libggml-cpu-armv8.6_2.so",
+              "lib/ollama/libggml-cpu-armv9.2_1.so",
+              "lib/ollama/libggml-cpu-armv9.2_2.so",
+              "lib/ollama/libggml.so",
+              "lib/ollama/libggml.so.1",
+              "lib/ollama/libggml.so.1.0.0",
+              "lib/ollama/libgomp.so.1",
+              "lib/ollama/libgomp.so.1.0.0",
+              "lib/ollama/libllama-common.so",
+              "lib/ollama/libllama-common.so.1",
+              "lib/ollama/libllama-common.so.1.0.0",
+              "lib/ollama/libllama-quantize-impl.so",
+              "lib/ollama/libllama-server-impl.so",
+              "lib/ollama/libllama.so",
+              "lib/ollama/libllama.so.1",
+              "lib/ollama/libllama.so.1.0.0",
+              "lib/ollama/libmtmd.so",
+              "lib/ollama/libmtmd.so.1",
+              "lib/ollama/libmtmd.so.1.0.0",
+              "lib/ollama/libomp.so",
+              "lib/ollama/llama-quantize",
+              "lib/ollama/llama-server"
+            ]
+          },
+          "limits": {
+            "expandedBytes": 5368709120,
+            "fileBytes": 1073741824,
+            "files": 128,
+            "windowBytes": 8388608
+          },
+          "logsRelativePath": "deps/ollama/logs/server",
+          "modelsRelativePath": "deps/ollama/data/models",
+          "qualification": {
+            "checks": {
+              "decline": true,
+              "readiness": true,
+              "reuse": true,
+              "userOnly": true,
+              "version": true
+            },
+            "evidence": "native-qualification/candidate-not-release.json",
+            "native": true,
+            "policySha256": "4e02734bed1f3c1eac80a4fc517b99030659cb749a7144401f116f83248a35aa"
+          },
+          "schemaVersion": 1,
+          "start": true,
+          "target": {
+            "arch": "arm64",
+            "baseline": "glibc-2.35",
+            "os": "linux"
+          },
+          "version": "0.40.18"
+        },
+        "schemaVersion": 1
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3/deps/ollama/.attempts/native-ollama/0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50.service-launch.json",
+      "bytes": 161,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "admissionSha256": "838c08d4f5c90f7d899573b4c4bcf3a4a3c01b3b44d17b40980c87b9603c9f5f",
+        "endpointOwnership": "unproven",
+        "schemaVersion": 1,
+        "state": "launch-admitted"
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3/deps/ollama/.attempts/native-ollama/0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50.service-result.json",
+      "bytes": 151,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "admissionSha256": "838c08d4f5c90f7d899573b4c4bcf3a4a3c01b3b44d17b40980c87b9603c9f5f",
+        "endpointOwnership": "unproven",
+        "schemaVersion": 1,
+        "state": "ready"
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3/deps/ollama/.attempts/native-ollama/0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50.service-running.json",
+      "bytes": 153,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "admissionSha256": "838c08d4f5c90f7d899573b4c4bcf3a4a3c01b3b44d17b40980c87b9603c9f5f",
+        "endpointOwnership": "unproven",
+        "schemaVersion": 1,
+        "state": "spawned"
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3/deps/ollama/.attempts/native-ollama/0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50.service.json",
+      "bytes": 390,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {
+        "identitySha256": "1ad82869bcb68adc89eb9dcc67f076916ceca0ab0c48023f8f341c7fd4f5f123",
+        "inventorySha256": "9e9680d4da283cc4ffa5f5222d558c43b445f532fce7d2a4e19ac3db4ffe5df6",
+        "kind": "user-session-ollama",
+        "nonce": "466e66b5c7f09419721d43a7efd1f2656f46454af8a7b0b939a5802fa8372d4b",
+        "policySha256": "4e02734bed1f3c1eac80a4fc517b99030659cb749a7144401f116f83248a35aa",
+        "retained": true,
+        "schemaVersion": 1
+      }
+    },
+    {
+      "path": "/home/insrctest/.insrc-s3/deps/ollama/.attempts/native-ollama/0b4eabe7a54578626d5cd5f76cad26dc582b45b8ffc54b22043dda1fa3377b50.service.lock",
+      "bytes": 0,
+      "mode": 384,
+      "uid": 501,
+      "nlink": 1,
+      "content": {}
+    }
+  ],
+  "retainedService": true,
+  "endpointOwnership": "unproven",
+  "fullDaemonInstallation": false
+}

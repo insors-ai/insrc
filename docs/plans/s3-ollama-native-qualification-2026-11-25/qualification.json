@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "status": "blocked",
+  "date": "2026-11-25",
+  "task": "c3d71313f34bce71/s3/t9",
+  "catalogEnabled": false,
+  "machine": {
+    "name": "insrc-s3-ollama-arm64",
+    "id": "01M89AR4V9SBYTBK2DHGZXCSK7",
+    "os": "Ubuntu 22.04.5 LTS",
+    "arch": "arm64",
+    "glibc": "2.35",
+    "native": true,
+    "translated": false,
+    "isolated": true,
+    "memoryLimitBytes": 8589934592,
+    "cpuQuota": 2,
+    "uid": 501,
+    "provisioning": "Compiler/zstd installed only while preparing disposable VM; tested install route ran unprivileged and used Node decoding."
+  },
+  "asset": {
+    "url": "https://github.com/ollama/ollama/releases/download/v0.40.18/ollama-linux-arm64.tar.zst",
+    "sha256": "63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6",
+    "bytes": 1704011634,
+    "format": "tar.zst"
+  },
+  "policySha256": "4e02734bed1f3c1eac80a4fc517b99030659cb749a7144401f116f83248a35aa",
+  "archive": {
+    "regularBytes": 2451055436,
+    "materializedBytes": 4005889908,
+    "regularFiles": 32,
+    "aliases": 17,
+    "materializedFiles": 49,
+    "frames": 1,
+    "windowBytes": 8388608,
+    "checksum": "XXH64"
+  },
+  "observed": {
+    "nativeInstallSeconds": 147.107248816,
+    "executableVersion": "0.40.18",
+    "apiVersion": "0.40.18",
+    "privateNode": "22.22.1",
+    "modelFiles": 0,
+    "declinePreservedDependencyFiles": true,
+    "reusePreservedAttemptRecords": true,
+    "finitePreparationAndHandoffClosed": true,
+    "stageDisposed": true,
+    "retainedService": true,
+    "endpointOwnership": "unproven",
+    "fullDaemonInstallation": false,
+    "originalFullVerificationMs": 4333.961948,
+    "oneMiBFullVerificationMs": 4134.629115999999,
+    "warmFreshInspectionMs": 2096.609279,
+    "coldFreshInspection": "unavailable: exceeded 3000 ms aggregate deadline after dropping only the owned payload file caches with posix_fadvise"
+  },
+  "qualificationCandidate": "Native run used explicitly provisional, non-shipped eligibility metadata to exercise the exact policy. No release route has been enabled; this is not a final pass certificate.",
+  "proposedCorrection": "Keep configuration/runtime/executable/HTTP presence probes at 3 seconds. Give complete recorded private-payload reconciliation a separate 20-second deadline with cancellation and positive closure; retain every digest/layout/receipt check. No wire-schema or initial IDE reachability change.",
+  "targets": [
+    {
+      "os": "linux",
+      "arch": "arm64",
+      "baseline": "glibc-2.35",
+      "status": "blocked",
+      "reason": "Official install/start/version/layout/decline/reuse passed; fresh cold-cache inspection cannot finish full 4.01 GB digest verification inside the approved 3-second aggregate deadline."
+    },
+    {
+      "os": "linux",
+      "arch": "x64",
+      "status": "pending",
+      "reason": "No native x64 runner provisioned in this session; OrbStack amd64 on this ARM host would be translated evidence."
+    },
+    {
+      "os": "darwin",
+      "arch": "arm64",
+      "status": "pending",
+      "reason": "Existing UTM VM insrc-macos-arm64 failed to restore with permission denied and remains stopped; user informed."
+    },
+    {
+      "os": "darwin",
+      "arch": "x64",
+      "status": "pending",
+      "reason": "No native Intel Mac runner provisioned; this host is ARM64."
+    },
+    {
+      "os": "win32",
+      "arch": "arm64",
+      "status": "pending",
+      "reason": "No Windows ARM64 VM is registered in UTM."
+    },
+    {
+      "os": "win32",
+      "arch": "x64",
+      "status": "pending",
+      "reason": "No native Windows x64 runner provisioned in this session."
+    }
+  ]
+}

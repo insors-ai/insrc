@@ -658,3 +658,79 @@ test('REVIEW round-17 HIGH — finalize requires the live head KIND to match the
 		} finally { fx.cleanup(); }
 	}
 });
+
+test('REVIEW round-18 — holistic finalize boundary: headKind normalized both directions (DEF->ISSUE replacement refused at finalize); full head validation AT THE WRITE (kind + approval) on the same read the write uses; claim never released after a refused write', async () => {
+	const { renderIssueEpicBody } = await import('../tracker/conventions.js');
+	const BODY = renderIssueEpicBody({ body: { title: 'ISSUE title', reproduction: 'r', rootCause: 'c', fixIntent: 'f' } } as never, SLUG, undefined, issueArtifactId(HASH));
+	const writeDef = (fx: Fx): void => {
+		writeFileSync(fx.def, JSON.stringify({
+			meta: { workflow: 'define', runId: 'd1', repoPath: fx.repo, epicHash: HASH, epicSlug: SLUG, createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1, ...approvedMeta() },
+			body: { flavor: 'enhancement', problem: 'p', nonGoals: [], assumptions: [], constraints: [], stories: [{ id: 's1', title: 's', userValue: 'u', acceptanceCriteria: [] }], openQuestions: [] },
+			citations: [],
+		}, null, 2) + '\n');
+	};
+	const syncIntentOf = (repo: string) => ({ workflow: 'tracker.sync', focus: 'sync', repoPath: repo, repoIndexedAt: null, params: { epicHash: HASH } }) as never;
+	const syncPayload = { refs: { epicStatus: 'open', storyStatus: { [IMPLIED_ISSUE_STORY_ID]: 'open' }, syncedAt: '2026-11-24T00:00:00.000Z' }, checklist: { items: [], failedCount: 0 } } as never;
+	const defS1 = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG };   // DEF context: headKind absent -> normalized 'def'
+
+	// (a) positive: DEF context + readable DEF -> sync finalize writes to the DEF
+	{
+		const fx = seedIssueOnly();
+		try {
+			writeDef(fx);
+			const fr = await _finalizeTracker(syncIntentOf(fx.repo), { s1: defS1 }, 'run-D', 5, syncPayload, 'm');
+			assert.equal(fr.ok, true, JSON.stringify(fr));
+			assert.equal(readTrackerMeta(fx.def)?.epicStatus, 'open', 'DEF head received the sync status');
+		} finally { fx.cleanup(); }
+	}
+	// (b) HIGH-1: DEF removed mid-run -> live head resolves to ISSUE -> refused, ISSUE untouched
+	{
+		const fx = seedIssueOnly();
+		try {
+			writeDef(fx);
+			rmSync(fx.def);
+			const fr = await _finalizeTracker(syncIntentOf(fx.repo), { s1: defS1 }, 'run-D', 5, syncPayload, 'm');
+			assert.equal(fr.ok, false, 'DEF context refuses when the live head flipped to ISSUE');
+			assert.match(JSON.stringify(fr), /resolves to kind 'issue'/);
+			assert.equal(readTrackerMeta(fx.issue)?.epicStatus, undefined, "the ISSUE did not receive the DEF context's status");
+		} finally { fx.cleanup(); }
+	}
+	// (c) HIGH-2: write-time validation — expected 'issue' but the head lost approval -> throws before any write
+	{
+		const fx = seedIssueOnly();
+		try {
+			const j = JSON.parse(readFileSync(fx.issue, 'utf8')) as { meta: Record<string, unknown> };
+			delete j.meta['lifecycle'];
+			writeFileSync(fx.issue, JSON.stringify(j));
+			assert.throws(() => _mutateEpicTrackerMeta(fx.repo, HASH, 'tracker.sync', { epicStatus: 'open', storyStatus: {}, syncedAt: 'x' } as never, 'issue'), /not approved at write time/);
+			assert.equal(readTrackerMeta(fx.issue)?.epicStatus, undefined, 'no write happened');
+		} finally { fx.cleanup(); }
+	}
+	// (d) HIGH-1 at the write: expected 'issue' but a readable DEF wins -> throws, DEF untouched
+	{
+		const fx = seedIssueOnly();
+		try {
+			writeDef(fx);
+			assert.throws(() => _mutateEpicTrackerMeta(fx.repo, HASH, 'tracker.sync', { epicStatus: 'open', storyStatus: {}, syncedAt: 'x' } as never, 'issue'), /head kind changed/);
+			const defRaw = JSON.parse(readFileSync(fx.def, 'utf8')) as { meta?: { tracker?: unknown } };
+			assert.equal(defRaw.meta?.tracker, undefined, 'replacement DEF untouched');
+		} finally { fx.cleanup(); }
+	}
+	// (e) HIGH-2 end-to-end: ISSUE push with carried claim, head loses approval before finalize -> refused, claim retained
+	{
+		const fx = seedIssueOnly();
+		try {
+			const c = claimCreateIntent(fx.repo, HASH, 'run-A', { title: 'ISSUE title', marker: `<!-- insrc:artifact ISSUE-${HASH} -->` });
+			const committed = await heartbeatClaim(fx.repo, HASH, c.claim.fence);
+			const j = JSON.parse(readFileSync(fx.issue, 'utf8')) as { meta: Record<string, unknown> };
+			delete j.meta['lifecycle'];
+			writeFileSync(fx.issue, JSON.stringify(j));
+			const pushIntent = { workflow: 'tracker.push', focus: 'push', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
+			const s1 = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue', epicBodyMd: BODY, claimFence: committed, claimRunId: 'run-A' };
+			const fr = await _finalizeTracker(pushIntent, { s1 }, 'run-A', 5, { refs: { epicRef: 'acme/demo#42', storyRefs: { [IMPLIED_ISSUE_STORY_ID]: 'acme/demo#42' }, labelsCreated: [] }, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } } as never, 'm');
+			assert.equal(fr.ok, false);
+			assert.match(JSON.stringify(fr), /not approved/);
+			assert.ok(readClaim(fx.repo, HASH) !== undefined, 'claim retained — not released after a refused write');
+		} finally { fx.cleanup(); }
+	}
+});

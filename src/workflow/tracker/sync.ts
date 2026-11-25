@@ -119,9 +119,11 @@ export async function syncTracker(repoPath: string, epicHash: string, table?: Re
 			if (s.status === 'skipped' || s.status === 'failed') return s as SyncResult;
 			storyStatus[story] = s.status as TrackerStatus;
 		}
-		// REVIEW round-17 HIGH: re-verify the head kind AT THE WRITE — a head
+		// REVIEW round-17 HIGH: re-verify the head KIND at the write — a head
 		// swapped mid-sync (e.g. a readable DEF now wins first-readable-wins)
-		// must not receive this status write.
+		// must not receive this status write. (Approval is NOT gated here: the
+		// deterministic refresh writes operational status onto any readable
+		// head; approval is enforced on the workflow path at finalize.)
 		const liveKindNow = readDefinitionHead(repoPath, epicHash)?.kind ?? 'def';
 		if (liveKindNow !== headKind) {
 			return { status: 'failed', reason: `head kind changed during sync for ${epicHash}: was '${headKind}', now '${liveKindNow}' — status not persisted; re-run tracker.sync` };

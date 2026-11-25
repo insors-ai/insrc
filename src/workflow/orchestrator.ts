@@ -2948,113 +2948,95 @@ async function finalizeTracker(
 	const carriedRunIdRaw = (s1 as { claimRunId?: unknown }).claimRunId;
 	const carriedRunId = typeof carriedRunIdRaw === 'string' ? carriedRunIdRaw : undefined;
 	const existingClaim = readClaim(intent.repoPath, epicHash);
-	// REVIEW round-6 HIGH-3: for an ISSUE-head push, validate BEFORE the first
-	// write that (a) the returned epicRef targets the configured GitHub
-	// repository, (b) it equals the recovered claim's marker-verified issueRef
-	// when one was recorded, and (c) the single-issue mapping holds — the
-	// implied s1 IS the root issue, so a different storyRefs.s1 is refused and
-	// s1 is derived from the validated root instead of spread over it.
-	// SELF-REVIEW round-16 (holistic self-review): reread the live head at
-	// finalize. For an ISSUE head on push/sync the head must STILL be approved —
-	// execute revalidates it (round-15), but the head could be replaced during
-	// the execution turn, and persisting tracker meta into an unapproved head
-	// would write state the approval gate never saw.
+	// REVIEW round-18 HIGH-1: normalize the absent discriminator — a DEF context
+	// omits headKind, so 'issue' must be explicit and everything else is 'def'.
+	// Kind equality is enforced in BOTH directions, first as a fail-fast check
+	// here and authoritatively at the write (below + inside mutateEpicTrackerMeta),
+	// so a DEF->ISSUE or ISSUE->DEF replacement mid-run cannot receive the other
+	// kind's tracker meta.
+	const ctxHeadKind: 'def' | 'issue' = s1.headKind === 'issue' ? 'issue' : 'def';
+	const bodyMdRaw = (s1 as { epicBodyMd?: unknown }).epicBodyMd;
+	const bodyMd = typeof bodyMdRaw === 'string' ? bodyMdRaw : undefined;
 	const liveHead = readDefinitionHead(intent.repoPath, epicHash);
-	// REVIEW round-17 HIGH: the assembled context's headKind must match the
-	// LIVE head's kind at finalize — if a readable DEF now wins the
-	// DEF-then-ISSUE first-readable-wins race, the ISSUE checks below are
-	// skipped and the write (and a push's claim release) would run against
-	// the replacement head. Refuse before persistence or claim cleanup.
-	const ctxHeadKind = s1.headKind;
-	if (ctxHeadKind === 'issue' && liveHead?.kind !== 'issue') {
-		return { ok: false, failure: schemaFailure(`${intent.workflow} context was assembled for an ISSUE head but the live head for ${epicHash} now resolves to ${liveHead === undefined ? 'no readable head' : `kind '${liveHead.kind}'`} — refusing to persist against a changed head; re-run ${intent.workflow}`) };
+	const liveKind = liveHead?.kind ?? 'def';
+	// Fail-fast pre-checks (outside the mutex). The AUTHORITATIVE re-validation
+	// runs under the claim mutex at the write (round-18 HIGH-2) — a head or claim
+	// swapped at the write-authority handoff is still caught there.
+	if (liveKind !== ctxHeadKind) {
+		return { ok: false, failure: schemaFailure(`${intent.workflow} context was assembled for a ${ctxHeadKind.toUpperCase()} head but the live head for ${epicHash} now resolves to ${liveHead === undefined ? 'no readable head' : `kind '${liveKind}'`} — refusing to persist against a changed head; re-run ${intent.workflow}`) };
 	}
-	if (intent.workflow !== 'tracker.post' && liveHead?.kind === 'issue' && approvalStateOf(liveHead.artifact.meta) !== 'approved') {
-		return { ok: false, failure: schemaFailure(`ISSUE head for ${epicHash} is not approved at finalize — refusing to persist tracker meta into an unapproved head; re-approve and re-run`) };
+	if (intent.workflow !== 'tracker.post' && liveHead !== undefined && approvalStateOf(liveHead.artifact.meta) !== 'approved') {
+		return { ok: false, failure: schemaFailure(`${liveKind.toUpperCase()} head for ${epicHash} is not approved at finalize — refusing to persist tracker meta into an unapproved head; re-approve and re-run`) };
 	}
-	if (intent.workflow === 'tracker.push' && liveHead?.kind === 'issue') {
-		const pushRefs = typedRefs as TrackerPushRefs;
-		const m = /^([^/#\s]+)\/([^/#\s]+)#(\d+)$/.exec(pushRefs.epicRef);
-		if (m === null || m[1] !== s1.gh.owner || m[2] !== s1.gh.repo) {
-			return { ok: false, failure: schemaFailure(`ISSUE push epicRef '${pushRefs.epicRef}' does not target the configured GitHub repository ${s1.gh.owner}/${s1.gh.repo}`) };
-		}
-		if (existingClaim?.issueRef !== undefined && existingClaim.issueRef !== pushRefs.epicRef) {
-			return { ok: false, failure: schemaFailure(`recovered claim ref ${existingClaim.issueRef} != returned epicRef ${pushRefs.epicRef} — refusing to persist a different issue than the marker-verified recovery`) };
-		}
-		const s1Ref = pushRefs.storyRefs?.[IMPLIED_ISSUE_STORY_ID];
-		if (s1Ref !== undefined && s1Ref !== pushRefs.epicRef) {
-			return { ok: false, failure: schemaFailure(`ISSUE single-issue mapping: storyRefs.${IMPLIED_ISSUE_STORY_ID} '${s1Ref}' != epicRef '${pushRefs.epicRef}' — the implied story IS the root issue`) };
-		}
-		// SELF-REVIEW round-16: the durable ref already recorded on the head is
-		// the work item's issue identity (closeBugfixTrackerIssue + doc links key
-		// on it). The durable-ref adoption path carries no claim fence, so without
-		// this check finalize would silently rebind meta.tracker.issueRef to
-		// whatever ref the model returned.
-		const durableRef = unitIssueOf(intent.repoPath, epicHash) ?? readTrackerMeta(definitionHeadJsonPath(intent.repoPath, epicHash))?.issueRef;
-		if (durableRef !== undefined && durableRef !== pushRefs.epicRef) {
-			return { ok: false, failure: schemaFailure(`durable issueRef '${durableRef}' != returned epicRef '${pushRefs.epicRef}' — an ISSUE re-push must adopt the recorded issue; refusing to rebind`) };
-		}
-		// SELF-REVIEW round-16: content freshness — the head's rendered body must
-		// still equal the one the push context was assembled from.
-		const bodyMd = (s1 as { epicBodyMd?: unknown }).epicBodyMd;
-		if (typeof bodyMd === 'string' && renderIssueEpicBody(liveHead.artifact as IssueArtifact, epicSlug, undefined, issueArtifactId(epicHash)) !== bodyMd) {
+	// REVIEW round-6 HIGH-3 + round-16: for an ISSUE-head push, the returned
+	// epicRef must (a) target the configured GitHub repository, (b) equal the
+	// recovered claim's marker-verified issueRef when one was recorded, (c) keep
+	// the single-issue mapping (implied s1 IS the root), and (d) equal the durable
+	// ref already recorded on the head (no silent rebind). Run fail-fast here and
+	// authoritatively under the mutex below via issuePushRefCheck.
+	if (intent.workflow === 'tracker.push' && ctxHeadKind === 'issue') {
+		const refErr = issuePushRefCheck(intent.repoPath, epicHash, s1.gh, typedRefs as TrackerPushRefs, existingClaim);
+		if (refErr !== undefined) return { ok: false, failure: schemaFailure(refErr) };
+		if (bodyMd !== undefined && liveHead !== undefined && renderIssueEpicBody(liveHead.artifact as IssueArtifact, epicSlug, undefined, issueArtifactId(epicHash)) !== bodyMd) {
 			return { ok: false, failure: schemaFailure(`ISSUE head content changed since the push context was assembled — refusing to persist against a stale context; re-run tracker.push`) };
 		}
 	}
-	if (existingClaim !== undefined && (expectedFence === undefined || carriedRunId === undefined)) {
-		return { ok: false, failure: schemaFailure(`pending-create claim exists for ${epicHash} but no fence+runId was carried — refusing unverifiable persistence`) };
-	}
-	// REVIEW round-3 HIGH-2: a run that CARRIED claim ownership must not downgrade
-	// to unfenced persistence when its claim disappeared (another run completed and
-	// deleted it). If the carried fence is stale/absent-claim AND the durable refs
-	// already equal what this run is about to persist, that is an idempotent
-	// completion — allowed. Otherwise refuse: never replace a completed
-	// publication with a different ref.
-	if (existingClaim === undefined && expectedFence !== undefined && intent.workflow === 'tracker.push') {
-		const durableEpic = unitIssueOf(intent.repoPath, epicHash);
-		const pushRefs = typedRefs as TrackerPushRefs;
-		if (durableEpic !== undefined && durableEpic === pushRefs.epicRef) {
-			// idempotent completion: the publication this run carried already landed
-			mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs, ctxHeadKind);
-		} else {
-			return { ok: false, failure: schemaFailure(`carried claim fence ${expectedFence} has no claim and durable ref ${durableEpic ?? '(none)'} != ${pushRefs.epicRef} — displaced/completed owner refused`) };
-		}
-	} else {
+	// One ownership boundary spans claim re-read + full validation + metadata
+	// write + head bindings + claim release (round-2 HIGH-3/HIGH-4). REVIEW
+	// round-18 HIGH-2: the claim is re-read INSIDE the mutex so the branch
+	// decision and the writes cannot be separated by a takeover, and every check
+	// re-runs on fresh reads under that mutex before the first write.
+	{
+		const mutex = await acquireClaimMutex(intent.repoPath, epicHash);
 		try {
-			if (existingClaim !== undefined) {
-				// claim present: the carried fence is mandatory; one mutex hold spans
-				// fence validation + metadata write + head bindings + claim release
-				// (round-2 HIGH-3: atomic ownership boundary; HIGH-4: awaited cleanup).
-				const mutex = await acquireClaimMutex(intent.repoPath, epicHash);
-				try {
-					await withOwnedFence(intent.repoPath, epicHash, expectedFence ?? -1, async (lockedClaim) => {
-						// REVIEW round-7 HIGH-3: validate the recovered ref from the
-						// SAME locked claim (we hold the mutex, so the claim cannot be
-						// swapped between check and write) BEFORE the first persistence.
-						if (intent.workflow === 'tracker.push' && lockedClaim.issueRef !== undefined) {
-							const pushRefs = typedRefs as TrackerPushRefs;
-							if (lockedClaim.issueRef !== pushRefs.epicRef) {
-								throw new Error(`locked claim ref ${lockedClaim.issueRef} != returned epicRef ${pushRefs.epicRef} — refusing to persist a different issue than the marker-verified recovery`);
-							}
-						}
-						mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs, ctxHeadKind);
-						// Only AFTER the refs are durably persisted and the heads bound
-						// is the claim released (HIGH-2) — unlink directly, we already
-						// hold the mutex (releaseClaim would re-acquire and deadlock).
-						if (intent.workflow === 'tracker.push') {
-							unlinkSync(pendingCreatePath(intent.repoPath, epicHash));
-						}
-					}, carriedRunId);
-				} finally {
-					mutex.release();
+			const claimNow = readClaim(intent.repoPath, epicHash);
+			if (claimNow !== undefined && (expectedFence === undefined || carriedRunId === undefined)) {
+				return { ok: false, failure: schemaFailure(`pending-create claim exists for ${epicHash} but no fence+runId was carried — refusing unverifiable persistence`) };
+			}
+			if (claimNow !== undefined) {
+				// claim present: the carried fence is mandatory; the withOwnedFence
+				// hold spans fence validation + re-validation + write + bindings +
+				// claim release (round-2 HIGH-3: atomic ownership boundary).
+				await withOwnedFence(intent.repoPath, epicHash, expectedFence ?? -1, async (lockedClaim) => {
+					// round-18 HIGH-2: re-run the FULL validation under the mutation
+					// authority — ref checks against the LOCKED claim and the durable
+					// ref; the head kind/approval/content re-check runs inside
+					// mutateEpicTrackerMeta on the same read the write uses.
+					if (intent.workflow === 'tracker.push' && ctxHeadKind === 'issue') {
+						const refErr = issuePushRefCheck(intent.repoPath, epicHash, s1.gh ?? {}, typedRefs as TrackerPushRefs, lockedClaim);
+						if (refErr !== undefined) throw new Error(refErr);
+					}
+					mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs, ctxHeadKind, bodyMd);
+					// Only AFTER the refs are durably persisted and the heads bound is
+					// the claim released (HIGH-2) — unlink directly, we already hold the
+					// mutex (releaseClaim would re-acquire and deadlock).
+					if (intent.workflow === 'tracker.push') {
+						unlinkSync(pendingCreatePath(intent.repoPath, epicHash));
+					}
+				}, carriedRunId);
+			} else if (expectedFence !== undefined && intent.workflow === 'tracker.push') {
+				// REVIEW round-3 HIGH-2: a run that CARRIED claim ownership must not
+				// downgrade to unfenced persistence when its claim disappeared (another
+				// run completed and deleted it). If the durable refs already equal what
+				// this run is about to persist, that is an idempotent completion —
+				// allowed. Otherwise refuse: never replace a completed publication.
+				const durableEpic = unitIssueOf(intent.repoPath, epicHash);
+				const pushRefs = typedRefs as TrackerPushRefs;
+				if (durableEpic !== undefined && durableEpic === pushRefs.epicRef) {
+					mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs, ctxHeadKind, bodyMd);
+				} else {
+					return { ok: false, failure: schemaFailure(`carried claim fence ${expectedFence} has no claim and durable ref ${durableEpic ?? '(none)'} != ${pushRefs.epicRef} — displaced/completed owner refused`) };
 				}
 			} else {
-				// no claim and no carried fence: plain persistence (DEF heads, sync, tests)
-				mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs, ctxHeadKind);
+				// no claim and no carried fence: plain persistence (DEF heads, sync) —
+				// still under the claim mutex, still head-validated at the write.
+				mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs, ctxHeadKind, bodyMd);
 			}
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			return { ok: false, failure: schemaFailure(`failed to patch Epic tracker meta: ${msg}`) };
+		} finally {
+			mutex.release();
 		}
 	}
 
@@ -3099,6 +3081,36 @@ async function finalizeTracker(
 	};
 }
 
+/** REVIEW round-18: the ISSUE push ref checks in ONE place, run both as a
+ *  fail-fast pre-check at finalize and authoritatively under the claim mutex at
+ *  the write (against the LOCKED claim). Returns an error message or undefined. */
+function issuePushRefCheck(
+	repoPath: string,
+	epicHash: string,
+	gh: { readonly owner?: string | undefined; readonly repo?: string | undefined },
+	pushRefs: TrackerPushRefs,
+	claim: { readonly issueRef?: string | undefined } | undefined,
+): string | undefined {
+	const m = /^([^/#\s]+)\/([^/#\s]+)#(\d+)$/.exec(pushRefs.epicRef);
+	if (m === null || typeof gh.owner !== 'string' || typeof gh.repo !== 'string' || m[1] !== gh.owner || m[2] !== gh.repo) {
+		return `ISSUE push epicRef '${pushRefs.epicRef}' does not target the configured GitHub repository ${gh.owner ?? '?'}/${gh.repo ?? '?'}`;
+	}
+	if (claim?.issueRef !== undefined && claim.issueRef !== pushRefs.epicRef) {
+		return `recovered claim ref ${claim.issueRef} != returned epicRef ${pushRefs.epicRef} — refusing to persist a different issue than the marker-verified recovery`;
+	}
+	const s1Ref = pushRefs.storyRefs?.[IMPLIED_ISSUE_STORY_ID];
+	if (s1Ref !== undefined && s1Ref !== pushRefs.epicRef) {
+		return `ISSUE single-issue mapping: storyRefs.${IMPLIED_ISSUE_STORY_ID} '${s1Ref}' != epicRef '${pushRefs.epicRef}' — the implied story IS the root issue`;
+	}
+	// round-16: the durable ref on the head is the work item's issue identity —
+	// a re-push must adopt it, never rebind to a different returned ref.
+	const durableRef = unitIssueOf(repoPath, epicHash) ?? readTrackerMeta(definitionHeadJsonPath(repoPath, epicHash))?.issueRef;
+	if (durableRef !== undefined && durableRef !== pushRefs.epicRef) {
+		return `durable issueRef '${durableRef}' != returned epicRef '${pushRefs.epicRef}' — an ISSUE re-push must adopt the recorded issue; refusing to rebind`;
+	}
+	return undefined;
+}
+
 /** Merge tracker refs into the work item's head artifact's meta.tracker.
  *  ISSUE-5f9d4ab4c90c0b4c s1/t4: the head is resolved by the readable-head
  *  rule (DEF-then-ISSUE first-readable-wins, {@link definitionHeadJsonPath}),
@@ -3115,6 +3127,7 @@ function mutateEpicTrackerMeta(
 	workflow:   string,
 	refs:       TrackerPushRefs | TrackerSyncRefs | TrackerPostRefs,
 	expectedHeadKind?: string | undefined,
+	expectedBodyMd?: string | undefined,
 ): void {
 	if (workflow === 'tracker.post') return;   // no-op for post
 	// REVIEW round-2 HIGH-3: fence validation now happens in withOwnedFence,
@@ -3123,12 +3136,18 @@ function mutateEpicTrackerMeta(
 	// rule the context assemblers use, so persistence and reads never diverge.
 	const head = readDefinitionHead(repoPath, epicHash);
 	const headKind = head?.kind ?? 'def';
-	// REVIEW round-17 HIGH: re-verify the head kind AT THE WRITE — inside the
-	// caller's ownership boundary (withOwnedFence for claim runs) — so a head
-	// swapped between finalize's checks and the persistence cannot retarget
-	// the write, and a push cannot release its claim after writing a replacement.
+	// REVIEW round-18 HIGH-1/HIGH-2: FULL head validation AT THE WRITE, on the
+	// SAME read the write uses — the caller holds the claim mutex, so this is
+	// the authoritative boundary: (a) kind equality in both directions
+	// (normalized — an absent context headKind means DEF), (b) the head must
+	// still be approved, (c) an ISSUE push's content must still match the
+	// assembled context. A head swapped at the write-authority handoff throws
+	// here, before any write, and a push cannot release its claim afterwards.
 	if (expectedHeadKind !== undefined && headKind !== expectedHeadKind) {
-		throw new Error(`head kind changed since the context was assembled: expected '${expectedHeadKind}' but the live head for ${epicHash} is '${headKind}' — refusing to persist tracker meta into a replacement head`);
+		throw new Error(`head kind changed since the context was assembled: expected '${expectedHeadKind}' but the live head for ${epicHash} is ${head === undefined ? 'not readable' : `kind '${headKind}'`} — refusing to persist tracker meta into a replacement head`);
+	}
+	if (head !== undefined && approvalStateOf(head.artifact.meta) !== 'approved') {
+		throw new Error(`${headKind.toUpperCase()} head for ${epicHash} is not approved at write time — refusing to persist tracker meta into an unapproved head`);
 	}
 	const headJson = head !== undefined ? definitionHeadJsonPath(repoPath, epicHash) : artifactJsonPath(repoPath, defineArtifactId(epicHash));
 	const raw = readFileSync(headJson, 'utf8');
@@ -3136,6 +3155,10 @@ function mutateEpicTrackerMeta(
 	if (artifact.meta === undefined) artifact.meta = {};
 	if (artifact.meta.tracker === undefined) artifact.meta.tracker = {};
 	const epicSlug = artifact.meta.epicSlug ?? epicHash;
+	if (expectedHeadKind === 'issue' && expectedBodyMd !== undefined && head !== undefined
+		&& renderIssueEpicBody(head.artifact as IssueArtifact, epicSlug, undefined, issueArtifactId(epicHash)) !== expectedBodyMd) {
+		throw new Error(`ISSUE head content changed since the push context was assembled — refusing to persist against a stale context`);
+	}
 	if (workflow === 'tracker.push') {
 		const push = refs as TrackerPushRefs;
 		artifact.meta.tracker = {

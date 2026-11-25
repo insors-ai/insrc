@@ -21,7 +21,10 @@ import {
 	READ_ONLY_SESSION_READ_TOOLS, ReadOnlySessionTimeoutError, CliStallError, CODEX_FIRST_OUTPUT_MS, InputTooLargeError,
 } from '../cli-provider.js';
 import { UnqualifiedCapabilityPolicyError } from '../../../shared/types.js';
-import { _captureCapabilityPolicyAttemptsForTests, _stopCapturingCapabilityPolicyAttemptsForTests } from '../cli-provider.js';
+import {
+	_captureCapabilityPolicyAttemptsForTests, _stopCapturingCapabilityPolicyAttemptsForTests,
+	_qualificationCheckCallCountForTests, _resetQualificationCheckCallCountForTests,
+} from '../cli-provider.js';
 
 const SCHEMA = { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } } };
 
@@ -698,14 +701,16 @@ test("without effort every argv is byte-identical to today's", async () => {
 
 // --- capabilityPolicy (s3/t2, Epic add-dedicated-security-reviews) -------------
 
-test('capabilityPolicy omitted defaults to write-sandboxed, which every provider (including codex) is qualified for -- today\'s exact dispatch is unaffected', async () => {
+test('capabilityPolicy omitted skips the qualification check entirely (zero calls), defaulting to write-sandboxed -- today\'s exact dispatch is unaffected', async () => {
 	const f = fakeCli([{ out: codexOk('{"ok":true}') }]);
 	const attempts = _captureCapabilityPolicyAttemptsForTests();
+	_resetQualificationCheckCallCountForTests();
 	try {
 		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
 		const res = await p.runReadOnlySession<{ ok: boolean }>('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000 });
 		assert.deepEqual(res, { ok: true });
 		assert.equal(f.calls().length, 1);
+		assert.equal(_qualificationCheckCallCountForTests(), 0, 'isQualifiedForCapabilityPolicy is never called when capabilityPolicy is omitted');
 		assert.deepEqual(attempts, ['write-sandboxed', 'write-sandboxed'], 'the outer attempt and the inner codex-loop attempt both resolve the omitted policy to write-sandboxed');
 	} finally { _stopCapturingCapabilityPolicyAttemptsForTests(); f.cleanup(); }
 });

@@ -66,6 +66,7 @@ import type {
 } from '../../shared/types.js';
 import { UnqualifiedCapabilityPolicyError } from '../../shared/types.js';
 import { isQualifiedForCapabilityPolicy } from './capability-qualification.js';
+import type { CapabilityQualifiedProvider } from './capability-qualification.js';
 import type { TierEffort } from '../../config/analyze.js';
 import { getLogger } from '../../shared/logger.js';
 import { runInProcessGroup } from '../../shared/process-group.js';
@@ -122,6 +123,22 @@ export function _captureCapabilityPolicyAttemptsForTests(): (string | undefined)
 }
 export function _stopCapturingCapabilityPolicyAttemptsForTests(): void {
 	capabilityPolicyAttemptsForTests = undefined;
+}
+
+/** Test-only count of calls to `isQualifiedForCapabilityPolicy` -- proves
+ *  that omitting `capabilityPolicy` entirely skips the qualification check
+ *  (count stays 0), rather than merely resolving it to a value that happens
+ *  to always qualify. */
+let qualificationCheckCallsForTests = 0;
+function checkedIsQualifiedForCapabilityPolicy(provider: CapabilityQualifiedProvider, policy: 'write-sandboxed' | 'strict-read-analyze'): boolean {
+	qualificationCheckCallsForTests++;
+	return isQualifiedForCapabilityPolicy(provider, policy);
+}
+export function _qualificationCheckCallCountForTests(): number {
+	return qualificationCheckCallsForTests;
+}
+export function _resetQualificationCheckCallCountForTests(): void {
+	qualificationCheckCallsForTests = 0;
 }
 
 /** The built-in tools a read-only session may use: reading only. */
@@ -734,7 +751,7 @@ export class CliProvider implements LLMProvider {
 		// retry loop below): an unqualified provider never spawns a subprocess at
 		// all. Omitted entirely: no qualification check runs at all -- today's exact
 		// behavior for every existing caller, unchanged.
-		if (opts.capabilityPolicy !== undefined && !isQualifiedForCapabilityPolicy(this.kind, opts.capabilityPolicy)) {
+		if (opts.capabilityPolicy !== undefined && !checkedIsQualifiedForCapabilityPolicy(this.kind, opts.capabilityPolicy)) {
 			throw new UnqualifiedCapabilityPolicyError(this.kind, opts.capabilityPolicy);
 		}
 		const capabilityPolicy = opts.capabilityPolicy ?? 'write-sandboxed';

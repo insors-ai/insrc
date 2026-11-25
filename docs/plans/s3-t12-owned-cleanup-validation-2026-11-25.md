@@ -33,3 +33,9 @@ The cleanup primitive has no delivery/lifecycle/installation ports and cannot st
 The second tracked gate passed all mapped tests/typechecks but identified a real admission hole: the finite-stage census ignored incomplete retry journals. The census now validates exact retry admission and completion plus every temporary item's intent, removed-target absence and per-item completion before allowing a fresh preparation. Malformed, orphaned, mismatched or incomplete retry records block availability/preparation; read-only checks never repair them.
 
 The unlink/completion interruption test now attempts real fresh preparation, asserts dependency-uncertain with zero transport calls, explicitly finishes Retry cleanup, and then proves the fresh preparation can acquire its payload. Separate journal-tampering tests cover malformed and mismatched admission/completion. Current focused run `40f01af4-f2e6-473a-941b-91b7888b924a`: 19/19 passed, zero failure/skip/cancel, confirmed owned-group closure. Tracked revalidation remains required.
+
+## Orphan evidence admission correction
+
+The next tracked verdict identified baseless retry journals that were still ignored by the outer filename census. Every recognized non-lock journal now requires its base attempt in the same census, which then receives full finite/stage/retry validation. Orphan finite handoff records are also rejected. The regression uses otherwise empty private attempt directories across all 17 non-lock evidence forms (including retry/item completion, finite closure and service/handoff records) and proves zero transport calls, no staging/publication, and preserved orphan bytes.
+
+Focused run `7d71df69-7b87-4e7c-89de-bb902d741623`: 20 tests passed, confirmed owned-group closure. This addresses the concrete admission counterexample while retaining the existing explicit-retry-only cleanup boundary; no automatic orphan deletion was added.

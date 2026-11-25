@@ -81,6 +81,7 @@ export async function closedOllamaAttempts(location: InstallationLocation, signa
       if (!/^[A-Za-z0-9_-]{32,128}\.json$/.test(name)) {
         const handoff = /^([A-Za-z0-9_-]{32,128})\.handoff-([a-f0-9]{32})(\.closed)?\.json$/.exec(name);
         if (handoff) {
+          if (!files.includes(`${handoff[1]}.json`)) throw dependencyUncertain('Orphan finite handoff evidence lacks its base attempt');
           const file = join(directory, `${handoff[1]}.json`), attempt = parseBoundOllamaAttempt(location, json(await readDependencyRecord(location, file)));
           if (dependencyPath(location, attempt.identity.recordRelativePath) !== file) throw dependencyUncertain('Finite handoff attempt path differs');
           const admissionFile = join(directory, `${handoff[1]}.handoff-${handoff[2]}.json`);
@@ -94,7 +95,11 @@ export async function closedOllamaAttempts(location: InstallationLocation, signa
           const info = lstatSync(join(directory, name)); if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1
             || (process.platform !== 'win32' && (info.uid !== process.getuid?.() || (info.mode & 0o077)))) throw dependencyUncertain('Unsafe dependency attempt lock'); continue;
         }
-        if (!/^[A-Za-z0-9_-]{32,128}\.(?:closed|cleanup|disposed|retry|retry-done|retry-temp-[a-f0-9]{64}(?:\.done)?|published|service|service-input|service-launch|service-running|service-exit|service-result|service-log-error)\.json$/.test(name)) throw dependencyUncertain('Unrecognized dependency attempt evidence');
+        const evidence = /^([A-Za-z0-9_-]{32,128})\.(?:closed|cleanup|disposed|retry|retry-done|retry-temp-[a-f0-9]{64}(?:\.done)?|published|service|service-input|service-launch|service-running|service-exit|service-result|service-log-error)\.json$/.exec(name);
+        if (!evidence) throw dependencyUncertain('Unrecognized dependency attempt evidence');
+        // Never silently ignore an orphan journal. Its base must be part of
+        // this census and pass the full finite/disposal/retry validation below.
+        if (!files.includes(`${evidence[1]}.json`)) throw dependencyUncertain('Orphan dependency evidence lacks its base attempt');
         continue;
       }
       if (result.length >= 128) throw dependencyUncertain('Dependency attempt history exceeds bound');

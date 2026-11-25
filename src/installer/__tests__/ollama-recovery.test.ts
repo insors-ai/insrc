@@ -256,6 +256,26 @@ privateRuntimeTest(import.meta.url, 'malformed-or-incomplete-retry-journals-bloc
   } finally { await f.cleanup(); }
 });
 
+privateRuntimeTest(import.meta.url, 'orphan-evidence-in-empty-attempt-directory-blocks-fresh-preparation', async () => {
+  for (const suffix of ['retry', 'retry-done', `retry-temp-${'c'.repeat(64)}`, `retry-temp-${'c'.repeat(64)}.done`,
+    'closed', 'cleanup', 'disposed', 'published', 'service', 'service-input', 'service-launch', 'service-running',
+    'service-exit', 'service-result', 'service-log-error', `handoff-${'c'.repeat(32)}`, `handoff-${'c'.repeat(32)}.closed`]) {
+    const f = await ollamaFixture();
+    try {
+      const { policy, offer } = await f.input(), nonce = 'a'.repeat(64), context = f.context();
+      const directory = ensureDependencyDirectory(f.location, 'deps/ollama/.attempts/prepare-operation', context.assertCurrent);
+      const orphan = join(directory, `${nonce}.${suffix}.json`); writeFileSync(orphan, '{}', { mode: 0o600 });
+      assert.deepEqual(readdirSync(directory), [`${nonce}.${suffix}.json`]);
+      await assert.rejects(closedOllamaAttempts(f.location), { code: 'dependency-uncertain' });
+      let downloads = 0;
+      await assert.rejects(prepareOllama(f.location, policy, offer, f.context('b'.repeat(64)),
+        { recheck: f.recheck, transport: async () => { downloads++; return f.transport(); } }), { code: 'dependency-uncertain' });
+      assert.equal(downloads, 0); assert.equal(existsSync(offer.destination), false); assert.equal(readFileSync(orphan, 'utf8'), '{}');
+      assert.equal(existsSync(join(f.home, 'deps/ollama/.staging')), false);
+    } finally { await f.cleanup(); }
+  }
+});
+
 privateRuntimeTest(import.meta.url, 'cleanup-deadline-retains-actor-until-close-and-retry-finishes-disposal', async () => {
   const f = await ollamaFixture(); let release!: () => void, entered!: () => void;
   const paused = new Promise<void>(resolve => { release = resolve; }), started = new Promise<void>(resolve => { entered = resolve; });

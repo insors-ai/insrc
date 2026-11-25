@@ -262,3 +262,50 @@ test('integration: handleSecurityReviewStep: a fresh-index request calls the REA
 		assert.equal(derivedRecord.meta.standalone, true, 'an omitted epicHash/storyId derives identity via deriveReceiptIdentity and sets standalone:true in the persisted receipt');
 	} finally { unwireReal(); unwire(); rmSync(repo, { recursive: true, force: true }); }
 });
+
+test('integration: a STALE-index request pauses at confirm_wait, then a resumed proceed:false call runs the REAL runSecurityReview degraded and persists receipts; a separate resumed proceed:true call waits for freshness before running it', async () => {
+	const repoFalse = initRepo();
+	wireRealRunSecurityReview(repoFalse);
+	try {
+		const identityFalse = await computeContentIdentity(repoFalse, targets);
+		_setSecurityReviewStepDepsForTests({
+			resolveRepoLastIndexedAt: async () => 1_000_000,
+			statMtimeMs: async () => 2_000_000, // stale throughout -- proceed:false never waits
+			resolveSecurityModel: async () => modelSelection,
+			collectDependencyAdvisories: async () => ({ ...evidence(), contentIdentity: identityFalse }),
+		});
+		const first = await handleSecurityReviewStep({ phase: 'start', repoPath: repoFalse, targets, epicHash: '1111111111111111', storyId: 's3' });
+		assert.equal(first.next, 'confirm_wait');
+		assert.equal(readReceiptRecord(repoFalse, '1111111111111111', 's3'), null, 'nothing persisted yet at confirm_wait');
+
+		const resumedFalse = await handleSecurityReviewStep({ phase: 'start', state: (first as { state: string }).state, proceed: false }) as { next: string };
+		assert.equal(resumedFalse.next, 'done');
+		const falseRecord = readReceiptRecord(repoFalse, '1111111111111111', 's3');
+		assert.ok(falseRecord, 'the degraded proceed:false run genuinely persisted both round receipts via the real runSecurityReview');
+		assert.equal(falseRecord.body.receipts.length, 2);
+	} finally { unwireReal(); unwire(); rmSync(repoFalse, { recursive: true, force: true }); }
+
+	const repoTrue = initRepo();
+	wireRealRunSecurityReview(repoTrue);
+	try {
+		const identityTrue = await computeContentIdentity(repoTrue, targets);
+		let staleReads = 0;
+		const sleptMs: number[] = [];
+		_setSecurityReviewStepDepsForTests({
+			resolveRepoLastIndexedAt: async () => { staleReads++; return staleReads < 3 ? 1_000_000 : 2_000_000; },
+			statMtimeMs: async () => 2_000_000,
+			sleep: async ms => { sleptMs.push(ms); },
+			resolveSecurityModel: async () => modelSelection,
+			collectDependencyAdvisories: async () => ({ ...evidence(), contentIdentity: identityTrue }),
+		});
+		const first = await handleSecurityReviewStep({ phase: 'start', repoPath: repoTrue, targets, epicHash: '2222222222222222', storyId: 's3' });
+		assert.equal(first.next, 'confirm_wait');
+
+		const resumedTrue = await handleSecurityReviewStep({ phase: 'start', state: (first as { state: string }).state, proceed: true }) as { next: string };
+		assert.equal(resumedTrue.next, 'done');
+		assert.ok(sleptMs.length >= 1, 'proceed:true genuinely waited at least once before the index became fresh');
+		const trueRecord = readReceiptRecord(repoTrue, '2222222222222222', 's3');
+		assert.ok(trueRecord, 'the proceed:true run, once fresh, genuinely persisted both round receipts via the real runSecurityReview');
+		assert.equal(trueRecord.body.receipts.length, 2);
+	} finally { unwireReal(); unwire(); rmSync(repoTrue, { recursive: true, force: true }); }
+});

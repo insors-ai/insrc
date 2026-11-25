@@ -31,7 +31,10 @@ import { _setContentIdentityDepsForTests } from '../content-identity.js';
 import { _setRunSecurityCodePassForTests } from '../security-round-hooks.js';
 import type { SecurityAdvisoryEvidence } from '../collect-dependency-advisories.js';
 import type { SecurityFinding } from '../../review-round/security-finding.js';
-import type { SecurityModelSelection } from '../../../config/analyze.js';
+import { resolveSecurityModelCandidate } from '../../../config/analyze.js';
+import type { AnalyzeConfig, AnalyzeTiering, SecurityModelSelection, TierResolution } from '../../../config/analyze.js';
+import type { FamilyDefinition } from '../../../daemon/model-catalog.js';
+import type { ModelRegistry, ResolvedModel } from '../../../daemon/model-registry.js';
 
 registerGitTools();
 
@@ -80,6 +83,38 @@ function evidenceFor(contentIdentity: string, over: Partial<SecurityAdvisoryEvid
 
 function finding(id: string): SecurityFinding {
 	return { id, category: 'security', severity: 'HIGH', kind: 'security', checkId: 'injection', evidence: [], enforcementMode: 'advisory' };
+}
+
+// Minimal AnalyzeConfig/ModelRegistry fixtures (same shape as
+// config/__tests__/analyze-tiering.test.ts's own fakeRegistry/fakeAnalyzeConfig),
+// used ONLY to resolve a REAL "repo's currently-configured tier default" via
+// s1's own resolveSecurityModelCandidate -- never to re-implement or re-probe
+// that resolution inside this Story's own test.
+function fakeResolvedModel(family: string, id: string): ResolvedModel {
+	return { id, efforts: [], family, source: 'shipped' } as unknown as ResolvedModel;
+}
+function fakeRegistry(families: readonly FamilyDefinition[]): ModelRegistry {
+	const notUsed = (): never => { throw new Error('not used'); };
+	return {
+		families: () => families, defaultFamily: notUsed, models: notUsed, rejected: notUsed,
+		find: (family, idOrAlias) => {
+			const f = families.find(fam => fam.id === family);
+			const m = f?.models.find(mod => mod.id === idOrAlias || mod.aliases?.includes(idOrAlias));
+			return m === undefined ? undefined : fakeResolvedModel(family, m.id);
+		},
+		tierDefault: notUsed, summariserModel: notUsed, toolLoopModel: notUsed,
+		cliKind: family => family.startsWith('cli-') ? family.slice('cli-'.length) as 'claude' | 'codex' | 'vibe' : undefined,
+		host: notUsed, effortLevels: notUsed, resolveTier: notUsed,
+	};
+}
+function fakeAnalyzeConfig(tiering: AnalyzeTiering): AnalyzeConfig {
+	return {
+		shaperProvider: 'cli-claude', shaperProviderExplicit: false, shaperModel: '', shaperModelExplicit: false,
+		summariserProvider: 'cli-claude', summariserModel: '',
+		shaper: { maxToolTurns: 40, structuredOutputRetries: 3, ollamaNumPredict: 20_480 },
+		maxPlanDepth: { XS: 2, S: 3, M: 4, L: 5, XL: 6 },
+		tiering, tierResolutions: {} as Record<string, TierResolution> as never,
+	};
 }
 
 test('a targets.entries path resolving outside repoPath throws SYNCHRONOUSLY (never a rejected Promise) with no dispatch, before any receipt or round work', async () => {
@@ -167,18 +202,34 @@ test("persists exactly ONE VerificationReceipt per round, both 'pass' on a clean
 	} finally { unwire(); rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('SecurityReviewReport.effectiveModel matches the modelSelection actually passed in, even when it differs from this file\'s own baseline fixture modelSelection (standing in for "the repo\'s currently-configured tier default", which t4 itself never resolves or consults -- s1 owns that)', async () => {
+test("integration: SecurityReviewReport.effectiveModel matches the modelSelection actually passed in, in a case where it differs from the repo's currently-configured tier default", async () => {
 	const repo = initRepo();
 	wireRepo(repo);
 	_setRunSecurityCodePassForTests(async () => []);
 	try {
+		// Resolve a REAL configured tier default for 'security.review' via s1's
+		// own resolveSecurityModelCandidate (an absent models.security pin falls
+		// through to the role's tier-default model) -- this IS the repo's
+		// currently-configured tier default, not a stand-in.
+		const registry = fakeRegistry([{
+			id: 'cli-claude', displayName: 'Claude',
+			models: [{ id: 'opus', efforts: [] }, { id: 'haiku', efforts: [] }],
+			tierDefaults: { core: { model: 'opus' }, mid: { model: 'opus' }, cheap: { model: 'haiku' } },
+		}]);
+		const cfg = fakeAnalyzeConfig({ security: { kind: 'absent' }, tiers: { core: { runner: 'cli-claude', model: 'opus' } } });
+		const configuredDefault = resolveSecurityModelCandidate(cfg, registry);
+		assert.equal(configuredDefault.status, 'candidate');
+		assert.deepEqual(configuredDefault, { status: 'candidate', runner: 'cli-claude', model: 'opus' });
+
+		// The modelSelection actually passed to runSecurityReview deliberately
+		// differs from that resolved default (a different runner AND model).
 		const identity = await realContentIdentity(repo);
 		const differingModelSelection: SecurityModelSelection & { status: 'configured' } = { status: 'configured', provider: 'cli-codex', modelId: 'a-non-default-model-id' };
-		assert.notDeepEqual(differingModelSelection, modelSelection, 'the two selections genuinely differ');
+		assert.notDeepEqual({ provider: differingModelSelection.provider, modelId: differingModelSelection.modelId }, { provider: (configuredDefault as { runner: string }).runner, modelId: (configuredDefault as { model: string }).model });
 		const report = await runSecurityReview(repo, targets, {
 			reviewId: `r-${randomUUID()}`, modelSelection: differingModelSelection, advisoryEvidence: evidenceFor(identity), now: '2026-11-25T00:00:00.000Z',
 		});
-		assert.deepEqual(report.effectiveModel, { provider: 'cli-codex', modelId: 'a-non-default-model-id' }, 'effectiveModel reflects the DIFFERING selection actually passed in, never the file\'s baseline');
+		assert.deepEqual(report.effectiveModel, { provider: 'cli-codex', modelId: 'a-non-default-model-id' }, 'effectiveModel reflects the DIFFERING selection actually passed in, never the repo\'s configured tier default');
 	} finally { unwire(); rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -221,24 +272,37 @@ test("a round's own execution failure persists only that round's 'fail' receipt 
 
 test('reverifies contentIdentity before round 2: a repository edit injected between round 1 and round 2 is caught and aborts with ContentIdentityMismatchError, with round 1\'s receipt already durably persisted as pass', async () => {
 	const repo = initRepo();
-	wireRepo(repo);
+	_setContentIdentityDepsForTests(async candidate => candidate === repo);
+	_setReviewReportDepsForTests({ resolveRepoRoot: async () => repo });
+	_setReconciliationDepsForTests({ resolveRepoRoot: async () => repo, classify: async (_id, prior) => prior.map(() => 'still-open') });
+	_setRunSecurityCodePassForTests(async () => []);
 	const identity = await realContentIdentity(repo);
-	let round = 0;
-	_setRunSecurityCodePassForTests(async () => {
-		round++;
-		if (round === 1) {
-			// mutate the repo between round 1 and round 2's pre-flight reverify
-			writeFileSync(join(repo, 'app.ts'), 'export const x = 2;\n');
-			execFileSync('git', ['add', '.'], { cwd: repo });
-			execFileSync('git', ['commit', '-q', '-m', 'mutate'], { cwd: repo });
-		}
-		return [];
+	// Checkpoint's own resolveRepoRoot is called once per round, AFTER that
+	// round's persistVerificationReceipt('pass') has already resolved (see
+	// runRoundWithReceipt: persist, then writeCheckpoint). Its FIRST call
+	// therefore fires strictly after round 1's pass receipt is durably on
+	// disk and strictly before round 2's pre-flight reverify -- the one
+	// window in the whole call with no dispatch hook of its own. Mutating
+	// here (rather than inside the round-1 code-pass callback, which runs
+	// BEFORE that round's receipt is persisted) proves the required order.
+	let checkpointCalls = 0;
+	_setCheckpointDepsForTests({
+		resolveRepoRoot: async () => {
+			checkpointCalls++;
+			if (checkpointCalls === 1) {
+				writeFileSync(join(repo, 'app.ts'), 'export const x = 2;\n');
+				execFileSync('git', ['add', '.'], { cwd: repo });
+				execFileSync('git', ['commit', '-q', '-m', 'mutate'], { cwd: repo });
+			}
+			return repo;
+		},
 	});
 	try {
 		await assert.rejects(
 			runSecurityReview(repo, targets, { reviewId: `r-${randomUUID()}`, modelSelection, advisoryEvidence: evidenceFor(identity), now: '2026-11-25T00:00:00.000Z', epicHash: '2222222222222222', storyId: 's3' }),
 			ContentIdentityMismatchError,
 		);
+		assert.equal(checkpointCalls, 1, 'round 2 never reached its own checkpoint write -- the reverify aborted first');
 		const record = readReceiptRecord(repo, '2222222222222222', 's3');
 		assert.ok(record);
 		assert.deepEqual(record.body.receipts.map(r => r.result), ['pass'], "round 1's receipt is already durably persisted as pass before the round-2 reverify aborts");
@@ -272,24 +336,38 @@ test('two sequential calls with the SAME reviewId -- the first failing at ROUND 
 
 test('reverifies contentIdentity immediately before final persistence too: a repository edit injected after round 2 completes is caught and aborts with ContentIdentityMismatchError, with BOTH round receipts already durably persisted as pass', async () => {
 	const repo = initRepo();
-	wireRepo(repo);
+	_setContentIdentityDepsForTests(async candidate => candidate === repo);
+	_setReviewReportDepsForTests({ resolveRepoRoot: async () => repo });
+	_setCheckpointDepsForTests({ resolveRepoRoot: async () => repo });
+	// reconcileRound short-circuits with no resolveRepoRoot call at all when
+	// round 1's own findings are empty (nothing to reconcile) -- round 1 must
+	// produce at least one finding so reconciliation genuinely runs.
+	_setRunSecurityCodePassForTests(async (_r, _t, _m, round) => round === 1 ? [finding('f-round1')] : []);
 	const identity = await realContentIdentity(repo);
-	let round = 0;
-	_setRunSecurityCodePassForTests(async () => {
-		round++;
-		if (round === 2) {
-			// mutate the repo after round 2 completes, before the pre-finalization reverify
+	// reconcileRound's own resolveRepoRoot is called exactly once, AFTER
+	// round 2's persistVerificationReceipt('pass') + writeCheckpoint have
+	// both already resolved (round2 = await runRoundWithReceipt(2), then
+	// reconcileRound), and strictly before the pre-finalization reverify.
+	// Mutating here (rather than inside round 2's own code-pass callback,
+	// which runs BEFORE round 2's own receipt is persisted) proves the
+	// edit lands genuinely after round 2 has completed and been recorded.
+	let reconciliationCalls = 0;
+	_setReconciliationDepsForTests({
+		resolveRepoRoot: async () => {
+			reconciliationCalls++;
 			writeFileSync(join(repo, 'app.ts'), 'export const x = 3;\n');
 			execFileSync('git', ['add', '.'], { cwd: repo });
 			execFileSync('git', ['commit', '-q', '-m', 'mutate-after-round-2'], { cwd: repo });
-		}
-		return [];
+			return repo;
+		},
+		classify: async (_id, prior) => prior.map(() => 'still-open'),
 	});
 	try {
 		await assert.rejects(
 			runSecurityReview(repo, targets, { reviewId: `r-${randomUUID()}`, modelSelection, advisoryEvidence: evidenceFor(identity), now: '2026-11-25T00:00:00.000Z', epicHash: '7777777777777777', storyId: 's3' }),
 			ContentIdentityMismatchError,
 		);
+		assert.equal(reconciliationCalls, 1, 'reconcileRound ran exactly once, strictly after round 2 was recorded and strictly before the pre-finalization reverify');
 		const record = readReceiptRecord(repo, '7777777777777777', 's3');
 		assert.ok(record);
 		assert.deepEqual(record.body.receipts.map(r => r.result), ['pass', 'pass'], 'both round receipts are already durably persisted as pass before the pre-finalization reverify aborts');

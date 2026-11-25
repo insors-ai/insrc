@@ -1,10 +1,10 @@
 /** Read-only inspection and exact-consented private dependency preparation. */
-import { constants } from 'node:fs';
+import { constants, existsSync } from 'node:fs';
 import type { Stats } from 'node:fs';
 import { access, lstat, open, readdir, realpath, stat } from 'node:fs/promises';
 import { get } from 'node:http';
 import { homedir } from 'node:os';
-import { posix, win32 } from 'node:path';
+import { dirname, posix, win32 } from 'node:path';
 import { InstallerError, PRIVATE_NODE_VERSION } from './contracts.js';
 import type { DependencyReport, InstallationLocation, Target } from './contracts.js';
 import type { DependencyPort, DependencyProbeContext } from './peer-contracts.js';
@@ -12,10 +12,15 @@ import { assertToken, normalizeHome } from './location.js';
 import { canonicalJson, digest } from './release-descriptor.js';
 import { parseInstaller } from './schemas.js';
 import { runtimeArchive, runtimePolicy } from './runtime-policy.js';
-import { createOllamaOffer, ollamaEndpoint, ollamaPayloadRelativePath, parseOllamaPolicy } from './ollama-policy.js';
+import { createOllamaOffer, dependencyAttemptPaths, ollamaEndpoint, ollamaPayloadRelativePath, parseOllamaPolicy } from './ollama-policy.js';
 import type { OllamaOffer, OllamaPolicy } from './ollama-policy.js';
-import { requireDependencyOperation } from './dependency-context.js';
-import { prepareOllama } from './ollama-prepare.js';
+import { requireDependencyOperation, requireDependencyRetry } from './dependency-context.js';
+import { assertOllamaReadsClosed, closedOllamaAttempts, prepareOllama } from './ollama-prepare.js';
+import { cleanupOllamaInstallAttempt } from './ollama-recovery.js';
+import { dependencyLockIdentity, dependencyPath, dependencyUncertain, readDependencyRecord } from './ollama-records.js';
+import { privateOllamaDirectory } from './ollama-layout.js';
+import { controlBinding } from './native.js';
+import { parseServiceFrame, serviceJson, servicePaths, SERVICE_FRAME_LIMIT } from './ollama-service-records.js';
 import type { OllamaPrepareOptions } from './ollama-prepare.js';
 import { closeOwnedFile } from './owned-file.js';
 import { startOllamaService, reconcileOllamaDependencies } from './ollama-service.js';
@@ -376,6 +381,37 @@ export function dependencyPort(targetInput: Target, locationInput: InstallationL
     if (requested.installationId !== location.installationId || normalizeHome(requested.home, target.os) !== location.home) throw new InstallerError('identity-mismatch', 'Dependency adapter belongs to another installation');
   };
   return {
+    async cleanupInstall(requested, input) {
+      check(requested); const context = requireDependencyRetry(location, input);
+      context.assertCurrent(); assertOllamaReadsClosed(location);
+      const paths = dependencyAttemptPaths(context.operationId, context.attemptNonce), record = dependencyPath(location, paths.recordRelativePath);
+      if (!existsSync(record)) {
+        // Before any attempt was admitted, only a truly empty scope is safe.
+        // Orphan temporary/unknown records are preserved, never inferred owned.
+        if (existsSync(dependencyPath(location, paths.stageRelativePath))) throw dependencyUncertain('Unadmitted dependency staging cannot be discarded');
+        const directory = dirname(record);
+        if (existsSync(directory)) {
+          await privateOllamaDirectory(directory); context.assertCurrent();
+          const names = await readdir(directory); context.assertCurrent();
+          if (names.length > 1024 || names.some(n => n.startsWith(`${context.attemptNonce}.`) && n !== `${context.attemptNonce}.json.lock`)) {
+            throw dependencyUncertain('Original dependency attempt is missing but private evidence remains');
+          }
+          if (existsSync(`${record}.lock`)) {
+            dependencyLockIdentity(`${record}.lock`);
+            const handle = controlBinding().acquire(`${record}.lock`); controlBinding().close(handle);
+          }
+        }
+        await closedOllamaAttempts(location, context.signal); context.assertCurrent(); return;
+      }
+      let policy = options.policies?.find(p => p.target.os === target.os && p.target.arch === target.arch && p.target.baseline === target.baseline);
+      const frameFile = servicePaths(record).frame;
+      if (existsSync(frameFile)) {
+        const frame = parseServiceFrame(serviceJson(await readDependencyRecord(location, frameFile, SERVICE_FRAME_LIMIT))); context.assertCurrent();
+        if (canonicalJson(frame.location) !== canonicalJson(location) || frame.attempt.identity.recordRelativePath !== paths.recordRelativePath) throw dependencyUncertain('Historical service policy belongs to another installation');
+        policy = frame.policy;
+      }
+      await cleanupOllamaInstallAttempt(location, context, policy); context.assertCurrent();
+    },
     async inspect(requested, context) { check(requested); return (await inspectDependencyWork(location, target, options, context ?? {}, false,
       (inspection, signal) => reconcileOllamaDependencies(location, inspection.policy, inspection, signal))).report; },
     async decide(requested, decision, context) {

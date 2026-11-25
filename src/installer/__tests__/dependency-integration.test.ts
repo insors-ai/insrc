@@ -12,6 +12,9 @@ import { dependencyPort } from '../dependencies.js';
 import { requireDependencyOperation } from '../dependency-context.js';
 import { ControllerStore } from '../controller-store.js';
 import { InstallerError } from '../contracts.js';
+import { dependencyAttemptPaths } from '../ollama-policy.js';
+import { dependencyPath } from '../ollama-records.js';
+import { controlBinding } from '../native.js';
 import type { DependencyReport, ManagerRequest } from '../contracts.js';
 import { requireTerminal } from '../terminal-admission.js';
 import { runTerminalInstall } from '../terminal-install.js';
@@ -138,4 +141,46 @@ privateRuntimeTest(import.meta.url, 'dependency-uncertain-recovery-preserves-ope
     const recovered = await f.manager().execute(request('retry-migration')); assert.equal(recovered.state.phase, 'ready', recovered.state.message);
     assert.equal(decisions, 1); assert.equal(preparations, 1); assert.equal(f.state.migrations.length, 1); assert.equal(f.state.activations.length, 1); assert.deepEqual(readFileSync(checkpointFile), checkpoint);
   } finally { f.cleanup(); }
+});
+
+privateRuntimeTest(import.meta.url, 'real-install-retry-waits-for-owned-actor-closure-and-cleans-original-policy', async () => {
+  const i = await integrated(), store = ControllerStore.acquire(i.location), cancel = new AbortController();
+  let release!: () => void, entered!: () => void;
+  const waiting = new Promise<void>(resolve => { release = resolve; }), reached = new Promise<void>(resolve => { entered = resolve; });
+  try {
+    const current = store.inspect(); assert.equal(current.kind, 'present'); if (current.kind !== 'present') throw new Error('missing fixture');
+    store.commit({ ...current.snapshot, revision: current.snapshot.revision + 1, installation: { ...current.snapshot.installation, activeReleaseId: undefined }, lastResult: undefined }, current.snapshot.revision);
+  } finally { store.close(); }
+  i.f.state.observation = { state: 'absent', resourceOwnershipReleased: true, evidence: { kind: 'never-started' } };
+  try {
+    const offer = (await i.input()).offer;
+    // This real finite actor is deliberately held after extraction. Cancellation
+    // returns while it still owns the original non-inherited native lock.
+    i.f.peers.dependencies = dependencyPort(i.target, i.location, { ...i.options, preparation: { transport: i.transport, cleanupMs: 100,
+      beforeFiniteClose: async () => { entered(); cancel.abort(); await waiting; } } });
+    const install = i.f.manager().install(terminalAdmission(), 'real-interrupted-install', { mode: 'bundle', repository: 'insors-ai/insrc', channel: 'stable' }, { offerId: offer.id, choice: 'install' }, cancel.signal);
+    await reached; const blocked = await install; assert.equal(blocked.state.phase, 'blocked');
+    const checkpoint = JSON.parse(readFileSync(join(i.home, 'install/operations/real-interrupted-install/dependency.json'), 'utf8'));
+    const paths = dependencyAttemptPaths('real-interrupted-install', checkpoint.attemptNonce), record = dependencyPath(i.location, paths.recordRelativePath);
+    assert.equal(existsSync(dependencyPath(i.location, paths.stageRelativePath)), true);
+    await assert.rejects(i.f.manager().retryInstall(terminalAdmission(), 'real-interrupted-install'), { code: 'dependency-uncertain' });
+    assert.equal(i.f.state.migrations.length, 0); assert.equal(i.f.state.activations.length, 0);
+    release();
+    const ends = performance.now() + 5000;
+    for (;;) {
+      try { const handle = controlBinding().acquire(`${record}.lock`); controlBinding().close(handle); break; }
+      catch (error) { if (performance.now() >= ends) throw error; await new Promise(resolve => setTimeout(resolve, 10)); }
+    }
+    // Current policy has changed. Cleanup must use the stored accepted policy;
+    // it cannot require that the old offer still exists in the current catalog.
+    i.setPolicy({ ...i.policy, version: '0.0.2-fixture', asset: { ...i.policy.asset, url: i.policy.asset.url.replace('v0.0.1-fixture', 'v0.0.2-fixture') } });
+    i.f.peers.dependencies = dependencyPort(i.target, i.location, { ...i.options, preparation: { transport: async () => { throw new Error('cleanup must not download'); } } });
+    await i.f.manager().retryInstall(terminalAdmission(), 'real-interrupted-install');
+    assert.equal(existsSync(dependencyPath(i.location, paths.stageRelativePath)), false);
+    assert.equal(existsSync(join(i.home, 'deps/ollama', i.policy.version)), false);
+    const result = i.f.manager().inspect(); assert.equal(result.kind, 'present');
+    if (result.kind === 'present') { assert.equal(result.snapshot.operation, undefined); assert.equal(result.snapshot.installation.activeReleaseId, undefined); }
+    const current = await i.f.peers.dependencies!.inspect(i.location); assert.equal(current.ollamaInstallOffer?.version, '0.0.2-fixture');
+    assert.equal(readFileSync(join(i.home, 'application-data'), 'utf8'), 'retain'); assert.deepEqual(i.count(), { launches: 0, downloads: 0 });
+  } finally { release(); await i.cleanup(); }
 });

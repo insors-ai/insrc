@@ -2,6 +2,7 @@
 import type { DependencyDecision, DependencyReport, Delivery, InstallationLocation, LocalEndpoint, MigrationContext, ReleaseManifest } from './contracts.js';
 import type { PreparedCandidate, PreparationLease } from './bundle.js';
 import type { DevSourceOffer, PreparationContext } from './dev.js';
+import type { ReleaseDescriptor } from './release-descriptor.js';
 export interface DaemonIdentity { instanceId: string; installationId: string; releaseId: string; protocolVersion: 1; state: 'ready' | 'draining' | 'migration-blocked' }
 export interface ShutdownRequest { operationId: string; expectedInstanceId: string; mode: 'graceful' | 'immediate'; completionEndpoint: string; completionNonce: string }
 export interface ShutdownAccepted { operationId: string; instanceId: string; accepted: true; mode: 'graceful' | 'immediate' }
@@ -22,7 +23,7 @@ export interface DeliveryPort {
   open(location: InstallationLocation, releaseId: string): Promise<PreparedCandidate>;
   verify(candidate: PreparedCandidate, location: InstallationLocation): Promise<void>;
 }
-export interface BundleReleaseOffer { kind: 'bundle'; manifest: ReleaseManifest; descriptorSha256: string }
+export interface BundleReleaseOffer { kind: 'bundle'; manifest: ReleaseManifest; descriptorSha256: string; descriptor?: ReleaseDescriptor | undefined }
 export type PreparedReleaseOffer = BundleReleaseOffer | DevSourceOffer;
 /** Private TypeScript capabilities only; these are never accepted on the wire. */
 export interface DependencyProbeContext { signal?: AbortSignal | undefined }
@@ -34,6 +35,8 @@ export interface DependencyOperationContext extends DependencyProbeContext {
 export interface DependencyPort {
   inspect(location: InstallationLocation, context?: DependencyProbeContext): Promise<DependencyReport>;
   decide(location: InstallationLocation, decision: DependencyDecision, context?: DependencyOperationContext): Promise<DependencyReport>;
+  /** Internal, explicit install-retry capability; never a wire decision. */
+  cleanupInstall?(location: InstallationLocation, context: DependencyOperationContext): Promise<void>;
 }
 export interface LifecyclePort {
   observe(location: InstallationLocation): Promise<DaemonObservation>;

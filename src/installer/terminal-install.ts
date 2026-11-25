@@ -28,7 +28,7 @@ const affirmative = (answer: string) => /^(y|yes)$/i.test(answer.trim());
 /** All consent comes from this terminal, never machine request flags. */
 export async function runTerminalInstall(options: TerminalInstallOptions): Promise<TerminalOutcome> {
   const { location, target, peers, ui } = options;
-  const admission = requireTerminal(ui.streams), operationId = options.operationId ?? randomUUID();
+  const admission = requireTerminal(ui.streams); let operationId = options.operationId ?? randomUUID();
   const manager = new InstallerManager(location, target, peers, event => ui.write(`${event.state.phase}${event.state.message ? ': ' + event.state.message : ''}\n`));
   let ready: ManagerEvent | undefined;
   const checkCancellation = () => { if (options.signal?.aborted) throw new InstallerError('cancelled', 'Installation cancelled'); };
@@ -41,8 +41,21 @@ export async function runTerminalInstall(options: TerminalInstallOptions): Promi
   };
   try {
     checkCancellation();
-    const inspected = manager.inspect();
+    let inspected = manager.inspect();
     if (inspected.kind === 'corrupt') throw new InstallerError('controller-corrupt', inspected.reason);
+    if (inspected.kind === 'present' && inspected.installRetryOperationId) {
+      const original = inspected.installRetryOperationId;
+      ui.write(`Interrupted install ${original} requires cleanup before a fresh installation.\n`);
+      if (!affirmative(await ask('Retry install? [y/N] '))) return { kind: 'cancelled', code: 130 };
+      ui.write('Completing interrupted install cleanup...\n');
+      await manager.retryInstall(admission, original, options.signal); checkCancellation();
+      ui.write('Cleanup completed. Starting a fresh installation.\n'); operationId = randomUUID();
+      inspected = manager.inspect();
+      if (inspected.kind === 'corrupt') throw new InstallerError('controller-corrupt', inspected.reason);
+      if (inspected.kind === 'present' && inspected.snapshot.installation.activeReleaseId) {
+        ui.write('Another installation completed; the existing release is preserved.\n'); return { kind: 'already-completed', code: 0 };
+      }
+    }
     if (inspected.kind === 'present' && inspected.snapshot.operation) throw new InstallerError('busy', 'An unfinished operation requires explicit reconciliation');
     if (inspected.kind === 'present' && inspected.snapshot.lastResult?.operationId === operationId) {
       const releaseId = inspected.snapshot.installation.activeReleaseId;
@@ -51,7 +64,7 @@ export async function runTerminalInstall(options: TerminalInstallOptions): Promi
     }
     let delivery: Delivery, acceptedOfferId: string | undefined;
     const upgrading = inspected.kind === 'present' && !!inspected.snapshot.installation.activeReleaseId;
-    if (upgrading) {
+    if (upgrading && inspected.kind === 'present') {
       delivery = inspected.snapshot.installation.delivery;
       ui.write(`Installed delivery: ${delivery.mode} ${delivery.repository}\n`);
       const offer = await manager.checkUpgrade();
@@ -84,7 +97,7 @@ export async function runTerminalInstall(options: TerminalInstallOptions): Promi
     checkCancellation();
     if (ready.state.phase !== 'ready' || ready.state.errorCode || !ready.state.candidateId) throw new InstallerError(ready.state.errorCode ?? 'installation-blocked', ready.state.message ?? 'Installation did not reach verified readiness');
   } catch (error) {
-    const cancelled = error instanceof Error && (error.name === 'AbortError' || error.name === 'TerminalClosedError' || error instanceof InstallerError && error.code === 'cancelled');
+    const cancelled = options.signal?.aborted === true || error instanceof Error && (error.name === 'AbortError' || error.name === 'TerminalClosedError' || error instanceof InstallerError && error.code === 'cancelled');
     try { ui.write(cancelled ? `Installation cancelled.${ready?.state.message ? '\n' + ready.state.message : ''}\n` : `${error instanceof InstallerError ? error.code : 'install-failed'}: ${error instanceof Error ? error.message : 'Installation failed'}\n`); } catch { /* The terminal may already be closed; never retry the operation. */ }
     return { kind: cancelled ? 'cancelled' : 'failed', code: cancelled ? 130 : 1, event: ready, errorCode: error instanceof InstallerError ? error.code : undefined };
   } finally { ui.close(); }

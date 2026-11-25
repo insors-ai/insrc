@@ -1,14 +1,15 @@
 import { randomBytes, randomUUID } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { InstallerError } from './contracts.js';
 import type { ControllerSnapshot, DependencyDecision, Delivery, InstallationLocation, ManagerEvent, ManagerRequest, MigrationContext, OperationRecord, Target, UpgradeOffer } from './contracts.js';
-import { ControllerStore, inspectController } from './controller-store.js';
+import { ControllerStore, inspectController, readPrivateControlRecord } from './controller-store.js';
 import type { ControllerInspection } from './controller-store.js';
 import { parseInstaller, parseManagerRequest, parseReleaseManifest } from './schemas.js';
-import { canonicalJson, digest } from './release-descriptor.js';
+import { canonicalJson, digest, parseReleaseDescriptor } from './release-descriptor.js';
 import type { PreparedCandidate, PreparationLease } from './bundle.js';
 import type { DeliveryPort, DependencyOperationContext, LaunchAdmission, ManagerPeers, MigrationEvidence, PreparedReleaseOffer, ReadyEvidence, ShutdownCompletion, ShutdownRequest } from './peer-contracts.js';
-import { createDependencyOperationContext } from './dependency-context.js';
+import { createDependencyOperationContext, createDependencyRetryContext } from './dependency-context.js';
 import { acceptResolvedDevSource, devUpgradeOfferId, parseDevDelivery, parseDevPreparation, parseDevReleaseReceipt, parseDevSourceOffer } from './dev.js';
 import type { DevPreparationRecord, DevSourceOffer, PreparationContext } from './dev.js';
 import { BUNDLE_LIMITS } from './release-descriptor.js';
@@ -16,6 +17,8 @@ import { readBoundedFile } from './safe-zip.js';
 import { assertTerminalAdmission } from './terminal-admission.js';
 import type { TerminalAdmission } from './terminal-admission.js';
 import { forwardImmediate, openOperationControl } from './operation-control.js';
+import { assertLocalControlRoot, assertToken } from './location.js';
+import { controlBinding } from './native.js';
 
 function fail(code: string, message: string): never { throw new InstallerError(code, message); }
 const hash = (value: unknown): value is string => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
@@ -32,7 +35,93 @@ export class InstallerManager {
     this.location = structuredClone(location); Object.freeze(this.location.daemonEndpoint); Object.freeze(this.location);
     this.target = Object.freeze(structuredClone(target));
   }
-  inspect(): ControllerInspection { return inspectController(this.location); }
+  inspect(): ControllerInspection & { installRetryOperationId?: string | undefined } {
+    const inspection = inspectController(this.location);
+    if (inspection.kind !== 'present') return inspection;
+    const id = inspection.snapshot.operation?.operationId ?? inspection.snapshot.lastResult?.operationId;
+    if (!id) return inspection;
+    try {
+      this.#installRetryState(inspection.snapshot, id, name => {
+        const directory = join(this.location.home, 'install/operations', id);
+        assertLocalControlRoot(directory, this.target.os === 'win32' ? path => controlBinding().localVolume(path) : undefined);
+        const file = join(directory, `${name}.json`);
+        return existsSync(file) ? readPrivateControlRecord(file) : undefined;
+      });
+      return { ...inspection, installRetryOperationId: id };
+    } catch { return inspection; } // Unknown/later work is never offered install cleanup.
+  }
+  #installPreparation(operationId: string) {
+    return { schemaVersion: 1, installationId: this.location.installationId, home: this.location.home,
+      operationId, originalAction: 'install', protocol: 'dependency-before-delivery-v1' };
+  }
+  #installCleanupComplete(operationId: string) {
+    return { schemaVersion: 1, installationId: this.location.installationId, home: this.location.home, operationId, cleanupComplete: true };
+  }
+  #installRetryState(snapshot: ControllerSnapshot, operationId: string, read: (name: string) => unknown) {
+    assertToken(operationId);
+    if (snapshot.operation ? snapshot.operation.operationId !== operationId : snapshot.lastResult?.operationId !== operationId) fail('phase-conflict', 'Retry must name the exact interrupted install');
+    if (snapshot.installation.activeReleaseId !== undefined || snapshot.operation?.candidateId !== undefined
+      || snapshot.operation?.predecessorId !== undefined) fail('phase-conflict', 'Install cleanup cannot change a selected release or admitted candidate');
+    const intent = parseInstaller('managerRequest', read('intent'));
+    if (intent.action !== 'install' || intent.operationId !== operationId || intent.installationId !== this.location.installationId
+      || Object.keys(intent).sort().join(',') !== 'action,installationId,operationId,protocolVersion') fail('phase-conflict', 'Cleanup requires the exact original terminal install intent');
+    if (canonicalJson(read('install-preparation')) !== canonicalJson(this.#installPreparation(operationId))) fail('phase-conflict', 'Original install lacks proven dependency-before-delivery scope');
+    for (const key of ['candidate', 'dev-preparation', 'delivery-preparation', 'shutdown', 'admission']) {
+      if (read(key) !== undefined) fail('phase-conflict', `Install cleanup cannot reset admitted ${key} work`);
+    }
+    const complete = read('install-retry');
+    if (complete !== undefined && canonicalJson(complete) !== canonicalJson(this.#installCleanupComplete(operationId))) fail('dependency-uncertain', 'Install cleanup completion belongs to another operation/home');
+    if (!snapshot.operation) {
+      if (!complete || snapshot.lastResult?.operationId !== operationId) fail('phase-conflict', 'No matching interrupted install exists');
+      return { intent, complete: true };
+    }
+    if (snapshot.operation.operationId !== operationId) fail('phase-conflict', 'Another operation owns this installation');
+    const interruption = snapshot.operation.phase === 'blocked' ? read('interruption') : undefined;
+    if (snapshot.operation.phase === 'blocked' && canonicalJson(interruption) !== canonicalJson({ phase: 'preparing' })) fail('phase-conflict', 'Interrupted install phase is unconfirmed');
+    const phase = snapshot.operation.phase === 'blocked' ? 'preparing' : snapshot.operation.phase;
+    if (phase !== 'preparing') fail('phase-conflict', 'Later install work retains its existing recovery contract');
+    return { intent, complete: false };
+  }
+  /** Explicit terminal retry cleans only dependency preparation. The caller
+   * starts a NEW ordinary install after this method positively completes. */
+  async retryInstall(admission: TerminalAdmission, operationId: string, signal?: AbortSignal): Promise<void> {
+    assertTerminalAdmission(admission); assertToken(operationId);
+    const checkCancellation = () => { if (signal?.aborted) fail('cancelled', 'Install retry cancelled before fresh installation'); };
+    checkCancellation(); if (this.#active) fail('busy', 'Manager already owns an operation');
+    const store = ControllerStore.acquire(this.location); let active: Active | undefined;
+    try {
+      const inspection = store.inspect();
+      if (inspection.kind !== 'present') fail('phase-conflict', 'Install retry needs its original intact controller');
+      const snapshot = inspection.snapshot, state = this.#installRetryState(snapshot, operationId, name => store.readOperationData(operationId, name));
+      active = { store, snapshot, request: state.intent, checkCancellation, ownerNonce: randomBytes(32).toString('hex'),
+        previousResult: snapshot.lastResult, started: false, disrupted: true, interruptedPhase: 'preparing' };
+      this.#active = active;
+      const current = () => { this.#assertCurrent(active!); checkCancellation(); };
+      const dependency = this.#dependencyAttempt(active);
+      if (dependency?.decision.choice === 'install') {
+        const cleanup = this.peers.dependencies?.cleanupInstall;
+        if (!cleanup) fail('capability-unavailable', 'Owned dependency install cleanup is unavailable');
+        const context = createDependencyRetryContext(this.location, this.target.os, { operationId, attemptNonce: dependency.attemptNonce,
+          signal, assertCurrent: current, progress: (stage, detail) => { current(); this.progress(this.#event(active!, { ...snapshot.operation!, operationId, phase: 'preparing', message: `${stage}: ${detail}` }, 'progress')); } });
+        current(); await cleanup.call(this.peers.dependencies, this.location, context); current();
+      }
+      if (!this.peers.dependencies) fail('capability-unavailable', 'Dependency reconciliation is unavailable');
+      const report = parseInstaller('dependencyReport', await this.peers.dependencies.inspect(this.location, { signal })); current();
+      if (!report.runtimeReady || report.ollama === 'unavailable') fail('dependency-uncertain', report.blockers.join('; ') || 'Dependency closure/availability remains unconfirmed');
+      const complete = this.#installCleanupComplete(operationId);
+      const previous = store.readOperationData(operationId, 'install-retry');
+      if (previous === undefined) store.writeOperationData(operationId, 'install-retry', complete);
+      else if (canonicalJson(previous) !== canonicalJson(complete)) fail('dependency-uncertain', 'Install cleanup completion changed');
+      current();
+      if (!state.complete) this.#finish(active, { operationId, phase: 'stopped', message: 'Interrupted install cleanup completed; a fresh install may be started.' });
+    } catch (cause) {
+      if (active?.snapshot.operation) {
+        store.writeOperationData(operationId, 'interruption', { phase: 'preparing' }, true);
+        this.#update(active, 'blocked', { errorCode: 'dependency-uncertain', message: cause instanceof Error ? cause.message.slice(0, 3500) : 'Install cleanup is incomplete' });
+      }
+      throw cause;
+    } finally { this.#active = undefined; store.close(); }
+  }
   #delivery(delivery: Delivery): DeliveryPort {
     const port = (delivery.mode === 'bundle' ? this.peers.bundle : this.peers.dev) ?? fail('capability-unavailable', `${delivery.mode} preparation capability is unavailable`);
     for (const name of ['resolve', 'prepare', 'open', 'verify'] as const) if (typeof port[name] !== 'function') fail('capability-unavailable', `Required delivery capability ${name} is unavailable`);
@@ -53,6 +142,11 @@ export class InstallerManager {
     if (input.kind !== 'bundle' || delivery.mode !== 'bundle') fail('delivery-invalid', 'Offer kind differs from configured delivery');
     const manifest = parseReleaseManifest(input.manifest, { target: this.target, predecessorId });
     if (!hash(input.descriptorSha256)) fail('manifest-invalid', 'Offer lacks exact descriptor identity');
+    if (input.descriptor !== undefined) {
+      const descriptor = parseReleaseDescriptor(input.descriptor, { target: this.target, predecessorId });
+      if (digest(canonicalJson(descriptor)) !== input.descriptorSha256 || canonicalJson(descriptor.manifest) !== canonicalJson(manifest)) fail('offer-stale', 'Bundle descriptor differs from accepted identity');
+      return { kind: 'bundle', manifest, descriptorSha256: input.descriptorSha256, descriptor };
+    }
     return { kind: 'bundle', manifest, descriptorSha256: input.descriptorSha256 };
   }
   #offerId(offer: PreparedReleaseOffer, delivery: Delivery, predecessorId: string | undefined): string {
@@ -159,9 +253,23 @@ export class InstallerManager {
       progress: (stage, detail) => { assertCurrent(); this.progress(this.#event(active, { ...active.snapshot.operation!, message: `${stage}: ${detail}` }, 'progress')); } });
   }
   #acceptedOffer(active: Active): PreparedReleaseOffer {
-    const value = active.store.readOperationData(active.request.operationId, 'release-offer') as { schemaVersion?: unknown; offer?: unknown } | undefined;
+    const value = active.store.readOperationData(active.request.operationId, 'release-offer') as { schemaVersion?: unknown; offer?: unknown; kind?: unknown; descriptor?: unknown; descriptorSha256?: unknown } | undefined;
+    if (value?.schemaVersion === 2) {
+      if (value.kind !== 'bundle' || Object.keys(value).sort().join(',') !== 'descriptor,descriptorSha256,kind,schemaVersion') fail('dependency-uncertain', 'Durable complete bundle descriptor is unavailable');
+      const descriptor = parseReleaseDescriptor(value.descriptor, { target: this.target, predecessorId: active.snapshot.installation.activeReleaseId });
+      return this.#offer({ kind: 'bundle', manifest: descriptor.manifest, descriptor, descriptorSha256: value.descriptorSha256 as string }, active.snapshot.installation.delivery, active.snapshot.installation.activeReleaseId);
+    }
     if (!value || value.schemaVersion !== 1 || Object.keys(value).sort().join(',') !== 'offer,schemaVersion') fail('dependency-uncertain', 'Original release offer is unavailable after dependency interruption');
     return this.#offer(value.offer as PreparedReleaseOffer, active.snapshot.installation.delivery, active.snapshot.installation.activeReleaseId);
+  }
+  #admitInstallDelivery(active: Active): void {
+    this.#assertCurrent(active); active.checkCancellation();
+    const original = parseInstaller('managerRequest', active.store.readOperationData(active.request.operationId, 'intent'));
+    if (original.action !== 'install') return;
+    const value = { schemaVersion: 1, installationId: this.location.installationId, operationId: original.operationId, kind: 'delivery-preparation' };
+    const prior = active.store.readOperationData(original.operationId, 'delivery-preparation');
+    if (prior === undefined) active.store.writeOperationData(original.operationId, 'delivery-preparation', value);
+    else if (canonicalJson(prior) !== canonicalJson(value)) fail('preparation-uncertain', 'Delivery preparation admission differs');
   }
   /** Typed metadata capability bound to this exact live manager lease/revision.
    * Peers never receive the controller writer or an arbitrary metadata filename. */
@@ -326,6 +434,10 @@ export class InstallerManager {
         const interruption = store.readOperationData(request.operationId, 'interruption') as { phase?: OperationRecord['phase'] } | undefined;
         interruptedPhase = interruption && Object.keys(interruption).join(',') === 'phase' && ['preparing', 'quiescing', 'migrating', 'activating'].includes(interruption.phase ?? '') ? interruption.phase : undefined;
       }
+      if (recovering && intent!.action === 'install' && interruptedPhase === 'preparing'
+        && canonicalJson(store.readOperationData(request.operationId, 'install-preparation')) === canonicalJson(this.#installPreparation(request.operationId))
+        && store.readOperationData(request.operationId, 'delivery-preparation') === undefined
+        && store.readOperationData(request.operationId, 'candidate') === undefined) fail('install-retry-required', 'Use explicit Retry install in the shared terminal to complete cleanup before a fresh installation');
       active = { store, snapshot: initial, request, checkCancellation, ownerNonce: randomBytes(32).toString('hex'), previousResult: initial.lastResult, started: false, disrupted: recovering,
         interruptedPhase }; this.#active = active;
       if (stopping) {
@@ -357,8 +469,11 @@ export class InstallerManager {
         checkCancellation(); store.assertHeld();
         if (inspected.kind === 'missing') store.commit(initial, null);
         store.writeOperationData(request.operationId, 'intent', request);
+        if (request.action === 'install') store.writeOperationData(request.operationId, 'install-preparation', this.#installPreparation(request.operationId));
         this.#update(active, 'preparing', { predecessorId: initial.installation.activeReleaseId });
-        if (offer) store.writeOperationData(request.operationId, 'release-offer', { schemaVersion: 1, offer });
+        if (offer) store.writeOperationData(request.operationId, 'release-offer', offer.kind === 'bundle' && offer.descriptor
+          ? { schemaVersion: 2, kind: 'bundle', descriptorSha256: offer.descriptorSha256, descriptor: offer.descriptor }
+          : { schemaVersion: 1, offer });
         if (offer?.kind === 'dev-source') store.writeOperationData(request.operationId, 'dev-source', { schemaVersion: 1, sourceOffer: offer });
       }
       const dependencyAttempt = this.#dependencyAttempt(active);
@@ -368,9 +483,10 @@ export class InstallerManager {
       if (decision) {
         parseInstaller('dependencyDecision', decision);
         if (!['install', 'upgrade'].includes(request.action) || report.ollamaInstallOffer?.id !== decision.offerId) fail('dependency-offer-stale', 'Dependency consent does not match the terminal offer');
-        const context = this.#dependencyContext(active, decision, signal); context.assertCurrent();
+        const context = decision.choice === 'install' ? this.#dependencyContext(active, decision, signal) : undefined;
+        context?.assertCurrent();
         report = parseInstaller('dependencyReport', await this.peers.dependencies!.decide(this.location, decision, context));
-        context.assertCurrent();
+        context?.assertCurrent();
       }
       this.#assertCurrent(active); checkCancellation();
       if (!report.runtimeReady || report.blockers.length) fail(recovering && dependencyAttempt ? 'dependency-uncertain' : 'dependency-blocked', report.blockers.join('; ') || 'Private runtime is unavailable');
@@ -385,10 +501,10 @@ export class InstallerManager {
           if (intent!.action === 'upgrade' && intent!.acceptedOfferId !== this.#offerId(accepted, initial.installation.delivery, initial.installation.activeReleaseId)) fail('preparation-uncertain', 'Original release consent differs from the interrupted operation');
           // No candidate, shutdown or launch admission existed: data/lifecycle
           // disruption has not begun. Unknown preparation still blocks below.
-          active.disrupted = false;
           this.#update(active, 'preparing', { errorCode: undefined, message: undefined });
           const source = accepted.kind === 'dev-source' ? accepted : undefined;
           const preparation = this.#preparation(active, source, signal);
+          this.#admitInstallDelivery(active);
           if (source && (store.readOperationData(request.operationId, 'dev-preparation') !== undefined || !dependencyAttempt)) {
             if (!delivery.resumePreparation) fail('preparation-uncertain', 'Dev preparation recovery is unavailable');
             active.candidate = await delivery.resumePreparation(this.#lease(active, signal), preparation);
@@ -397,6 +513,7 @@ export class InstallerManager {
           await this.#acceptedCandidate(active, accepted);
           store.writeOperationData(request.operationId, 'candidate', { releaseId: active.candidate.releaseId, descriptorSha256: active.candidate.descriptorSha256, payloadSha256: active.candidate.payloadSha256, inventorySha256: active.candidate.inventorySha256 });
           this.#update(active, 'preparing', { candidateId: active.candidate.releaseId });
+          active.disrupted = false;
           await this.#quiesce(active, intent!.shutdownMode);
           migrate = true;
         } else {
@@ -426,6 +543,7 @@ export class InstallerManager {
         }
       } else {
         checkCancellation();
+        if (offer) this.#admitInstallDelivery(active);
         active.candidate = offer ? await delivery.prepare(this.#lease(active, signal), offer, this.#preparation(active, offer.kind === 'dev-source' ? offer : undefined, signal)) : await delivery.open(this.location, initial.installation.activeReleaseId ?? fail('install-required', 'No selected release'));
         await this.#verify(active, active.candidate);
         checkCancellation();

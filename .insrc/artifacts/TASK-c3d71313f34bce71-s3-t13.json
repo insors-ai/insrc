@@ -1,0 +1,137 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2f9e472d-8bd5-4975-b6e6-3914fe5c17fc",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-25T16:36:51.227Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add terminal install Retry cleanup gate and durable offer recovery",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s3-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#289",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5ffda54f80f5a3f74361bef363a5b1bb6283d021d314adeb5282ac54e403c64e",
+        "at": "2026-11-25T16:36:51.227Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T16:36:51.234Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add terminal install Retry cleanup gate and durable offer recovery",
+    "summary": "Integrate explicit Retry for original install dependency preparation: cleanup first, retire old operation, then normal fresh install with new identity/current consent. Make accepted bundle data survive fresh peers and keep update recovery separate.",
+    "size": "L",
+    "order": 13,
+    "acceptanceChecks": [
+      "Add approved internal InstallerManager.retryInstall terminal capability without a new ManagerRequest action. Check original durable action=install, preparing phase, exact id/home, no selected release/candidate/dev-worker/shutdown/daemon admission before cleanup writes.",
+      "Terminal defaults Retry install to no; inspection/startup/IDE flags never trigger cleanup and no separate Discard flow is added. On yes, finish all owned cleanup and retire the old operation before ordinary install with a new operation/attempt, normal release resolution and current dependency consent.",
+      "Cleanup failure, cancellation or process death blocks every new install/download/publication/service launch. Repeated explicit Retry completes missing cleanup steps idempotently. Preserve already installed dependencies/services as existing state found by normal fresh installation, not partial-work resume.",
+      "Original upgrade intent never enters install cleanup. Existing update same-candidate acceptance, migration hooks, lifecycle, selected releases and installed daemon remain intact; later-stage install work with another owner blocks rather than inventing its reset policy.",
+      "Persist complete parsed descriptor in versioned private accepted-offer data and validate canonical digest/manifest/target/delivery on fresh bundle peer construction. No factory-local Map dependency, no resolve-latest substitution; invalid/unavailable legacy exact data fails closed.",
+      "Create dependency context/attempt data only for install choice, not decline; certain decline survives interruption without dependency-uncertain. Do not clear disruption/blocked state before positive cleanup or existing recovery completion.",
+      "Use fresh manager AND fresh delivery peers in restart tests. Assert strict cleanup-before-install event ordering, current-offer reconsent, cancellation/death/retry, decline-zero-dependency-writes and categorical upgrade exclusion. Preserve stop/TUI/terminal-only admission regressions.",
+      "Sentinels separately seed original upgrade intent, candidateId/durable candidate, admitted dev-preparation, shutdown and daemon migration/activation admission; every case rejects before cleanup writes. The fresh-install gate is confined to S3 dependency preparation and cannot substitute a different admitted HLD candidate."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "inspect-and-decline-have-zero-mutation-or-process-side-effects"
+      },
+      {
+        "level": "integration",
+        "name": "stale-forged-and-cross-home-offers-reject-before-mutation"
+      },
+      {
+        "level": "integration",
+        "name": "accepted-official-payload-is-user-only-and-discloses-install-and-start"
+      },
+      {
+        "level": "integration",
+        "name": "consent-races-on-policy-destination-and-endpoint-never-overwrite-existing-state"
+      },
+      {
+        "level": "integration",
+        "name": "explicit-install-retry-completes-cleanup-before-fresh-install"
+      },
+      {
+        "level": "integration",
+        "name": "terminal-manager-dependency-context-preserves-stop-and-cancellation-regressions"
+      },
+      {
+        "level": "integration",
+        "name": "install-retry-requires-explicit-terminal-admission-and-original-install-intent"
+      },
+      {
+        "level": "integration",
+        "name": "upgrade-retry-never-enters-install-cleanup-or-changes-selected-release"
+      },
+      {
+        "level": "integration",
+        "name": "cleanup-cancellation-or-partial-failure-prevents-every-new-install-side-effect"
+      },
+      {
+        "level": "integration",
+        "name": "repeated-retry-after-death-is-idempotent-and-finishes-cleanup-first"
+      },
+      {
+        "level": "integration",
+        "name": "fresh-bundle-peer-validates-durable-descriptor-without-resolve-map"
+      },
+      {
+        "level": "integration",
+        "name": "decline-creates-no-dependency-context-record-or-process-and-remains-certain"
+      }
+    ],
+    "planTaskId": "t13"
+  },
+  "citations": []
+}

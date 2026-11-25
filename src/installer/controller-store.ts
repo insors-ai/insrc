@@ -7,6 +7,7 @@ import { assertLocalControlRoot, assertToken, sameInstallationHome } from './loc
 import { controlBinding } from './native.js';
 import { parseInstaller } from './schemas.js';
 import { flushDirectory } from './durability.js';
+import { BUNDLE_LIMITS } from './release-descriptor.js';
 
 export type ControllerInspection = { kind: 'missing' } | { kind: 'present'; snapshot: ControllerSnapshot } | { kind: 'corrupt'; reason: string };
 export type CommitPoint = 'temp-flushed' | 'replaced' | 'directory-flushed';
@@ -16,16 +17,19 @@ const privateFile = (file: string): void => {
     throw new InstallerError('controller-corrupt', 'Control record is not a private regular file');
   }
 };
-function readRecord(file: string): unknown {
+// Only the private accepted release descriptor uses this larger bound. Control
+// snapshots, intent, wire frames and every other metadata record stay at 64 KiB.
+const releaseOfferBytes = BUNDLE_LIMITS.descriptorBytes + MAX_CONTROL_BYTES;
+function readRecord(file: string, maximum = MAX_CONTROL_BYTES): unknown {
   privateFile(file);
   const fd = openSync(file, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
   try {
     const s = fstatSync(fd);
-    if (!s.isFile() || s.size > MAX_CONTROL_BYTES) throw new Error('Control record exceeds bound');
-    const bytes = Buffer.alloc(MAX_CONTROL_BYTES + 1);
+    if (!Number.isSafeInteger(maximum) || maximum < 1 || maximum > releaseOfferBytes || !s.isFile() || s.size > maximum) throw new Error('Control record exceeds bound');
+    const bytes = Buffer.alloc(maximum + 1);
     let count = 0, got: number;
     while (count < bytes.length && (got = readSync(fd, bytes, count, bytes.length - count, null)) > 0) count += got;
-    if (count > MAX_CONTROL_BYTES) throw new Error('Control record exceeds bound');
+    if (count > maximum) throw new Error('Control record exceeds bound');
     return JSON.parse(bytes.subarray(0, count).toString('utf8')) as unknown;
   } finally { closeSync(fd); }
 }
@@ -126,12 +130,12 @@ export class ControllerStore {
     const directory = join(this.#root, 'operations', operationId);
     assertLocalControlRoot(directory, process.platform === 'win32' ? path => controlBinding().localVolume(path) : undefined);
     const file = join(directory, `${name}.json`);
-    return present(file) ? readRecord(file) : undefined;
+    return present(file) ? readRecord(file, name === 'release-offer' ? releaseOfferBytes : MAX_CONTROL_BYTES) : undefined;
   }
   writeOperationData(operationId: string, name: string, value: unknown, replace = false): void {
     this.assertHeld(); assertToken(operationId); assertToken(name);
     const bytes = JSON.stringify(value);
-    if (!bytes || Buffer.byteLength(bytes) > MAX_CONTROL_BYTES) throw new InstallerError('record-invalid', 'Operation metadata exceeds its bound');
+    if (!bytes || Buffer.byteLength(bytes) > (name === 'release-offer' ? releaseOfferBytes : MAX_CONTROL_BYTES)) throw new InstallerError('record-invalid', 'Operation metadata exceeds its bound');
     const directory = join(this.#root, 'operations', operationId);
     assertLocalControlRoot(directory, process.platform === 'win32' ? path => controlBinding().localVolume(path) : undefined);
     mkdirSync(directory, { recursive: true, mode: 0o700 }); controlBinding().protect(directory);

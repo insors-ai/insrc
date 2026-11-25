@@ -734,3 +734,46 @@ test('REVIEW round-18 — holistic finalize boundary: headKind normalized both d
 		} finally { fx.cleanup(); }
 	}
 });
+
+test('REVIEW round-19 — HIGH: the ISSUE push ref check runs under the claim mutex on EVERY persistence path (plain no-claim adoption included); MED: tracker.post finalize stays outside claim persistence (a retained claim neither fails nor is released by a post)', async () => {
+	const { renderIssueEpicBody } = await import('../tracker/conventions.js');
+	const BODY = renderIssueEpicBody({ body: { title: 'ISSUE title', reproduction: 'r', rootCause: 'c', fixIntent: 'f' } } as never, SLUG, undefined, issueArtifactId(HASH));
+	const pushIntentOf = (repo: string) => ({ workflow: 'tracker.push', focus: 'push', repoPath: repo, repoIndexedAt: null, params: { epicHash: HASH } }) as never;
+	const postIntentOf = (repo: string) => ({ workflow: 'tracker.post', focus: 'post', repoPath: repo, repoIndexedAt: null, params: { epicHash: HASH } }) as never;
+	const refsOf = (ref: string) => ({ refs: { epicRef: ref, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: ref }, labelsCreated: [] }, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } }) as never;
+	const postPayload = { refs: { targetKind: 'lld', targetIssue: 'acme/demo#42', commentId: 'c1' }, checklist: { items: [], failedCount: 0 } } as never;
+
+	// (a) HIGH contract, plain no-claim path: durable ref recorded ONLY in meta (no binding); returning the SAME ref succeeds (the in-mutex recheck must not false-positive on adoption)
+	{
+		const fx = seedIssueOnly();
+		try {
+			patchTrackerMeta(fx.issue, { issueRef: 'acme/demo#42' });
+			const fr = await _finalizeTracker(pushIntentOf(fx.repo), { s1: { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue', epicBodyMd: BODY } }, 'run-X', 5, refsOf('acme/demo#42'), 'm');
+			assert.equal(fr.ok, true, 'adopting the durable ref with no claim persists: ' + JSON.stringify(fr));
+			assert.equal(readTrackerMeta(fx.issue)?.issueRef, 'acme/demo#42');
+		} finally { fx.cleanup(); }
+	}
+	// (b) HIGH contract: same setup but the model returns a DIFFERENT in-repo ref -> refused under the mutex, meta not rebound
+	{
+		const fx = seedIssueOnly();
+		try {
+			patchTrackerMeta(fx.issue, { issueRef: 'acme/demo#42' });
+			const fr = await _finalizeTracker(pushIntentOf(fx.repo), { s1: { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue', epicBodyMd: BODY } }, 'run-X', 5, refsOf('acme/demo#99'), 'm');
+			assert.equal(fr.ok, false);
+			assert.match(JSON.stringify(fr), /refusing to rebind/);
+			assert.equal(readTrackerMeta(fx.issue)?.issueRef, 'acme/demo#42', 'not rebound');
+		} finally { fx.cleanup(); }
+	}
+	// (c) MED: post finalize with a RETAINED claim succeeds, does not release the claim, and does not require a fence
+	{
+		const fx = seedIssueOnly();
+		try {
+			const c = claimCreateIntent(fx.repo, HASH, 'run-OTHER', { title: 'ISSUE title', marker: `<!-- insrc:artifact ISSUE-${HASH} -->` });
+			void c;
+			const fr = await _finalizeTracker(postIntentOf(fx.repo), { s1: { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue' } }, 'run-P', 5, postPayload, 'm');
+			assert.equal(fr.ok, true, 'post audit finalizes despite a retained claim: ' + JSON.stringify(fr));
+			assert.ok(readClaim(fx.repo, HASH) !== undefined, 'the retained claim is NOT released by a post');
+			assert.equal(readTrackerMeta(fx.issue)?.issueRef, undefined, 'post writes no head meta');
+		} finally { fx.cleanup(); }
+	}
+});

@@ -2986,12 +2986,25 @@ async function finalizeTracker(
 	// round-18 HIGH-2: the claim is re-read INSIDE the mutex so the branch
 	// decision and the writes cannot be separated by a takeover, and every check
 	// re-runs on fresh reads under that mutex before the first write.
-	{
+	// REVIEW round-19 MED: tracker.post is report-only — its head persistence is
+	// a no-op, so its audit finalization stays OUTSIDE claim persistence and
+	// cleanup (no claim mutex, no guard dir, no fence requirement; a retained
+	// claim must not fail a completed post).
+	if (intent.workflow !== 'tracker.post') {
 		const mutex = await acquireClaimMutex(intent.repoPath, epicHash);
 		try {
 			const claimNow = readClaim(intent.repoPath, epicHash);
 			if (claimNow !== undefined && (expectedFence === undefined || carriedRunId === undefined)) {
 				return { ok: false, failure: schemaFailure(`pending-create claim exists for ${epicHash} but no fence+runId was carried — refusing unverifiable persistence`) };
+			}
+			// REVIEW round-19 HIGH: the ISSUE push ref check runs under the SAME
+			// authority on EVERY push persistence path — claim, idempotent
+			// completion, and plain adoption without a claim. A durable ref
+			// changed at the write-authority handoff must refuse here, not
+			// restore a stale ref.
+			if (intent.workflow === 'tracker.push' && ctxHeadKind === 'issue') {
+				const refErr = issuePushRefCheck(intent.repoPath, epicHash, s1.gh ?? {}, typedRefs as TrackerPushRefs, claimNow);
+				if (refErr !== undefined) return { ok: false, failure: schemaFailure(refErr) };
 			}
 			if (claimNow !== undefined) {
 				// claim present: the carried fence is mandatory; the withOwnedFence

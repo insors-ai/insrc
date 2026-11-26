@@ -16,7 +16,7 @@ import type { DownloadTransport } from '../download.js';
 import { resolveInstallationLocation } from '../location.js';
 import { controlBinding } from '../native.js';
 import { runtimeArchive, runtimePolicy, runtimeProfile } from '../runtime-policy.js';
-import { runtimeInventoryJson } from '../runtime-metadata.js';
+import { RUNTIME_LIMITS, runtimeInventoryJson } from '../runtime-metadata.js';
 import { verifyRuntimeInventory } from '../runtime-store.js';
 import { stageRuntime, discardRuntimeStage, assertRuntimeStage } from '../runtime-acquire.js';
 import { extractRuntimeArchiveBytes, extractRuntimeProfile } from '../runtime-archive.js';
@@ -73,6 +73,38 @@ test('runtime download rejects HTTP redirects sizes and digest failures before e
       assert.equal(closed, true); assert.deepEqual(f.stages(), []); assert.equal(fs.existsSync(join(f.home, 'runtimes')), false);
     }
   } finally { f.clean(); }
+});
+test('runtime download deadline expires before extraction and closes input before cleanup', async t => {
+  const f = fixture(), timeout = AbortSignal.timeout, rm = io.rm;
+  let entered = false, positive = false, expired: AbortSignal | undefined;
+  // Shorten only the clock, keeping production deadline creation and propagation.
+  // A real network socket would keep the loop alive while the body stalls.
+  const keepAlive = setInterval(() => {}, 1_000);
+  try {
+    t.mock.method(AbortSignal, 'timeout', (milliseconds: number) => {
+      assert.equal(milliseconds, RUNTIME_LIMITS.networkMs);
+      expired = timeout.call(AbortSignal, 1_000); return expired;
+    });
+    const transport: DownloadTransport = async (_url, signal) => {
+      entered = true; assert.equal(signal, expired);
+      const body = new Readable({ read() {} });
+      const closed = new Promise<void>(resolve => body.once('close', () => { positive = true; resolve(); }));
+      return { status: 200, body, closed };
+    };
+    t.mock.method(io, 'rm', async (...args: Parameters<typeof rm>) => {
+      assert.equal(positive, true);
+      const work = String(args[0]);
+      assert.deepEqual(fs.readdirSync(join(work, 'candidate')), [], 'deadline must reject before extraction');
+      return rm(...args);
+    });
+    syncBuiltinESMExports();
+    await assert.rejects(stageRuntime(f.owner, identity(target), { transport }), (error: unknown) => {
+      assert.ok(error instanceof Error); assert.equal(error.name, 'AbortError');
+      assert.ok(error.cause instanceof DOMException); assert.equal(error.cause.name, 'TimeoutError'); return true;
+    });
+    assert.equal(entered, true); assert.equal(expired?.aborted, true); assert.equal(positive, true);
+    assert.deepEqual(f.stages(), []); assert.equal(fs.existsSync(join(f.home, 'runtimes')), false);
+  } finally { clearInterval(keepAlive); t.mock.restoreAll(); syncBuiltinESMExports(); f.clean(); }
 });
 test('runtime cancellation waits for output closure before owned stage cleanup', async t => {
   const f = fixture(), transport = await officialTransport(), abort = new AbortController(), open = io.open, rm = io.rm;

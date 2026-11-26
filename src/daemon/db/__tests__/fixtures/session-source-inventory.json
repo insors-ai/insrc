@@ -38175,35 +38175,6 @@
       "sitesDigest": "50c0be7a8f6ff30b607571761c6fc30d3b5cee5b430b7fc4f2c5e0af00ccdf44",
       "sourceDigest": "163384738deadb2674f6487dedbfb6315a83c952a779d98b0f770baf75c8a6bc"
     },
-    "src/shared/vibe-session.ts": {
-      "classification": "provider-admission",
-      "rationale": "Frames and decodes Vibe subprocess JSON-RPC after runtime and model selection. This is a provider transport; its caller must apply connection execution admission before supplying prompt data.",
-      "sites": [
-        [
-          "serialization",
-          "child.stdin.write"
-        ],
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "send"
-        ],
-        [
-          "serialization",
-          "send"
-        ]
-      ],
-      "siteCount": 5,
-      "sitesDigest": "53eb5be1e169536e7579e2d75b489fbbe1362ca3b83f289a61b3f2f8b01c7808",
-      "sourceDigest": "bf19065a0bb4d18d0de5dbda54e57e09da2555680be1954bb7da7d597c7f3305"
-    },
     "src/understanding/identity-tools.ts": {
       "classification": "forbidden-session-service",
       "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",

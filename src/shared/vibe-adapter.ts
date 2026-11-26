@@ -288,6 +288,43 @@ async function readExitEvidence(exportPath: string, readFile: (path: string) => 
 	return { stopReason, outcome, effectiveSelection: model !== undefined ? { model, thinking: undefined } : undefined };
 }
 
+/** export.json's own `session_id` field (live-confirmed) -- the ONLY source of session
+ *  identity for outputMode:'text', which prints no journal entries at all. */
+async function readExportSessionId(exportPath: string, readFile: (path: string) => Promise<string>): Promise<string | undefined> {
+	let raw: string;
+	try { raw = await readFile(exportPath); } catch { return undefined; }
+	let parsed: unknown;
+	try { parsed = JSON.parse(raw); } catch { return undefined; }
+	const sessionId = record(parsed)?.['session_id'];
+	return typeof sessionId === 'string' && sessionId !== '' ? sessionId : undefined;
+}
+
+/** `--output json` prints the SAME per-entry journal shape as `--output streaming`, just
+ *  collected into one array at exit rather than streamed line by line (live-confirmed). The
+ *  last `type:'message', role:'assistant'` entry's joined text blocks is the turn's answer --
+ *  same precedence vibeLastAssistantText (cli-provider.ts) already applies to this shape. */
+function lastAssistantTextFromEntries(stdout: string): { readonly text: string; readonly sessionId: string | undefined } {
+	let parsed: unknown;
+	try { parsed = JSON.parse(stdout); } catch (err) { throw new Error(`vibe --output json stdout was not parseable JSON: ${(err as Error).message}`); }
+	const entries = Array.isArray(parsed) ? parsed : record(parsed)?.['messages'];
+	if (!Array.isArray(entries)) throw new Error('vibe --output json did not print an entry array');
+	let sessionId: string | undefined;
+	for (const entry of entries) {
+		const row = record(entry);
+		if (typeof row?.['sessionId'] === 'string') sessionId = row['sessionId'];
+	}
+	for (let i = entries.length - 1; i >= 0; i--) {
+		const row = record(entries[i]);
+		if (row === undefined || row['type'] !== 'message' || row['role'] !== 'assistant' || !Array.isArray(row['content'])) continue;
+		const text = row['content'].map(block => {
+			const item = record(block);
+			return item?.['type'] === 'text' && typeof item['text'] === 'string' ? item['text'] : '';
+		}).join('');
+		if (text.length > 0) return { text, sessionId };
+	}
+	throw new Error('vibe --output json carried no assistant text message');
+}
+
 /** The approval argv this launch actually honors (live-confirmed flags):
  *  'auto' -> --auto-approve; 'manual' -> --approval-policy ask; 'edit-auto' -> --approval-policy accept-edits; default -> none. */
 function buildApprovalArgs(approval: VibeApproval | undefined): readonly string[] {
@@ -391,7 +428,9 @@ async function runTurn(
 		if (request.deadlineMs !== undefined) deadlineTimer = setTimeout(killNow, request.deadlineMs);
 
 		let buffer = '';
+		let rawStdout = '';
 		onUtf8Data(child.stdout, chunk => {
+			if (request.outputMode !== 'streaming') { rawStdout += chunk; return; }
 			buffer += chunk;
 			let newline = buffer.indexOf('\n');
 			while (newline >= 0) {
@@ -424,6 +463,16 @@ async function runTurn(
 			if (selectionMatch !== null) throw new VibeSelectionError(stderrText.trim());
 			throw new Error(stderrText.trim() !== '' ? stderrText.trim() : `vibe exited with code ${exit.code}`);
 		}
+
+		if (request.outputMode === 'text') {
+			assistantText = rawStdout.replace(/\n+$/, '');
+			sessionId = await readExportSessionId(join(tempDir, 'export.json'), deps.readFile);
+		} else if (request.outputMode === 'json') {
+			const parsed = lastAssistantTextFromEntries(rawStdout);
+			assistantText = parsed.text;
+			sessionId = parsed.sessionId;
+		}
+		if (request.outputMode !== 'streaming') resumeHandle = request.session.kind === 'new' ? sessionId : request.session.resumeHandle;
 
 		const exitEvidence = await readExitEvidence(join(tempDir, 'export.json'), deps.readFile);
 		finish();

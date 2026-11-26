@@ -77,8 +77,7 @@ import { ModelResponseShapeError } from './model-call-error.js';
 import { checkOllamaTarget, OllamaTargetError } from './ollama-target.js';
 import { getModelRegistry } from '../../daemon/model-registry.js';
 import { daemonInstallRoot } from '../../daemon/mcp-register.js';
-import { openVerifiedVibeSession, runVerifiedVibeTurn, vibeAssistantOutput } from '../../shared/vibe-session.js';
-import { VibeTurnError, type VibeCatalogModel } from '../../shared/vibe-adapter.js';
+import { createVibeAdapter, VibeTurnError, type VibeCatalogModel, type VibeTurnRequest, type VibeTurnResult } from '../../shared/vibe-adapter.js';
 
 const log = getLogger('cli-provider');
 
@@ -147,15 +146,6 @@ export function _resetQualificationCheckCallCountForTests(): void {
 export const READ_ONLY_SESSION_READ_TOOLS: readonly string[] = ['Read', 'Grep', 'Glob'];
 /** The insrc analyze tools a read-only session may call for drill-down. */
 export const READ_ONLY_SESSION_ANALYZE_TOOLS: readonly string[] = ['mcp__insrc__insrc_analyze', 'mcp__insrc__insrc_analyze_step'];
-
-/** The vibe-native tool names a read-only session may use: reading (vibe's
- *  own `read_file` and `grep`) plus the insrc analyze tools, addressed as
- *  `<group>.<remote tool>` -- vibe groups an MCP server's tools under
- *  `mcp_<server name>` (`mistralai_vibe_local_harness/vibe/_mcp_naming.py`'s
- *  `_group_names()`), so the insrc server's tools are `mcp_insrc.insrc_analyze`
- *  / `mcp_insrc.insrc_analyze_step` -- confirmed live against the real `vibe`
- *  CLI (2026-11-24). */
-export const READ_ONLY_SESSION_VIBE_TOOL_NAMES: readonly string[] = ['read_file', 'grep', 'mcp_insrc.insrc_analyze', 'mcp_insrc.insrc_analyze_step'];
 
 /**
  * The MCP config a 'strict-read-analyze' claude session is confined to: ONLY
@@ -535,12 +525,36 @@ export class CliProvider implements LLMProvider {
 					stopReason: 'end_turn' as const,
 				};
 			}
-			const out = await this.runVibe(vibeArgs('text', []), prompt, this.execIn(opts?.cwd, undefined, opts?.signal));
+			const result = await this.dispatchVibeTurn({ prompt, outputMode: 'text', mode: 'default', approval: undefined }, this.execIn(opts?.cwd, undefined, opts?.signal));
 			return {
-				text: out.stdout.replace(/\n+$/, ''),
+				text: result.text,
 				stopReason: 'end_turn' as const,
 			};
 		}, 3, opts?.connectionExecution);
+	}
+
+	/** Builds a new-session request (model/thinking from this provider's own
+	 *  configured defaults, never a silent catalog substitution -- the installed
+	 *  CLI validates --model itself) and drives it through the adapter. Every
+	 *  backend vibe path -- complete, completeStructuredVibe, the interactive-
+	 *  tools auto-approve path, and readOnlySessionOnce -- goes through here;
+	 *  there is no other vibe argv/dispatch path left in this provider. */
+	private async dispatchVibeTurn(
+		request: Pick<VibeTurnRequest, 'prompt' | 'outputMode' | 'mode' | 'approval'>,
+		exec?: ExecOverride,
+	): Promise<VibeTurnResult> {
+		const adapter = createVibeAdapter({
+			cwd: exec?.cwd ?? process.cwd(),
+			env: exec?.env as Readonly<Record<string, string>> | undefined,
+			processGroup: 'adapter-owned',
+		}, { command: this.binPath });
+		const turn = adapter.startTurn({
+			...request,
+			session: { kind: 'new', model: this.defaultModel || undefined, thinking: this.effort },
+			signal: exec?.signal,
+			deadlineMs: exec?.timeoutMs ?? this.timeoutMs,
+		});
+		return turn.result;
 	}
 
 
@@ -560,7 +574,14 @@ export class CliProvider implements LLMProvider {
 				assertConnectionProviderAdmission(execution);
 				return result;
 			} catch (err) {
-				if (err instanceof VibeTurnError && err.dispatchState !== 'not-sent') throw err;
+				// The old app-server's dispatchState guard ("an uncertain write is never
+				// reported as a safe retry") protected its own persistent-session,
+				// interrupt/resume protocol, where a dropped connection mid-turn could
+				// leave a server-side effect of unknown outcome. Every vibe path now
+				// dispatches a single, stateless, one-shot CLI invocation per attempt
+				// through the adapter -- there is no persistent session to leave in an
+				// uncertain state, so a fresh retry is exactly as safe as it is for the
+				// claude/codex clients, which never had this guard either.
 				assertConnectionProviderAdmission(execution);
 				lastErr = err;
 				// A size refusal is never resent, whatever its text looks like (ISSUE-aef82b03).
@@ -696,8 +717,8 @@ export class CliProvider implements LLMProvider {
 		return withStructuredRetry<T>(
 			async (note) => {
 				const prompt = serialiseMessages(messages) + schemaNote + (note !== undefined ? `\n\n${note}` : '');
-				const out = await this.runVibe(vibeArgs('json', []), prompt, this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal));
-				return JSON.parse(vibeLastAssistantText(out.stdout)) as unknown;
+				const result = await this.dispatchVibeTurn({ prompt, outputMode: 'json', mode: 'default', approval: undefined }, this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal));
+				return JSON.parse(result.text) as unknown;
 			},
 			(raw) => validateAgainstSchema<T>(schema, raw, opts?.connectionExecution),
 			opts?.internalRetry === false ? 1 : 3,
@@ -749,8 +770,8 @@ export class CliProvider implements LLMProvider {
 			}
 			// vibe: headless run with every tool call auto-approved (the headless
 			// sibling of codex --full-auto / claude --permission-mode acceptEdits).
-			const out = await this.runVibe(vibeArgs('text', ['--auto-approve']), prompt, { cwd: opts.cwd, timeoutMs: opts.timeoutMs ?? this.timeoutMs });
-			return { text: out.stdout.replace(/\n+$/, ''), stopReason: 'end_turn' as const };
+			const result = await this.dispatchVibeTurn({ prompt, outputMode: 'text', mode: 'default', approval: 'auto' }, { cwd: opts.cwd, timeoutMs: opts.timeoutMs ?? this.timeoutMs });
+			return { text: result.text, stopReason: 'end_turn' as const };
 		}, 3, opts?.connectionExecution);
 	}
 
@@ -832,25 +853,12 @@ export class CliProvider implements LLMProvider {
 
 	private async readOnlySessionOnce<T>(prompt: string, schema: StructuredSchema, exec: ExecOverride & { cwd: string; timeoutMs: number; watchStall: boolean; capabilityPolicy: 'write-sandboxed' | 'strict-read-analyze' }): Promise<T> {
 		if (this.kind === 'vibe') {
-			// Read-only: in headless mode `--enabled-tools` disables every other
-			// tool, and programmatic mode denies any call that would need an
-			// approval, so no write/execute tool exists in the session at all.
-			// The insrc analyze MCP tools stay reachable for drill-down.
-			const args = vibeArgs('json', READ_ONLY_SESSION_VIBE_TOOL_NAMES.flatMap(tool => ['--enabled-tools', tool]));
-			const schemaNote = outputContractNote(schema);
-			let errors: readonly string[] = [];
-			for (let attempt = 1; attempt <= 2; attempt++) {
-				const full = prompt + schemaNote + (attempt > 1 ? `\n\n${buildRetryNote(errors)}` : '');
-				const out = await this.runVibe(args, full, exec);
-				const text = vibeLastAssistantText(out.stdout);
-				let parsed: unknown;
-				try { parsed = JSON.parse(text); }
-				catch (err) { errors = [`the read-only answer was not parseable JSON: ${(err as Error).message}`]; continue; }
-				const checked = validateNativeReply<T>(schema, parsed);
-				if (checked.ok) return checked.value;
-				errors = checked.errors;
-			}
-			throw new ModelResponseShapeError('vibe read-only session answer did not satisfy the schema', errors);
+			// Read-only: the adapter's own fail-closed state (k1) refuses this mode
+			// synchronously, before any subprocess spawns, until a later Story of
+			// this Epic supplies its live qualification.
+			createVibeAdapter({ cwd: exec.cwd, processGroup: 'adapter-owned' }, { command: this.binPath })
+				.startTurn({ prompt, outputMode: 'json', mode: 'read-only', session: { kind: 'new' } });
+			throw new Error('unreachable: startTurn refuses a read-only request synchronously');
 		}
 		if (this.kind === 'claude') {
 			const { envelope } = await this.runClaude(claudeReadOnlySessionArgs(schema, this.modelArgs(), exec.capabilityPolicy), prompt, exec);
@@ -964,64 +972,6 @@ export class CliProvider implements LLMProvider {
 		return [...modelArgs, ...(this.kind === 'claude' ? ['--effort', this.effort] : ['-c', `model_reasoning_effort=${this.effort}`])];
 	}
 
-	private async runVibe(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<SubprocessResult> {
-		if (this.defaultModel || this.effort !== undefined) {
-			const start = Date.now();
-			const output = vibeAssistantOutput();
-			const allowed = args.includes('--enabled-tools') ? [...READ_ONLY_SESSION_VIBE_TOOL_NAMES] : undefined;
-			const registry = getModelRegistry();
-			const rejected = new Set(registry.rejected('cli-vibe'));
-			const result = await runVerifiedVibeTurn({
-				command: await resolveBin(this.vibeAppServerPath),
-				cwd: exec?.cwd,
-				env: exec?.env,
-				signal: exec?.signal,
-				timeoutMs: exec?.timeoutMs ?? this.timeoutMs,
-				model: this.defaultModel || undefined,
-				effort: this.effort,
-				catalog: registry.models('cli-vibe').filter(model => !rejected.has(model.id)),
-				agentConfig: {
-					cwd: exec?.cwd ?? process.cwd(),
-					headless: true,
-					autoApprove: args.includes('--auto-approve'),
-					...(allowed === undefined ? {} : { enabledTools: allowed }),
-				},
-				verifyRuntime: allowed === undefined ? undefined : runtime => {
-					const tools = runtime['tools'];
-					if (runtime['bypassToolPermissions'] !== false || !Array.isArray(tools)) {
-						throw new Error('Vibe app server did not verify the read-only tool policy');
-					}
-					const names = tools.map(tool => (isRecord(tool) ? tool['name'] : undefined));
-					if (names.some(name => typeof name !== 'string' || !READ_ONLY_SESSION_VIBE_TOOL_NAMES.includes(name))) {
-						throw new Error('Vibe app server did not verify the read-only tool policy');
-					}
-					const requiredAnalyzeTools = READ_ONLY_SESSION_VIBE_TOOL_NAMES.filter(name => name.startsWith('mcp_insrc.'));
-					if (requiredAnalyzeTools.some(required => !names.includes(required))) {
-						throw new Error('Vibe app server did not verify the read-only tool policy');
-					}
-				},
-				prompt,
-				onHistory: output.accept,
-			});
-			if (result.stopReason !== undefined) {
-				throw new VibeTurnError('accepted', result.sessionId, new Error(`Vibe turn stopped early (${result.stopReason})`));
-			}
-			const text = output.last();
-			const stdout = args[2] === 'json' ? JSON.stringify([{ role: 'assistant', content: text }]) : text;
-			return { stdout, stderr: '', exitCode: 0, durationMs: Date.now() - start };
-		}
-		const out = await runSubprocess(
-			this.binPath, args, prompt,
-			exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, undefined, exec?.signal,
-			exec?.env,
-		);
-		// vibe exit codes: 0 finished, 1 could not start, 2 model API/runtime
-		// failure, 3 stopped before finishing. Transience is judged on the
-		// CLI's own words (`said`), as for the other CLIs.
-		if (out.exitCode !== 0) throw cliExitError('vibe', out.exitCode, out.stdout, out.stderr);
-		return out;
-	}
-
 
 	/** The exec override for a one-shot call: run the CLI in `cwd` when the
 	 *  caller names one, with the caller's `timeoutMs` when it names one, else
@@ -1116,13 +1066,6 @@ export class CliProvider implements LLMProvider {
 // vibe headless helpers
 // ---------------------------------------------------------------------------
 
-/** vibe headless args: `-p` with no text reads the prompt from stdin;
- *  `--output` picks the format (`text` = the final answer, `json` = the
- *  session messages as a JSON array). Extra flags (--auto-approve,
- *  --enabled-tools, ...) follow. */
-function vibeArgs(output: 'text' | 'json', extra: readonly string[]): string[] {
-	return ['-p', '--output', output, ...extra];
-}
 
 /** The output-contract note appended to a vibe prompt when a structured
  *  answer is required (vibe has no schema flag, so the schema travels in

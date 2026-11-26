@@ -75,6 +75,18 @@ await withRun(run,async scope=>{
     assert.equal(upgraded.result.kind,'post-install-tui-error');assert.ok(upgraded.output.includes(join(current.candidate.directory,'bootstrap.mjs')));assert.ok(upgraded.output.includes(canonicalRuntime.node));
     const snapshot=f.manager().inspect().snapshot;assert.equal(snapshot.installation.activeReleaseId,current.offer.releaseId);assert.equal(snapshot.installation.delivery.mode,'dev');assert.equal(snapshot.lastResult.phase,'ready');assert.equal(snapshot.operation,undefined);
     const launcher=readFileSync(join(home,'bin',target.os==='win32'?'insrc.ps1':'insrc'),'utf8');assert.ok(launcher.includes(current.offer.releaseId));assert.equal(launcher.includes(first.offer.releaseId),false);
+    // Execute the real Retry entry, with only terminal presence simulated.
+    // Current production S4/S5 peers are intentionally unavailable: fail closed
+    // after runtime binding, without replaying installation or launching a TUI.
+    const tty=join(root,'tty-presence.mjs');writeFileSync(tty,"for(const stream of [process.stdin,process.stdout,process.stderr])Object.defineProperty(stream,'isTTY',{value:true});");
+    const before=readFileSync(join(home,'install/controller.json'));
+    const retryArgs=['--import',tty,join(current.candidate.directory,'bootstrap.mjs'),'--launch-tui','--home',home,'--installation-id','fixture'];
+    const retry=await scope.start(canonicalRuntime.node,retryArgs,{env:{...run.environment(),PATH:'',NODE_OPTIONS:'',NODE_PATH:''}});
+    assert.notEqual(retry.code,0);assert.match(readFileSync(retry.log,'utf8'),/capability-unavailable/);
+    const foreignRetry=await scope.start(process.execPath,retryArgs,{env:{...run.environment(),PATH:'',NODE_OPTIONS:'',NODE_PATH:''}});
+    assert.notEqual(foreignRetry.code,0);assert.match(readFileSync(foreignRetry.log,'utf8'),/runtime-invalid/);
+    assert.deepEqual(readFileSync(join(home,'install/controller.json')),before);
+    assert.equal(existsSync(join(home,'dev/checkouts')),false);
   } else {
     enrolled();const before=readFileSync(join(home,'install/controller.json'),'utf8');
     const checked=await request(inspect);assert.equal(checked.response.code,0,checked.text);assert.equal(JSON.parse(checked.text.trim().split('\n').at(-1)).kind,'result');

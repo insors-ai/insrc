@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
-import { copyFileSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, readdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { privateRuntimeTest } from './_private-runtime-test.js';
@@ -11,7 +11,7 @@ import { productionPeers } from '../production-peers.js';
 import { InstallerManager } from '../manager.js';
 import { createRun } from '../../../scripts/test-harness/context.mjs';
 import { withRun } from '../../../scripts/test-harness/process.mjs';
-import { bundleControlEntrypoint } from '../../../scripts/package-installer.mjs';
+import { bundleControlEntrypoint, probePayload } from '../../../scripts/package-installer.mjs';
 
 const out = fileURLToPath(new URL('../../../out/installer/', import.meta.url));
 function tree(directory: string): unknown {
@@ -65,6 +65,16 @@ process.stdout.write(JSON.stringify({node:process.version,executable:process.exe
           assert.notEqual(invalid.code, 0); assert.match(readFileSync(invalid.log, 'utf8'), /schema-invalid: Service worker requires/);
         }
       }
+      // Execute the real publisher probe with actual installed native modules.
+      // This controlled app slice is not full payload/publication qualification.
+      const probe = join(base.root, 'publisher-probe'); mkdirSync(join(probe, 'native'), { recursive: true });
+      writeFileSync(join(probe, 'package.json'), '{"type":"module"}');
+      copyFileSync(native, join(probe, 'native/control.node'));
+      symlinkSync(fileURLToPath(new URL('../../../node_modules', import.meta.url)), join(probe, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
+      const commands: string[] = [], probeScope = Object.create(scope) as typeof scope;
+      probeScope.start = async (...args: Parameters<typeof scope.start>) => { commands.push(args[0]); return scope.start(...args); };
+      await probePayload(run, probeScope, probe, base.target, { location: base.location, identity: base.options.runtime.identity });
+      assert.deepEqual(commands, [base.options.runtime.node], 'Real publisher probe must execute the canonical shared runtime');
     });
   } finally { await base.cleanup(); }
 });

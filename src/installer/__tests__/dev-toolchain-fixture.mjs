@@ -7,6 +7,7 @@ import { withRun } from '../../../scripts/test-harness/process.mjs';
 import { buildStages } from '../../../scripts/test-harness/build.mjs';
 import { resolveInstallationLocation } from '../location.ts';
 import { runtimePolicy, runtimeArchive } from '../runtime-policy.ts';
+import { privateRuntimePaths } from '../runtime-policy.ts';
 import { checkDevPrerequisites, devBuildEnvironment, installDevDependencies, loadDevBuildHelpers, ownedDevBuildEnvironment, verifyDevToolchain } from '../dev-toolchain.ts';
 const [root, runtime, scenario] = process.argv.slice(2);
 const target = { os: process.platform, arch: process.arch, baseline: 'local-fixture' };
@@ -22,7 +23,8 @@ await withRun(run, async scope => {
     NODE_OPTIONS: '--require=/must-not-load', NODE_PATH: '/must-not-load', npm_config_node_options: '--require=/must-not-load',
     NPM_CONFIG_TARGET: '99.0.0', npm_config_nodedir: '/must-not-use', INSRC_TEST_RUN_ID: 'foreign', INSRC_TEST_ROOT: '/foreign', NODE_TEST_CONTEXT: 'child-v8',
     INSRC_NODE_HEADERS: '/must-not-use', INSRC_NODE_LIB: '/must-not-use', INSRC_NATIVE_CC: '/must-not-use',
-    npm_config_registry: 'https://registry.npmjs.org/', NPM_TOKEN: 'fixture-delegated', GIT_SSH_COMMAND: 'fixture-ssh-command' };
+    npm_config_registry: 'https://registry.npmjs.org/', NPM_TOKEN: 'fixture-delegated', GIT_SSH_COMMAND: 'fixture-ssh-command',
+    PYTHONDONTWRITEBYTECODE: '', pythondontwritebytecode: '' };
   if (scenario === 'cuda-empty') inherited.ONNXRUNTIME_NODE_INSTALL_CUDA = '';
   else if (scenario === 'cuda-custom') inherited.ONNXRUNTIME_NODE_INSTALL_CUDA = 'custom';
   else delete inherited.ONNXRUNTIME_NODE_INSTALL_CUDA;
@@ -32,6 +34,7 @@ await withRun(run, async scope => {
   assert.equal(clean.npm_config_target, runtimePolicy.nodeVersion); assert.equal(clean.npm_config_nodedir, selected.headers);
   assert.equal(clean.INSRC_NODE_HEADERS, join(selected.headers, 'include/node')); assert.equal(clean.INSRC_NODE_LIB, selected.nodeLib);
   assert.equal(clean.INSRC_NATIVE_CC, undefined);
+  assert.equal(clean.PYTHONDONTWRITEBYTECODE, '1'); assert.equal(clean.pythondontwritebytecode, undefined);
   assert.equal(clean.NPM_TOKEN, inherited.NPM_TOKEN); assert.equal(clean.GIT_SSH_COMMAND, inherited.GIT_SSH_COMMAND);
   const env = ownedDevBuildEnvironment(run, selected, inherited), owned = { ...run, environment: () => env };
   assert.equal(env.INSRC_TEST_RUN_ID, run.runId); assert.equal(env.INSRC_TEST_ROOT, run.root);
@@ -75,6 +78,9 @@ await withRun(run, async scope => {
   assert.equal(prepared.runtimeExecutable, selected.node); assert.equal(prepared.runId, run.runId);
   const native = await scope.start(selected.node, ['-e', "const c=require('./out/installer/native/control.node');const h=c.acquire('native-probe.lock');if(!c.held(h))throw Error('native lock');c.close(h);"], { env });
   assert.equal(native.code, 0, readFileSync(native.log, 'utf8'));
+  // Full independent inventory verification rejects even an extra Python cache
+  // directory; this runs after real bundled node-gyp imports during npm ci.
+  assert.equal((await privateRuntimePaths(location, identity)).node, selected.node);
   const stageObserved = JSON.parse(readFileSync(join(root, 'observed.json'), 'utf8'));
   assert.equal(stageObserved.node, selected.node); assert.equal(stageObserved.npm, runtimePolicy.npmVersion);
   assert.equal(stageObserved.cuda, env.ONNXRUNTIME_NODE_INSTALL_CUDA);

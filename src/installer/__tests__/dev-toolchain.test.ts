@@ -21,7 +21,10 @@ async function fixture(scenarios: string[], corrupt?: 'headers' | 'npm' | 'missi
     for (const scenario of scenarios) {
       const checkout = join(root, `checkout-${scenario}`); mkdirSync(checkout);
       writeFileSync(join(checkout, 'package.json'), JSON.stringify({ name: 'dev-toolchain-fixture', version: '1.0.0', scripts: { preinstall: 'node install-probe.cjs', probe: 'node probe.cjs' } }));
-      writeFileSync(join(checkout, 'install-probe.cjs'), "const fs=require('node:fs');if(!fs.existsSync('.insrc/tmp/test-harness/active/writer'))throw Error('writer missing');fs.writeFileSync('install-owned','yes');");
+      const pythonProbe = scenario === 'python'
+        ? `const cp=require('node:child_process');const p=cp.spawnSync(${JSON.stringify(target.os === 'win32' ? 'python' : 'python3')},['-c',${JSON.stringify(`import sys;sys.path.insert(0,${JSON.stringify(join(npmRoot, 'node_modules/node-gyp/gyp/pylib'))});import gyp;import gyp.generator.make`)}],{stdio:'inherit'});if(p.error)throw p.error;if(p.status!==0)throw Error('bundled node-gyp Python import failed');`
+        : '';
+      writeFileSync(join(checkout, 'install-probe.cjs'), "const fs=require('node:fs');if(!fs.existsSync('.insrc/tmp/test-harness/active/writer'))throw Error('writer missing');fs.writeFileSync('install-owned','yes');" + pythonProbe);
       writeFileSync(join(checkout, 'package-lock.json'), JSON.stringify({ name: 'dev-toolchain-fixture', version: '1.0.0', lockfileVersion: 3, packages: { '': { name: 'dev-toolchain-fixture', version: '1.0.0' } } }));
       writeFileSync(join(checkout, 'probe.cjs'), `const fs=require('node:fs'),cp=require('node:child_process');const npm=cp.execSync('npm --version',{encoding:'utf8'}).trim();fs.writeFileSync('observed.json',JSON.stringify({node:process.execPath,version:process.version,npm,cuda:process.env.ONNXRUNTIME_NODE_INSTALL_CUDA,nodeOptions:process.env.NODE_OPTIONS??null,nodePath:process.env.NODE_PATH??null}));`);
       mkdirSync(join(checkout, 'scripts/test-harness'), { recursive: true });
@@ -43,6 +46,7 @@ async function fixture(scenarios: string[], corrupt?: 'headers' | 'npm' | 'missi
 }
 test('dev-private-node-and-explicit-npm-cli-work-with-no-host-npm-wrapper', async () => { await fixture(['normal']); });
 test('dev-build-children-ignore-host-node-npm-and-preserve-explicit-cuda-setting', async () => { await fixture(['cuda-empty', 'cuda-custom']); });
+test('native Python imports leave the private Node npm distribution unchanged', async () => { await fixture(['python']); });
 test('missing-or-mismatched-private-toolchain-headers-and-prerequisites-refuse-without-elevation', async () => {
   await fixture(['prerequisite']);
   for (const corrupt of ['headers', 'npm', 'missing'] as const) await fixture(['bad'], corrupt);

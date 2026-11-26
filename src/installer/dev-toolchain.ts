@@ -57,14 +57,17 @@ export function devBuildEnvironment(toolchain: DevToolchain, inherited: NodeJS.P
     'npm_config_target', 'npm_config_runtime', 'npm_config_arch', 'npm_config_platform', 'npm_config_nodedir', 'npm_config_disturl',
     'npm_config_node_options', 'npm_config_node_gyp', 'npm_config_node_version', 'npm_config_ignore_scripts', 'npm_config_omit',
     'npm_config_optional', 'npm_config_include', 'npm_config_global', 'npm_config_prefix', 'npm_config_script_shell',
-    'npm_config_force_process_config', 'npm_config_build_from_source', 'npm_execpath', 'npm_node_execpath']);
+    'npm_config_force_process_config', 'npm_config_build_from_source', 'npm_execpath', 'npm_node_execpath', 'pythondontwritebytecode']);
   for (const key of Object.keys(env)) if (controlled.has(key.toLowerCase())) delete env[key];
   // Environment values override ambient project/user npm runtime settings; registry
   // authentication and Git/SSH delegation remain untouched and are never logged.
   Object.assign(env, { npm_config_target: PRIVATE_NODE_VERSION, npm_config_runtime: 'node', npm_config_arch: toolchain.target.arch,
     npm_config_platform: toolchain.target.os, npm_config_nodedir: toolchain.headers, npm_config_disturl: 'https://nodejs.org/dist',
     npm_config_node_options: '', npm_config_node_gyp: toolchain.nodeGyp, npm_config_ignore_scripts: 'false', npm_config_omit: '', npm_config_include: 'optional',
-    npm_config_global: 'false', npm_node_execpath: toolchain.node, npm_execpath: toolchain.npmCli });
+    npm_config_global: 'false', npm_node_execpath: toolchain.node, npm_execpath: toolchain.npmCli,
+    // npm bundles node-gyp's Python sources inside this immutable distribution.
+    // Native builds must not add __pycache__ files to the verified runtime.
+    PYTHONDONTWRITEBYTECODE: '1' });
   env['PATH'] = [dirname(toolchain.node), env['PATH'] ?? ''].join(delimiter);
   env['INSRC_NODE_HEADERS'] = join(toolchain.headers, 'include/node');
   if (toolchain.nodeLib !== undefined) env['INSRC_NODE_LIB'] = toolchain.nodeLib;

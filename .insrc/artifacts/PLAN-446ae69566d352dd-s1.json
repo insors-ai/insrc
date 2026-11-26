@@ -1,0 +1,706 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795676882264-pfoojd",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-26T07:12:46.118Z",
+    "epicCreatedAt": "2026-11-26T06:29:10.586Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 283501,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "446ae69566d352dd",
+    "epicSlug": "complete-shared-external-node-runtime-foundation",
+    "storyId": "s1",
+    "lldRunId": "wf-1795676543322-bhz2eh",
+    "lldEffectiveHash": "10ef12ead6b254cbedba52b0a686d5ac69d8cc140f0eae618893fef9f7b40926",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "86d0d546fb908771053bf96471d837db1f4c04c8f0ae50734b3b6d5fea6dedc7",
+        "at": "2026-11-26T07:12:46.216Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T07:28:16.150Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "b8133673185a8b9333a44ea0f4e00a190fcfdb92"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Build the shared external Node foundation first, then adapt bootstrap, bundle/dev payloads and installed consumers to it. Ten ordered tasks retain all25 LLD test subjects, with surrounding tests per task and the full scoped installer regression after implementation. Native evidence is collected separately in isolated UTM macOS, OrbStack Linux and genuine Windows environments; unavailable evidence stays unsatisfied and unqualified targets stay disabled. S4 resumes only after the corrective build passes its required gates; the installed host daemon remains untouched."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Pin deterministic runtime profiles and integrity metadata",
+        "summary": "Extend the existing private policy with deterministic distribution profiles, official archive byte counts and independently derived Node/inventory hashes. Include pinned official Windows header/library inputs when needed, without executing foreign binaries or enabling unqualified targets. Define bounded runtime receipt/inventory/result types and canonical layout without changing public contracts.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "All six declared os/arch policy identities retain Node22.22.1/npm10.9.4/header22.22.1 consistency; profile metadata is derived from verified official archive/assets and reproducible, not copied from an installed receipt.",
+          "Completion64KiB, inventory16MiB,32768 entries,128MiB/file,1GiB expanded,256MiB/compressed asset,600s network and120s verification bounds are explicit and tested.",
+          "RuntimeIdentity/ReleaseManifest/IPC fields remain unchanged; metadata computation alone neither executes target code nor enables a native target."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "runtime-policy-exact-identity-target-baseline-profile-and-pinned-inventory"
+          },
+          {
+            "level": "unit",
+            "name": "runtime-profile-metadata-is-reproducible-from-pinned-official-assets-without-target-execution"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Implement the read-only verified runtime resolver",
+        "summary": "Replace the unused privateRuntimePaths constructor with the approved async resolver, implemented through the proposed runtime-store module. Verify explicit home/full identity, protected canonical root, independent policy-bound inventory and exact Node/npm/header file set, with no allocation or application imports.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Direct calls return frozen canonical absolute runtime paths only for the exact verified identity; tampered files/metadata, extra files, bad target/baseline, links and unsafe roots fail closed.",
+          "A self-consistent rewritten receipt/inventory cannot replace the independently pinned expected inventory hash.",
+          "Resolver imports no application paths/DB/provider/source builder and performs no network, mkdir, controller lock, selection or application/Ollama traversal.",
+          "Task-local fixtures prove this API; production consumer wiring is assessed in t8, not required prematurely for t2 validation."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "resolver-import-boundary-excludes-application-paths-storage-provider-and-source-build"
+          },
+          {
+            "level": "unit",
+            "name": "resolver-returns-canonical-node-npm-headers-and-win-library-from-exact-identity"
+          },
+          {
+            "level": "unit",
+            "name": "resolver-rejects-missing-corrupt-extra-files-wrong-mode-target-digest-npm-headers-inventory-receipt"
+          },
+          {
+            "level": "unit",
+            "name": "rewritten-self-consistent-local-runtime-metadata-cannot-replace-policy-inventory-digest"
+          },
+          {
+            "level": "unit",
+            "name": "resolver-does-no-mkdir-download-lock-selection-db-or-provider-work"
+          },
+          {
+            "level": "unit",
+            "name": "runtime-caps-and-cancellation-are-finite-and-do-not-trigger-app-or-Ollama-hashing"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Acquire and safely stage the official runtime",
+        "summary": "Implement bounded live official runtime/header/library download, digest verification and safe deterministic extraction in the proposed acquisition module. Produce only owned validated stages; close actors before cleanup and reuse the read-only verifier/profile rules without application payload access.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Official assets are HTTPS/status/redirect/size/hash/deadline checked before extraction or target-code execution; POSIX and Windows profile extraction rejects unsafe/colliding/special entries and missing exact npm/header/library inputs.",
+          "Cancellation and download/extraction failure close network/parser resources before removing only the owned stage; uncertain closure retains evidence and fails.",
+          "Stage verification covers the fixed runtime limits and exact independent inventory digest; no runtime/release publication, selection or daemon lifecycle occurs in this staging task."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "runtime-acquisition-checks-official-HTTPS-byte-hash-deadline-before-safe-extraction"
+          },
+          {
+            "level": "integration",
+            "name": "runtime-stage-cancellation-closes-owned-network-parser-actors-before-cleanup"
+          },
+          {
+            "level": "integration",
+            "name": "runtime-profile-rejects-unsafe-archive-collisions-links-and-missing-header-library-inputs"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Publish and reuse runtime entries under controller ownership",
+        "summary": "Add immutable durable runtime publication and verified reuse through the existing native operation.lock and original controller capability. Keep executing helper/runtime/DLL paths outside the publication tree and preserve conflicting entries for explicit recovery.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Fresh publication is exclusive and durable under the original live controller lock, with canonical completion/inventory; matching verified entries are reused before network.",
+          "Concurrent/stale/lost owners cannot publish; incompatible/incomplete immutable destinations are never overwritten or silently repaired.",
+          "Execution and publication stages are distinct, including Windows node.exe/loaded DLL constraints; final-runtime or application cleanup never deletes retained shared runtimes.",
+          "No new manager action, lock transfer, PID/kill controller, S4 lifecycle peer or S5 migration implementation is introduced."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4",
+          "c9",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "runtime-native-lock-exclusive-durable-no-replace-publication-and-offline-entry-reuse"
+          },
+          {
+            "level": "integration",
+            "name": "runtime-publication-rejects-stale-owner-and-conflicting-incomplete-entry"
+          },
+          {
+            "level": "integration",
+            "name": "runtime-publication-stage-is-not-running-node-or-loaded-native-library"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Unify terminal bootstrap verification and runtime handoff",
+        "summary": "Adapt both shared terminal templates, renderer and publication helper to the same verified external store. Authenticate cached/fresh Node and control bytes before execution, publish under the existing lock, wait for exact helper exit, then invoke the canonical runtime manager with fresh ordinary admission.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Manual and IDE-generated POSIX/PowerShell scripts use fixed independent Node/control digests and need no host Node; matching verified cached runtime/control can work offline while missing prerequisites fail clearly.",
+          "The exact publication-helper child exits before the final manager starts/acquires a fresh lock; no inherited lock/session/source flag, PID heuristic or successful install claim substitutes for admission.",
+          "Paths with spaces/Unicode/apostrophes, interruption, concurrent bootstrap and Windows nonmoving execution-stage behavior are covered by surrounding fixtures.",
+          "Terminal owns prompts/I/O and existing same-terminal TUI semantics; no IDE adapter redesign or current host daemon operation is performed."
+        ],
+        "derivedFrom": [
+          "c4",
+          "c7",
+          "c9",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "bootstrap-no-host-node-verifies-archive-and-executable-before-execution"
+          },
+          {
+            "level": "integration",
+            "name": "bootstrap-native-operation-lock-exclusive-publication-exact-helper-exit-then-fresh-manager-lock"
+          },
+          {
+            "level": "integration",
+            "name": "bootstrap-publication-stage-distinct-from-running-node-and-loaded-native-library"
+          },
+          {
+            "level": "integration",
+            "name": "runtime-stage-cancellation-conflict-and-uncertain-closure-retain-safe-state"
+          },
+          {
+            "level": "integration",
+            "name": "bootstrap-verified-cached-runtime-control-offline-with-host-node-trap-and-quoted-paths"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Publish and validate application-only bundle format",
+        "summary": "Advance private ReleaseDescriptor to format2 without runtimeArchive and adapt bundle inventory, ZIP validation and publisher assembly/probes together. Preserve public manifest1, exact source/target/digests and native qualification while separating runtime acquisition inputs from all app/IDE payload collection.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "New bundle/publisher receipts and accepted descriptor hashing consistently use private format2; old embedded descriptor1 is rejected diagnostically without reinterpretation or adoption.",
+          "Bundle validation no longer requires tools/node or a runtime archive and still validates the exact production app/native closure and archive safety.",
+          "Provenance/allowlisted collection rejects ordinary or renamed Node/Ollama distribution/archive contributions; native .node application dependencies remain legitimate.",
+          "Publisher runtime probes and candidate preparation obtain the shared verified external runtime; no release-local/PATH fallback or full app/Ollama reconciliation is added."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5",
+          "c7",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "bundle-descriptor2-application-only-public-manifest1-and-legacy-descriptor-diagnostic"
+          },
+          {
+            "level": "integration",
+            "name": "publisher-app-and-IDE-inventory-exclude-Node-Ollama-distributions-and-archives-including-renamed-contributions"
+          },
+          {
+            "level": "integration",
+            "name": "bundle-publisher-probes-use-shared-external-runtime-without-tools-node-copy"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Prepare dev candidates with the shared external runtime",
+        "summary": "Advance private dev receipts/recipe to application-only semantics and adapt source offers, toolchain, worker staging, verification and immutable publication. Consume the same resolved Node/npm/header/library distribution instead of copying tools/node into dev releases.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Dev receipt2/new recipe, durable offers, canonical hashes and all readers agree; old embedded receipts/offers fail with an explicit compatibility diagnostic.",
+          "Dev payloads omit Node/Ollama distributions/archives and preserve exact accepted source, native output closure, closed-worker proof and no duplicate writer.",
+          "Dev build commands/owned npm aliases use resolved absolute private Node/npm/header/library paths; existing CUDA skip-if-unset and hostile environment isolation remain.",
+          "Prepared candidate open/verify does not acquire/build a runtime implicitly or adopt an arbitrary runtimeDirectory; cross-mode runtime reuse is proven at the shared foundation boundary."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c6",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "private-dev-node-npm-headers-native-env-and-worker-source-closure-preserved"
+          },
+          {
+            "level": "integration",
+            "name": "dev-receipt2-recipe-offer-compatibility-and-application-only-payload"
+          },
+          {
+            "level": "integration",
+            "name": "dev-candidate-open-has-no-implicit-runtime-acquisition-or-foreign-directory-trust"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Bind installed consumers to the verified external runtime",
+        "summary": "Wire manager/terminal entry, TUI/Retry/bridge launch selection, production peer dependency readiness and both delivery modes to real shared resolution/acquisition. Remove process/release-directory guesses and duplicate trust paths, while keeping lifecycle and migration ports under their existing owners.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t2",
+          "t4",
+          "t5",
+          "t6",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Every existing installed consumer owned by this correction selects the canonical resolved executable from explicit location+manifest identity, verifies actual process.execPath where required, and has no tools/node/PATH/runtimeDirectory trust fallback. S4 daemon boot consumes the real exposed resolver later; no S4 production consumer is required prematurely here.",
+          "Both delivery preparations acquire only under original controller ownership before lifecycle disruption; installed start/status/receipt resolution never downloads/builds source or traverses full app/Ollama payloads.",
+          "S3 runtime readiness uses verified external paths, preserving Ollama consent/retention, agent recommendations, install-only Retry and terminal TUI flow.",
+          "S4 boot/lease/shutdown/wrapper and S5 hooks remain consumers, not new implementations; separate manager action-specific peer gating is excluded and missing production peers still fail truthfully."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c5",
+          "c6",
+          "c7",
+          "c9",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "bundle-dev-manager-terminal-TUI-Retry-bridge-and-publisher-probes-use-shared-resolver"
+          },
+          {
+            "level": "integration",
+            "name": "status-readiness-and-control-checks-do-not-scan-full-app-Ollama-payload"
+          },
+          {
+            "level": "integration",
+            "name": "installed-consumer-process-executable-and-manifest-identity-bound-to-real-resolver"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Complete integrated coverage and run the scoped regression",
+        "summary": "Finish cross-mode/consumer/regression fixtures and validation-only native harness setup, maintain structured design companions if relationships change, and run the complete scoped installer regression after all source tasks are built. Preserve final human BUILD approval after validation rather than per-task approvals.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t7",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "All25 LLD subjects and ac1–ac6 have explicit owner mapping. All non-native surrounding/integrated regression evidence passes with canonical Node22 coordinator and confirmed actor cleanup after the last implementation task is built. Actual native evidence belongs to t10 and is neither required prematurely nor claimed by t9.",
+          "Surrounding S2/S3/terminal/bridge/public-contract tests preserve source closure, consent/Retry/TUI and no full app/Ollama status/readiness rehash; no test fixture certifies a real unavailable lifecycle/migration peer.",
+          "Generated ER retains one runtime ->0..N releases, sequence retains exact helper-exit/fresh-manager ownership ordering, and component/import boundaries match implementation. Source and render checks distinguish unavailable evidence.",
+          "Final regression/source checks pass before completion; tracker/build admission failures are reported rather than bypassed with fabricated Define/issue bindings or raw workflow edits."
+        ],
+        "derivedFrom": [
+          "c8",
+          "c9",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "descriptor2-and-dev-receipt2-application-only-with-public-manifest1-unchanged"
+          },
+          {
+            "level": "smoke",
+            "name": "legacy-embedded-runtime-formats-rejected-without-adoption"
+          },
+          {
+            "level": "smoke",
+            "name": "verified-runtime-and-control-reuse-offline-across-bundle-and-dev"
+          },
+          {
+            "level": "smoke",
+            "name": "S3-Ollama-consent-retention-agent-recommendations-and-install-only-Retry-preserved"
+          },
+          {
+            "level": "smoke",
+            "name": "terminal-install-success-ready-lock-release-same-terminal-TUI-and-failure-no-TUI-preserved"
+          },
+          {
+            "level": "smoke",
+            "name": "final-scoped-installer-publisher-bootstrap-dev-dependencies-terminal-regression"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Record native runtime qualification and S4 handoff evidence",
+        "summary": "Run the completed runtime/installed-consumer qualification harness in isolated UTM macOS and OrbStack Linux homes, and a genuine Windows runner when available. Record exact platform/runtime/asset/actor evidence and unsupported routes; hand the actual resolver contract back to S4 after the corrective BUILD passes all required gates.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "Actual UTM macOS and OrbStack Linux runtime-first-acquisition/native-build/offline-reuse/installed-consumer checks are distinguished from fixtures and host emulation; host v2/Ollama remain untouched.",
+          "Windows qualification requires actual native ACL/path/header/library/loaded-DLL-safe-publication evidence, not Linux/macOS execution or metadata extraction. Missing infrastructure remains explicitly unavailable and the target cannot be enabled/published. An unavailable native subject remains unsatisfied; recording an availability diagnostic is not a passing native test or a waiver of required BUILD acceptance.",
+          "Qualification is for the runtime foundation and existing installed-consumer boundaries; no end-to-end S4/S5 daemon activation proof is fabricated or introduced as a cyclic prerequisite.",
+          "No source changes are made during this evidence-only task. Any required correction returns to its owning task and reruns appropriate tests/regression; user BUILD approval is requested only after all required validation/task accounting/tracker gates are satisfied."
+        ],
+        "derivedFrom": [
+          "c8",
+          "c9",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "UTM-macOS-fresh-live-acquisition-offline-reuse-and-isolated-installed-consumer-smoke"
+          },
+          {
+            "level": "live",
+            "name": "OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke"
+          },
+          {
+            "level": "live",
+            "name": "native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication"
+          },
+          {
+            "level": "live",
+            "name": "unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "runtime-policy-exact-identity-target-baseline-profile-and-pinned-inventory",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "descriptor2-and-dev-receipt2-application-only-with-public-manifest1-unchanged",
+        "coveredByTaskIds": [
+          "t6",
+          "t7",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "legacy-embedded-runtime-formats-rejected-without-adoption",
+        "coveredByTaskIds": [
+          "t6",
+          "t7",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolver-import-boundary-excludes-application-paths-storage-provider-and-source-build",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolver-returns-canonical-node-npm-headers-and-win-library-from-exact-identity",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolver-rejects-missing-corrupt-extra-files-wrong-mode-target-digest-npm-headers-inventory-receipt",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "rewritten-self-consistent-local-runtime-metadata-cannot-replace-policy-inventory-digest",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolver-does-no-mkdir-download-lock-selection-db-or-provider-work",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "runtime-caps-and-cancellation-are-finite-and-do-not-trigger-app-or-Ollama-hashing",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "bootstrap-no-host-node-verifies-archive-and-executable-before-execution",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "verified-runtime-and-control-reuse-offline-across-bundle-and-dev",
+        "coveredByTaskIds": [
+          "t4",
+          "t5",
+          "t7",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "bootstrap-native-operation-lock-exclusive-publication-exact-helper-exit-then-fresh-manager-lock",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "bootstrap-publication-stage-distinct-from-running-node-and-loaded-native-library",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "runtime-stage-cancellation-conflict-and-uncertain-closure-retain-safe-state",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "bundle-dev-manager-terminal-TUI-Retry-bridge-and-publisher-probes-use-shared-resolver",
+        "coveredByTaskIds": [
+          "t6",
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "private-dev-node-npm-headers-native-env-and-worker-source-closure-preserved",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "publisher-app-and-IDE-inventory-exclude-Node-Ollama-distributions-and-archives-including-renamed-contributions",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "S3-Ollama-consent-retention-agent-recommendations-and-install-only-Retry-preserved",
+        "coveredByTaskIds": [
+          "t8",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "terminal-install-success-ready-lock-release-same-terminal-TUI-and-failure-no-TUI-preserved",
+        "coveredByTaskIds": [
+          "t5",
+          "t8",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "status-readiness-and-control-checks-do-not-scan-full-app-Ollama-payload",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "final-scoped-installer-publisher-bootstrap-dev-dependencies-terminal-regression",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "UTM-macOS-fresh-live-acquisition-offline-reuse-and-isolated-installed-consumer-smoke",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#3-data-model-changes",
+      "quotedText": "Approved revision3 §3.1–3.2: independently pinned official distribution profiles, metadata/types, canonical runtime store and fixed finite bounds; public runtime/manifest contracts unchanged."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#2-contract-details",
+      "quotedText": "§2.2–2.3: privateRuntimePaths is the verified async read-only resolver; exact runtime integrity and explicit home, no allocation/acquisition/application imports or arbitrary runtimeDirectory trust."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#3-data-model-changes",
+      "quotedText": "§3.3: live official bounded download/safe stage; controller-owned immutable publication, exact verified reuse and closed actors, using original native operation.lock ownership."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#2-contract-details",
+      "quotedText": "§2.4/§3.3: shared POSIX/PowerShell bootstrap verifies Node/control bytes before execution, publishes a nonexecuting stage, observes exact helper exit before fresh manager admission, including Windows loaded DLL constraints."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#3-data-model-changes",
+      "quotedText": "§3.4: private descriptor2/application-only inventory and publisher/probe adaptation; reject embedded formats and runtime byte contributions while preserving public manifest1 and native closure/qualification."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#3-data-model-changes",
+      "quotedText": "§3.4–3.5: dev receipt2/new recipe and canonical offers/readers with shared external Node/npm/header/library; retain accepted source, worker closure and owned native build environment."
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#3-data-model-changes",
+      "quotedText": "§3.5: manager/terminal/TUI/Retry/bridge/dependency readiness and delivery consumers use the real shared foundation; no source build on installed status/start and no release-local/PATH fallback."
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#6-test-strategy",
+      "quotedText": "All25 LLD subjects and ac1–ac6; surrounding tests per task, full scoped regression after implementation, real isolated UTM macOS/OrbStack Linux/Windows evidence kept separate from fixtures."
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#5-error-paths",
+      "quotedText": "§5/§7: fail closed on corrupt runtime/legacy format/ownership/closure; preserve consent/install-only Retry, same-terminal TUI, current host daemon and immutable entries; unavailable native evidence is not a pass. User requires final story BUILD approval after all tasks."
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#3-data-model-changes",
+      "quotedText": "§3.6 and diagrams: standalone ISSUE correction with external epic compatibility references only; S4 boot/control/lease/wrapper, S5 hooks and action-specific peer gating stay with their existing owners. Runtime-to-release cardinality and helper handoff sources retained."
+    }
+  ]
+}

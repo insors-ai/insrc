@@ -28,7 +28,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { stat } from 'node:fs/promises';
-import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { isAbsolute, resolve } from 'node:path';
 
 import { resolveRepoLastIndexedAt } from '../../analyze/context/driver.js';
 import { loadAnalyzeConfig, resolveSecurityModel } from '../../config/analyze.js';
@@ -37,7 +37,7 @@ import { getStepStateStore } from '../../daemon/threads/step-state.js';
 import type { ReviewTargets } from '../artifact-core/types.js';
 import { checkRepoRegistered } from './content-identity.js';
 import { collectDependencyAdvisories } from './collect-dependency-advisories.js';
-import { runSecurityReview, type SecurityReviewReport } from './run-security-review.js';
+import { assertTargetsContained, runSecurityReview, type SecurityReviewReport } from './run-security-review.js';
 
 const MODEL_PROBE_DEADLINE_MS = 15_000;
 /** proceed:true genuinely WAITS for a fresh index -- unlike proceed:false, it
@@ -118,8 +118,8 @@ export class SecurityReviewTargetUnreachableError extends Error {
  *  but run HERE first, before this module's own earlier I/O (the freshness
  *  stat) ever touches the resolved path. */
 export class SecurityReviewTargetOutOfScopeError extends Error {
-	constructor(path: string) {
-		super(`handleSecurityReviewStep: targets.entries path '${path}' resolves outside repoPath`);
+	constructor(reason: string) {
+		super(`handleSecurityReviewStep: ${reason}`);
 		this.name = 'SecurityReviewTargetOutOfScopeError';
 	}
 }
@@ -142,18 +142,18 @@ function isWellShapedTargets(targets: unknown): targets is ReviewTargets {
 		&& entries.every(e => typeof e === 'object' && e !== null && typeof (e as { path?: unknown }).path === 'string' && (e as { path: string }).path.length > 0);
 }
 
-/** The SAME lexical containment check run-security-review.ts's own
- *  assertTargetsContained performs, run here BEFORE any I/O of this module's
- *  own (the freshness stat) -- not merely relying on runSecurityReview's
- *  later guard, which by then has already let this module's own stat calls
- *  touch an out-of-scope path. */
+/** Runs run-security-review.ts's OWN assertTargetsContained -- the SAME
+ *  lexical containment check, never a second duplicated copy -- here BEFORE
+ *  any I/O of this module's own (the freshness stat), not merely relying on
+ *  runSecurityReview's later guard, which by then has already let this
+ *  module's own stat calls touch an out-of-scope path. Re-thrown under this
+ *  module's own error type so callers see one consistent class regardless of
+ *  which layer's guard actually caught the escape. */
 function assertTargetsContainedEarly(repoPath: string, targets: ReviewTargets): void {
-	for (const entry of targets.entries) {
-		const resolved = resolve(repoPath, entry.path);
-		const rel = relative(repoPath, resolved);
-		if (rel === '..' || rel.startsWith(`..${sep}`)) {
-			throw new SecurityReviewTargetOutOfScopeError(entry.path);
-		}
+	try {
+		assertTargetsContained(repoPath, targets);
+	} catch (err) {
+		throw new SecurityReviewTargetOutOfScopeError((err as Error).message);
 	}
 }
 

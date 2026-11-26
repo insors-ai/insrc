@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1795676882264-pfoojd",
+    "runId": "wf-1795699880376-fw42b8",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-26T07:12:46.118Z",
+    "createdAt": "2026-11-26T13:34:22.477Z",
     "epicCreatedAt": "2026-11-26T06:29:10.586Z",
     "standalone": true,
     "attribution": {
@@ -16,21 +16,21 @@
         }
       ]
     },
-    "elapsedMs": 283501,
+    "elapsedMs": 181806,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "446ae69566d352dd",
     "epicSlug": "complete-shared-external-node-runtime-foundation",
     "storyId": "s1",
-    "lldRunId": "wf-1795676543322-bhz2eh",
-    "lldEffectiveHash": "10ef12ead6b254cbedba52b0a686d5ac69d8cc140f0eae618893fef9f7b40926",
+    "lldRunId": "wf-1795698455782-c8hya3",
+    "lldEffectiveHash": "d909d44a83e92c7d305e01b4df1b15a313c7d927ebce102b0cf60ff35cd9a9a0",
     "authoredBy": "controller",
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "86d0d546fb908771053bf96471d837db1f4c04c8f0ae50734b3b6d5fea6dedc7",
-        "at": "2026-11-26T07:12:46.216Z",
+        "number": 2,
+        "contentHash": "413c5f7a026aade1685300e63d2275cbf9c1662264a18066318ac142e62bec6b",
+        "at": "2026-11-26T13:34:22.573Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -39,27 +39,27 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 1,
+        "revision": 2,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-26T07:28:16.150Z"
+        "at": "2026-11-26T14:15:39.042Z"
       }
     },
-    "revision": 1,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
-    "rangeBase": "b8133673185a8b9333a44ea0f4e00a190fcfdb92"
+    "revision": 2,
+    "rangeBase": "ea9612c4f670d37c7354c9209364cef6e9934d21"
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Build the shared external Node foundation first, then adapt bootstrap, bundle/dev payloads and installed consumers to it. Ten ordered tasks retain all25 LLD test subjects, with surrounding tests per task and the full scoped installer regression after implementation. Native evidence is collected separately in isolated UTM macOS, OrbStack Linux and genuine Windows environments; unavailable evidence stays unsatisfied and unqualified targets stay disabled. S4 resumes only after the corrective build passes its required gates; the installed host daemon remains untouched."
+      "prose": "Build the shared external Node foundation, then adapt bootstrap, application-only bundle/dev payloads and existing installed consumers. Retain ten ordered tasks,25 LLD subjects, surrounding tests per task and the final scoped installer regression; this revision aligns T8 with LLD revision4 and leaves future Windows bridge process/runtime execution with S7. Record native evidence separately in isolated UTM macOS, OrbStack Linux and genuine Windows environments; unavailable evidence stays unsatisfied and unqualified targets remain disabled. S4 resumes only after the corrective build passes its required gates and human approval, with the installed host daemon untouched."
     },
     "tasks": [
       {
@@ -337,7 +337,7 @@
       {
         "id": "t8",
         "title": "Bind installed consumers to the verified external runtime",
-        "summary": "Wire manager/terminal entry, TUI/Retry/bridge launch selection, production peer dependency readiness and both delivery modes to real shared resolution/acquisition. Remove process/release-directory guesses and duplicate trust paths, while keeping lifecycle and migration ports under their existing owners.",
+        "summary": "Wire manager/terminal entry, TUI/Retry launch selection, production peer dependency readiness and both delivery modes to real shared resolution/acquisition. Remove process/release-directory guesses and duplicate trust paths, while keeping lifecycle and migration ports under their existing owners. The future Windows bridge process and its runtime-selection/execution coverage remain owned by main-epic S7; this task exposes the shared foundation for that consumer.",
         "size": "M",
         "order": 8,
         "dependsOn": [
@@ -348,7 +348,7 @@
           "t7"
         ],
         "acceptanceChecks": [
-          "Every existing installed consumer owned by this correction selects the canonical resolved executable from explicit location+manifest identity, verifies actual process.execPath where required, and has no tools/node/PATH/runtimeDirectory trust fallback. S4 daemon boot consumes the real exposed resolver later; no S4 production consumer is required prematurely here.",
+          "Every existing installed consumer owned by this correction selects the canonical resolved executable from explicit location+manifest identity, verifies actual process.execPath where required, and has no tools/node/PATH/runtimeDirectory trust fallback. S4 daemon boot consumes the real exposed resolver later; no S4 production consumer is required prematurely here. Future S7 bridge-process runtime selection/execution is not a current T8 consumer or a prerequisite to validating this task.",
           "Both delivery preparations acquire only under original controller ownership before lifecycle disruption; installed start/status/receipt resolution never downloads/builds source or traverses full app/Ollama payloads.",
           "S3 runtime readiness uses verified external paths, preserving Ollama consent/retention, agent recommendations, install-only Retry and terminal TUI flow.",
           "S4 boot/lease/shutdown/wrapper and S5 hooks remain consumers, not new implementations; separate manager action-specific peer gating is excluded and missing production peers still fail truthfully."
@@ -365,7 +365,7 @@
         "tests": [
           {
             "level": "integration",
-            "name": "bundle-dev-manager-terminal-TUI-Retry-bridge-and-publisher-probes-use-shared-resolver"
+            "name": "bundle-dev-manager-terminal-TUI-Retry-and-publisher-probes-use-shared-resolver"
           },
           {
             "level": "integration",
@@ -569,7 +569,7 @@
         ]
       },
       {
-        "lldStrategyItem": "bundle-dev-manager-terminal-TUI-Retry-bridge-and-publisher-probes-use-shared-resolver",
+        "lldStrategyItem": "bundle-dev-manager-terminal-TUI-Retry-and-publisher-probes-use-shared-resolver",
         "coveredByTaskIds": [
           "t6",
           "t7",
@@ -639,68 +639,75 @@
           "t10"
         ]
       }
-    ]
+    ],
+    "epicImpact": {
+      "applies": false,
+      "reason": "Standalone corrective story; no sibling ownership changes.",
+      "storiesCovered": [],
+      "findings": "External main-epic S7 keeps bridge implementation/testing; this plan consumes the approved shared foundation boundary.",
+      "sources": []
+    }
   },
   "citations": [
     {
       "id": "c1",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#3-data-model-changes",
-      "quotedText": "Approved revision3 §3.1–3.2: independently pinned official distribution profiles, metadata/types, canonical runtime store and fixed finite bounds; public runtime/manifest contracts unchanged."
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes",
+      "quotedText": "Approved revision4 §4.1–4.2: independently pinned official distribution profiles, metadata/types, canonical runtime store and fixed finite bounds; public runtime/manifest contracts unchanged."
     },
     {
       "id": "c2",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#2-contract-details",
-      "quotedText": "§2.2–2.3: privateRuntimePaths is the verified async read-only resolver; exact runtime integrity and explicit home, no allocation/acquisition/application imports or arbitrary runtimeDirectory trust."
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#3-contract-details",
+      "quotedText": "§3.2–3.3: privateRuntimePaths is the verified async read-only resolver; exact runtime integrity and explicit home, no allocation/acquisition/application imports or arbitrary runtimeDirectory trust."
     },
     {
       "id": "c3",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#3-data-model-changes",
-      "quotedText": "§3.3: live official bounded download/safe stage; controller-owned immutable publication, exact verified reuse and closed actors, using original native operation.lock ownership."
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes",
+      "quotedText": "§4.3: live official bounded download/safe stage; controller-owned immutable publication, exact verified reuse and closed actors, using original native operation.lock ownership."
     },
     {
       "id": "c4",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#2-contract-details",
-      "quotedText": "§2.4/§3.3: shared POSIX/PowerShell bootstrap verifies Node/control bytes before execution, publishes a nonexecuting stage, observes exact helper exit before fresh manager admission, including Windows loaded DLL constraints."
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#3-contract-details",
+      "quotedText": "§3.4/§4.3: shared POSIX/PowerShell bootstrap verifies Node/control bytes before execution, publishes a nonexecuting stage, observes exact helper exit before fresh manager admission, including Windows loaded DLL constraints."
     },
     {
       "id": "c5",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#3-data-model-changes",
-      "quotedText": "§3.4: private descriptor2/application-only inventory and publisher/probe adaptation; reject embedded formats and runtime byte contributions while preserving public manifest1 and native closure/qualification."
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes",
+      "quotedText": "§4.4: private descriptor2/application-only inventory and publisher/probe adaptation; reject embedded formats and runtime byte contributions while preserving public manifest1 and native closure/qualification."
     },
     {
       "id": "c6",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#3-data-model-changes",
-      "quotedText": "§3.4–3.5: dev receipt2/new recipe and canonical offers/readers with shared external Node/npm/header/library; retain accepted source, worker closure and owned native build environment."
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes",
+      "quotedText": "§4.4–4.5: dev receipt2/new recipe and canonical offers/readers with shared external Node/npm/header/library; retain accepted source, worker closure and owned native build environment."
     },
     {
       "id": "c7",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#3-data-model-changes",
-      "quotedText": "§3.5: manager/terminal/TUI/Retry/bridge/dependency readiness and delivery consumers use the real shared foundation; no source build on installed status/start and no release-local/PATH fallback."
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes",
+      "quotedText": "§4.5: existing manager/terminal/TUI/Retry/bootstrap/dependency readiness and delivery/publisher consumers use the real shared foundation; future S7 bridge process/runtime execution remains with S7. No installed source build or release-local/PATH fallback."
     },
     {
       "id": "c8",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#6-test-strategy",
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#7-test-strategy",
       "quotedText": "All25 LLD subjects and ac1–ac6; surrounding tests per task, full scoped regression after implementation, real isolated UTM macOS/OrbStack Linux/Windows evidence kept separate from fixtures."
     },
     {
       "id": "c9",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#5-error-paths",
-      "quotedText": "§5/§7: fail closed on corrupt runtime/legacy format/ownership/closure; preserve consent/install-only Retry, same-terminal TUI, current host daemon and immutable entries; unavailable native evidence is not a pass. User requires final story BUILD approval after all tasks."
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#6-error-paths",
+      "quotedText": "§6/§8: fail closed on corrupt runtime/legacy format/ownership/closure; preserve consent/install-only Retry, same-terminal TUI, current host daemon and immutable entries; unavailable native evidence is not a pass. User requires final story BUILD approval after all tasks."
     },
     {
       "id": "c10",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#3-data-model-changes",
-      "quotedText": "§3.6 and diagrams: standalone ISSUE correction with external epic compatibility references only; S4 boot/control/lease/wrapper, S5 hooks and action-specific peer gating stay with their existing owners. Runtime-to-release cardinality and helper handoff sources retained."
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes",
+      "quotedText": "§4.6 and diagrams: standalone ISSUE correction with external epic compatibility references only; S4 boot/control/lease/wrapper, S5 hooks and action-specific peer gating stay with their existing owners. Runtime-to-release cardinality and helper handoff sources retained. Future Windows bridge implementation and execution coverage remain with S7."
     }
   ]
 }

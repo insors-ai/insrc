@@ -240,7 +240,9 @@ a call from memory when the contract is one lookup away.
   just start editing. Route it: `brainstorm` (if the idea is rough) →
   `insrc_triage` (sizes + routes) → the routed workflow → present → approve →
   build → validate → human approval → complete. Every feature, big or small, is tracked. See
-  `insrc_guide({ workflow: 'triage' })` for the routing table.
+  `insrc_guide({ workflow: 'triage' })` for the routing table. For a later Story
+  of an Epic, the first activity of its design.story, plan and build is a
+  complete impact analysis of what the Epic has already built (see those guides).
 - **Fix a bug / defect** → same front door: `insrc_triage` classifies it
   `bugfix` (magnitude `small` or `sized`) and routes to the `issue` stage — a
   defect gets tracked exactly like a feature, never patched off-ledger. Small →

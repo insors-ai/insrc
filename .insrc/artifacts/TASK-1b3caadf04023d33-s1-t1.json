@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-825e4b5d-1caf-44ed-93f9-c556164909e5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T09:33:07.575Z",
+    "epicCreatedAt": "2026-11-24T08:44:39.235Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1b3caadf04023d33",
+    "storyId": "s1",
+    "envelope": {
+      "description": "EpicImpactAnalysis on the LLD and PLAN: type, optional field, sections and first-step schemas",
+      "parent": {
+        "entityId": "STORY-1b3caadf04023d33-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1b3caadf04023d33-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "793dfe6b5eacbff15c4b1cdd2bbb8f67167c6e24c66ace7aec024f5b955ef498",
+        "at": "2026-11-24T09:33:07.575Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T09:33:07.576Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "EpicImpactAnalysis on the LLD and PLAN: type, optional field, sections and first-step schemas",
+    "summary": "Add the EpicImpactAnalysis type ({ applies, reason?, storiesCovered, findings, sources }) and the optional epicImpact field to LldBody (src/workflow/artifacts/lld.ts) and PlanBody (src/workflow/artifacts/plan.ts), each with a section builder that renders an 'Epic impact analysis' section only when the field is present (so existing artifacts and their markdown are byte-for-byte unchanged); add the optional epicImpact to the design.story and plan first-step context schemas (src/workflow/runners/design-story/schemas.ts, src/workflow/runners/plan/schemas.ts). Refresh the module-state and session-source inventory fixtures only for the files this task changes. Tests in epic-impact-artifacts.test.ts (the render part).",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "an LLD and a PLAN with an epicImpact render an 'Epic impact analysis' section and one without it renders exactly as before (a golden comparison with an existing artifact)",
+      "the first-step schemas accept an epicImpact and still accept a context without one",
+      "no inventory test case fails beyond the four that already fail on a clean checkout"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "epic-impact-artifacts.test.ts: an LLD and a PLAN with an epicImpact render an 'Epic impact analysis' section, one without it renders exactly as before, and a synthesize with a non-null digest and no analysis (or an empty one) is rejected with the reason"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

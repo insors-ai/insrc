@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ed7f7948-9a7f-408a-9f2e-3bfb751f7d2a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T09:33:07.587Z",
+    "epicCreatedAt": "2026-11-24T08:44:39.235Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1b3caadf04023d33",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The steering text",
+      "parent": {
+        "entityId": "STORY-1b3caadf04023d33-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1b3caadf04023d33-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1b3caadf04023d33-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1b3caadf04023d33-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1b3caadf04023d33-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "cca7e96afe006e597ac699c5e36b4b10307b2c7683b0082d093510f1b9016a25",
+        "at": "2026-11-24T09:33:07.587Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T09:33:07.588Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The steering text",
+    "summary": "State the rule inside the existing design.story, plan and build guide sections of src/prompts/steering-block.md (the build section also states the labelled paragraph, the check and that approval is refused without it) and add one line to the skeleton's 'Build / add / implement a feature' route; no marker pair is added or removed; the wording uses EPIC_IMPACT_LABEL. A steering test reads the shipped block (steering-epic-impact.test.ts) and the existing guide-section and injection tests still pass.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "the design.story, plan and build guide sections each state the rule, the build section states the labelled paragraph and the approval refusal, and the skeleton's feature route points at it",
+      "no new marker pair was added and the existing sections are still addressable by name",
+      "the existing guide-section, steering-injection and boot-refresh tests still pass"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "steering-epic-impact.test.ts: the design.story, plan and build guide sections of the shipped steering block each state the rule, the build section states that the BUILD summary must carry the labelled paragraph and that approval is refused without it, the skeleton's feature route points at it, no new marker pair was added, and the existing sections are still addressable by name"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

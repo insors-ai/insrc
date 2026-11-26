@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b4721805-53ef-4b72-b374-ab82fab3ee55",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T09:33:07.582Z",
+    "epicCreatedAt": "2026-11-24T08:44:39.235Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1b3caadf04023d33",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The build implement prompts",
+      "parent": {
+        "entityId": "STORY-1b3caadf04023d33-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1b3caadf04023d33-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1b3caadf04023d33-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "232593af4b69ecf686ecf8e87289b15753e7d412faf4158ee6df9d8bc752d399",
+        "at": "2026-11-24T09:33:07.582Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T09:33:07.583Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The build implement prompts",
+    "summary": "Add the digest and the first action to both build implement renderers (renderImplementPrompt and renderStandaloneImplementPrompt in src/daemon/steps/build-step/render.ts) through a new placeholder in src/prompts/build/implement-task.md that begins the Process with the Epic impact analysis and tells the builder the BUILD summary must open with a paragraph labelled EPIC_IMPACT_LABEL naming each Story the LLD's analysis covered, repeated in its final validate call, and that BUILD approval is refused without it; a first or standalone Story gets only the one-line 'does not apply'. Refresh inventory fixtures only for what this task changes. Tests in render.test.ts.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "the task implement prompt and the standalone implement prompt for a later Story begin their Process with the Epic impact analysis and the digest and tell the builder about the labelled paragraph, the final validate call and the approval refusal",
+      "for a first or standalone Story the prompts gain only the one-line 'does not apply'",
+      "the existing render tests still pass and no inventory test case fails beyond the four that already fail on a clean checkout"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "render.test.ts: the build implement prompt for a later Story begins its Process with the Epic impact analysis and the digest and tells the builder to open its BUILD summary with a paragraph labelled EPIC_IMPACT_LABEL naming each covered Story and that BUILD approval is refused without it, and for a first or standalone Story gains only the one-line 'does not apply'"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

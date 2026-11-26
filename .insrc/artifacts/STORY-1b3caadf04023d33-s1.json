@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-7960ddd7-ed10-4e89-b3c3-ee4b0b198955",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T11:22:09.176Z",
+    "epicCreatedAt": "2026-11-24T08:44:39.235Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1b3caadf04023d33",
+    "storyId": "s1",
+    "envelope": {
+      "description": "",
+      "parent": {
+        "entityId": "EPIC-1b3caadf04023d33",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "7f67311f00c6101c952763f219208b46e606b381c765f6354708dffd623980a3",
+        "at": "2026-11-24T11:22:09.176Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

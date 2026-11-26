@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1795669816506-1r1a4a",
+    "runId": "wf-1795671582643-ok62jv",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-26T05:14:41.036Z",
+    "createdAt": "2026-11-26T05:41:39.167Z",
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
     "attribution": {
       "outputs": [
@@ -15,7 +15,7 @@
         }
       ]
     },
-    "elapsedMs": 264170,
+    "elapsedMs": 116246,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "c3d71313f34bce71",
@@ -27,9 +27,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "93b8e7b6c842a64821bd9d888d8e22d00cf033b67c96b69b95cc5d8304ce13b9",
-        "at": "2026-11-26T05:14:41.125Z",
+        "number": 2,
+        "contentHash": "fe5c847b8105649be8f4cfe45c8909920ba1c84c3366e905c63c9e493b22f3a0",
+        "at": "2026-11-26T05:41:39.270Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -38,26 +38,26 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 1,
+        "revision": 2,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-26T05:20:57.314Z"
+        "at": "2026-11-26T05:42:48.666Z"
       }
     },
-    "revision": 1,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
-    "rangeBase": "af549eef1223eec9ae669bc638cf8d941c7ab3a5"
+    "revision": 2,
+    "rangeBase": "aec8df4e4f85d7361cd9dd76d75a6c05a91c3f6e"
   },
   "body": {
     "summary": {
-      "prose": "Build S4 in twelve bounded tasks, from admission and exclusive store ownership through detached exit observation, authenticated IPC, graceful/immediate shutdown and the real manager lifecycle peer. Run surrounding tests during each task, then one scoped regression and available isolated native qualification after implementation. Production claims require the linked S1/S2 runtime-store and manager-admission corrections; S5 hook flows and unavailable platform routes remain explicitly pending rather than being replaced by fixtures. Seek one final human BUILD approval after the story's required work and validation.",
+      "prose": "Build S4 through the same twelve bounded tasks covering admission, exclusive daemon ownership, detached exit observation, IPC shutdown and manager lifecycle composition. Helper tasks run only their concrete surrounding tests; actual native qualification subjects belong to final T12, followed by the fixed scoped regression and one final human BUILD gate. T1 retains its native lease until actual process exit, because the existing close(void) cannot prove release. S1/S2 production prerequisites, S5 hook flows and unavailable native routes remain explicit gates; no fixture result substitutes for real qualification.",
       "audience": "technical"
     },
     "tasks": [
@@ -76,7 +76,7 @@
         "acceptanceChecks": [
           "Exact installation/release/instance/session/nonce/inventory/purpose/path binding rejects malformed or mismatched evidence before use; no PID/age/endpoint-disappearance inference.",
           "Separate processes cannot own one installation data lease concurrently; wrapper and manager never inherit/retain the daemon data lease or open application stores.",
-          "Lease remains held until store/DB-worker close is proven or actual process exit; unknown native close remains uncertain."
+          "Lease remains held until store/DB-worker close is proven or actual process exit; unknown native close remains uncertain. This wrapper retains its strong native handle until actual process exit and closes application resources through closeResources without treating legacy close(void) as native release evidence."
         ],
         "tests": [
           {
@@ -101,15 +101,11 @@
           },
           {
             "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: Unix-owner-protection-endpoint-length-stale-socket-safety-and-directory-durability"
-          },
-          {
-            "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: Windows-named-pipe-same-user-capability-protection-real-CRT-DLL-exit-and-lock-release"
-          },
-          {
-            "level": "integration",
             "name": "Surrounding regression selector: src/installer/__tests__/controller-store.test.ts"
+          },
+          {
+            "level": "unit",
+            "name": "canonical Unix and Windows lifecycle endpoint and receipt identity validation"
           }
         ]
       },
@@ -143,10 +139,6 @@
           {
             "level": "integration",
             "name": "owner-loss-before-final-grant-denies-start-owner-loss-after-grant-retains-single-owner"
-          },
-          {
-            "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: manager-terminal-loss-retains-wrapper-child-receipt-with-no-inherited-owner-lock"
           },
           {
             "level": "integration",
@@ -212,10 +204,6 @@
           },
           {
             "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: both-delivery-modes-use-verified-separate-runtime-store-and-no-host-fallback"
-          },
-          {
-            "level": "integration",
             "name": "Surrounding regression selector: src/daemon/__tests__/lifecycle-wiring.test.ts"
           },
           {
@@ -269,10 +257,6 @@
           {
             "level": "integration",
             "name": "normal-lifetime-optional-receipt-and-missing-evidence-recovery-remain-truthful"
-          },
-          {
-            "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: manager-terminal-loss-retains-wrapper-child-receipt-with-no-inherited-owner-lock"
           }
         ]
       },
@@ -322,14 +306,6 @@
           {
             "level": "integration",
             "name": "normal-lifetime-optional-receipt-and-missing-evidence-recovery-remain-truthful"
-          },
-          {
-            "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: Unix-owner-protection-endpoint-length-stale-socket-safety-and-directory-durability"
-          },
-          {
-            "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: manager-terminal-loss-retains-wrapper-child-receipt-with-no-inherited-owner-lock"
           }
         ]
       },
@@ -379,14 +355,6 @@
           {
             "level": "integration",
             "name": "failed-or-backpressured-ack-never-triggers-new-immediate-action"
-          },
-          {
-            "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: Unix-owner-protection-endpoint-length-stale-socket-safety-and-directory-durability"
-          },
-          {
-            "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: Windows-named-pipe-same-user-capability-protection-real-CRT-DLL-exit-and-lock-release"
           },
           {
             "level": "integration",
@@ -456,14 +424,6 @@
           },
           {
             "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: Mac/Linux/Windows graceful and immediate exit"
-          },
-          {
-            "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: no PID/kill command execution"
-          },
-          {
-            "level": "integration",
             "name": "Surrounding regression selector: src/daemon/__tests__/shutdown-store-failure.test.ts"
           },
           {
@@ -508,26 +468,6 @@
           {
             "level": "integration",
             "name": "failed-or-backpressured-ack-never-triggers-new-immediate-action"
-          },
-          {
-            "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: Mac/Linux/Windows graceful and immediate exit"
-          },
-          {
-            "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: no PID/kill command execution"
-          },
-          {
-            "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: native DB reopen after immediate self-exit"
-          },
-          {
-            "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: qualified-_Exit-with-native-cleanup-hang-and-atexit-fixture-plus-real-LMDB-Lance-reopen"
-          },
-          {
-            "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: Windows-named-pipe-same-user-capability-protection-real-CRT-DLL-exit-and-lock-release"
           }
         ]
       },
@@ -581,14 +521,6 @@
           },
           {
             "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: restart exact release ready"
-          },
-          {
-            "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: no PID/kill command execution"
-          },
-          {
-            "level": "integration",
             "name": "Surrounding regression selector: src/installer/__tests__/manager.test.ts"
           }
         ]
@@ -637,14 +569,6 @@
           },
           {
             "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: restart exact release ready"
-          },
-          {
-            "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: both-delivery-modes-use-verified-separate-runtime-store-and-no-host-fallback"
-          },
-          {
-            "level": "integration",
             "name": "Surrounding regression selector: src/installer/__tests__/dev-manager.test.ts"
           }
         ]
@@ -689,14 +613,6 @@
           },
           {
             "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: both-delivery-modes-use-verified-separate-runtime-store-and-no-host-fallback"
-          },
-          {
-            "level": "integration",
-            "name": "Fixture/prerequisite for native qualification: leave-installed-host-v2-daemon-and-host-Ollama-untouched-use-only-isolated-test-homes"
-          },
-          {
-            "level": "integration",
             "name": "Surrounding regression selector: src/installer/__tests__/production-peers.test.ts"
           },
           {
@@ -731,7 +647,7 @@
           "c7",
           "c8"
         ],
-        "summary": "After all S4 implementation tasks, run one fixed-manifest installer/lifecycle scoped regression and bounded available isolated sc4 native smoke cases. Record owner prerequisite status and target-specific qualification honestly; S8 retains full release/IDE matrix and S5 retains real hook/journal end-to-end work. Maintain relevant sequence source and present the final human BUILD gate only after S4 task accounting/validation is complete.",
+        "summary": "After all S4 implementation tasks, run one fixed-manifest installer/lifecycle scoped regression and bounded available isolated sc4 native smoke cases. Record owner prerequisite status and target-specific qualification honestly; S8 retains full release/IDE matrix and S5 retains real hook/journal end-to-end work. Maintain relevant sequence source and present the final human BUILD gate only after S4 task accounting/validation is complete. Actual native qualification subjects are assigned only to this final task; earlier helper fixture success cannot stand in for native results.",
         "acceptanceChecks": [
           "After implementation settles, final selected-file manifest covers installer plus changed daemon lifecycle/transport/ownership regressions, fingerprints match, and all owned actors close/dispose. Run only surrounding tests earlier; preserve intentional S2 budgets and S3 209/44 baseline as reference rather than frozen count.",
           "On each available enabled test route, collect actual isolated Linux OrbStack/macOS UTM/Windows runner evidence for graceful drain, explicit immediate, wrapper-observed exit before selected-ready restart, lease release and real LMDB/Lance reopen. Atexit fixture evidence alone cannot qualify native stores or Windows DLL behavior.",
@@ -990,82 +906,60 @@
       {
         "lldStrategyItem": "Mac/Linux/Windows graceful and immediate exit",
         "coveredByTaskIds": [
-          "t7",
-          "t8",
           "t12"
         ]
       },
       {
         "lldStrategyItem": "restart exact release ready",
         "coveredByTaskIds": [
-          "t9",
-          "t10",
           "t12"
         ]
       },
       {
         "lldStrategyItem": "no PID/kill command execution",
         "coveredByTaskIds": [
-          "t7",
-          "t8",
-          "t9",
           "t12"
         ]
       },
       {
         "lldStrategyItem": "native DB reopen after immediate self-exit",
         "coveredByTaskIds": [
-          "t8",
           "t12"
         ]
       },
       {
         "lldStrategyItem": "qualified-_Exit-with-native-cleanup-hang-and-atexit-fixture-plus-real-LMDB-Lance-reopen",
         "coveredByTaskIds": [
-          "t8",
           "t12"
         ]
       },
       {
         "lldStrategyItem": "Unix-owner-protection-endpoint-length-stale-socket-safety-and-directory-durability",
         "coveredByTaskIds": [
-          "t1",
-          "t5",
-          "t6",
           "t12"
         ]
       },
       {
         "lldStrategyItem": "Windows-named-pipe-same-user-capability-protection-real-CRT-DLL-exit-and-lock-release",
         "coveredByTaskIds": [
-          "t1",
-          "t6",
-          "t8",
           "t12"
         ]
       },
       {
         "lldStrategyItem": "manager-terminal-loss-retains-wrapper-child-receipt-with-no-inherited-owner-lock",
         "coveredByTaskIds": [
-          "t2",
-          "t4",
-          "t5",
           "t12"
         ]
       },
       {
         "lldStrategyItem": "both-delivery-modes-use-verified-separate-runtime-store-and-no-host-fallback",
         "coveredByTaskIds": [
-          "t3",
-          "t10",
-          "t11",
           "t12"
         ]
       },
       {
         "lldStrategyItem": "leave-installed-host-v2-daemon-and-host-Ollama-untouched-use-only-isolated-test-homes",
         "coveredByTaskIds": [
-          "t11",
           "t12"
         ]
       }

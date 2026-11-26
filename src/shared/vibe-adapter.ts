@@ -755,40 +755,60 @@ export async function runVibeTurn(options: VibeTurnOptions): Promise<VibeTurnOut
 	// reports it as an unhandled rejection and can crash the host process on an
 	// otherwise-handled, ordinary CLI failure (review finding r3-1).
 	const resultPromise = turn.result;
+	// A no-op observer attached immediately, independent of the real `await`
+	// below: if a callback throws (see the loop below) this function exits
+	// before ever reaching that `await`, and resultPromise could itself go on
+	// to REJECT too (the CLI call failing for its own, unrelated reason) --
+	// this keeps that rejection from ever being unobserved, without changing
+	// what error the caller actually sees (the callback's own throw still
+	// propagates untouched).
+	void resultPromise.catch(() => undefined);
 
 	let sessionId: string | undefined;
 	let assistantEntrySeq = 0;
-	try {
-		for await (const event of turn) {
-			if (event.kind === 'session') {
-				sessionId = event.sessionId;
-				options.onSession?.(event.sessionId);
-			} else if (event.kind === 'status') {
-				// historyLines() needs no id for a 'reasoning' row -- it only checks type.
-				options.onHistory?.('history/entryAdded', { entry: { type: 'reasoning' } });
-			} else if (event.kind === 'assistant-text') {
-				const id = `assistant-${sessionId ?? 'turn'}-${assistantEntrySeq++}`;
-				options.onHistory?.('history/entryAdded', { entry: { id, type: 'message', role: 'assistant', content: [{ type: 'text', text: event.text }] } });
-			} else if (event.kind === 'tool-call') {
-				// generationStatus:'in_progress' is load-bearing: historyLines() only adds
-				// this id to its active-result map when it sees this, which is what lets
-				// the later history/entryUpdated (the tool's result) actually get through
-				// instead of being silently discarded at the active-map lookup.
-				options.onHistory?.('history/entryAdded', { entry: { type: 'effect', id: event.toolCallId, generationStatus: 'in_progress', detail: { toolName: event.toolName, input: event.arguments } } });
-			} else if (event.kind === 'tool-result') {
-				// The companion '/generationStatus' patch clears the active-map entry
-				// historyLines() added above -- without it, every tool call this turn
-				// bridges leaks an entry for the lifetime of the chat session.
-				options.onHistory?.('history/entryUpdated', { entryId: event.toolCallId, patch: [
-					{ path: '/state', value: { status: event.ok ? 'completed' : 'failed', outputText: event.output, ...(event.error !== undefined ? { error: { message: event.error } } : {}) } },
-					{ path: '/generationStatus', value: 'completed' },
-				] });
-			}
+	// Driven manually (not a bare `for await`) so only the ITERATOR's own
+	// rejection is swallowed here -- resultPromise below carries that exact
+	// same underlying error authoritatively. A callback (onSession/onHistory)
+	// throwing is a SEPARATE, genuine event-delivery failure (e.g. historyLines()'s
+	// own active-entry-limit guard) that must propagate and fail the turn even
+	// when the CLI itself went on to exit cleanly -- swallowing it here, as a
+	// blanket try/catch around the whole loop body previously did, silently
+	// turned a real delivery failure into a reported success (review finding
+	// r4-1).
+	const iterator = turn[Symbol.asyncIterator]();
+	for (;;) {
+		let step: IteratorResult<VibeTurnEvent>;
+		try {
+			step = await iterator.next();
+		} catch {
+			break;
 		}
-	} catch {
-		// Swallow here -- a single failure path: resultPromise below rejects
-		// with this exact same error, and awaiting it is what actually
-		// propagates the failure to runVibeTurn's own caller.
+		if (step.done === true) break;
+		const event = step.value;
+		if (event.kind === 'session') {
+			sessionId = event.sessionId;
+			options.onSession?.(event.sessionId);
+		} else if (event.kind === 'status') {
+			// historyLines() needs no id for a 'reasoning' row -- it only checks type.
+			options.onHistory?.('history/entryAdded', { entry: { type: 'reasoning' } });
+		} else if (event.kind === 'assistant-text') {
+			const id = `assistant-${sessionId ?? 'turn'}-${assistantEntrySeq++}`;
+			options.onHistory?.('history/entryAdded', { entry: { id, type: 'message', role: 'assistant', content: [{ type: 'text', text: event.text }] } });
+		} else if (event.kind === 'tool-call') {
+			// generationStatus:'in_progress' is load-bearing: historyLines() only adds
+			// this id to its active-result map when it sees this, which is what lets
+			// the later history/entryUpdated (the tool's result) actually get through
+			// instead of being silently discarded at the active-map lookup.
+			options.onHistory?.('history/entryAdded', { entry: { type: 'effect', id: event.toolCallId, generationStatus: 'in_progress', detail: { toolName: event.toolName, input: event.arguments } } });
+		} else if (event.kind === 'tool-result') {
+			// The companion '/generationStatus' patch clears the active-map entry
+			// historyLines() added above -- without it, every tool call this turn
+			// bridges leaks an entry for the lifetime of the chat session.
+			options.onHistory?.('history/entryUpdated', { entryId: event.toolCallId, patch: [
+				{ path: '/state', value: { status: event.ok ? 'completed' : 'failed', outputText: event.output, ...(event.error !== undefined ? { error: { message: event.error } } : {}) } },
+				{ path: '/generationStatus', value: 'completed' },
+			] });
+		}
 	}
 	const result = await resultPromise;
 	return { sessionId: result.sessionId ?? sessionId ?? '', stopReason: result.exitEvidence?.stopReason };

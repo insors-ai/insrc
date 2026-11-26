@@ -14,7 +14,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -613,5 +613,35 @@ test('a cancel() or deadline that fires after the leader exits cleanly but durin
 		}
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test('runVibeTurn propagates a throwing onSession/onHistory callback as the turn\'s own failure, even when the underlying CLI goes on to exit cleanly -- the r3-1 fix must never swallow a genuine event-delivery failure along with the iterator\'s own rejection (review finding r4-1)', async () => {
+	const cwd = realDir();
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-fake-vibe-r4-'));
+	const bin = join(dir, 'vibe');
+	// A benign fixture: one session row, exit 0 -- matching the reviewer's own repro.
+	writeFileSync(bin, `#!/usr/bin/env node
+let stdin = '';
+for await (const c of process.stdin) stdin += c;
+process.stdout.write(JSON.stringify({ sessionId: 'fixture-session', type: 'message', role: 'assistant', content: [{ type: 'text', text: 'hi' }] }) + '\\n');
+process.exit(0);
+`);
+	chmodSync(bin, 0o755);
+	try {
+		const thrown = new Error('onSession deliberately throws (review finding r4-1 repro)');
+		await assert.rejects(
+			runVibeTurn({
+				command: bin, cwd, timeoutMs: 5_000,
+				agentConfig: { cwd, headless: true },
+				catalog: [],
+				prompt: 'hello',
+				onSession: () => { throw thrown; },
+			}),
+			(err: unknown) => err === thrown,
+		);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+		rmSync(dir, { recursive: true, force: true });
 	}
 });

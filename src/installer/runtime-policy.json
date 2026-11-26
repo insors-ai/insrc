@@ -10,5 +10,74 @@
     "linux-x64": "07c8aafa60644fb81adefa1ee7da860eb1920851ffdc9a37020ab0be47fbc10e",
     "win32-arm64": "d0722fcdefa1c08e4af31809e91ad4f23282f6c535c261607e8aa372d0ce61dd",
     "win32-x64": "877cb93829e14fffbbc7903e7d8037336c9a79f3ea43c5d0b8c2379b79da56de"
+  },
+  "supplemental": {
+    "headers": {
+      "url": "https://nodejs.org/download/release/v22.22.1/node-v22.22.1-headers.tar.gz",
+      "bytes": 9927921,
+      "sha256": "0f76c31ce76a623a6a3a4038cb62eae281b2e33ad189dcf2d514ec32ae74d9b2"
+    },
+    "libraries": {
+      "arm64": {
+        "url": "https://nodejs.org/download/release/v22.22.1/win-arm64/node.lib",
+        "bytes": 2789908,
+        "sha256": "9b75bbc3be72c84f1d41cd6abb6e5ecc333836015e40a6267ce755554874a13a"
+      },
+      "x64": {
+        "url": "https://nodejs.org/download/release/v22.22.1/win-x64/node.lib",
+        "bytes": 2790256,
+        "sha256": "0d8d8bcc11daea60f5dd4da414e72ccb785718345ec8fbec52cfc7d1a2326293"
+      }
+    }
+  },
+  "profiles": {
+    "darwin-arm64": {
+      "profileVersion": "node22-minimal-v1",
+      "archiveBytes": 50134815,
+      "nodeSha256": "245e0321af97d3c21dd4e7104457334dfe3c3ba7982d0db75363e354565f8cbb",
+      "inventorySha256": "e0e9f1ed798739cb51be5c5dd710c304b7fccdde21af345d149a896403bcb6a5",
+      "entries": 4972,
+      "expandedBytes": 183523686
+    },
+    "darwin-x64": {
+      "profileVersion": "node22-minimal-v1",
+      "archiveBytes": 51313142,
+      "nodeSha256": "79d179c289a57a2d2f1b8b1bf6533a987a2751eb9564783ab9746d3563a5f0e3",
+      "inventorySha256": "98275b70b575e1c5f80ed3ed9c2f5d2743c90313cc20060794286b7dcb3e052b",
+      "entries": 4972,
+      "expandedBytes": 186033219
+    },
+    "linux-arm64": {
+      "profileVersion": "node22-minimal-v1",
+      "archiveBytes": 56795036,
+      "nodeSha256": "1ea16f5e8d590ca819f1db81e61a6bc4c8e7d8b69776c9236f8ebbf717113225",
+      "inventorySha256": "d3189509e38e1436f269b1a781568e9e37eca85acb2203e01728f747f4c097af",
+      "entries": 4972,
+      "expandedBytes": 192465838
+    },
+    "linux-x64": {
+      "profileVersion": "node22-minimal-v1",
+      "archiveBytes": 56918660,
+      "nodeSha256": "243fd8938011479f41b3de101842150fa990f33fbbb3f7aabd330857f2d79e1d",
+      "inventorySha256": "f507b8d2fb43cde27d0b572ee73c850dd9ccf2ef1dc1a2a40df5a7aedb0abebd",
+      "entries": 4972,
+      "expandedBytes": 195226274
+    },
+    "win32-arm64": {
+      "profileVersion": "node22-minimal-v1",
+      "archiveBytes": 31689065,
+      "nodeSha256": "993b56091266aec4a41653ea3e70b5b18fadc78952030ca0329309240030859c",
+      "inventorySha256": "592e8a6facd0808f0ca1cec07f0ab54c303641f397e630e2f9689376d8dc98ef",
+      "entries": 4973,
+      "expandedBytes": 150853061
+    },
+    "win32-x64": {
+      "profileVersion": "node22-minimal-v1",
+      "archiveBytes": 35945338,
+      "nodeSha256": "923a41f268ab49ede2e3363fbdd9e790609e385c6f3ca880b4ee9a56a8133e5a",
+      "inventorySha256": "25b01058ecb63642f2852fb0b723e1746d230e4edf037d36bfd74ce02ce92857",
+      "entries": 4973,
+      "expandedBytes": 160715553
+    }
   }
 }

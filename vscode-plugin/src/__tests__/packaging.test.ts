@@ -173,8 +173,8 @@ test('esbuild emits self-contained CJS out/extension.js that loads under an ESM 
     const extSrc = readFileSync(extPath, 'utf8');
     assert.match(extSrc, /vibe-session-worker\.js/, 'the packaged extension launches the Vibe worker');
     const vibeWorker = readFileSync(join(out, 'vibe-session-worker.js'), 'utf8');
-    assert.match(vibeWorker, /config\/model\/write/, 'the packaged Vibe worker includes verified selection');
-    assert.match(vibeWorker, /turn\/interrupt/, 'the packaged Vibe worker includes turn cancellation');
+    assert.match(vibeWorker, /buildSelectionArgs/, 'the packaged Vibe worker includes model/thinking selection (the adapter\'s new-session-only argv)');
+    assert.match(vibeWorker, /killProcessGroup/, 'the packaged Vibe worker includes turn cancellation (the adapter\'s process-group cleanup)');
     assert.match(extSrc, /require\(["']vscode["']\)/, "'vscode' is left as an external require");
     assert.doesNotMatch(extSrc, /\.\.\/\.\.\/src\/shared/, 'the cross-package ../../src import is inlined, not left dangling');
 

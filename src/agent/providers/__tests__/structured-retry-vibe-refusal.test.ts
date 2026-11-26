@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { withStructuredRetry } from '../structured-output.js';
-import { VibeTurnError } from '../../../shared/vibe-session.js';
+import { VibeTurnError } from '../../../shared/vibe-adapter.js';
 
 test('Saved structured retry preserves Vibe refusal identity and never retries', async () => {
 	for (const state of ['not-sent', 'possibly-sent', 'accepted'] as const) {

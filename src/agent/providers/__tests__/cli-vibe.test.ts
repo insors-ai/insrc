@@ -5,69 +5,84 @@
 
 /**
  * The vibe kind of CliProvider, driven against a FAKE `vibe` binary (the same
- * pattern as cli-subprocess.test.ts). Verifies the headless arg shape, the
- * prompt on stdin, the VIBE_ACTIVE_MODEL pin, the session-message JSON parse,
- * the structured retry, and the read-only/edit session flags.
+ * pattern as cli-subprocess.test.ts) -- re-pointed for Epic
+ * unify-vibe-one-plain-cli-adapter, s1/t6: every vibe call now dispatches
+ * through src/shared/vibe-adapter.ts (createVibeAdapter/startTurn), not a
+ * private argv path or the deleted app-server transport. Verifies the
+ * headless arg shape (now including --output-dir), the prompt on stdin, the
+ * session-message JSON parse, the structured retry, the edit-session flag,
+ * the read-only mode's fail-closed refusal (k1, s1 -- no qualification exists
+ * yet), and transient-vs-deterministic retry classification.
+ *
+ * The OLD app-server-specific fixture and its four tests (uncertain-dispatch
+ * replay protection, live JSON-RPC tool-policy verification before dispatch)
+ * are deleted outright, not re-pointed: that whole protocol (session/start,
+ * turn/start-and-wait, runtime/read tool-policy verification) no longer
+ * exists on any code path -- every vibe dispatch is now a single, stateless,
+ * one-shot plain-CLI invocation with no persistent session to verify or
+ * leave in an uncertain state, and the read-only mode refuses before any
+ * dispatch at all (s1) until a later Story's live qualification lands (s2).
  *
  * Run: npx tsx --test src/agent/providers/__tests__/cli-vibe.test.ts
  */
 
 import assert from 'node:assert/strict';
-import { chmodSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
 import { CliProvider, vibeLastAssistantText } from '../cli-provider.js';
-import { ModelResponseShapeError } from '../model-call-error.js';
-import { VibeTurnError } from '../../../shared/vibe-session.js';
+import { VibeReadOnlyUnavailableError } from '../../../shared/vibe-adapter.js';
 
 /**
- * A fake `vibe`: records every invocation (args, VIBE_ACTIVE_MODEL, stdin) as
- * a JSON line in <dir>/calls.jsonl, then behaves per <dir>/mode:
+ * A fake `vibe`: records every invocation (args minus --output-dir's
+ * non-deterministic temp path, stdin) as a JSON line in <dir>/calls.jsonl,
+ * writes export.json to --output-dir same as the real binary, then behaves
+ * per <dir>/mode:
  *   text      — prints a plain answer on stdout, exit 0
- *   json      — prints a session-messages JSON array whose last assistant
- *               message is the JSON payload in <dir>/payload, exit 0
+ *   json      — prints the real journal-entry array shape whose last
+ *               assistant message carries the JSON payload in <dir>/payload
  *   flaky     — call 1: assistant text is NOT JSON; later calls: like json
- *   fail      — exit 2 with a stderr message
+ *   fail      — exit 2 with a transient-looking stderr message
  */
 const FAKE = `#!/usr/bin/env node
-import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 let stdin = '';
 for await (const c of process.stdin) stdin += c;
+const args = process.argv.slice(2);
+const outputDirIdx = args.indexOf('--output-dir');
+const outputDir = outputDirIdx >= 0 ? args[outputDirIdx + 1] : undefined;
+const recordedArgs = outputDirIdx >= 0 ? [...args.slice(0, outputDirIdx), ...args.slice(outputDirIdx + 2)] : args;
+if (outputDir !== undefined) { mkdirSync(outputDir, { recursive: true }); writeFileSync(join(outputDir, 'export.json'), JSON.stringify({ outcome: 'finished', stop_reason: null, config: {} })); }
 const mode = readFileSync(join(here, 'mode'), 'utf8').trim();
-appendFileSync(join(here, 'calls.jsonl'), JSON.stringify({
-  args: process.argv.slice(2),
-  model: process.env.VIBE_ACTIVE_MODEL ?? null,
-  stdin,
-}) + '\\n');
+appendFileSync(join(here, 'calls.jsonl'), JSON.stringify({ args: recordedArgs, stdin }) + '\\n');
 const calls = readFileSync(join(here, 'calls.jsonl'), 'utf8').trim().split('\\n').length;
 if (mode === 'fail') {
-  process.stderr.write('error: 429 rate limit exceeded\\n');
+  process.stderr.write('API Error: 503 service unavailable\\n');
   process.exit(2);
 }
 if (mode === 'text') {
   process.stdout.write('the final answer\\n');
   process.exit(0);
 }
-// json / flaky: a session-messages array; the last assistant message carries the payload.
+// json / flaky: the real journal-entry array shape; the last assistant message carries the payload.
 const payload = readFileSync(join(here, 'payload'), 'utf8');
 const bad = mode === 'flaky' && calls === 1;
-const messages = [
-  { role: 'user', content: [{ type: 'text', text: 'q' }] },
-  { role: 'assistant', content: [{ type: 'tool_call', id: 't1' }] },
-  { role: 'assistant', content: [{ type: 'text', text: bad ? 'sure! here is some prose, not json' : payload }] },
+const entries = [
+  { sessionId: 'fixture-session', type: 'message', role: 'user', content: [{ type: 'text', text: 'q' }] },
+  { sessionId: 'fixture-session', type: 'message', role: 'assistant', content: [{ type: 'text', text: bad ? 'sure! here is some prose, not json' : payload }] },
 ];
-process.stdout.write(JSON.stringify(messages));
+process.stdout.write(JSON.stringify(entries));
 process.exit(0);
 `;
 
 interface FakeVibe {
 	readonly bin: string;
-	readonly calls: () => Array<{ args: string[]; model: string | null; stdin: string }>;
+	readonly calls: () => Array<{ args: string[]; stdin: string }>;
 	readonly cleanup: () => void;
 }
 
@@ -81,7 +96,7 @@ function fakeVibe(mode: string, payload = ''): FakeVibe {
 	writeFileSync(join(dir, 'calls.jsonl'), '');
 	return {
 		bin,
-		calls: () => readFileSync(join(dir, 'calls.jsonl'), 'utf8').trim().split('\n').filter(l => l.length > 0).map(l => JSON.parse(l) as { args: string[]; model: string | null; stdin: string }),
+		calls: () => readFileSync(join(dir, 'calls.jsonl'), 'utf8').trim().split('\n').filter(l => l.length > 0).map(l => JSON.parse(l) as { args: string[]; stdin: string }),
 		cleanup: () => rmSync(dir, { recursive: true, force: true }),
 	};
 }
@@ -115,22 +130,22 @@ test('complete() runs default `vibe -p --output text` with the prompt on stdin',
 		const calls = f.calls();
 		assert.equal(calls.length, 1);
 		assert.deepEqual(calls[0]!.args, ['-p', '--output', 'text']);
-		assert.equal(calls[0]!.model, null);
 		assert.match(calls[0]!.stdin, /## System\nbe terse/);
 		assert.match(calls[0]!.stdin, /hi there/);
 	} finally { f.cleanup(); }
 });
 
-test('complete() without a model leaves VIBE_ACTIVE_MODEL unset (the CLI default applies)', async () => {
+test('complete() without a model adds no --model/--thinking flags (the CLI default applies)', async () => {
 	const f = fakeVibe('text');
 	try {
 		const p = new CliProvider({ kind: 'vibe', binPath: f.bin, timeoutMs: 10_000 });
 		await p.complete([{ role: 'user', content: 'hi' }]);
-		assert.equal(f.calls()[0]!.model, null);
+		assert.ok(!f.calls()[0]!.args.includes('--model'));
+		assert.ok(!f.calls()[0]!.args.includes('--thinking'));
 	} finally { f.cleanup(); }
 });
 
-test('completeStructured() parses the last assistant message of the json output and validates it against the schema', async () => {
+test("completeStructured() parses the last assistant message of the json output and validates it against the schema", async () => {
 	const f = fakeVibe('json', JSON.stringify({ answer: 42 }));
 	try {
 		const p = new CliProvider({ kind: 'vibe', binPath: f.bin, timeoutMs: 10_000 });
@@ -182,188 +197,42 @@ test('runEditSession() runs headless with --auto-approve inside the repo cwd', a
 	} finally { f.cleanup(); }
 });
 
-test('runReadOnlySession() restricts tools to read_file + the insrc MCP tools and validates the schema-shaped answer', async () => {
+test("runReadOnlySession() refuses before any subprocess spawns -- the adapter's fail-closed read-only mode (k1), no qualification exists yet", async () => {
 	const f = fakeVibe('json', JSON.stringify({ verdict: 'holds' }));
 	try {
 		const p = new CliProvider({ kind: 'vibe', binPath: f.bin, timeoutMs: 10_000 });
 		const dir = mkdtempSync(join(tmpdir(), 'insrc-vibe-review-'));
 		try {
 			const reviewSchema = { type: 'object', properties: { verdict: { type: 'string' } }, required: ['verdict'], additionalProperties: false } as const;
-			const out = await p.runReadOnlySession<{ verdict: string }>('review this', reviewSchema, { cwd: dir, deadlineMs: 30_000 });
-			assert.deepEqual(out, { verdict: 'holds' });
-			const c = f.calls()[0]!;
-			assert.deepEqual(c.args, [
-				'-p', '--output', 'json',
-				'--enabled-tools', 'read_file', '--enabled-tools', 'grep',
-				'--enabled-tools', 'mcp_insrc.insrc_analyze', '--enabled-tools', 'mcp_insrc.insrc_analyze_step',
-			]);
+			await assert.rejects(
+				p.runReadOnlySession<{ verdict: string }>('review this', reviewSchema, { cwd: dir, deadlineMs: 30_000 }),
+				(err: unknown) => err instanceof VibeReadOnlyUnavailableError,
+			);
+			assert.equal(f.calls().length, 0, 'no subprocess spawns for a refused read-only request');
 		} finally { rmSync(dir, { recursive: true, force: true }); }
 	} finally { f.cleanup(); }
 });
 
-test('a non-zero vibe exit is a CliExitError naming vibe; a transient 429 is retried on a fresh run', async () => {
+test('a non-zero vibe exit is a VibeTurnError carrying the CLI\'s own stderr text; a transient 503 is retried on a fresh run', async () => {
 	const f = fakeVibe('fail');
 	try {
 		const p = new CliProvider({ kind: 'vibe', binPath: f.bin, timeoutMs: 10_000 });
-		await assert.rejects(p.complete([{ role: 'user', content: 'hi' }]), /vibe exited with 2/);
-		// 429 text is transient: three attempts before the error surfaces.
+		await assert.rejects(p.complete([{ role: 'user', content: 'hi' }]), /service unavailable/);
+		// A transient 503 text is retried: three attempts before the error surfaces.
 		assert.equal(f.calls().length, 3);
 	} finally { f.cleanup(); }
 });
 
-test('Vibe reviewer responses retain strict original nullable semantics without Codex transport decoding',async()=>{
- const schema={type:'object',required:['verdict'],additionalProperties:false,properties:{verdict:{type:'string'},error:{type:'string'}}};
- for(const nullable of [false,true]){
-  const input=nullable?{...schema,properties:{...schema.properties,error:{type:['string','null']}}}:schema;
-  const f=fakeVibe('json',JSON.stringify({verdict:'holds',error:null})),cwd=realpathSync(mkdtempSync(join(tmpdir(),'insrc-vibe-null-check-')));
-  try{
-   const p=new CliProvider({kind:'vibe',binPath:f.bin});const call=()=>p.runReadOnlySession('strict review',input,{cwd,deadlineMs:30000,internalRetry:false});
-   if(nullable)assert.deepEqual(await call(),{verdict:'holds',error:null});
-   else await assert.rejects(call(),(error:unknown)=>error instanceof ModelResponseShapeError&&error.reasons.some(reason=>reason.includes('/error: must be string')));
-  }finally{f.cleanup();rmSync(cwd,{recursive:true,force:true});}
- }
-});
-
-const APP_SERVER = String.raw`#!/usr/bin/env node
-import assert from 'node:assert/strict';
-import { appendFileSync, readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { createInterface } from 'node:readline';
-
-const callsFile = fileURLToPath(new URL('./calls.jsonl', import.meta.url));
-const mode = readFileSync(new URL('./mode', import.meta.url), 'utf8');
-const model = { name: 'mistral-vibe-cli-latest', alias: 'mistral-medium-3.5', thinking: 'low', thinkingLevels: ['low', 'high'] };
-let policy;
-let activeModel = model;
-const sessionId = 'native-session';
-const reply = (id, result) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id, result }) + '\n');
-const event = (method, params) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', method, params: { ...params, sessionId } }) + '\n');
-createInterface({ input: process.stdin }).on('line', line => {
-	const { method, params, id } = JSON.parse(line);
-	switch (method) {
-		case 'initialize': reply(id, {}); return;
-		case 'initialized': return;
-		case 'session/start':
-			assert.equal(params.agentConfig.headless, true);
-			assert.equal(params.agentConfig.cwd, process.cwd());
-			policy = params.agentConfig;
-			reply(id, { state: { session: { id: sessionId } } });
-			return;
-		case 'runtime/read':
-			reply(id, { runtime: {
-				config: { activeModel, models: [model] },
-				tools: (mode === 'unsafe' ? ['write_file']
-					: mode === 'missing-both-analyze' ? ['read_file', 'grep']
-					: mode === 'missing-analyze-step' ? ['read_file', 'grep', 'mcp_insrc.insrc_analyze']
-					: mode === 'missing-analyze' ? ['read_file', 'grep', 'mcp_insrc.insrc_analyze_step']
-					: mode === 'empty-tools' ? []
-					: ['read_file', 'grep', 'mcp_insrc.insrc_analyze', 'mcp_insrc.insrc_analyze_step']).map(name => ({ name })),
-				bypassToolPermissions: policy.autoApprove,
-			} });
-			return;
-		case 'config/model/write':
-			assert.deepEqual(params, { sessionId, modelAlias: model.alias, reasoningEffort: 'high', sessionOnly: true });
-			activeModel = { ...model, thinking: params.reasoningEffort };
-			reply(id, { status: 'applied' });
-			return;
-		case 'turn/start': {
-			assert.equal(activeModel.thinking, 'high');
-			appendFileSync(callsFile, JSON.stringify({ policy, prompt: params.message[0].text }) + '\n');
-			const turn = { id: 'turn-id', sessionId, status: 'in_progress' };
-			if (mode === 'lost') {
-				process.exit(1);
-				return;
-			}
-			reply(id, { turn });
-			event('turn/started', { turn });
-			if (mode === 'accepted') {
-				event('turn/completed', { turn: { ...turn, status: 'failed', error: { message: '429 rate limit exceeded' } } });
-				return;
-			}
-			const count = readFileSync(callsFile, 'utf8').trim().split('\n').length;
-			const text = mode === 'flaky' && count === 1 ? 'not JSON' : '{"answer":';
-			const content = [{ type: 'text', text }, ...(text === 'not JSON' ? [] : [{ type: 'text', text: '3}' }])];
-			event('history/entryAdded', { turnId: turn.id, entry: { type: 'message', role: 'assistant', id: 'answer', content } });
-			if (text !== 'not JSON') event('history/entryUpdated', { turnId: turn.id, entryId: 'answer', patch: [
-				{ op: 'append', path: '/content/0/text', value: '4' },
-				{ op: 'replace', path: '/content/1/text', value: '2}' },
-			] });
-			event('turn/completed', { turn: { ...turn, status: 'completed' } });
-			return;
-		}
-		default: throw new Error('unexpected method ' + method);
-	}
-});
-`;
-
-function fakeAppServer(mode: string) {
-	const cwd = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-vibe-server-')));
-	const bin = join(cwd, 'app-server.mjs');
-	const callsPath = join(cwd, 'calls.jsonl');
-	writeFileSync(bin, APP_SERVER, { mode: 0o755 });
-	writeFileSync(join(cwd, 'mode'), mode);
-	writeFileSync(callsPath, '');
-	return {
-		cwd,
-		provider: new CliProvider({ kind: 'vibe', vibeAppServerPath: bin, model: 'mistral-vibe-cli-latest', effort: 'high', timeoutMs: 10_000 }),
-		calls: () => readFileSync(callsPath, 'utf8').trim().split('\n').filter(Boolean)
-			.map(line => JSON.parse(line) as { policy: { autoApprove: boolean; enabledTools?: string[] }; prompt: string }),
-		cleanup: () => rmSync(cwd, { recursive: true, force: true }),
-	};
-}
-
-const USER_MESSAGES = [{ role: 'user', content: 'do the work' }] as const;
-
-test('explicit Vibe selections do not replay an uncertain turn through any daemon entry point', async () => {
-	for (const [mode, dispatchState] of [['lost', 'possibly-sent'], ['accepted', 'accepted']] as const) {
-		const fixture = fakeAppServer(mode);
-		const { provider, cwd } = fixture;
+test('Vibe structured completion retains strict original nullable semantics without Codex transport decoding', async () => {
+	const schema = { type: 'object', required: ['verdict'], additionalProperties: false, properties: { verdict: { type: 'string' }, error: { type: 'string' } } };
+	for (const nullable of [false, true]) {
+		const input = nullable ? { ...schema, properties: { ...schema.properties, error: { type: ['string', 'null'] } } } : schema;
+		const f = fakeVibe('json', JSON.stringify({ verdict: 'holds', error: null }));
 		try {
-			const calls = [
-				() => provider.complete([...USER_MESSAGES], { cwd }),
-				() => provider.completeStructured([...USER_MESSAGES], SCHEMA, { cwd }),
-				() => provider.runEditSession('edit', { cwd }),
-				() => provider.runReadOnlySession('review', SCHEMA, { cwd, deadlineMs: 10_000 }),
-			];
-			for (const [index, run] of calls.entries()) {
-				await assert.rejects(run, error => error instanceof VibeTurnError && error.dispatchState === dispatchState);
-				assert.equal(fixture.calls().length, index + 1);
-			}
-			assert.equal(fixture.calls()[2]?.policy.autoApprove, true);
-			assert.deepEqual(fixture.calls()[3]?.policy.enabledTools, ['read_file', 'grep', 'mcp_insrc.insrc_analyze', 'mcp_insrc.insrc_analyze_step']);
-		} finally { fixture.cleanup(); }
-	}
-});
-
-test('explicit Vibe structured completion repairs received schema output and honors its attempt budget', async () => {
-	const retry = fakeAppServer('flaky');
-	const oneAttempt = fakeAppServer('flaky');
-	try {
-		assert.deepEqual(await retry.provider.completeStructured([...USER_MESSAGES], SCHEMA, { cwd: retry.cwd }), { answer: 42 });
-		assert.equal(retry.calls().length, 2);
-		assert.match(retry.calls()[1]!.prompt, /not JSON|Unexpected token/);
-		await assert.rejects(oneAttempt.provider.completeStructured([...USER_MESSAGES], SCHEMA, { cwd: oneAttempt.cwd, internalRetry: false }), /failed after 1 attempts/);
-		assert.equal(oneAttempt.calls().length, 1);
-		const signal = AbortSignal.abort();
-		await assert.rejects(retry.provider.completeStructured([...USER_MESSAGES], SCHEMA, { cwd: retry.cwd, signal }), /abort/i);
-		assert.equal(retry.calls().length, 2);
-	} finally { retry.cleanup(); oneAttempt.cleanup(); }
-});
-
-test('explicit Vibe review refuses unverified tool policy before dispatch', async () => {
-	const fixture = fakeAppServer('unsafe');
-	try {
-		await assert.rejects(fixture.provider.runReadOnlySession('review', SCHEMA, { cwd: fixture.cwd, deadlineMs: 10_000 }), /did not verify the read-only tool policy/);
-		assert.equal(fixture.calls().length, 0);
-	} finally { fixture.cleanup(); }
-});
-
-test('explicit Vibe review refuses when a required analyze tool is missing, including an empty tools array', async () => {
-	for (const mode of ['missing-both-analyze', 'missing-analyze', 'missing-analyze-step', 'empty-tools']) {
-		const fixture = fakeAppServer(mode);
-		try {
-			await assert.rejects(fixture.provider.runReadOnlySession('review', SCHEMA, { cwd: fixture.cwd, deadlineMs: 10_000 }), /did not verify the read-only tool policy/);
-			assert.equal(fixture.calls().length, 0);
-		} finally { fixture.cleanup(); }
+			const p = new CliProvider({ kind: 'vibe', binPath: f.bin, timeoutMs: 10_000 });
+			const call = () => p.completeStructured([{ role: 'user', content: 'strict review' }], input, { internalRetry: false });
+			if (nullable) assert.deepEqual(await call(), { verdict: 'holds', error: null });
+			else await assert.rejects(call(), /validation failed/);
+		} finally { f.cleanup(); }
 	}
 });

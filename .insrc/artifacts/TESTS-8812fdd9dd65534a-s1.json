@@ -1,0 +1,142 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 3,
+        "contentHash": "f63738b8cbc27c29bcdc0e2f14203bf7ec7ade891ef7993c3a6651c01757cc32",
+        "at": "2026-11-25T13:29:25.101Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "8812fdd9dd65534a",
+    "storyId": "s1",
+    "createdAt": "2026-11-25T13:25:55.134Z",
+    "updatedAt": "2026-11-25T13:29:25.025Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-25T13:08:32.676Z",
+    "epicSlug": "refresh-shipped-gpt-claude-models",
+    "revision": 3
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "cdfa0b5e2",
+        "ranAt": "2026-11-25T13:29:25.025Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/config/__tests__/config-reconcile-smoke.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/config/__tests__/config-reconcile-smoke.test.ts"
+            ]
+          },
+          {
+            "name": "src/daemon/__tests__/model-catalog-asset.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/__tests__/model-catalog-asset.test.ts"
+            ]
+          },
+          {
+            "name": "src/daemon/__tests__/models-daemon-s3.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/__tests__/models-daemon-s3.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/config-reconcile-smoke.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 396,
+            "titles": [
+              {
+                "title": "boot against a legacy config: retired keys stripped, live namespaces byte-identical, then converges",
+                "result": "pass"
+              },
+              {
+                "title": "first boot against an empty home → surviving former-literal keys written, retired keys NOT written, canonical surfaces present",
+                "result": "pass"
+              },
+              {
+                "title": "update chain: newly-catalogued key added, type-invalid key repaired, retired keys pruned, live namespaces unchanged; repeat writes nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 710,
+            "titles": [
+              {
+                "title": "model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today's models and aliases; its tier defaults equal DEFAULT_TIERS; the installer reads its defaults from the file; the summariser comes from summariserModel",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimit",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: every shipped Ollama model has memoryMb and the build gate passes",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: the shipped file validates, lists ollama-claude after the existing families, and every host-family model has hosting 'cloud' with its efforts",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: the shipped cli-vibe family pins the runtime-verified Mistral models and tier defaults (ISSUE-de3ab23659bc21fd)",
+                "result": "pass"
+              },
+              {
+                "title": "T9-catalog-large4-entry-verified-efforts: the shipped cli-vibe family carries the versioned mistral-large-4 id with only runtime-verified efforts, and uncatalogued selections stay refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/models-daemon-s3.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5000,
+            "titles": [
+              {
+                "title": "models-daemon-s3.test.ts: a real daemon removes byRepo tiers at boot with warnings and models.resolveRole returns the global tier's model for a repo-chosen tier",
+                "result": "pass"
+              },
+              {
+                "title": "models-daemon-s3.test.ts: a cold start with an alternate catalog changing toolLoopModel uses the reconciled coreModel",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795612089739-s9zvac",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-25T13:08:32.676Z",
+    "epicCreatedAt": "2026-11-25T13:08:32.676Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 22937,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "8812fdd9dd65534a",
+    "epicSlug": "refresh-shipped-gpt-claude-models",
+    "standalone": true,
+    "magnitude": "small",
+    "kind": "change",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4389c50dda86c5ad5bc2356a9e0d3d0432612da8f9f1e525f181c036293f4a83",
+        "at": "2026-11-25T13:08:32.686Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T13:13:22.803Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "8812fdd9dd65534a",
+      "slug": "EPIC-8812fdd9dd65534a"
+    }
+  },
+  "body": {
+    "title": "Refresh shipped GPT and Claude models",
+    "reproduction": "Update the repository model catalog so daemon releases ship the newer GPT and Claude model choices and defaults. Preserve existing saved pins.",
+    "rootCause": "The shipped catalog still defaults Codex to GPT-6 Astra and GPT-6.1 Sol and lists Claude Sonnet 5 and Fable 5.1 as the current entries for those model lines. [[c1]]",
+    "fixIntent": "Ship GPT-6.2 Astra and Sol as Codex core and mid defaults. Map sonnet to Claude Sonnet 5.5 and list Fable 5.2. Keep prior IDs selectable, preserve explicit pins and effort during update, and verify live CLI availability, built asset delivery, installer defaults, and update reconciliation. [[c1]]"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/assets/models/cloud-model-catalog.json"
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 4,
+        "contentHash": "0fcb60aa4a5e30fb94db3fb45be60a786855e53829947b8f397bb6d408773fa2",
+        "at": "2026-11-25T13:30:20.074Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 4,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-25T13:33:40.397Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-1e9c24df-dbb1-453c-a0ea-52b92945ef95",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-25T13:14:24.797Z",
+    "epicCreatedAt": "2026-11-25T13:08:32.676Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8812fdd9dd65534a",
+    "storyId": "s1",
+    "revision": 4,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "epicSlug": "refresh-shipped-gpt-claude-models",
+    "updatedAt": "2026-11-25T13:29:25.025Z"
+  },
+  "body": {
+    "focus": "Ship GPT-6.2 Astra and Sol as Codex core and mid defaults. Map sonnet to Claude Sonnet 5.5 and list Fable 5.2. Keep prior IDs selectable, preserve explicit pins and effort during update, and verify live CLI availability, built asset delivery, installer defaults, and update reconciliation.",
+    "producesLld": false,
+    "commit": "02fa0a28a",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Captured live CLI output and installer step-4b dry-run output are in docs/standalone/refresh-shipped-gpt-claude-models-E202611258812fdd9/S001/verification.md. Both GPT models and both Claude models completed with matching CLI-reported identity. Both canonical installer dry runs exited zero with expected defaults. The full installer suite separately fails the pre-existing byte equality check between installer script copies.",
+    "testRecord": {
+      "md": "docs/standalone/refresh-shipped-gpt-claude-models-E202611258812fdd9/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T13:29:25.025Z"
+      },
+      {
+        "target": {
+          "file": "src/assets/models/cloud-model-catalog.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T13:29:25.025Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/config-reconcile-smoke.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T13:29:25.025Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/model-catalog-asset.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T13:29:25.025Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/models-daemon-s3.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T13:29:25.025Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/phases/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-25T13:29:25.025Z"
+      }
+    ]
+  },
+  "citations": []
+}

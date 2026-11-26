@@ -457,30 +457,30 @@ test('streaming mode flushes a final journal row that has no trailing newline (r
 	}
 });
 
-test("a mutating (approval-bearing) turn's VibeTurnError carries mutating:true once dispatch is uncertain; a non-mutating turn's does not (review finding 3)", async () => {
+test("a VibeTurnError's mutating flag is true for every approval EXCEPT 'manual' -- the installed CLI's own default_approval_policy config setting (accept-edits by default) governs an omitted/'default' approval, so only 'manual' (--approval-policy ask, which the CLI denies outright in headless mode) is verified non-mutating (review finding r2-1)", async () => {
 	const cwd = realDir();
 	try {
-		{
+		for (const approval of ['auto', 'edit-auto', 'default', undefined] as const) {
 			const { child, emitter } = fakeChild();
 			const deps: VibeAdapterDeps = { spawn: () => child, mkdtemp: async () => realDir(), rm: async () => undefined, readFile: async () => { throw new Error('no export'); } };
 			const adapter = createVibeAdapter({ cwd, processGroup: 'adapter-owned' }, deps);
-			const turn = adapter.startTurn(baseRequest({ approval: 'auto' }));
+			const turn = adapter.startTurn(baseRequest({ approval }));
 			turn.result.catch(() => undefined);
 			const consume = (async () => { for await (const _e of turn) { /* drain */ } })();
 			await tick();
 			emitter.emit('exit', 1, null);
-			await assert.rejects(consume, (err: unknown) => err instanceof Error && err.name === 'VibeTurnError' && (err as { mutating?: boolean }).mutating === true && (err as { dispatchState?: string }).dispatchState === 'possibly-sent');
+			await assert.rejects(consume, (err: unknown) => err instanceof Error && err.name === 'VibeTurnError' && (err as { mutating?: boolean }).mutating === true && (err as { dispatchState?: string }).dispatchState === 'possibly-sent', `approval:${String(approval)} must be classified mutating`);
 		}
 		{
 			const { child, emitter } = fakeChild();
 			const deps: VibeAdapterDeps = { spawn: () => child, mkdtemp: async () => realDir(), rm: async () => undefined, readFile: async () => { throw new Error('no export'); } };
 			const adapter = createVibeAdapter({ cwd, processGroup: 'adapter-owned' }, deps);
-			const turn = adapter.startTurn(baseRequest());
+			const turn = adapter.startTurn(baseRequest({ approval: 'manual' }));
 			turn.result.catch(() => undefined);
 			const consume = (async () => { for await (const _e of turn) { /* drain */ } })();
 			await tick();
 			emitter.emit('exit', 1, null);
-			await assert.rejects(consume, (err: unknown) => err instanceof Error && err.name === 'VibeTurnError' && (err as { mutating?: boolean }).mutating === false);
+			await assert.rejects(consume, (err: unknown) => err instanceof Error && err.name === 'VibeTurnError' && (err as { mutating?: boolean }).mutating === false, "approval:'manual' must be the only non-mutating classification");
 		}
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });

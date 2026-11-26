@@ -14,17 +14,22 @@ function historyLines(emit: (line: Row) => void): NonNullable<VibeTurnOptions['o
   return (method, params) => {
     if (method === 'history/entryAdded') {
       const entry = row(params['entry']);
-      const id = entry?.['id'];
-      if (entry === undefined || typeof id !== 'string') return;
+      if (entry === undefined) return;
       const type = entry['type'];
+      // A 'reasoning' marker carries no id (and none is bridged above for it) --
+      // only 'message'/'effect' need one, to key the active-result map below.
+      if (type === 'reasoning') {
+        emit({ type: 'insrc-vibe-thinking' });
+        return;
+      }
+      const id = entry['id'];
+      if (typeof id !== 'string') return;
       if (entry['generationStatus'] === 'in_progress' && active.size >= 128) {
         throw new Error('Vibe sent too many simultaneous history entries');
       }
       if (type === 'message' && entry['role'] === 'assistant') {
         if (entry['generationStatus'] === 'in_progress') active.set(id, type);
         emit({ type, role: 'assistant', content: entry['content'] });
-      } else if (type === 'reasoning') {
-        emit({ type: 'insrc-vibe-thinking' });
       } else if (type === 'effect') {
         const detail = row(entry['detail']);
         const name = detail?.['toolName'];

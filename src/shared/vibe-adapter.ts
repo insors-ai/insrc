@@ -156,11 +156,18 @@ export function vibeDispatchState(error: unknown): VibeDispatchState | undefined
 
 /** Re-homed verbatim from src/shared/vibe-session.ts -- structured-output.ts's retry
  *  classifier keeps using `instanceof VibeTurnError` as the non-retryable refusal marker.
- *  `mutating` marks a turn that could have executed an approved tool call (any approval
- *  other than 'default'/undefined, e.g. runEditSession's 'auto') -- withTransientRetry
- *  uses it together with `dispatchState` to refuse replaying a turn whose effects on disk
- *  may already have happened; a read/generate-only turn (no approval) carries no such risk
- *  and stays retryable even once dispatch is uncertain. */
+ *  `mutating` marks a turn that could have executed an approved tool call --
+ *  withTransientRetry uses it together with `dispatchState` to refuse replaying a turn
+ *  whose effects on disk may already have happened. Only 'manual' (--approval-policy
+ *  ask) is verified safe: the installed CLI denies every tool call outright in headless
+ *  mode when there is no one to answer (live-confirmed -- "needs approval, which a
+ *  headless run cannot give"), so a turn dispatched that way can never have mutated
+ *  anything. Every other value, INCLUDING 'default'/undefined, is treated as mutating:
+ *  the installed CLI's own `default_approval_policy` config setting governs an omitted
+ *  policy (its own --help: "Defaults to the 'default_approval_policy' config setting"),
+ *  and that setting's own default is 'accept-edits' -- an omitted policy can silently
+ *  approve an edit before a later transient failure, which review finding r2-1 caught
+ *  this class had wrongly assumed was safe to replay. */
 export class VibeTurnError extends Error {
 	constructor(
 		readonly dispatchState: VibeDispatchState,
@@ -425,7 +432,7 @@ async function runTurn(
 	rejectResult: (error: Error) => void,
 ): Promise<void> {
 	const adapterOwned = context.processGroup === 'adapter-owned';
-	const mutating = request.approval !== undefined && request.approval !== 'default';
+	const mutating = request.approval !== 'manual';
 	let tempDir: string | undefined;
 	let child: VibeChildProcess | undefined;
 	let dispatchState: VibeDispatchState = 'not-sent';
@@ -435,6 +442,7 @@ async function runTurn(
 	let stderrText = '';
 	let deadlineTimer: ReturnType<typeof setTimeout> | undefined;
 	let cancelled = false;
+	let deadlineExpired = false;
 
 	function killNow(): void {
 		if (child === undefined) return;
@@ -442,6 +450,7 @@ async function runTurn(
 		else child.kill('SIGKILL');
 	}
 	function onAbort(): void { cancelled = true; killNow(); }
+	function onDeadline(): void { deadlineExpired = true; killNow(); }
 	// A plain function (not a bare property read) so TypeScript never narrows this
 	// across statements -- AbortSignal.aborted is mutable between every check here.
 	function signalAborted(): boolean { return request.signal?.aborted === true; }
@@ -473,7 +482,7 @@ async function runTurn(
 
 			request.signal?.addEventListener('abort', onAbort, { once: true });
 			if (signalAborted()) onAbort();
-			if (request.deadlineMs !== undefined) deadlineTimer = setTimeout(killNow, request.deadlineMs);
+			if (request.deadlineMs !== undefined) deadlineTimer = setTimeout(onDeadline, request.deadlineMs);
 
 			let buffer = '';
 			function handleLine(line: string): void {
@@ -526,6 +535,13 @@ async function runTurn(
 				child!.on('close', code => settle({ code, spawnError: undefined }));
 			});
 
+			// The termination reason is tracked independently of the exit code: a
+			// descendant that keeps stdio open past the leader's own clean exit can
+			// let 'close' settle with code 0 well after a cancel()/deadline already
+			// fired during that drain -- checked here, unconditionally, before any
+			// code-based success/failure branching below ever runs.
+			if (cancelled) throw new Error('Vibe turn aborted during output drain');
+			if (deadlineExpired) throw new Error(`Vibe turn exceeded its deadline (${request.deadlineMs}ms) during output drain`);
 			if (exit.spawnError !== undefined) throw exit.spawnError;
 			if (exit.code !== 0) {
 				const selectionMatch = MODEL_SELECTION_FAILURE.exec(stderrText);

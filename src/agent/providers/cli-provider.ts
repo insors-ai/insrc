@@ -525,7 +525,12 @@ export class CliProvider implements LLMProvider {
 					stopReason: 'end_turn' as const,
 				};
 			}
-			const result = await this.dispatchVibeTurn({ prompt, outputMode: 'text', mode: 'default', approval: undefined }, this.execIn(opts?.cwd, undefined, opts?.signal));
+			// approval:'manual' (--approval-policy ask) denies every tool call outright
+			// in headless mode (live-confirmed) -- this capability declares
+			// toolCalling:false above, and an omitted policy would otherwise inherit
+			// whatever the installed CLI's own config default is (accept-edits by
+			// default), letting a plain completion silently mutate the checkout.
+			const result = await this.dispatchVibeTurn({ prompt, outputMode: 'text', mode: 'default', approval: 'manual' }, this.execIn(opts?.cwd, undefined, opts?.signal));
 			return {
 				text: result.text,
 				stopReason: 'end_turn' as const,
@@ -574,14 +579,17 @@ export class CliProvider implements LLMProvider {
 				assertConnectionProviderAdmission(execution);
 				return result;
 			} catch (err) {
-				// A one-shot CLI re-invocation is safe to retry when the turn could
-				// only ever read/generate (complete, completeStructuredVibe,
-				// readOnlySessionOnce — no approved tool execution). runEditSession's
-				// approval:'auto' turn is different: an already-uncertain dispatch
-				// (the CLI may have executed file-modifying tool calls before the
-				// transient failure) must never be replayed against the now-mutated
-				// checkout, exactly as the old app-server's dispatchState guard
-				// protected its own persistent-session uncertain-write risk.
+				// A one-shot CLI re-invocation is safe to retry only when the turn was
+				// dispatched with approval:'manual' (--approval-policy ask), which the
+				// installed CLI denies every tool call under in headless mode -- so it
+				// could never have mutated anything (complete, completeStructuredVibe:
+				// both dispatch that way). Any other approval, including an omitted one
+				// (readOnlySessionOnce refuses before dispatch; runEditSession's
+				// approval:'auto' is explicitly mutating), may have executed a
+				// file-modifying tool call before the transient failure and must never
+				// be replayed against the now-possibly-mutated checkout -- exactly as
+				// the old app-server's dispatchState guard protected its own
+				// persistent-session uncertain-write risk.
 				if (err instanceof VibeTurnError && err.mutating && err.dispatchState !== 'not-sent') throw err;
 				assertConnectionProviderAdmission(execution);
 				lastErr = err;
@@ -718,7 +726,10 @@ export class CliProvider implements LLMProvider {
 		return withStructuredRetry<T>(
 			async (note) => {
 				const prompt = serialiseMessages(messages) + schemaNote + (note !== undefined ? `\n\n${note}` : '');
-				const result = await this.dispatchVibeTurn({ prompt, outputMode: 'json', mode: 'default', approval: undefined }, this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal));
+				// approval:'manual' -- see complete()'s identical comment: denies every
+				// tool call outright in headless mode, instead of inheriting the
+				// installed CLI's own (accept-edits-by-default) config.
+				const result = await this.dispatchVibeTurn({ prompt, outputMode: 'json', mode: 'default', approval: 'manual' }, this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal));
 				return JSON.parse(result.text) as unknown;
 			},
 			(raw) => validateAgainstSchema<T>(schema, raw, opts?.connectionExecution),

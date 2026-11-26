@@ -67,10 +67,14 @@ test("runVibeChatJob through the adapter's runVibeTurn — the chat worker's obs
 	}
 });
 
-/** A fake `vibe` that emits a full turn: a reasoning row, a tool-call-and-result
- *  'effect' row, then the final assistant message -- proving the chat worker's
- *  line protocol carries a correlated tool call + result and a reasoning marker,
- *  not just the assistant text (review finding 4). */
+/** A fake `vibe` that emits a full turn: a reasoning row (the one that also
+ *  carries the session id), two DISTINCT tool-call-and-result 'effect' rows,
+ *  a second reasoning row (session already known, so this one can only reach
+ *  the chat through the status-event bridge, not onSession's own marker),
+ *  then the final assistant message -- proving the chat worker's line
+ *  protocol carries each correlated tool call + result without conflating
+ *  them, and a reasoning marker that is not merely onSession's own one-shot
+ *  marker in disguise (review finding r2-2). */
 const FAKE_VIBE_WITH_TOOL = `#!/usr/bin/env node
 let stdin = '';
 for await (const c of process.stdin) stdin += c;
@@ -81,6 +85,12 @@ const rows = [
     detail: { toolName: 'bash', input: { command: 'ls' } },
     state: { status: 'completed', outputText: 'file.txt' },
   },
+  {
+    sessionId: 'fixture-session-2', type: 'effect', toolCallId: 'tc-2',
+    detail: { toolName: 'bash', input: { command: 'pwd' } },
+    state: { status: 'completed', outputText: '/work' },
+  },
+  { sessionId: 'fixture-session-2', type: 'reasoning', text: 'thinking some more' },
   { sessionId: 'fixture-session-2', type: 'message', role: 'assistant', content: [{ type: 'text', text: 'done' }] },
 ];
 for (const row of rows) process.stdout.write(JSON.stringify(row) + '\\n');
@@ -95,7 +105,7 @@ function makeFakeVibeWithTool(): { readonly dir: string; readonly bin: string } 
 	return { dir, bin };
 }
 
-test('runVibeChatJob bridges a correlated tool call + result and a reasoning marker through the real worker line protocol (review finding 4)', async () => {
+test('runVibeChatJob bridges distinct correlated tool call + result pairs without conflation, and a reasoning marker that is not just onSession\'s own one-shot marker (review finding r2-2)', async () => {
 	const { dir, bin } = makeFakeVibeWithTool();
 	try {
 		const lines: string[] = [];
@@ -108,15 +118,23 @@ test('runVibeChatJob bridges a correlated tool call + result and a reasoning mar
 		);
 		assert.equal(exitCode, 0);
 		const rows = lines.map(l => JSON.parse(l) as Record<string, unknown>);
-		assert.ok(rows.some(r => r['type'] === 'insrc-vibe-thinking'), 'the reasoning row must bridge to a thinking marker');
-		const callRow = rows.find(r => Array.isArray(r['content']) && (r['content'] as Array<Record<string, unknown>>).some(c => c['type'] === 'tool_call'));
-		assert.ok(callRow !== undefined, 'the tool call must be emitted as one message row');
-		const toolCallId = ((callRow?.['content'] as Array<Record<string, unknown>>)[0] as Record<string, unknown>)['id'];
-		const resultRow = rows.find(r => Array.isArray(r['content']) && (r['content'] as Array<Record<string, unknown>>).some(c => c['type'] === 'tool_result' && c['tool_call_id'] === toolCallId));
-		assert.ok(resultRow !== undefined, 'the correlated tool result must reach the chat, not be discarded at the active-map lookup');
-		const resultContent = (resultRow?.['content'] as Array<Record<string, unknown>>)[0] as Record<string, unknown>;
-		assert.equal(resultContent['content'], 'file.txt');
-		assert.equal(resultContent['is_error'], false);
+		const thinkingRows = rows.filter(r => r['type'] === 'insrc-vibe-thinking');
+		// The first reasoning row fires BOTH onSession's own one-shot marker (it
+		// is also the row that first carries the session id) AND the bridged
+		// 'status' event every reasoning row produces; the second reasoning row
+		// (session already known) can only reach the chat through that same
+		// status-event bridge -- three markers total proves the bridge itself
+		// emits, independently of onSession.
+		assert.equal(thinkingRows.length, 3, 'the session-open marker, its own status-bridged marker, and the later reasoning row\'s status-bridged marker must all reach the chat');
+		for (const [toolCallId, toolOutput] of [['tc-1', 'file.txt'], ['tc-2', '/work']] as const) {
+			const callRow = rows.find(r => Array.isArray(r['content']) && (r['content'] as Array<Record<string, unknown>>).some(c => c['type'] === 'tool_call' && c['id'] === toolCallId));
+			assert.ok(callRow !== undefined, `the ${toolCallId} tool call must be emitted as its own message row`);
+			const resultRow = rows.find(r => Array.isArray(r['content']) && (r['content'] as Array<Record<string, unknown>>).some(c => c['type'] === 'tool_result' && c['tool_call_id'] === toolCallId));
+			assert.ok(resultRow !== undefined, `the ${toolCallId} correlated tool result must reach the chat, not be discarded or conflated with the other call`);
+			const resultContent = (resultRow?.['content'] as Array<Record<string, unknown>>)[0] as Record<string, unknown>;
+			assert.equal(resultContent['content'], toolOutput);
+			assert.equal(resultContent['is_error'], false);
+		}
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
 	}

@@ -121,7 +121,7 @@ test('vibeLastAssistantText: bare array, wrapped messages, string content, no as
 	assert.throws(() => vibeLastAssistantText(JSON.stringify({ nope: 1 })), /did not print a message array/);
 });
 
-test('complete() runs default `vibe -p --output text` with the prompt on stdin', async () => {
+test("complete() runs `vibe -p --output text --approval-policy ask` with the prompt on stdin -- the explicit 'ask' policy (review finding r2-1) denies every tool call outright in headless mode instead of inheriting the installed CLI's own (accept-edits-by-default) config", async () => {
 	const f = fakeVibe('text');
 	try {
 		const p = new CliProvider({ kind: 'vibe', binPath: f.bin, timeoutMs: 10_000 });
@@ -129,7 +129,7 @@ test('complete() runs default `vibe -p --output text` with the prompt on stdin',
 		assert.equal(r.text, 'the final answer');
 		const calls = f.calls();
 		assert.equal(calls.length, 1);
-		assert.deepEqual(calls[0]!.args, ['-p', '--output', 'text']);
+		assert.deepEqual(calls[0]!.args, ['-p', '--output', 'text', '--approval-policy', 'ask']);
 		assert.match(calls[0]!.stdin, /## System\nbe terse/);
 		assert.match(calls[0]!.stdin, /hi there/);
 	} finally { f.cleanup(); }
@@ -153,7 +153,7 @@ test("completeStructured() parses the last assistant message of the json output 
 		assert.deepEqual(out, { answer: 42 });
 		const calls = f.calls();
 		assert.equal(calls.length, 1, 'one run when the first answer validates');
-		assert.deepEqual(calls[0]!.args, ['-p', '--output', 'json']);
+		assert.deepEqual(calls[0]!.args, ['-p', '--output', 'json', '--approval-policy', 'ask']);
 		assert.match(calls[0]!.stdin, /## Output contract/, 'the schema travels in the prompt');
 		assert.match(calls[0]!.stdin, /"required":\["answer"\]/);
 	} finally { f.cleanup(); }

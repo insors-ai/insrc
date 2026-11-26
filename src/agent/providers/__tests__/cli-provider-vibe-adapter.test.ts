@@ -110,13 +110,25 @@ test("the backend vibe request path spawns exactly one subprocess per turn throu
 	}
 });
 
-test('completeStructuredVibe keeps the local two-attempt ajv validation loop -- a first invalid answer retries once, a second raises ModelResponseShapeError naming the errors', async () => {
+// The LLD's own acceptance wording for this test named "two attempts" and a
+// typed ModelResponseShapeError; neither held even before this Story (verified
+// against cli-provider.ts as it stood immediately before t5's rewire, commit
+// 82ae9340e~1: withStructuredRetry's own maxAttempts arg here was already
+// `opts?.internalRetry === false ? 1 : 3`, byte-identical, and its own
+// exhaustion path -- structured-output.ts, a file this Story never touches --
+// has only ever thrown a generic Error, never ModelResponseShapeError (that
+// class is thrown elsewhere, by validateAgainstSchema's own caller in
+// cli-provider.ts and by review-round/security-schema.ts, never by
+// withStructuredRetry's exhaustion branch). Review finding r2-4 renamed this
+// test to describe the real, pre-existing, verified-unrelated-to-this-Story
+// behavior instead of the LLD's inaccurate original title.
+test('completeStructuredVibe keeps the local three-attempt ajv validation loop (the pre-existing, unchanged internalRetry bound) -- a first invalid answer retries, exhaustion raises a generic Error naming every attempt\'s validation errors', async () => {
 	const fixture = makeFakeVibe('json-bad');
 	try {
 		const provider = new CliProvider({ kind: 'vibe', binPath: fixture.bin, timeoutMs: 10_000 });
 		await assert.rejects(
 			provider.completeStructured([{ role: 'user', content: 'hello' }], { type: 'object', properties: { ok: { type: 'boolean' } }, required: ['ok'] }),
-			(err: unknown) => err instanceof Error && /validation failed after 3 attempts/.test(err.message),
+			(err: unknown) => err instanceof Error && err.name !== 'ModelResponseShapeError' && /validation failed after 3 attempts/.test(err.message),
 		);
 		assert.equal(fixture.calls().length, 3, 'the default internal retry bound (3 attempts)');
 	} finally {

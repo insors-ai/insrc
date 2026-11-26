@@ -2,19 +2,16 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import childProcess from 'node:child_process';
 import fs from 'node:fs';
-import { join, posix, win32 } from 'node:path';
-import { tmpdir } from 'node:os';
-import { get } from 'node:https';
-import { createHash } from 'node:crypto';
+import { posix, win32 } from 'node:path';
 import { syncBuiltinESMExports } from 'node:module';
 import type { RuntimeIdentity, Target } from '../contracts.js';
 import { runtimeArchive, runtimePolicy, runtimeProfile, runtimeStorePaths } from '../runtime-policy.js';
 import { RUNTIME_LIMITS, RUNTIME_PROFILE_VERSION, runtimeInventoryJson } from '../runtime-metadata.js';
 import { requireNativeQualification } from '../native-qualification.js';
 import { installerSchemas } from '../schemas.js';
+import { officialInputs } from './_runtime-profile-fixture.js';
 import { deriveRuntimeProfiles } from '../../../scripts/generate-runtime-profiles.mjs';
 
-const sha = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
 const targets = Object.keys(runtimePolicy.archives) as (keyof typeof runtimePolicy.archives)[];
 function identity(key: string): RuntimeIdentity {
   const [os, arch] = key.split('-') as [Target['os'], Target['arch']];
@@ -22,38 +19,6 @@ function identity(key: string): RuntimeIdentity {
   return { version: '22.22.1', target, sha256: runtimeArchive(target).sha256, relativeExecutable: os === 'win32' ? 'node.exe' : 'bin/node' };
 }
 
-/** Official byte fixtures, like _runtime-fixture.ts. Cache only; no target
- * executable is launched and no installed runtime or policy is written. */
-async function officialInputs(): Promise<string> {
-  const directory = join(fs.realpathSync(tmpdir()), 'insrc-test-runtime-profiles-22.22.1');
-  fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
-  const assets = targets.map(key => {
-    const archive = runtimeArchive(identity(key).target);
-    return { ...archive, bytes: runtimePolicy.profiles[key].archiveBytes };
-  }).concat([runtimePolicy.supplemental.headers, ...Object.values(runtimePolicy.supplemental.libraries)].map(asset => ({ ...asset, root: '' })));
-  for (const asset of assets) {
-    const relative = new URL(asset.url).pathname.split('/v22.22.1/')[1]!;
-    const file = join(directory, relative);
-    if (fs.existsSync(file)) { assert.equal(sha(fs.readFileSync(file)), asset.sha256); continue; }
-    fs.mkdirSync(join(file, '..'), { recursive: true, mode: 0o700 });
-    let request: ReturnType<typeof get> | undefined, closed: Promise<void> | undefined;
-    try {
-      const bytes = await new Promise<Buffer>((resolve, reject) => {
-        request = get(asset.url, { agent: false, signal: AbortSignal.timeout(60_000) }, response => {
-          if (response.statusCode !== 200) { response.resume(); reject(Error('Official runtime fixture HTTP failure')); return; }
-          const chunks: Buffer[] = []; let count = 0;
-          response.on('error', reject);
-          response.on('data', (chunk: Buffer) => { count += chunk.length; if (count > asset.bytes) response.destroy(Error('Runtime fixture grew')); else chunks.push(chunk); });
-          response.on('end', () => resolve(Buffer.concat(chunks)));
-        });
-        closed = new Promise<void>(resolve => request!.once('close', resolve)); request.on('error', reject);
-      });
-      assert.equal(bytes.length, asset.bytes); assert.equal(sha(bytes), asset.sha256);
-      fs.writeFileSync(file, bytes, { flag: 'wx', mode: 0o600 });
-    } finally { request?.destroy(); await closed; }
-  }
-  return directory;
-}
 
 test('runtime policy pins all six official distribution identities without enabling targets', () => {
   assert.equal(targets.length, 6); assert.deepEqual(Object.keys(runtimePolicy.profiles), targets);

@@ -45,3 +45,12 @@ export function runtimeInventoryJson(files: readonly RuntimeInventoryFile[]): st
   return JSON.stringify({ schemaVersion: 1, files: [...files].sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0)
     .map(({ path, bytes, sha256, mode }) => ({ path, bytes, sha256, mode })) });
 }
+/** Fixed runtime receipt encoding, shared by its writer and read-only reader. */
+export function runtimeCompletionJson(value: RuntimeCompletion): string {
+  const identity = value.identity;
+  return JSON.stringify({ schemaVersion: value.schemaVersion,
+    identity: { version: identity.version, target: { os: identity.target.os, arch: identity.target.arch, baseline: identity.target.baseline },
+      sha256: identity.sha256, relativeExecutable: identity.relativeExecutable },
+    profileVersion: value.profileVersion, inventorySha256: value.inventorySha256,
+    npmVersion: value.npmVersion, headersVersion: value.headersVersion });
+}

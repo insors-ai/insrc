@@ -79,8 +79,9 @@ async function zipFiles(bytes, root, files) {
     });
   } finally { zip.close(); }
 }
-/** Deterministic byte profile; independent from store completion receipts. */
-export async function deriveRuntimeProfile(target, assetDirectory) {
+/** Verified in-memory files, reused by maintainer metadata and isolated tests.
+ * This is not a production extractor or installed acquisition API. */
+export async function readRuntimeProfileFiles(target, assetDirectory) {
   if (!Object.hasOwn(policy.archives, target)) throw Error('Unsupported runtime target');
   const windows = target.startsWith('win32-'), arch = target.slice(target.lastIndexOf('-') + 1);
   const root = `node-v${policy.nodeVersion}-${target.replace('win32-', 'win-')}`;
@@ -98,10 +99,16 @@ export async function deriveRuntimeProfile(target, assetDirectory) {
   const version = ['MAJOR', 'MINOR', 'PATCH'].map(key => new RegExp(`^#define NODE_${key}_VERSION\\s+(\\d+)`, 'm').exec(header.bytes.toString('utf8'))?.[1]).join('.');
   if (version !== policy.headersVersion || policy.nodeVersion !== policy.headersVersion) throw Error('Runtime header policy mismatch');
   for (const path of ['include/node/node_api.h', 'include/node/common.gypi', 'include/node/config.gypi']) if (!files.has(path)) throw Error('Runtime header missing');
+  return { files, archiveBytes: archive.length };
+}
+/** Deterministic byte profile; independent from store completion receipts. */
+export async function deriveRuntimeProfile(target, assetDirectory) {
+  const { files, archiveBytes } = await readRuntimeProfileFiles(target, assetDirectory);
+  const node = files.get(target.startsWith('win32-') ? 'node.exe' : 'bin/node');
   const inventory = inventoryFor(files);
   const inventoryBytes = runtimeInventoryJson(inventory), expandedBytes = inventory.reduce((sum, f) => sum + f.bytes, 0);
   if (Buffer.byteLength(inventoryBytes) > RUNTIME_LIMITS.inventoryBytes || expandedBytes > RUNTIME_LIMITS.expandedBytes) throw Error('Runtime profile bounds exceeded');
-  return { profileVersion: RUNTIME_PROFILE_VERSION, archiveBytes: archive.length, nodeSha256: sha256(node.bytes), inventorySha256: sha256(inventoryBytes), entries: inventory.length, expandedBytes };
+  return { profileVersion: RUNTIME_PROFILE_VERSION, archiveBytes, nodeSha256: sha256(node.bytes), inventorySha256: sha256(inventoryBytes), entries: inventory.length, expandedBytes };
 }
 export async function deriveRuntimeProfiles(assetDirectory) {
   const profiles = {};

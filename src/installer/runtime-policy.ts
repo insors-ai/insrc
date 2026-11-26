@@ -1,11 +1,10 @@
 import { posix, win32 } from 'node:path';
 import policy from './runtime-policy.json' with { type: 'json' };
 import { InstallerError, PRIVATE_NODE_VERSION } from './contracts.js';
-import type { Target } from './contracts.js';
-import type { RuntimeIdentity } from './contracts.js';
+import type { Target, RuntimeIdentity, InstallationLocation } from './contracts.js';
 import { assertToken, normalizeHome } from './location.js';
 import { RUNTIME_LIMITS, RUNTIME_PROFILE_VERSION } from './runtime-metadata.js';
-import type { RuntimeProfile, RuntimeStorePaths } from './runtime-metadata.js';
+import type { RuntimeProfile, RuntimeStorePaths, ResolvedPrivateRuntime } from './runtime-metadata.js';
 function freeze(value: unknown): void {
   if (value && typeof value === 'object') { for (const child of Object.values(value)) freeze(child); Object.freeze(value); }
 }
@@ -44,12 +43,10 @@ export function runtimeStorePaths(home: string, identity: RuntimeIdentity): Read
     `${target.os}-${target.arch}-${target.baseline}`, archive.sha256);
   return Object.freeze({ root, directory: path.join(root, 'distribution'), inventory: path.join(root, 'inventory.json'), completion: path.join(root, 'completion.json') });
 }
-export function privateRuntimePaths(home: string, target: Pick<Target, 'os' | 'arch'>): { directory: string; node: string; npmCli: string } {
-  const path = target.os === 'win32' ? win32 : posix;
-  if (!path.isAbsolute(home)) throw new InstallerError('home-invalid', 'Private runtime home must be absolute');
-  runtimeArchive(target);
-  const directory = path.join(home, 'runtimes', PRIVATE_NODE_VERSION, `${target.os}-${target.arch}`);
-  return { directory, node: path.join(directory, target.os === 'win32' ? 'node.exe' : 'bin/node'), npmCli: path.join(directory, target.os === 'win32' ? 'node_modules/npm/bin/npm-cli.js' : 'lib/node_modules/npm/bin/npm-cli.js') };
+/** Read-only resolution. Loading metadata never loads filesystem verification. */
+export async function privateRuntimePaths(location: InstallationLocation, identity: RuntimeIdentity,
+  options: { signal?: AbortSignal | undefined } = {}): Promise<ResolvedPrivateRuntime> {
+  return (await import('./runtime-store.js')).resolveRuntimeStore(location, identity, options);
 }
 /** All child launches use absolute private executables; no PATH lookup. */
 export function privateRuntimeEnvironment(input: NodeJS.ProcessEnv): NodeJS.ProcessEnv {

@@ -1,0 +1,904 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795537513475-h3oly6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T16:31:18.615Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 361067,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "epicHash": "639cd2159a87aedb",
+    "epicSlug": "unify-vibe-one-plain-cli-adapter",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1795535373279-l4wumn",
+    "hldEffectiveHash": "67d59677de6a7a14a26bdb819949a499c3171f1bd551c1f73af1201b624e872c",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "One shared plain-CLI launch path serves every backend Vibe request",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "ef088619dc9f0f06d7f211ac5e67ef1eaf2b62015fb4309e53ee322fd0a6a399",
+        "at": "2026-11-24T16:31:19.827Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "alternativesConsidered": [
+      {
+        "id": "b1",
+        "name": "Single-module adapter with injectable seams and a live-streaming turn",
+        "oneLineSummary": "One shared module: sc1/sc2 verbatim, a factory with injectable spawn/fs/group seams, live JSONL event production, and a turn-entry export for the plugin's mechanical re-home.",
+        "approach": "One module, src/shared/vibe-adapter.ts, exporting the sc1 types verbatim, a factory createVibeAdapter(context, deps?) with injectable spawn/filesystem/process-group seams (the same McpRegisterDeps/VibeSessionOptions convention the codebase already uses for testable subprocess code), and the sc2 naming split. Events are produced LIVE: when outputMode is 'streaming' the adapter spawns the tool with --output streaming and parses the JSONL stream into the rich event variants as they arrive; text/json modes map the final assistant message. The module also exports an adapter-owned turn-entry function whose signature is shaped so vibe-session-process.ts's runVibeChatJob call re-points mechanically (one-line import + call change, no chat behavior change) — the HLD's mechanical re-home. Exit evidence comes from --output-dir export.json read after turn end; temp files and (in adapter-owned mode) the child group are swept on every exit path. Structured output stays in the provider: the adapter returns the turn, the provider keeps its existing two-attempt local schema-validation loop.",
+        "pros": [
+          "Smallest complete shape: one new file plus the four enumerated re-points, the least surface for the Story's L-sized scope.",
+          "The injectable-seams factory follows the repo's proven testability convention (McpRegisterDeps, VibeSessionOptions) — no new testing machinery.",
+          "Live streaming preserves the event contract's meaning for s3: the chat migration starts from a real stream, not a replay shim.",
+          "The turn-entry export keeps the plugin compiling at the story boundary with a one-line re-point — exactly the HLD's risky-bit-1 mitigation."
+        ],
+        "cons": [
+          "One file owns argv, streaming parse, process management and naming — the internal seams are conventions rather than file boundaries; the HLD's 'grows into a new vibe-session.ts' con is managed only by discipline until a later split.",
+          "The turn-entry export adds a second entry shape beside startTurn that exists for exactly one consumer until s3 migrates it — temporary surface, documented as such."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "b2",
+        "name": "Directory module with explicit internal seams",
+        "oneLineSummary": "src/shared/vibe-adapter/ split into types, argv, stream, process and naming files behind one index — same contract, file-level internal seams.",
+        "approach": "A directory module, src/shared/vibe-adapter/ with types.ts (the sc1/sc2 types verbatim), argv.ts (flag-surface construction incl. the approval mapping and budget guards), stream.ts (JSONL event parsing + the tool-result output normalization), process.ts (spawn, dual process-group policy, termination/descendant-exit/temp cleanup, exit-evidence reading) and naming.ts, plus index.ts re-exporting the public surface. Same external contract as b1; the internal seams are file boundaries from day one.",
+        "pros": [
+          "The HLD's 'one module owning several concerns' con is answered structurally: each concern has a file boundary and its own tests.",
+          "s2 (qualification) and s3 (chat migration) get obvious extension points without touching unrelated concerns."
+        ],
+        "cons": [
+          "More files and a barrel index for the same behavior — the internal split is speculative until s2/s3 exercise it.",
+          "The plugin's mechanical re-home imports from index.js either way, so the directory buys no consumer-facing benefit in this Story."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Satisfies everything b1 does and answers the HLD's 'one module, several concerns' con structurally — but the internal split is speculative until s2/s3 exercise the seams, adds a barrel index with no consumer-facing benefit, and costs the same. The documented fallback if the adapter module grows."
+      },
+      {
+        "id": "b3",
+        "name": "Replay-based event production (collect, then synthesize)",
+        "oneLineSummary": "The adapter collects the final output and synthesizes the event sequence at completion — no live stream parsing in this Story.",
+        "approach": "Same module and factory as b1, but events are synthesized after the fact: the adapter always runs --output json (the final session-messages array) or --output text, and composes the event sequence when the turn completes — session event, then the recorded assistant/tool events replayed, then the result. No live JSONL parsing at all in this Story.",
+        "pros": [
+          "Simplest possible event production: one final parse, no incremental JSONL state machine.",
+          "Backend one-shot consumers (complete/completeStructured) get exactly what they need with the least code."
+        ],
+        "cons": [
+          "The streaming contract becomes a replay: a long chat turn yields nothing until the tool exits — s3's transcript would show no incremental text, and the HLD's unchanged-chat-behavior promise for streaming would need re-deriving later, pushing real work into s3.",
+          "s3 would have to replace the event production internals anyway — the one part of the adapter most coupled to the CLI's wire format — so the Story's 'smallest' is smaller only by deferring cost, not saving it."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Backend-complete but contract-hollowing: the AsyncIterable shape exists but is a replay — events arrive only at turn completion, partialing sc1 (the streaming event contract s3 depends on) and k3 (chat-surface alignment deferred into s3, which would then rewrite the adapter's event-production internals). Smaller now only by deferring cost into the story that already carries the parity risk."
+      }
+    ],
+    "chosenAlternative": "b1",
+    "contractDetails": {
+      "api": [
+        {
+          "errors": [
+            {
+              "condition": "context.cwd is empty or not a directory — refused at construction",
+              "type": "Error"
+            }
+          ],
+          "name": "createVibeAdapter",
+          "parameters": [
+            {
+              "name": "context",
+              "optional": false,
+              "purpose": "The construction-fixed execution context: cwd, env, and the process-group policy — adapter-owned or supervisor-owned",
+              "type": "VibeAdapterContext"
+            },
+            {
+              "name": "deps",
+              "optional": true,
+              "purpose": "Injectable seams for tests: spawn, file read/write, process-group kill/sweep, clock",
+              "type": "VibeAdapterDeps"
+            }
+          ],
+          "postconditions": [
+            "The returned adapter spawns one CLI subprocess per turn",
+            "In adapter-owned mode every exit path sweeps the child group and removes turn temporary files"
+          ],
+          "preconditions": [
+            "Called once per consumer surface"
+          ],
+          "returns": {
+            "meaning": "The single Vibe launch contract instance both surfaces call",
+            "type": "VibeExecutionAdapter"
+          },
+          "signature": "createVibeAdapter(context: VibeAdapterContext, deps?: VibeAdapterDeps): VibeExecutionAdapter"
+        },
+        {
+          "errors": [
+            {
+              "condition": "mode:'read-only' while the adapter's own qualification has not succeeded (until s2) — refused before any subprocess spawns, the refusal reason surfaced",
+              "type": "VibeRefusalError"
+            },
+            {
+              "condition": "A mode:'read-only' request carries any approval setting — refused before dispatch",
+              "type": "VibeRefusalError"
+            },
+            {
+              "condition": "A new-session request names a model or thinking level outside the installed tool's real catalog — surfaced before any model call",
+              "type": "VibeSelectionError"
+            },
+            {
+              "condition": "request.signal aborted or request.deadlineMs exceeded — the turn is terminated and result rejects",
+              "type": "Error"
+            }
+          ],
+          "name": "startTurn",
+          "parameters": [
+            {
+              "name": "request",
+              "optional": false,
+              "purpose": "The turn: prompt, outputMode, session (new — carries model/thinking — or resumed — carries only the resumeHandle), mode, approval (REJECTED for read-only), readDirs, budget guards, per-turn signal and host deadline",
+              "type": "VibeTurnRequest"
+            }
+          ],
+          "postconditions": [
+            "A 'session' event opens every turn, carrying the native session id and, for a new session, the resume handle",
+            "result carries exit evidence: stop reason, outcome, and the session's effective model/thinking read back from the export",
+            "Turn temporary files are removed on every exit path; in adapter-owned mode the child group is swept too"
+          ],
+          "preconditions": [
+            "The adapter was constructed with a context; the tool binary is reachable on PATH"
+          ],
+          "returns": {
+            "meaning": "The streamed turn events and the result promise carrying text + identity + exit evidence",
+            "type": "AsyncIterable<VibeTurnEvent> & { result: Promise<VibeTurnResult> }"
+          },
+          "signature": "VibeExecutionAdapter.startTurn(request: VibeTurnRequest): AsyncIterable<VibeTurnEvent> & { readonly result: Promise<VibeTurnResult> }"
+        },
+        {
+          "errors": [
+            {
+              "condition": "The turn fails mid-flight (non-transient) — carried to the chat worker unchanged in shape",
+              "type": "VibeTurnError"
+            }
+          ],
+          "name": "runVibeTurn",
+          "parameters": [
+            {
+              "name": "options",
+              "optional": false,
+              "purpose": "The plugin's existing turn options — command resolution, cwd, timeoutMs, signal, inheritProcessGroup, agentConfig, nativeSessionId, model, effort, catalog, prompt — mapped one-to-one onto the adapter's context + request; the mapping is total so no chat option is lost",
+              "type": "VibeTurnOptions"
+            }
+          ],
+          "postconditions": [
+            "The chat worker's observable behavior is unchanged — the same rows are written to the same line protocol",
+            "No reference to src/shared/vibe-session.js remains in the plugin"
+          ],
+          "preconditions": [
+            "Called only by vscode-plugin/src/chat/vibe-session-process.ts's runVibeChatJob until s3 migrates the chat surface onto startTurn directly"
+          ],
+          "returns": {
+            "meaning": "The turn outcome the chat worker already consumes (stop reason, session id, output history)",
+            "type": "Promise<VibeTurnOutcome>"
+          },
+          "signature": "runVibeTurn(options: VibeTurnOptions): Promise<VibeTurnOutcome> — the adapter-owned turn entry shaped so runVibeChatJob's existing call re-points mechanically"
+        },
+        {
+          "errors": [
+            {
+              "condition": "The streamed name matches no insrc MCP tool — undefined, never a guess",
+              "type": "undefined return"
+            }
+          ],
+          "name": "fromStreamedName",
+          "parameters": [
+            {
+              "name": "streamedName",
+              "optional": false,
+              "purpose": "A tool name as the installed CLI spells it in its event stream (incl. insrc_present)",
+              "type": "string"
+            }
+          ],
+          "postconditions": [
+            "One spelling serves the backend allowlist and the chat parser; the restricted analysis allowlist stays a separate fixed set"
+          ],
+          "preconditions": [
+            "The spelling was established by live qualification against the installed tool"
+          ],
+          "returns": {
+            "meaning": "The tool's identity split into server and tool, or undefined",
+            "type": "VibeMcpToolIdentity | undefined"
+          },
+          "signature": "VibeMcpNaming.fromStreamedName(streamedName: string): VibeMcpToolIdentity | undefined"
+        },
+        {
+          "errors": [
+            {
+              "condition": "The adapter turn fails non-transiently — propagates to the provider's caller",
+              "type": "Error"
+            }
+          ],
+          "name": "complete",
+          "parameters": [
+            {
+              "name": "messages",
+              "optional": false,
+              "purpose": "The conversation to serialise into the prompt",
+              "type": "LLMMessage[]"
+            },
+            {
+              "name": "opts",
+              "optional": true,
+              "purpose": "cwd/timeout/signal — threaded to the adapter's per-turn cancellation",
+              "type": "CompletionOpts"
+            }
+          ],
+          "postconditions": [
+            "ac1: the same plain-CLI path as every other vibe request, prompt via the tool's programmatic input contract"
+          ],
+          "preconditions": [
+            "The provider was constructed with kind 'vibe'"
+          ],
+          "returns": {
+            "meaning": "The final assistant text",
+            "type": "LLMResponse"
+          },
+          "signature": "CliProvider.complete(messages: LLMMessage[], opts?: CompletionOpts): Promise<LLMResponse> — rewired: builds a VibeTurnRequest (new session, no selection) and consumes the adapter"
+        },
+        {
+          "errors": [
+            {
+              "condition": "Both local validation attempts fail — ModelResponseShapeError naming the schema errors",
+              "type": "ModelResponseShapeError"
+            }
+          ],
+          "name": "completeStructuredVibe",
+          "parameters": [
+            {
+              "name": "messages",
+              "optional": false,
+              "purpose": "The conversation",
+              "type": "LLMMessage[]"
+            },
+            {
+              "name": "schema",
+              "optional": false,
+              "purpose": "The requested JSON Schema — the tool has no native schema flag, so the schema note rides the prompt",
+              "type": "StructuredSchema"
+            }
+          ],
+          "postconditions": [
+            "ac4: the answer is validated locally against the caller's schema with the existing two-attempt retry; transient upstream failures retry via withTransientRetry (ac5)"
+          ],
+          "preconditions": [
+            "Called from completeStructured's vibe branch"
+          ],
+          "returns": {
+            "meaning": "The schema-validated payload",
+            "type": "T"
+          },
+          "signature": "CliProvider.completeStructuredVibe<T>(messages: LLMMessage[], schema: StructuredSchema, opts?): Promise<T> — rewired onto the adapter; the local schema-validation loop stays in the provider"
+        },
+        {
+          "errors": [
+            {
+              "condition": "mode 'read-only' is refused before dispatch until the adapter's qualification succeeds (s2) — ReadOnlyUnavailableError with the surfaced reason",
+              "type": "ReadOnlyUnavailableError"
+            }
+          ],
+          "name": "readOnlySessionOnce",
+          "parameters": [
+            {
+              "name": "prompt",
+              "optional": false,
+              "purpose": "The read-only session's task",
+              "type": "string"
+            },
+            {
+              "name": "schema",
+              "optional": false,
+              "purpose": "The expected answer schema, validated locally",
+              "type": "StructuredSchema"
+            }
+          ],
+          "postconditions": [
+            "No write/execute capability runs in a completed read-only session (the s2 qualification proves it; from s1 the mode refuses outright)"
+          ],
+          "preconditions": [
+            "The backend read-only entry path"
+          ],
+          "returns": {
+            "meaning": "The schema-validated answer",
+            "type": "T"
+          },
+          "signature": "CliProvider.readOnlySessionOnce<T>(prompt, schema, exec): Promise<T> — rewired: builds a mode:'read-only' VibeTurnRequest; the adapter refuses until its own qualification succeeds"
+        },
+        {
+          "errors": [],
+          "name": "runVibe",
+          "parameters": [
+            {
+              "name": "args",
+              "optional": false,
+              "purpose": "The vibe argv fragment",
+              "type": "readonly string[]"
+            },
+            {
+              "name": "prompt",
+              "optional": false,
+              "purpose": "The prompt on stdin",
+              "type": "string"
+            }
+          ],
+          "postconditions": [
+            "ac3: no session-based transport remains reachable, referenced or importable in production code"
+          ],
+          "preconditions": [
+            "—"
+          ],
+          "returns": {
+            "meaning": "—",
+            "type": "—"
+          },
+          "signature": "runVibe(args, prompt, exec): Promise<SubprocessResult> — REMOVED: the dispatch seam (with its model/effort branch into the app-server transport, cli-provider.ts:885-905) is absorbed into the adapter"
+        },
+        {
+          "errors": [],
+          "name": "vibeArgs",
+          "parameters": [],
+          "postconditions": [
+            "argv construction lives in the adapter, constructed against the qualified 3.1.4 flag surface"
+          ],
+          "preconditions": [
+            "—"
+          ],
+          "returns": {
+            "meaning": "—",
+            "type": "—"
+          },
+          "signature": "vibeArgs(output, extra): string[] — REMOVED into the adapter's argv construction"
+        },
+        {
+          "errors": [
+            {
+              "condition": "The underlying adapter turn fails — same error shapes the chat already renders",
+              "type": "VibeTurnError"
+            }
+          ],
+          "name": "runVibeChatJob",
+          "parameters": [
+            {
+              "name": "job",
+              "optional": false,
+              "purpose": "The chat turn job (prompt, model/effort, catalog snapshot, session, readDirs, permissionMode)",
+              "type": "VibeChatJob"
+            },
+            {
+              "name": "signal",
+              "optional": false,
+              "purpose": "Host cancellation, threaded to the adapter",
+              "type": "AbortSignal"
+            },
+            {
+              "name": "ownedGroup",
+              "optional": false,
+              "purpose": "The worker's process-group ownership — the adapter runs the turn supervisor-owned so the worker's sweep is unchanged",
+              "type": "boolean"
+            }
+          ],
+          "postconditions": [
+            "The plugin compiles with zero references to the shared transport; chat behavior is unchanged (the real migration is s3)"
+          ],
+          "preconditions": [
+            "Called by vscode-plugin/src/vibe-session-worker.ts through the plugin-internal import — unchanged"
+          ],
+          "returns": {
+            "meaning": "The exit code the worker already propagates",
+            "type": "Promise<number>"
+          },
+          "signature": "runVibeChatJob(job: VibeChatJob, signal: AbortSignal, write: (line: string) => void, ownedGroup: boolean): Promise<number> — reshaped: its runVerifiedVibeTurn call re-points to the adapter's runVibeTurn turn entry (mechanical re-home)"
+        }
+      ],
+      "surfaceLevel": "internal-shared"
+    },
+    "dataModelChanges": [
+      {
+        "callSites": [
+          "src/agent/providers/cli-provider.ts:470",
+          "src/agent/providers/cli-provider.ts:622",
+          "src/agent/providers/cli-provider.ts:756",
+          "vscode-plugin/src/chat/vibe-session-process.ts:76"
+        ],
+        "change": "new",
+        "details": "The turn request union: new sessions carry model/thinking; resumed sessions carry only the resumeHandle with selection structurally absent (the type-level no-silent-substitution rule). Carries mode, approval (rejected for read-only), readDirs, budget guards, per-turn signal and deadlineMs.",
+        "entity": "VibeTurnRequest"
+      },
+      {
+        "callSites": [
+          "vscode-plugin/src/chat/vibe-session-process.ts:56"
+        ],
+        "change": "new",
+        "details": "The rich event variants: session (identity + resume handle), status, assistant-text, tool-call (id, name, arguments), tool-result (id, ok, normalized OUTPUT per the chat precedence), error. Produced live from the streaming output for outputMode 'streaming'; mapped from the final message for text/json.",
+        "entity": "VibeTurnEvent"
+      },
+      {
+        "callSites": [
+          "src/agent/providers/cli-provider.ts:895"
+        ],
+        "change": "new",
+        "details": "The result carries text, sessionId, resumeHandle and exit evidence — stopReason, outcome and the session's effectiveSelection read back from the tool's --output-dir export.json (a resumed turn reports what actually ran).",
+        "entity": "VibeTurnResult + VibeExitEvidence"
+      },
+      {
+        "callSites": [
+          "src/agent/providers/cli-provider.ts:76",
+          "vscode-plugin/src/chat/cli-adapter.ts:49",
+          "vscode-plugin/src/chat/vibe-session-process.ts:2"
+        ],
+        "change": "field-modify",
+        "details": "The catalog model type (id, aliases, efforts) re-homes from the deleted transport to the adapter module — pure re-point, no shape change; all three import sites move with it.",
+        "entity": "VibeCatalogModel"
+      },
+      {
+        "callSites": [
+          "src/agent/providers/cli-provider.ts:76",
+          "src/agent/providers/structured-output.ts:40",
+          "vscode-plugin/src/chat/vibe-session-process.ts:1"
+        ],
+        "change": "field-remove",
+        "details": "The app-server session transport (openVerifiedVibeSession, runVerifiedVibeTurn, VerifiedVibeSession, VibeSessionOptions) and its module are deleted; VibeTurnError is re-homed to the adapter (its refusal-marker role in structured-output.ts:234 is preserved); vibe-selection-smoke.mjs and vibe-session.test.ts go with the module.",
+        "entity": "VerifiedVibeSession + VibeSessionOptions"
+      },
+      {
+        "callSites": [
+          "src/agent/providers/cli-provider.ts:123"
+        ],
+        "change": "field-modify",
+        "details": "The backend read-only allowlist constant is replaced by the adapter's sc2 VibeInsrcAnalysisToolId allowlist — same two tool ids, now the one established spelling shared with the chat parser.",
+        "entity": "READ_ONLY_SESSION_VIBE_TOOL_NAMES"
+      }
+    ],
+    "errorPaths": {
+      "edgeCases": [
+        {
+          "expected": "No model/thinking flags are added to the argv — the tool's configured defaults apply; the result reports the effective selection read back from the export (ac1)",
+          "input": "A backend Vibe request with no explicit model or thinking level"
+        },
+        {
+          "expected": "The argv carries --model/--thinking for the new session only; the catalog check happens at the tool (bogus alias fails before any model call listing the real catalog — live-probed 2026-11-24), and the adapter surfaces the supported choices (ac2)",
+          "input": "A new-session request with an explicit model and thinking level, both valid in the installed catalog"
+        },
+        {
+          "expected": "The argv carries only --resume <handle> — the request type has no selection fields on a resumed turn, so nothing is silently substituted; the result reports the session's effective selection from the exit evidence",
+          "input": "A resumed turn whose session had a different model/thinking than the caller now wants"
+        },
+        {
+          "expected": "Refused before dispatch with the surfaced reason (until s2's adapter-owned qualification succeeds); no subprocess spawns (k1 fail-closed from s1)",
+          "input": "A mode:'read-only' request while the adapter's qualification has not succeeded"
+        },
+        {
+          "expected": "Refused before dispatch — the read-only authorization is the adapter's own qualified narrow policy, never a caller choice (r2 finding 1)",
+          "input": "A mode:'read-only' request that also carries an approval setting (manual/edit-auto/auto)"
+        },
+        {
+          "expected": "default/undefined adds no approval flag (CLI defaults); manual maps to agent ask; edit-auto maps to agent accept-edits; auto maps to auto-approve — the mapping chat's private launch path built today (vibe-session-process.ts:89-91)",
+          "input": "An ordinary (mode:'default') request with each approval value in turn"
+        },
+        {
+          "expected": "The tool's stop reason and outcome ride the result's exit evidence — failures are attributable, not just exit-code -1 (the tool's --time-limit exits 3 and writes the export)",
+          "input": "A turn the tool stops early (budget guard, time limit)"
+        },
+        {
+          "expected": "The adapter stops the turn, sweeps its own child group (adapter-owned) or leaves the group to the supervisor (supervisor-owned), and removes the turn's temporary files; result rejects with an abort error",
+          "input": "The host aborts the signal or the deadlineMs passes mid-turn (including during a bootstrap stall before the tool applies its own budgets)"
+        },
+        {
+          "expected": "The event stream yields the session event and the tool-result variants carry the normalized OUTPUT (outputText/output, else error message, else reason — the existing chat precedence), not empty payloads",
+          "input": "A streaming turn whose tool result arrives with outputText absent but output present (and vice versa; and an error-only result)"
+        }
+      ],
+      "errorCases": [
+        {
+          "detection": "The adapter checks request.mode and its own qualification state BEFORE spawning — a refusal is raised, never a spawn-and-hope",
+          "recoverable": true,
+          "response": "Raise the read-only refusal error with the surfaced reason; the provider surfaces it as the read-only session's failure. No subprocess is spawned.",
+          "scenario": "A read-only request arrives before the adapter's qualification has succeeded (the s1 state, and any post-s2 invalidation)",
+          "userImpact": "The read-only session reports analysis unavailable with a clear reason (k1's honest unavailable state) — never a blanket bypass, never a silent fallback"
+        },
+        {
+          "detection": "The tool fails fast with its supported-choices listing (live-probed: 'Error: Unknown model: __no_such_alias__. Available: …') — the adapter recognizes the tool's selection-failure wording in stderr",
+          "recoverable": true,
+          "response": "Surface the tool's supported choices as a selection error before any model call; do not retry a selection error (it is deterministic)",
+          "scenario": "A new-session request names a model or thinking level outside the installed tool's real catalog",
+          "userImpact": "The caller gets the tool's real catalog in the error — same guarantee as claude/codex clients"
+        },
+        {
+          "detection": "The spawned process fails to launch (spawnError) or exits non-zero with a transient-looking failure (withTransientRetry's isTransientCliError classification on the error text)",
+          "recoverable": true,
+          "response": "The provider's existing withTransientRetry retries a fresh invocation up to its bound; deterministic failures are re-thrown at once — the bounded semantics ac5 pins",
+          "scenario": "The tool binary is missing from PATH or a transient upstream error drops mid-response",
+          "userImpact": "Same retry behavior as the claude and codex clients — bounded attempts, then the failure surfaces"
+        },
+        {
+          "detection": "request.signal.aborted or Date.now() passes the turn start + deadlineMs — checked by the adapter's watchdog, authoritative over the tool's own budgets",
+          "recoverable": false,
+          "response": "Terminate the turn (the adapter's own child group in adapter-owned mode; the supervisor's sweep otherwise), remove temporary files, reject result with an abort/deadline error",
+          "scenario": "The tool stalls during bootstrap before applying its own budget guards",
+          "userImpact": "The host deadline bounds what the tool cannot — no unbounded hang"
+        },
+        {
+          "detection": "readFileSync of the export throws, or the JSON parses but lacks stopReason/outcome — the adapter treats evidence as absent rather than guessing",
+          "recoverable": true,
+          "response": "The result carries undefined exitEvidence (and undefined effectiveSelection) rather than fabricated values; the turn text still returns",
+          "scenario": "The --output-dir export.json is missing or malformed after the turn exits",
+          "userImpact": "Slightly poorer attribution for that one turn; no silent fabrication of exit evidence"
+        },
+        {
+          "detection": "mkdirSync/writeFileSync of the export dir or the prompt temp file throws — the exception propagates from startTurn before spawn",
+          "recoverable": false,
+          "response": "The turn fails before dispatch with the IO error; no partial process is left running",
+          "scenario": "The adapter cannot create its temporary working files (ENOENT/EACCES/EROFS/ENOSPC)",
+          "userImpact": "A clear setup failure naming the path — never a half-launched turn"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "source": "c2",
+          "text": "A Vibe turn never approves every tool as a side effect of enabling analysis: the read-only mode refuses until the adapter's own live qualification succeeds (s2), and ordinary approval settings are rejected on read-only requests — the k1 invariant this Story ships the refusing half of."
+        },
+        {
+          "source": "c4",
+          "text": "Every backend Vibe request — plain completion, structured output and read-only session alike — executes through the one plain-CLI launch path; the session-based transport is deleted, not demoted to a fallback or verification layer (k2, ac3)."
+        },
+        {
+          "source": "c2",
+          "text": "The provider's bounded transient-retry semantics (withTransientRetry — fresh invocation, bounded attempts, deterministic failures re-thrown at once) are preserved for every vibe path; the adapter adds the host-side signal/deadline bound on top (ac5, cli-provider.ts:475-520)."
+        },
+        {
+          "source": "c4",
+          "text": "Structured output is validated locally against the caller's schema with the existing two-attempt retry — the tool enforces no native schema flag, so the schema rides the prompt and the provider's ajv loop stays authoritative (ac4, cli-provider.ts:622-640)."
+        },
+        {
+          "source": "c3",
+          "text": "The prompt travels via the tool's programmatic input contract (stdin), never through shell-interpolated argv — a prompt with multiline text or option-like text reaches the tool whole (k6)."
+        },
+        {
+          "source": "c2",
+          "text": "VibeTurnError's role as the non-retryable refusal marker in structured-output retry (structured-output.ts:234) survives the transport deletion: the adapter's error surface re-homes it so the retry classifier keeps distinguishing tool refusals from transient failures."
+        }
+      ]
+    },
+    "hldContextSlice": {
+      "adjacentBoundaries": [
+        {
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The narrow-authorization design itself: the live qualification suite against the real installed binary (custom policy/agent exploration, allowed-tool execution proof, blocked-tool proof, blanket-bypass absence proof, write-refusal check, AND the invalidation behavior — a changed binary version or effective policy returns the mode to refusing until re-qualified), the adapter-owned ReadOnlyCapability wiring (the adapter validates and exposes; callers never construct), the unavailable-state reporting when qualification fails, and the adapter's read-only mode enablement. The custom-agent/policy TOML a qualified design may need is authored with the same smol-toml dependency directly — it is not the Vibe-config reader (sc4).",
+          "owns": [
+            "sc3"
+          ],
+          "storyId": "s2"
+        },
+        {
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The chat surface migration: the vibe mapper and job runner become consumers of the adapter (argv and VIBE_ACTIVE_MODEL pinning deleted from the plugin; the worker's signal threads into the adapter's per-turn cancellation; the worker keeps its supervisor-owned process group and its forced-stop sweep), while the transcript rendering, streaming event mapping over the RICH events (tool-call identity and arguments for command correlation, tool-result OUTPUT content, session identity and resume-handle delivery), worker lifecycle, resume handles and attachments keep their existing behavior (lc2). Also internal: the live verifications whose outcomes s6 records — the approval parity cases, the tool-result output parity fixture, the worker forced-termination and descendant-cleanup parity check, the prompt-transport check, the resume round-trip, and the general-naming check that chat tool-activity rendering and insrc_present declarations parse through sc2's general identity.",
+          "owns": [],
+          "storyId": "s3"
+        },
+        {
+          "depends": [],
+          "internal": "The reader's internals: parse-for-understanding via the existing smol-toml dependency following the codex project-config guard's refuse-don't-rewrite precedent, the surgical byte-preserving edit engine, the refusal path for configs that cannot be changed safely, and the rewiring of the daemon's registration checks and cleanup (mcp-register) and the plugin's config writer (toml-mcp-writer) onto it — with src/shared/toml-inline-list.ts deleted.",
+          "owns": [
+            "sc4"
+          ],
+          "storyId": "s4"
+        },
+        {
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The model-family alignment: catalog, registry, check and definitions entries for cli-vibe rebuilt to exactly the models and thinking levels the adapter honors (verified against the installed tool's catalog), the selection-delivery semantics through the adapter — new sessions take the selection, resumed sessions inherit and report — and the fail-before-dispatch error naming supported choices. No other story consumes these records; settings and tier resolution do.",
+          "owns": [],
+          "storyId": "s5"
+        },
+        {
+          "depends": [
+            "sc3"
+          ],
+          "internal": "The reconciliation work itself: verifying the chat prompt-transport fix, the approval parity cases, the tool-result output parity, the resume-selection behavior and the worker cleanup parity live with s3's evidence, checking catalog coverage, closing the implemented issues (read-only authorization via sc3's qualification evidence incl. its provenAgainst record, TOML parsing via sc4's story validation), stamping the review-dependent deferrals with their recorded dependency on the review rewrite, and attaching evidence to every closure.",
+          "owns": [],
+          "storyId": "s6"
+        }
+      ],
+      "boundary": {
+        "depends": [],
+        "internal": "Everything behind the adapter interface: argv construction from the qualified 3.1.4 flag surface (headless mode selection, model and thinking pinning for NEW sessions, prompt transport through the programmatic input contract, budget-guard forwarding, the ordinary approval mapping with the read-only request REJECTING any approval setting, exit-evidence parsing including the session's effective selection), the adapter-construction execution context with the DUAL process-group policy and per-turn cancellation, transient-error classification and the bounded retry semantics shared with the claude/codex clients, the local schema-validation loop for structured-output requests, the tool-result output normalization, the type-level resumed-session selection rule, and the deletion of src/shared/vibe-session.ts plus the rewiring of the backend provider paths (complete, completeStructured, runReadOnlySession's launch mechanics) and structured-output.ts onto the adapter. The read-only launch MODE exists from s1 but every 'read-only' request REFUSES before dispatch until the adapter's own qualification succeeds (s2) — the refusal reason is surfaced to the caller.",
+        "owns": [
+          "sc1",
+          "sc2"
+        ],
+        "storyId": "s1"
+      },
+      "consumedContracts": [],
+      "frameworkSummary": "One shared plain-CLI Vibe execution adapter module owns the whole launch contract — argv construction, model/thinking pinning for new sessions with explicit resumed-session selection semantics, prompt transport, budget guards, the execution context (cwd, environment, dual process-group policy with defined escalation and cleanup ownership per mode, abort signal, host deadline), the ordinary-session approval input with the existing chat mapping, rich turn events with session identity and tool-result output content, the qualified MCP tool naming split into general identity parsing and the analysis allowlist, and the fail-closed read-only mode whose qualification the ADAPTER owns and validates. The backend provider and the VS Code plugin chat both import and call it directly; the session-based app-server transport is deleted, not demoted. A sibling shared real-TOML config module replaces every hand-written Vibe TOML reader. This is alternative a1: the only shape that satisfies all seven Epic constraints, with k1/k2/k3 satisfied structurally.",
+      "nonFunctional": {
+        "durability": "User configuration files are edited surgically with byte-for-byte preservation of unrelated content, and a config that cannot be changed safely is left untouched with the failure reported (k4); the issue ledger records closures only with evidence (k7). Temporary files the adapter creates for a turn are cleaned by the adapter on every exit path in BOTH process-group policies: adapter-owned cleanup extends to the child group sweep, supervisor-owned keeps the adapter's turn-scoped temp cleanup while the supervisor sweeps the group.",
+        "observability": "Every turn result carries the tool's structured exit evidence (stop reason, outcome) and the session identity (native session id, newly-created resume handle) so failures are attributable and resume is auditable; tool-result events carry the normalized OUTPUT content so the transcript shows what a tool actually returned, not only that it succeeded; per-turn outcomes, qualification results and refusal reasons are logged through the daemon's pino logger; the ledger reconciliation (s6) records its verification evidence on the artifacts it closes or defers.",
+        "performance": "One subprocess per turn, as the claude and codex clients already do. The adapter forwards the tool's own budget guards AND enforces the host-side deadline: the tool's budgets do not bound a bootstrap that stalls before the tool applies them, so the adapter's abort/deadline path is the authoritative bound. In adapter-owned mode the adapter sweeps the child group on every exit path; in supervisor-owned mode the supervisor's existing sweep is preserved unchanged. Structured-output requests keep the existing bounded retry semantics.",
+        "security": "k1 is structural in the strict sense: the read-only launch mode is part of the single adapter's request shape, its narrow authorization is qualified live BY THE ADAPTER against the installed binary (a caller cannot assert a status — the adapter exposes only the capability it validated), and a change in the binary's version or the effective approval policy invalidates the qualification and the mode returns to refusing until re-qualified. Ordinary approval settings are REJECTED for read-only requests. On any qualification failure the mode reports analysis unavailable and never falls back to a blanket approval. Resumed turns cannot carry a changed model or thinking level: the request type has no selection field on a resumed turn, a session's effective selection is read back from exit evidence and reported in the result, and a caller who wants a different selection starts a new session — silent substitution is unrepresentable. All model access stays through the local CLI binary's own auth (k6) — no direct cloud REST; prompts travel via the tool's programmatic input contract, never through shell-interpolated argv."
+      },
+      "ownedContracts": [
+        {
+          "assumptions": [
+            "c13",
+            "c5"
+          ],
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s5"
+          ],
+          "id": "sc1",
+          "interfaceSketch": "/** The single Vibe launch contract. Construction fixes the execution context; each turn carries its own cancellation and approval choice. */\ninterface VibeAdapterContext {\n\treadonly cwd: string;\n\treadonly env?: Readonly<Record<string, string>> | undefined;\n\t/** adapter-owned: the child leads a detached group; the adapter owns termination, escalation, descendant-exit confirmation and cleanup. supervisor-owned: the child inherits the caller's group; the SUPERVISOR owns escalation and sweeping; the adapter retains turn-scoped temporary-file cleanup only. */\n\treadonly processGroup: 'adapter-owned' | 'supervisor-owned';\n}\ninterface VibeNewSession { readonly kind: 'new'; readonly model?: string | undefined; readonly thinking?: string | undefined; }\ninterface VibeResumedSession { readonly kind: 'resume'; readonly resumeHandle: string; readonly selection?: undefined; }\ntype VibeSessionRequest = VibeNewSession | VibeResumedSession;\ntype VibeApproval = 'default' | 'manual' | 'edit-auto' | 'auto';\ninterface VibeTurnRequest {\n\treadonly prompt: string;\n\treadonly outputMode: 'text' | 'json' | 'streaming';\n\treadonly session: VibeSessionRequest;\n\treadonly mode: 'default' | 'read-only';\n\treadonly approval?: VibeApproval | undefined;\n\treadonly readDirs?: readonly string[] | undefined;\n\treadonly budget?: { readonly maxTurns?: number | undefined; readonly timeLimitSeconds?: number | undefined; readonly maxPriceDollars?: number | undefined; readonly maxTokens?: number | undefined } | undefined;\n\treadonly signal?: AbortSignal | undefined;\n\treadonly deadlineMs?: number | undefined;\n}\ntype VibeTurnEvent =\n\t| { readonly kind: 'session'; readonly sessionId: string; readonly resumeHandle?: string | undefined }\n\t| { readonly kind: 'status'; readonly phase: 'starting' | 'thinking' | 'refused' }\n\t| { readonly kind: 'assistant-text'; readonly text: string }\n\t| { readonly kind: 'tool-call'; readonly toolCallId: string; readonly toolName: string; readonly arguments: Readonly<Record<string, unknown>> }\n\t| { readonly kind: 'tool-result'; readonly toolCallId: string; readonly ok: boolean; readonly output: string; readonly error?: string | undefined }\n\t| { readonly kind: 'error'; readonly message: string };\ninterface VibeExitEvidence { readonly stopReason?: string | undefined; readonly outcome?: string | undefined; readonly effectiveSelection?: { readonly model?: string | undefined; readonly thinking?: string | undefined } | undefined; }\ninterface VibeTurnResult { readonly text: string; readonly sessionId?: string | undefined; readonly resumeHandle?: string | undefined; readonly exitEvidence?: VibeExitEvidence | undefined; }\ninterface VibeExecutionAdapter { startTurn(request: VibeTurnRequest): AsyncIterable<VibeTurnEvent> & { readonly result: Promise<VibeTurnResult> }; }",
+          "name": "Vibe execution adapter interface",
+          "ownedByStory": "s1",
+          "purpose": "The one launch contract every Vibe turn goes through: explicit launch mode with an ordinary-session approval input (rejected for read-only), the adapter-construction context with a dual process-group policy, rich turn events with tool-result output content, and the resumed-session selection semantics expressed in the type."
+        },
+        {
+          "assumptions": [
+            "c13"
+          ],
+          "consumedByStories": [
+            "s2",
+            "s3"
+          ],
+          "id": "sc2",
+          "interfaceSketch": "/** Tool naming, split into general MCP identity and the restricted analysis allowlist. */\ninterface VibeMcpToolIdentity { readonly server: string; readonly tool: string; readonly streamedName: string; }\ninterface VibeMcpNaming { readonly fromStreamedName: (streamedName: string) => VibeMcpToolIdentity | undefined; }\ntype VibeInsrcAnalysisToolId = 'insrc_analyze' | 'insrc_analyze_step';",
+          "name": "Qualified insrc tool naming — general identity plus the analysis allowlist",
+          "ownedByStory": "s1",
+          "purpose": "One spelling of the insrc MCP tool names, established once against the installed CLI — general identity parsing recognizes every insrc MCP tool (including insrc_present) while the restricted analysis allowlist names exactly the two tools a read-only session may run."
+        }
+      ],
+      "rolloutPhase": "Phase A — Shared foundations"
+    },
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "howDetails": "The Story builds the adapter module exporting the sc1 types verbatim plus the createVibeAdapter factory (construction fixes VibeAdapterContext incl. the dual processGroup policy) and startTurn with live event production, the approval mapping (rejected for read-only), the type-level resumed-session rule, exit-evidence readback, and adapter-owned termination/descendant-exit/temp cleanup on every exit path. The read-only mode exists and refuses until s2's adapter-owned qualification succeeds.",
+        "role": "implements"
+      },
+      {
+        "contractId": "sc2",
+        "howDetails": "The adapter module exports the naming split: general VibeMcpNaming.fromStreamedName (any insrc MCP tool incl. insrc_present, established by live qualification) and the restricted VibeInsrcAnalysisToolId allowlist the read-only mode uses.",
+        "role": "implements"
+      }
+    ],
+    "migration": {
+      "backwardCompat": "The four external behavior surfaces keep their observable contracts: the LLMProvider interface for kind 'vibe' (complete/completeStructured/runReadOnlySession shapes and errors, incl. ModelResponseShapeError and the transient-retry classification), the plugin chat's line protocol (the same rows the worker writes today), the structured-output retry classification (VibeTurnError as the non-retryable refusal marker), and the cli-vibe model-family catalog type (VibeCatalogModel, re-homed with no shape change — the s5 alignment is a later story). Internal-only breaking change: src/shared/vibe-session.js's exports cease to exist — the grep-enumerated four production importers and eight test/fixture references are the complete migration set, and no out-of-repo consumer exists (the deprecated insrc-ide fork is out of scope per project rules).",
+      "dataRewriteRequired": false,
+      "migrationSteps": [
+        {
+          "action": "Add src/shared/vibe-adapter.ts: the sc1/sc2 types verbatim, the createVibeAdapter factory with injectable spawn/fs/process-group/clock seams, startTurn with live JSONL event production, the runVibeTurn turn entry (the total mapping of the plugin's VibeTurnOptions onto context+request), the re-homed VibeTurnError, the approval mapping, the dual process-group policy with cleanup on every exit path, the exit-evidence readback, and the sc2 naming split. Purely additive — nothing imports it yet.",
+          "order": 1,
+          "rollbackable": true
+        },
+        {
+          "action": "Re-point the plugin's two shared-transport imports mechanically: vscode-plugin/src/chat/cli-adapter.ts:49's VibeCatalogModel type import and vscode-plugin/src/chat/vibe-session-process.ts:1-2's runVerifiedVibeTurn/VibeTurnError/VibeCatalogModel/VibeTurnOptions imports move to the adapter module; runVibeChatJob's turn call becomes a call to the adapter's runVibeTurn with the same options object — no mapper, event-mapping or worker-lifecycle change (that is s3).",
+          "order": 2,
+          "rollbackable": true
+        },
+        {
+          "action": "Re-point the backend's two transport imports: src/agent/providers/structured-output.ts:40's VibeTurnError import moves to the adapter (its refusal-marker role at :234 is untouched); src/agent/providers/cli-provider.ts:76's imports move to the adapter (VibeCatalogModel, VibeTurnError).",
+          "order": 3,
+          "rollbackable": true
+        },
+        {
+          "action": "Rewire the backend vibe call sites onto the adapter: complete() (:470) and completeStructuredVibe() (:622) build VibeTurnRequests and consume startTurn; the interactive-tools path (:684) maps its auto-approve flag to the approval input; readOnlySessionOnce() (:756) builds a mode:'read-only' request whose tool-name set comes from the adapter's sc2 allowlist — the adapter refuses it before dispatch (the s1 fail-closed state). runVibe (:885) and vibeArgs (:980) are deleted — the provider stops constructing vibe argv.",
+          "order": 4,
+          "rollbackable": false
+        },
+        {
+          "action": "Delete src/shared/vibe-session.ts with its test suite and fixture (vibe-session.test.ts, vibe-selection-smoke.mjs), and update the remaining references: the daemon test helper review-shell-worker.mjs and model-catalog-asset.test.ts re-point to the adapter (or drop the reference if transport-specific), the plugin packaging.test.ts shared-file list gains vibe-adapter.js and loses vibe-session.js, and cli-vibe.test.ts / structured-retry-vibe-refusal.test.ts / cli-adapter.test.ts re-point to the adapter equivalents with the same case verdicts.",
+          "order": 5,
+          "rollbackable": false
+        },
+        {
+          "action": "Add the no-transport contract check (the repo-wide grep test asserting no production file imports src/shared/vibe-session.js and the module no longer exists) and run the full test sweep — the repo compiles at every prior step's boundary, so this step only verifies.",
+          "order": 6,
+          "rollbackable": true
+        }
+      ],
+      "stateAfter": "Every backend Vibe request — complete, completeStructured, the interactive-tools path and the read-only entry — builds a VibeTurnRequest and executes through the single adapter module (one subprocess per turn, model/thinking on the plain argv for new sessions, resumed sessions structurally selection-free, read-only refusing until s2 qualifies, approval rejected on read-only). The app-server transport module no longer exists; the plugin's chat worker compiles against the adapter's turn entry with unchanged observable behavior; structured output keeps its local validation; transient retry keeps its bounded semantics; the provider contains no vibe argv construction.",
+      "stateBefore": "The backend provider carries a two-transport split (LldContext bundle 4): runVibe at src/agent/providers/cli-provider.ts:885 dispatches plain `vibe -p` via vibeArgs for the default model, but switches to the app-server transport (openVerifiedVibeSession/runVerifiedVibeTurn) whenever a model/effort is set (:895-905); the chat worker (vscode-plugin/src/chat/vibe-session-process.ts:76) calls the app-server transport directly, passing inheritProcessGroup and the per-turn permission mapping (:84-95); structured-output.ts:234 classifies VibeTurnError as the non-retryable refusal marker; the read-only path pins its tool names via READ_ONLY_SESSION_VIBE_TOOL_NAMES (:123). Four production files import src/shared/vibe-session.js (grep-exhaustive bundle 3), plus eight test/fixture references.",
+      "zeroDowntime": true
+    },
+    "openQuestions": [],
+    "summary": {
+      "audience": "technical",
+      "prose": "This Story builds the one shared plain-CLI Vibe adapter and rewires every backend Vibe path onto it: the provider's completion, structured-output and read-only entries become thin request builders over the adapter's single launch contract, with model/thinking selection riding the plain invocation, structured output staying locally validated, and the read-only mode present but refusing until its qualification lands in s2. The app-server session transport is deleted outright, and the plugin's four transport imports are re-pointed to adapter-owned equivalents so the repo compiles at the story boundary with no chat behavior change. The adapter owns termination, descendant cleanup and temporary-file cleanup on every exit path, in both process-group modes, and produces the rich turn events — session identity, tool calls and results with content — that the chat migration in s3 will render."
+    },
+    "testStrategy": {
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: adapter argv construction — a request with no model/thinking adds no --model/--thinking flags and writes the prompt to the tool's programmatic input (stdin), never into argv",
+            "unit: provider.complete for kind 'vibe' builds a single VibeTurnRequest and consumes the adapter — no private argv path remains (grep-level assertion: no vibeArgs/runVibe in cli-provider.ts)",
+            "integration: the backend vibe request path spawns exactly one subprocess per turn through the adapter (seam-recorded spawn)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: a new-session request with model+thinking constructs the argv with --model/--thinking; a resumed-session request constructs --resume only and the type forbids selection (compile-time plus runtime guard test)",
+            "unit: the adapter recognizes the tool's selection-failure wording (fixture: 'Error: Unknown model: … Available: …' from the live probe) and raises VibeSelectionError before any model call, not retried by withTransientRetry",
+            "live: INSRC_LIVE_TESTS-gated — a real `vibe -p` turn with a bogus alias surfaces the tool's real catalog; a valid model/thinking completes"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: a repo-wide grep test asserts no production file imports src/shared/vibe-session.js and the module no longer exists (the grep-exhaustive enumeration in the LldContext is the baseline list)",
+            "unit: the transport's test suite (vibe-session.test.ts) and fixture (vibe-selection-smoke.mjs) are deleted with the module; packaging.test.ts's shared-file list updated",
+            "integration: provider + structured-output + chat worker compile and run against the adapter alone"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: completeStructuredVibe keeps the local two-attempt ajv validation loop — a first invalid answer retries once, a second raises ModelResponseShapeError naming the errors",
+            "unit: the schema note rides the prompt — the prompt passed to the spawn seam contains the output contract"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "unit: withTransientRetry still wraps every vibe path — a transient error text from the seam retries a fresh invocation, a deterministic failure re-throws on attempt 1, bounded at the existing max",
+            "unit: VibeTurnError re-homed to the adapter is still the non-retryable refusal marker (structured-retry-vibe-refusal.test.ts's cases re-pointed, same verdicts)"
+          ]
+        }
+      ],
+      "testFramework": "node:test",
+      "testLevels": [
+        {
+          "fixturesNeeded": [
+            "canned CLI stderr for the selection-failure wording",
+            "canned streaming JSONL rows for the event variants",
+            "canned export.json for the exit-evidence readback"
+          ],
+          "level": "unit",
+          "purpose": "The adapter's contract behavior with injected spawn/fs/clock seams: argv construction per mode/approval/session kind, the read-only refusal before spawn, event production from the stream, tool-result output normalization, exit-evidence readback, cleanup on every exit path in both process-group modes, and the provider's rewired entries building requests instead of argv.",
+          "subjects": [
+            "src/shared/vibe-adapter.ts (createVibeAdapter, startTurn, runVibeTurn, fromStreamedName)",
+            "src/agent/providers/cli-provider.ts vibe paths (complete, completeStructuredVibe, readOnlySessionOnce) against the seam-injected adapter"
+          ]
+        },
+        {
+          "fixturesNeeded": [
+            "a scripted fake vibe binary for the spawned path"
+          ],
+          "level": "integration",
+          "purpose": "The provider + structured-output + plugin chat worker run against the real adapter module (no transport), including the chat worker's mechanical re-home producing its existing line protocol.",
+          "subjects": [
+            "src/agent/providers/structured-output.ts retry classification with the re-homed VibeTurnError",
+            "vscode-plugin/src/chat/vibe-session-process.ts runVibeChatJob through the adapter turn entry"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Gated behind INSRC_LIVE_TESTS=1 against the real installed binary 3.1.4: the plain-CLI path end to end, the selection failure surfacing the real catalog, and exit-evidence readback from --output-dir.",
+          "subjects": [
+            "vibe adapter live suite (new, alongside the existing cli-provider live suites)"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The no-transport invariant as a durable check: a test that greps production sources for src/shared/vibe-session.js imports and the module's existence, so a regression re-introducing the transport fails the suite.",
+          "subjects": [
+            "repo-wide import scan test (the LldContext's grep enumeration as the baseline)"
+          ]
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "quotedText": "the grep-exhaustive production import enumeration of src/shared/vibe-session.js (four importers, eight test/fixture references) and the backend vibe call sites the Story rewires",
+      "ref": "s1"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "quotedText": "the live 3.1.4 qualification: headless --model/--thinking for NEW sessions, --approval-policy, budget guards, --output-dir export.json, and the programmatic-mode documentation establishing new-session-only selection",
+      "ref": "s1"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "quotedText": "the provider vibe paths the Story reshapes: complete (:470), completeStructuredVibe (:622), interactive-tools (:684), readOnlySessionOnce (:756), runVibe (:885), vibeActivityCatalog (:715), READ_ONLY_SESSION_VIBE_TOOL_NAMES (:123)",
+      "ref": "src/agent/providers/cli-provider.ts:470"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "quotedText": "VibeTurnError as the non-retryable refusal marker in the structured-output retry classifier",
+      "ref": "src/agent/providers/structured-output.ts:234"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "quotedText": "the chat worker's tool-result content emission (outputText/output/error/reason) and its per-turn permission mapping",
+      "ref": "vscode-plugin/src/chat/vibe-session-process.ts:56"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "quotedText": "the approved HLD this LLD implements — sc1/sc2 owned by s1, the rev-3 contract surface and the rollout risky bit 1 (the mechanical plugin re-home)",
+      "ref": "docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/HLD.md"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "quotedText": "the approved Epic — the Story's acceptance criteria and constraints k1-k7",
+      "ref": "docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/DEF.md"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "quotedText": "the session transport to be deleted",
+      "ref": "src/shared/vibe-session.ts"
+    },
+    {
+      "id": "c10",
+      "kind": "step-output",
+      "ref": "s4"
+    },
+    {
+      "id": "c11",
+      "kind": "step-output",
+      "ref": "s5"
+    },
+    {
+      "id": "c12",
+      "kind": "step-output",
+      "ref": "s6"
+    },
+    {
+      "id": "c13",
+      "kind": "step-output",
+      "ref": "s7"
+    }
+  ]
+}

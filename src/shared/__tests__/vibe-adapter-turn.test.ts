@@ -19,7 +19,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import {
-	createVibeAdapter, fromStreamedName, mapVibeTurnOptions,
+	createVibeAdapter, fromStreamedName, mapVibeTurnOptions, runVibeTurn,
 } from '../vibe-adapter.js';
 import type { VibeAdapterDeps, VibeChildProcess, VibeTurnRequest, VibeTurnOptions } from '../vibe-adapter.js';
 
@@ -524,6 +524,93 @@ test('a mid-flight cancellation (signal fires after dispatch) still rejects with
 		await tick();
 		emitter.emit('exit', null, 'SIGKILL');
 		await assert.rejects(consume, (err: unknown) => err instanceof Error && err.name === 'AbortError');
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test('runVibeTurn on a handled dispatch failure never leaves an internal promise unobserved -- a caller that only catches runVibeTurn\'s own rejection must not also crash the host with an unhandled rejection (review finding r3-1)', async () => {
+	const cwd = realDir();
+	const unhandled: unknown[] = [];
+	const onUnhandledRejection = (reason: unknown): void => { unhandled.push(reason); };
+	process.on('unhandledRejection', onUnhandledRejection);
+	try {
+		// A nonexistent executable -- the adapter's real (uninjected) child_process.spawn
+		// path, matching the reviewer's own Node 22.22.1 repro, exercises the real ENOENT
+		// spawn-error path end to end, not a fake deps stand-in.
+		const command = join(cwd, 'insrc-definitely-not-a-real-vibe-binary');
+		let caught: unknown;
+		try {
+			await runVibeTurn({
+				command, cwd, timeoutMs: 5_000,
+				agentConfig: { cwd, headless: true },
+				catalog: [],
+				prompt: 'hello',
+			});
+		} catch (err) {
+			caught = err;
+		}
+		assert.ok(caught instanceof Error && caught.name === 'VibeTurnError', 'the caller\'s own await must still observe the failure');
+		// Give the event loop a few turns to surface any unhandled rejection that
+		// fired on a promise runVibeTurn itself never touched.
+		await new Promise(resolve => setImmediate(resolve));
+		await new Promise(resolve => setImmediate(resolve));
+		await new Promise(resolve => setImmediate(resolve));
+		assert.deepEqual(unhandled, [], 'no internal promise must surface as an unhandled rejection once the caller has handled the ordinary failure');
+	} finally {
+		process.removeListener('unhandledRejection', onUnhandledRejection);
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test('a cancel() or deadline that fires after the leader exits cleanly but during output extraction (export/exit-evidence reads) still rejects, instead of resolving the turn as an ordinary success (review finding r3-2)', async () => {
+	const cwd = realDir();
+	try {
+		{
+			// Cancellation during extraction: the fake child exits 0 immediately, but
+			// deps.readFile (export.json) only resolves once the test cancels.
+			const { child, emitter } = fakeChild();
+			let releaseRead!: () => void;
+			const readGate = new Promise<void>(resolve => { releaseRead = resolve; });
+			const controller = new AbortController();
+			const deps: VibeAdapterDeps = {
+				spawn: () => child, mkdtemp: async () => realDir(), rm: async () => undefined,
+				readFile: async () => { await readGate; throw new Error('no export'); },
+			};
+			const adapter = createVibeAdapter({ cwd, processGroup: 'adapter-owned' }, deps);
+			const turn = adapter.startTurn(baseRequest({ outputMode: 'text', signal: controller.signal }));
+			turn.result.catch(() => undefined);
+			const consume = (async () => { for await (const _e of turn) { /* drain */ } })();
+			await tick();
+			emitter.emit('exit', 0, null);
+			emitter.emit('close', 0, null);
+			await tick();
+			controller.abort();
+			releaseRead();
+			await assert.rejects(consume, (err: unknown) => err instanceof Error && err.name === 'AbortError');
+			await assert.rejects(turn.result, (err: unknown) => err instanceof Error && err.name === 'AbortError');
+		}
+		{
+			// Deadline expiry during extraction: same shape, but via deadlineMs instead
+			// of an external signal.
+			const { child, emitter } = fakeChild();
+			let releaseRead!: () => void;
+			const readGate = new Promise<void>(resolve => { releaseRead = resolve; });
+			const deps: VibeAdapterDeps = {
+				spawn: () => child, mkdtemp: async () => realDir(), rm: async () => undefined,
+				readFile: async () => { await readGate; throw new Error('no export'); },
+			};
+			const adapter = createVibeAdapter({ cwd, processGroup: 'adapter-owned' }, deps);
+			const turn = adapter.startTurn(baseRequest({ outputMode: 'text', deadlineMs: 20 }));
+			turn.result.catch(() => undefined);
+			const consume = (async () => { for await (const _e of turn) { /* drain */ } })();
+			await tick();
+			emitter.emit('exit', 0, null);
+			emitter.emit('close', 0, null);
+			await new Promise(resolve => setTimeout(resolve, 40));
+			releaseRead();
+			await assert.rejects(consume, (err: unknown) => err instanceof Error && err.name === 'VibeTurnError' && /deadline/.test(err.message));
+		}
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
 	}

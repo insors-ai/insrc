@@ -454,6 +454,17 @@ async function runTurn(
 	// A plain function (not a bare property read) so TypeScript never narrows this
 	// across statements -- AbortSignal.aborted is mutable between every check here.
 	function signalAborted(): boolean { return request.signal?.aborted === true; }
+	// One construction, reused at every point this turn's lifecycle recognizes a
+	// cancellation (before dispatch, during the dispatch/drain wait, and after a
+	// successful exit but before output extraction settles) -- a cancelled turn
+	// always keeps this same recognizable AbortError identity, never a generic
+	// Error or a VibeTurnError, however far execution had already gotten.
+	function throwAborted(cause?: unknown): never {
+		const abortError = new Error('Vibe turn aborted', { cause: request.signal?.reason ?? cause });
+		abortError.name = 'AbortError';
+		Object.assign(abortError, { dispatchState });
+		throw abortError;
+	}
 
 	try {
 		tempDir = await deps.mkdtemp();
@@ -462,10 +473,7 @@ async function runTurn(
 		// and still surfaces as a real, recognizable AbortError.
 		if (signalAborted()) {
 			cancelled = true;
-			const abortError = new Error('Vibe turn aborted before dispatch', { cause: request.signal?.reason });
-			abortError.name = 'AbortError';
-			Object.assign(abortError, { dispatchState: 'not-sent' as VibeDispatchState });
-			throw abortError;
+			throwAborted();
 		}
 
 		let rawStdout = '';
@@ -552,12 +560,7 @@ async function runTurn(
 			// A cancelled turn keeps its recognizable AbortError identity (callers
 			// distinguish cancellation from an operational failure); everything else
 			// from this phase is a genuinely uncertain dispatch.
-			if (cancelled) {
-				const abortError = new Error('Vibe turn aborted', { cause: request.signal?.reason ?? dispatchError });
-				abortError.name = 'AbortError';
-				Object.assign(abortError, { dispatchState });
-				throw abortError;
-			}
+			if (cancelled) throwAborted(dispatchError);
 			if (dispatchError instanceof VibeSelectionError) throw dispatchError;
 			throw new VibeTurnError(dispatchState, sessionId, dispatchError, mutating);
 		}
@@ -578,6 +581,16 @@ async function runTurn(
 		if (request.outputMode !== 'streaming') resumeHandle = request.session.kind === 'new' ? sessionId : request.session.resumeHandle;
 
 		const exitEvidence = await readExitEvidence(join(tempDir, 'export.json'), deps.readFile);
+		// The timer/abort listener are still armed through this whole extraction
+		// phase (export/evidence reads are inside the cancellable lifecycle, not
+		// after it): a cancel()/deadline that lands during these reads sets its
+		// flag and kills an already-exited child harmlessly, but nothing re-read
+		// the flag afterwards -- recheck here, immediately before publishing
+		// success, or the turn would resolve as an ordinary success despite the
+		// caller's own cancellation/deadline having already fired (review finding
+		// r3-2).
+		if (cancelled) throwAborted();
+		if (deadlineExpired) throw new VibeTurnError(dispatchState, sessionId, new Error(`Vibe turn exceeded its deadline (${request.deadlineMs}ms) during output extraction`), mutating);
 		finish();
 		resolveResult({ text: assistantText, sessionId, resumeHandle, exitEvidence });
 	} catch (error) {
@@ -734,35 +747,49 @@ export async function runVibeTurn(options: VibeTurnOptions): Promise<VibeTurnOut
 	const { command, context, request } = mapVibeTurnOptions(options);
 	const adapter = createVibeAdapter(context, { command });
 	const turn = adapter.startTurn(request);
+	// Held from the start, not read off `turn.result` only after the loop below:
+	// the iterator and this promise reject with the exact same underlying error
+	// (both driven by runTurn's single finish()/rejectResult() call), but a
+	// caller that only handles the iterator's own throw never touches this
+	// promise at all when that throw exits the function first -- Node then
+	// reports it as an unhandled rejection and can crash the host process on an
+	// otherwise-handled, ordinary CLI failure (review finding r3-1).
+	const resultPromise = turn.result;
 
 	let sessionId: string | undefined;
 	let assistantEntrySeq = 0;
-	for await (const event of turn) {
-		if (event.kind === 'session') {
-			sessionId = event.sessionId;
-			options.onSession?.(event.sessionId);
-		} else if (event.kind === 'status') {
-			// historyLines() needs no id for a 'reasoning' row -- it only checks type.
-			options.onHistory?.('history/entryAdded', { entry: { type: 'reasoning' } });
-		} else if (event.kind === 'assistant-text') {
-			const id = `assistant-${sessionId ?? 'turn'}-${assistantEntrySeq++}`;
-			options.onHistory?.('history/entryAdded', { entry: { id, type: 'message', role: 'assistant', content: [{ type: 'text', text: event.text }] } });
-		} else if (event.kind === 'tool-call') {
-			// generationStatus:'in_progress' is load-bearing: historyLines() only adds
-			// this id to its active-result map when it sees this, which is what lets
-			// the later history/entryUpdated (the tool's result) actually get through
-			// instead of being silently discarded at the active-map lookup.
-			options.onHistory?.('history/entryAdded', { entry: { type: 'effect', id: event.toolCallId, generationStatus: 'in_progress', detail: { toolName: event.toolName, input: event.arguments } } });
-		} else if (event.kind === 'tool-result') {
-			// The companion '/generationStatus' patch clears the active-map entry
-			// historyLines() added above -- without it, every tool call this turn
-			// bridges leaks an entry for the lifetime of the chat session.
-			options.onHistory?.('history/entryUpdated', { entryId: event.toolCallId, patch: [
-				{ path: '/state', value: { status: event.ok ? 'completed' : 'failed', outputText: event.output, ...(event.error !== undefined ? { error: { message: event.error } } : {}) } },
-				{ path: '/generationStatus', value: 'completed' },
-			] });
+	try {
+		for await (const event of turn) {
+			if (event.kind === 'session') {
+				sessionId = event.sessionId;
+				options.onSession?.(event.sessionId);
+			} else if (event.kind === 'status') {
+				// historyLines() needs no id for a 'reasoning' row -- it only checks type.
+				options.onHistory?.('history/entryAdded', { entry: { type: 'reasoning' } });
+			} else if (event.kind === 'assistant-text') {
+				const id = `assistant-${sessionId ?? 'turn'}-${assistantEntrySeq++}`;
+				options.onHistory?.('history/entryAdded', { entry: { id, type: 'message', role: 'assistant', content: [{ type: 'text', text: event.text }] } });
+			} else if (event.kind === 'tool-call') {
+				// generationStatus:'in_progress' is load-bearing: historyLines() only adds
+				// this id to its active-result map when it sees this, which is what lets
+				// the later history/entryUpdated (the tool's result) actually get through
+				// instead of being silently discarded at the active-map lookup.
+				options.onHistory?.('history/entryAdded', { entry: { type: 'effect', id: event.toolCallId, generationStatus: 'in_progress', detail: { toolName: event.toolName, input: event.arguments } } });
+			} else if (event.kind === 'tool-result') {
+				// The companion '/generationStatus' patch clears the active-map entry
+				// historyLines() added above -- without it, every tool call this turn
+				// bridges leaks an entry for the lifetime of the chat session.
+				options.onHistory?.('history/entryUpdated', { entryId: event.toolCallId, patch: [
+					{ path: '/state', value: { status: event.ok ? 'completed' : 'failed', outputText: event.output, ...(event.error !== undefined ? { error: { message: event.error } } : {}) } },
+					{ path: '/generationStatus', value: 'completed' },
+				] });
+			}
 		}
+	} catch {
+		// Swallow here -- a single failure path: resultPromise below rejects
+		// with this exact same error, and awaiting it is what actually
+		// propagates the failure to runVibeTurn's own caller.
 	}
-	const result = await turn.result;
+	const result = await resultPromise;
 	return { sessionId: result.sessionId ?? sessionId ?? '', stopReason: result.exitEvidence?.stopReason };
 }

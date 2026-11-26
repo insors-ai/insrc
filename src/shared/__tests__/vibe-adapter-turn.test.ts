@@ -61,6 +61,39 @@ function baseRequest(overrides: Partial<VibeTurnRequest> = {}): VibeTurnRequest 
 	};
 }
 
+test("adapter argv construction — a request with no model/thinking adds no --model/--thinking flags and writes the prompt to the tool's programmatic input (stdin), never into argv", async () => {
+	const cwd = realDir();
+	const { child, stdout, stdin, emitter } = fakeChild();
+	const spawnCalls: Array<{ command: string; args: readonly string[] }> = [];
+	const stdinChunks: string[] = [];
+	stdin.on('data', chunk => stdinChunks.push(chunk.toString()));
+	const deps: VibeAdapterDeps = {
+		spawn: (command, args) => { spawnCalls.push({ command, args }); return child; },
+		mkdtemp: async () => realDir(),
+		readFile: async () => { throw new Error('no export'); },
+		rm: async () => undefined,
+	};
+	try {
+		const adapter = createVibeAdapter({ cwd, processGroup: 'adapter-owned' }, deps);
+		const turn = adapter.startTurn(baseRequest({ prompt: 'the actual prompt text' }));
+		turn.result.catch(() => undefined);
+		const consume = (async () => { for await (const _event of turn) { /* drain */ } })();
+		await tick();
+		stdout.end();
+		emitter.emit('exit', 0, null);
+		await consume;
+
+		assert.equal(spawnCalls.length, 1);
+		assert.deepEqual(spawnCalls[0]?.args.slice(0, 2), ['-p', '--output']);
+		assert.ok(!spawnCalls[0]?.args.includes('--model'));
+		assert.ok(!spawnCalls[0]?.args.includes('--thinking'));
+		assert.ok(!spawnCalls[0]?.args.some(a => a.includes('the actual prompt text')), 'the prompt must never appear in argv');
+		assert.equal(stdinChunks.join(''), 'the actual prompt text', 'the prompt travels via stdin, not argv');
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
 test("a 'session' event opens every turn carrying the native session id and, for a new session, the resume handle", async () => {
 	const cwd = realDir();
 	const { child, stdout, emitter } = fakeChild();

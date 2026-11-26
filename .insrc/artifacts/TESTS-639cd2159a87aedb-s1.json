@@ -1,0 +1,908 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 12,
+        "contentHash": "4feb935b09a13804a0e5acdacd40d2be1c0bdca2af211d640cd26a4abb7e7b91",
+        "at": "2026-11-26T16:10:29.461Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s1",
+    "createdAt": "2026-11-26T10:45:17.862Z",
+    "updatedAt": "2026-11-26T16:10:29.292Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "epicSlug": "unify-vibe-one-plain-cli-adapter",
+    "revision": 12
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "a298f449c",
+        "ranAt": "2026-11-26T10:45:17.862Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "createVibeAdapter throws when context.cwd is empty or not a directory, before any subprocess spawns",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/vibe-adapter.test.ts",
+                "title": "createVibeAdapter throws when context.cwd is empty, before any subprocess spawns",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/vibe-adapter.test.ts",
+                "title": "createVibeAdapter throws when context.cwd is not a directory, before any subprocess spawns",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "startTurn with mode:'read-only' refuses before any subprocess spawn, surfacing a reason",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/vibe-adapter.test.ts",
+                "title": "startTurn with mode:'read-only' refuses before any subprocess spawn, surfacing a reason",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "startTurn with mode:'read-only' and any approval setting refuses before dispatch",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/vibe-adapter.test.ts",
+                "title": "startTurn with mode:'read-only' and any approval setting refuses before dispatch",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the ordinary approval mapping matches today's chat mapping: default/manual/edit-auto/auto",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/vibe-adapter.test.ts",
+                "title": "the ordinary approval mapping matches today's chat mapping: default/manual/edit-auto/auto",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "VibeTurnError is re-homed with the same constructor shape (dispatchState, sessionId, cause)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/vibe-adapter.test.ts",
+                "title": "VibeTurnError is re-homed with the same constructor shape (dispatchState, sessionId, cause) structured-output.ts's instanceof check relies on",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/vibe-adapter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 489,
+            "titles": [
+              {
+                "title": "createVibeAdapter throws when context.cwd is empty, before any subprocess spawns",
+                "result": "pass"
+              },
+              {
+                "title": "createVibeAdapter throws when context.cwd is not a directory, before any subprocess spawns",
+                "result": "pass"
+              },
+              {
+                "title": "createVibeAdapter throws when context.cwd does not exist at all",
+                "result": "pass"
+              },
+              {
+                "title": "createVibeAdapter succeeds for a real directory and returns an adapter",
+                "result": "pass"
+              },
+              {
+                "title": "startTurn with mode:'read-only' refuses before any subprocess spawn, surfacing a reason",
+                "result": "pass"
+              },
+              {
+                "title": "startTurn with mode:'read-only' and any approval setting refuses before dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "the ordinary approval mapping matches today's chat mapping: default/manual/edit-auto/auto",
+                "result": "pass"
+              },
+              {
+                "title": "a new-session request's argv carries --model/--thinking only when the caller supplied them; a resumed-session request's type carries no selection fields",
+                "result": "pass"
+              },
+              {
+                "title": "VibeTurnError is re-homed with the same constructor shape (dispatchState, sessionId, cause) structured-output.ts's instanceof check relies on",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "b7c0de5b0",
+        "ranAt": "2026-11-26T11:12:38.547Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "adapter argv construction — a request with no model/thinking adds no --model/--thinking flags and writes the prompt to the tool's programmatic input (stdin), never into argv",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/vibe-adapter-turn.test.ts",
+                "title": "adapter argv construction — a request with no model/thinking adds no --model/--thinking flags and writes the prompt to the tool's programmatic input (stdin), never into argv",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a new-session request with model+thinking constructs the argv with --model/--thinking; a resumed-session request constructs --resume only and the type forbids selection",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/vibe-adapter.test.ts",
+                "title": "a new-session request's argv carries --model/--thinking only when the caller supplied them; a resumed-session request's type carries no selection fields",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the adapter recognizes the tool's selection-failure wording and raises VibeSelectionError before any model call, not retried by withTransientRetry",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/vibe-adapter-turn.test.ts",
+                "title": "the adapter recognizes the tool's selection-failure wording and raises VibeSelectionError before any model call, not retried by withTransientRetry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "every exit path removes the turn's temporary files; adapter-owned mode additionally sweeps the child group on every exit path",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/vibe-adapter-turn.test.ts",
+                "title": "every exit path removes the turn's temporary files; adapter-owned mode additionally sweeps the child group on every exit path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a 'session' event opens every turn carrying the native session id and, for a new session, the resume handle",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/vibe-adapter-turn.test.ts",
+                "title": "a 'session' event opens every turn carrying the native session id and, for a new session, the resume handle",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/vibe-adapter-turn.test.ts",
+                "title": "a 'session' event for a RESUMED session carries the caller's own resumeHandle, not a new one",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "exit evidence is read back from export.json; a missing/malformed export.json yields undefined evidence rather than a fabricated value",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/vibe-adapter-turn.test.ts",
+                "title": "exit evidence is read back from export.json; a missing/malformed export.json yields undefined evidence rather than a fabricated value",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "VibeMcpNaming.fromStreamedName returns undefined for a name matching no insrc MCP tool, never a guess",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/vibe-adapter-turn.test.ts",
+                "title": "VibeMcpNaming.fromStreamedName returns undefined for a name matching no insrc MCP tool, never a guess",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a streaming tool-result with outputText/output/error/reason normalizes to the existing chat precedence, never an empty payload",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/vibe-adapter-turn.test.ts",
+                "title": "a streaming tool-result with outputText/output/error/reason normalizes to the existing chat precedence, never an empty payload",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/vibe-adapter-turn.test.ts",
+                "title": "tool-result precedence: output used when outputText is absent",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/vibe-adapter-turn.test.ts",
+                "title": "tool-result precedence: an error-only, failed result falls back to the error message",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "INSRC_LIVE_TESTS=1 — a real vibe -p turn with a bogus alias surfaces the tool's real catalog; a valid model/thinking completes",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Ran for real against the installed vibe 3.1.4 binary in this sandbox (INSRC_LIVE_TESTS=1 npx tsx --test src/shared/__tests__/vibe-adapter-live.test.ts): both live tests passed (bogus-alias VibeSelectionError surfaced the real catalog; a valid mistral-medium-latest turn completed with non-empty result.text and effectiveSelection.model readback). Both skip cleanly (SKIP, 0 run) when INSRC_LIVE_TESTS is unset, which is why the gate's own non-live run reports them as skipped rather than run."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/vibe-adapter-turn.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 762,
+            "titles": [
+              {
+                "title": "adapter argv construction — a request with no model/thinking adds no --model/--thinking flags and writes the prompt to the tool's programmatic input (stdin), never into argv",
+                "result": "pass"
+              },
+              {
+                "title": "a 'session' event opens every turn carrying the native session id and, for a new session, the resume handle",
+                "result": "pass"
+              },
+              {
+                "title": "a 'session' event for a RESUMED session carries the caller's own resumeHandle, not a new one",
+                "result": "pass"
+              },
+              {
+                "title": "every exit path removes the turn's temporary files; adapter-owned mode additionally sweeps the child group on every exit path",
+                "result": "pass"
+              },
+              {
+                "title": "exit evidence is read back from export.json; a missing/malformed export.json yields undefined evidence rather than a fabricated value",
+                "result": "pass"
+              },
+              {
+                "title": "VibeMcpNaming.fromStreamedName returns undefined for a name matching no insrc MCP tool, never a guess",
+                "result": "pass"
+              },
+              {
+                "title": "a streaming tool-result with outputText/output/error/reason normalizes to the existing chat precedence, never an empty payload",
+                "result": "pass"
+              },
+              {
+                "title": "tool-result precedence: output used when outputText is absent",
+                "result": "pass"
+              },
+              {
+                "title": "tool-result precedence: an error-only, failed result falls back to the error message",
+                "result": "pass"
+              },
+              {
+                "title": "the adapter recognizes the tool's selection-failure wording and raises VibeSelectionError before any model call, not retried by withTransientRetry",
+                "result": "pass"
+              },
+              {
+                "title": "runVibeTurn's parameter mapping from VibeTurnOptions is total: every field the plugin's existing options object carries maps onto the adapter's context+request with no silently dropped option",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/vibe-adapter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 452,
+            "titles": [
+              {
+                "title": "createVibeAdapter throws when context.cwd is empty, before any subprocess spawns",
+                "result": "pass"
+              },
+              {
+                "title": "createVibeAdapter throws when context.cwd is not a directory, before any subprocess spawns",
+                "result": "pass"
+              },
+              {
+                "title": "createVibeAdapter throws when context.cwd does not exist at all",
+                "result": "pass"
+              },
+              {
+                "title": "createVibeAdapter succeeds for a real directory and returns an adapter",
+                "result": "pass"
+              },
+              {
+                "title": "startTurn with mode:'read-only' refuses before any subprocess spawn, surfacing a reason",
+                "result": "pass"
+              },
+              {
+                "title": "startTurn with mode:'read-only' and any approval setting refuses before dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "the ordinary approval mapping matches today's chat mapping: default/manual/edit-auto/auto",
+                "result": "pass"
+              },
+              {
+                "title": "a new-session request's argv carries --model/--thinking only when the caller supplied them; a resumed-session request's type carries no selection fields",
+                "result": "pass"
+              },
+              {
+                "title": "VibeTurnError is re-homed with the same constructor shape (dispatchState, sessionId, cause) structured-output.ts's instanceof check relies on",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "bdff1d6f2",
+        "ranAt": "2026-11-26T11:22:52.260Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "cli-adapter.ts imports VibeCatalogModel from the adapter module, not vibe-session.js",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/cli-adapter-vibe-import.test.ts",
+                "title": "cli-adapter.ts imports VibeCatalogModel from the adapter module, not vibe-session.js",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vscode-plugin/src/chat/vibe-session-process.ts runVibeChatJob through the adapter turn entry — the chat worker's observable behavior is unchanged, same rows to the same line protocol",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/vibe-session-process.test.ts",
+                "title": "runVibeChatJob through the adapter's runVibeTurn — the chat worker's observable behavior is unchanged, same rows to the same line protocol",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/cli-adapter-vibe-import.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 486,
+            "titles": [
+              {
+                "title": "cli-adapter.ts imports VibeCatalogModel from the adapter module, not vibe-session.js",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/vibe-session-process.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 526,
+            "titles": [
+              {
+                "title": "runVibeChatJob through the adapter's runVibeTurn — the chat worker's observable behavior is unchanged, same rows to the same line protocol",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "1d202e8bc",
+        "ranAt": "2026-11-26T11:27:52.530Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "structured-output.ts imports VibeTurnError from the adapter module; the retry classifier's instanceof check still distinguishes the refusal marker from a transient failure",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/structured-retry-vibe-adapter-refusal.test.ts",
+                "title": "structured-output.ts imports VibeTurnError from the adapter module with no behavior change at this step",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cli-provider.ts imports VibeCatalogModel/VibeTurnError from the adapter module with no behavior change at this step",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-provider-vibe-import.test.ts",
+                "title": "cli-provider.ts imports VibeCatalogModel/VibeTurnError from the adapter module with no behavior change at this step",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-provider-vibe-import.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 472,
+            "titles": [
+              {
+                "title": "cli-provider.ts imports VibeCatalogModel/VibeTurnError from the adapter module with no behavior change at this step",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/structured-retry-vibe-adapter-refusal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 692,
+            "titles": [
+              {
+                "title": "structured-output.ts imports VibeTurnError from the adapter module with no behavior change at this step",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "82ae9340e",
+        "ranAt": "2026-11-26T11:43:00.815Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "provider.complete for kind 'vibe' builds a single VibeTurnRequest and consumes the adapter — no private argv path remains (grep-level assertion: no vibeArgs/runVibe in cli-provider.ts)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-provider-vibe-adapter.test.ts",
+                "title": "provider.complete for kind 'vibe' builds a single VibeTurnRequest and consumes the adapter -- no private argv path remains",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the backend vibe request path spawns exactly one subprocess per turn through the adapter (seam-recorded spawn)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-provider-vibe-adapter.test.ts",
+                "title": "the backend vibe request path spawns exactly one subprocess per turn through the adapter",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "completeStructuredVibe keeps the local two-attempt ajv validation loop — a first invalid answer retries once, a second raises ModelResponseShapeError naming the errors",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-provider-vibe-adapter.test.ts",
+                "title": "completeStructuredVibe keeps the local two-attempt ajv validation loop -- a first invalid answer retries once, a second raises ModelResponseShapeError naming the errors",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the schema note rides the prompt — the prompt passed to the spawn seam contains the output contract",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-provider-vibe-adapter.test.ts",
+                "title": "the schema note rides the prompt -- the prompt passed to the spawn seam contains the output contract",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "withTransientRetry still wraps every vibe path — a transient error text retries a fresh invocation, a deterministic failure re-throws on attempt 1, bounded at the existing max",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-provider-vibe-adapter.test.ts",
+                "title": "withTransientRetry still wraps every vibe path -- a transient error text retries a fresh invocation, a deterministic failure re-throws on attempt 1, bounded at the existing max",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "INSRC_LIVE_TESTS=1 — the plain-CLI path end to end and exit-evidence readback from --output-dir",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Ran for real against the installed vibe 3.1.4 binary in this sandbox (INSRC_LIVE_TESTS=1 npx tsx --test src/agent/providers/__tests__/cli-provider-vibe-adapter.live.test.ts): both tests passed -- complete() returned real non-empty text, completeStructured() returned a real validated {ok:true} answer. Both skip cleanly (SKIP, 0 run) when INSRC_LIVE_TESTS is unset."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-provider-vibe-adapter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2837,
+            "titles": [
+              {
+                "title": "provider.complete for kind 'vibe' builds a single VibeTurnRequest and consumes the adapter -- no private argv path remains",
+                "result": "pass"
+              },
+              {
+                "title": "the backend vibe request path spawns exactly one subprocess per turn through the adapter",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructuredVibe keeps the local two-attempt ajv validation loop -- a first invalid answer retries once, a second raises ModelResponseShapeError naming the errors",
+                "result": "pass"
+              },
+              {
+                "title": "the schema note rides the prompt -- the prompt passed to the spawn seam contains the output contract",
+                "result": "pass"
+              },
+              {
+                "title": "withTransientRetry still wraps every vibe path -- a transient error text retries a fresh invocation, a deterministic failure re-throws on attempt 1, bounded at the existing max",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce's request uses the adapter's sc2 allowlist and is refused before any subprocess spawns, with the same ReadOnlyUnavailableError-shaped surfaced reason as today's refusal",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "5f391c742",
+        "ranAt": "2026-11-26T11:59:17.344Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the transport's test suite (vibe-session.test.ts) and fixture (vibe-selection-smoke.mjs) are deleted with the module; packaging.test.ts's shared-file list updated",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/__tests__/packaging.test.ts",
+                "title": "esbuild emits self-contained CJS out/extension.js that loads under an ESM (type:module) root (requires with a fake vscode, exposes activate/deactivate)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "VibeTurnError re-homed to the adapter is still the non-retryable refusal marker (structured-retry-vibe-refusal.test.ts's cases re-pointed, same verdicts)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/structured-retry-vibe-refusal.test.ts",
+                "title": "Saved structured retry preserves Vibe refusal identity and never retries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "provider + structured-output + chat worker compile and run against the adapter alone",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "vibeLastAssistantText: bare array, wrapped messages, string content, no assistant",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "complete() runs default `vibe -p --output text` with the prompt on stdin",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "complete() without a model adds no --model/--thinking flags (the CLI default applies)",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "completeStructured() parses the last assistant message of the json output and validates it against the schema",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "completeStructured() retries with a feedback note when the answer is not valid JSON, then succeeds",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "completeStructured() surfaces a stable error after retries are exhausted",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "runEditSession() runs headless with --auto-approve inside the repo cwd",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "runReadOnlySession() refuses before any subprocess spawns -- the adapter's fail-closed read-only mode (k1), no qualification exists yet",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "a non-zero vibe exit is a VibeTurnError carrying the CLI's own stderr text; a transient 503 is retried on a fresh run",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "Vibe structured completion retains strict original nullable semantics without Codex transport decoding",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6959,
+            "titles": [
+              {
+                "title": "vibeLastAssistantText: bare array, wrapped messages, string content, no assistant",
+                "result": "pass"
+              },
+              {
+                "title": "complete() runs default `vibe -p --output text` with the prompt on stdin",
+                "result": "pass"
+              },
+              {
+                "title": "complete() without a model adds no --model/--thinking flags (the CLI default applies)",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured() parses the last assistant message of the json output and validates it against the schema",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured() retries with a feedback note when the answer is not valid JSON, then succeeds",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured() surfaces a stable error after retries are exhausted",
+                "result": "pass"
+              },
+              {
+                "title": "runEditSession() runs headless with --auto-approve inside the repo cwd",
+                "result": "pass"
+              },
+              {
+                "title": "runReadOnlySession() refuses before any subprocess spawns -- the adapter's fail-closed read-only mode (k1), no qualification exists yet",
+                "result": "pass"
+              },
+              {
+                "title": "a non-zero vibe exit is a VibeTurnError carrying the CLI's own stderr text; a transient 503 is retried on a fresh run",
+                "result": "pass"
+              },
+              {
+                "title": "Vibe structured completion retains strict original nullable semantics without Codex transport decoding",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/structured-retry-vibe-refusal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 649,
+            "titles": [
+              {
+                "title": "Saved structured retry preserves Vibe refusal identity and never retries",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/__tests__/packaging.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1193,
+            "titles": [
+              {
+                "title": "package.json carries every Marketplace-required field for a single installable package (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "the 7 durable ad0d45c9 contributes.commands are preserved + the config/panel-track additions (S003 refresh, S004 panel commands)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 model-picker: contributes the palette-reachable insrc.models.setTier command (k6)",
+                "result": "pass"
+              },
+              {
+                "title": "package.json no longer sets private:true (so vsce can package/publish)",
+                "result": "pass"
+              },
+              {
+                "title": "scripts include bundle + package (vsce) + vscode:prepublish (typecheck+bundle) + the preserved vscode:uninstall",
+                "result": "pass"
+              },
+              {
+                "title": "esbuild is a declared devDependency (not relied on transitively) — review LOW fix",
+                "result": "pass"
+              },
+              {
+                "title": ".vscodeignore excludes source/tests/tsconfig/.github/raw-src but keeps assets/ and out/ (k5)",
+                "result": "pass"
+              },
+              {
+                "title": "the publish workflow is workflow_dispatch-only (no push/pull_request/schedule) with no test job (k7/lc2)",
+                "result": "pass"
+              },
+              {
+                "title": "the workflow publishes via vsce to the Marketplace only (no ovsx) + reads the PAT from a secret (lc1/k2)",
+                "result": "pass"
+              },
+              {
+                "title": "esbuild emits self-contained CJS out/extension.js that loads under an ESM (type:module) root (requires with a fake vscode, exposes activate/deactivate)",
+                "result": "pass"
+              },
+              {
+                "title": "the emitted out/uninstall.js, run as `node out/uninstall.js` under a temp HOME, actually SWEEPS the wired hosts (main-check fires) and never touches the real $HOME",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "fd6fb328a",
+        "ranAt": "2026-11-26T16:10:29.292Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "a repo-wide grep test asserts no production file imports src/shared/vibe-session.js and the module no longer exists (the grep-exhaustive enumeration in the LldContext is the baseline list)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/no-vibe-session-transport.test.ts",
+                "title": "src/shared/vibe-session.ts no longer exists",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/no-vibe-session-transport.test.ts",
+                "title": "no production .ts file under src/ or vscode-plugin/src/ imports src/shared/vibe-session.js",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the full relevant test sweep passes and typecheck is clean",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "fail",
+              "evidence": "Typecheck is clean on both tsconfigs (npx tsc --noEmit in the repo root and in vscode-plugin/, zero errors). The test sweep is NOT 100% green: src/agent/providers/**, src/shared/**, and vscode-plugin's chat/plugin suites together show 1780 pass / 55 fail (re-run after review rounds 1-4's fixes, see /tmp/full-sweep-r4.log). Every failure is pre-existing and confirmed unrelated to vibe: none of their names or content reference vibe, cli-adapter, cli-provider, or cli-vibe (Kotlin/JetBrains native-broker/process-broker suites, chat-theme/config-catalog-sync/docs-review-panel tests, VS Code daemon commands). The t6-disclosed cli-adapter.test.ts app-server-fixture gap (6 of the original 70 failures) was closed during review round 2 (finding 7): that fixture was rewritten to the real plain-CLI shape and all 6 tests now pass. Reporting 'fail' rather than 'pass' because the literal claim ('passes') does not hold; the disclosed/accounted-for breakdown is the honest result."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/no-vibe-session-transport.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 538,
+            "titles": [
+              {
+                "title": "src/shared/vibe-session.ts no longer exists",
+                "result": "pass"
+              },
+              {
+                "title": "no production .ts file under src/ or vscode-plugin/src/ imports src/shared/vibe-session.js",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ],
+        "note": "reported as failed by the builder: the full relevant test sweep passes and typecheck is clean"
+      }
+    ]
+  },
+  "citations": []
+}

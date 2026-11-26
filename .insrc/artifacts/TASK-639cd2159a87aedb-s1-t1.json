@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-aacc3dc4-a913-4e87-8be2-805348e360eb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-26T10:32:57.112Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add vibe-adapter.ts core: sc1/sc2 types, createVibeAdapter factory, and startTurn's request validation/refusal paths",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#308",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "15b009da69448b1c82b191960ca1889f05acf3f6d03b4c4afaabae630d0b0e88",
+        "at": "2026-11-26T10:32:57.113Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T10:32:57.114Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add vibe-adapter.ts core: sc1/sc2 types, createVibeAdapter factory, and startTurn's request validation/refusal paths",
+    "summary": "New, purely additive module src/shared/vibe-adapter.ts. Exports the sc1/sc2 types verbatim (VibeAdapterContext, VibeNewSession/VibeResumedSession, VibeTurnRequest, VibeTurnEvent, VibeTurnResult+VibeExitEvidence, VibeMcpToolIdentity) and createVibeAdapter(context, deps?) with injectable spawn/fs/process-group/clock seams, refusing construction when context.cwd is empty or not a directory. startTurn() validates the request shape and runs every refusal/mapping path BEFORE any subprocess spawns: the read-only refusal (refuses outright until s2's qualification exists), the read-only+approval-setting refusal, the new-session selection-catalog check surface, and the ordinary-session approval mapping (default/manual/edit-auto/auto). The re-homed VibeTurnError class (same refusal-marker shape structured-output.ts relies on) is defined here. Turn execution internals (event production, process-group cleanup, exit-evidence readback, naming) are a separate Task (t2) and are stubbed/deferred here -- nothing imports this module yet.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "createVibeAdapter throws when context.cwd is empty or not a directory, before any subprocess spawns",
+      "startTurn with mode:'read-only' refuses before any subprocess spawn, surfacing a reason (k1 fail-closed from s1; s2 will later make this conditional on qualification)",
+      "startTurn with mode:'read-only' and any approval setting refuses before dispatch",
+      "a new-session request's argv carries --model/--thinking only when the caller supplied them; a resumed-session request's type carries no selection fields",
+      "the ordinary approval mapping matches today's chat mapping: default/undefined adds no flag, manual maps to agent ask, edit-auto maps to agent accept-edits, auto maps to auto-approve",
+      "VibeTurnError is re-homed with the same constructor shape (dispatchState, sessionId, cause) structured-output.ts's instanceof check relies on"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "createVibeAdapter throws when context.cwd is empty or not a directory, before any subprocess spawns"
+      },
+      {
+        "level": "unit",
+        "name": "startTurn with mode:'read-only' refuses before any subprocess spawn, surfacing a reason"
+      },
+      {
+        "level": "unit",
+        "name": "startTurn with mode:'read-only' and any approval setting refuses before dispatch"
+      },
+      {
+        "level": "unit",
+        "name": "the ordinary approval mapping matches today's chat mapping: default/manual/edit-auto/auto"
+      },
+      {
+        "level": "unit",
+        "name": "VibeTurnError is re-homed with the same constructor shape (dispatchState, sessionId, cause)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

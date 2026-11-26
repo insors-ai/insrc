@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ffb708d2-62e5-4d49-9ace-d9c49adc236c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-26T10:32:57.118Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Re-point the plugin's shared-transport imports onto the adapter (mechanical, no chat behavior change)",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#310",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "78e4706f18c4c6a0c9c769113ef39e16a5f6716df949ec6e9edbf00a3f54056d",
+        "at": "2026-11-26T10:32:57.118Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T10:32:57.119Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Re-point the plugin's shared-transport imports onto the adapter (mechanical, no chat behavior change)",
+    "summary": "vscode-plugin/src/chat/cli-adapter.ts's type-only VibeCatalogModel import moves from src/shared/vibe-session.js to the adapter module (zero behavior change, confirmed no runtime transport call in this file). vscode-plugin/src/chat/vibe-session-process.ts's imports (runVerifiedVibeTurn, VibeTurnError, VibeCatalogModel, VibeTurnOptions) move to the adapter's equivalents; runVibeChatJob's turn call becomes a call to the adapter's runVibeTurn with the identical options object -- no mapper, event-mapping or worker-lifecycle change (that is a later Story, s3).",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "cli-adapter.ts imports VibeCatalogModel from the adapter module, not vibe-session.js, with no other change to that file",
+      "vibe-session-process.ts imports runVerifiedVibeTurn/VibeTurnError/VibeCatalogModel/VibeTurnOptions equivalents from the adapter module only",
+      "runVibeChatJob's turn call is the adapter's runVibeTurn, given the SAME VibeTurnOptions-shaped object the worker already builds",
+      "the chat worker's observable behavior is unchanged -- the same rows are written to the same line protocol (integration test against the real adapter, no transport)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "cli-adapter.ts imports VibeCatalogModel from the adapter module, not vibe-session.js"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/vibe-session-process.ts runVibeChatJob through the adapter turn entry — the chat worker's observable behavior is unchanged, same rows to the same line protocol"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

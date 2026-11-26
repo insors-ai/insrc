@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ca0d34d5-e6c7-4950-b110-4bcd846348d6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-26T10:32:57.122Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Rewire the backend's vibe call sites onto the adapter; delete runVibe/vibeArgs",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#312",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "4d203bb8c81a86ff93a98199334e3265a08cb6b36abb67032f981c6d7cb8ff6b",
+        "at": "2026-11-26T10:32:57.123Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T10:32:57.124Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Rewire the backend's vibe call sites onto the adapter; delete runVibe/vibeArgs",
+    "summary": "complete() builds a new-session VibeTurnRequest (no selection) and consumes startTurn, returning the final assistant text. completeStructuredVibe() builds a VibeTurnRequest and consumes startTurn, keeping its existing local two-attempt ajv validation loop and the schema note riding the prompt (the tool has no native schema flag). The interactive-tools/auto-approve path maps its auto-approve flag onto the request's approval input. readOnlySessionOnce() builds a mode:'read-only' request whose tool-name set comes from the adapter's sc2 VibeInsrcAnalysisToolId allowlist -- the adapter refuses it before dispatch (the s1 fail-closed state, matching today's READ_ONLY_SESSION_VIBE_TOOL_NAMES behavior one-for-one). runVibe() and vibeArgs() are deleted outright -- the provider stops constructing vibe argv or branching into the app-server transport.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "complete() for kind 'vibe' builds exactly one VibeTurnRequest and consumes the adapter -- a grep-level assertion confirms no vibeArgs/runVibe reference remains in cli-provider.ts",
+      "completeStructuredVibe keeps the local two-attempt ajv validation loop unchanged: a first invalid answer retries once, a second raises ModelResponseShapeError naming the schema errors",
+      "readOnlySessionOnce's request uses the adapter's sc2 allowlist and is refused before any subprocess spawns, with the same ReadOnlyUnavailableError-shaped surfaced reason as today's refusal",
+      "the provider's existing withTransientRetry still wraps every vibe path: a transient error text from the seam retries a fresh invocation once, a deterministic failure re-throws on attempt 1",
+      "a backend vibe request (complete/completeStructuredVibe/readOnlySessionOnce) spawns exactly one subprocess per turn through the adapter (seam-recorded spawn count)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "provider.complete for kind 'vibe' builds a single VibeTurnRequest and consumes the adapter — no private argv path remains (grep-level assertion: no vibeArgs/runVibe in cli-provider.ts)"
+      },
+      {
+        "level": "integration",
+        "name": "the backend vibe request path spawns exactly one subprocess per turn through the adapter (seam-recorded spawn)"
+      },
+      {
+        "level": "unit",
+        "name": "completeStructuredVibe keeps the local two-attempt ajv validation loop — a first invalid answer retries once, a second raises ModelResponseShapeError naming the errors"
+      },
+      {
+        "level": "unit",
+        "name": "the schema note rides the prompt — the prompt passed to the spawn seam contains the output contract"
+      },
+      {
+        "level": "unit",
+        "name": "withTransientRetry still wraps every vibe path — a transient error text retries a fresh invocation, a deterministic failure re-throws on attempt 1, bounded at the existing max"
+      },
+      {
+        "level": "live",
+        "name": "INSRC_LIVE_TESTS=1 — the plain-CLI path end to end and exit-evidence readback from --output-dir"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-732d66cb-134a-4d7b-8739-6572bcd3a6b7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-26T10:32:57.126Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Delete src/shared/vibe-session.ts and its test/fixture files; update the remaining non-production references",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#313",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "833e661d0088980e4f1b7a4bd8eeced2e8b29a907eedaaf093912330b6c54711",
+        "at": "2026-11-26T10:32:57.126Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T10:32:57.128Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Delete src/shared/vibe-session.ts and its test/fixture files; update the remaining non-production references",
+    "summary": "Delete src/shared/vibe-session.ts, src/shared/__tests__/vibe-session.test.ts and src/shared/__tests__/fixtures/vibe-selection-smoke.mjs. Re-point src/agent/providers/__tests__/cli-vibe.test.ts and src/agent/providers/__tests__/structured-retry-vibe-refusal.test.ts to the adapter equivalents with the same case verdicts. Update vscode-plugin's packaging.test.ts shared-file list (gains vibe-adapter.js, loses vibe-session.js) and any other repo-wide test/fixture reference found by the grep enumeration (e.g. a daemon test helper or model-catalog-asset.test.ts), re-pointing or dropping each per its own relevance.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "src/shared/vibe-session.ts no longer exists in the repo",
+      "vibe-session.test.ts and vibe-selection-smoke.mjs no longer exist",
+      "cli-vibe.test.ts and structured-retry-vibe-refusal.test.ts pass against the adapter's equivalents with the same case verdicts as before the rewire",
+      "packaging.test.ts's shared-file list reflects vibe-adapter.js and no longer references vibe-session.js",
+      "every other repo-wide reference to vibe-session.js found by a fresh grep at this Task's end is either re-pointed or justified as dropped in the Task's own notes"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the transport's test suite (vibe-session.test.ts) and fixture (vibe-selection-smoke.mjs) are deleted with the module; packaging.test.ts's shared-file list updated"
+      },
+      {
+        "level": "unit",
+        "name": "VibeTurnError re-homed to the adapter is still the non-retryable refusal marker (structured-retry-vibe-refusal.test.ts's cases re-pointed, same verdicts)"
+      },
+      {
+        "level": "integration",
+        "name": "provider + structured-output + chat worker compile and run against the adapter alone"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

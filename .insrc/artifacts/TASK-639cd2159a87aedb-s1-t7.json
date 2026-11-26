@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-dcf1cf9a-62bf-43bb-ba57-9170a2ba726f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-26T10:32:57.129Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the no-transport contract check and run the full test sweep",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#314",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "b664a73c41e3606a9b26d39536ad7e42b2e79f34236a767ed1b94cfb5c2810cd",
+        "at": "2026-11-26T10:32:57.129Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T10:32:57.131Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the no-transport contract check and run the full test sweep",
+    "summary": "Add a durable repo-wide grep test asserting no production file imports src/shared/vibe-session.js and the module no longer exists, so a future regression re-introducing the transport fails the suite immediately. Run the full relevant test sweep (src/agent/providers/**, src/shared/**, vscode-plugin's chat/plugin suites) plus typecheck to confirm no regression to any path this Story touched.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "the new contract test fails if src/shared/vibe-session.js is re-imported by any production file or the file is restored",
+      "the full relevant test sweep passes and typecheck is clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a repo-wide grep test asserts no production file imports src/shared/vibe-session.js and the module no longer exists (the grep-exhaustive enumeration in the LldContext is the baseline list)"
+      },
+      {
+        "level": "smoke",
+        "name": "the full relevant test sweep passes and typecheck is clean"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

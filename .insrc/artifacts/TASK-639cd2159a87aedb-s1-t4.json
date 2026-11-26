@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-133894b8-7747-4dba-9d87-5321cd244ab8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-26T10:32:57.120Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Re-point the backend's shared-transport imports onto the adapter",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#311",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "3ead85b5a19c8a307821e61f8d10d353dd79c6a29b495a60463f30183d36534b",
+        "at": "2026-11-26T10:32:57.120Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T10:32:57.121Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Re-point the backend's shared-transport imports onto the adapter",
+    "summary": "src/agent/providers/structured-output.ts's VibeTurnError import moves to the adapter module; its refusal-marker role in the structured-output retry classifier (the instanceof check) is untouched. src/agent/providers/cli-provider.ts's VibeCatalogModel and VibeTurnError imports move to the adapter module.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "structured-output.ts imports VibeTurnError from the adapter module; the retry classifier's instanceof check still distinguishes the refusal marker from a transient failure, same verdicts as today",
+      "cli-provider.ts imports VibeCatalogModel/VibeTurnError from the adapter module, with no behavior change at this step (call sites are rewired in the next Task)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "structured-output.ts imports VibeTurnError from the adapter module; the retry classifier's instanceof check still distinguishes the refusal marker from a transient failure"
+      },
+      {
+        "level": "unit",
+        "name": "cli-provider.ts imports VibeCatalogModel/VibeTurnError from the adapter module with no behavior change at this step"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

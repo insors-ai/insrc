@@ -1,0 +1,123 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-74fdba0b-383f-4cda-b75f-3b211606f6d5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-26T10:32:57.115Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add vibe-adapter.ts turn execution: live event production, process-group cleanup, exit-evidence readback, and naming",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#309",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "dcd483f96664a25e290195a13bcb9805da42a31f11fd206943c3119e7e4ffff7",
+        "at": "2026-11-26T10:32:57.115Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T10:32:57.116Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add vibe-adapter.ts turn execution: live event production, process-group cleanup, exit-evidence readback, and naming",
+    "summary": "Completes src/shared/vibe-adapter.ts: startTurn's live JSONL event production for outputMode:'streaming' (session/status/assistant-text/tool-call/tool-result/error variants) and final-message mapping for text/json modes; the dual process-group policy with termination/descendant-exit-confirmation/temp-file cleanup on every exit path (adapter-owned and supervisor-owned); exit-evidence readback from --output-dir export.json (stopReason, outcome, effectiveSelection), treating a missing/malformed export as absent evidence rather than fabricated; VibeMcpNaming.fromStreamedName (general insrc MCP tool identity) and the VibeInsrcAnalysisToolId allowlist (restricted); and runVibeTurn(options), the adapter-owned turn entry whose signature totally maps the plugin's existing VibeTurnOptions onto context+request with no chat behavior change.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "every exit path (success, abort/deadline, spawn failure) removes the turn's temporary files; adapter-owned mode additionally sweeps the child group on every exit path",
+      "a 'session' event opens every turn carrying the native session id and, for a new session, the resume handle",
+      "the result carries exit evidence (stopReason, outcome, effectiveSelection) read back from export.json; a missing/malformed export.json yields undefined evidence rather than a fabricated value",
+      "VibeMcpNaming.fromStreamedName returns undefined for a name matching no insrc MCP tool, never a guess",
+      "a streaming turn whose tool-result arrives with outputText absent but output present (and vice versa; and an error-only result) yields the normalized OUTPUT per the existing chat precedence, never an empty payload",
+      "runVibeTurn's parameter mapping from VibeTurnOptions is total: every field the plugin's existing options object carries maps onto the adapter's context+request with no silently dropped option"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "adapter argv construction — a request with no model/thinking adds no --model/--thinking flags and writes the prompt to the tool's programmatic input (stdin), never into argv"
+      },
+      {
+        "level": "unit",
+        "name": "a new-session request with model+thinking constructs the argv with --model/--thinking; a resumed-session request constructs --resume only and the type forbids selection"
+      },
+      {
+        "level": "unit",
+        "name": "the adapter recognizes the tool's selection-failure wording and raises VibeSelectionError before any model call, not retried by withTransientRetry"
+      },
+      {
+        "level": "unit",
+        "name": "every exit path removes the turn's temporary files; adapter-owned mode additionally sweeps the child group on every exit path"
+      },
+      {
+        "level": "unit",
+        "name": "a 'session' event opens every turn carrying the native session id and, for a new session, the resume handle"
+      },
+      {
+        "level": "unit",
+        "name": "exit evidence is read back from export.json; a missing/malformed export.json yields undefined evidence rather than a fabricated value"
+      },
+      {
+        "level": "unit",
+        "name": "VibeMcpNaming.fromStreamedName returns undefined for a name matching no insrc MCP tool, never a guess"
+      },
+      {
+        "level": "unit",
+        "name": "a streaming tool-result with outputText/output/error/reason normalizes to the existing chat precedence, never an empty payload"
+      },
+      {
+        "level": "live",
+        "name": "INSRC_LIVE_TESTS=1 — a real vibe -p turn with a bogus alias surfaces the tool's real catalog; a valid model/thinking completes"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

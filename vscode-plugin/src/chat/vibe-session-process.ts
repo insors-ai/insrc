@@ -1,5 +1,5 @@
-import { runVerifiedVibeTurn, VibeTurnError } from '../../../src/shared/vibe-session.js';
-import type { VibeCatalogModel, VibeTurnOptions } from '../../../src/shared/vibe-session.js';
+import { runVibeTurn, VibeTurnError } from '../../../src/shared/vibe-adapter.js';
+import type { VibeCatalogModel, VibeTurnOptions } from '../../../src/shared/vibe-adapter.js';
 import type { TurnRequest } from './cli-adapter.js';
 
 type Row = Record<string, unknown>;
@@ -80,7 +80,7 @@ export async function runVibeChatJob(job: VibeChatJob, signal: AbortSignal, writ
     write(JSON.stringify({ ...row, ...(sessionId !== undefined ? { sessionId } : {}) }) + '\n');
   };
   try {
-    const result = await runVerifiedVibeTurn({
+    const result = await runVibeTurn({
       command, cwd: request.cwd, timeoutMs: 600_000, signal, inheritProcessGroup: ownedGroup,
       agentConfig: {
         cwd: request.cwd,

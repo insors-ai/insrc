@@ -46,7 +46,7 @@ import { DEFAULT_GRACE_MS, defaultKillGroup, observeProcess, processDeparted, si
 import { parseMarker, SegmentGone, type SegmentCursor, type SessionOutput } from './session-output.js';
 
 import type { VibeChatJob } from './vibe-session-process.js';
-import type { VibeCatalogModel } from '../../../src/shared/vibe-session.js';
+import type { VibeCatalogModel } from '../../../src/shared/vibe-adapter.js';
 
 export type ProviderId = 'claude' | 'codex' | 'vibe';
 

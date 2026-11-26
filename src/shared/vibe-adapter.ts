@@ -502,7 +502,7 @@ export function createVibeAdapter(context: VibeAdapterContext, deps: VibeAdapter
 /** The OLD app-server VibeSessionOptions/VibeTurnOptions shape, re-declared here (not
  *  imported from the module being deleted) so a later Task's call-site re-point is a pure
  *  import swap: vibe-session-process.ts's runVibeChatJob already builds exactly this shape. */
-export interface VibeTurnOptionsCatalogModel {
+export interface VibeCatalogModel {
 	readonly id: string;
 	readonly aliases?: readonly string[] | undefined;
 	readonly efforts: readonly string[];
@@ -517,7 +517,7 @@ export interface VibeTurnOptions {
 	readonly nativeSessionId?: string | undefined;
 	readonly model?: string | undefined;
 	readonly effort?: string | undefined;
-	readonly catalog: readonly VibeTurnOptionsCatalogModel[];
+	readonly catalog: readonly VibeCatalogModel[];
 	readonly inheritProcessGroup?: boolean | undefined;
 	readonly prompt: string;
 	readonly onSession?: ((sessionId: string) => void) | undefined;
@@ -584,12 +584,14 @@ export async function runVibeTurn(options: VibeTurnOptions): Promise<VibeTurnOut
 	const turn = adapter.startTurn(request);
 
 	let sessionId: string | undefined;
+	let assistantEntrySeq = 0;
 	for await (const event of turn) {
 		if (event.kind === 'session') {
 			sessionId = event.sessionId;
 			options.onSession?.(event.sessionId);
 		} else if (event.kind === 'assistant-text') {
-			options.onHistory?.('history/entryAdded', { entry: { type: 'message', role: 'assistant', content: [{ type: 'text', text: event.text }] } });
+			const id = `assistant-${sessionId ?? 'turn'}-${assistantEntrySeq++}`;
+			options.onHistory?.('history/entryAdded', { entry: { id, type: 'message', role: 'assistant', content: [{ type: 'text', text: event.text }] } });
 		} else if (event.kind === 'tool-call') {
 			options.onHistory?.('history/entryAdded', { entry: { type: 'effect', id: event.toolCallId, detail: { toolName: event.toolName, input: event.arguments } } });
 		} else if (event.kind === 'tool-result') {

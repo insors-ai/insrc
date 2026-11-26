@@ -27,8 +27,10 @@ privateRuntimeTest(import.meta.url, 'inspection-and-reconciliation-share-three-s
     const report = await dependencyPort(f.target, f.location, f.options).inspect(f.location);
     assert.equal(report.ollama, 'installed-not-running', JSON.stringify(report));
     assert.ok(performance.now() - started < 3000);
-    assert.ok(observer.reads.length > 0, 'the sentinel observes the real bounded target-header reads');
-    assert.ok(observer.reads.every(read => read.bytes <= 4096)); await observer.drain(); observer.restore();
+    assert.ok(observer.metadataReads.some(read => read.file === 'inventory.json' && read.bytes > 0), 'the sentinel observes the bound inventory read');
+    assert.ok(observer.metadataReads.some(read => read.file === '.ollama-receipt.json' && read.bytes > 0), 'the sentinel observes the bound receipt read');
+    assert.deepEqual(observer.reads, [], 'inspection reconciles completion metadata without opening payload contents');
+    await observer.drain(); observer.restore();
     const wait = new Promise<void>(resolve => { release = resolve; });
     const inventory = join(f.prepared.directory, 'inventory.json');
     observer = observeOllamaReads(f.prepared.directory, async file => {
@@ -79,7 +81,9 @@ privateRuntimeTest(import.meta.url, 'receipt-closure-and-layout-errors-block-reu
       else chmodSync(data, 0o755);
       observer = observeOllamaReads(f.prepared.directory);
       const report = await dependencyPort(f.target, f.location, f.options).inspect(f.location);
-      assert.equal(report.ollama, 'unavailable', `${kind}: ${JSON.stringify(report)}`);
+      const invalidCompletion = kind === 'receipt' || kind === 'closure';
+      assert.equal(report.ollama, invalidCompletion ? 'unavailable' : 'installed-not-running', `${kind}: ${JSON.stringify(report)}`);
+      assert.deepEqual(observer.reads, [], 'status must not traverse payload contents to discover layout changes');
       let downloads = 0;
       await assert.rejects(prepareOllama(f.location, f.policy, f.offer, f.context(), { recheck: f.recheck,
         transport: async () => { downloads++; return f.transport(); } }), { code: kind === 'receipt' || kind === 'closure' ? 'dependency-uncertain' : 'archive-unsafe' }, kind);

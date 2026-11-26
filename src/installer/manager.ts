@@ -230,7 +230,10 @@ export class InstallerManager {
       const offer = this.#offer(parseDevSourceOffer(value.sourceOffer), active.snapshot.installation.delivery);
       if (offer.kind !== 'dev-source') throw new Error('wrong source mode');
       return offer;
-    } catch (cause) { throw new InstallerError('preparation-uncertain', 'Original accepted source cannot be recovered', { cause }); }
+    } catch (cause) {
+      if (cause instanceof InstallerError && cause.code === 'source-incompatible') throw cause;
+      throw new InstallerError('preparation-uncertain', 'Original accepted source cannot be recovered', { cause });
+    }
   }
   #dependencyAttempt(active: Active): { schemaVersion: 1; operationId: string; installationId: string; attemptNonce: string; decision: DependencyDecision } | undefined {
     const input = active.store.readOperationData(active.request.operationId, 'dependency');

@@ -72,6 +72,40 @@ test('manager checkpoint rejects source mutation after durable acceptance', asyn
     assert.equal(f.state.shutdowns.length, 0);
   } finally { f.cleanup(); }
 });
+test('durable legacy dev offer recovery preserves compatibility diagnostics without preparation or shutdown', async () => {
+  for (const legacy of [true, false]) {
+    const f = managerFixture();
+    try {
+      const operationId = 'legacy-recovery', delivery = { mode: 'dev' as const, repository: '/source', branch: 'installer' };
+      const offer = createDevSourceOffer({ kind: 'dev-source', delivery, sourceCommit: 'a'.repeat(40), target: f.target,
+        runtime: { version: '22.22.1', target: f.target, sha256: runtimeArchive(f.target).sha256,
+          relativeExecutable: f.target.os === 'win32' ? 'node.exe' : 'bin/node' }, recipeVersion: 'dev-v2-app-only' });
+      const sourceOffer = legacy ? { ...offer, recipeVersion: 'dev-v1' } : { kind: 'dev-source' };
+      const store = ControllerStore.acquire(f.location);
+      try {
+        const current = store.inspect(); assert.equal(current.kind, 'present');
+        if (current.kind !== 'present') throw new Error('fixture enrollment missing');
+        store.commit({ ...current.snapshot, revision: current.snapshot.revision + 1,
+          installation: { ...current.snapshot.installation, delivery, operationId },
+          operation: { operationId, phase: 'blocked', predecessorId: 'old', errorCode: 'preparation-uncertain' } }, current.snapshot.revision);
+        store.writeOperationData(operationId, 'intent', { protocolVersion: 1, installationId: 'fixture', operationId, action: 'upgrade', acceptedOfferId: 'a'.repeat(64) });
+        store.writeOperationData(operationId, 'interruption', { phase: 'preparing' });
+        store.writeOperationData(operationId, 'dev-source', { schemaVersion: 1, sourceOffer });
+      } finally { store.close(); }
+      f.peers.dev = { ...f.peers.bundle!, async resolve() { throw new Error('recovery must not resolve new source'); },
+        async prepare() { throw new Error('incompatible source must not prepare'); } };
+      const result = await f.manager().execute({ protocolVersion: 1, installationId: 'fixture', operationId, action: 'retry-migration' });
+      assert.equal(result.state.phase, 'blocked');
+      assert.equal(result.state.errorCode, legacy ? 'source-incompatible' : 'preparation-uncertain', result.state.message);
+      if (legacy) assert.match(result.state.message!, /Legacy embedded-runtime.*receipt2/);
+      assert.deepEqual(JSON.parse(readFileSync(join(f.home, 'install/operations', operationId, 'dev-source.json'), 'utf8')), { schemaVersion: 1, sourceOffer });
+      const inspected = f.manager().inspect(); assert.equal(inspected.kind, 'present');
+      if (inspected.kind === 'present') assert.equal(inspected.snapshot.installation.activeReleaseId, 'old');
+      assert.equal(existsSync(join(f.home, 'install/operations', operationId, 'candidate.json')), false);
+      assert.equal(f.state.shutdowns.length + f.state.migrations.length + f.state.activations.length, 0);
+    } finally { f.cleanup(); }
+  }
+});
 test('bundled manager metadata does not start source preparation', async () => {
   const directory = join(root, 'b'); mkdirSync(directory);
   const entry = join(directory, 'entry.mjs'), output = join(directory, 'manager.mjs');

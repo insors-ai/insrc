@@ -24,8 +24,8 @@ import type { HubClient, HubHandlers } from './channel.js';
 
 const log = getLogger('step-state');
 
-export type StepKind = 'analyze' | 'workflow';
-export const STEP_KINDS: readonly StepKind[] = ['analyze', 'workflow'];
+export type StepKind = 'analyze' | 'workflow' | 'security-review';
+export const STEP_KINDS: readonly StepKind[] = ['analyze', 'workflow', 'security-review'];
 
 export interface StepStateEntry<P> {
 	readonly token: string;
@@ -67,8 +67,9 @@ export interface SharedStepStateStore {
 }
 
 const LIFECYCLES: Readonly<Record<StepKind, StepLifecycle>> = {
-	'analyze':     { update: 'rotate-token',      maxEntries: 100, ttlMs: 60 * 60 * 1_000, readRefreshes: true },
-	'workflow':    { update: 'rotate-token',      maxEntries: 100, ttlMs: 60 * 60 * 1_000, readRefreshes: true },
+	'analyze':         { update: 'rotate-token', maxEntries: 100, ttlMs: 60 * 60 * 1_000, readRefreshes: true },
+	'workflow':        { update: 'rotate-token', maxEntries: 100, ttlMs: 60 * 60 * 1_000, readRefreshes: true },
+	'security-review': { update: 'rotate-token', maxEntries: 100, ttlMs: 60 * 60 * 1_000, readRefreshes: true },
 };
 
 export class StepStateNotFound extends Error {

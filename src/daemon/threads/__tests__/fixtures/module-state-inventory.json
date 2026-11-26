@@ -1435,5 +1435,13 @@
   "src/workflow/tracker/resolve.ts#EXPLICIT_EVIDENCE": {
     "class": "per-thread",
     "reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+  },
+  "src/workflow/security-review/handle-security-review-step.ts#testDeps": {
+    "class": "per-thread",
+    "reason": "Test-only override seam (_setSecurityReviewStepDepsForTests), matching every other testDeps entry in this inventory: never written outside a unit test, and a per-thread copy defaulting to {} is correct for production."
+  },
+  "src/workflow/security-review/handle-security-review-step.ts#TRANSIENT_STAT_CODES": {
+    "class": "per-thread",
+    "reason": "A read-only lookup Set, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
   }
 }

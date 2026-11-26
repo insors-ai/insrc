@@ -32,6 +32,18 @@ function errorEnvelope(message: string): SecurityReviewStepEnvelope {
 	return { content: [{ type: 'text', text: JSON.stringify({ next: 'error', error: { message } }, null, 2) }], isError: true };
 }
 
+/** `targets` must be `{ entries: [{ path: <non-empty string> }, ...] }` with
+ *  at least one entry -- checked at this boundary too (not only inside
+ *  handleSecurityReviewStep), so a structurally malformed `targets` is
+ *  refused before any dispatch at all, defense in depth against this being
+ *  the only validator a future caller ever reaches. */
+function isWellShapedTargets(targets: unknown): boolean {
+	if (typeof targets !== 'object' || targets === null) return false;
+	const entries = (targets as { entries?: unknown }).entries;
+	return Array.isArray(entries) && entries.length > 0
+		&& entries.every(e => typeof e === 'object' && e !== null && typeof (e as { path?: unknown }).path === 'string' && (e as { path: string }).path.length > 0);
+}
+
 /**
  * Accepts ONLY an unambiguous fresh shape ({repoPath, targets}, no
  * state/proceed) or an unambiguous resumed shape ({state, proceed}, no
@@ -59,7 +71,7 @@ function isValidRequest(input: unknown): input is SecurityReviewStepRequest {
 	if (epicHashGiven !== storyIdGiven) return false; // epicHash/storyId must be given as a pair
 
 	return typeof r['repoPath'] === 'string' && r['repoPath'].length > 0
-		&& typeof r['targets'] === 'object' && r['targets'] !== null
+		&& isWellShapedTargets(r['targets'])
 		&& (!epicHashGiven || typeof r['epicHash'] === 'string')
 		&& (!storyIdGiven || typeof r['storyId'] === 'string');
 }

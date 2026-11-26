@@ -198,10 +198,10 @@ test('MCP forwarder: a forwarded insrc_analyze_step with a progressToken emits n
 	}
 });
 
-test('MCP tool surface: the thirteen tools keep their names, descriptions and input schemas', async () => {
+test('MCP tool surface: the fourteen tools keep their names, descriptions and input schemas', async () => {
 	// The golden file was captured from the server before the tools became forwarders (at e30638e5).
 	const golden = JSON.parse(readFileSync(join(HERE, 'fixtures', 'tool-surface.golden.json'), 'utf8')) as { name: string }[];
-	assert.equal(golden.length, 13);
+	assert.equal(golden.length, 14);
 	const { client, close } = await mcpClient('surface-check');
 	try {
 		const { tools } = await client.listTools();
@@ -215,9 +215,9 @@ test('MCP tool surface: the thirteen tools keep their names, descriptions and in
 	} finally { await close(); }
 });
 
-test('the MCP tool surface golden fixture lists insrc_present and the tool count is thirteen', () => {
+test('the MCP tool surface golden fixture lists insrc_present and the tool count is fourteen', () => {
 	const golden = JSON.parse(readFileSync(join(HERE, 'fixtures', 'tool-surface.golden.json'), 'utf8')) as { name: string }[];
-	assert.equal(golden.length, 13);
+	assert.equal(golden.length, 14);
 	assert.ok(golden.some(t => t.name === 'insrc_present'));
 	const names = golden.map(t => t.name);
 	assert.deepEqual(names, [...names].sort((x, y) => x.localeCompare(y)), 'the golden list stays name-sorted');

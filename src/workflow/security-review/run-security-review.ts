@@ -62,6 +62,14 @@ export interface SecurityReviewReport {
 	readonly effectiveModel: { readonly provider: string; readonly modelId?: string };
 	readonly baseReportMarkdown: string;
 	readonly supplementalMarkdown: string;
+	/** True when the caller (t5's handleSecurityReviewStep) ran this review
+	 *  against a graph index it already knew was stale (a proceed:false
+	 *  resume) -- carried INTO the report object itself, not bolted on by a
+	 *  wrapper afterward, so finalizeAndCleanup's own durable copy of this
+	 *  exact object also records the disposition. Defaults to false: a direct
+	 *  runSecurityReview caller with no freshness concept of its own (e.g. a
+	 *  future standalone caller) is never mistakenly flagged degraded. */
+	readonly degraded: boolean;
 }
 
 /**
@@ -140,6 +148,7 @@ export function assembleSecurityReport(
 	receipts: { readonly round1: VerificationReceipt; readonly round2: VerificationReceipt },
 	modelSelection: SecurityModelSelection & { readonly status: 'configured' },
 	baseReport: { readonly path: string; readonly markdown: string },
+	degraded = false,
 ): SecurityReviewReport {
 	const advisoryFindings = advisoryEvidence.matches.map(advisoryMatchToFinding);
 	return {
@@ -151,6 +160,7 @@ export function assembleSecurityReport(
 		effectiveModel: { provider: modelSelection.provider, modelId: modelSelection.modelId },
 		baseReportMarkdown: baseReport.markdown,
 		supplementalMarkdown: renderSupplementalMarkdown(advisoryEvidence),
+		degraded,
 	};
 }
 
@@ -158,8 +168,10 @@ export function assembleSecurityReport(
  *  computeContentIdentity itself also runs) -- must throw before ANY I/O,
  *  including the async realpath-based symlink check computeContentIdentity
  *  performs later; that one still runs (inside verifyContentIdentityMatch)
- *  and catches a symlink escape this check cannot see. */
-function assertTargetsContained(repoPath: string, targets: ReviewTargets): void {
+ *  and catches a symlink escape this check cannot see. Exported so t5's
+ *  handleSecurityReviewStep can run the SAME check before its own earlier
+ *  I/O (the freshness stat), not just rely on this module's own later guard. */
+export function assertTargetsContained(repoPath: string, targets: ReviewTargets): void {
 	for (const entry of targets.entries) {
 		const resolved = resolve(repoPath, entry.path);
 		const rel = relative(repoPath, resolved);
@@ -200,6 +212,10 @@ export function runSecurityReview(
 		readonly now: string;
 		readonly epicHash?: string;
 		readonly storyId?: string;
+		/** Threaded verbatim into the returned (and durably copied) report's
+		 *  own `degraded` field -- see SecurityReviewReport's doc. Defaults to
+		 *  false when omitted. */
+		readonly degraded?: boolean;
 	},
 ): Promise<SecurityReviewReport> {
 	// Deliberately NOT async (matches runReviewRound's own documented reason):
@@ -267,6 +283,7 @@ export function runSecurityReview(
 			{ round1: round1.receipt, round2: round2.receipt },
 			modelSelection,
 			baseReport,
+			opts.degraded ?? false,
 		);
 
 		await finalizeAndCleanup(opts.reviewId, report);

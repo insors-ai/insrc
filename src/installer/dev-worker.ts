@@ -15,7 +15,8 @@ import { devHashSchema, devNonceSchema, devObjectSchema, devPreparationSchema, d
 import type { DevPreparationRecord } from './dev.js';
 import { devPreparationPaths, parseDevReleaseReceipt } from './dev.js';
 import { normalizeHome, assertLocalControlRoot } from './location.js';
-import { canonicalJson, digest, parseInventory } from './release-descriptor.js';
+import { privateRuntimePaths } from './runtime-policy.js';
+import { canonicalJson, digest, parseApplicationInventory } from './release-descriptor.js';
 import { controlBinding } from './native.js';
 import { verifyPayloadInventory } from './safe-zip.js';
 import { flushDirectory, flushFile, flushParents } from './durability.js';
@@ -155,11 +156,11 @@ function closureEvidence(record: DevPreparationRecord, paths: ReturnType<typeof 
 async function verifyStagedMetadata(record: DevPreparationRecord, paths: ReturnType<typeof devWorkerPaths>, inventorySha256: string, signal?: AbortSignal): Promise<void> {
   realParents(paths.home, join(paths.stage, '.dev-release.json'));
   const receiptBytes = bytes(join(paths.stage, '.dev-release.json')), receipt = parseDevReleaseReceipt(JSON.parse(receiptBytes));
-  const inventoryBytes = bytes(join(paths.stage, 'inventory.json'), 32 * 1024 * 1024), inventory = parseInventory(JSON.parse(inventoryBytes));
+  const inventoryBytes = bytes(join(paths.stage, 'inventory.json'), 32 * 1024 * 1024), inventory = parseApplicationInventory(JSON.parse(inventoryBytes));
   if (canonicalJson(receipt.sourceOffer) !== canonicalJson(record.sourceOffer) || receipt.checkoutRelativePath !== record.checkoutRelativePath
     || receipt.inventorySha256 !== inventorySha256 || digest(inventoryBytes) !== inventorySha256 || canonicalJson(inventory) !== inventoryBytes
     || canonicalJson(receipt) !== receiptBytes) throw uncertain('Worker staged identity differs');
-  const required = ['bootstrap.mjs', 'manager.mjs', 'native/control.node', `tools/node/${receipt.manifest.runtime.relativeExecutable}`,
+  const required = ['bootstrap.mjs', 'manager.mjs', 'native/control.node',
     receipt.manifest.daemonEntry, receipt.manifest.managerEntry, receipt.manifest.tuiEntry];
   for (const name of required) {
     if (!inventory.files.some(file => file.path === name)) throw uncertain('Worker stage is incomplete');
@@ -304,7 +305,10 @@ export async function launchDevWorker(scope: CommandScope, location: Installatio
   options.signal?.throwIfAborted();
   if (options.ownerInput?.readableEnded || options.ownerInput?.destroyed) throw new InstallerError('source-cancelled', 'Preparation owner input ended before launch');
   const cancelFrame = canonicalJson({ schemaVersion: 1, kind: 'cancel', operationId: record.operationId, attemptId: record.attemptId, workerNonce: record.workerNonce }) + '\n';
-  const result = await scope.start(process.execPath, [options.entrypoint, '--dev-preparation-worker', location.home], {
+  const runtime = await privateRuntimePaths(location, record.sourceOffer.runtime, { signal: options.signal });
+  options.signal?.throwIfAborted();
+  if (options.ownerInput?.readableEnded || options.ownerInput?.destroyed) throw new InstallerError('source-cancelled', 'Preparation owner input ended during runtime verification');
+  const result = await scope.start(runtime.node, [options.entrypoint, '--dev-preparation-worker', location.home], {
     env: options.environment,
     ...(options.budgetMs !== undefined ? { budgetMs: options.budgetMs } : {}),
     ownerChannel: { initial: canonicalJson({ schemaVersion: 1, kind: 'prepare', checkpoint: record }) + '\n', cancel: cancelFrame, connect(channel) {

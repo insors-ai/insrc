@@ -12,7 +12,7 @@ function intent(os: 'linux' | 'win32' = 'linux'): DevSourceIntent {
   const target = { os, arch: 'arm64' as const, baseline: os === 'linux' ? 'ubuntu-24.04' : 'windows-11' };
   return { kind: 'dev-source', delivery: { mode: 'dev', repository: 'https://github.com/insors-ai/insrc.git', branch: 'installer' },
     sourceCommit: 'b'.repeat(40), target, runtime: { version: '22.22.1', target: { ...target }, sha256: runtimeArchive(target).sha256,
-      relativeExecutable: os === 'win32' ? 'node.exe' : 'bin/node' }, recipeVersion: 'dev-v1' };
+      relativeExecutable: os === 'win32' ? 'node.exe' : 'bin/node' }, recipeVersion: 'dev-v2-app-only' };
 }
 function checkpoint(): DevPreparationRecord {
   return { schemaVersion: 1, installationId: 'home', operationId: 'op', sourceOffer: createDevSourceOffer(intent()),
@@ -22,7 +22,7 @@ function fixture(os: 'linux' | 'win32' = 'linux') {
   const sourceOffer = createDevSourceOffer(intent(os)), inventory = { schemaVersion: 1 as const,
     files: [{ path: 'out/daemon/index.js', bytes: 3, mode: 0o644, sha256: 'a'.repeat(64) }] };
   const inventorySha256 = digest(canonicalJson(inventory));
-  const receipt: DevReleaseReceipt = { schemaVersion: 1, mode: 'dev', sourceOffer, inventorySha256, checkoutRelativePath: 'dev/checkouts/attempt-1',
+  const receipt: DevReleaseReceipt = { schemaVersion: 2, mode: 'dev', sourceOffer, inventorySha256, checkoutRelativePath: 'dev/checkouts/attempt-1',
     manifest: { schemaVersion: 1, releaseId: sourceOffer.releaseId, sourceCommit: sourceOffer.sourceCommit, target: sourceOffer.target,
       runtime: sourceOffer.runtime, payloadSha256: inventorySha256, daemonEntry: 'out/daemon/index.js', managerEntry: 'manager.mjs',
       tuiEntry: 'out/cli/index.js', protocolVersion: 1, compatiblePredecessors: ['dev-predecessor'], migrations: [] } };
@@ -65,7 +65,7 @@ test('dev-receipt-binds-final-manifest-inventory-and-contained-checkout-without-
   assert.notEqual(candidate.payloadSha256, receipt.sourceOffer.sourceSha256);
   for (const change of [
     { inventorySha256: 'f'.repeat(64) }, { manifest: { ...receipt.manifest, sourceCommit: 'a'.repeat(40) } },
-    { manifest: { ...receipt.manifest, releaseId: 'another' } }, { schemaVersion: 2 }, { descriptorSha256: 'a'.repeat(64) },
+    { manifest: { ...receipt.manifest, releaseId: 'another' } }, { schemaVersion: 3 }, { descriptorSha256: 'a'.repeat(64) },
     { checkoutRelativePath: 'dev/checkouts/../selected' }, { checkoutRelativePath: 'dev/checkouts/attempt-1/subdir' },
     { checkoutRelativePath: 'install/staging/attempt-1' }, { checkoutRelativePath: 'dev/checkouts/CON' },
     { manifest: { ...receipt.manifest, migrations: [{ id: 'm', version: '1', module: '../bad.js' }] } },
@@ -80,6 +80,24 @@ test('dev-receipt-binds-final-manifest-inventory-and-contained-checkout-without-
   const win = fixture('win32');
   assert.equal(devCandidateFromReceipt(`c:\\Users\\person\\releases\\${win.receipt.manifest.releaseId}`, win.receipt, win.inventory).directory,
     `C:\\Users\\person\\releases\\${win.receipt.manifest.releaseId}`);
+});
+
+test('dev receipt2 and recipe reject legacy embedded formats without changing public manifest1', () => {
+  const { receipt, inventory } = fixture();
+  assert.equal(receipt.schemaVersion, 2);
+  assert.equal(receipt.manifest.schemaVersion, 1);
+  assert.equal(receipt.sourceOffer.recipeVersion, 'dev-v2-app-only');
+  assert.throws(() => parseDevReleaseReceipt({ ...receipt, schemaVersion: 1 }), /Legacy embedded-runtime/);
+  const legacy = { ...receipt.sourceOffer, recipeVersion: 'dev-v1' };
+  assert.throws(() => parseDevSourceOffer(legacy), /Legacy embedded-runtime/);
+  assert.throws(() => parseDevPreparation({ ...checkpoint(), sourceOffer: legacy }), /Legacy embedded-runtime/);
+  assert.throws(() => parseDevWorkerLaunch({ schemaVersion: 1, kind: 'prepare', checkpoint: { ...checkpoint(), sourceOffer: legacy } }), /Legacy embedded-runtime/);
+  for (const path of ['tools/node/bin/node', 'runtime/node.tar.gz']) {
+    const changed = { ...inventory, files: [{ ...inventory.files[0]!, path }] }, sha = digest(canonicalJson(changed));
+    assert.throws(() => devCandidateFromReceipt(`/tmp/releases/${receipt.manifest.releaseId}`, {
+      ...receipt, inventorySha256: sha, manifest: { ...receipt.manifest, payloadSha256: sha },
+    }, changed), /runtime distribution contribution/);
+  }
 });
 
 test('invalid-option-like-ref-source-and-ambiguous-receipts-rejected', () => {

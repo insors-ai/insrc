@@ -19,12 +19,12 @@ const target = { os: process.platform, arch: process.arch, baseline: 'git-fixtur
 const runtime = { version: '22.22.1', target, sha256: runtimeArchive(target).sha256, relativeExecutable: process.platform === 'win32' ? 'node.exe' : 'bin/node' };
 function fixtureStage(stage, record, prepared) {
   const files = [];
-  for (const path of ['bootstrap.mjs', 'manager.mjs', 'native/control.node', `tools/node/${runtime.relativeExecutable}`, 'out/daemon/index.js', 'out/cli/index.js', ...prepared.migrations.map(x => x.module)]) {
+  for (const path of ['bootstrap.mjs', 'manager.mjs', 'native/control.node', 'out/daemon/index.js', 'out/cli/index.js', ...prepared.migrations.map(x => x.module)]) {
     const value = Buffer.from('controlled Git preparation fixture'); mkdirSync(dirname(join(stage, path)), { recursive: true }); writeFileSync(join(stage, path), value);
     files.push({ path, bytes: value.length, mode: 0o644, sha256: digest(value) });
   }
   const inventory = canonicalJson({ schemaVersion: 1, files }), inventorySha256 = digest(inventory), offer = record.sourceOffer;
-  const receipt = { schemaVersion: 1, mode: 'dev', sourceOffer: offer, inventorySha256, checkoutRelativePath: record.checkoutRelativePath,
+  const receipt = { schemaVersion: 2, mode: 'dev', sourceOffer: offer, inventorySha256, checkoutRelativePath: record.checkoutRelativePath,
     manifest: { schemaVersion: 1, releaseId: offer.releaseId, sourceCommit: offer.sourceCommit, target, runtime, payloadSha256: inventorySha256,
       daemonEntry: 'out/daemon/index.js', managerEntry: 'manager.mjs', tuiEntry: 'out/cli/index.js', protocolVersion: 1,
       compatiblePredecessors: prepared.compatiblePredecessors, migrations: prepared.migrations } };

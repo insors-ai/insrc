@@ -24,15 +24,15 @@ if (mode === '--dev-preparation-worker') {
   try {
     const launch = await channel.launch, record = launch.checkpoint, home = process.argv[3];
     const location = resolveInstallationLocation(record.installationId, { home });
-    const predecessor = record.predecessorId ? (await verifyDevPayload(join(home, 'releases', record.predecessorId), record.sourceOffer.target, privateRuntime)).receipt : undefined;
+    const predecessor = record.predecessorId ? (await verifyDevPayload(join(home, 'releases', record.predecessorId), record.sourceOffer.target, location)).receipt : undefined;
     await executeDevWorker(home, launch, { environment: process.env, signal: channel.controller.signal,
-      work: createDevPreparationWork(location, record, { runtimeDirectory: privateRuntime, ...(predecessor ? { predecessor } : {}) }) });
+      work: createDevPreparationWork(location, record, { ...(predecessor ? { predecessor } : {}) }) });
   } catch (error) { process.stderr.write(`${error.code ?? 'worker-error'}: controlled preparation refused\n`); process.exitCode = 2; }
   finally { channel.dispose(); }
 } else if (mode === '--readonly') {
   const [home, runtimeDirectory, targetJson, releaseId] = process.argv.slice(3), target = JSON.parse(targetJson), f = await createDevManagerPeers(home, runtimeDirectory, target, self);
   // No source tools or worker entrypoint is available to this new adapter.
-  f.peers.dev = devDelivery(target, { runtimeDirectory, workerEntrypoint: join(home, 'missing-worker'), environment: () => ({ PATH: '' }) });
+  f.peers.dev = devDelivery(target, { workerEntrypoint: join(home, 'missing-worker'), environment: () => ({ PATH: '' }) });
   const candidate = await f.peers.dev.open(f.location, releaseId); await f.peers.dev.verify(candidate, f.location);
   f.state.observation = { state: 'present', identity: { protocolVersion: 1, installationId: 'fixture', instanceId: 'selected', releaseId, state: 'ready' }, endpoint: f.location.daemonEndpoint };
   const result = await f.manager().execute({ protocolVersion: 1, installationId: 'fixture', operationId: 'readonly-start', action: 'start' });
@@ -51,7 +51,7 @@ if (mode === '--dev-preparation-worker') {
     try {
       const originalPrepare = f.port.prepare.bind(f.port);
       f.port.prepare = async (lease, accepted, context) => {
-        assert.deepEqual(Object.keys(lease).sort(), ['assertHeld','inspect','location','publishCandidate']);
+        assert.deepEqual(Object.keys(lease).sort(), ['assertHeld','ensureRuntime','inspect','location','publishCandidate']);
         assert.equal('manifest' in accepted, false); assert.equal('descriptorSha256' in accepted, false);
         const saved = JSON.parse(readFileSync(join(home,'install/operations',context.operationId,'dev-source.json'),'utf8'));
         assert.deepEqual(saved.sourceOffer,accepted); lease.assertHeld();
@@ -70,9 +70,9 @@ if (mode === '--dev-preparation-worker') {
         // another worker, checkpoint or publication under the immutable ID.
         const store=ControllerStore.acquire(f.location), prior=store.inspect().snapshot;
         store.commit({...prior,revision:prior.revision+1,installation:{...prior.installation,operationId:'reuse'},operation:{operationId:'reuse',phase:'preparing',predecessorId:offer.releaseId}},prior.revision);
-        const lease={location:store.location,assertHeld:()=>store.assertHeld(),inspect:()=>store.inspect(),publishCandidate:(...args)=>store.publishCandidate(...args)};
+        const lease={ensureRuntime:(...args)=>store.ensureRuntime(...args),location:store.location,assertHeld:()=>store.assertHeld(),inspect:()=>store.inspect(),publishCandidate:(...args)=>store.publishCandidate(...args)};
         try {
-          const fresh=devDelivery(target,{runtimeDirectory,workerEntrypoint:join(home,'missing-worker')});
+          const fresh=devDelivery(target,{workerEntrypoint:join(home,'missing-worker')});
           const reused=await fresh.prepare(lease,offer,{operationId:'reuse',readCheckpoint:()=>undefined,checkpoint:()=>assert.fail('reuse launched a new attempt')});
           assert.deepEqual(reused,selected); assert.equal(publications,1);
           const current=store.inspect().snapshot;store.commit({...current,revision:current.revision+1,installation:{...current.installation,operationId:undefined},operation:undefined},current.revision);
@@ -80,7 +80,7 @@ if (mode === '--dev-preparation-worker') {
         // A worker that closes without private completion evidence cannot clear
         // an unfinished preparing operation or trigger incumbent shutdown.
         await advance(2);const empty=join(root,'empty.mjs');writeFileSync(empty,"process.stdin.resume();process.stdin.once('data',()=>process.stdin.destroy());");
-        f.peers.dev=devDelivery(target,{runtimeDirectory,workerEntrypoint:empty});const proposed=await f.manager().checkUpgrade();
+        f.peers.dev=devDelivery(target,{workerEntrypoint:empty});const proposed=await f.manager().checkUpgrade();
         const blocked=await f.manager().execute({protocolVersion:1,installationId:'fixture',operationId:'uncertain',action:'upgrade',acceptedOfferId:proposed.offerId});
         assert.equal(blocked.state.phase,'blocked');assert.equal(blocked.state.errorCode,'preparation-uncertain');
         assert.equal(f.manager().inspect().snapshot.installation.activeReleaseId,offer.releaseId);assert.equal(f.state.shutdowns.length,0);

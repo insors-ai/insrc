@@ -22,7 +22,7 @@ async function until(predicate, ms = 10000) {
 }
 function stageFixture(stage, checkpoint) {
   mkdirSync(stage, { recursive: true });
-  const names = ['bootstrap.mjs', 'manager.mjs', 'native/control.node', `tools/node/${checkpoint.sourceOffer.runtime.relativeExecutable}`,
+  const names = ['bootstrap.mjs', 'manager.mjs', 'native/control.node',
     'out/daemon/index.js', 'out/cli/index.js', 'data/required.txt'];
   const files = names.map(path => {
     const value = Buffer.from('controlled protocol fixture');
@@ -32,7 +32,7 @@ function stageFixture(stage, checkpoint) {
   const inventory = canonicalJson({ schemaVersion: 1, files }), inventorySha256 = digest(inventory);
   writeFileSync(join(stage, 'inventory.json'), inventory);
   const offer = checkpoint.sourceOffer;
-  writeFileSync(join(stage, '.dev-release.json'), canonicalJson({ schemaVersion: 1, mode: 'dev', sourceOffer: offer, inventorySha256,
+  writeFileSync(join(stage, '.dev-release.json'), canonicalJson({ schemaVersion: 2, mode: 'dev', sourceOffer: offer, inventorySha256,
     checkoutRelativePath: checkpoint.checkoutRelativePath, manifest: { schemaVersion: 1, releaseId: offer.releaseId, sourceCommit: offer.sourceCommit,
       target: offer.target, runtime: offer.runtime, payloadSha256: inventorySha256, daemonEntry: 'out/daemon/index.js', managerEntry: 'manager.mjs',
       tuiEntry: 'out/cli/index.js', protocolVersion: 1, compatiblePredecessors: [], migrations: [] } }));
@@ -95,9 +95,11 @@ if (process.argv[2] === '--nested') {
   const [root, scenario] = process.argv.slice(2), home = join(root, 'home'); mkdirSync(home);
   const target = { os: process.platform, arch: process.arch, baseline: 'protocol-fixture' };
   const sourceOffer = createDevSourceOffer({ kind: 'dev-source', delivery: { mode: 'dev', repository: 'https://example.test/org/repo.git', branch: 'installer' },
-    sourceCommit: 'b'.repeat(40), target, runtime: { version: '22.22.1', target, sha256: runtimeArchive(target).sha256, relativeExecutable: process.platform === 'win32' ? 'node.exe' : 'bin/node' }, recipeVersion: 'dev-v1' });
+    sourceCommit: 'b'.repeat(40), target, runtime: { version: '22.22.1', target, sha256: runtimeArchive(target).sha256, relativeExecutable: process.platform === 'win32' ? 'node.exe' : 'bin/node' }, recipeVersion: 'dev-v2-app-only' });
   const record = { schemaVersion: 1, installationId: 'home', operationId: 'op', attemptId: 'attempt', workerNonce: 'n'.repeat(32),
     sourceOffer, ...devPreparationPaths('op', 'attempt'), coordinatorRunId: randomUUID(), stage: 'accepted' };
+  const { devRuntimeFixture } = await import('./_dev-runtime-fixture.ts');
+  await devRuntimeFixture(home, target, 'home');
   const paths = devWorkerPaths(home, record), location = resolveInstallationLocation('home', { home });
   const parentRoot = join(root, 'parent'); mkdirSync(parentRoot);
   const parent = createRun(parentRoot, { mode: 'build' }), controller = new AbortController(), input = new PassThrough();
@@ -189,7 +191,7 @@ if (process.argv[2] === '--nested') {
       }
       assert.deepEqual(await readVerifiedDevResult(home, record), result);
     }
-    assert.ok(readdirSync(home).every(name => ['dev', 'install'].includes(name)));
+    assert.ok(readdirSync(home).every(name => ['dev', 'install', 'runtimes'].includes(name)));
     assert.equal(existsSync(join(home, 'install/controller.json')), false);
   }); } finally {
     if (scenario === 'unregistered-detached' && existsSync(join(paths.privateRoot, 'fixture-detached-ready'))) {

@@ -6,14 +6,14 @@ import { InstallerError, MAX_CONTROL_BYTES } from './contracts.js';
 import type { Delivery, HookReference, InstallationLocation, ReleaseManifest, RuntimeIdentity, Target } from './contracts.js';
 import type { PreparedCandidate } from './bundle.js';
 import { assertRelativeFile, normalizeHome } from './location.js';
-import { BUNDLE_LIMITS, canonicalJson, digest, parseInventory } from './release-descriptor.js';
+import { BUNDLE_LIMITS, canonicalJson, digest, parseApplicationInventory } from './release-descriptor.js';
 import type { PayloadInventory } from './release-descriptor.js';
 import { installerSchemas, parseInstaller, parseReleaseManifest } from './schemas.js';
 import { runtimeArchive } from './runtime-policy.js';
 
 export interface DevSourceIntent {
   kind: 'dev-source'; delivery: Extract<Delivery, { mode: 'dev' }>; sourceCommit: string;
-  target: Target; runtime: RuntimeIdentity; recipeVersion: 'dev-v1';
+  target: Target; runtime: RuntimeIdentity; recipeVersion: 'dev-v2-app-only';
 }
 export interface DevSourceOffer extends DevSourceIntent { releaseId: string; sourceSha256: string }
 /** Consent binds source intent, not the later receipt/inventory digest. The
@@ -40,7 +40,7 @@ export interface PreparationContext {
   checkpoint(record: DevPreparationRecord): void;
 }
 export interface DevReleaseReceipt {
-  schemaVersion: 1; mode: 'dev'; sourceOffer: DevSourceOffer; manifest: ReleaseManifest;
+  schemaVersion: 2; mode: 'dev'; sourceOffer: DevSourceOffer; manifest: ReleaseManifest;
   inventorySha256: string; checkoutRelativePath: string;
 }
 
@@ -53,7 +53,7 @@ const pathSchema = { type: 'string', minLength: 1, maxLength: 1024 };
 const intentProperties = {
   kind: { const: 'dev-source' }, delivery: installerSchemas.delivery,
   sourceCommit: { type: 'string', pattern: '^(?:[a-f0-9]{40}|[a-f0-9]{64})$' },
-  target: installerSchemas.target, runtime: installerSchemas.runtime, recipeVersion: { const: 'dev-v1' },
+  target: installerSchemas.target, runtime: installerSchemas.runtime, recipeVersion: { const: 'dev-v2-app-only' },
 };
 export const devSourceOfferSchema = devObjectSchema({ ...intentProperties, releaseId: devTokenSchema, sourceSha256: devHashSchema });
 const checkpointProperties = {
@@ -69,11 +69,27 @@ const intentValidator = ajv.compile<DevSourceIntent>(devObjectSchema(intentPrope
 const offerValidator = ajv.compile<DevSourceOffer>(devSourceOfferSchema);
 const checkpointValidator = ajv.compile<DevPreparationRecord>(devPreparationSchema);
 const pathIdentityValidator = ajv.compile(devObjectSchema({ operationId: devTokenSchema, attemptId: devTokenSchema }));
-const receiptValidator = ajv.compile<DevReleaseReceipt>(devObjectSchema({ schemaVersion: { const: 1 }, mode: { const: 'dev' },
+const receiptValidator = ajv.compile<DevReleaseReceipt>(devObjectSchema({ schemaVersion: { const: 2 }, mode: { const: 'dev' },
   sourceOffer: devSourceOfferSchema, manifest: installerSchemas.manifest, inventorySha256: devHashSchema, checkoutRelativePath: pathSchema }));
 const hooksValidator = ajv.compile<{ schemaVersion: 1; migrations: HookReference[] }>(devObjectSchema({
   schemaVersion: { const: 1 }, migrations: { type: 'array', maxItems: 512, items: installerSchemas.hook },
 }));
+
+/** Old private formats have different payload semantics; never reinterpret them. */
+function rejectLegacyDev(value: unknown): void {
+  if (!value || typeof value !== 'object') return;
+  const record = value as Record<string, unknown>;
+  const checkpoint = record['checkpoint'];
+  const candidates = [record, record['sourceOffer'], checkpoint,
+    checkpoint && typeof checkpoint === 'object' ? (checkpoint as Record<string, unknown>)['sourceOffer'] : undefined];
+  for (const item of candidates) {
+    if (!item || typeof item !== 'object') continue;
+    const candidate = item as Record<string, unknown>;
+    if (candidate['recipeVersion'] === 'dev-v1' || (candidate['mode'] === 'dev' && candidate['schemaVersion'] === 1)) {
+      throw new InstallerError('source-incompatible', 'Legacy embedded-runtime dev receipt/recipe is unsupported; use application-only receipt2 and dev-v2-app-only');
+    }
+  }
+}
 
 /** Copy validated input so the caller cannot mutate an accepted identity later. */
 export function parseDevRecord<T>(validator: ValidateFunction<T>, input: unknown, limit = MAX_CONTROL_BYTES): T {
@@ -81,6 +97,7 @@ export function parseDevRecord<T>(validator: ValidateFunction<T>, input: unknown
   try { encoded = JSON.stringify(input); } catch { throw new InstallerError('schema-invalid', 'Expected bounded dev metadata'); }
   if (!encoded || Buffer.byteLength(encoded) > limit) throw new InstallerError('schema-invalid', 'Dev metadata exceeds its byte limit');
   const value: unknown = JSON.parse(encoded);
+  rejectLegacyDev(value);
   if (!validator(value)) throw new InstallerError('schema-invalid', `Invalid dev metadata: ${ajv.errorsText(validator.errors)}`);
   return value;
 }
@@ -184,7 +201,7 @@ export function parseDevReleaseReceipt(input: unknown): DevReleaseReceipt {
 
 /** Pure metadata reconstruction. Actual immutable file/runtime verification belongs to delivery.open. */
 export function devCandidateFromReceipt(directory: string, input: unknown, inventoryInput: unknown): PreparedCandidate {
-  const receipt = parseDevReleaseReceipt(input), inventory: PayloadInventory = parseInventory(inventoryInput);
+  const receipt = parseDevReleaseReceipt(input), inventory: PayloadInventory = parseApplicationInventory(inventoryInput);
   if (Buffer.byteLength(canonicalJson(inventory)) > BUNDLE_LIMITS.inventoryBytes || inventory.files.some(file => file.path === '.dev-release.json')
     || digest(canonicalJson(inventory)) !== receipt.inventorySha256) throw new InstallerError('candidate-conflict', 'Dev inventory differs from its receipt');
   const root = normalizeHome(directory, receipt.manifest.target.os);

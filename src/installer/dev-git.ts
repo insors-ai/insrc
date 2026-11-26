@@ -63,7 +63,7 @@ export async function resolveDevSource(deliveryInput: Delivery, target: Target, 
       if (lines.length !== 1) throw new InstallerError('source-fetch-failed', 'Selected branch has no unique commit');
       const parts = lines[0]!.split('\t'), commit = parts[0];
       if (!commit || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(commit) || parts.length !== 2 || parts[1] !== ref) throw new InstallerError('source-fetch-failed', 'Selected branch has no exact commit');
-      return createDevSourceOffer({ kind: 'dev-source', delivery, sourceCommit: commit, target, runtime, recipeVersion: 'dev-v1' });
+      return createDevSourceOffer({ kind: 'dev-source', delivery, sourceCommit: commit, target, runtime, recipeVersion: 'dev-v2-app-only' });
     });
   } finally {
     // Unknown ownership keeps its own temporary evidence; no recursive cleanup on

@@ -41,7 +41,7 @@ test('bundle-offer-receipt-and-required-sibling-admission-regressions-preserved'
     assert.equal(offer.kind, 'bundle');
     const shown = await f.manager().checkUpgrade(); assert.equal(shown?.candidateReleaseId, 'next');
     f.peers.bundle!.resolve = async () => createDevSourceOffer({ kind: 'dev-source', delivery: { mode: 'dev', repository: '/source', branch: 'installer' }, sourceCommit: 'a'.repeat(40),
-      target: f.target, runtime: { version: '22.22.1', target: f.target, sha256: runtimeArchive(f.target).sha256, relativeExecutable: f.target.os === 'win32' ? 'node.exe' : 'bin/node' }, recipeVersion: 'dev-v1' });
+      target: f.target, runtime: { version: '22.22.1', target: f.target, sha256: runtimeArchive(f.target).sha256, relativeExecutable: f.target.os === 'win32' ? 'node.exe' : 'bin/node' }, recipeVersion: 'dev-v2-app-only' });
     await assert.rejects(f.manager().checkUpgrade(), { code: 'delivery-invalid' });
     f.peers.lifecycle = undefined;
     await assert.rejects(f.manager().execute({ protocolVersion: 1, installationId: 'fixture', operationId: 'missing-sibling', action: 'upgrade', acceptedOfferId: shown!.offerId }), { code: 'capability-unavailable' });
@@ -53,13 +53,13 @@ test('manager checkpoint rejects source mutation after durable acceptance', asyn
   try {
     const delivery = { mode: 'dev' as const, repository: '/source', branch: 'installer' };
     const offer = createDevSourceOffer({ kind: 'dev-source', delivery, sourceCommit: 'a'.repeat(40), target: f.target,
-      runtime: { version: '22.22.1', target: f.target, sha256: runtimeArchive(f.target).sha256, relativeExecutable: f.target.os === 'win32' ? 'node.exe' : 'bin/node' }, recipeVersion: 'dev-v1' });
+      runtime: { version: '22.22.1', target: f.target, sha256: runtimeArchive(f.target).sha256, relativeExecutable: f.target.os === 'win32' ? 'node.exe' : 'bin/node' }, recipeVersion: 'dev-v2-app-only' });
     const store = ControllerStore.acquire(f.location);
     try { const current = store.inspect(); assert.equal(current.kind, 'present'); if (current.kind === 'present') store.commit({ ...current.snapshot, revision: current.snapshot.revision + 1, installation: { ...current.snapshot.installation, delivery } }, current.snapshot.revision); }
     finally { store.close(); }
     f.peers.dev = { ...f.peers.bundle!, async resolve() { return offer; }, async prepare(_lease, accepted, context) {
       assert.equal(accepted.kind, 'dev-source'); if (accepted.kind !== 'dev-source') throw new Error('wrong offer');
-      Object.assign(accepted, createDevSourceOffer({ kind: 'dev-source', delivery, sourceCommit: 'c'.repeat(40), target: accepted.target, runtime: accepted.runtime, recipeVersion: 'dev-v1' }));
+      Object.assign(accepted, createDevSourceOffer({ kind: 'dev-source', delivery, sourceCommit: 'c'.repeat(40), target: accepted.target, runtime: accepted.runtime, recipeVersion: 'dev-v2-app-only' }));
       const attemptId = randomUUID(); context.checkpoint({ schemaVersion: 1, installationId: 'fixture', operationId: context.operationId, sourceOffer: accepted,
         predecessorId: 'old', attemptId, workerNonce: 'n'.repeat(32), ...devPreparationPaths(context.operationId, attemptId), coordinatorRunId: randomUUID(), stage: 'accepted' });
       throw new Error('forged source checkpoint was accepted');

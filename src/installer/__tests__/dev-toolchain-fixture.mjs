@@ -5,11 +5,14 @@ import { isDeepStrictEqual } from 'node:util';
 import { createRun } from '../../../scripts/test-harness/context.mjs';
 import { withRun } from '../../../scripts/test-harness/process.mjs';
 import { buildStages } from '../../../scripts/test-harness/build.mjs';
-import { runtimePolicy } from '../runtime-policy.ts';
+import { resolveInstallationLocation } from '../location.ts';
+import { runtimePolicy, runtimeArchive } from '../runtime-policy.ts';
 import { checkDevPrerequisites, devBuildEnvironment, installDevDependencies, loadDevBuildHelpers, ownedDevBuildEnvironment, verifyDevToolchain } from '../dev-toolchain.ts';
 const [root, runtime, scenario] = process.argv.slice(2);
 const target = { os: process.platform, arch: process.arch, baseline: 'local-fixture' };
-const selected = verifyDevToolchain(runtime, target), original = { ...process.env };
+const location = resolveInstallationLocation('fixture', { home: join(root, '..', 'h') });
+const identity = { version: '22.22.1', target, sha256: runtimeArchive(target).sha256, relativeExecutable: target.os === 'win32' ? 'node.exe' : 'bin/node' };
+const selected = await verifyDevToolchain(location, identity), original = { ...process.env };
 assert.equal(existsSync(join(dirname(selected.node), process.platform === 'win32' ? 'npm.cmd' : 'npm')), false);
 const run = createRun(root, { mode: 'build' });
 await withRun(run, async scope => {
@@ -46,7 +49,7 @@ await withRun(run, async scope => {
       assert.deepEqual(starts.map(args => args[0]), commands.slice(0, index + 1));
     }
     assert.throws(() => devBuildEnvironment({ ...selected }, inherited), { code: 'runtime-invalid' });
-    assert.throws(() => verifyDevToolchain(runtime, { ...target, arch: target.arch === 'arm64' ? 'x64' : 'arm64' }), { code: 'runtime-invalid' });
+    await assert.rejects(verifyDevToolchain(location, { ...identity, target: { ...target, arch: target.arch === 'arm64' ? 'x64' : 'arm64' } }), { code: 'runtime-invalid' });
     return;
   }
   await checkDevPrerequisites(run, scope, selected, env);

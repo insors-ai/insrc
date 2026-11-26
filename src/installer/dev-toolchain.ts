@@ -1,10 +1,10 @@
-/** Dev build tooling under the bootstrap's verified distribution and existing owner. */
+/** Dev build tooling under the shared verified distribution and existing owner. */
 import { lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { delimiter, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { InstallerError, PRIVATE_NODE_VERSION } from './contracts.js';
-import type { Target } from './contracts.js';
-import { privateRuntimeEnvironment, runtimeArchive, runtimePolicy } from './runtime-policy.js';
+import type { Target, InstallationLocation, RuntimeIdentity } from './contracts.js';
+import { privateRuntimeEnvironment, privateRuntimePaths, runtimePolicy } from './runtime-policy.js';
 
 export interface DevToolchain { readonly directory: string; readonly node: string; readonly npmCli: string; readonly npxCli: string; readonly nodeGyp: string; readonly headers: string; readonly nodeLib?: string | undefined; readonly target: Target }
 export interface DevBuildOwner {
@@ -29,30 +29,23 @@ function regular(root: string, name: string): string {
   } catch (cause) { throw new InstallerError('source-prerequisite-missing', `Missing regular private toolchain file: ${name}`, { cause }); }
   return file;
 }
-/** The root is trusted only from S1 verified bootstrap/receipt loading, never wire input.
- * Require this worker to be executing that exact distribution before using npm. */
-export function verifyDevToolchain(directory: string, target: Target): DevToolchain {
-  runtimeArchive(target);
-  if (!isAbsolute(directory)) throw new InstallerError('runtime-invalid', 'Private runtime root must be absolute');
-  const root = realpathSync(directory), node = regular(root, target.os === 'win32' ? 'node.exe' : 'bin/node');
-  if (process.version !== `v${PRIVATE_NODE_VERSION}` || process.platform !== target.os || process.arch !== target.arch
-    || realpathSync(process.execPath) !== node) throw new InstallerError('runtime-invalid', 'Dev preparation must execute its exact verified private Node');
+/** Resolve policy-bound paths from explicit installation identity. A worker must
+ * execute that exact Node; a manager may prepare its environment before launch. */
+export async function verifyDevToolchain(location: InstallationLocation, identity: RuntimeIdentity,
+  options: { requireCurrentProcess?: boolean | undefined; signal?: AbortSignal | undefined } = {}): Promise<DevToolchain> {
+  const runtime = await privateRuntimePaths(location, identity, options), target = runtime.identity.target;
+  if (process.platform !== target.os || process.arch !== target.arch
+    || (options.requireCurrentProcess !== false && (process.version !== `v${PRIVATE_NODE_VERSION}` || realpathSync(process.execPath) !== runtime.node))) {
+    throw new InstallerError('runtime-invalid', 'Dev preparation must execute its exact verified private Node');
+  }
   const npmRoot = target.os === 'win32' ? 'node_modules/npm' : 'lib/node_modules/npm';
-  const npmCli = regular(root, `${npmRoot}/bin/npm-cli.js`), npxCli = regular(root, `${npmRoot}/bin/npx-cli.js`);
-  const nodeGyp = regular(root, `${npmRoot}/node_modules/node-gyp/bin/node-gyp.js`);
-  let pkg: { version?: unknown };
-  try { pkg = JSON.parse(readFileSync(regular(root, `${npmRoot}/package.json`), 'utf8')) as typeof pkg; }
-  catch (cause) { throw new InstallerError('runtime-invalid', 'Private npm metadata is invalid', { cause }); }
-  if (pkg.version !== runtimePolicy.npmVersion) throw new InstallerError('runtime-invalid', 'Private npm version differs from release policy');
-  const header = readFileSync(regular(root, 'include/node/node_version.h'), 'utf8');
-  const version = ['MAJOR', 'MINOR', 'PATCH'].map(key => new RegExp(`^#define NODE_${key}_VERSION\\s+(\\d+)`, 'm').exec(header)?.[1]).join('.');
-  if (version !== runtimePolicy.headersVersion) throw new InstallerError('runtime-invalid', 'Private native headers differ from release policy');
-  regular(root, 'include/node/common.gypi'); regular(root, 'include/node/config.gypi');
-  regular(root, 'include/node/node_api.h');
-  const nodeLib = target.os === 'win32' ? regular(root, `${target.arch}/node.lib`) : undefined;
-  const value = Object.freeze({ directory: root, node, npmCli, npxCli, nodeGyp, headers: root, nodeLib, target: Object.freeze({ ...target }) });
+  const value = Object.freeze({ directory: runtime.directory, node: runtime.node, npmCli: runtime.npmCli,
+    npxCli: regular(runtime.directory, `${npmRoot}/bin/npx-cli.js`),
+    nodeGyp: regular(runtime.directory, `${npmRoot}/node_modules/node-gyp/bin/node-gyp.js`),
+    headers: runtime.headers, nodeLib: runtime.nodeLib, target });
   verified.add(value); return value;
 }
+
 function assertToolchain(toolchain: DevToolchain): void {
   if (!verified.has(toolchain)) throw new InstallerError('runtime-invalid', 'Toolchain must be verified in this worker');
 }

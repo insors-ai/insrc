@@ -25,8 +25,8 @@ import type { DeliveryPort } from './peer-contracts.js';
 import { flushDirectoryTree, flushParents } from './durability.js';
 
 export interface DevDeliveryOptions {
-  /** Internal verified bootstrap trust and executable; never wire settings. */
-  runtimeDirectory: string; workerEntrypoint: string;
+  /** Internal target-specific control entrypoint, never a manager request field. */
+  workerEntrypoint: string;
   environment?: (() => NodeJS.ProcessEnv) | undefined;
 }
 function uncertain(message: string, cause?: unknown): InstallerError { return new InstallerError('preparation-uncertain', message, { cause }); }
@@ -49,12 +49,12 @@ async function ownedScope<T>(environment: NodeJS.ProcessEnv, work: (run: BuildRu
   return result as T;
 }
 
-export async function openPreparedDev(location: InstallationLocation, releaseId: string, target: Target, runtimeDirectory: string): Promise<PreparedCandidate> {
+export async function openPreparedDev(location: InstallationLocation, releaseId: string, target: Target): Promise<PreparedCandidate> {
   parseInstaller('location', location); assertToken(releaseId);
-  const directory = join(location.home, 'releases', releaseId), { receipt, inventory } = await verifyDevPayload(directory, target, runtimeDirectory);
+  const directory = join(location.home, 'releases', releaseId), { receipt, inventory } = await verifyDevPayload(directory, target, location);
   return Object.freeze(devCandidateFromReceipt(directory, receipt, inventory));
 }
-async function finalStage(store: PreparationLease, record: DevPreparationRecord, target: Target, runtimeDirectory: string, context: PreparationContext): Promise<PreparedCandidate> {
+async function finalStage(store: PreparationLease, record: DevPreparationRecord, target: Target, context: PreparationContext): Promise<PreparedCandidate> {
   store.assertHeld(); context.signal?.throwIfAborted();
   const current = context.readCheckpoint();
   if (!current || !['building', 'prepared'].includes(current.stage) || canonicalJson({ ...current, stage: record.stage }) !== canonicalJson(record)) throw uncertain('Finalization lacks its matching admitted attempt');
@@ -63,7 +63,7 @@ async function finalStage(store: PreparationLease, record: DevPreparationRecord,
   const result = await proof(store.location.home, record);
   if (result.outcome !== 'prepared') throw new InstallerError(result.outcome === 'cancelled' ? 'source-cancelled' : 'source-build-failed', 'Private source preparation did not complete; inspect its retained diagnostic');
   const paths = devWorkerPaths(store.location.home, record);
-  const { receipt } = await verifyDevPayload(published ? destination : paths.stage, target, runtimeDirectory, { ...(context.signal ? { signal: context.signal } : {}) });
+  const { receipt } = await verifyDevPayload(published ? destination : paths.stage, target, store.location, { ...(context.signal ? { signal: context.signal } : {}) });
   const pkg = JSON.parse((await readBoundedFile(join(paths.checkout, 'package.json'), MAX_CONTROL_BYTES)).toString('utf8')) as { insrcInstaller?: unknown };
   if (canonicalJson(receipt.sourceOffer) !== canonicalJson(record.sourceOffer) || receipt.checkoutRelativePath !== record.checkoutRelativePath
     || receipt.inventorySha256 !== result.inventorySha256 || canonicalJson(receipt.manifest.migrations) !== canonicalJson(parseDevHooks(pkg.insrcInstaller))
@@ -75,13 +75,13 @@ async function finalStage(store: PreparationLease, record: DevPreparationRecord,
   context.checkpoint({ ...record, stage: 'prepared' });
   if (published) {
     try {
-      await verifyDevPayload(destination, target, runtimeDirectory, { expectedReceipt: receipt, ...(context.signal ? { signal: context.signal } : {}) });
+      await verifyDevPayload(destination, target, store.location, { expectedReceipt: receipt, ...(context.signal ? { signal: context.signal } : {}) });
       await flushDirectoryTree(destination, context.signal); flushParents(destination, store.location.home);
     } catch (cause) { throw new InstallerError('candidate-conflict', 'Immutable dev release ID already has different or invalid bytes', { cause }); }
   } else {
     context.signal?.throwIfAborted(); store.assertHeld(); store.publishCandidate(paths.stage, receipt.manifest.releaseId);
   }
-  return openPreparedDev(store.location, receipt.manifest.releaseId, target, runtimeDirectory);
+  return openPreparedDev(store.location, receipt.manifest.releaseId, target);
 }
 
 export function devDelivery(target: Target, options: DevDeliveryOptions): DeliveryPort {
@@ -98,21 +98,23 @@ export function devDelivery(target: Target, options: DevDeliveryOptions): Delive
     const previous = context.readCheckpoint();
     if (previous && (!retry || canonicalJson(previous) !== canonicalJson(retry) || !['failed', 'cancelled'].includes(previous.stage))) throw uncertain('An existing attempt requires explicit reconciliation');
     if (retry && (!previous || canonicalJson(retry.sourceOffer) !== canonicalJson(offer))) throw uncertain('Retry source or prior attempt differs');
+    await store.ensureRuntime(offer.runtime, { signal: context.signal });
+    store.assertHeld(); context.signal?.throwIfAborted();
     const predecessorId = inspected.snapshot.installation.activeReleaseId;
     let predecessor: DevReleaseReceipt | undefined;
     if (predecessorId) {
       // No implicit bundle/legacy adoption. Selected source preflight is done
       // by the fresh worker, or below when reusing an existing payload.
-      predecessor = (await verifyDevPayload(join(store.location.home, 'releases', predecessorId), target, options.runtimeDirectory)).receipt;
+      predecessor = (await verifyDevPayload(join(store.location.home, 'releases', predecessorId), target, store.location)).receipt;
       const prior = predecessor.sourceOffer;
       if (canonicalJson(prior.delivery) !== canonicalJson(offer.delivery) || canonicalJson(prior.target) !== canonicalJson(offer.target)
         || canonicalJson(prior.runtime) !== canonicalJson(offer.runtime) || prior.recipeVersion !== offer.recipeVersion) throw new InstallerError('source-incompatible', 'Selected dev provenance differs from the accepted source recipe');
     }
-    const toolchain = verifyDevToolchain(options.runtimeDirectory, target), environment = devBuildEnvironment(toolchain, inherited());
+    const toolchain = await verifyDevToolchain(store.location, offer.runtime, { requireCurrentProcess: false, signal: context.signal }), environment = devBuildEnvironment(toolchain, inherited());
     const destination = join(store.location.home, 'releases', offer.releaseId);
     if (existsSync(destination)) {
       let receipt: DevReleaseReceipt;
-      try { receipt = (await verifyDevPayload(destination, target, options.runtimeDirectory)).receipt; }
+      try { receipt = (await verifyDevPayload(destination, target, store.location)).receipt; }
       catch (cause) { throw new InstallerError('candidate-conflict', 'Existing immutable dev release is invalid; retain it for inspection', { cause }); }
       if (canonicalJson(receipt.sourceOffer) !== canonicalJson(offer)) throw new InstallerError('candidate-conflict', 'Existing dev release ID names another source');
       parseReleaseManifest(receipt.manifest, { target, ...(offer.releaseId !== predecessorId ? { predecessorId } : {}) });
@@ -124,7 +126,7 @@ export function devDelivery(target: Target, options: DevDeliveryOptions): Delive
       });
       store.assertHeld(); context.signal?.throwIfAborted();
       await flushDirectoryTree(destination, context.signal); flushParents(destination, store.location.home);
-      return openPreparedDev(store.location, offer.releaseId, target, options.runtimeDirectory);
+      return openPreparedDev(store.location, offer.releaseId, target);
     }
     const attemptId = randomUUID(), operationId = context.operationId;
     const record = parseDevPreparation({ schemaVersion: 1, installationId: store.location.installationId, operationId, sourceOffer: offer,
@@ -140,7 +142,7 @@ export function devDelivery(target: Target, options: DevDeliveryOptions): Delive
       context.checkpoint({ ...record, stage: result.outcome });
       throw new InstallerError(result.outcome === 'cancelled' ? 'source-cancelled' : 'source-build-failed', 'Private source preparation failed; inspect its retained diagnostic');
     }
-    return finalStage(store, record, target, options.runtimeDirectory, context);
+    return finalStage(store, record, target, context);
   }
   return {
     resolve: delivery => resolveDevSource(delivery, target, runtime, { environment: inherited() }),
@@ -162,7 +164,7 @@ export function devDelivery(target: Target, options: DevDeliveryOptions): Delive
         try {
           const prepared = await readVerifiedDevSourceResult(store.location.home, record);
           if (prepared.outcome !== 'prepared' || !['building', 'prepared'].includes(record.stage)) throw cause;
-          return await finalStage(store, record, target, options.runtimeDirectory, context);
+          return await finalStage(store, record, target, context);
         } catch (error) { throw uncertain('Retained preparation cannot be reconciled; keep its evidence and source', error); }
       }
       if (!['building', result.outcome].includes(record.stage)) throw uncertain('Recorded preparation stage contradicts its closed outcome');
@@ -171,9 +173,9 @@ export function devDelivery(target: Target, options: DevDeliveryOptions): Delive
       context.signal?.throwIfAborted();
       return prepareCandidate(store, record.sourceOffer, context, failed);
     },
-    open: (location, releaseId) => openPreparedDev(location, releaseId, target, options.runtimeDirectory),
+    open: (location, releaseId) => openPreparedDev(location, releaseId, target),
     async verify(candidate, location) {
-      const verified = await openPreparedDev(location, candidate.releaseId, target, options.runtimeDirectory);
+      const verified = await openPreparedDev(location, candidate.releaseId, target);
       if (canonicalJson(verified) !== canonicalJson(candidate)) throw new InstallerError('candidate-conflict', 'Dev candidate differs from its stored immutable receipt/payload');
     },
   };

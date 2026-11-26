@@ -5,21 +5,15 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { once } from 'node:events';
 import type { ChildProcess } from 'node:child_process';
-import { archiveFixture } from './_runtime-fixture.js';
-import { runtimeArchive } from '../runtime-policy.js';
+import { devRuntimeFixture } from './_dev-runtime-fixture.js';
 import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
 
 async function fixture(scenarios: string[], corrupt?: 'headers' | 'npm' | 'missing'): Promise<void> {
   const root = mkdtempSync(join(realpathSync(tmpdir()), 'insrc-dev-toolchain-')), children: ChildProcess[] = [];
   try {
-    const archive = await archiveFixture(), target = { os: process.platform as 'darwin' | 'linux' | 'win32', arch: process.arch as 'arm64' | 'x64' };
-    const identity = runtimeArchive(target), quote = (value: string) => "'" + value.replaceAll("'", "''") + "'";
-    const unpack = target.os === 'win32'
-      ? spawnFixture('powershell.exe', ['-NoProfile', '-Command', `Expand-Archive -LiteralPath ${quote(archive)} -DestinationPath ${quote(root)}`], { stdio: 'ignore' })
-      : spawnFixture('tar', ['-xzf', archive, '-C', root, `${identity.root}/bin/node`, `${identity.root}/lib/node_modules/npm`, `${identity.root}/include/node`, `${identity.root}/LICENSE`], { stdio: 'ignore' });
-    children.push(unpack); assert.equal((await once(unpack, 'close'))[0], 0);
-    const runtime = join(root, identity.root), node = join(runtime, target.os === 'win32' ? 'node.exe' : 'bin/node');
-    if (target.os === 'win32') for (const name of ['npm', 'npm.cmd', 'npm.ps1', 'npx', 'npx.cmd', 'npx.ps1']) rmSync(join(runtime, name), { force: true });
+    const target = { os: process.platform as 'darwin' | 'linux' | 'win32', arch: process.arch as 'arm64' | 'x64', baseline: 'local-fixture' };
+    const { runtime: selected } = await devRuntimeFixture(join(root, 'h'), target);
+    const runtime = selected.directory, node = selected.node;
     const npmRoot = join(runtime, target.os === 'win32' ? 'node_modules/npm' : 'lib/node_modules/npm');
     if (corrupt === 'headers') writeFileSync(join(runtime, 'include/node/node_version.h'), '#define NODE_MAJOR_VERSION 99\n#define NODE_MINOR_VERSION 0\n#define NODE_PATCH_VERSION 0\n');
     if (corrupt === 'npm') writeFileSync(join(npmRoot, 'package.json'), JSON.stringify({ version: '99.0.0' }));

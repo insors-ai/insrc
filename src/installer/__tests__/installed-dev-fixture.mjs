@@ -34,14 +34,14 @@ await withRun(run,async scope=>{
   const rawNative=readFileSync('out/installer/native/control.node');
   const runtimeFiles=collectTree(runtimeDirectory,runtimeDirectory,'tools/node');
   function payload(commit,predecessors=[]) {
-    const offer=createDevSourceOffer({kind:'dev-source',delivery:{mode:'dev',repository:'/source',branch:'installer'},sourceCommit:commit.repeat(40),target,runtime,recipeVersion:'dev-v1'});
+    const offer=createDevSourceOffer({kind:'dev-source',delivery:{mode:'dev',repository:'/source',branch:'installer'},sourceCommit:commit.repeat(40),target,runtime,recipeVersion:'dev-v2-app-only'});
     const files=new Map(runtimeFiles),add=(name,bytes,mode=0o644)=>files.set(name,{bytes:Buffer.isBuffer(bytes)?bytes:Buffer.from(bytes),mode});
     add('bootstrap.mjs',readFileSync(bootstrap));add('manager.mjs',readFileSync(manager));add('native/control.node',rawNative,0o755);add('out/installer/native/control.node',rawNative,0o755);
     for(const name of ['out/daemon/index.js','out/bin/insrc-mcp.js','out/installer/terminal-entry.js','out/installer/manager-entry.js'])add(name,'export {};\n');
     add('out/cli/index.js',`import fs from 'node:fs';fs.writeFileSync(process.env.INSRC_HOME+'/tui-started',JSON.stringify({node:process.execPath,version:process.version,home:process.env.INSRC_HOME,id:process.env.INSRC_INSTALLATION_ID,cwd:process.cwd()}));if(fs.existsSync(process.env.INSRC_HOME+'/fail-tui'))process.exitCode=7;`);
     add('out/assets/runtime.json','controlled app asset');add('package.json','{"type":"module"}');
     const inventory={schemaVersion:1,files:inventoryFor(files)},inventoryBytes=canonicalJson(inventory),inventorySha256=digest(inventoryBytes);
-    const receipt={schemaVersion:1,mode:'dev',sourceOffer:offer,inventorySha256,checkoutRelativePath:`dev/checkouts/fixture-${commit}`,
+    const receipt={schemaVersion:2,mode:'dev',sourceOffer:offer,inventorySha256,checkoutRelativePath:`dev/checkouts/fixture-${commit}`,
       manifest:{schemaVersion:1,releaseId:offer.releaseId,sourceCommit:offer.sourceCommit,target,runtime,payloadSha256:inventorySha256,daemonEntry:'out/daemon/index.js',managerEntry:'manager.mjs',tuiEntry:'out/cli/index.js',protocolVersion:1,compatiblePredecessors:predecessors,migrations:[]}};
     const directory=join(home,'releases',offer.releaseId);mkdirSync(directory,{recursive:true});
     for(const [name,value]of files){const path=join(directory,name);mkdirSync(dirname(path),{recursive:true});writeFileSync(path,value.bytes,{mode:value.mode});}
@@ -83,7 +83,7 @@ await withRun(run,async scope=>{
     if(scenario==='inspect') {
       const candidate=await realPeers.dev.open(location,first.offer.releaseId);await realPeers.dev.verify(candidate,location);
       const wrongRuntime=await request(inspect,process.execPath);assert.notEqual(wrongRuntime.response.code,0);assert.match(wrongRuntime.text,/runtime-invalid/);
-      const record={schemaVersion:1,installationId:'fixture',operationId:'private-worker',sourceOffer:createDevSourceOffer({kind:'dev-source',delivery:{mode:'dev',repository:join(root,'missing-source'),branch:'installer'},sourceCommit:'f'.repeat(40),target,runtime,recipeVersion:'dev-v1'}),attemptId:'private-attempt',workerNonce:'n'.repeat(32),...devPreparationPaths('private-worker','private-attempt'),coordinatorRunId:randomUUID(),stage:'accepted'};
+      const record={schemaVersion:1,installationId:'fixture',operationId:'private-worker',sourceOffer:createDevSourceOffer({kind:'dev-source',delivery:{mode:'dev',repository:join(root,'missing-source'),branch:'installer'},sourceCommit:'f'.repeat(40),target,runtime,recipeVersion:'dev-v2-app-only'}),attemptId:'private-attempt',workerNonce:'n'.repeat(32),...devPreparationPaths('private-worker','private-attempt'),coordinatorRunId:randomUUID(),stage:'accepted'};
       const workerResult=await scope.start(join(first.candidate.directory,'tools/node',runtime.relativeExecutable),[join(first.candidate.directory,'bootstrap.mjs'),'--dev-preparation-worker',home],{env:{...process.env,NODE_OPTIONS:'',NODE_PATH:''},ownerChannel:{initial:canonicalJson({schemaVersion:1,kind:'prepare',checkpoint:record})+'\n',connect:()=>()=>{}}});
       assert.equal(workerResult.code,0,readFileSync(workerResult.log,'utf8'));assert.equal((await readClosedDevFailure(home,record)).outcome,'failed');
       const paths=devWorkerPaths(home,record);assert.equal(JSON.parse(readFileSync(paths.diagnostic,'utf8')).code,'source-dirty');assert.equal(readFileSync(join(home,'install/controller.json'),'utf8'),before);

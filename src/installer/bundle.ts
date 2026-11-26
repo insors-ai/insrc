@@ -1,6 +1,5 @@
-import { createHash, randomUUID } from 'node:crypto';
-import { createReadStream } from 'node:fs';
-import { lstat, mkdir, mkdtemp, open, readdir, rm, writeFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import { lstat, mkdir, mkdtemp, open, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { InstallerError } from './contracts.js';
 import type { Delivery, Target, ReleaseManifest } from './contracts.js';
@@ -9,7 +8,6 @@ import { assertToken, assertLocalControlRoot } from './location.js';
 import { controlBinding } from './native.js';
 import { ControllerStore } from './controller-store.js';
 import { BUNDLE_LIMITS, canonicalJson, digest, parseReleaseDescriptor } from './release-descriptor.js';
-import type { PayloadInventory } from './release-descriptor.js';
 import { downloadJson, downloadVerifiedAsset } from './download.js';
 import type { DownloadTransport } from './download.js';
 import { extractSafeZip, readBoundedFile, verifyPublishedPayload } from './safe-zip.js';
@@ -26,33 +24,6 @@ export interface PrepareOptions {
 }
 function local(directory: string): void { assertLocalControlRoot(directory, process.platform === 'win32' ? path => controlBinding().localVolume(path) : undefined); }
 async function exists(path: string): Promise<boolean> { try { await lstat(path); return true; } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false; throw error; } }
-async function fileDigest(file: string, expectedBytes: number, signal?: AbortSignal): Promise<string> {
-  const hash = createHash('sha256'); let bytes = 0;
-  for await (const chunk of createReadStream(file)) { signal?.throwIfAborted(); const data = chunk as Buffer; bytes += data.length; if (bytes > expectedBytes) throw new InstallerError('runtime-invalid', 'Runtime file grew'); hash.update(data); }
-  if (bytes !== expectedBytes) throw new InstallerError('runtime-invalid', 'Runtime file size differs'); return hash.digest('hex');
-}
-/** Legacy dev-receipt verifier, retained until the T7 receipt transition.
- * Bundle format2 uses the shared external runtime resolver instead. */
-export async function verifyPayloadRuntime(inventory: PayloadInventory, target: Target, trustedRoot: string, signal?: AbortSignal): Promise<void> {
-  const expected = new Map(inventory.files.filter(file => file.path.startsWith('tools/node/')).map(file => [file.path.slice(11), file]));
-  let count = 0;
-  async function visit(directory: string, prefix = ''): Promise<void> {
-    for (const name of await readdir(directory)) {
-      signal?.throwIfAborted();
-      if (++count > BUNDLE_LIMITS.entries) throw new InstallerError('runtime-invalid', 'Trusted runtime exceeds bound');
-      const path = join(directory, name), relative = prefix ? `${prefix}/${name}` : name, stat = await lstat(path);
-      if (stat.isSymbolicLink() || (!stat.isDirectory() && !stat.isFile())) throw new InstallerError('runtime-invalid', 'Trusted runtime has a special file');
-      if (stat.isDirectory()) { await visit(path, relative); continue; }
-      const record = expected.get(relative);
-      if (!record || record.bytes !== stat.size || await fileDigest(path, record.bytes, signal) !== record.sha256) throw new InstallerError('runtime-invalid', 'Candidate runtime differs from verified bootstrap distribution');
-      expected.delete(relative);
-    }
-  }
-  await visit(trustedRoot); if (expected.size) throw new InstallerError('runtime-invalid', 'Candidate runtime has extra files');
-  const npm = target.os === 'win32' ? 'node_modules/npm/package.json' : 'lib/node_modules/npm/package.json';
-  const manifest = JSON.parse((await readBoundedFile(join(trustedRoot, npm), 128 * 1024)).toString('utf8')) as { version?: string };
-  if (manifest.version !== '10.9.4') throw new InstallerError('runtime-invalid', 'Verified runtime npm differs');
-}
 /** No selection/daemon/migration/application-data mutation occurs here. */
 export async function prepareBundle(store: PreparationLease, input: unknown, options: PrepareOptions): Promise<PreparedCandidate> {
   store.assertHeld(); options.signal?.throwIfAborted();

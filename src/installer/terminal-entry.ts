@@ -47,15 +47,15 @@ export async function terminalMain(args = process.argv.slice(2)): Promise<void> 
   if (args[0] === '--dev-preparation-worker') {
     if (args.length !== 2 || !args[1]) throw new InstallerError('schema-invalid', 'Worker requires one explicit installation home');
     if (typeof __INSRC_INSTALLER_TARGET__ === 'undefined') throw new InstallerError('target-unqualified', 'Use the target-specific control bootstrap');
-    const target = parseInstaller('target', __INSRC_INSTALLER_TARGET__), runtimeDirectory = controlRuntimeDirectory(target);
+    const target = parseInstaller('target', __INSRC_INSTALLER_TARGET__);
     const channel = new DevWorkerInput(process.stdin);
     try {
       const launch = await channel.launch, record = launch.checkpoint;
       if (canonicalJson(record.sourceOffer.target) !== canonicalJson(target)) throw new InstallerError('identity-mismatch', 'Worker checkpoint targets another control build');
       const location = resolveInstallationLocation(record.installationId, { home: args[1], ...(process.platform === 'win32' ? { userSid: controlBinding().userSid() } : {}) });
-      const predecessor = record.predecessorId ? (await verifyDevPayload(join(location.home, 'releases', record.predecessorId), target, runtimeDirectory)).receipt : undefined;
+      const predecessor = record.predecessorId ? (await verifyDevPayload(join(location.home, 'releases', record.predecessorId), target, location)).receipt : undefined;
       await executeDevWorker(location.home, launch, { signal: channel.controller.signal, environment: process.env,
-        work: createDevPreparationWork(location, record, { runtimeDirectory, ...(predecessor ? { predecessor } : {}) }) });
+        work: createDevPreparationWork(location, record, { ...(predecessor ? { predecessor } : {}) }) });
     } finally { channel.dispose(); }
     return;
   }

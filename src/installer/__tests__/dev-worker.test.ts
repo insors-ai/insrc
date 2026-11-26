@@ -36,7 +36,7 @@ test('worker completion durably flushes proof and refuses a failed result flush'
 test('worker input rejects oversized launch and foreign cancellation frames', async () => {
   const target = { os: 'linux' as const, arch: 'arm64' as const, baseline: 'protocol' };
   const sourceOffer = createDevSourceOffer({ kind: 'dev-source', delivery: { mode: 'dev', repository: 'https://example.test/repo.git', branch: 'installer' },
-    sourceCommit: 'a'.repeat(40), target, runtime: { version: '22.22.1', target, sha256: runtimeArchive(target).sha256, relativeExecutable: 'bin/node' }, recipeVersion: 'dev-v1' });
+    sourceCommit: 'a'.repeat(40), target, runtime: { version: '22.22.1', target, sha256: runtimeArchive(target).sha256, relativeExecutable: 'bin/node' }, recipeVersion: 'dev-v2-app-only' });
   const checkpoint = { schemaVersion: 1, installationId: 'home', operationId: 'op', attemptId: 'attempt', workerNonce: 'n'.repeat(32), sourceOffer,
     ...devPreparationPaths('op', 'attempt'), stage: 'accepted', coordinatorRunId: randomUUID() };
   for (const frame of ['x'.repeat(70_000), JSON.stringify({ schemaVersion: 1, kind: 'prepare', checkpoint, extra: true }) + '\n']) {
@@ -54,7 +54,7 @@ test('worker input rejects oversized launch and foreign cancellation frames', as
 test('worker framing preserves fragmented UTF-8 and rejects malformed byte frames', async () => {
   const target = { os: 'linux' as const, arch: 'arm64' as const, baseline: 'protocol' };
   const sourceOffer = createDevSourceOffer({ kind: 'dev-source', delivery: { mode: 'dev', repository: '/tmp/源/😀', branch: '分支' },
-    sourceCommit: 'a'.repeat(40), target, runtime: { version: '22.22.1', target, sha256: runtimeArchive(target).sha256, relativeExecutable: 'bin/node' }, recipeVersion: 'dev-v1' });
+    sourceCommit: 'a'.repeat(40), target, runtime: { version: '22.22.1', target, sha256: runtimeArchive(target).sha256, relativeExecutable: 'bin/node' }, recipeVersion: 'dev-v2-app-only' });
   const checkpoint = { schemaVersion: 1, installationId: 'home', operationId: 'utf8', attemptId: 'attempt', workerNonce: 'n'.repeat(32), sourceOffer,
     ...devPreparationPaths('utf8', 'attempt'), stage: 'accepted', coordinatorRunId: randomUUID() };
   const frame = Buffer.from(JSON.stringify({ schemaVersion: 1, kind: 'prepare', checkpoint }) + '\n');

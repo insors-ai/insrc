@@ -17,6 +17,6 @@ export function controlRuntimeDirectory(target: Target): string {
 }
 export function productionPeers(target: Target, location: InstallationLocation): ManagerPeers {
   const runtimeDirectory = controlRuntimeDirectory(target), workerEntrypoint = join(dirname(fileURLToPath(import.meta.url)), 'bootstrap.mjs');
-  return { bundle: bundleDelivery(target), dev: devDelivery(target, { runtimeDirectory, workerEntrypoint }),
+  return { bundle: bundleDelivery(target), dev: devDelivery(target, { workerEntrypoint }),
     dependencies: dependencyPort(target, location, { runtimeDirectory, policies: ollamaPolicies, service: { workerEntrypoint } }) };
 }

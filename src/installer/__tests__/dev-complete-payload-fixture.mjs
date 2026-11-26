@@ -13,6 +13,7 @@ const {requireTerminal}=await import('../terminal-admission.ts');
 const {readVerifiedDevSourceResult,devWorkerPaths}=await import('../dev-worker.ts');
 const {readInstalledReceipt}=await import('../installed-receipt.ts');
 const {verifyDevPayload}=await import('../dev-payload.ts');
+const {privateRuntimePaths}=await import('../runtime-policy.ts');
 const {retryCommand}=await import('../installed-launcher.ts');
 const [source,root,runtimeDirectory]=process.argv.slice(2),target={os:process.platform,arch:process.arch,baseline:'fixture'};
 const binary=`node_modules/@esbuild/${process.platform}-${process.arch}/${process.platform==='win32'?'esbuild.exe':'bin/esbuild'}`;
@@ -35,13 +36,14 @@ await withRun(run,async scope=>{
   const closure=await readVerifiedDevSourceResult(home,record);assert.equal(closure.outcome,'prepared');assert.deepEqual(record.sourceOffer,offered);
   cancellation.signal.throwIfAborted();
   const candidate=await f.port.open(f.location,offered.releaseId);
-  const {receipt,inventory}=await verifyDevPayload(candidate.directory,target,runtimeDirectory);assert.equal(receipt.sourceOffer.sourceCommit,head);
+  const {receipt,inventory}=await verifyDevPayload(candidate.directory,target,f.location);assert.equal(receipt.sourceOffer.sourceCommit,head);
   assert.ok(inventory.files.some(file=>file.path==='node_modules/@insrc/project-memory/dist/index.js'));
   assert.ok(inventory.files.some(file=>file.path==='out/bin/insrc-mcp.js'));assert.equal(inventory.files.some(file=>file.path.startsWith('dev/checkouts/')),false);
   // The real manager has already verified/selects this payload. Avoid repeating
   // the terminal handoff's two full-tree reads here; installed-dev and terminal
   // tests exercise that function. Probe the selected release's actual Node.
-  const selected={node:join(candidate.directory,'tools/node',receipt.manifest.runtime.relativeExecutable)};
+  const selected=await privateRuntimePaths(f.location,receipt.manifest.runtime);
+  assert.equal(inventory.files.some(file=>file.path.startsWith('tools/node/')||file.path.startsWith('runtime/')),false);
   assert.equal(result.state.candidateId,candidate.releaseId);
   assert.ok(retryCommand(f.location,target,candidate.releaseId).includes(join(candidate.directory,'bootstrap.mjs')));
   // Re-probe the actual published files independently, keeping the probe lock

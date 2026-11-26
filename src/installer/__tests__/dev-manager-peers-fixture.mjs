@@ -1,10 +1,12 @@
 // Owning peer fixtures only; never imported by production composition.
 import assert from 'node:assert/strict';
 export async function createDevManagerPeers(home, runtimeDirectory, target, workerEntrypoint, environment) {
+  const { devRuntimeFixture } = await import('./_dev-runtime-fixture.ts');
+  await devRuntimeFixture(home, target);
   const {managerFixture}=await import('./_manager-fixture.ts');
   const {devDelivery}=await import('../dev-delivery.ts');
   const f = managerFixture(home); assert.deepEqual(f.target, target);
-  const port = devDelivery(target, { runtimeDirectory, workerEntrypoint, environment }); f.peers.dev = port;
+  const port = devDelivery(target, { workerEntrypoint, environment }); f.peers.dev = port;
   f.state.observation = { state: 'absent', resourceOwnershipReleased: true, evidence: { kind: 'never-started' } };
   const snapshot=f.manager().inspect();
   if(snapshot.kind==='present'&&snapshot.snapshot.installation.activeReleaseId)f.state.observation={state:'present',identity:{protocolVersion:1,installationId:'fixture',instanceId:'fixture-incumbent',releaseId:snapshot.snapshot.installation.activeReleaseId,state:'ready'},endpoint:f.location.daemonEndpoint};

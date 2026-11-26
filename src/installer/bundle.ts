@@ -13,7 +13,7 @@ import type { DownloadTransport } from './download.js';
 import { extractSafeZip, readBoundedFile, verifyPublishedPayload } from './safe-zip.js';
 import type { ExtractionLimits } from './safe-zip.js';
 import { flushDirectoryTree } from './durability.js';
-import { privateRuntimePaths } from './runtime-policy.js';
+import { resolveInstalledControl } from './installed-receipt.js';
 export interface PreparedCandidate {
   releaseId: string; directory: string; manifest: ReleaseManifest; descriptorSha256: string; payloadSha256: string; inventorySha256: string;
 }
@@ -74,11 +74,7 @@ export async function resolveBundleDelivery(delivery: Delivery, target: Target, 
 /** Read-only opening of an already selected immutable release. Unlike preparing
  * an upgrade, opening the selected release does not require self-predecessorship. */
 export async function openPreparedBundle(location: import('./contracts.js').InstallationLocation, releaseId: string, target: Target, options: { signal?: AbortSignal | undefined } = {}): Promise<PreparedCandidate> {
-  assertToken(releaseId); const directory = join(location.home, 'releases', releaseId); local(directory);
-  const raw = await readBoundedFile(join(directory, '.release.json'), BUNDLE_LIMITS.descriptorBytes);
-  const descriptor = parseReleaseDescriptor(JSON.parse(raw.toString('utf8')) as unknown, { target });
-  if (descriptor.manifest.releaseId !== releaseId || canonicalJson(descriptor) !== raw.toString('utf8')) throw new InstallerError('candidate-conflict', 'Stored release identity differs');
-  await privateRuntimePaths(location, descriptor.manifest.runtime, options);
-  await verifyPublishedPayload(directory, descriptor, options.signal);
-  return Object.freeze({ releaseId, directory, manifest: descriptor.manifest, descriptorSha256: digest(raw), payloadSha256: descriptor.payload.sha256, inventorySha256: descriptor.inventorySha256 });
+  const { installed, candidate } = await resolveInstalledControl(location, releaseId, target, options);
+  if (installed.mode !== 'bundle') throw new InstallerError('candidate-conflict', 'Selected release is not bundle delivery');
+  return candidate;
 }

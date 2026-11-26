@@ -23,8 +23,8 @@ privateRuntimeTest(import.meta.url, 'sighup-sigterm-and-sigkill-at-preparation-a
       const { policy, offer } = await f.input(), prepared = mode === 'handoff' ? await prepareOllama(f.location, policy, offer, f.context(), { recheck: f.recheck, transport: f.transport }) : undefined;
       const bytesFile = join(f.root, 'fixture-asset'); writeFileSync(bytesFile, f.bytes);
       const input = join(f.root, 'signal-input.json'); writeFileSync(input, JSON.stringify({ root: f.root, bin: f.bin, location: f.location, target: f.target,
-        policy, offer, runtimeDirectory: f.options.runtimeDirectory, mode, bytesFile, prepared }));
-      const child = spawnFixture(process.execPath, [fileURLToPath(new URL('./ollama-signal-fixture.mjs', import.meta.url)), input], { stdio: ['pipe', 'ignore', 'pipe', 'ipc'] }); children.push(child);
+        policy, offer, mode, bytesFile, prepared }));
+      const child = spawnFixture(f.options.runtime.node, [fileURLToPath(new URL('./ollama-signal-fixture.mjs', import.meta.url)), input], { stdio: ['pipe', 'ignore', 'pipe', 'ipc'] }); children.push(child);
       let diagnostic = '', reached!: () => void;
       child.stderr!.on('data', bytes => { diagnostic = (diagnostic + bytes.toString()).slice(-8192); });
       const boundary = new Promise<void>(resolve => { reached = resolve; });

@@ -10,12 +10,13 @@ import type { CommandScope } from '../../scripts/test-harness/process.mjs';
 import { InstallerError, MAX_CONTROL_BYTES, PRIVATE_NODE_VERSION } from './contracts.js';
 import type { InstallationLocation, RuntimeIdentity, Target } from './contracts.js';
 import type { PreparedCandidate, PreparationLease } from './bundle.js';
-import { devCandidateFromReceipt, devPreparationPaths, parseDevDelivery, parseDevHooks, parseDevPreparation, parseDevSourceOffer } from './dev.js';
+import { devPreparationPaths, parseDevDelivery, parseDevHooks, parseDevPreparation, parseDevSourceOffer } from './dev.js';
 import type { DevPreparationRecord, DevReleaseReceipt, DevSourceOffer, PreparationContext } from './dev.js';
 import { inspectLocalDevSource, inspectManagedDevCheckout, ownedDevGit, resolveDevSource } from './dev-git.js';
 import { devWorkerPaths, launchDevWorker, readClosedDevFailure, readVerifiedDevResult, readVerifiedDevSourceResult } from './dev-worker.js';
 import { devBuildEnvironment, verifyDevToolchain } from './dev-toolchain.js';
 import { verifyDevPayload } from './dev-payload.js';
+import { resolveInstalledControl } from './installed-receipt.js';
 import { assertToken } from './location.js';
 import { canonicalJson } from './release-descriptor.js';
 import { runtimeArchive } from './runtime-policy.js';
@@ -51,8 +52,9 @@ async function ownedScope<T>(environment: NodeJS.ProcessEnv, work: (run: BuildRu
 
 export async function openPreparedDev(location: InstallationLocation, releaseId: string, target: Target): Promise<PreparedCandidate> {
   parseInstaller('location', location); assertToken(releaseId);
-  const directory = join(location.home, 'releases', releaseId), { receipt, inventory } = await verifyDevPayload(directory, target, location);
-  return Object.freeze(devCandidateFromReceipt(directory, receipt, inventory));
+  const { installed, candidate } = await resolveInstalledControl(location, releaseId, target);
+  if (installed.mode !== 'dev') throw new InstallerError('candidate-conflict', 'Selected release is not dev delivery');
+  return candidate;
 }
 async function finalStage(store: PreparationLease, record: DevPreparationRecord, target: Target, context: PreparationContext): Promise<PreparedCandidate> {
   store.assertHeld(); context.signal?.throwIfAborted();

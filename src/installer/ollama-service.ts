@@ -14,7 +14,8 @@ import { canonicalJson, digest } from './release-descriptor.js';
 import { privateRuntimeEnvironment } from './runtime-policy.js';
 import { dependencyAttemptIdentity, ollamaPolicySha256 } from './ollama-policy.js';
 import type { OllamaPolicy } from './ollama-policy.js';
-import { closedOllamaAttempts, verifyPreparedOllama } from './ollama-prepare.js';
+import { closedOllamaAttempts, verifyPreparedOllama, readPreparedOllamaRecords } from './ollama-prepare.js';
+import { privateRuntimePaths, privateRuntimeIdentity } from './runtime-policy.js';
 import type { PreparedOllama } from './ollama-prepare.js';
 import { acceptedOllamaPolicy, closurePath, dependencyPath, dependencyUncertain, ensureDependencyDirectory, parseOllamaAttempt, parseOllamaClosure, readDependencyRecord, writeDependencyRecord } from './ollama-records.js';
 import { controlBinding } from './native.js';
@@ -84,7 +85,7 @@ export async function reconcileOllamaDependencies(location: InstallationLocation
       if (existsSync(paths.admission)) {
         const frame = parseServiceFrame(serviceJson(await readDependencyRecord(location, paths.frame, SERVICE_FRAME_LIMIT))); signal.throwIfAborted();
         if (canonicalJson(frame.location) !== canonicalJson(location) || canonicalJson(frame.attempt) !== canonicalJson(attempt)) throw dependencyUncertain('Interrupted service belongs to a different attempt');
-        const verified = await verifyPreparedOllama(location, frame.policy, dependencyPath(location, attempt.identity.payloadRelativePath), signal); signal.throwIfAborted();
+        const verified = await readPreparedOllamaRecords(location, frame.policy, dependencyPath(location, attempt.identity.payloadRelativePath), signal); signal.throwIfAborted();
         if (closure.outcome !== 'prepared' || verified.inventorySha256 !== closure.inventorySha256
           || verified.inventorySha256 !== frame.admission.inventorySha256) throw dependencyUncertain('Interrupted service inventory differs from its accepted preparation or admission');
         report = await serviceState(frame, record, report, signal);
@@ -93,7 +94,7 @@ export async function reconcileOllamaDependencies(location: InstallationLocation
         const payload = dependencyPath(location, attempt.identity.payloadRelativePath);
         if (existsSync(payload)) {
           const accepted = acceptedOllamaPolicy(attempt, policy);
-          const verified = await verifyPreparedOllama(location, accepted, payload, signal); signal.throwIfAborted();
+          const verified = await readPreparedOllamaRecords(location, accepted, payload, signal); signal.throwIfAborted();
           if (closure.outcome !== 'prepared' || verified.inventorySha256 !== closure.inventorySha256) throw dependencyUncertain('Published interrupted preparation differs from its durable inventory closure');
         }
       }
@@ -108,10 +109,12 @@ function checkWorkerEntrypoint(entrypoint: string): void {
   if (!isAbsolute(entrypoint)) throw dependencyUncertain('Service supervisor must be an absolute control entrypoint');
   const info = lstatSync(entrypoint); if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1) throw dependencyUncertain('Service supervisor control file is unsafe');
 }
-function launchWorker(frame: OllamaServiceFrame, record: string, entrypoint: string, observed?: (child: ChildProcess) => void): Promise<{ started: boolean }> {
+async function launchWorker(frame: OllamaServiceFrame, record: string, entrypoint: string, observed?: (child: ChildProcess) => void, signal?: AbortSignal): Promise<{ started: boolean }> {
+  const runtime = await privateRuntimePaths(frame.location, privateRuntimeIdentity(frame.policy.target), { signal });
+  signal?.throwIfAborted();
   checkWorkerEntrypoint(entrypoint);
   return new Promise(resolve => {
-    const child = spawn(process.execPath, [entrypoint, '--ollama-service-worker', frame.location.home, frame.location.installationId,
+    const child = spawn(runtime.node, [entrypoint, '--ollama-service-worker', frame.location.home, frame.location.installationId,
       relative(frame.location.home, record).replaceAll('\\', '/')], {
       cwd: frame.location.home, env: privateRuntimeEnvironment(process.env), detached: true, windowsHide: true, stdio: 'ignore',
     });
@@ -186,7 +189,7 @@ export async function startOllamaService(location: InstallationLocation, prepare
     launchInvoked = true;
     try { launched = await (options.launch ?? ((input, file) => launchWorker(input, file, options.workerEntrypoint, child => {
       supervisorStarted = true; options.workerStarted?.(child);
-    })))(frame, record); }
+    }, signal)))(frame, record); }
     catch (cause) {
       if (!options.launch && !supervisorStarted) {
         notStarted(cause);

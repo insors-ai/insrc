@@ -9,7 +9,9 @@ import { homedir, tmpdir } from 'node:os';
 import { observeLinuxMachine, fetchOfficialProvenance, validateNativeProvenance } from './ollama-qualification-evidence.mjs';
 import { dirname, join, resolve } from 'node:path';
 import { dependencyPort, probeOllamaVersion } from '../out/installer/dependencies.js';
-import { productionPeers, controlRuntimeDirectory } from '../out/installer/production-peers.js';
+import { productionPeers } from '../out/installer/production-peers.js';
+import { resolveControlRuntime } from '../out/installer/runtime-binding.js';
+import { privateRuntimeIdentity } from '../out/installer/runtime-policy.js';
 import { createDependencyOperationContext } from '../out/installer/dependency-context.js';
 import { parseOllamaPolicy, ollamaPolicySha256 } from '../out/installer/ollama-policy.js';
 import { closedOllamaAttempts, verifyPreparedOllama } from '../out/installer/ollama-prepare.js';
@@ -23,7 +25,7 @@ const [phase, specPath] = process.argv.slice(2), spec = JSON.parse(readFileSync(
 assert.ok(['decline', 'install', 'inspect', 'benchmark', 'cache-advice'].includes(phase));
 const policy = parseOllamaPolicy(spec.policy), location = resolveInstallationLocation(spec.installationId, { home: spec.home });
 assert.equal(process.getuid() > 0, true, 'qualification install must be unprivileged');
-const runtimeDirectory = controlRuntimeDirectory(policy.target);
+const runtime = await resolveControlRuntime(location, privateRuntimeIdentity(policy.target));
 function files(directory) {
   if (!existsSync(directory)) return [];
   return readdirSync(directory).sort().flatMap(name => {
@@ -66,7 +68,7 @@ function saveWriteObservations() {
     limits: 'Bounded before/after directory metadata only. This does not detect transient/deleted or metadata-preserving writes, trace syscalls, or prove exhaustive filesystem confinement. Shared temp activity may be unrelated. No payload content hashing is performed.' });
 }
 process.once('beforeExit', saveWriteObservations);
-const port = dependencyPort(policy.target, location, { runtimeDirectory, policies: [policy], service: { workerEntrypoint: spec.bootstrap } });
+const port = dependencyPort(policy.target, location, { runtime, policies: [policy], service: { workerEntrypoint: spec.bootstrap } });
 if (phase === 'cache-advice') {
   const attempts = await closedOllamaAttempts(location); assert.equal(attempts.length, 1);
   const payload = join(location.home, attempts[0].identity.payloadRelativePath);
@@ -96,7 +98,7 @@ print(json.dumps(results))`;
 } else if (phase === 'inspect') {
   const ioBytes = () => Number(/^rchar:\s*(\d+)$/m.exec(readFileSync('/proc/self/io', 'utf8'))?.[1]);
   const before = snapshot(join(location.home, 'deps/ollama/.attempts')), readBefore = ioBytes(), started = performance.now();
-  const report = await productionPeers(policy.target, location).dependencies.inspect(location);
+  const report = await productionPeers(policy.target, location, runtime).dependencies.inspect(location);
   const elapsedMs = performance.now() - started, readCharacters = ioBytes() - readBefore;
   assert.equal(report.ollama, 'ready', JSON.stringify(report)); assert.equal(report.runtimeReady, true);
   assert.ok(elapsedMs < 3000, 'aggregate inspection target');

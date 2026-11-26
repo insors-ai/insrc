@@ -20,7 +20,7 @@ export interface TerminalInstallOptions {
   operationId?: string | undefined;
   signal?: AbortSignal | undefined;
   select?: typeof selectInstalledTui | undefined;
-  publish?: typeof publishInstalledLauncher | undefined;
+  publish?: ((...args: Parameters<typeof publishInstalledLauncher>) => string | Promise<string>) | undefined;
   launch?: ((selection: TuiSelection) => Promise<TuiExit>) | undefined;
 }
 export interface TerminalOutcome { kind: 'completed' | 'cancelled' | 'already-completed' | 'failed' | 'post-install-tui-error'; code: number; event?: ManagerEvent | undefined; errorCode?: string | undefined }
@@ -39,6 +39,11 @@ export async function runTerminalInstall(options: TerminalInstallOptions): Promi
     checkCancellation();
     if (answer.length > 2048 || /[\x00-\x1f]/.test(answer)) throw new InstallerError('input-invalid', 'Terminal input exceeds its bound');
     return answer || fallback;
+  };
+  const showRetry = async (prefix: string, releaseId: string) => {
+    ui.write(prefix);
+    try { ui.write(`${await retryCommand(location, target, releaseId)}\n`); }
+    catch { ui.write(`Installed control files could not be verified. Inspect the installation at ${location.home} before retrying.\n`); }
   };
   try {
     checkCancellation();
@@ -60,7 +65,8 @@ export async function runTerminalInstall(options: TerminalInstallOptions): Promi
     if (inspected.kind === 'present' && inspected.snapshot.operation) throw new InstallerError('busy', 'An unfinished operation requires explicit reconciliation');
     if (inspected.kind === 'present' && inspected.snapshot.lastResult?.operationId === operationId) {
       const releaseId = inspected.snapshot.installation.activeReleaseId;
-      ui.write(releaseId ? `This operation already completed. Open the installed TUI with:\n${retryCommand(location, target, releaseId)}\n` : 'This operation already completed.\n');
+      if (releaseId) await showRetry('This operation already completed. Open the installed TUI with:\n', releaseId);
+      else ui.write('This operation already completed.\n');
       return { kind: 'already-completed', code: 0 };
     }
     let delivery: Delivery, acceptedOfferId: string | undefined;
@@ -108,13 +114,14 @@ export async function runTerminalInstall(options: TerminalInstallOptions): Promi
     checkCancellation();
     const selected = await (options.select ?? selectInstalledTui)(location, target, peers, ready);
     checkCancellation();
-    (options.publish ?? publishInstalledLauncher)(location, target, ready.state.candidateId!, ready);
+    await (options.publish ?? publishInstalledLauncher)(location, target, ready.state.candidateId!, ready);
+    checkCancellation();
     const exit = await (options.launch ?? launchInstalledTui)(selected);
     if (exit.code !== 0 || exit.signal) throw new InstallerError('post-install-tui-error', 'The TUI ended unsuccessfully');
     return { kind: 'completed', code: 0, event: ready };
   } catch (error) {
     if (error instanceof InstallerError && error.code === 'cancelled') return { kind: 'cancelled', code: 130, event: ready, errorCode: error.code };
-    try { ui.write(`Installation completed; the TUI could not open. Retry without reinstalling:\n${retryCommand(location, target, ready.state.candidateId!)}\n`); } catch { /* Completed selection survives terminal loss too. */ }
+    try { await showRetry('Installation completed; the TUI could not open. Retry without reinstalling:\n', ready.state.candidateId!); } catch { /* Completed selection survives terminal loss too. */ }
     return { kind: 'post-install-tui-error', code: 1, event: ready, errorCode: error instanceof InstallerError ? error.code : 'post-install-tui-error' };
   }
 }

@@ -17,6 +17,7 @@ import type { OllamaPolicy } from '../ollama-policy.js';
 import type { Target } from '../contracts.js';
 import { resolveInstallationLocation } from '../location.js';
 import { controlBinding } from '../native.js';
+import { devRuntimeFixture } from './_dev-runtime-fixture.js';
 
 export function fixtureExecutable(target: Target): Buffer {
   const bytes = Buffer.alloc(512), arm = target.arch === 'arm64';
@@ -54,7 +55,8 @@ export async function ollamaFixture(installationId = 'ollama-preparation', conte
     asset: { url: `https://github.com/ollama/ollama/releases/download/v0.0.1-fixture/ollama.${target.os === 'linux' ? 'tar.zst' : 'zip'}`, sha256: digest(bytes), bytes: bytes.length, format: target.os === 'linux' ? 'tar.zst' : 'zip' },
     limits: { expandedBytes: Math.max(1024 * 1024, files.reduce((n, file) => n + file.bytes.length, 0) * 2), fileBytes: Math.max(512 * 1024, ...files.map(file => file.bytes.length)), files: 128, windowBytes: 2 ** 25 }, layout: { executable, requiredFiles: [executable, 'lib/data.dat'], aliases: [] },
     endpoint, modelsRelativePath: 'deps/ollama/data/models', logsRelativePath: 'deps/ollama/logs/server', start: true });
-  const options: DependencyOptions = { runtimeDirectory: target.os === 'win32' ? dirname(realpathSync(process.execPath)) : dirname(dirname(realpathSync(process.execPath))),
+  const { runtime } = await devRuntimeFixture(home, target, installationId);
+  const options: DependencyOptions = { runtime,
     userHome: root, environment: { PATH: bin }, policies: [policy], io: { ...dependencyReadIo, async stat(file) {
       const path = relative(root, file); if (path === '..' || path.startsWith('../') || path.startsWith('..\\')) throw Object.assign(new Error('fixture absence'), { code: 'ENOENT' }); return dependencyReadIo.stat(file);
     } } };

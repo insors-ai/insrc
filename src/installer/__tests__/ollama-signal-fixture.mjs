@@ -9,11 +9,13 @@ import { dependencyReadIo, inspectDependenciesClosed } from '../../../out/instal
 import { prepareOllama } from '../../../out/installer/ollama-prepare.js';
 import { startOllamaService } from '../../../out/installer/ollama-service.js';
 import { executeOllamaServiceWorker } from '../../../out/installer/ollama-service-worker.js';
+import { privateRuntimePaths, privateRuntimeIdentity } from '../../../out/installer/runtime-policy.js';
 import { servicePaths } from '../../../out/installer/ollama-service-records.js';
 const input = JSON.parse(readFileSync(process.argv[2], 'utf8'));
 const terminal = createInterface({ input: process.stdin }), abort = terminalAbort(terminal, text => process.stderr.write(text));
 const context = createDependencyOperationContext(input.location, input.target.os, { operationId: 'prepare-operation', attemptNonce: 'a'.repeat(64), signal: abort.signal, assertCurrent() {}, progress() {} });
-const options = { runtimeDirectory: input.runtimeDirectory, userHome: input.root, environment: { PATH: input.bin }, policies: [input.policy],
+const runtime = await privateRuntimePaths(input.location, privateRuntimeIdentity(input.target));
+const options = { runtime, userHome: input.root, environment: { PATH: input.bin }, policies: [input.policy],
   io: { ...dependencyReadIo, async stat(file) { const path = relative(input.root, file); if (path === '..' || path.startsWith('../') || path.startsWith('..\\')) throw Object.assign(new Error('fixture absence'), { code: 'ENOENT' }); return dependencyReadIo.stat(file); } } };
 const recheck = signal => inspectDependenciesClosed(input.location, input.target, options, { signal });
 const waitForAbort = () => new Promise(resolve => { if (abort.signal.aborted) resolve(); else abort.signal.addEventListener('abort', resolve, { once: true }); });

@@ -12,6 +12,8 @@ try {
     launch(executable, argv, settings) {
       assert.equal(executable, join(home, frame.attempt.identity.payloadRelativePath, frame.policy.layout.executable)); assert.deepEqual(argv, ['serve']);
       writeFileSync(join(dirname(home), 'launch-arguments.json'), JSON.stringify({ executable, argv }));
+      if (mode === 'fault-spawn-error') return spawn(join(dirname(home), 'missing-executable'), []);
+      if (mode.startsWith('fault-')) throw Object.assign(new Error('owned synchronous spawn fixture'), { code: 'EACCES' });
       return spawn(process.execPath, [fileURLToPath(new URL('./ollama-process-fixture.mjs', import.meta.url)), ...argv], {
         ...settings, env: { ...settings.env, INSRC_TEST_SERVICE_STATE: state, INSRC_TEST_SERVICE_MODE: mode },
       });

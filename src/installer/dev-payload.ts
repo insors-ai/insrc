@@ -18,6 +18,7 @@ import { devWorkerPaths } from './dev-worker.js';
 import { assertLocalControlRoot } from './location.js';
 import { controlBinding } from './native.js';
 import { privateRuntimePaths } from './runtime-policy.js';
+import { readInstalledInventory } from './installed-control.js';
 import { BUNDLE_LIMITS, canonicalJson, digest, parseApplicationInventory } from './release-descriptor.js';
 import type { InventoryFile, PayloadInventory } from './release-descriptor.js';
 import { readBoundedFile, verifyPayloadInventory } from './safe-zip.js';
@@ -69,9 +70,8 @@ function requireEntries(receipt: DevReleaseReceipt, inventory: PayloadInventory)
   if (manifest.managerEntry !== 'manager.mjs' || inventory.files.some(file => file.path === '.dev-release.json')) throw new InstallerError('candidate-conflict', 'Dev receipt/control membership differs');
 }
 
-/** Read-only full tree proof for a stage or immutable release. Does not fetch,
- * run build tools, execute hooks or load application/native services. */
-export async function verifyDevPayload(directory: string, target: Target, location: InstallationLocation, options: {
+/** Bounded receipt/inventory evidence, without source tools or app-tree traversal. */
+export async function readDevPayloadMetadata(directory: string, target: Target, options: {
   expectedReceipt?: DevReleaseReceipt; signal?: AbortSignal;
 } = {}): Promise<{ receipt: DevReleaseReceipt; inventory: PayloadInventory }> {
   options.signal?.throwIfAborted(); local(directory);
@@ -79,11 +79,17 @@ export async function verifyDevPayload(directory: string, target: Target, locati
   const receipt = parseDevReleaseReceipt(JSON.parse(raw.toString('utf8')));
   if (raw.toString('utf8') !== canonicalJson(receipt) || canonicalJson(receipt.manifest.target) !== canonicalJson(target)
     || (options.expectedReceipt && canonicalJson(receipt) !== canonicalJson(parseDevReleaseReceipt(options.expectedReceipt)))) throw new InstallerError('candidate-conflict', 'Dev receipt differs from the expected immutable source/payload');
-  const bytes = await readBoundedFile(join(directory, 'inventory.json'), BUNDLE_LIMITS.inventoryBytes);
-  const inventory = parseApplicationInventory(JSON.parse(bytes.toString('utf8')));
-  if (bytes.toString('utf8') !== canonicalJson(inventory) || digest(bytes) !== receipt.inventorySha256
-    || inventory.files.reduce((total, file) => total + file.bytes, bytes.length + raw.length) > BUNDLE_LIMITS.expanded) throw new InstallerError('candidate-conflict', 'Dev inventory digest or bounds differ');
+  const inventory = await readInstalledInventory(directory, receipt.inventorySha256, options.signal), canonical = canonicalJson(inventory);
+  if (digest(canonical) !== receipt.inventorySha256
+    || inventory.files.reduce((total, file) => total + file.bytes, Buffer.byteLength(canonical) + raw.length) > BUNDLE_LIMITS.expanded) throw new InstallerError('candidate-conflict', 'Dev inventory digest or bounds differ');
   requireEntries(receipt, inventory);
+  return { receipt, inventory };
+}
+/** Full preparation proof. Installed opening uses bounded metadata/control checks. */
+export async function verifyDevPayload(directory: string, target: Target, location: InstallationLocation, options: {
+  expectedReceipt?: DevReleaseReceipt; signal?: AbortSignal;
+} = {}): Promise<{ receipt: DevReleaseReceipt; inventory: PayloadInventory }> {
+  const { receipt, inventory } = await readDevPayloadMetadata(directory, target, options);
   await verifyPayloadInventory(directory, inventory, { receipt: '.dev-release.json', signal: options.signal });
   await privateRuntimePaths(location, receipt.manifest.runtime, { signal: options.signal });
   return { receipt, inventory };

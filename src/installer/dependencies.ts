@@ -1,3 +1,5 @@
+import type { ResolvedPrivateRuntime } from './runtime-metadata.js';
+import { assertRuntimeBinding } from './runtime-binding.js';
 /** Read-only inspection and exact-consented private dependency preparation. */
 import { constants, existsSync } from 'node:fs';
 import type { Stats } from 'node:fs';
@@ -5,13 +7,12 @@ import { access, lstat, open, readdir, realpath, stat } from 'node:fs/promises';
 import { get } from 'node:http';
 import { homedir } from 'node:os';
 import { dirname, posix, win32 } from 'node:path';
-import { InstallerError, PRIVATE_NODE_VERSION } from './contracts.js';
+import { InstallerError } from './contracts.js';
 import type { DependencyReport, InstallationLocation, Target } from './contracts.js';
 import type { DependencyPort, DependencyProbeContext } from './peer-contracts.js';
 import { assertToken, normalizeHome } from './location.js';
 import { canonicalJson, digest } from './release-descriptor.js';
 import { parseInstaller } from './schemas.js';
-import { runtimeArchive, runtimePolicy } from './runtime-policy.js';
 import { createOllamaOffer, dependencyAttemptPaths, ollamaEndpoint, ollamaPayloadRelativePath, parseOllamaPolicy } from './ollama-policy.js';
 import type { OllamaOffer, OllamaPolicy } from './ollama-policy.js';
 import { CODING_CLI_RECOMMENDATION, requireDependencyOperation, requireDependencyRetry } from './dependency-context.js';
@@ -56,8 +57,8 @@ export const dependencyReadIo: DependencyReadIo = {
   },
 };
 export interface DependencyOptions {
-  /** S1-verified root from bootstrap/installed receipt, never a wire argument. */
-  runtimeDirectory: string;
+  /** Verified result passed within the control launch; never serialized or wire-selected. */
+  runtime: ResolvedPrivateRuntime;
   environment?: NodeJS.ProcessEnv | undefined;
   userHome?: string | undefined;
   policies?: readonly OllamaPolicy[] | undefined;
@@ -79,37 +80,6 @@ const diagnostic = (error: unknown): string => {
 const missing = (error: unknown) => (error as NodeJS.ErrnoException)?.code === 'ENOENT';
 const requireProbeClosure = (error: unknown): void => { if ((error as { code?: string } | undefined)?.code === 'resource-close-uncertain') throw error; };
 const isObject = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
-
-/** S1 supplies an already authenticated runtime root. Unlike the synchronous
- * build verifier, every filesystem read here participates in the probe deadline. */
-async function verifyProbeRuntime(directory: string, target: Target, io: DependencyReadIo, signal: AbortSignal): Promise<void> {
-  runtimeArchive(target);
-  if (process.version !== `v${PRIVATE_NODE_VERSION}` || process.platform !== target.os || process.arch !== target.arch) throw new InstallerError('runtime-invalid', 'Wrong private runtime/target');
-  const path = target.os === 'win32' ? win32 : posix;
-  signal.throwIfAborted(); const root = await io.realpath(normalizeHome(directory, target.os)); signal.throwIfAborted();
-  const node = await io.realpath(process.execPath); signal.throwIfAborted();
-  if (node !== path.join(root, target.os === 'win32' ? 'node.exe' : 'bin/node')) throw new InstallerError('runtime-invalid', 'Current process is not the selected private Node');
-  const regular = async (name: string) => {
-    const file = path.join(root, name); let current = file;
-    while (true) {
-      signal.throwIfAborted(); const info = await io.lstat(current); signal.throwIfAborted();
-      if (info.isSymbolicLink() || (current === file ? !info.isFile() : !info.isDirectory())) throw new InstallerError('runtime-invalid', 'Private runtime contains a linked or non-regular path');
-      if (current === root) break; current = path.dirname(current);
-    }
-    return file;
-  };
-  const npmRoot = target.os === 'win32' ? 'node_modules/npm' : 'lib/node_modules/npm';
-  await regular(target.os === 'win32' ? 'node.exe' : 'bin/node');
-  for (const file of [`${npmRoot}/bin/npm-cli.js`, `${npmRoot}/bin/npx-cli.js`, `${npmRoot}/node_modules/node-gyp/bin/node-gyp.js`,
-    'include/node/common.gypi', 'include/node/config.gypi', 'include/node/node_api.h', ...(target.os === 'win32' ? [`${target.arch}/node.lib`] : [])]) await regular(file);
-  const metadata = await io.read(await regular(`${npmRoot}/package.json`), 128 * 1024, signal); signal.throwIfAborted();
-  const npm: unknown = JSON.parse(metadata.toString('utf8'));
-  if (!isObject(npm) || npm['version'] !== runtimePolicy.npmVersion) throw new InstallerError('runtime-invalid', 'Private npm version differs');
-  const header = (await io.read(await regular('include/node/node_version.h'), 64 * 1024, signal)).toString('utf8'); signal.throwIfAborted();
-  if (['MAJOR', 'MINOR', 'PATCH'].map(key => new RegExp(`^#define NODE_${key}_VERSION\\s+(\\d+)`, 'm').exec(header)?.[1]).join('.') !== runtimePolicy.headersVersion) {
-    throw new InstallerError('runtime-invalid', 'Private Node headers differ');
-  }
-}
 
 /** Literal loopback only; even a reconfigured localhost DNS cannot reach a remote host. */
 export async function probeOllamaVersion(endpoint: string, signal: AbortSignal): Promise<OllamaProbe> {
@@ -289,7 +259,8 @@ async function inspectDependencyWork(location: InstallationLocation, target: Tar
   };
   const work = async (): Promise<DependencyInspection> => {
     signal.throwIfAborted();
-    try { await verifyProbeRuntime(options.runtimeDirectory, target, io, signal); signal.throwIfAborted(); report.runtimeReady = true; }
+    try { assertRuntimeBinding(location, options.runtime, false);
+      if (canonicalJson(options.runtime.identity.target) !== canonicalJson(target)) throw new InstallerError('runtime-invalid', 'Dependency runtime target differs'); signal.throwIfAborted(); report.runtimeReady = true; }
     catch (error) { requireProbeClosure(error); signal.throwIfAborted(); report.blockers.push('Private Node runtime or target provenance is invalid; use the selected verified installer runtime.'); }
     const policies = options.policies ?? [];
     if (policies.length > 32) throw new InstallerError('dependency-policy-invalid', 'Dependency policy catalog exceeds bound');

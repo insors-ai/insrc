@@ -10,6 +10,12 @@ function freeze(value: unknown): void {
 }
 freeze(policy);
 export { policy as runtimePolicy };
+/** Release-owned policy identity for control before an app release is selected. */
+export function privateRuntimeIdentity(target: Target): RuntimeIdentity {
+  const identity = { version: PRIVATE_NODE_VERSION, target: { ...target }, sha256: runtimeArchive(target).sha256,
+    relativeExecutable: target.os === 'win32' ? 'node.exe' : 'bin/node' };
+  freeze(identity); return identity;
+}
 export function runtimeArchive(target: Pick<Target, 'os' | 'arch'>): { url: string; sha256: string; root: string } {
   const key = `${target.os}-${target.arch}` as keyof typeof policy.archives;
   const sha256 = policy.archives[key];

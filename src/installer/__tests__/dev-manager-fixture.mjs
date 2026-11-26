@@ -107,6 +107,9 @@ if (mode === '--dev-preparation-worker') {
         const result=await scope.start(process.execPath,[self,'--readonly',home,runtimeDirectory,JSON.stringify(target),offer.releaseId],{env:{...process.env,PATH:'',NODE_OPTIONS:'',NODE_PATH:''}});
         assert.equal(result.code,0,readFileSync(result.log,'utf8'));assert.equal(publications,1);
         const asset=join(selected.directory,'out/assets/runtime.json');writeFileSync(asset,'changed');
+        await f.port.open(f.location,offer.releaseId); // Installed control does not hash app data.
+        await assert.rejects(verifyDevPayload(selected.directory,target,f.location));
+        writeFileSync(join(selected.directory,'bootstrap.mjs'),'changed control');
         await assert.rejects(f.port.open(f.location,offer.releaseId));
       }
     } finally {ControllerStore.prototype.publishCandidate=publish;}

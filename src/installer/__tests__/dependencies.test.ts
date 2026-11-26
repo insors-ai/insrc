@@ -1,3 +1,6 @@
+import { privateRuntimePaths } from '../runtime-policy.js';
+import { createHash } from 'node:crypto';
+import { devRuntimeFixture } from './_dev-runtime-fixture.js';
 import { privateRuntimeTest } from './_private-runtime-test.js';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -18,7 +21,6 @@ import { ollamaPolicySha256 } from '../ollama-policy.js';
 import type { OllamaPolicy } from '../ollama-policy.js';
 
 const target: Target = { os: process.platform as Target['os'], arch: process.arch as Target['arch'], baseline: 'fixture' };
-const runtimeDirectory = target.os === 'win32' ? dirname(realpathSync(process.execPath)) : dirname(dirname(realpathSync(process.execPath)));
 const errno = (code: string) => Object.assign(new Error(code), { code });
 type Handler = (request: IncomingMessage, response: ServerResponse) => void;
 async function fixture(handler?: Handler) {
@@ -34,7 +36,8 @@ async function fixture(handler?: Handler) {
   const io: DependencyReadIo = { ...dependencyReadIo, async stat(file) {
     if (!file.startsWith(root + '/')) throw errno('ENOENT'); return dependencyReadIo.stat(file);
   } };
-  const options: DependencyOptions = { runtimeDirectory, environment: { PATH: bin }, userHome: root, io };
+  const { runtime } = await devRuntimeFixture(home, target, location.installationId);
+  const options: DependencyOptions = { runtime, environment: { PATH: bin }, userHome: root, io };
   let closed = false;
   const closeServer = async () => { if (!closed) { closed = true; const end = once(server, 'close'); server.closeAllConnections(); server.close(); await end; } };
   const executable = (name: string, mode = 0o755) => {
@@ -55,7 +58,7 @@ async function fixture(handler?: Handler) {
 }
 function tree(root: string): unknown[] {
   return readdirSync(root).sort().map(name => { const file = join(root, name), stat = lstatSync(file);
-    return stat.isDirectory() ? [name, tree(file)] : [name, stat.isSymbolicLink() ? 'link' : readFileSync(file).toString('base64'), stat.mode]; });
+    return stat.isDirectory() ? [name, tree(file)] : [name, stat.isSymbolicLink() ? 'link' : createHash('sha256').update(readFileSync(file)).digest('hex'), stat.mode]; });
 }
 
 privateRuntimeTest(import.meta.url, 'dependency-state-matrix-distinguishes-ready-stopped-missing-and-unavailable', async () => {
@@ -170,28 +173,33 @@ privateRuntimeTest(import.meta.url, 'private-runtime-provenance-rejects-path-nod
   try {
     f.executable('node'); f.executable('npm');
     assert.equal((await inspectDependencies(f.location, target, f.options)).report.runtimeReady, true);
-    assert.equal((await inspectDependencies(f.location, target, { ...f.options, runtimeDirectory: f.bin })).report.runtimeReady, false);
+    assert.equal((await inspectDependencies(f.location, target, { ...f.options, runtime: { ...f.options.runtime, directory: f.bin } })).report.runtimeReady, false);
     const wrong = { ...target, arch: target.arch === 'arm64' ? 'x64' as const : 'arm64' as const };
     assert.equal((await inspectDependencies(f.location, wrong, f.options)).report.runtimeReady, false);
-    for (const bad of ['npm', 'headers']) {
-      const io: DependencyReadIo = { ...f.options.io!, async read(file, limit, signal) {
-        if (bad === 'npm' && file.endsWith('/npm/package.json')) return Buffer.from('{"version":"99.0.0"}');
-        if (bad === 'headers' && file.endsWith('/node_version.h')) return Buffer.from('#define NODE_MAJOR_VERSION 99');
-        return f.options.io!.read(file, limit, signal);
-      } };
-      assert.equal((await inspectDependencies(f.location, target, { ...f.options, io })).report.runtimeReady, false, bad);
+    for (const path of [f.options.runtime.npmCli.replace(/bin[\\/]npm-cli\.js$/, 'package.json'), join(f.options.runtime.headers, 'include/node/node_version.h')]) {
+      const before = readFileSync(path);
+      try {
+        writeFileSync(path, 'changed runtime input');
+        await assert.rejects(privateRuntimePaths(f.location, f.options.runtime.identity), { code: 'runtime-invalid' });
+      } finally { writeFileSync(path, before); }
+      assert.deepEqual(await privateRuntimePaths(f.location, f.options.runtime.identity), f.options.runtime);
     }
-    let readsAfterSlowRuntime = 0, entered = false, release!: () => void, finished!: () => void;
+    let laterReads = 0, entered = false, release!: () => void, finished!: () => void;
     const blocked = new Promise<void>(resolve => { release = resolve; }), closed = new Promise<void>(resolve => { finished = resolve; });
-    const delayed: DependencyReadIo = { ...f.options.io!, async realpath(file) {
-      entered = true; try { await blocked; return await f.options.io!.realpath(file); } finally { finished(); }
-    }, async read(file, limit, signal) { readsAfterSlowRuntime++; return f.options.io!.read(file, limit, signal); } };
+    const delayed: DependencyReadIo = { ...f.options.io!, async read(file, limit, signal) {
+      if (file === join(f.home, 'config.json')) {
+        entered = true; try { await blocked; return await f.options.io!.read(file, limit, signal); } finally { finished(); }
+      }
+      laterReads++; return f.options.io!.read(file, limit, signal);
+    } };
     try {
       const start = performance.now();
-      assert.equal((await inspectDependencies(f.location, target, { ...f.options, io: delayed, budgetMs: 100 })).report.runtimeReady, false);
-      assert.equal(entered, true); assert.ok(performance.now() - start < 2000, 'runtime verification obeys the aggregate deadline');
+      const result = await inspectDependencies(f.location, target, { ...f.options, io: delayed, budgetMs: 100 });
+      assert.equal(result.report.runtimeReady, true, 'launch already supplied a policy-verified runtime');
+      assert.equal(result.report.ollama, 'unavailable');
+      assert.equal(entered, true); assert.ok(performance.now() - start < 2000, 'presence/configuration probing obeys its aggregate deadline');
       release(); await closed; await turn();
-      assert.equal(readsAfterSlowRuntime, 0, 'no later reads are admitted after a timed-out runtime identity lookup');
+      assert.equal(laterReads, 0, 'no later probe reads after a timed-out configuration lookup');
     } finally { release(); if (entered) await closed; }
     const cancel = new AbortController(); cancel.abort();
     await assert.rejects(inspectDependencies(f.location, target, f.options, { signal: cancel.signal }), { code: 'cancelled' });

@@ -159,12 +159,12 @@ privateRuntimeTest(import.meta.url, 'finite-actor-closure-uncertainty-blocks-ret
   const probeWait = new Promise<void>(resolve => { releaseProbe = resolve; }), probeClosed = new Promise<void>(resolve => { probeFinished = resolve; });
   try {
     const { policy, offer } = await production.input(), io = production.options.io!; let roots = 0, downloads = 0;
-    production.options.io = { ...io, async realpath(file) {
-      if (file === production.options.runtimeDirectory && ++roots === 3) {
+    production.options.io = { ...io, async read(file, limit, signal) {
+      if (file === join(production.home, 'config.json') && ++roots === 3) {
         probeStarted = true; probeCancel.abort();
-        try { await probeWait; return await io.realpath(file); } finally { probeFinished(); }
+        try { await probeWait; return await io.read(file, limit, signal); } finally { probeFinished(); }
       }
-      return io.realpath(file);
+      return io.read(file, limit, signal);
     } };
     const port = dependencyPort(production.target, production.location, { ...production.options, preparation: { cleanupMs: 40, prepareMs: 5000,
       transport: async () => { downloads++; return production.transport(); } } });

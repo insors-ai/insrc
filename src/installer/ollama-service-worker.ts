@@ -3,7 +3,6 @@ import { spawn } from 'node:child_process';
 import type { ChildProcess, SpawnOptions } from 'node:child_process';
 import { constants, existsSync, fsyncSync, lstatSync, openSync, renameSync, unlinkSync, writeSync } from 'node:fs';
 import { dirname, delimiter, join } from 'node:path';
-import { InstallerError, PRIVATE_NODE_VERSION } from './contracts.js';
 import type { InstallationLocation, Target } from './contracts.js';
 import { canonicalJson, digest } from './release-descriptor.js';
 import { dependencyPath, dependencyUncertain, parseOllamaInventory, parseOllamaReceipt, readDependencyRecord, writeDependencyRecord,
@@ -15,6 +14,8 @@ import { parseServiceFrame, serviceDiagnostic, serviceFact, serviceJson, service
 import type { OllamaServiceFrame } from './ollama-service-records.js';
 import { verifyOllamaExecutable } from './ollama-layout.js';
 import { ollamaCloseUncertain, retainUncertainOllamaHandle } from './ollama-cleanup.js';
+import { resolveControlRuntime } from './runtime-binding.js';
+import { privateRuntimeIdentity } from './runtime-policy.js';
 
 const LOG_BYTES = 1024 * 1024;
 /** Two owned 1 MiB files. Never truncate an unknown predecessor or follow links. */
@@ -69,7 +70,7 @@ export interface ServiceWorkerOptions {
  * prevents replay even if a supervisor dies after starting its native child. */
 export async function executeOllamaServiceWorker(location: InstallationLocation, recordRelativePath: string,
   options: ServiceWorkerOptions): Promise<void> {
-  if (process.version !== `v${PRIVATE_NODE_VERSION}` || process.platform !== options.target.os || process.arch !== options.target.arch) throw new InstallerError('runtime-invalid', 'Service supervisor requires its exact private native runtime');
+  await resolveControlRuntime(location, privateRuntimeIdentity(options.target));
   const record = dependencyPath(location, recordRelativePath), paths = servicePaths(record);
   const frame = parseServiceFrame(serviceJson(await readDependencyRecord(location, paths.frame, SERVICE_FRAME_LIMIT)));
   if (canonicalJson(frame.location) !== canonicalJson(location) || canonicalJson(frame.policy.target) !== canonicalJson(options.target)

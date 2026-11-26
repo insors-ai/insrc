@@ -45,7 +45,7 @@ privateRuntimeTest(import.meta.url, 'production-worker-dispatch-argv-path-and-sa
     const report = await startOllamaService(f.location, prepared, f.context(), { workerEntrypoint: bootstrap, recheck: f.recheck, readinessMs: 8000,
       workerStarted: child => { child.ref(); workers.push(child); } }); // The test positively joins this intentionally unref'ed production worker.
     assert.equal(report.ollama, 'ready'); assert.equal(workers.length, 1);
-    assert.deepEqual(workers[0]!.spawnargs, [process.execPath, bootstrap, '--ollama-service-worker', f.home, f.location.installationId, prepared.identity.recordRelativePath]);
+    assert.deepEqual(workers[0]!.spawnargs, [f.options.runtime.node, bootstrap, '--ollama-service-worker', f.home, f.location.installationId, prepared.identity.recordRelativePath]);
     assert.equal(workers[0]!.exitCode, null); const args = JSON.parse(readFileSync(join(state, 'arguments.json'), 'utf8'));
     assert.equal(args.script, join(prepared.directory, 'serve')); assert.deepEqual(args.argv, []); assert.equal(args.cwd, prepared.directory);
     assert.equal(args.credential, false); assert.equal(args.nodeOptions, false); assert.equal(args.nodePath, false);
@@ -90,8 +90,8 @@ privateRuntimeTest(import.meta.url, 'supervisor-death-does-not-imply-retained-se
     // distinct retained supervisor below will die in this scenario.
     await startOllamaService(f.location, prepared, f.context(), { workerEntrypoint: 'trusted-fixture', recheck: f.recheck, readinessMs: 30, launch: async () => ({ started: true }) });
     const file = join(f.root, 'supervisor-input.json'); writeFileSync(file, JSON.stringify({ root: f.root, bin: f.bin, location: f.location, target: f.target,
-      policy: input.policy, runtimeDirectory: f.options.runtimeDirectory, mode: 'supervisor', prepared }));
-    const child = spawnFixture(process.execPath, [fileURLToPath(new URL('./ollama-signal-fixture.mjs', import.meta.url)), file], { stdio: ['pipe', 'ignore', 'pipe', 'ipc'] }); children.push(child);
+      policy: input.policy, mode: 'supervisor', prepared }));
+    const child = spawnFixture(f.options.runtime.node, [fileURLToPath(new URL('./ollama-signal-fixture.mjs', import.meta.url)), file], { stdio: ['pipe', 'ignore', 'pipe', 'ipc'] }); children.push(child);
     child.stderr!.resume(); let reached!: () => void, available!: () => void;
     const boundary = new Promise<void>(resolve => { reached = resolve; }), ready = new Promise<void>(resolve => { available = resolve; });
     child.on('message', (message: { type: string; environment?: NodeJS.ProcessEnv }) => {

@@ -7,9 +7,10 @@ import { controlBinding } from './native.js';
 import { parseInstaller, parseManagerRequest } from './schemas.js';
 import { canonicalJson } from './release-descriptor.js';
 import { parseDevDelivery } from './dev.js';
-import { readInstalledReceipt } from './installed-receipt.js';
+import { readInstalledReceipt, resolveInstalledControl } from './installed-receipt.js';
+import { assertRuntimeBinding } from './runtime-binding.js';
 import { InstallerManager } from './manager.js';
-import { controlRuntimeDirectory, productionPeers } from './production-peers.js';
+import { productionPeers } from './production-peers.js';
 declare const __INSRC_INSTALLER_TARGET__: unknown;
 /** Ordinary CLI owns no prompts and cannot construct an install admission. */
 export async function managerMain(args = process.argv.slice(2)): Promise<void> {
@@ -23,10 +24,12 @@ export async function managerMain(args = process.argv.slice(2)): Promise<void> {
   }
   const location = resolveInstallationLocation(installationId, { home, ...(process.platform === 'win32' ? { userSid: controlBinding().userSid() } : {}) });
   if (typeof __INSRC_INSTALLER_TARGET__ === 'undefined') throw new InstallerError('target-unqualified', 'Use the installed manager for this platform');
-  const target = parseInstaller('target', __INSRC_INSTALLER_TARGET__); controlRuntimeDirectory(target);
+  const target = parseInstaller('target', __INSRC_INSTALLER_TARGET__);
   const directory = dirname(fileURLToPath(import.meta.url)), installed = await readInstalledReceipt(directory, target);
-  if (realpathSync(process.execPath) !== realpathSync(join(directory, 'tools/node', installed.manifest.runtime.relativeExecutable))) throw new InstallerError('runtime-invalid', 'Installed manager requires its own release runtime');
-  const manager = new InstallerManager(location, target, productionPeers(target, location), event => process.stdout.write(JSON.stringify(event) + '\n'));
+  if (directory !== join(location.home, 'releases', installed.manifest.releaseId)) throw new InstallerError('candidate-conflict', 'Manager control is outside its canonical installation release');
+  const { runtime } = await resolveInstalledControl(location, installed.manifest.releaseId, target);
+  assertRuntimeBinding(location, runtime);
+  const manager = new InstallerManager(location, target, productionPeers(target, location, runtime), event => process.stdout.write(JSON.stringify(event) + '\n'));
   const current = manager.inspect();
   if (current.kind === 'present' && (current.snapshot.installation.delivery.mode !== installed.mode
     || (current.snapshot.installation.activeReleaseId !== undefined && current.snapshot.installation.activeReleaseId !== installed.manifest.releaseId)

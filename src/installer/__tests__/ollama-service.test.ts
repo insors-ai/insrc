@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import type { ChildProcess } from 'node:child_process';
-import { spawn } from 'node:child_process';
 import { existsSync, linkSync, mkdirSync, readFileSync, readdirSync, lstatSync, unlinkSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { ollamaFixture } from './_ollama-fixture.js';
@@ -15,7 +14,6 @@ import { canonicalJson, digest } from '../release-descriptor.js';
 import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
 import { privateRuntimeTest } from './_private-runtime-test.js';
 import { observeOllamaReads } from './_ollama-read-sentinel.js';
-import { executeOllamaServiceWorker } from '../ollama-service-worker.js';
 import { cleanupOllamaInstallAttempt } from '../ollama-recovery.js';
 import { createDependencyOperationContext, createDependencyRetryContext } from '../dependency-context.js';
 
@@ -36,7 +34,7 @@ async function fixture() {
   let launches = 0;
   const launch = async (_frame: unknown, file: string, mode = 'ready') => {
     assert.equal(existsSync(paths.admission), true, 'durable admission precedes any retained process');
-    launches++; const child = spawnFixture(process.execPath, [driver, base.home, file, mode], { stdio: ['ignore', 'ignore', 'pipe'] }); children.push(child);
+    launches++; const child = spawnFixture(base.options.runtime.node, [driver, base.home, file, mode], { stdio: ['ignore', 'ignore', 'pipe'] }); children.push(child);
     let diagnostic = ''; child.stderr!.on('data', (bytes: Buffer) => { diagnostic = (diagnostic + bytes.toString()).slice(-8192); });
     child.on('error', () => {}); await once(child, 'spawn');
     return { started: true, diagnostic };
@@ -46,7 +44,7 @@ async function fixture() {
     for (const child of children) if (child.exitCode === null && child.signalCode === null) await once(child, 'close');
   };
   const inspectFresh = async (framePath = paths.frame) => {
-    const child = spawnFixture(process.execPath, [inspector, framePath], { stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child);
+    const child = spawnFixture(base.options.runtime.node, [inspector, framePath], { stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child);
     let result = '', diagnostic = ''; child.stdout!.on('data', (data: Buffer) => { result += data.toString(); assert.ok(result.length <= 16384); }); child.stderr!.on('data', (data: Buffer) => { diagnostic = (diagnostic + data.toString()).slice(-8192); });
     assert.deepEqual(await once(child, 'close'), [0, null], diagnostic); return JSON.parse(result) as { ollama: string; recommendations: string[] };
   };
@@ -68,12 +66,18 @@ function replacePayload(f: Awaited<ReturnType<typeof fixture>>): () => void {
 }
 
 serviceTest('reuse-and-service-admission-never-rehash-installed-files', async () => {
-  const f = await fixture(), observer = observeOllamaReads(f.prepared.directory);
+  const f = await fixture(); let inspecting = false;
+  const observer = observeOllamaReads(f.prepared.directory, async file => {
+    const name = relative(f.prepared.directory, file).replaceAll('\\', '/');
+    if (inspecting && name !== '..' && !name.startsWith('../') && !isAbsolute(name)) assert.ok(['inventory.json', '.ollama-receipt.json'].includes(name), 'Status must not open Ollama payload files');
+  });
   try {
     const data = join(f.prepared.directory, 'lib/data.dat');
     writeFileSync(data, Buffer.alloc(lstatSync(data).size, 3));
     assert.equal((await startOllamaService(f.location, f.prepared, f.context(), f.service)).ollama, 'ready');
-    assert.equal((await dependencyPort(f.target, f.location, f.options).inspect(f.location)).ollama, 'ready');
+    inspecting = true;
+    try { assert.equal((await dependencyPort(f.target, f.location, f.options).inspect(f.location)).ollama, 'ready'); }
+    finally { inspecting = false; }
     const reused = await startOllamaService(f.location, f.prepared, f.context(), { ...f.service,
       launch: async () => { throw new Error('retained service must not launch again'); } });
     assert.equal(reused.ollama, 'ready'); assert.equal(f.count(), 1);
@@ -231,14 +235,14 @@ serviceTest('supervisor-log-validation-and-pre-spawn-failures-have-bounded-not-s
           if (kind === 'linked-cli') linkSync(join(f.prepared.directory, f.prepared.policy.layout.executable), join(f.root, 'linked-cli'));
           if (kind === 'header') writeFileSync(join(f.prepared.directory, f.prepared.policy.layout.executable), Buffer.alloc(512));
           if (kind === 'receipt') writeFileSync(join(f.prepared.directory, '.ollama-receipt.json'), '{}');
-          const worker = executeOllamaServiceWorker(f.location, f.prepared.identity.recordRelativePath, { target: f.target,
-            launch() { spawns++; if (kind === 'spawn-error') return spawn(join(f.root, 'missing-executable'), []); throw Object.assign(new Error('owned synchronous spawn fixture'), { code: 'EACCES' }); } });
-          if (kind === 'spawn-error') await worker;
-          else await assert.rejects(worker, (error: unknown) => {
-            const value = error as { code: string; message: string };
-            assert.equal(value.code, kind === 'header' ? 'archive-unsafe' : kind === 'receipt' ? 'schema-invalid' : kind === 'spawn-throw' ? 'EACCES' : 'dependency-uncertain');
-            return true;
-          });
+          // The supervisor must execute under this installation's actual
+          // resolver-selected Node, including fault-injection scenarios.
+          const child = spawnFixture(f.options.runtime.node, [driver, f.home, f.record, `fault-${kind}`], { stdio: ['ignore', 'pipe', 'pipe'] });
+          f.children.push(child); let output = '';
+          for (const stream of [child.stdout!, child.stderr!]) stream.on('data', bytes => { output = (output + String(bytes)).slice(-8192); });
+          assert.deepEqual(await once(child, 'close'), [kind === 'spawn-error' ? 0 : 1, null], output);
+          if (kind !== 'spawn-error') assert.equal(output.trim(), kind === 'header' ? 'archive-unsafe' : kind === 'receipt' ? 'schema-invalid' : kind === 'spawn-throw' ? 'EACCES' : 'dependency-uncertain');
+          spawns = Number(existsSync(join(f.root, 'launch-arguments.json')));
           return { started: true };
         } });
       assert.notEqual(report.ollama, 'ready'); assert.equal(spawns, kind.startsWith('spawn-') ? 1 : 0);

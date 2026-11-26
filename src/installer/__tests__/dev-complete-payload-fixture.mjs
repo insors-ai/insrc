@@ -45,7 +45,7 @@ await withRun(run,async scope=>{
   const selected=await privateRuntimePaths(f.location,receipt.manifest.runtime);
   assert.equal(inventory.files.some(file=>file.path.startsWith('tools/node/')||file.path.startsWith('runtime/')),false);
   assert.equal(result.state.candidateId,candidate.releaseId);
-  assert.ok(retryCommand(f.location,target,candidate.releaseId).includes(join(candidate.directory,'bootstrap.mjs')));
+  assert.ok((await retryCommand(f.location,target,candidate.releaseId)).includes(join(candidate.directory,'bootstrap.mjs')));
   // Re-probe the actual published files independently, keeping the probe lock
   // outside immutable payloads and never opening LMDB/Lance/DuckDB stores.
   const probeLock=join(run.workspace,'native-smoke.lock'),program=`const {createRequire}=require('node:module');const r=createRequire(process.cwd()+'/package.json');if(process.version!=='v22.22.1'||process.platform!==${JSON.stringify(target.os)}||process.arch!==${JSON.stringify(target.arch)})throw Error('runtime identity');for(const name of ['lmdb','@lancedb/lancedb','@duckdb/node-api','tree-sitter','onnxruntime-node','@parcel/watcher']){const api=r(name);if(!api)throw Error('native module missing');}const c=r('./native/control.node'),h=c.acquire(${JSON.stringify(probeLock)});if(!c.held(h))throw Error('native lock');c.close(h);`;

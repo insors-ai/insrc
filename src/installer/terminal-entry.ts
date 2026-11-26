@@ -3,11 +3,13 @@ import { fileURLToPath } from 'node:url';
 import { createInterface } from 'node:readline/promises';
 import { randomUUID } from 'node:crypto';
 import { requireTerminal } from './terminal-admission.js';
-import { InstallerError, PRIVATE_NODE_VERSION } from './contracts.js';
+import { InstallerError } from './contracts.js';
 import { resolveInstallationLocation, assertToken } from './location.js';
 import { controlBinding } from './native.js';
 import { parseInstaller } from './schemas.js';
-import { controlRuntimeDirectory, productionPeers } from './production-peers.js';
+import { productionPeers } from './production-peers.js';
+import { resolveControlRuntime } from './runtime-binding.js';
+import { privateRuntimeIdentity } from './runtime-policy.js';
 import { canonicalJson } from './release-descriptor.js';
 import { DevWorkerInput, executeDevWorker } from './dev-worker.js';
 import { createDevPreparationWork, verifyDevPayload } from './dev-payload.js';
@@ -38,7 +40,6 @@ export async function terminalMain(args = process.argv.slice(2)): Promise<void> 
     if (args.length !== 4 || !args[1] || !args[2] || !args[3]) throw new InstallerError('schema-invalid', 'Service worker requires installation home, identity and attempt record');
     if (typeof __INSRC_INSTALLER_TARGET__ === 'undefined') throw new InstallerError('target-unqualified', 'Use the target-specific control bootstrap');
     const target = parseInstaller('target', __INSRC_INSTALLER_TARGET__);
-    controlRuntimeDirectory(target);
     assertToken(args[2]);
     const location = resolveInstallationLocation(args[2], { home: args[1], ...(process.platform === 'win32' ? { userSid: controlBinding().userSid() } : {}) });
     await executeOllamaServiceWorker(location, args[3], { target });
@@ -53,6 +54,7 @@ export async function terminalMain(args = process.argv.slice(2)): Promise<void> 
       const launch = await channel.launch, record = launch.checkpoint;
       if (canonicalJson(record.sourceOffer.target) !== canonicalJson(target)) throw new InstallerError('identity-mismatch', 'Worker checkpoint targets another control build');
       const location = resolveInstallationLocation(record.installationId, { home: args[1], ...(process.platform === 'win32' ? { userSid: controlBinding().userSid() } : {}) });
+      await resolveControlRuntime(location, record.sourceOffer.runtime, { signal: channel.controller.signal });
       const predecessor = record.predecessorId ? (await verifyDevPayload(join(location.home, 'releases', record.predecessorId), target, location)).receipt : undefined;
       await executeDevWorker(location.home, launch, { signal: channel.controller.signal, environment: process.env,
         work: createDevPreparationWork(location, record, { ...(predecessor ? { predecessor } : {}) }) });
@@ -62,7 +64,6 @@ export async function terminalMain(args = process.argv.slice(2)): Promise<void> 
   requireTerminal();
   if (typeof __INSRC_INSTALLER_TARGET__ === 'undefined') throw new InstallerError('target-unqualified', 'Use the published target-specific installer');
   const target = parseInstaller('target', __INSRC_INSTALLER_TARGET__);
-  if (process.version !== `v${PRIVATE_NODE_VERSION}` || process.platform !== target.os || process.arch !== target.arch) throw new InstallerError('runtime-invalid', 'The published private runtime target is required');
   let home: string | undefined, installationId = 'default', operationId: string | undefined, retry = false;
   for (let index = 0; index < args.length; index++) {
     const key = args[index];
@@ -75,7 +76,8 @@ export async function terminalMain(args = process.argv.slice(2)): Promise<void> 
   }
   assertToken(installationId); if (operationId) assertToken(operationId);
   const location = resolveInstallationLocation(installationId, { home, ...(process.platform === 'win32' ? { userSid: controlBinding().userSid() } : {}) });
-  const peers = productionPeers(target, location);
+  const runtime = await resolveControlRuntime(location, privateRuntimeIdentity(target));
+  const peers = productionPeers(target, location, runtime);
   if (retry) {
     const manager = new InstallerManager(location, target, peers);
     const ready = await manager.execute({ protocolVersion: 1, operationId: randomUUID(), installationId, action: 'start' });

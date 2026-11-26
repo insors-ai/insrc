@@ -136,7 +136,8 @@ export async function closedOllamaAttempts(location: InstallationLocation, signa
   } catch (cause) { throw dependencyUncertain('Dependency finite/disposal evidence cannot establish closure', cause); }
 }
 
-export async function verifyPreparedOllama(location: InstallationLocation, policyInput: OllamaPolicy,
+/** Read-only, policy-bound completion metadata; grants no launch or cleanup. */
+export async function readPreparedOllamaRecords(location: InstallationLocation, policyInput: OllamaPolicy,
   directory: string, signal?: AbortSignal): Promise<{ files: InventoryFile[]; inventorySha256: string }> {
   const policy = parseOllamaPolicy(policyInput);
   const raw = await readDependencyRecord(location, join(directory, 'inventory.json'), DEPENDENCY_INVENTORY_LIMIT);
@@ -146,7 +147,12 @@ export async function verifyPreparedOllama(location: InstallationLocation, polic
   const expected: OllamaReceipt = { schemaVersion: 1, installationId: location.installationId, policySha256: ollamaPolicySha256(policy), assetSha256: policy.asset.sha256,
     version: policy.version, target: policy.target, inventorySha256 };
   if (canonicalJson(receipt) !== canonicalJson(expected)) throw dependencyUncertain('Dependency payload receipt differs');
-  await verifyOllamaTree(directory, inventory.files, policy, signal, { records: true }); return { files: inventory.files, inventorySha256 };
+  signal?.throwIfAborted(); return { files: inventory.files, inventorySha256 };
+}
+export async function verifyPreparedOllama(location: InstallationLocation, policyInput: OllamaPolicy,
+  directory: string, signal?: AbortSignal): Promise<{ files: InventoryFile[]; inventorySha256: string }> {
+  const policy = parseOllamaPolicy(policyInput), result = await readPreparedOllamaRecords(location, policy, directory, signal);
+  await verifyOllamaTree(directory, result.files, policy, signal, { records: true }); return result;
 }
 
 /** Exact offer is re-observed before any mutation and immediately before publish.

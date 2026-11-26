@@ -1,7 +1,8 @@
+import { installedControlFixture } from './_installed-control-fixture.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
-import { constants, copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { forbidProcesses } from './_no-process-sentinel.js';
@@ -13,7 +14,6 @@ import { runTerminalInstall } from '../terminal-install.js';
 import type { TerminalInstallOptions, TerminalUI } from '../terminal-install.js';
 import { publishInstalledLauncher, retryCommand } from '../installed-launcher.js';
 import { managerFixture } from './_manager-fixture.js';
-import { node22Fixture } from './_runtime-fixture.js';
 import type { DependencyReport, ManagerEvent } from '../contracts.js';
 
 function setup(fresh = true) {
@@ -60,19 +60,17 @@ test('terminal installer requires all TTY streams and absent dev adapter fails e
   } finally { f.cleanup(); }
 });
 
-test('ready commit and lock release precede same terminal installed TUI', { timeout: 45_000 }, async () => {
+test('ready commit and lock release precede same terminal installed TUI', { timeout: 120_000 }, async () => {
   const f = setup(), children: ChildProcess[] = [], terminal = ui(['', '', '', 'yes']);
   let daemon: ChildProcess | undefined;
-  let node: Awaited<ReturnType<typeof node22Fixture>> | undefined;
   try {
-    node = await node22Fixture();
-    const runtime = join(f.next.directory, 'tools/node/bin/node'); mkdirSync(dirname(runtime), { recursive: true }); copyFileSync(node.executable, runtime, constants.COPYFILE_FICLONE);
     const entry = join(f.next.directory, f.next.manifest.tuiEntry); mkdirSync(dirname(entry), { recursive: true });
     const paths = new URL('../../../out/shared/paths.js', import.meta.url).href;
     const storeModule = new URL('../../../out/installer/controller-store.js', import.meta.url).href;
     writeFileSync(entry, `import fs from 'node:fs';import net from 'node:net';import {PATHS} from ${JSON.stringify(paths)};import {ControllerStore} from ${JSON.stringify(storeModule)};const location=${JSON.stringify(f.location)};const s=JSON.parse(fs.readFileSync(location.home+'/install/controller.json'));if(s.operation||s.lastResult.phase!=='ready')throw Error('not committed');const lock=ControllerStore.acquire(location);lock.close();const socket=net.createConnection(PATHS.sockFile);socket.on('error',e=>{throw e});socket.on('connect',()=>socket.write('{}\\n'));socket.on('data',d=>{const r=JSON.parse(String(d));if(r.result.releaseId!=='next')throw Error('wrong daemon');socket.end();fs.writeFileSync(location.home+'/tui-observed.json',JSON.stringify({node:process.execPath,home:PATHS.insrc,socket:PATHS.sockFile,nodeOptions:process.env.NODE_OPTIONS??null}));});`);
     writeFileSync(join(f.next.directory, f.next.manifest.managerEntry), '// fixture manager entry\n');
     writeFileSync(join(f.next.directory, 'bootstrap.mjs'), '// selected bootstrap fixture\n');
+    const { node: runtime } = await installedControlFixture(f.location, f.target, f.next);
     const activate = f.peers.lifecycle!.activate;
     f.peers.lifecycle!.activate = async (...args) => {
       const ready = await activate(...args);
@@ -87,13 +85,14 @@ test('ready commit and lock release precede same terminal installed TUI', { time
     const before = readFileSync(join(f.home, 'install/controller.json'), 'utf8');
     const duplicate = await runTerminalInstall(options(f, ui([]))); assert.equal(duplicate.kind, 'already-completed'); assert.equal(readFileSync(join(f.home, 'install/controller.json'), 'utf8'), before);
     const closed = once(daemon!, 'close'); daemon!.stdin!.end('close\n'); assert.deepEqual(await closed, [0, null]);
-  } finally { await stopOwnedChildren(children); node?.cleanup(); f.cleanup(); }
+  } finally { await stopOwnedChildren(children); f.cleanup(); }
 });
 
 test('cancel install failure and post install TUI error preserve correct outcome', async () => {
   for (const mode of ['decline', 'closed', 'closed-progress', 'migration-failure', 'peer-error', 'tui-error', 'stale-readiness', 'busy'] as const) {
     const f = setup(); let launches = 0;
     try {
+      if (mode === 'tui-error' || mode === 'stale-readiness') await installedControlFixture(f.location, f.target, f.next);
       const terminal = ui(mode === 'closed' ? [] : ['', '', '', mode === 'decline' ? 'no' : 'yes']);
       if (mode === 'closed-progress') terminal.write = () => { const error = new Error('terminal closed'); error.name = 'TerminalClosedError'; throw error; };
       const select: NonNullable<TerminalInstallOptions['select']> = async () => {
@@ -140,20 +139,21 @@ test('terminal consent binds exact dependency offer and never installs coding CL
   } finally { processes.restore(); f.cleanup(); }
 });
 
-test('installed launcher preserves existing files and quotes exact private-runtime retry', () => {
+test('installed launcher preserves existing files and quotes exact private-runtime retry', async () => {
   const f = setup(false), event = priorReady(f);
   try {
-    const releaseId = 'old', command = publishInstalledLauncher(f.location, f.target, releaseId, event);
-    assert.equal(publishInstalledLauncher(f.location, f.target, releaseId, event), command);
-    assert.match(command, /releases\/old\/tools\/node/); assert.match(command, /--home/); assert.equal(command, retryCommand(f.location, f.target, releaseId));
+    const runtime = await installedControlFixture(f.location, f.target, f.old);
+    const releaseId = 'old', command = await publishInstalledLauncher(f.location, f.target, releaseId, event);
+    assert.equal(await publishInstalledLauncher(f.location, f.target, releaseId, event), command);
+    assert.ok(command.includes(runtime.node)); assert.match(command, /--home/); assert.equal(command, await retryCommand(f.location, f.target, releaseId));
     const file = join(f.home, 'bin/insrc'); writeFileSync(file, '# foreign launcher\n');
-    assert.throws(() => publishInstalledLauncher(f.location, f.target, releaseId, event), { code: 'launcher-conflict' }); assert.equal(readFileSync(file, 'utf8'), '# foreign launcher\n');
+    await assert.rejects(publishInstalledLauncher(f.location, f.target, releaseId, event), { code: 'launcher-conflict' }); assert.equal(readFileSync(file, 'utf8'), '# foreign launcher\n');
   } finally { f.cleanup(); }
 });
 
 
 test('terminal cancellation settles owned work and suppresses later TUI handoff', async () => {
-  for (const boundary of ['preparation', 'migration', 'activation', 'selection'] as const) {
+  for (const boundary of ['preparation', 'migration', 'activation', 'selection', 'launcher'] as const) {
     const f = setup(), abort = new AbortController(), terminal = ui(['', '', '', 'yes']); let launches = 0;
     try {
       if (boundary === 'preparation') {
@@ -167,8 +167,9 @@ test('terminal cancellation settles owned work and suppresses later TUI handoff'
         f.peers.lifecycle!.activate = async (...args) => { const ready = await activate(...args); abort.abort(); return ready; };
       }
       const outcome = await runTerminalInstall({ ...options(f, terminal), signal: abort.signal,
-        select: async () => { abort.abort(); return { node: 'fixture', entry: 'fixture', managerEntry: 'fixture', releaseId: 'next', location: f.location }; },
-        publish: () => { throw new Error('cancelled operation published launcher'); }, launch: async () => { launches++; return { code: 0, signal: null }; } });
+        select: async () => { if (boundary === 'selection') abort.abort(); return { node: 'fixture', entry: 'fixture', managerEntry: 'fixture', releaseId: 'next', location: f.location }; },
+        publish: async () => { assert.equal(boundary, 'launcher', 'cancelled operation published launcher'); await Promise.resolve(); abort.abort(); return 'verified fixture command'; },
+        launch: async () => { launches++; return { code: 0, signal: null }; } });
       assert.equal(outcome.kind, 'cancelled', boundary); assert.equal(outcome.code, 130); assert.equal(launches, 0);
       const state = f.manager().inspect(); assert.equal(state.kind, 'present');
       if (state.kind === 'present') {
@@ -204,9 +205,11 @@ test('terminal upgrade retains delivery and rejects stale dependency consent bef
 test('successor upgrade replaces its owned launcher and preserves ready selection', async () => {
   const f = setup(false), terminal = ui(['yes', 'yes']); let launches = 0;
   try {
+    await installedControlFixture(f.location, f.target, f.old);
+    await installedControlFixture(f.location, f.target, f.next);
     const previous = priorReady(f), oldRelease = 'old';
     const before = JSON.stringify(f.manager().inspect());
-    publishInstalledLauncher(f.location, f.target, oldRelease, previous);
+    await publishInstalledLauncher(f.location, f.target, oldRelease, previous);
     assert.equal(JSON.stringify(f.manager().inspect()), before, 'launcher does not mutate controller state');
     const file = join(f.home, 'bin/insrc'); assert.match(readFileSync(file, 'utf8'), /releases\/old\/bootstrap\.mjs/);
     const next = options(f, terminal);
@@ -219,14 +222,14 @@ test('successor upgrade replaces its owned launcher and preserves ready selectio
       } });
     assert.equal(outcome.kind, 'completed', terminal.output.join('')); assert.equal(launches, 1);
     const after = readFileSync(file, 'utf8');
-    assert.throws(() => publishInstalledLauncher(f.location, f.target, oldRelease, previous), { code: 'readiness-uncertain' });
+    await assert.rejects(publishInstalledLauncher(f.location, f.target, oldRelease, previous), { code: 'readiness-uncertain' });
     assert.equal(readFileSync(file, 'utf8'), after, 'stale publisher cannot restore old bootstrap');
     const lease = ControllerStore.acquire(f.location);
-    try { assert.throws(() => publishInstalledLauncher(f.location, f.target, 'next', outcome.event!), { code: 'busy' }); }
+    try { await assert.rejects(publishInstalledLauncher(f.location, f.target, 'next', outcome.event!), { code: 'busy' }); }
     finally { lease.close(); }
     assert.equal(readFileSync(file, 'utf8'), after);
     writeFileSync(file, after + '# user modification\n');
-    assert.throws(() => publishInstalledLauncher(f.location, f.target, 'next', outcome.event!), { code: 'launcher-conflict' });
+    await assert.rejects(publishInstalledLauncher(f.location, f.target, 'next', outcome.event!), { code: 'launcher-conflict' });
     assert.equal(readFileSync(file, 'utf8'), after + '# user modification\n');
   } finally { f.cleanup(); }
 });
@@ -235,20 +238,30 @@ test('saved installer selects candidate control runtime and exact post-install r
   for (const mode of ['success', 'tui-error', 'missing-control'] as const) {
     const f = setup(false), terminal = ui(['yes', 'yes']); let launches = 0;
     try {
-      publishInstalledLauncher(f.location, f.target, 'old', priorReady(f));
+      await installedControlFixture(f.location, f.target, f.old);
+      await publishInstalledLauncher(f.location, f.target, 'old', priorReady(f));
       for (const entry of [f.next.manifest.tuiEntry, f.next.manifest.managerEntry, 'bootstrap.mjs']) {
         if (mode === 'missing-control' && entry === 'bootstrap.mjs') continue;
         const path = join(f.next.directory, entry); mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, '// selected fixture asset\n');
       }
+      const runtime = await installedControlFixture(f.location, f.target, f.next);
+      if (mode === 'missing-control') rmSync(join(f.next.directory, 'bootstrap.mjs'));
       const result = await runTerminalInstall({ ...options(f, terminal), launch: async selection => {
-        launches++; assert.equal(selection.node, join(f.next.directory, 'tools/node/bin/node'));
+        launches++; assert.equal(selection.node, runtime.node);
         if (mode === 'tui-error') throw new Error('fixture TUI launch failure');
         return { code: 0, signal: null };
       } });
       assert.equal(result.kind, mode === 'success' ? 'completed' : 'post-install-tui-error', terminal.output.join(''));
       assert.equal(launches, mode === 'missing-control' ? 0 : 1);
-      const command = retryCommand(f.location, f.target, 'next');
-      assert.match(command, /releases\/next\/tools\/node/); assert.match(command, /releases\/next\/bootstrap\.mjs/);
+      if (mode === 'missing-control') {
+        await assert.rejects(retryCommand(f.location, f.target, 'next'));
+        assert.match(terminal.output.join(''), /control files could not be verified/);
+        const duplicate = ui([]); assert.equal((await runTerminalInstall(options(f, duplicate))).kind, 'already-completed');
+        assert.match(duplicate.output.join(''), /control files could not be verified/);
+        continue;
+      }
+      const command = await retryCommand(f.location, f.target, 'next');
+      assert.ok(command.includes(runtime.node)); assert.match(command, /releases\/next\/bootstrap\.mjs/);
       if (mode === 'tui-error' || mode === 'missing-control') assert.ok(terminal.output.join('').includes(command));
       if (mode !== 'missing-control') assert.match(readFileSync(join(f.home, 'bin/insrc'), 'utf8'), /releases\/next\/bootstrap\.mjs/);
       const duplicate = ui([]); assert.equal((await runTerminalInstall(options(f, duplicate))).kind, 'already-completed');

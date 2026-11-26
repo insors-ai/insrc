@@ -68,15 +68,29 @@ export async function checkRepoRegistered(repoPath: string): Promise<boolean> {
  * canonical check first, rather than only catching the escape here, after
  * that earlier I/O already touched the resolved path.
  */
+/** The per-entry primitive: resolves `entryPath` against `repoPath`, then
+ *  canonically verifies it (via the ALREADY-resolved `realRepoPath`, so a
+ *  caller checking several entries never re-resolves the repo root itself
+ *  per entry). Returns the realpath-resolved target so a caller doing I/O
+ *  immediately afterward uses the EXACT path just checked, not `entryPath`
+ *  resolved fresh a second time (which a symlink swapped in between the two
+ *  resolutions could answer differently) -- the two steps are fused into one
+ *  caller-visible operation specifically so no caller can split "check" from
+ *  "use" the way an earlier revision of computeContentIdentity itself did. */
+async function canonicalResolve(realRepoPath: string, repoPath: string, entryPath: string): Promise<string> {
+	const resolved = resolve(repoPath, entryPath);
+	const realResolved = await realpath(resolved);
+	const realRel = relative(realRepoPath, realResolved);
+	if (realRel === '..' || realRel.startsWith(`..${sep}`)) {
+		throw new Error(`targets.entries path '${entryPath}' resolves outside repoPath`);
+	}
+	return realResolved;
+}
+
 export async function assertTargetsCanonicallyContained(repoPath: string, targets: ReviewTargets): Promise<void> {
 	const realRepoPath = await realpath(repoPath);
 	for (const entry of targets.entries) {
-		const resolved = resolve(repoPath, entry.path);
-		const realResolved = await realpath(resolved);
-		const realRel = relative(realRepoPath, realResolved);
-		if (realRel === '..' || realRel.startsWith(`..${sep}`)) {
-			throw new Error(`targets.entries path '${entry.path}' resolves outside repoPath`);
-		}
+		await canonicalResolve(realRepoPath, repoPath, entry.path);
 	}
 }
 
@@ -91,18 +105,7 @@ export async function computeContentIdentity(repoPath: string, targets: ReviewTa
 		throw new Error(`computeContentIdentity: '${repoPath}' is a registered repo, but its HEAD cannot be resolved: ${head.error ?? head.output}`);
 	}
 
-	for (const entry of targets.entries) {
-		const resolved = resolve(repoPath, entry.path);
-		const rel = relative(repoPath, resolved);
-		if (rel === '..' || rel.startsWith(`..${sep}`)) {
-			throw new Error(`computeContentIdentity: targets.entries path '${entry.path}' resolves outside repoPath`);
-		}
-	}
-	try {
-		await assertTargetsCanonicallyContained(repoPath, targets);
-	} catch (err) {
-		throw new Error(`computeContentIdentity: ${(err as Error).message}`);
-	}
+	const realRepoPath = await realpath(repoPath);
 
 	// Each piece is framed as `<path>\0<fixed-length sha256 of its bytes>` before
 	// joining the outer hash. A path can never contain a NUL byte on any
@@ -110,11 +113,30 @@ export async function computeContentIdentity(repoPath: string, targets: ReviewTa
 	// file's digest (always exactly 32 bytes) rather than its raw, variable-length
 	// bytes directly rules out two different (path, bytes) sequences concatenating
 	// to the identical byte stream -- which raw concatenation alone would not.
+	//
+	// Check-then-read is fused per entry, in ONE pass, deliberately: an
+	// earlier revision checked every entry first and read every entry after,
+	// in two separate loops, which widened the window between "this entry
+	// was verified contained" and "these are the bytes actually hashed for
+	// it" to the time taken by every OTHER entry's check in between. Each
+	// entry's canonicalResolve() result (its realpath-resolved path, not
+	// entry.path re-resolved a second time) is what gets read immediately
+	// afterward, in the same iteration.
 	const hash = createHash('sha256');
 	hash.update(`${headSha}\0`);
 	for (const entry of targets.entries) {
-		const resolved = resolve(repoPath, entry.path);
-		const bytes = await readFile(resolved);
+		const lexicalResolved = resolve(repoPath, entry.path);
+		const rel = relative(repoPath, lexicalResolved);
+		if (rel === '..' || rel.startsWith(`..${sep}`)) {
+			throw new Error(`computeContentIdentity: targets.entries path '${entry.path}' resolves outside repoPath`);
+		}
+		let realResolved: string;
+		try {
+			realResolved = await canonicalResolve(realRepoPath, repoPath, entry.path);
+		} catch (err) {
+			throw new Error(`computeContentIdentity: ${(err as Error).message}`);
+		}
+		const bytes = await readFile(realResolved);
 		const fileDigest = createHash('sha256').update(bytes).digest();
 		hash.update(`${entry.path}\0`);
 		hash.update(fileDigest);

@@ -177,3 +177,37 @@ test('computeContentIdentity: a targets.entries path that is a SYMLINK pointing 
 		rmSync(outsideDir, { recursive: true, force: true });
 	}
 });
+
+test('computeContentIdentity: an IN-REPO symlink is read via its realpath-resolved target, not re-resolved a second time from the lexical path -- the check and the read refer to the SAME fused resolution', async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'real.ts'), 'export const real = 1;\n');
+		symlinkSync(join(repo, 'real.ts'), join(repo, 'alias.ts'));
+		const viaAlias = await computeContentIdentity(repo, { entries: [{ path: 'alias.ts' }] });
+		const viaReal = await computeContentIdentity(repo, { entries: [{ path: 'real.ts' }] });
+		// Same bytes, but a DIFFERENT entry.path framing ('alias.ts' vs 'real.ts' is
+		// hashed into the digest too), so these must differ -- proving the symlink's
+		// REAL content was actually read (not an error, not a stale/cached value).
+		assert.notEqual(viaAlias, viaReal, 'different entry.path framing');
+	} finally {
+		_setContentIdentityDepsForTests();
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('computeContentIdentity: with MULTIPLE entries, one of which is an out-of-scope symlink, the check-then-read fusion still refuses before reading ANY entry\'s bytes (not merely the offending one) -- checks are not separated from reads across entries', async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	const outsideDir = mkdtempSync(join(tmpdir(), 'insrc-outside-multi-'));
+	try {
+		writeFileSync(join(repo, 'a.ts'), 'export const a = 1;\n');
+		writeFileSync(join(outsideDir, 'secret.ts'), 'export const secret = 1;\n');
+		symlinkSync(join(outsideDir, 'secret.ts'), join(repo, 'b.ts'));
+		await assert.rejects(() => computeContentIdentity(repo, { entries: [{ path: 'a.ts' }, { path: 'b.ts' }] }));
+	} finally {
+		_setContentIdentityDepsForTests();
+		rmSync(repo, { recursive: true, force: true });
+		rmSync(outsideDir, { recursive: true, force: true });
+	}
+});

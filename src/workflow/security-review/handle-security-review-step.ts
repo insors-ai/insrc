@@ -157,20 +157,47 @@ function assertTargetsContainedEarly(repoPath: string, targets: ReviewTargets): 
 	}
 }
 
-/** Runs content-identity.ts's OWN assertTargetsCanonicallyContained -- the
- *  REAL (realpath-resolved) containment check, closing the gap the lexical
- *  check above cannot see: a symlinked path component, or the target itself
- *  being a symlink, pointing outside repoPath. Run on every fresh request
- *  AND on every resumed call (both proceed:true and proceed:false), before
- *  any model or advisory work -- a target can change between the original
- *  admission and a later resume, so the lexical pass at confirm_wait time is
- *  never treated as sufficient for the resumed call too. */
-async function assertCanonicalContainment(repoPath: string, targets: ReviewTargets): Promise<void> {
+/** Runs content-identity.ts's OWN assertTargetsCanonicallyContained for ONE
+ *  entry -- the REAL (realpath-resolved) containment check, closing the gap
+ *  the lexical check above cannot see: a symlinked path component, or the
+ *  target itself being a symlink, pointing outside repoPath.
+ *
+ *  A SUCCESSFUL resolution outside repoPath throws SecurityReviewTargetOutOfScopeError
+ *  -- a genuine, never-retried scope violation. A FAILED resolution (ENOENT, a
+ *  permission refusal, a broken path component, a symlink loop, ...) is
+ *  classified the SAME way a stat failure is, NEVER folded into a scope
+ *  violation: 'missing'/most other codes refuse via SecurityReviewTargetUnreachableError,
+ *  the short TRANSIENT_STAT_CODES allowlist returns 'transient' so the caller
+ *  can treat it as ordinary lag rather than a hard refusal. Called per-entry
+ *  from isIndexStale's own loop (so it is re-run on EVERY poll, not merely
+ *  once before a wait begins -- a target that changes mid-wait is caught on
+ *  the very next poll) and once more, directly, as the degraded path's own
+ *  pre-dispatch check (which never reaches isIndexStale at all). */
+async function checkEntryContainment(repoPath: string, entryPath: string): Promise<'ok' | 'transient'> {
 	const check = testDeps.canonicallyContained ?? assertTargetsCanonicallyContained;
 	try {
-		await check(repoPath, targets);
+		await check(repoPath, { entries: [{ path: entryPath }] });
+		return 'ok';
 	} catch (err) {
-		throw new SecurityReviewTargetOutOfScopeError((err as Error).message);
+		const code = (err as NodeJS.ErrnoException).code;
+		if (code === undefined) throw new SecurityReviewTargetOutOfScopeError((err as Error).message);
+		if (code === 'ENOENT') throw new SecurityReviewTargetUnreachableError(entryPath, 'does not exist');
+		if (TRANSIENT_STAT_CODES.has(code)) return 'transient';
+		throw new SecurityReviewTargetUnreachableError(entryPath, code);
+	}
+}
+
+/** The degraded (proceed:false) path's own pre-dispatch containment check --
+ *  it never reaches isIndexStale (which is where the fresh/proceed:true
+ *  paths get this check, re-run on every poll), so it must check for itself,
+ *  immediately before model/advisory work, rather than merely trusting
+ *  whatever passed at the original confirm_wait admission. A transient
+ *  failure here does not block a degraded run (there is no polling context
+ *  to defer to); it is allowed through, consistent with proceed:false's own
+ *  "best effort, do not block on freshness concerns" contract. */
+async function assertCanonicalContainmentForDispatch(repoPath: string, targets: ReviewTargets): Promise<void> {
+	for (const entry of targets.entries) {
+		await checkEntryContainment(repoPath, entry.path);
 	}
 }
 
@@ -271,18 +298,25 @@ async function requireRegisteredRepo(repoPath: string): Promise<void> {
 	}
 }
 
-/** Stats every target once. Throws SecurityReviewTargetUnreachableError on
- *  the FIRST permanently-unreachable target ('missing' or 'permanent') --
- *  distinct from "stale" (which a wait could resolve) and from a genuinely
- *  transient stat hiccup (kept as ordinary lag). Returns true (stale) when
- *  the index predates any target's mtime, false when every target is at or
- *  before the index watermark. */
+/** Checks canonical containment THEN stats every target, both per-entry, on
+ *  EVERY call -- including every poll of waitForFreshIndex's loop, not just
+ *  once before the wait begins, so a target that changes mid-wait (a symlink
+ *  introduced, or swapped to point elsewhere) is caught on the very next
+ *  poll rather than trusted from an earlier pass. Throws
+ *  SecurityReviewTargetOutOfScopeError on a genuine scope violation, or
+ *  SecurityReviewTargetUnreachableError on the FIRST permanently-unreachable
+ *  target ('missing' or most other codes) -- distinct from "stale" (which a
+ *  wait could resolve) and from a genuinely transient hiccup (kept as
+ *  ordinary lag, from either the containment check or the stat itself).
+ *  Returns true (stale) when the index predates any target's mtime, false
+ *  when every target is at or before the index watermark. */
 async function isIndexStale(repoPath: string, targets: ReviewTargets): Promise<boolean> {
 	const resolveLastIndexedAt = testDeps.resolveRepoLastIndexedAt ?? resolveRepoLastIndexedAt;
 	const statTarget = testDeps.statTarget ?? defaultStatTarget;
 	const indexedAt = await resolveLastIndexedAt(repoPath);
 	let stale = indexedAt === undefined;
 	for (const entry of targets.entries) {
+		if (await checkEntryContainment(repoPath, entry.path) === 'transient') { stale = true; continue; }
 		const outcome = await statTarget(resolve(repoPath, entry.path));
 		if (outcome.kind === 'missing') throw new SecurityReviewTargetUnreachableError(entry.path, 'does not exist');
 		if (outcome.kind === 'permanent') throw new SecurityReviewTargetUnreachableError(entry.path, outcome.code);
@@ -344,11 +378,13 @@ export async function handleSecurityReviewStep(request: SecurityReviewStepReques
 		const { repoPath, targets, epicHash, storyId } = await loadState(request.state);
 		await requireRegisteredRepo(repoPath);
 		assertTargetsContainedEarly(repoPath, targets);
-		await assertCanonicalContainment(repoPath, targets);
 		if (request.proceed) {
 			await waitForFreshIndex(repoPath, targets, signal);
 			return runToDone(repoPath, targets, epicHash, storyId, false, signal);
 		}
+		// proceed:false never reaches isIndexStale (where the canonical check
+		// otherwise lives), so it needs its own pre-dispatch check here.
+		await assertCanonicalContainmentForDispatch(repoPath, targets);
 		return runToDone(repoPath, targets, epicHash, storyId, true, signal);
 	}
 
@@ -358,7 +394,6 @@ export async function handleSecurityReviewStep(request: SecurityReviewStepReques
 	}
 	await requireRegisteredRepo(repoPath);
 	assertTargetsContainedEarly(repoPath, targets);
-	await assertCanonicalContainment(repoPath, targets);
 	if (await isIndexStale(repoPath, targets)) {
 		const state = await mintState({ repoPath, targets, ...(epicHash !== undefined ? { epicHash } : {}), ...(storyId !== undefined ? { storyId } : {}) });
 		return {

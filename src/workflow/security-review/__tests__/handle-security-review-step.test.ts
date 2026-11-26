@@ -577,6 +577,69 @@ test('a RESUMED call (both proceed:true and proceed:false) re-checks canonical c
 	} finally { unwire(); }
 });
 
+test("proceed:true's wait RE-CHECKS canonical containment on EVERY poll, not just once before the wait begins -- a target that becomes a symlink escape MID-WAIT is caught on the very next poll, before model/advisory work ever runs", async () => {
+	let pollCount = 0;
+	let resolveModelCalls = 0;
+	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
+		resolveRepoLastIndexedAt: async () => 1_000_000,
+		statTarget: async () => ok(2_000_000), // stays stale -- the only exit is the escape below
+		canonicallyContained: async () => { pollCount++; if (pollCount >= 2) throw new Error("targets.entries path 'app.ts' resolves outside repoPath"); },
+		sleep: async () => undefined,
+		resolveSecurityModel: async () => { resolveModelCalls++; return modelSelection; },
+		collectDependencyAdvisories: async () => evidence(),
+		runSecurityReview: fakeRunSecurityReview(),
+	});
+	try {
+		const first = await handleSecurityReviewStep({ phase: 'start', repoPath: '/repo', targets });
+		assert.equal(first.next, 'confirm_wait');
+		await assert.rejects(
+			handleSecurityReviewStep({ phase: 'start', state: (first as { state: string }).state, proceed: true }),
+			SecurityReviewTargetOutOfScopeError,
+		);
+		assert.ok(pollCount >= 2, 'the escape was introduced only on a LATER poll, not the first');
+		assert.equal(resolveModelCalls, 0, 'caught before any model work');
+	} finally { unwire(); }
+});
+
+test('the canonical containment check classifies a FAILED resolution (e.g. ENOENT, or a transient code) the SAME way a stat failure is classified -- never folded into SecurityReviewTargetOutOfScopeError, which is reserved for a resolution that SUCCEEDS outside repoPath', async () => {
+	// A failed resolution with code ENOENT: refused as unreachable, not as out-of-scope.
+	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
+		resolveRepoLastIndexedAt: async () => 2_000_000,
+		statTarget: async () => ok(1_000_000),
+		canonicallyContained: async () => { const e = new Error('no such file') as NodeJS.ErrnoException; e.code = 'ENOENT'; throw e; },
+		resolveSecurityModel: async () => modelSelection,
+		collectDependencyAdvisories: async () => evidence(),
+		runSecurityReview: fakeRunSecurityReview(),
+	});
+	try {
+		await assert.rejects(
+			handleSecurityReviewStep({ phase: 'start', repoPath: '/repo', targets }),
+			SecurityReviewTargetUnreachableError,
+		);
+	} finally { unwire(); }
+
+	// A failed resolution with a TRANSIENT code: treated as ordinary lag (stale), never refused.
+	let canonicalCalls = 0;
+	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
+		resolveRepoLastIndexedAt: async () => 2_000_000,
+		statTarget: async () => ok(1_000_000),
+		canonicallyContained: async () => {
+			canonicalCalls++;
+			if (canonicalCalls === 1) { const e = new Error('too many open files') as NodeJS.ErrnoException; e.code = 'EMFILE'; throw e; }
+		},
+		resolveSecurityModel: async () => modelSelection,
+		collectDependencyAdvisories: async () => evidence(),
+		runSecurityReview: fakeRunSecurityReview(),
+	});
+	try {
+		const response = await handleSecurityReviewStep({ phase: 'start', repoPath: '/repo', targets });
+		assert.equal(response.next, 'confirm_wait', 'a transient containment-check hiccup is treated as stale (safe default), never thrown');
+	} finally { unwire(); }
+});
+
 test('a fresh request with malformed targets (no entries, an empty entries array, or an entry with no path) is refused before any admission check, stat, model probe or round', async () => {
 	let registeredCalls = 0;
 	_setSecurityReviewStepDepsForTests({

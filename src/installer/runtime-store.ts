@@ -53,7 +53,7 @@ async function readChecked(path: string, maximum: number, signal: AbortSignal,
     return capture || !expected ? { bytes: Buffer.concat(chunks), hash: value } : { hash: value };
   } finally { await closeOwnedFile(file); }
 }
-function inventory(bytes: Buffer, expected: ReturnType<typeof runtimeProfile>): RuntimeInventoryFile[] {
+export function verifyRuntimeInventory(bytes: Buffer, expected: ReturnType<typeof runtimeProfile>): RuntimeInventoryFile[] {
   if (digest(bytes) !== expected.inventorySha256) throw invalid('Runtime inventory differs from independent pinned profile');
   const value: unknown = JSON.parse(bytes.toString('utf8'));
   if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).sort().join(',') !== 'files,schemaVersion') throw invalid('Invalid runtime inventory');
@@ -102,7 +102,7 @@ export async function resolveRuntimeStore(locationInput: InstallationLocation, i
       inventorySha256: profile.inventorySha256, npmVersion: runtimePolicy.npmVersion, headersVersion: runtimePolicy.headersVersion });
     if (completion.toString('utf8') !== expectedCompletion) throw invalid('Runtime completion identity or canonical bytes differ');
     const bytes = (await readChecked(paths.inventory, RUNTIME_LIMITS.inventoryBytes, signal)).bytes!;
-    const files = inventory(bytes, profile), pending = new Map(files.map(file => [file.path, file]));
+    const files = verifyRuntimeInventory(bytes, profile), pending = new Map(files.map(file => [file.path, file]));
     const directories = new Set(['']);
     for (const file of files) {
       let path = dirname(file.path).split(sep).join('/');

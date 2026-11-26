@@ -1,0 +1,171 @@
+{
+  "meta": {
+    "workflow": "brainstorm",
+    "runId": "wf-1795523238344-vhxkr2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T12:47:54.022Z",
+    "epicCreatedAt": "2026-11-24T12:47:54.022Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "glm-5.3:cloud"
+        }
+      ]
+    },
+    "elapsedMs": 1235677,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "specHash": "74e8a0cf59d3f57d",
+    "epicSlug": "unify-vibe-one-plain-cli-execution",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "259e4d70162bc4716e6790dd7d5d2be1495bf193b37f124644998aa57847abfe",
+        "at": "2026-11-24T12:47:54.028Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T12:48:43.136Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "category": "requirements",
+    "decisions": [
+      {
+        "chosen": "Plain CLI only, with explicit safety qualification",
+        "reason": "Installed Vibe 3.1.4 accepts headless model and thinking selection, removing the original reason for the transport split. Its flags alone do not establish equivalent tool-policy enforcement; choosing plain CLI does not authorize a blanket approval bypass.",
+        "ruledOut": [
+          "Plain CLI with temporary app-server fallback",
+          "Retain app-server for selected requests"
+        ]
+      },
+      {
+        "chosen": "Qualify narrow authorization; fail closed",
+        "reason": "Plain CLI with explicit safety qualification is settled. Installed Vibe's --enabled-tools does not bypass its separate agent approval gate; whether a custom policy or agent can safely authorize only the required analysis tools remains unproven.",
+        "ruledOut": [
+          "Defer read-only MCP authorization"
+        ]
+      },
+      {
+        "chosen": "One shared execution adapter",
+        "reason": "Plain CLI and fail-closed read-only authorization are settled. Plugin chat currently uses VIBE_ACTIVE_MODEL and its own prompt/streaming path, so its scope remains a material boundary decision.",
+        "ruledOut": [
+          "Share launch rules; preserve chat UX",
+          "Backend only"
+        ]
+      },
+      {
+        "chosen": "Replace parsing across all identified Vibe paths",
+        "reason": "ISSUE-0b3114f87754959b identifies three heuristic parsing areas; smol-toml is already a dependency, and the recent registration build required nine validation rounds hardening a hand-written lexer. Parser adoption must also preserve unrelated user configuration when editing files.",
+        "ruledOut": [
+          "Replace parsing only where the adapter needs it",
+          "Defer TOML cleanup to separate tracked work"
+        ]
+      },
+      {
+        "chosen": "Verify and reconcile the issue set",
+        "reason": "ISSUE-910fce32967bc4ea appears already fixed; ISSUE-30962d0f44df1e76 and the review portion of ISSUE-738d62b848fd173f depend on removed machinery, while the latter's catalog concern may still need verification.",
+        "ruledOut": [
+          "Reconcile only directly implemented issues",
+          "Document follow-ups only"
+        ]
+      }
+    ],
+    "intent": "Make Mistral Vibe a first-class CliProvider client using one shared plain-CLI execution adapter for backend requests and VS Code plugin chat, removing the vibe-app-server transport entirely while preserving plugin streaming. Model, effort, prompt transport, safety handling and the exact MCP tool naming are aligned by construction and qualified against the installed Vibe 3.1.4 (headless --model/--thinking, --approval-policy, custom agents, --enabled-tools, budget guards, --output-dir export evidence — live-confirmed 2026-11-24). Narrowly authorized insrc analysis tools are enabled in read-only sessions only when live qualification proves the no-blanket-bypass invariant; otherwise the session fails closed and analysis stays unavailable (ISSUE-d3e72fe73ee775a2). Hand-written TOML parsing is replaced with smol-toml across all identified daemon and plugin Vibe paths (ISSUE-0b3114f87754959b). The overlapping issue set is verified and reconciled: confirm the apparent prompt-transport fix (ISSUE-910fce32967bc4ea), identify remaining catalog gaps, and record the review-dependent issues as deferred pending the review rewrite.",
+    "nonGoals": [
+      "Retain vibe-app-server as a backend transport or verification layer.",
+      "Allow blanket permission bypass to enable read-only analysis tools.",
+      "Restore removed review-activity or streaming-review machinery; review integration awaits the review rewrite.",
+      "Plain CLI with temporary app-server fallback",
+      "Retain app-server for selected requests",
+      "Defer read-only MCP authorization",
+      "Share launch rules; preserve chat UX",
+      "Backend only",
+      "Replace parsing only where the adapter needs it",
+      "Defer TOML cleanup to separate tracked work",
+      "Reconcile only directly implemented issues",
+      "Document follow-ups only"
+    ],
+    "openItems": [],
+    "scopeBoundary": "The overhaul stops at the Vibe execution/config surfaces: the shared adapter replaces the backend CliProvider vibe paths and the plugin chat launch path, and the smol-toml replacement covers only the identified Vibe TOML paths (plugin MCP config writer, daemon registration checks, shared inline-list interpretation) with surgical edits that preserve unrelated user configuration. Review integration is out of scope until the review rewrite establishes its replacement (ISSUE-30962d0f44df1e76 and the review portion of ISSUE-738d62b848fd173f are recorded as deferred dependencies on it; 738d62b8's surviving catalog-coverage sub-point is verified within this scope). Read-only analysis authorization ships only on successful qualification — never via a blanket bypass. Issues close only with supporting evidence; no speculative closures.",
+    "title": "Unify Vibe on one plain-CLI execution adapter"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "quotedText": "the vibe-app-server verified-session transport to be removed",
+      "ref": "src/shared/vibe-session.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "quotedText": "CliProvider vibe paths: modelArgs() returns [] for vibe; runVibe switches to the app-server on explicit model/effort; READ_ONLY_SESSION_VIBE_TOOL_NAMES; runReviewSession removal",
+      "ref": "src/agent/providers/cli-provider.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "quotedText": "plugin chat vibe mapper: --prompt= binding, VIBE_ACTIVE_MODEL pin, mcp_<server>_<tool> parser",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "quotedText": "--enabled-tools does not bypass vibe's separate agent-approval gate",
+      "ref": "docs/standalone/vibe-s-read-only-session-cannot-E20261124d3e72fe7/ISSUE.md"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "quotedText": "Read Vibe configs with a real TOML parser",
+      "ref": "docs/standalone/read-vibe-configs-real-toml-parser-E202611090b3114f8/ISSUE.md"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "quotedText": "Pass Vibe chat prompts correctly in programmatic mode",
+      "ref": "docs/standalone/pass-vibe-chat-prompts-correctly-programmatic-E20261105910fce32/ISSUE.md"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "quotedText": "activity-supervised reviews through Mistral Vibe CLI — predicated on removed review machinery",
+      "ref": "docs/standalone/support-activity-supervised-reviews-through-mistral-E2026110430962d0f/ISSUE.md"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "quotedText": "streaming reviews incl. Vibe — review portion depends on removed machinery; catalog-coverage sub-point survives",
+      "ref": "docs/standalone/preserve-ollama-routing-claude-streaming-reviews-E20261110738d62b8/ISSUE.md"
+    }
+  ]
+}

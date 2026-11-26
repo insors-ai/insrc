@@ -58,6 +58,28 @@ export async function checkRepoRegistered(repoPath: string): Promise<boolean> {
  * bytes -- never delegates to git_hash_object or relies on git status, which
  * can miss a tracked file marked assume-unchanged.
  */
+/**
+ * The REAL (realpath-resolved) containment check, as opposed to a purely
+ * lexical `resolve`/`relative` test: a symlinked path component, or the
+ * target itself being a symlink, can point outside repoPath without a
+ * lexical check ever seeing '..'. Exported so any caller that does I/O on a
+ * target BEFORE reaching this module's own computeContentIdentity (e.g.
+ * handle-security-review-step.ts's freshness stat) can run the SAME
+ * canonical check first, rather than only catching the escape here, after
+ * that earlier I/O already touched the resolved path.
+ */
+export async function assertTargetsCanonicallyContained(repoPath: string, targets: ReviewTargets): Promise<void> {
+	const realRepoPath = await realpath(repoPath);
+	for (const entry of targets.entries) {
+		const resolved = resolve(repoPath, entry.path);
+		const realResolved = await realpath(resolved);
+		const realRel = relative(realRepoPath, realResolved);
+		if (realRel === '..' || realRel.startsWith(`..${sep}`)) {
+			throw new Error(`targets.entries path '${entry.path}' resolves outside repoPath`);
+		}
+	}
+}
+
 export async function computeContentIdentity(repoPath: string, targets: ReviewTargets): Promise<string> {
 	if (!(await isRepoRegistered(repoPath))) {
 		throw new Error(`computeContentIdentity: '${repoPath}' is not a registered repo`);
@@ -69,7 +91,18 @@ export async function computeContentIdentity(repoPath: string, targets: ReviewTa
 		throw new Error(`computeContentIdentity: '${repoPath}' is a registered repo, but its HEAD cannot be resolved: ${head.error ?? head.output}`);
 	}
 
-	const realRepoPath = await realpath(repoPath);
+	for (const entry of targets.entries) {
+		const resolved = resolve(repoPath, entry.path);
+		const rel = relative(repoPath, resolved);
+		if (rel === '..' || rel.startsWith(`..${sep}`)) {
+			throw new Error(`computeContentIdentity: targets.entries path '${entry.path}' resolves outside repoPath`);
+		}
+	}
+	try {
+		await assertTargetsCanonicallyContained(repoPath, targets);
+	} catch (err) {
+		throw new Error(`computeContentIdentity: ${(err as Error).message}`);
+	}
 
 	// Each piece is framed as `<path>\0<fixed-length sha256 of its bytes>` before
 	// joining the outer hash. A path can never contain a NUL byte on any
@@ -81,18 +114,6 @@ export async function computeContentIdentity(repoPath: string, targets: ReviewTa
 	hash.update(`${headSha}\0`);
 	for (const entry of targets.entries) {
 		const resolved = resolve(repoPath, entry.path);
-		const rel = relative(repoPath, resolved);
-		if (rel === '..' || rel.startsWith(`..${sep}`)) {
-			throw new Error(`computeContentIdentity: targets.entries path '${entry.path}' resolves outside repoPath`);
-		}
-		// A symlinked component (or the target itself a symlink) can point outside
-		// repoPath without the lexical check above ever seeing '..'; realpath resolves
-		// every symlink so the final location is checked against repoPath for real.
-		const realResolved = await realpath(resolved);
-		const realRel = relative(realRepoPath, realResolved);
-		if (realRel === '..' || realRel.startsWith(`..${sep}`)) {
-			throw new Error(`computeContentIdentity: targets.entries path '${entry.path}' resolves outside repoPath`);
-		}
 		const bytes = await readFile(resolved);
 		const fileDigest = createHash('sha256').update(bytes).digest();
 		hash.update(`${entry.path}\0`);

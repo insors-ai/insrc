@@ -62,6 +62,34 @@ test("each step kind's token rule, 100-entry eviction, TTL with read refresh and
 	assert.equal(await ttl.read('workflow', dropped), undefined, 'untouched for over an hour: swept');
 });
 
+test("take: single-use retrieval -- the first take returns the entry and consumes it; a second take with the SAME token (sequential or concurrent) always gets undefined, never the entry twice; expiry is enforced on access, unlike read", async () => {
+	let t = 1_000_000;
+	const s = new LocalStepStateStore(() => t, () => {});
+
+	const token = await s.mint('security-review', { n: 1 });
+	const first = await s.take('security-review', token);
+	assert.deepEqual(first?.payload, { n: 1 });
+	assert.equal(await s.take('security-review', token), undefined, 'the SAME token a second time: already consumed');
+	assert.equal(await s.read('security-review', token), undefined, 'a plain read confirms the entry is genuinely gone, not merely marked');
+
+	// "Concurrent" racing calls on the same token: since take's lookup-and-delete
+	// is one synchronous step with no internal await, firing two take() calls
+	// back-to-back (no await between the two invocations) still lets only ONE
+	// of them observe the entry -- Promise.all does not change JS's single-
+	// threaded execution order of each call's synchronous portion.
+	const raceToken = await s.mint('security-review', { race: true });
+	const [a, b] = await Promise.all([s.take('security-review', raceToken), s.take('security-review', raceToken)]);
+	const winners = [a, b].filter(r => r !== undefined);
+	assert.equal(winners.length, 1, 'exactly one of the two racing take() calls gets the entry, never both, never neither');
+
+	// Expiry: take refuses an entry past its kind's ttlMs since last touch,
+	// even though nothing else has read or touched it (read alone only
+	// refreshes the expiry -- it does not itself enforce it on the read side).
+	const expiring = await s.mint('security-review', { expiring: true });
+	t += HOUR + 1;
+	assert.equal(await s.take('security-review', expiring), undefined, 'an entry past its ttl is treated as absent by take');
+});
+
 function connect(store: LocalStepStateStore): () => { worker: Worker; ask: (m: Record<string, unknown>) => Promise<Record<string, unknown>> } {
 	return () => {
 		const { port1: main, port2: workerPort } = new MessageChannel();

@@ -36,7 +36,7 @@ test('insrc_security_review_step is registered in the step host table under exac
 	assert.ok(Object.hasOwn(table, 'insrc_security_review_step'));
 });
 
-const REGISTERED = { isRepoRegistered: async () => true };
+const REGISTERED = { isRepoRegistered: async () => true, canonicallyContained: async () => undefined };
 const ok = (mtimeMs: number) => ({ kind: 'ok' as const, mtimeMs });
 
 test('handleSecurityReviewStepCall: a valid fresh request wraps handleSecurityReviewStep\'s reply as {content:[{type:"text",text}]}, routed through handleSecurityReviewStep and nowhere else', async () => {

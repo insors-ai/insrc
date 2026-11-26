@@ -49,6 +49,18 @@ export interface SharedStepStateStore {
 	mint<P>(kind: StepKind, payload: P): Promise<string>;
 	read<P>(kind: StepKind, token: string): Promise<StepStateEntry<P> | undefined>;
 	/**
+	 * Atomically reads AND deletes `token` in one step -- single-use retrieval
+	 * for a kind whose resume is meant to be a one-time decision (e.g.
+	 * security-review's confirm_wait). An entry past its kind's ttlMs since
+	 * last touch is treated the same as absent (expiry IS enforced here,
+	 * unlike a plain `read`, which only refreshes it). Concurrent or repeated
+	 * calls with the SAME token: only the FIRST ever returns a value, even
+	 * when raced -- the lookup-and-delete is one synchronous step with no
+	 * `await` in between, so no second call can observe the entry before it
+	 * is gone, on the main thread or (one request at a time) through the hub.
+	 */
+	take<P>(kind: StepKind, token: string): Promise<StepStateEntry<P> | undefined>;
+	/**
 	 * Returns the token to use next: the same one for a stable-token kind (whose
 	 * token must exist), a new one otherwise (the old one, if any, is released).
 	 */
@@ -100,6 +112,17 @@ export class LocalStepStateStore implements SharedStepStateStore {
 		const entry = this.map(kind).get(token);
 		if (entry === undefined) return undefined;
 		entry.touchedAt = this.now();
+		return { token, kind, payload: structuredClone(entry.payload) as P, touchedAt: entry.touchedAt };
+	}
+
+	async take<P>(kind: StepKind, token: string): Promise<StepStateEntry<P> | undefined> {
+		assertNoSessionPersistence();
+		const store = this.map(kind);
+		const entry = store.get(token);
+		store.delete(token);
+		if (entry === undefined) return undefined;
+		const { ttlMs } = LIFECYCLES[kind];
+		if (this.now() - entry.touchedAt > ttlMs) return undefined;
 		return { token, kind, payload: structuredClone(entry.payload) as P, touchedAt: entry.touchedAt };
 	}
 
@@ -161,6 +184,7 @@ export function stepStateHubHandlers(store: SharedStepStateStore, _assertOwner?:
 	return {
 		'step.mint':    a => store.mint((a as A).kind, (a as A).payload),
 		'step.read':    a => store.read((a as A).kind, (a as A).token!),
+		'step.take':    a => store.take((a as A).kind, (a as A).token!),
 		'step.update':  a => store.update((a as A).kind, (a as A).token, (a as A).payload),
 		'step.release': a => store.release((a as A).kind, (a as A).token!),
 		'step.clear':   a => store.clearForTests((a as A).kind),
@@ -175,6 +199,7 @@ export class HubStepStateStore implements SharedStepStateStore {
 	lifecycle(kind: StepKind): StepLifecycle { return LIFECYCLES[kind]; }
 	mint<P>(kind: StepKind, payload: P): Promise<string> { assertNoSessionPersistence(); return this.hub.request('step.mint', { kind, payload }); }
 	read<P>(kind: StepKind, token: string): Promise<StepStateEntry<P> | undefined> { assertNoSessionPersistence(); return this.hub.request('step.read', { kind, token }); }
+	take<P>(kind: StepKind, token: string): Promise<StepStateEntry<P> | undefined> { assertNoSessionPersistence(); return this.hub.request('step.take', { kind, token }); }
 	update<P>(kind: StepKind, token: string | undefined, payload: P): Promise<string> { assertNoSessionPersistence(); return this.hub.request('step.update', { kind, token, payload }); }
 	release(kind: StepKind, token: string): Promise<void> { assertNoSessionPersistence(); return this.hub.request('step.release', { kind, token }); }
 	listLocal<P>(_kind: StepKind): readonly StepStateEntry<P>[] { throw new Error('step-state entries are listed on the main thread only'); }

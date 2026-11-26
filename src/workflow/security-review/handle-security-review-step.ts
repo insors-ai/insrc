@@ -35,7 +35,7 @@ import { loadAnalyzeConfig, resolveSecurityModel } from '../../config/analyze.js
 import { getModelRegistry } from '../../daemon/model-registry.js';
 import { getStepStateStore } from '../../daemon/threads/step-state.js';
 import type { ReviewTargets } from '../artifact-core/types.js';
-import { checkRepoRegistered } from './content-identity.js';
+import { assertTargetsCanonicallyContained, checkRepoRegistered } from './content-identity.js';
 import { collectDependencyAdvisories } from './collect-dependency-advisories.js';
 import { assertTargetsContained, runSecurityReview, type SecurityReviewReport } from './run-security-review.js';
 
@@ -157,6 +157,23 @@ function assertTargetsContainedEarly(repoPath: string, targets: ReviewTargets): 
 	}
 }
 
+/** Runs content-identity.ts's OWN assertTargetsCanonicallyContained -- the
+ *  REAL (realpath-resolved) containment check, closing the gap the lexical
+ *  check above cannot see: a symlinked path component, or the target itself
+ *  being a symlink, pointing outside repoPath. Run on every fresh request
+ *  AND on every resumed call (both proceed:true and proceed:false), before
+ *  any model or advisory work -- a target can change between the original
+ *  admission and a later resume, so the lexical pass at confirm_wait time is
+ *  never treated as sufficient for the resumed call too. */
+async function assertCanonicalContainment(repoPath: string, targets: ReviewTargets): Promise<void> {
+	const check = testDeps.canonicallyContained ?? assertTargetsCanonicallyContained;
+	try {
+		await check(repoPath, targets);
+	} catch (err) {
+		throw new SecurityReviewTargetOutOfScopeError((err as Error).message);
+	}
+}
+
 /** Mints an opaque, daemon-held confirm_wait token for `payload` -- never a
  *  caller-decodable blob. Matches insrc_workflow_step's own established
  *  pattern (src/daemon/steps/workflow-step/state-store.ts): the shared
@@ -169,12 +186,18 @@ function mintState(payload: StatePayload): Promise<string> {
 	return getStepStateStore().mint('security-review', payload);
 }
 
+/** Single-use: consumes (atomically reads AND deletes) the token, so a
+ *  resumed call's decision can only ever be acted on ONCE -- a repeat or
+ *  concurrent resume with the SAME token (sequential retry, or a genuine
+ *  race between two callers) gets this same "not found" refusal on every
+ *  attempt after the first, never a second independent review run. */
 async function loadState(token: string): Promise<StatePayload> {
-	const entry = await getStepStateStore().read<StatePayload>('security-review', token);
+	const entry = await getStepStateStore().take<StatePayload>('security-review', token);
 	if (entry === undefined) {
 		throw new Error(
-			`handleSecurityReviewStep: state token '${token}' not found: the insrc daemon was restarted (confirm_wait tokens are held in its ` +
-			`memory and a restart loses them), the token went unused for an hour, or it was already resumed. Start again with a fresh request.`,
+			`handleSecurityReviewStep: state token '${token}' not found: it was already resumed (a confirm_wait token is consumed on its first use), ` +
+			`the insrc daemon was restarted (tokens are held in its memory and a restart loses them), or it went unused for an hour. ` +
+			`Start again with a fresh request.`,
 		);
 	}
 	return entry.payload;
@@ -210,6 +233,7 @@ export interface SecurityReviewStepDeps {
 	readonly isRepoRegistered?:         (repoPath: string) => Promise<boolean>;
 	readonly resolveRepoLastIndexedAt?: (repoPath: string) => Promise<number | undefined>;
 	readonly statTarget?:               (absolutePath: string) => Promise<StatOutcome>;
+	readonly canonicallyContained?:     (repoPath: string, targets: ReviewTargets) => Promise<void>;
 	readonly sleep?:                    (ms: number) => Promise<void>;
 	readonly resolveSecurityModel?:     (repoPath: string) => ReturnType<typeof resolveSecurityModel>;
 	readonly collectDependencyAdvisories?: typeof collectDependencyAdvisories;
@@ -319,6 +343,8 @@ export async function handleSecurityReviewStep(request: SecurityReviewStepReques
 	if ('state' in request) {
 		const { repoPath, targets, epicHash, storyId } = await loadState(request.state);
 		await requireRegisteredRepo(repoPath);
+		assertTargetsContainedEarly(repoPath, targets);
+		await assertCanonicalContainment(repoPath, targets);
 		if (request.proceed) {
 			await waitForFreshIndex(repoPath, targets, signal);
 			return runToDone(repoPath, targets, epicHash, storyId, false, signal);
@@ -332,6 +358,7 @@ export async function handleSecurityReviewStep(request: SecurityReviewStepReques
 	}
 	await requireRegisteredRepo(repoPath);
 	assertTargetsContainedEarly(repoPath, targets);
+	await assertCanonicalContainment(repoPath, targets);
 	if (await isIndexStale(repoPath, targets)) {
 		const state = await mintState({ repoPath, targets, ...(epicHash !== undefined ? { epicHash } : {}), ...(storyId !== undefined ? { storyId } : {}) });
 		return {

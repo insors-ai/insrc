@@ -19,6 +19,7 @@ import {
 	handleSecurityReviewStep, _setSecurityReviewStepDepsForTests,
 	SecurityReviewRepoNotRegisteredError, SecurityReviewCancelledError, SecurityReviewTargetUnreachableError, SecurityReviewTargetOutOfScopeError,
 } from '../handle-security-review-step.js';
+import type { SecurityReviewStepResponse } from '../handle-security-review-step.js';
 import { ContentIdentityMismatchError, SecurityModelUnavailableError, deriveReceiptIdentity } from '../run-security-review.js';
 import type { SecurityReviewReport } from '../run-security-review.js';
 import type { SecurityModelSelection } from '../../../config/analyze.js';
@@ -68,7 +69,7 @@ const missing = () => ({ kind: 'missing' as const });
  *  (the admission check this Story's security review flagged -- every test
  *  must now pass this explicitly, matching a real caller authorizing a real
  *  repoPath). */
-const REGISTERED = { isRepoRegistered: async () => true };
+const REGISTERED = { isRepoRegistered: async () => true, canonicallyContained: async () => undefined };
 
 function unwire(): void { _setSecurityReviewStepDepsForTests(); }
 
@@ -260,7 +261,7 @@ test('a fresh request naming an UNREGISTERED repoPath is refused with SecurityRe
 test('a resumed call is RE-AUTHORIZED against the registry at resume time, never merely trusting that its state token\'s repoPath was authorized once at pause time', async () => {
 	let registeredNow = true;
 	_setSecurityReviewStepDepsForTests({
-		isRepoRegistered: async () => registeredNow,
+		isRepoRegistered: async () => registeredNow, canonicallyContained: async () => undefined,
 		resolveRepoLastIndexedAt: async () => 1_000_000,
 		statTarget: async () => ok(2_000_000),
 		resolveSecurityModel: async () => modelSelection,
@@ -283,7 +284,7 @@ test("proceed:true's wait re-authorizes on every poll iteration too -- a repo de
 	let registeredNow = true;
 	const sleptMs: number[] = [];
 	_setSecurityReviewStepDepsForTests({
-		isRepoRegistered: async () => registeredNow,
+		isRepoRegistered: async () => registeredNow, canonicallyContained: async () => undefined,
 		resolveRepoLastIndexedAt: async () => { pollCount++; if (pollCount === 2) registeredNow = false; return 1_000_000; },
 		statTarget: async () => ok(2_000_000), // stays stale -- the only exit is de-registration
 		sleep: async ms => { sleptMs.push(ms); },
@@ -462,6 +463,117 @@ test("the confirm_wait state is an OPAQUE, daemon-minted token -- a resumed call
 	try {
 		const forged = Buffer.from(JSON.stringify({ repoPath: '/some/other/repo', targets: { entries: [{ path: 'secret.env' }] } }), 'utf8').toString('base64url');
 		await assert.rejects(handleSecurityReviewStep({ phase: 'start', state: forged, proceed: false }));
+	} finally { unwire(); }
+});
+
+test('a confirm_wait token is SINGLE-USE: a second resume with the SAME token (a sequential retry or a would-be concurrent race) is refused exactly like an unknown token, never dispatching a second independent review', async () => {
+	let runReviewCalls = 0;
+	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
+		resolveRepoLastIndexedAt: async () => 1_000_000,
+		statTarget: async () => ok(2_000_000),
+		resolveSecurityModel: async () => modelSelection,
+		collectDependencyAdvisories: async () => evidence(),
+		runSecurityReview: async (...a: Parameters<ReturnType<typeof fakeRunSecurityReview>>) => { runReviewCalls++; return fakeRunSecurityReview()(...a); },
+	});
+	try {
+		const first = await handleSecurityReviewStep({ phase: 'start', repoPath: '/repo', targets });
+		assert.equal(first.next, 'confirm_wait');
+		const state = (first as { state: string }).state;
+
+		const resumed = await handleSecurityReviewStep({ phase: 'start', state, proceed: false });
+		assert.equal(resumed.next, 'done');
+		assert.equal(runReviewCalls, 1);
+
+		// The SAME token again: refused, and no second review ever dispatches.
+		await assert.rejects(handleSecurityReviewStep({ phase: 'start', state, proceed: false }));
+		assert.equal(runReviewCalls, 1, 'the second resume attempt never reached runSecurityReview a second time');
+	} finally { unwire(); }
+});
+
+test('a confirm_wait token is consumed by the FIRST resume even when it ultimately fails (e.g. de-registration mid-wait) -- a retry with the same token is refused, not silently re-granted', async () => {
+	_setSecurityReviewStepDepsForTests({
+		isRepoRegistered: async () => true,
+		canonicallyContained: async () => undefined,
+		resolveRepoLastIndexedAt: async () => 1_000_000,
+		statTarget: async () => ok(2_000_000),
+		resolveSecurityModel: async () => modelSelection,
+		collectDependencyAdvisories: async () => evidence(),
+		runSecurityReview: fakeRunSecurityReview(),
+	});
+	try {
+		const first = await handleSecurityReviewStep({ phase: 'start', repoPath: '/repo', targets });
+		assert.equal(first.next, 'confirm_wait');
+		const state = (first as { state: string }).state;
+
+		_setSecurityReviewStepDepsForTests({
+			isRepoRegistered: async () => false, // de-registered before the resume ever runs
+			canonicallyContained: async () => undefined,
+			resolveRepoLastIndexedAt: async () => 1_000_000,
+			statTarget: async () => ok(2_000_000),
+			resolveSecurityModel: async () => modelSelection,
+			collectDependencyAdvisories: async () => evidence(),
+			runSecurityReview: fakeRunSecurityReview(),
+		});
+		await assert.rejects(handleSecurityReviewStep({ phase: 'start', state, proceed: false }), SecurityReviewRepoNotRegisteredError);
+		// The token is already gone (consumed by the attempt above), even though that attempt itself failed.
+		await assert.rejects(handleSecurityReviewStep({ phase: 'start', state, proceed: false }));
+	} finally { unwire(); }
+});
+
+// --- canonical (realpath-resolved) containment, not just lexical ---------
+
+test("a fresh request whose target is a SYMLINK pointing outside repoPath is refused with SecurityReviewTargetOutOfScopeError, even though the lexical path itself never contains '..'", async () => {
+	let statCalls = 0;
+	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
+		canonicallyContained: async () => { throw new Error("targets.entries path 'link.ts' resolves outside repoPath"); },
+		resolveRepoLastIndexedAt: async () => 2_000_000,
+		statTarget: async () => { statCalls++; return ok(1_000_000); },
+		resolveSecurityModel: async () => modelSelection,
+		collectDependencyAdvisories: async () => evidence(),
+		runSecurityReview: fakeRunSecurityReview(),
+	});
+	try {
+		await assert.rejects(
+			handleSecurityReviewStep({ phase: 'start', repoPath: '/repo', targets: { entries: [{ path: 'link.ts' }] } }),
+			SecurityReviewTargetOutOfScopeError,
+		);
+		assert.equal(statCalls, 0, 'the symlink-escaping target was never stat-ed either');
+	} finally { unwire(); }
+});
+
+test('a RESUMED call (both proceed:true and proceed:false) re-checks canonical containment too, before any model or advisory work -- a target that became a symlink escape between pause and resume is caught, not merely trusted from the original admission', async () => {
+	let resolveModelCalls = 0;
+	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
+		resolveRepoLastIndexedAt: async () => 1_000_000,
+		statTarget: async () => ok(2_000_000),
+		resolveSecurityModel: async () => { resolveModelCalls++; return modelSelection; },
+		collectDependencyAdvisories: async () => evidence(),
+		runSecurityReview: fakeRunSecurityReview(),
+	});
+	let first1: SecurityReviewStepResponse;
+	try {
+		first1 = await handleSecurityReviewStep({ phase: 'start', repoPath: '/repo', targets });
+		assert.equal(first1.next, 'confirm_wait');
+	} finally { unwire(); }
+
+	_setSecurityReviewStepDepsForTests({
+		...REGISTERED,
+		canonicallyContained: async () => { throw new Error("targets.entries path 'app.ts' resolves outside repoPath"); },
+		resolveRepoLastIndexedAt: async () => 1_000_000,
+		statTarget: async () => ok(2_000_000),
+		resolveSecurityModel: async () => { resolveModelCalls++; return modelSelection; },
+		collectDependencyAdvisories: async () => evidence(),
+		runSecurityReview: fakeRunSecurityReview(),
+	});
+	try {
+		await assert.rejects(
+			handleSecurityReviewStep({ phase: 'start', state: (first1 as { state: string }).state, proceed: false }),
+			SecurityReviewTargetOutOfScopeError,
+		);
+		assert.equal(resolveModelCalls, 0, 'the symlink escape was caught before any model work, on the resumed path too');
 	} finally { unwire(); }
 });
 

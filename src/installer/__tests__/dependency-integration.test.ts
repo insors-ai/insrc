@@ -33,18 +33,19 @@ function ui(answers: string[]): TerminalUI & { output: string[] } {
 async function integrated() {
   const base = await ollamaFixture('fixture'), f = managerFixture(base.home, true), children: ChildProcess[] = [];
   const driver = fileURLToPath(new URL('./ollama-service-worker-fixture.mjs', import.meta.url));
-  let launches = 0, downloads = 0;
+  let launches = 0, downloads = 0, workerDiagnostic = '';
   const preparation = { transport: async () => { downloads++; return base.transport(); } };
   const compose = (beforeLaunch?: (() => void) | undefined, beforeFiniteClose?: (() => Promise<void>) | undefined) => {
     f.peers.dependencies = dependencyPort(base.target, base.location, { ...base.options, preparation: { ...preparation, beforeFiniteClose }, service: { workerEntrypoint: driver, readinessMs: 3000,
       launch: async (_frame, record) => {
         beforeLaunch?.(); launches++;
-        const child = spawnFixture(process.execPath, [driver, base.home, record, 'ready'], { stdio: ['ignore', 'ignore', 'pipe'] }); children.push(child);
-        child.stderr!.resume(); await once(child, 'spawn'); return { started: true };
+        const child = spawnFixture(base.options.runtime.node, [driver, base.home, record, 'ready'], { stdio: ['ignore', 'ignore', 'pipe'] }); children.push(child);
+        child.stderr!.on('data', (bytes: Buffer) => { workerDiagnostic = (workerDiagnostic + bytes.toString()).slice(-8192); });
+        await once(child, 'spawn'); return { started: true };
       } } });
   };
   compose();
-  return { ...base, f, compose, count: () => ({ launches, downloads }),
+  return { ...base, f, compose, count: () => ({ launches, downloads }), diagnostic: () => workerDiagnostic,
     async cleanup() {
       const state = join(base.root, 'service-state'); mkdirSync(state, { recursive: true }); writeFileSync(join(state, 'stop'), 'close owned fixture');
       try { for (const child of children) if (child.exitCode === null && child.signalCode === null) await once(child, 'close'); }
@@ -58,7 +59,7 @@ privateRuntimeTest(import.meta.url, 'accepted-official-payload-is-user-only-and-
     const before = await i.f.peers.dependencies!.inspect(i.location); assert.ok(before.ollamaInstallOffer);
     const result = await runTerminalInstall({ location: i.location, target: i.target, peers: i.f.peers, ui: terminal, operationId: 'terminal-dependency',
       select: async () => ({ node: 'fixture', entry: 'fixture', managerEntry: 'fixture', releaseId: 'next', location: i.location }), publish: () => '', launch: async () => ({ code: 0, signal: null }) });
-    assert.equal(result.kind, 'completed', terminal.output.join('')); assert.deepEqual(i.count(), { downloads: 1, launches: 1 });
+    assert.equal(result.kind, 'completed', terminal.output.join('') + i.diagnostic()); assert.deepEqual(i.count(), { downloads: 1, launches: 1 });
     const transcript = terminal.output.join(''), prompt = `Install and start Ollama ${i.policy.version} at ${before.ollamaInstallOffer.destination}? [y/N]`;
     assert.ok(transcript.includes(prompt));
     for (const disclosure of [i.endpoint, join(i.home, i.policy.modelsRelativePath), join(i.home, i.policy.logsRelativePath), dirname(join(i.home, i.policy.modelsRelativePath)), 'No models are downloaded automatically']) {

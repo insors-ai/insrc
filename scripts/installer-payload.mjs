@@ -1,6 +1,6 @@
 /** Publisher filesystem closure; never used by consumers. */
 import { createHash } from 'node:crypto';
-import { lstatSync, readFileSync, readdirSync, realpathSync, existsSync } from 'node:fs';
+import { closeSync, constants, fstatSync, lstatSync, openSync, readFileSync, readdirSync, realpathSync, existsSync } from 'node:fs';
 import pathApi, { dirname, join, relative, resolve, sep } from 'node:path';
 const portable = path => path.split(sep).join('/');
 export const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -17,7 +17,8 @@ function validPath(path) {
   if (!path || /[\\:\x00-\x1f<>"|?*]/.test(path) || path.split('/').some(p => !p || p === '.' || p === '..' || /[. ]$/.test(p) || /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(p))) throw new Error(`Unsafe payload path: ${path}`);
 }
 export function collectTree(root, directory, prefix, { skipNodeModules = false, admitFile } = {}) {
-  const files = new Map(), stack = new Set();
+  const files = new Map(), stack = new Set(), entries = [], linked = new Map();
+  const unchanged = (before, after) => after.isFile() && ['dev', 'ino', 'nlink', 'mode', 'uid', 'gid', 'size', 'mtimeNs', 'ctimeNs'].every(key => before[key] === after[key]);
   function visit(source, target) {
     const actual = assertContained(root, source), stat = lstatSync(actual);
     if (stat.isDirectory()) {
@@ -29,13 +30,44 @@ export function collectTree(root, directory, prefix, { skipNodeModules = false, 
       }
       stack.delete(actual);
     } else {
-      if (!stat.isFile() || stat.nlink !== 1) throw new Error('Payload special or hardlinked file is forbidden');
+      if (!stat.isFile()) throw new Error('Payload special file is forbidden');
       validPath(target);
-      admitFile?.(actual, target, stat);
-      files.set(target, { bytes: readFileSync(actual), mode: (stat.mode & 0o111) ? 0o755 : 0o644, source: actual });
+      let identity;
+      if (stat.nlink !== 1) {
+        identity = lstatSync(actual, { bigint: true });
+        if (!identity.isFile() || identity.nlink !== BigInt(stat.nlink) || identity.size !== BigInt(stat.size) || identity.mode !== BigInt(stat.mode)) throw new Error('Hardlinked payload source changed during collection');
+        const key = `${identity.dev}:${identity.ino}`, group = linked.get(key);
+        if (group && !unchanged(group.identity, identity)) throw new Error('Hardlinked payload source changed during collection');
+        if (group) group.paths.add(actual);
+        else linked.set(key, { identity, paths: new Set([actual]) });
+      }
+      entries.push({ actual, target, stat, identity });
     }
   }
-  visit(directory, prefix); return files;
+  visit(directory, prefix);
+  // Linux node-gyp links Release/obj.target outputs to their final names.
+  // Snapshot only complete inode groups in this collected tree. Repeated
+  // symlink visits never account for another physical alias; an uncollected
+  // alias (including one outside the source root) remains forbidden.
+  for (const group of linked.values()) if (group.identity.nlink !== BigInt(group.paths.size)) throw new Error('Payload hardlink has unaccounted source aliases');
+  for (const { actual, target, stat, identity } of entries) {
+    admitFile?.(actual, target, stat);
+    let bytes;
+    if (identity) {
+      const fd = openSync(actual, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+      try {
+        if (!unchanged(identity, fstatSync(fd, { bigint: true }))) throw new Error('Hardlinked payload source changed before reading');
+        bytes = readFileSync(fd);
+        if (!unchanged(identity, fstatSync(fd, { bigint: true })) || !unchanged(identity, lstatSync(actual, { bigint: true }))) throw new Error('Hardlinked payload source changed during reading');
+      } finally { closeSync(fd); }
+    } else bytes = readFileSync(actual);
+    files.set(target, { bytes, mode: (stat.mode & 0o111) ? 0o755 : 0o644, source: actual });
+  }
+  for (const group of linked.values()) for (const actual of group.paths) {
+    assertContained(root, actual);
+    if (!unchanged(group.identity, lstatSync(actual, { bigint: true }))) throw new Error('Hardlinked payload source changed after reading');
+  }
+  return files;
 }
 /** Resolve actual installed production/optional/peer closure, retaining nested
  * versions and native sibling packages. Only in-root workspace links may expand. */

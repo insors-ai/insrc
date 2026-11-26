@@ -13,14 +13,17 @@ test('combined-s1-s2-s3-installer-regression-has-exact-coverage-and-confirmed-cl
     .map(name => `${directory}/${name}`), 'src/shared/__tests__/installation-home.test.ts',
     'scripts/__tests__/build-script.test.ts', 'scripts/__tests__/forbidden-spawn-scan.test.ts',
     'scripts/__tests__/test-harness-coordinator.test.ts'].sort();
-  const pointer = JSON.parse(readFileSync(join(root, '.insrc/tmp/s2-final-regression.json'), 'utf8'));
+  const foundation = process.env['INSRC_RUNTIME_FOUNDATION_REGRESSION'] === '1';
+  const pointer = JSON.parse(readFileSync(join(root, `.insrc/tmp/${foundation ? 'runtime-foundation' : 's2'}-final-regression.json`), 'utf8'));
   assert.match(pointer.runId, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   const workspace = join(root, '.insrc/tmp/test-harness/runs', pointer.runId);
   const read = (name: string) => JSON.parse(readFileSync(join(workspace, name), 'utf8'));
   const report = read('results.json'), prepared = read('prepared.json'), cleanup = read('cleanup.json');
   assert.equal(report.runId, pointer.runId); assert.equal(prepared.runId, pointer.runId);
   assert.equal(report.incomplete, false); assert.equal(report.error, undefined);
-  assert.equal(report.effectiveConcurrency, 1);
+  // Ordinary installer fixtures make no live LLM calls. The foundation sweep
+  // uses two independently owned test processes; retain S2's serial contract.
+  assert.equal(report.effectiveConcurrency, foundation ? 2 : 1);
   // These names describe the parent environment; the coordinator clears their
   // values for children. Recording an inherited DEBUG flag is not a failure.
   assert.ok(Array.isArray(report.diagnosticFlags) && report.diagnosticFlags.every((flag: unknown) => typeof flag === 'string'));

@@ -139,13 +139,34 @@ export const vibeMcpNaming: VibeMcpNaming = { fromStreamedName };
 
 export type VibeDispatchState = 'not-sent' | 'possibly-sent' | 'accepted';
 
+/** A cancelled turn's AbortError keeps its recognizable name/identity (callers
+ *  distinguish cancellation from an operational failure by `name === 'AbortError'`,
+ *  the same convention used throughout this codebase) but still carries the
+ *  dispatch state it had at the moment of cancellation, via this same-named
+ *  property, so a caller that only cares about replay safety (not the
+ *  cancel-vs-failure distinction) can read it off either error shape. */
+export function vibeDispatchState(error: unknown): VibeDispatchState | undefined {
+	if (error instanceof VibeTurnError) return error.dispatchState;
+	if (error instanceof Error && error.name === 'AbortError') {
+		const state = (error as { dispatchState?: unknown }).dispatchState;
+		if (state === 'not-sent' || state === 'possibly-sent' || state === 'accepted') return state;
+	}
+	return undefined;
+}
+
 /** Re-homed verbatim from src/shared/vibe-session.ts -- structured-output.ts's retry
- *  classifier keeps using `instanceof VibeTurnError` as the non-retryable refusal marker. */
+ *  classifier keeps using `instanceof VibeTurnError` as the non-retryable refusal marker.
+ *  `mutating` marks a turn that could have executed an approved tool call (any approval
+ *  other than 'default'/undefined, e.g. runEditSession's 'auto') -- withTransientRetry
+ *  uses it together with `dispatchState` to refuse replaying a turn whose effects on disk
+ *  may already have happened; a read/generate-only turn (no approval) carries no such risk
+ *  and stays retryable even once dispatch is uncertain. */
 export class VibeTurnError extends Error {
 	constructor(
 		readonly dispatchState: VibeDispatchState,
 		readonly sessionId: string | undefined,
 		cause: unknown,
+		readonly mutating: boolean = false,
 	) {
 		super(cause instanceof Error ? cause.message : 'Vibe turn failed', { cause });
 		this.name = 'VibeTurnError';
@@ -187,7 +208,7 @@ export interface VibeChildProcess {
 	readonly stdout: Readable | null;
 	readonly stderr: Readable | null;
 	readonly stdin: Writable | null;
-	on(event: 'exit', listener: (code: number | null, signal: NodeJS.Signals | null) => void): void;
+	on(event: 'exit' | 'close', listener: (code: number | null, signal: NodeJS.Signals | null) => void): void;
 	once(event: 'error', listener: (error: Error) => void): void;
 	kill(signal?: NodeJS.Signals): void;
 }
@@ -388,6 +409,12 @@ interface ResolvedVibeAdapterDeps {
 	readonly command: string;
 }
 
+/** A short, bounded wait for 'close' (full stdio drain) after 'exit' -- the same grace
+ *  vibe-session.ts's own transport used (CLOSE_GRACE_MS). A supervisor-owned descendant
+ *  that still holds a pipe open must never hang this turn indefinitely; adapter-owned mode
+ *  sweeps the group on 'exit' itself, so 'close' almost always follows immediately. */
+const CLOSE_GRACE_MS = 1_000;
+
 async function runTurn(
 	context: VibeAdapterContext,
 	request: VibeTurnRequest,
@@ -398,6 +425,7 @@ async function runTurn(
 	rejectResult: (error: Error) => void,
 ): Promise<void> {
 	const adapterOwned = context.processGroup === 'adapter-owned';
+	const mutating = request.approval !== undefined && request.approval !== 'default';
 	let tempDir: string | undefined;
 	let child: VibeChildProcess | undefined;
 	let dispatchState: VibeDispatchState = 'not-sent';
@@ -406,39 +434,52 @@ async function runTurn(
 	let assistantText = '';
 	let stderrText = '';
 	let deadlineTimer: ReturnType<typeof setTimeout> | undefined;
+	let cancelled = false;
 
 	function killNow(): void {
 		if (child === undefined) return;
 		if (adapterOwned && child.pid !== undefined) deps.killProcessGroup(child.pid);
 		else child.kill('SIGKILL');
 	}
-	function onAbort(): void { killNow(); }
+	function onAbort(): void { cancelled = true; killNow(); }
+	// A plain function (not a bare property read) so TypeScript never narrows this
+	// across statements -- AbortSignal.aborted is mutable between every check here.
+	function signalAborted(): boolean { return request.signal?.aborted === true; }
 
 	try {
 		tempDir = await deps.mkdtemp();
-		const argv = buildArgv(request, tempDir);
-		child = deps.spawn(deps.command, argv, { cwd: context.cwd, env: context.env, detached: adapterOwned });
-		dispatchState = 'possibly-sent';
-		// Prompt travels via the tool's programmatic input contract (stdin), never
-		// through shell-interpolated argv (k6) -- `-p` with no value reads it from here.
-		child.stdin?.end(request.prompt);
+		// Recheck cancellation after the mkdtemp hop, before any spawn -- a signal
+		// aborted while this turn was only queued must never start a subprocess,
+		// and still surfaces as a real, recognizable AbortError.
+		if (signalAborted()) {
+			cancelled = true;
+			const abortError = new Error('Vibe turn aborted before dispatch', { cause: request.signal?.reason });
+			abortError.name = 'AbortError';
+			Object.assign(abortError, { dispatchState: 'not-sent' as VibeDispatchState });
+			throw abortError;
+		}
 
-		request.signal?.addEventListener('abort', onAbort, { once: true });
-		if (request.signal?.aborted === true) killNow();
-		if (request.deadlineMs !== undefined) deadlineTimer = setTimeout(killNow, request.deadlineMs);
-
-		let buffer = '';
 		let rawStdout = '';
-		onUtf8Data(child.stdout, chunk => {
-			if (request.outputMode !== 'streaming') { rawStdout += chunk; return; }
-			buffer += chunk;
-			let newline = buffer.indexOf('\n');
-			while (newline >= 0) {
-				const line = buffer.slice(0, newline).trim();
-				buffer = buffer.slice(newline + 1);
-				newline = buffer.indexOf('\n');
-				if (line === '') continue;
-				const parsedLine = parseJournalLine(line);
+		try {
+			const argv = buildArgv(request, tempDir);
+			child = deps.spawn(deps.command, argv, { cwd: context.cwd, env: context.env, detached: adapterOwned });
+			dispatchState = 'possibly-sent';
+			// A child that closes stdin early (EPIPE) reports that asynchronously on
+			// the stream; its exit/close is what actually settles this turn below.
+			child.stdin?.on('error', () => undefined);
+			// Prompt travels via the tool's programmatic input contract (stdin), never
+			// through shell-interpolated argv (k6) -- `-p` with no value reads it from here.
+			child.stdin?.end(request.prompt);
+
+			request.signal?.addEventListener('abort', onAbort, { once: true });
+			if (signalAborted()) onAbort();
+			if (request.deadlineMs !== undefined) deadlineTimer = setTimeout(killNow, request.deadlineMs);
+
+			let buffer = '';
+			function handleLine(line: string): void {
+				const trimmed = line.trim();
+				if (trimmed === '') return;
+				const parsedLine = parseJournalLine(trimmed);
 				if (parsedLine.sessionId !== undefined && sessionId === undefined) {
 					sessionId = parsedLine.sessionId;
 					resumeHandle = request.session.kind === 'new' ? sessionId : request.session.resumeHandle;
@@ -448,22 +489,68 @@ async function runTurn(
 				for (const event of parsedLine.events) push(event);
 				if (parsedLine.assistantText !== undefined) assistantText = parsedLine.assistantText;
 			}
-		});
-		onUtf8Data(child.stderr, chunk => { stderrText += chunk; });
+			onUtf8Data(child.stdout, chunk => {
+				if (request.outputMode !== 'streaming') { rawStdout += chunk; return; }
+				buffer += chunk;
+				let newline = buffer.indexOf('\n');
+				while (newline >= 0) {
+					handleLine(buffer.slice(0, newline));
+					buffer = buffer.slice(newline + 1);
+					newline = buffer.indexOf('\n');
+				}
+			});
+			// A final journal row with no trailing newline (the last line before the
+			// stream ends) is still a complete row once the process has exited.
+			child.stdout?.on('end', () => {
+				if (request.outputMode === 'streaming' && buffer !== '') handleLine(buffer);
+				buffer = '';
+			});
+			onUtf8Data(child.stderr, chunk => { stderrText += chunk; });
 
-		const exit = await new Promise<{ readonly code: number | null; readonly spawnError: Error | undefined }>(resolve => {
-			child!.once('error', error => resolve({ code: null, spawnError: error }));
-			child!.on('exit', code => resolve({ code, spawnError: undefined }));
-		});
+			const exit = await new Promise<{ readonly code: number | null; readonly spawnError: Error | undefined }>(resolve => {
+				let settled = false;
+				let closeGrace: ReturnType<typeof setTimeout> | undefined;
+				const settle = (result: { readonly code: number | null; readonly spawnError: Error | undefined }): void => {
+					if (settled) return;
+					settled = true;
+					if (closeGrace !== undefined) clearTimeout(closeGrace);
+					resolve(result);
+				};
+				child!.once('error', error => settle({ code: null, spawnError: error }));
+				child!.on('exit', code => {
+					// Sweep descendants immediately on leader exit -- this is what lets
+					// 'close' (every stdio stream fully drained) actually follow.
+					if (adapterOwned && child!.pid !== undefined) deps.killProcessGroup(child!.pid);
+					closeGrace = setTimeout(() => settle({ code, spawnError: undefined }), CLOSE_GRACE_MS);
+				});
+				child!.on('close', code => settle({ code, spawnError: undefined }));
+			});
 
-		if (adapterOwned && child.pid !== undefined) deps.killProcessGroup(child.pid);
-		if (exit.spawnError !== undefined) throw exit.spawnError;
-		if (exit.code !== 0) {
-			const selectionMatch = MODEL_SELECTION_FAILURE.exec(stderrText);
-			if (selectionMatch !== null) throw new VibeSelectionError(stderrText.trim());
-			throw new Error(stderrText.trim() !== '' ? stderrText.trim() : `vibe exited with code ${exit.code}`);
+			if (exit.spawnError !== undefined) throw exit.spawnError;
+			if (exit.code !== 0) {
+				const selectionMatch = MODEL_SELECTION_FAILURE.exec(stderrText);
+				if (selectionMatch !== null) throw new VibeSelectionError(stderrText.trim());
+				throw new Error(stderrText.trim() !== '' ? stderrText.trim() : `vibe exited with code ${exit.code}`);
+			}
+		} catch (dispatchError) {
+			// A cancelled turn keeps its recognizable AbortError identity (callers
+			// distinguish cancellation from an operational failure); everything else
+			// from this phase is a genuinely uncertain dispatch.
+			if (cancelled) {
+				const abortError = new Error('Vibe turn aborted', { cause: request.signal?.reason ?? dispatchError });
+				abortError.name = 'AbortError';
+				Object.assign(abortError, { dispatchState });
+				throw abortError;
+			}
+			if (dispatchError instanceof VibeSelectionError) throw dispatchError;
+			throw new VibeTurnError(dispatchState, sessionId, dispatchError, mutating);
 		}
 
+		// The process exited successfully; shaping its output is a SEPARATE concern
+		// from dispatch uncertainty -- a malformed/missing answer here is a plain
+		// Error, not a VibeTurnError, so structured-output.ts's retry-with-feedback
+		// path (which treats VibeTurnError alone as a non-retryable refusal) still
+		// gets a chance to correct it, exactly as it did before this Story's rewire.
 		if (request.outputMode === 'text') {
 			assistantText = rawStdout.replace(/\n+$/, '');
 			sessionId = await readExportSessionId(join(tempDir, 'export.json'), deps.readFile);
@@ -478,9 +565,9 @@ async function runTurn(
 		finish();
 		resolveResult({ text: assistantText, sessionId, resumeHandle, exitEvidence });
 	} catch (error) {
-		const wrapped = error instanceof VibeSelectionError ? error : new VibeTurnError(dispatchState, sessionId, error);
-		finish(wrapped);
-		rejectResult(wrapped);
+		const final = error as Error;
+		finish(final);
+		rejectResult(final);
 	} finally {
 		if (deadlineTimer !== undefined) clearTimeout(deadlineTimer);
 		request.signal?.removeEventListener('abort', onAbort);
@@ -638,13 +725,26 @@ export async function runVibeTurn(options: VibeTurnOptions): Promise<VibeTurnOut
 		if (event.kind === 'session') {
 			sessionId = event.sessionId;
 			options.onSession?.(event.sessionId);
+		} else if (event.kind === 'status') {
+			// historyLines() needs no id for a 'reasoning' row -- it only checks type.
+			options.onHistory?.('history/entryAdded', { entry: { type: 'reasoning' } });
 		} else if (event.kind === 'assistant-text') {
 			const id = `assistant-${sessionId ?? 'turn'}-${assistantEntrySeq++}`;
 			options.onHistory?.('history/entryAdded', { entry: { id, type: 'message', role: 'assistant', content: [{ type: 'text', text: event.text }] } });
 		} else if (event.kind === 'tool-call') {
-			options.onHistory?.('history/entryAdded', { entry: { type: 'effect', id: event.toolCallId, detail: { toolName: event.toolName, input: event.arguments } } });
+			// generationStatus:'in_progress' is load-bearing: historyLines() only adds
+			// this id to its active-result map when it sees this, which is what lets
+			// the later history/entryUpdated (the tool's result) actually get through
+			// instead of being silently discarded at the active-map lookup.
+			options.onHistory?.('history/entryAdded', { entry: { type: 'effect', id: event.toolCallId, generationStatus: 'in_progress', detail: { toolName: event.toolName, input: event.arguments } } });
 		} else if (event.kind === 'tool-result') {
-			options.onHistory?.('history/entryUpdated', { entryId: event.toolCallId, patch: [{ path: '/state', value: { status: event.ok ? 'completed' : 'failed', outputText: event.output, ...(event.error !== undefined ? { error: { message: event.error } } : {}) } }] });
+			// The companion '/generationStatus' patch clears the active-map entry
+			// historyLines() added above -- without it, every tool call this turn
+			// bridges leaks an entry for the lifetime of the chat session.
+			options.onHistory?.('history/entryUpdated', { entryId: event.toolCallId, patch: [
+				{ path: '/state', value: { status: event.ok ? 'completed' : 'failed', outputText: event.output, ...(event.error !== undefined ? { error: { message: event.error } } : {}) } },
+				{ path: '/generationStatus', value: 'completed' },
+			] });
 		}
 	}
 	const result = await turn.result;

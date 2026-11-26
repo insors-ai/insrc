@@ -328,7 +328,8 @@ export interface AdapterDeps {
   /** Resolve the selected model at launch, never from webview-supplied endpoint/auth data. */
   readonly resolveOllamaTarget?: ((request: TurnRequest) => Promise<ChatOllamaTarget | undefined>) | undefined;
   readonly vibeCatalog?: (() => Promise<readonly VibeCatalogModel[]>) | undefined;
-  readonly vibeAppServerPath?: string | undefined;
+  /** Override the plain `vibe` binary the worker job dispatches to (tests only). */
+  readonly vibeBinPath?: string | undefined;
   readonly vibeWorkerPath?: string | undefined;
   readonly logger?: AdapterLogger;
   /** cancel()'s wait after SIGTERM, and again after SIGKILL. Default 5000 ms. */
@@ -1294,7 +1295,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       if (vibeCatalog !== undefined || (mapper.formatInput !== undefined && requestUuid !== undefined)) {
         if (proc.write === undefined) throw new Error('CLI stdin unavailable for correlated input');
         const job: VibeChatJob | undefined = vibeCatalog === undefined ? undefined : {
-          command: deps.vibeAppServerPath ?? 'vibe-app-server',
+          command: deps.vibeBinPath ?? BINARY.vibe,
           request: effectiveReq,
           catalog: vibeCatalog,
         };

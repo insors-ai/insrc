@@ -30,6 +30,8 @@ import { VibeReadOnlyUnavailableError } from '../../../shared/vibe-adapter.js';
  *   json               — prints the real journal-entry array shape, exit 0
  *   json-bad           — prints a journal array whose assistant text is NOT
  *                        valid JSON, exit 0 (every attempt)
+ *   no-assistant       — prints a journal array with NO assistant message at
+ *                        all (just the echoed user turn), exit 0
  *   transient-then-ok  — exit 2 with a transient-looking stderr on the FIRST
  *                        invocation, succeed (text) from the second on
  *   deterministic-fail — exit 1 with a non-transient stderr, every time
@@ -62,6 +64,10 @@ if (mode === 'deterministic-fail') {
 }
 if (mode === 'json-bad') {
   process.stdout.write(JSON.stringify([assistantEntry('not valid json {{{')]));
+  process.exit(0);
+}
+if (mode === 'no-assistant') {
+  process.stdout.write(JSON.stringify([{ sessionId: 'fixture-session', type: 'message', role: 'user', content: [{ type: 'text', text: 'q' }] }]));
   process.exit(0);
 }
 if (mode === 'json') {
@@ -160,5 +166,42 @@ test("readOnlySessionOnce's request uses the adapter's sc2 allowlist and is refu
 		assert.equal(fixture.calls().length, 0, 'no subprocess spawns for a refused read-only request');
 	} finally {
 		rmSync(fixture.dir, { recursive: true, force: true });
+	}
+});
+
+test('a successfully-exited process whose json output carries no assistant message at all is a retryable validation failure, not an immediate VibeTurnError refusal (review finding 6)', async () => {
+	const f = makeFakeVibe('no-assistant');
+	try {
+		const provider = new CliProvider({ kind: 'vibe', binPath: f.bin, timeoutMs: 10_000 });
+		await assert.rejects(
+			provider.completeStructured([{ role: 'user', content: 'give a number' }], { type: 'object', properties: { answer: { type: 'number' } }, required: ['answer'] }),
+			(err: unknown) => err instanceof Error && err.name !== 'VibeTurnError' && /validation failed after 3 attempts/.test(err.message),
+		);
+		assert.equal(f.calls().length, 3, 'the extraction-phase failure got the full retry budget, exactly like a shape/content error');
+	} finally {
+		rmSync(f.dir, { recursive: true, force: true });
+	}
+});
+
+test("an edit session's dispatch-uncertain failure is never replayed against the (possibly already-mutated) checkout, even when the failure text LOOKS transient; a read/generate-only call's same-looking failure still retries (review finding 3)", async () => {
+	// 'transient-then-ok' would SUCCEED on a second attempt -- calls().length
+	// staying at 1 (not 2, and the rejection standing) proves the edit session's
+	// own uncertain-dispatch guard blocked the replay, not mere bad luck.
+	const edit = makeFakeVibe('transient-then-ok');
+	try {
+		const provider = new CliProvider({ kind: 'vibe', binPath: edit.bin, timeoutMs: 10_000 });
+		await assert.rejects(provider.runEditSession('fix the thing', { cwd: edit.dir }));
+		assert.equal(edit.calls().length, 1, 'an edit session never replays once dispatch is uncertain, even for a transient-looking message');
+	} finally {
+		rmSync(edit.dir, { recursive: true, force: true });
+	}
+	const read = makeFakeVibe('transient-then-ok');
+	try {
+		const provider = new CliProvider({ kind: 'vibe', binPath: read.bin, timeoutMs: 10_000 });
+		const result = await provider.complete([{ role: 'user', content: 'hi' }]);
+		assert.equal(result.text, 'OK');
+		assert.equal(read.calls().length, 2, 'a read/generate-only call (no approval) still retries the same-looking transient failure');
+	} finally {
+		rmSync(read.dir, { recursive: true, force: true });
 	}
 });

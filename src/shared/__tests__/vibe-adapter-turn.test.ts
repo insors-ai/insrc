@@ -23,11 +23,21 @@ import {
 } from '../vibe-adapter.js';
 import type { VibeAdapterDeps, VibeChildProcess, VibeTurnRequest, VibeTurnOptions } from '../vibe-adapter.js';
 
-function fakeChild(pid: number | undefined = 4242): { child: VibeChildProcess; stdout: PassThrough; stderr: PassThrough; stdin: PassThrough; emitter: EventEmitter } {
+function fakeChild(pid: number | undefined = 4242, opts: { readonly autoClose?: boolean } = {}): { child: VibeChildProcess; stdout: PassThrough; stderr: PassThrough; stdin: PassThrough; emitter: EventEmitter } {
 	const emitter = new EventEmitter();
 	const stdout = new PassThrough();
 	const stderr = new PassThrough();
 	const stdin = new PassThrough();
+	// A real child's stdio closes very shortly after 'exit' once nothing still
+	// holds the pipes open; chain 'close' automatically so most tests don't have
+	// to emit it themselves and don't pay the adapter's CLOSE_GRACE_MS fallback.
+	// A test exercising the exit/close ordering itself passes autoClose:false
+	// and emits 'close' at the exact moment it wants to.
+	if (opts.autoClose !== false) {
+		emitter.on('exit', (code: number | null, signal: NodeJS.Signals | null) => {
+			queueMicrotask(() => emitter.emit('close', code, signal));
+		});
+	}
 	const child: VibeChildProcess = {
 		pid,
 		stdout,
@@ -392,4 +402,129 @@ test("runVibeTurn's parameter mapping from VibeTurnOptions is total: every field
 	assert.equal(mapVibeTurnOptions(editAuto).request.approval, 'edit-auto');
 	const defaultApproval: VibeTurnOptions = { command: 'vibe', timeoutMs: 1000, agentConfig: {}, catalog: [], prompt: 'x' };
 	assert.equal(mapVibeTurnOptions(defaultApproval).request.approval, 'default');
+});
+
+test('a final stdout chunk delivered after exit but before close is still captured (the exit/close drain race, review finding 2)', async () => {
+	const cwd = realDir();
+	const { child, stdout, emitter } = fakeChild(4242, { autoClose: false });
+	const deps: VibeAdapterDeps = { spawn: () => child, mkdtemp: async () => realDir(), rm: async () => undefined, readFile: async () => { throw new Error('no export'); } };
+	try {
+		const adapter = createVibeAdapter({ cwd, processGroup: 'adapter-owned' }, deps);
+		const turn = adapter.startTurn(baseRequest({ outputMode: 'text' }));
+		const consume = (async () => { for await (const _e of turn) { /* text mode emits no events */ } })();
+		await tick();
+		// 'exit' fires first (as a real child's does when it terminates before its
+		// pipe has finished flushing); the final chunk arrives after, 'close' only
+		// once the write has actually landed -- proving the adapter waited for it
+		// rather than finalizing the moment 'exit' fired.
+		emitter.emit('exit', 0, null);
+		await tick();
+		stdout.write('the real answer');
+		stdout.end();
+		await tick();
+		emitter.emit('close', 0, null);
+		await consume;
+		const result = await turn.result;
+		assert.equal(result.text, 'the real answer', 'the race must not finalize on an empty/partial buffer');
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test('streaming mode flushes a final journal row that has no trailing newline (review finding 2)', async () => {
+	const cwd = realDir();
+	const { child, stdout, emitter } = fakeChild(4242, { autoClose: false });
+	const deps: VibeAdapterDeps = { spawn: () => child, mkdtemp: async () => realDir(), rm: async () => undefined, readFile: async () => { throw new Error('no export'); } };
+	try {
+		const adapter = createVibeAdapter({ cwd, processGroup: 'adapter-owned' }, deps);
+		const turn = adapter.startTurn(baseRequest());
+		const events: unknown[] = [];
+		const consume = (async () => { for await (const event of turn) events.push(event); })();
+		await tick();
+		// No trailing \n on this last write -- the row must still be parsed once the stream ends.
+		stdout.write(JSON.stringify({ sessionId: 'no-newline-session', type: 'message', role: 'assistant', content: [{ type: 'text', text: 'hi' }] }));
+		stdout.end();
+		await tick();
+		emitter.emit('exit', 0, null);
+		await tick();
+		emitter.emit('close', 0, null);
+		await consume;
+		const result = await turn.result;
+		assert.equal(result.text, 'hi');
+		assert.equal(result.sessionId, 'no-newline-session');
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("a mutating (approval-bearing) turn's VibeTurnError carries mutating:true once dispatch is uncertain; a non-mutating turn's does not (review finding 3)", async () => {
+	const cwd = realDir();
+	try {
+		{
+			const { child, emitter } = fakeChild();
+			const deps: VibeAdapterDeps = { spawn: () => child, mkdtemp: async () => realDir(), rm: async () => undefined, readFile: async () => { throw new Error('no export'); } };
+			const adapter = createVibeAdapter({ cwd, processGroup: 'adapter-owned' }, deps);
+			const turn = adapter.startTurn(baseRequest({ approval: 'auto' }));
+			turn.result.catch(() => undefined);
+			const consume = (async () => { for await (const _e of turn) { /* drain */ } })();
+			await tick();
+			emitter.emit('exit', 1, null);
+			await assert.rejects(consume, (err: unknown) => err instanceof Error && err.name === 'VibeTurnError' && (err as { mutating?: boolean }).mutating === true && (err as { dispatchState?: string }).dispatchState === 'possibly-sent');
+		}
+		{
+			const { child, emitter } = fakeChild();
+			const deps: VibeAdapterDeps = { spawn: () => child, mkdtemp: async () => realDir(), rm: async () => undefined, readFile: async () => { throw new Error('no export'); } };
+			const adapter = createVibeAdapter({ cwd, processGroup: 'adapter-owned' }, deps);
+			const turn = adapter.startTurn(baseRequest());
+			turn.result.catch(() => undefined);
+			const consume = (async () => { for await (const _e of turn) { /* drain */ } })();
+			await tick();
+			emitter.emit('exit', 1, null);
+			await assert.rejects(consume, (err: unknown) => err instanceof Error && err.name === 'VibeTurnError' && (err as { mutating?: boolean }).mutating === false);
+		}
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test('a request whose signal is already aborted before dispatch spawns nothing and rejects with a real AbortError (review finding 5)', async () => {
+	const cwd = realDir();
+	const spawnCalls: unknown[] = [];
+	const { child } = fakeChild();
+	const deps: VibeAdapterDeps = {
+		spawn: (...args) => { spawnCalls.push(args); return child; },
+		mkdtemp: async () => realDir(), rm: async () => undefined, readFile: async () => { throw new Error('no export'); },
+	};
+	try {
+		const adapter = createVibeAdapter({ cwd, processGroup: 'adapter-owned' }, deps);
+		const controller = new AbortController();
+		controller.abort();
+		const turn = adapter.startTurn(baseRequest({ signal: controller.signal }));
+		const consume = (async () => { for await (const _e of turn) { /* drain */ } })();
+		await assert.rejects(consume, (err: unknown) => err instanceof Error && err.name === 'AbortError');
+		await assert.rejects(turn.result, (err: unknown) => err instanceof Error && err.name === 'AbortError');
+		assert.equal(spawnCalls.length, 0, 'an already-aborted request must never spawn a subprocess');
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test('a mid-flight cancellation (signal fires after dispatch) still rejects with a real AbortError, not a generic VibeTurnError (review finding 5)', async () => {
+	const cwd = realDir();
+	const { child, emitter } = fakeChild();
+	const deps: VibeAdapterDeps = { spawn: () => child, mkdtemp: async () => realDir(), rm: async () => undefined, readFile: async () => { throw new Error('no export'); } };
+	try {
+		const adapter = createVibeAdapter({ cwd, processGroup: 'adapter-owned' }, deps);
+		const controller = new AbortController();
+		const turn = adapter.startTurn(baseRequest({ signal: controller.signal }));
+		turn.result.catch(() => undefined);
+		const consume = (async () => { for await (const _e of turn) { /* drain */ } })();
+		await tick();
+		controller.abort();
+		await tick();
+		emitter.emit('exit', null, 'SIGKILL');
+		await assert.rejects(consume, (err: unknown) => err instanceof Error && err.name === 'AbortError');
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
 });

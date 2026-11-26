@@ -37,7 +37,7 @@ import { formatAjvError, responseValidationIssue } from './structured-schema.js'
 export { codexStrictSchema, validateCodexReply, rootUnionKey, processSchemaForOpenAIStrict } from './structured-schema.js';
 export type { RootUnionKey } from './structured-schema.js';
 import { getLogger } from '../../shared/logger.js';
-import { VibeTurnError } from '../../shared/vibe-adapter.js';
+import { VibeSelectionError, VibeTurnError } from '../../shared/vibe-adapter.js';
 import { ModelCallFailedError, ModelResponseShapeError } from './model-call-error.js';
 import type { StructuredSchema } from '../../shared/types.js';
 
@@ -232,6 +232,10 @@ export async function withStructuredRetry<T>(
 			// Inspect provider errors only after temporary failures have been safely projected.
 			// Budget admission is not a failed model answer and must never be retried/wrapped.
 			if (err instanceof VibeTurnError) throw err;
+			// A deterministic, unrecoverable model-selection failure (the installed
+			// CLI's own fast catalog check) is never resent with corrective feedback
+			// either: no amount of retry text fixes a bad --model/--thinking value.
+			if (err instanceof VibeSelectionError) throw err;
 			if (err instanceof ConnectionExecutionError) throw err;
 			// A cancelled call ends the helper as it was raised: it is neither
 			// retried nor reported as a failure of shape or of the model.

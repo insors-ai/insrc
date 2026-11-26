@@ -1969,81 +1969,96 @@ test('vibe: title generation uses the same explicit programmatic prompt transpor
 });
 
 
+/**
+ * A fake plain-CLI `vibe` (Epic unify-vibe-one-plain-cli-adapter, review finding 1/7):
+ * the explicit-selection chat route dispatches through vibe-session-worker.ts ->
+ * runVibeChatJob -> runVibeTurn -> the shared adapter, which spawns a single
+ * one-shot `vibe -p --output streaming --output-dir <dir> ...` invocation per turn --
+ * no app-server JSON-RPC session. Records every invocation (argv, stdin) to
+ * calls.jsonl and behaves per <dir>/mode:
+ *   ok            — a full turn: reasoning, a tool call+result, an assistant
+ *                   message, exit 0
+ *   bogus-model   — the CLI's own fast model-selection failure, exit 1
+ *   lost          — emits a reasoning row then exits 1 before any assistant text
+ *                   (a dispatch-uncertain failure)
+ *   pipe-complete — spawns a detached descendant holding stdout/stderr, then
+ *                   finishes normally
+ *   pipe-exit     — like pipe-complete, but exits 1 right after dispatching
+ *   pipe-hang     — like pipe-complete, but never finishes on its own
+ *   hang          — emits partial output then never finishes on its own
+ *   detach        — emits partial output, then waits for a `release` marker
+ *                   file before finishing (survives the launching host's exit)
+ */
 const VERIFIED_VIBE_CHAT = String.raw`#!/usr/bin/env node
-import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { createInterface } from 'node:readline';
-const mode = readFileSync(new URL('./mode', import.meta.url), 'utf8');
-const log = new URL('./requests', import.meta.url);
-const model = { name: 'mistral-vibe-cli-latest', alias: 'mistral-medium-3.5', thinking: 'low', thinkingLevels: ['low', 'high'] };
-let sessionId = 'new-vibe';
-let activeModel = model;
-const reply = (id, result) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id, result }) + '\n');
-const event = (method, params) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', method, params: { sessionId, ...params } }) + '\n');
-const turnId = 'turn-vibe';
-const turn = status => ({ id: turnId, sessionId, status });
-const history = entry => event('history/entryAdded', { turnId, entry });
-createInterface({ input: process.stdin }).on('line', line => {
-  const { method, id, params } = JSON.parse(line);
-  appendFileSync(log, JSON.stringify({ method, params }) + '\n');
-  switch (method) {
-    case 'initialize': reply(id, {}); return;
-    case 'initialized': return;
-    case 'session/resume': sessionId = params.sessionId;
-    case 'session/start':
-      assert.equal(params.agentConfig.cwd, process.cwd());
-      assert.equal(params.agentConfig.headless, true);
-      assert.equal(params.firstTurn, undefined);
-      reply(id, { state: { session: { id: sessionId } } });
-      return;
-    case 'runtime/read': reply(id, { runtime: { config: { activeModel, models: [model] } } }); return;
-    case 'config/model/write':
-      assert.equal(params.sessionOnly, true);
-      assert.equal(params.modelAlias, model.alias);
-      if (mode !== 'mismatch') activeModel = { ...model, thinking: params.reasoningEffort };
-      reply(id, { status: 'applied' });
-      return;
-    case 'turn/start':
-      if (mode === 'lost') process.exit(1);
-      if (mode.startsWith('pipe-')) {
-        const descendant = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], {
-          stdio: ['ignore', 'inherit', 'inherit'],
-        });
-        writeFileSync(new URL('./descendant', import.meta.url), String(descendant.pid));
-        descendant.unref();
-      }
-      assert.equal(activeModel.thinking, 'high');
-      reply(id, { turn: turn('in_progress') });
-      event('turn/started', { turn: turn('in_progress') });
-      history({ type: 'reasoning', id: 'thought' });
-      history({ type: 'message', role: 'assistant', id: 'msg', generationStatus: 'in_progress', content: [{ type: 'text', text: 'hello ' }] });
-      event('history/entryUpdated', { turnId, entryId: 'msg', patch: [{ op: 'append', path: '/content/0/text', value: 'world' }] });
-      history({ type: 'effect', id: 'tool', generationStatus: 'completed', detail: { toolName: 'bash', input: { command: 'ls' } }, state: { status: 'completed', outputText: 'file' } });
-      if (mode === 'pipe-exit') return process.stdout.write('', () => process.exit(1));
-      if (mode === 'detach') {
-        const timer = setInterval(() => {
-          if (!existsSync(new URL('./release', import.meta.url))) return;
-          clearInterval(timer);
-          history({ type: 'message', role: 'assistant', id: 'later', generationStatus: 'completed', content: [{ type: 'text', text: ' after host exit' }] });
-          event('turn/completed', { turn: turn('completed') });
-        }, 10);
-      } else if (mode !== 'hang' && mode !== 'pipe-hang') event('turn/completed', { turn: turn('completed') });
-      return;
-    case 'turn/interrupt':
-      assert.equal(params.expectedTurnId, turnId);
-      reply(id, { accepted: true });
-      event('turn/completed', { turn: turn('interrupted') });
-      return;
-    default: throw new Error('unexpected method ' + method);
-  }
-});
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const here = dirname(fileURLToPath(import.meta.url));
+let stdin = '';
+for await (const c of process.stdin) stdin += c;
+const args = process.argv.slice(2);
+appendFileSync(join(here, 'calls.jsonl'), JSON.stringify({ args, stdin }) + '\n');
+const mode = readFileSync(join(here, 'mode'), 'utf8').trim();
+
+const outputDirIdx = args.indexOf('--output-dir');
+const outputDir = outputDirIdx >= 0 ? args[outputDirIdx + 1] : undefined;
+function writeExport() {
+  if (outputDir === undefined) return;
+  mkdirSync(outputDir, { recursive: true });
+  writeFileSync(join(outputDir, 'export.json'), JSON.stringify({ outcome: 'finished', stop_reason: null, config: { active_model: 'mistral-medium-3.5' } }));
+}
+
+const modelIdx = args.indexOf('--model');
+const model = modelIdx >= 0 ? args[modelIdx + 1] : undefined;
+const resumeIdx = args.indexOf('--resume');
+const resumeHandle = resumeIdx >= 0 ? args[resumeIdx + 1] : undefined;
+const sessionId = resumeHandle ?? 'new-vibe';
+
+function row(r) { process.stdout.write(JSON.stringify({ sessionId, ...r }) + '\n'); }
+
+if (model === 'bogus-model') {
+  process.stderr.write('Error: Unknown model: bogus-model. Available: mistral-medium-3.5\n');
+  process.exit(1);
+}
+
+if (mode === 'lost') {
+  row({ type: 'reasoning', text: 'thinking' });
+  process.exit(1);
+}
+
+if (mode.startsWith('pipe-')) {
+  const descendant = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: ['ignore', 'inherit', 'inherit'] });
+  writeFileSync(join(here, 'descendant'), String(descendant.pid));
+  descendant.unref();
+}
+
+row({ type: 'reasoning', text: 'thinking' });
+row({ type: 'message', role: 'assistant', content: [{ type: 'text', text: 'hello ' }] });
+row({ type: 'effect', toolCallId: 'tool', detail: { toolName: 'bash', input: { command: 'ls' } }, state: { status: 'completed', outputText: 'file' } });
+
+if (mode === 'pipe-exit') { writeExport(); process.exit(1); }
+if (mode === 'hang' || mode === 'pipe-hang') { /* never finish on its own; the test kills this process */ }
+else if (mode === 'detach') {
+  const wait = setInterval(() => {
+    if (!existsSync(join(here, 'release'))) return;
+    clearInterval(wait);
+    row({ type: 'message', role: 'assistant', content: [{ type: 'text', text: 'world after host exit' }] });
+    writeExport();
+    process.exit(0);
+  }, 10);
+} else {
+  row({ type: 'message', role: 'assistant', content: [{ type: 'text', text: 'world' }] });
+  writeExport();
+  process.exit(0);
+}
 `;
 
 function verifiedVibeChat(mode: string, options: Partial<AdapterDeps> = {}) {
   const cwd = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-vibe-chat-')));
-  const bin = join(cwd, 'app-server.mjs');
-  const log = join(cwd, 'requests');
+  const bin = join(cwd, 'vibe.mjs');
+  const log = join(cwd, 'calls.jsonl');
   const worker = join(cwd, 'vibe-session-worker.cjs');
   buildSync({ entryPoints: [fileURLToPath(new URL('../../vibe-session-worker.ts', import.meta.url))], bundle: true, platform: 'node', format: 'cjs', outfile: worker });
   const catalog = [{ id: 'mistral-vibe-cli-latest', aliases: ['mistral-medium-3.5'], efforts: ['low', 'high'] }];
@@ -2053,7 +2068,7 @@ function verifiedVibeChat(mode: string, options: Partial<AdapterDeps> = {}) {
   const adapter = createProviderRegistry({
     isInstalled: id => id === 'vibe',
     spawn: nodeSpawner,
-    vibeAppServerPath: bin,
+    vibeBinPath: bin,
     vibeWorkerPath: worker,
     vibeCatalog: async () => catalog,
     ...options,
@@ -2061,10 +2076,12 @@ function verifiedVibeChat(mode: string, options: Partial<AdapterDeps> = {}) {
   const request = REQ({ provider: 'vibe', cwd, model: 'mistral-medium-3.5', effort: 'high' });
   return {
     adapter, request, bin, worker, catalog,
-    calls: () => readFileSync(log, 'utf8').split('\n').filter(Boolean).map(line => JSON.parse(line) as { method: string; params: Record<string, unknown> }),
+    calls: () => readFileSync(log, 'utf8').split('\n').filter(Boolean).map(line => JSON.parse(line) as { args: string[]; stdin: string }),
     cleanup: () => rmSync(cwd, { recursive: true, force: true }),
   };
 }
+
+const vibeWorkerFailureExit = process.platform === 'win32' ? { code: 1, signal: null } : { code: null, signal: 'SIGKILL' };
 
 test('explicit Vibe chat preserves resume, attachments, permissions and live events', async () => {
   const fixture = verifiedVibeChat('ok');
@@ -2082,35 +2099,41 @@ test('explicit Vibe chat preserves resume, attachments, permissions and live eve
       const done = events.find(event => event.kind === 'done');
       assert.equal(done?.ok, true);
       assert.equal(done?.sessionId, resume ?? 'new-vibe');
-      const open = fixture.calls().filter(call => call.method.startsWith('session/')).at(-1);
-      assert.equal(open?.method, resume === undefined ? 'session/start' : 'session/resume');
-      assert.deepEqual(open?.params.agentConfig, {
-        cwd: fixture.request.cwd, headless: true, workspaceRoots: readDirs,
-        ...(mode === 'auto' ? { autoApprove: true } : { agent: mode === 'manual' ? 'ask' : 'accept-edits' }),
-      });
+      // The dispatched argv -- not an RPC payload any more -- carries the
+      // selection, resume handle, attachments and approval flag.
+      const call = fixture.calls().at(-1)!;
+      // A resumed turn carries no model/thinking selection at all (no silent
+      // substitution) -- only the fresh ('auto') turn selects a model.
+      if (resume === undefined) assert.ok(call.args.includes('--model') && call.args[call.args.indexOf('--model') + 1] === 'mistral-medium-3.5');
+      else assert.ok(!call.args.includes('--model'));
+      if (resume !== undefined) assert.ok(call.args.includes('--resume') && call.args[call.args.indexOf('--resume') + 1] === resume);
+      assert.ok(call.args.includes('--add-dir') && call.args[call.args.indexOf('--add-dir') + 1] === readDirs[0]);
+      if (mode === 'auto') assert.ok(call.args.includes('--auto-approve'));
+      else assert.ok(call.args.includes('--approval-policy') && call.args[call.args.indexOf('--approval-policy') + 1] === (mode === 'manual' ? 'ask' : 'accept-edits'));
     }
   } finally { fixture.cleanup(); }
 });
 
-const vibeWorkerFailureExit = process.platform === 'win32' ? { code: 1, signal: null } : { code: null, signal: 'SIGKILL' };
-
-test('explicit Vibe chat refuses mismatch and marks uncertain dispatch as unsafe to replay', async () => {
-  for (const [mode, dispatches] of [['mismatch', 0], ['lost', 1]] as const) {
+test("explicit Vibe chat refuses the CLI's own deterministic model-selection failure, and marks a dispatch-uncertain failure (output already began) as unsafe to replay", async () => {
+  for (const [mode, dispatched] of [['bogus-model', false], ['lost', true]] as const) {
     const fixture = verifiedVibeChat(mode);
+    const request = mode === 'bogus-model' ? { ...fixture.request, model: 'bogus-model' } : fixture.request;
     let process: TurnProcess | undefined;
     try {
-      const events = await collect(fixture.adapter.run(fixture.request, { onSpawn: child => { process = child; } }));
+      const events = await collect(fixture.adapter.run(request, { onSpawn: child => { process = child; } }));
       const done = events.find(event => event.kind === 'done');
       assert.equal(done?.ok, false);
-      assert.equal(done?.replayUnsafe, mode === 'lost' ? true : undefined);
-      assert.equal(fixture.calls().filter(call => call.method === 'turn/start').length, dispatches);
+      assert.equal(done?.replayUnsafe, dispatched ? true : undefined);
+      // The worker always sweeps (and self-kills) its own owned process group after
+      // writing its result, regardless of the vibe child's own exit code -- see
+      // sweepAfterOutput in vibe-session-worker.ts.
       assert.deepEqual(await process?.exit, vibeWorkerFailureExit);
       assert.equal(await fixture.adapter.stopTurnVerified?.(done!.turnId), undefined);
     } finally { fixture.cleanup(); }
   }
 });
 
-test('explicit Vibe worker settles and stops descendants holding app-server output pipes', {
+test('explicit Vibe worker settles and stops descendants holding the vibe binary\'s own output pipes', {
   skip: process.platform === 'win32', timeout: 10_000,
 }, async ({ signal }) => {
   for (const mode of ['pipe-complete', 'pipe-exit', 'pipe-hang']) {
@@ -2149,16 +2172,14 @@ test('explicit Vibe worker settles and stops descendants holding app-server outp
   }
 });
 
-test('explicit Vibe chat cancellation interrupts the leased child and preserves partial output', async () => {
+test('explicit Vibe chat cancellation kills the leased child and preserves partial output', async () => {
   const fixture = verifiedVibeChat('hang');
   let child: TurnProcess | undefined;
   try {
     const events: TurnEvent[] = [];
     for await (const event of fixture.adapter.run(fixture.request, { onSpawn: process => { child = process; } })) {
       events.push(event);
-      if (event.kind === 'assistant-delta' && events.filter(e => e.kind === 'assistant-delta').length === 2) {
-        await fixture.adapter.cancel(event.turnId);
-      }
+      if (event.kind === 'assistant-delta') await fixture.adapter.cancel(event.turnId);
     }
     const done = events.find(event => event.kind === 'done');
     assert.equal(done?.ok, false);
@@ -2167,7 +2188,7 @@ test('explicit Vibe chat cancellation interrupts the leased child and preserves 
     assert.ok(child?.pid);
     assert.deepEqual(await child.exit, vibeWorkerFailureExit);
     assert.throws(() => process.kill(child!.pid!, 0), { code: 'ESRCH' });
-    assert.equal(fixture.calls().filter(call => call.method === 'turn/interrupt').length, 1);
+    assert.equal(events.filter(event => event.kind === 'assistant-delta').map(event => event.text).join(''), 'hello ');
   } finally { fixture.cleanup(); }
 });
 

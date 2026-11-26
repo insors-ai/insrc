@@ -574,14 +574,15 @@ export class CliProvider implements LLMProvider {
 				assertConnectionProviderAdmission(execution);
 				return result;
 			} catch (err) {
-				// The old app-server's dispatchState guard ("an uncertain write is never
-				// reported as a safe retry") protected its own persistent-session,
-				// interrupt/resume protocol, where a dropped connection mid-turn could
-				// leave a server-side effect of unknown outcome. Every vibe path now
-				// dispatches a single, stateless, one-shot CLI invocation per attempt
-				// through the adapter -- there is no persistent session to leave in an
-				// uncertain state, so a fresh retry is exactly as safe as it is for the
-				// claude/codex clients, which never had this guard either.
+				// A one-shot CLI re-invocation is safe to retry when the turn could
+				// only ever read/generate (complete, completeStructuredVibe,
+				// readOnlySessionOnce — no approved tool execution). runEditSession's
+				// approval:'auto' turn is different: an already-uncertain dispatch
+				// (the CLI may have executed file-modifying tool calls before the
+				// transient failure) must never be replayed against the now-mutated
+				// checkout, exactly as the old app-server's dispatchState guard
+				// protected its own persistent-session uncertain-write risk.
+				if (err instanceof VibeTurnError && err.mutating && err.dispatchState !== 'not-sent') throw err;
 				assertConnectionProviderAdmission(execution);
 				lastErr = err;
 				// A size refusal is never resent, whatever its text looks like (ISSUE-aef82b03).

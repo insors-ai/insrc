@@ -1,4 +1,4 @@
-import { runVibeTurn, VibeTurnError } from '../../../src/shared/vibe-adapter.js';
+import { runVibeTurn, vibeDispatchState } from '../../../src/shared/vibe-adapter.js';
 import type { VibeCatalogModel, VibeTurnOptions } from '../../../src/shared/vibe-adapter.js';
 import type { TurnRequest } from './cli-adapter.js';
 
@@ -106,7 +106,10 @@ export async function runVibeChatJob(job: VibeChatJob, signal: AbortSignal, writ
     });
     return 0;
   } catch (error) {
-    const replayUnsafe = error instanceof VibeTurnError && error.dispatchState !== 'not-sent';
+    // Covers both an operational VibeTurnError and a cancelled turn's AbortError --
+    // either way, dispatch having begun (anything but 'not-sent') makes a replay unsafe.
+    const state = vibeDispatchState(error);
+    const replayUnsafe = state !== undefined && state !== 'not-sent';
     emit({ type: 'insrc-vibe-result', ok: false, replayUnsafe, message: error instanceof Error ? error.message : 'Vibe turn failed' });
     return 1;
   }

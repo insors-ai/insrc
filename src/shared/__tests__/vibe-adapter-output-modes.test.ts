@@ -27,6 +27,12 @@ function fakeChild(): { child: VibeChildProcess; stdout: PassThrough; stderr: Pa
 	const stdout = new PassThrough();
 	const stderr = new PassThrough();
 	const stdin = new PassThrough();
+	// A real child's stdio closes very shortly after 'exit' once nothing still
+	// holds the pipes open; chain 'close' automatically so tests don't have to
+	// emit it themselves and don't pay the adapter's CLOSE_GRACE_MS fallback.
+	emitter.on('exit', (code: number | null, signal: NodeJS.Signals | null) => {
+		queueMicrotask(() => emitter.emit('close', code, signal));
+	});
 	const child: VibeChildProcess = {
 		pid: 4242, stdout, stderr, stdin,
 		on(event, listener) { emitter.on(event, listener); },

@@ -137,7 +137,7 @@ export async function qualifyRuntimeFoundation({ parent = realpathSync(tmpdir())
       assert.equal(probe.code, 0, readFileSync(probe.log, 'utf8'));
       const request = { protocolVersion: 1, installationId: location.installationId, operationId: 'fresh-inspect', action: 'inspect' };
       const inspected = await scope.start(runtime.node, [join(candidate.directory, 'manager.mjs'), '--home', home, '--installation-id', location.installationId],
-        { env: { ...run.environment(), PATH: '', NODE_OPTIONS: '', NODE_PATH: '' }, ownerChannel: { initial: JSON.stringify(request) + '\n', connect: channel => channel.end() } });
+        { env: { ...run.environment(), PATH: '', NODE_OPTIONS: '', NODE_PATH: '' }, ownerChannel: { initial: JSON.stringify(request) + '\n', connect: channel => { channel.end(); } } });
       assert.equal(inspected.code, 0, readFileSync(inspected.log, 'utf8'));
       const event = JSON.parse(readFileSync(inspected.log, 'utf8').trim().split('\n').at(-1));
       assert.equal(event.kind, 'result'); assert.equal(event.state.phase, 'preparing');

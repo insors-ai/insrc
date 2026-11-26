@@ -8,7 +8,9 @@ import type { ChildProcess } from 'node:child_process';
 import { completeNode22Fixture } from './_runtime-fixture.js';
 import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
 
-test('dev-complete-payload-native-probe-and-fresh-installed-manager-inspect', { timeout: 600_000 }, async t => {
+// A real lockfile install/build and durable 55k-file payload took 566s on the
+// qualification host. Allow finite headroom for the concurrent scoped sweep.
+test('dev-complete-payload-native-probe-and-fresh-installed-manager-inspect', { timeout: 1_800_000 }, async t => {
   const root = mkdtempSync(join(realpathSync(tmpdir()), 'ids-')), runtime = await completeNode22Fixture(), children: ChildProcess[] = [];
   let complete = false;
   let cancel: (() => void) | undefined;

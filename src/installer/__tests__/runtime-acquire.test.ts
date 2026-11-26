@@ -106,6 +106,24 @@ test('runtime download deadline expires before extraction and closes input befor
     assert.deepEqual(f.stages(), []); assert.equal(fs.existsSync(join(f.home, 'runtimes')), false);
   } finally { clearInterval(keepAlive); t.mock.restoreAll(); syncBuiltinESMExports(); f.clean(); }
 });
+test('runtime extraction enforces its separate fixed verification deadline after download', async t => {
+  const f = fixture(), timeout = AbortSignal.timeout, transport = await officialTransport();
+  let expired: AbortSignal | undefined, downloaded = false;
+  const keepAlive = setInterval(() => {}, 1_000);
+  try {
+    t.mock.method(AbortSignal, 'timeout', (milliseconds: number) => {
+      if (milliseconds === RUNTIME_LIMITS.networkMs) return timeout.call(AbortSignal, milliseconds);
+      assert.equal(milliseconds, RUNTIME_LIMITS.verificationMs); assert.equal(downloaded, true);
+      expired = timeout.call(AbortSignal, 1); return expired;
+    });
+    await assert.rejects(stageRuntime(f.owner, identity(target), { transport: async (...args) => {
+      const response = await transport(...args);
+      response.body.once('end', () => { downloaded = true; }); return response;
+    } }), (error: unknown) => { assert.equal(error, expired?.reason); return true; });
+    assert.equal(expired?.aborted, true); assert.deepEqual(f.stages(), []);
+    assert.equal(fs.existsSync(join(f.home, 'runtimes')), false);
+  } finally { clearInterval(keepAlive); t.mock.restoreAll(); f.clean(); }
+});
 test('runtime cancellation waits for output closure before owned stage cleanup', async t => {
   const f = fixture(), transport = await officialTransport(), abort = new AbortController(), open = io.open, rm = io.rm;
   let positive = false, armed = false;

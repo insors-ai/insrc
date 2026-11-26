@@ -79,7 +79,9 @@ export async function stageRuntime(owner: RuntimeStageOwner, identityInput: Runt
       }
     }
     owner.assertHeld(); signal.throwIfAborted();
-    await closedOperation(extractRuntimeProfile(sources, directory, identity, signal), signal);
+    const verification = AbortSignal.any([signal, AbortSignal.timeout(RUNTIME_LIMITS.verificationMs)]);
+    await closedOperation(extractRuntimeProfile(sources, directory, identity, verification), verification);
+    verification.throwIfAborted();
     owner.assertHeld(); signal.throwIfAborted();
     Object.freeze(identity.target); Object.freeze(identity);
     const stage = Object.freeze({ workDirectory: work, directory, identity }); stages.set(stage, { owner, dev: info.dev, ino: info.ino }); return stage;

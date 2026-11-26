@@ -27,7 +27,7 @@
     "storyTitle": "One shared plain-CLI launch path serves every backend Vibe request",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 1,
         "contentHash": "ef088619dc9f0f06d7f211ac5e67ef1eaf2b62015fb4309e53ee322fd0a6a399",
@@ -38,9 +38,23 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T09:22:29.559Z"
+      }
     },
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
   },
   "body": {
     "alternativesConsidered": [

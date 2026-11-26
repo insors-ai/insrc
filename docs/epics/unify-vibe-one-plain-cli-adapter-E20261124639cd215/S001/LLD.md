@@ -7,6 +7,7 @@
 **Epic:** `unify-vibe-one-plain-cli-adapter`
 **HLD base run:** `wf-1795535373279-l4wumn`
 **HLD effective hash:** `67d59677de6a...`
+**Tracker:** [insors-ai/insrc#276](https://github.com/insors-ai/insrc/issues/276)
 
 This Story builds the one shared plain-CLI Vibe adapter and rewires every backend Vibe path onto it: the provider's completion, structured-output and read-only entries become thin request builders over the adapter's single launch contract, with model/thinking selection riding the plain invocation, structured output staying locally validated, and the read-only mode present but refusing until its qualification lands in s2. The app-server session transport is deleted outright, and the plugin's four transport imports are re-pointed to adapter-owned equivalents so the repo compiles at the story boundary with no chat behavior change. The adapter owns termination, descendant cleanup and temporary-file cleanup on every exit path, in both process-group modes, and produces the rich turn events — session identity, tool calls and results with content — that the chat migration in s3 will render.
 
@@ -426,6 +427,22 @@ Same module and factory as b1, but events are synthesized after the fact: the ad
 **Rejected because:** Backend-complete but contract-hollowing: the AsyncIterable shape exists but is a replay — events arrive only at turn completion, partialing sc1 (the streaming event contract s3 depends on) and k3 (chat-surface alignment deferred into s3, which would then rewrite the adapter's event-production internals). Smaller now only by deferring cost into the story that already carries the parity risk.
 
 ## 9. References
+
+- **[[c1]]** `step-output` `s1`
+- **[[c2]]** `analyze-bundle` `s1` — "the grep-exhaustive production import enumeration of src/shared/vibe-session.js (four importers, eight test/fixture references) and the backend vibe call sites the Story rewires"
+- **[[c3]]** `analyze-bundle` `s1` — "the live 3.1.4 qualification: headless --model/--thinking for NEW sessions, --approval-policy, budget guards, --output-dir export.json, and the programmatic-mode documentation establishing new-session"
+- **[[c4]]** `code` `src/agent/providers/cli-provider.ts:470` — "the provider vibe paths the Story reshapes: complete (:470), completeStructuredVibe (:622), interactive-tools (:684), readOnlySessionOnce (:756), runVibe (:885), vibeActivityCatalog (:715), READ_ONLY_"
+- **[[c5]]** `code` `src/agent/providers/structured-output.ts:234` — "VibeTurnError as the non-retryable refusal marker in the structured-output retry classifier"
+- **[[c6]]** `code` `vscode-plugin/src/chat/vibe-session-process.ts:56` — "the chat worker's tool-result content emission (outputText/output/error/reason) and its per-turn permission mapping"
+- **[[c7]]** `prior-artifact` `docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/HLD.md` — "the approved HLD this LLD implements — sc1/sc2 owned by s1, the rev-3 contract surface and the rollout risky bit 1 (the mechanical plugin re-home)"
+- **[[c8]]** `prior-artifact` `docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/DEF.md` — "the approved Epic — the Story's acceptance criteria and constraints k1-k7"
+- **[[c9]]** `code` `src/shared/vibe-session.ts` — "the session transport to be deleted"
+- **[[c10]]** `step-output` `s4`
+- **[[c11]]** `step-output` `s5`
+- **[[c12]]** `step-output` `s6`
+- **[[c13]]** `step-output` `s7`
+
+## Citations
 
 - **[[c1]]** `step-output` `s1`
 - **[[c2]]** `analyze-bundle` `s1` — "the grep-exhaustive production import enumeration of src/shared/vibe-session.js (four importers, eight test/fixture references) and the backend vibe call sites the Story rewires"

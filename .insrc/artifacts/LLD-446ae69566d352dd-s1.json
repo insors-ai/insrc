@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1795676543322-bhz2eh",
+    "runId": "wf-1795698455782-c8hya3",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-26T07:02:24.716Z",
+    "createdAt": "2026-11-26T13:13:36.775Z",
     "epicCreatedAt": "2026-11-26T06:29:10.586Z",
     "attribution": {
       "outputs": [
@@ -15,14 +15,14 @@
         }
       ]
     },
-    "elapsedMs": 1087,
+    "elapsedMs": 360700,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "446ae69566d352dd",
     "epicSlug": "complete-shared-external-node-runtime-foundation",
     "storyId": "s1",
-    "hldBaseRunId": "wf-1795676543322-bhz2eh",
-    "hldEffectiveHash": "10ef12ead6b254cbedba52b0a686d5ac69d8cc140f0eae618893fef9f7b40926",
+    "hldBaseRunId": "wf-1795698455782-c8hya3",
+    "hldEffectiveHash": "d909d44a83e92c7d305e01b4df1b15a313c7d927ebce102b0cf60ff35cd9a9a0",
     "hldAmendmentsApplied": [],
     "storyTitle": "Complete the shared external Node runtime foundation",
     "standalone": true,
@@ -31,9 +31,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 3,
-        "contentHash": "711c2f19bb42f64207babba68a6f68b81b61ea3a15c2b078025ae87ee4febe36",
-        "at": "2026-11-26T07:02:24.850Z",
+        "number": 4,
+        "contentHash": "576c85dab48d3839cadc3e561617b8a73b9d180ba5aba0f9fd4c5cd4e4e41fee",
+        "at": "2026-11-26T13:13:36.917Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -42,22 +42,22 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 3,
+        "revision": 4,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-26T07:06:58.612Z"
+        "at": "2026-11-26T13:30:04.715Z"
       }
     },
-    "revision": 3,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
-    "rangeBase": "37b832d463bd07d76b6800a1ad1f0dcac3ef54c6"
+    "revision": 4,
+    "rangeBase": "b3166d1e0956bc7d01e735baf1c2b1aa1fa45abb"
   },
   "body": {
     "hldContextSlice": {
@@ -290,7 +290,7 @@
       {
         "entity": "Installed launch and preparation binding",
         "change": "invariant-change",
-        "details": "manager-entry and terminal-entry resolve explicit location plus receipt/policy identity and compare realpath process.execPath to resolved node before control work. Installed manager, daemon launch selection, TUI, Retry, bridge/bootstrap and publisher probes all consume the same foundation; no release tools/node selection remains. productionPeers receives the verified result for dependency/toolchain use; S3 runtime readiness uses verified external paths rather than a directory guess. Both bundle and dev preparation resolve/acquire the candidate manifest identity under original manager ownership before destructive lifecycle work and use absolute verified npm/header/node paths; dev payload/publisher omit runtime bytes. No source checkout/npm/compiler is used for installed start/status or receipt resolution. Existing S2 closed-worker/source proof, S3 consent/Retry/retained Ollama and same-terminal TUI behavior remain. This batch does not supply fake lifecycle/migration peers or change manager action gates; S4 T3/T11 consume the runtime resolver after this batch passes. (c1,c2,c7)",
+        "details": "manager-entry and terminal-entry resolve explicit location plus receipt/policy identity and compare realpath process.execPath to resolved node before control work. Installed manager, daemon launch selection, TUI, Retry, bootstrap and publisher probes all consume the same foundation; no release tools/node selection remains. productionPeers receives the verified result for dependency/toolchain use; S3 runtime readiness uses verified external paths rather than a directory guess. Both bundle and dev preparation resolve/acquire the candidate manifest identity under original manager ownership before destructive lifecycle work and use absolute verified npm/header/node paths; dev payload/publisher omit runtime bytes. No source checkout/npm/compiler is used for installed start/status or receipt resolution. Existing S2 closed-worker/source proof, S3 consent/Retry/retained Ollama and same-terminal TUI behavior remain. This batch does not supply fake lifecycle/migration peers or change manager action gates; S4 T3/T11 consume the runtime resolver after this batch passes. (c1,c2,c7) Current-build execution coverage applies to existing owned bundle/dev, manager/terminal, TUI/Retry, bootstrap and publisher consumers. Main-epic S7 owns the future Windows bridge transport process and its runtime-selection/execution tests; this foundation exposes the resolver for that owner and does not implement or claim to test an absent bridge process. (c13,c14,c15)",
         "callSites": [
           "src/installer/installed-launcher.ts",
           "src/installer/manager-entry.ts",
@@ -305,7 +305,7 @@
       {
         "entity": "External installer epic compatibility constraints",
         "change": "invariant-change",
-        "details": "This ISSUE is standalone and has no formal parent shared-contract entries. External epic c3d71313f34bce71 HLD7 sc1–sc7 are compatibility references only: preserve its public runtime/manifest/manager/dependency/IPC/terminal shapes, keep S4 daemon lifecycle and S5 hook execution owned by their existing stories, and leave action-specific manager gating outside this batch. No shared contract is re-owned or redefined. Local acceptance ac1–ac6 are derived from this approved issue, not new epic FRs. See cited prior ISSUE/HLD/S004 PLAN (c4,c6,c8). (c1,c2,c7)",
+        "details": "This ISSUE is standalone and has no formal parent shared-contract entries. External epic c3d71313f34bce71 HLD7 sc1–sc7 are compatibility references only: preserve its public runtime/manifest/manager/dependency/IPC/terminal shapes, keep S4 daemon lifecycle and S5 hook execution owned by their existing stories, and leave action-specific manager gating outside this batch. No shared contract is re-owned or redefined. Local acceptance ac1–ac6 are derived from this approved issue, not new epic FRs. See cited prior ISSUE/HLD/S004 PLAN (c4,c6,c8). (c1,c2,c7) S7 also retains its Windows bridge process implementation and runtime-selection/execution coverage. Its existing approved ownership is not moved into this standalone correction. (c13,c14)",
         "callSites": [
           "src/installer/contracts.ts"
         ]
@@ -455,14 +455,14 @@
         },
         {
           "level": "integration",
-          "purpose": "Prove actual bootstrap/publication ordering, reuse and all installed consumer paths.",
+          "purpose": "Prove actual bootstrap/publication ordering, reuse and existing owned installed consumer paths; the unbuilt S7 bridge process and its execution coverage remain with S7.",
           "subjects": [
             "bootstrap-no-host-node-verifies-archive-and-executable-before-execution",
             "verified-runtime-and-control-reuse-offline-across-bundle-and-dev",
             "bootstrap-native-operation-lock-exclusive-publication-exact-helper-exit-then-fresh-manager-lock",
             "bootstrap-publication-stage-distinct-from-running-node-and-loaded-native-library",
             "runtime-stage-cancellation-conflict-and-uncertain-closure-retain-safe-state",
-            "bundle-dev-manager-terminal-TUI-Retry-bridge-and-publisher-probes-use-shared-resolver",
+            "bundle-dev-manager-terminal-TUI-Retry-and-publisher-probes-use-shared-resolver",
             "private-dev-node-npm-headers-native-env-and-worker-source-closure-preserved",
             "publisher-app-and-IDE-inventory-exclude-Node-Ollama-distributions-and-archives-including-renamed-contributions"
           ],
@@ -518,7 +518,7 @@
         {
           "criterionId": "ac3",
           "provingTests": [
-            "bundle-dev-manager-terminal-TUI-Retry-bridge-and-publisher-probes-use-shared-resolver",
+            "bundle-dev-manager-terminal-TUI-Retry-and-publisher-probes-use-shared-resolver",
             "resolver-import-boundary-excludes-application-paths-storage-provider-and-source-build",
             "private-dev-node-npm-headers-native-env-and-worker-source-closure-preserved"
           ]
@@ -553,7 +553,7 @@
           ]
         }
       ],
-      "testFramework": "Existing node:test TypeScript suites run by the repository's canonical npm test coordinator under Node22.22.1 with tsx; extend src/installer/__tests__/bootstrap.test.ts, src/installer/__tests__/bundle.test.ts, src/installer/__tests__/publisher.test.ts and the named dev/terminal surrounding suites. Per user instruction run only surrounding tests per task, then the full scoped installer regression after every task is built. Native qualifications are recorded separately with exact platform/runtime/actor cleanup evidence; do not claim unavailable Windows/VM evidence. Local ac1–ac6 respectively name the approved issue's runtime-integrity, external-delivery, consumer-binding, safe-publication/reuse, preserved-behavior and native-evidence groups (the issue-* ids scored in s3)."
+      "testFramework": "Existing node:test TypeScript suites run by the repository's canonical npm test coordinator under Node22.22.1 with tsx; extend src/installer/__tests__/bootstrap.test.ts, src/installer/__tests__/bundle.test.ts, src/installer/__tests__/publisher.test.ts and the named dev/terminal surrounding suites. Per user instruction run only surrounding tests per task, then the full scoped installer regression after every task is built. Native qualifications are recorded separately with exact platform/runtime/actor cleanup evidence; do not claim unavailable Windows/VM evidence. Local ac1–ac6 respectively name the approved issue's runtime-integrity, external-delivery, consumer-binding, safe-publication/reuse, preserved-behavior and native-evidence groups (the issue-* ids scored in s3). The current consumer integration subject covers existing owned consumers only. Execute the actual publisher probe and real Retry entry, including truthful missing-production-peer failures; do not fabricate successful lifecycle or bridge evidence. Main-epic S7 owns the future Windows bridge process and its runtime-selection/execution tests, as already defined by S001 LLD section3.9 and S007 LLD section3.4. Its eventual implementation must consume the same shared resolver; none of the native Windows/VM obligations in this correction is waived."
     },
     "migration": {
       "stateBefore": "Completed bounded s1 context bundles (c1,c2,c5) show bundle/dev validation, installed launchers and publisher retaining tools/node plus runtime archive payloads, while runtime-policy has only a path constructor. Existing completed epic S1/S2 artifacts are preserved. Host v2 is outside this transition.",
@@ -886,6 +886,13 @@
         "functional-coverage"
       ]
     },
+    "epicImpact": {
+      "applies": false,
+      "reason": "Standalone corrective story; external main-epic references retain their existing owners.",
+      "storiesCovered": [],
+      "findings": "No new main-epic implementation ownership is asserted.",
+      "sources": []
+    },
     "companions": [
       {
         "kind": "diagram-mermaid",
@@ -976,6 +983,24 @@
       "kind": "code",
       "ref": "scripts/render-installer-bootstrap.mjs",
       "quotedText": "Existing renderInstallerBootstrap uses fixed official runtime policy and digest-bound control assets; source templates are scripts/install.sh and scripts/install.ps1."
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/LLD.md#3-data-model-changes",
+      "quotedText": "Section3.9: s1 defines schemas; s7 implements Windows transport. Existing bridge implementation ownership is external to this standalone correction."
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S007/LLD.md#3-data-model-changes",
+      "quotedText": "Section3.4 owns the Windows bridge transport process and its runtime launch, handshake and correlated IPC behavior."
+    },
+    {
+      "id": "c15",
+      "kind": "doc",
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t8.md#registered-gate-and-execution-coverage-correction",
+      "quotedText": "T8 implementation checks and mapped cases pass, but required bridge execution is absent because the process belongs to unbuilt S7. Actual publisher probe and Retry entry execute; no successful production lifecycle or bridge proof is fabricated."
     }
   ]
 }

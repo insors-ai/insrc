@@ -29,6 +29,17 @@
           "revision": 1,
           "at": "2026-11-26T09:23:43.819Z",
           "externalId": "7187911548"
+        },
+        {
+          "target": {
+            "entityId": "PLAN-639cd2159a87aedb-s1",
+            "type": "PLAN",
+            "relation": "documents",
+            "fragment": "docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/S001/PLAN.md"
+          },
+          "revision": 1,
+          "at": "2026-11-26T10:36:01.814Z",
+          "externalId": "7189579758"
         }
       ],
       "binding": {

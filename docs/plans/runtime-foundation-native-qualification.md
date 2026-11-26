@@ -47,6 +47,21 @@ run checks harness setup only. Foreign archives and fixture tests cannot stand
 in for execution on those platforms. Missing native infrastructure remains an
 unsatisfied test, and cannot enable a target.
 
+The existing manual CI workflow has a `runtime-foundation` scope for a genuine
+Windows2025 x64 runner:
+
+```sh
+gh workflow run ci.yml --ref installer -f scope=runtime-foundation
+```
+
+It sets up the development SDK/MSVC context without elevation, runs the native
+PowerShell bootstrap/runtime/controller tests through the canonical coordinator,
+then runs the fresh-home harness. The default `backend` scope is unchanged.
+Diagnostics are retained as an Actions artifact; application/runtime binaries are
+not uploaded. A queued or failed job is not passing native evidence. This job
+does not publish or enable a target. The Visual Studio shell setup follows
+[Microsoft's developer-shell procedure](https://learn.microsoft.com/en-us/dotnet/framework/tools/developer-command-prompt-for-vs).
+
 The final ordinary regression is separate: all `src/installer/__tests__/*.test.ts`,
 installation-home, build-script, forbidden-spawn-scan and test-harness-coordinator
 tests run through the canonical Node 22 coordinator at concurrency two. After

@@ -1,5 +1,6 @@
 /** Official runtime acquisition/staging. Publication belongs to the next layer. */
 import { lstat, mkdtemp, mkdir, rm } from 'node:fs/promises';
+import { lstatSync } from 'node:fs';
 import { join } from 'node:path';
 import { InstallerError } from './contracts.js';
 import type { InstallationLocation, RuntimeIdentity } from './contracts.js';
@@ -17,11 +18,11 @@ export interface RuntimeStageOwner { readonly location: InstallationLocation; as
 export interface StagedRuntime {
   readonly workDirectory: string; readonly directory: string; readonly identity: RuntimeIdentity;
 }
-const stages = new WeakMap<StagedRuntime, { owner: RuntimeStageOwner; dev: number; ino: number }>();
+const stages = new WeakMap<StagedRuntime, { owner: RuntimeStageOwner; dev: number; ino: number; uncertain?: boolean }>();
 const DRAIN_MS = 5_000;
 
 /** On abort, wait for positive operation closure. Unknown actors retain their stage. */
-async function closedOperation(operation: Promise<void>, signal: AbortSignal): Promise<void> {
+export async function closedRuntimeOperation(operation: Promise<void>, signal: AbortSignal): Promise<void> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let aborted!: () => void;
   const uncertain = new Promise<never>((_resolve, reject) => {
@@ -44,7 +45,20 @@ async function removeOwned(work: string, expected: { dev: number; ino: number })
 export function assertRuntimeStage(stage: StagedRuntime, owner: RuntimeStageOwner): void {
   const proof = stages.get(stage);
   if (!proof || proof.owner !== owner) throw new InstallerError('runtime-invalid', 'Runtime stage lacks its original ownership proof');
+  if (proof.uncertain) throw new InstallerError('resource-close-uncertain', 'Runtime stage remains retained after unconfirmed resource closure');
   owner.assertHeld();
+  const stat = lstatSync(stage.workDirectory);
+  if (!stat.isDirectory() || stat.isSymbolicLink() || stat.dev !== proof.dev || stat.ino !== proof.ino
+    || (process.platform !== 'win32' && (stat.uid !== process.getuid?.() || (stat.mode & 0o077)))
+    || (process.platform === 'win32' && !controlBinding().safePath(stage.workDirectory, true, true))) {
+    throw new InstallerError('runtime-invalid', 'Runtime stage root ownership changed');
+  }
+}
+/** Quarantine an existing proof after an actor cannot positively close. */
+export function retainUncertainRuntimeStage(stage: StagedRuntime, owner: RuntimeStageOwner): void {
+  const proof = stages.get(stage);
+  if (!proof || proof.owner !== owner) throw new InstallerError('runtime-invalid', 'Runtime stage lacks its original ownership proof');
+  proof.uncertain = true;
 }
 export async function discardRuntimeStage(stage: StagedRuntime, owner: RuntimeStageOwner): Promise<void> {
   assertRuntimeStage(stage, owner); const proof = stages.get(stage)!;
@@ -69,18 +83,18 @@ export async function stageRuntime(owner: RuntimeStageOwner, identityInput: Runt
     await mkdir(directory, { mode: 0o700 });
     const sources: RuntimeArchiveSources = { archive: join(work, 'node.archive') };
     owner.assertHeld(); signal.throwIfAborted();
-    await closedOperation(downloadBoundedAsset({ url: archive.url, bytes: profile.archiveBytes, sha256: archive.sha256 }, sources.archive,
+    await closedRuntimeOperation(downloadBoundedAsset({ url: archive.url, bytes: profile.archiveBytes, sha256: archive.sha256 }, sources.archive,
       RUNTIME_LIMITS.compressedBytes, signal, options.transport), signal);
     if (identity.target.os === 'win32') {
       sources.headers = join(work, 'headers.archive'); sources.library = join(work, 'node.lib');
       for (const [asset, path] of [[runtimePolicy.supplemental.headers, sources.headers], [runtimePolicy.supplemental.libraries[identity.target.arch], sources.library]] as const) {
         owner.assertHeld(); signal.throwIfAborted();
-        await closedOperation(downloadBoundedAsset(asset, path, RUNTIME_LIMITS.compressedBytes, signal, options.transport), signal);
+        await closedRuntimeOperation(downloadBoundedAsset(asset, path, RUNTIME_LIMITS.compressedBytes, signal, options.transport), signal);
       }
     }
     owner.assertHeld(); signal.throwIfAborted();
     const verification = AbortSignal.any([signal, AbortSignal.timeout(RUNTIME_LIMITS.verificationMs)]);
-    await closedOperation(extractRuntimeProfile(sources, directory, identity, verification), verification);
+    await closedRuntimeOperation(extractRuntimeProfile(sources, directory, identity, verification), verification);
     verification.throwIfAborted();
     owner.assertHeld(); signal.throwIfAborted();
     Object.freeze(identity.target); Object.freeze(identity);

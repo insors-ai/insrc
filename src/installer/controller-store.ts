@@ -6,7 +6,10 @@ import type { ControllerSnapshot, InstallationLocation } from './contracts.js';
 import { assertLocalControlRoot, assertToken, sameInstallationHome } from './location.js';
 import { controlBinding } from './native.js';
 import { parseInstaller } from './schemas.js';
-import { flushDirectory } from './durability.js';
+import { flushDirectory, flushDirectoryTree, flushParents } from './durability.js';
+import type { StagedRuntime } from './runtime-acquire.js';
+import { runtimeStorePaths } from './runtime-policy.js';
+import { RUNTIME_LIMITS } from './runtime-metadata.js';
 import { BUNDLE_LIMITS } from './release-descriptor.js';
 
 export type ControllerInspection = { kind: 'missing' } | { kind: 'present'; snapshot: ControllerSnapshot } | { kind: 'corrupt'; reason: string };
@@ -169,6 +172,42 @@ export class ControllerStore {
     const destination = join(releases, releaseId);
     controlBinding().publishDirectory(this.#handle, stagedDirectory, destination);
     flushDirectory(releases); flushDirectory(dirname(stagedDirectory)); flushDirectory(this.location.home); return destination;
+  }
+  /** Runtime stages keep their original owner; no raw native handle escapes. */
+  async publishRuntime(stage: StagedRuntime, signal?: AbortSignal): Promise<string> {
+    this.assertHeld();
+    const { assertRuntimeStage, retainUncertainRuntimeStage, closedRuntimeOperation } = await import('./runtime-acquire.js');
+    const { verifyRuntimeEntry } = await import('./runtime-store.js');
+    assertRuntimeStage(stage, this); signal?.throwIfAborted();
+    if (stage.directory !== join(stage.workDirectory, 'candidate')
+      || dirname(stage.workDirectory) !== this.#root || !/^runtime-stage-[A-Za-z0-9]+$/.test(relative(this.#root, stage.workDirectory))) {
+      throw new InstallerError('path-invalid', 'Runtime publication requires its exact owned stage');
+    }
+    const before = lstatSync(stage.directory);
+    const deadline = AbortSignal.timeout(RUNTIME_LIMITS.verificationMs);
+    const verification = signal ? AbortSignal.any([deadline, signal]) : deadline;
+    try {
+      await closedRuntimeOperation(verifyRuntimeEntry(stage.directory, stage.identity, verification), verification);
+      await closedRuntimeOperation(flushDirectoryTree(stage.directory, verification), verification);
+      assertRuntimeStage(stage, this); verification.throwIfAborted();
+      const after = lstatSync(stage.directory);
+      if (before.dev !== after.dev || before.ino !== after.ino) throw new InstallerError('runtime-invalid', 'Runtime candidate root changed');
+      const destination = runtimeStorePaths(this.location.home, stage.identity).root;
+      const parents: string[] = [];
+      for (let path = dirname(destination); path !== this.location.home; path = dirname(path)) parents.unshift(path);
+      for (const path of parents) {
+        if (!present(path)) { mkdirSync(path, { mode: 0o700 }); controlBinding().protect(path); }
+        if (!controlBinding().safePath(path, true, true)) throw new InstallerError('permissions-invalid', 'Runtime publication parent is unsafe');
+      }
+      this.assertHeld(); verification.throwIfAborted();
+      controlBinding().publishDirectory(this.#handle, stage.directory, destination);
+      // Namespace persistence is established before the runtime can be returned.
+      flushParents(dirname(destination), this.location.home); flushDirectory(stage.workDirectory);
+      return destination;
+    } catch (cause) {
+      if (cause instanceof InstallerError && cause.code === 'resource-close-uncertain') retainUncertainRuntimeStage(stage, this);
+      throw cause;
+    }
   }
   close(): void { if (!this.#closed) { controlBinding().close(this.#handle); this.#closed = true; } }
 }

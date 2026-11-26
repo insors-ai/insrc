@@ -75,6 +75,62 @@ export function verifyRuntimeInventory(bytes: Buffer, expected: ReturnType<typeo
   return files;
 }
 
+/** Internal content check only: arbitrary stages never receive launch paths. */
+export async function verifyRuntimeEntry(root: string, identityInput: RuntimeIdentity, external?: AbortSignal): Promise<void> {
+  const deadline = AbortSignal.timeout(RUNTIME_LIMITS.verificationMs);
+  const signal = external ? AbortSignal.any([deadline, external]) : deadline;
+  signal.throwIfAborted();
+  const identity = structuredClone(parseInstaller('runtime', identityInput)), target = identity.target;
+  runtimeStorePaths(root, identity);
+  if (target.os !== process.platform || target.arch !== process.arch) throw invalid('Runtime verification requires the native target');
+  assertLocalControlRoot(root, target.os === 'win32' ? path => controlBinding().localVolume(path) : undefined);
+  const initial = await admitted(root, true, true, signal), profile = runtimeProfile(target);
+  const paths = { root, directory: join(root, 'distribution'), completion: join(root, 'completion.json'), inventory: join(root, 'inventory.json') };
+  const rootEntries = await readdir(paths.root); signal.throwIfAborted();
+  if (rootEntries.sort().join(',') !== 'completion.json,distribution,inventory.json') throw invalid('Runtime entry membership differs');
+  const completion = (await readChecked(paths.completion, RUNTIME_LIMITS.completionBytes, signal)).bytes!;
+  const expectedCompletion = runtimeCompletionJson({ schemaVersion: 1, identity, profileVersion: RUNTIME_PROFILE_VERSION,
+    inventorySha256: profile.inventorySha256, npmVersion: runtimePolicy.npmVersion, headersVersion: runtimePolicy.headersVersion });
+  if (completion.toString('utf8') !== expectedCompletion) throw invalid('Runtime completion identity or canonical bytes differ');
+  const bytes = (await readChecked(paths.inventory, RUNTIME_LIMITS.inventoryBytes, signal)).bytes!;
+  const files = verifyRuntimeInventory(bytes, profile), pending = new Map(files.map(file => [file.path, file]));
+  const directories = new Set(['']);
+  for (const file of files) {
+    let path = dirname(file.path).split(sep).join('/');
+    while (path !== '.') { directories.add(path); path = dirname(path).split(sep).join('/'); }
+  }
+  if (pending.get(identity.relativeExecutable)?.sha256 !== profile.nodeSha256) throw invalid('Executable profile digest differs');
+  const npm = target.os === 'win32' ? 'node_modules/npm/package.json' : 'lib/node_modules/npm/package.json';
+  let npmBytes: Buffer | undefined, headerBytes: Buffer | undefined, entries = 0;
+  async function visit(directory: string, prefix = ''): Promise<void> {
+    const initial = await admitted(directory, true, false, signal);
+    for (const name of await readdir(directory)) {
+      signal.throwIfAborted(); if (++entries > RUNTIME_LIMITS.entries * 2) throw invalid('Runtime tree entry bound');
+      const path = join(directory, name), relativePath = prefix ? `${prefix}/${name}` : name;
+      const stat = await lstat(path); signal.throwIfAborted();
+      if (stat.isDirectory() && !stat.isSymbolicLink()) {
+        if (!directories.delete(relativePath)) throw invalid('Unexpected runtime directory');
+        await visit(path, relativePath); continue;
+      }
+      const expected = pending.get(relativePath); if (!expected) throw invalid('Unexpected runtime file');
+      const capture = relativePath === npm || relativePath === 'include/node/node_version.h';
+      if (capture && expected.bytes > 128 * 1024) throw invalid('Runtime version metadata bound');
+      const data = await readChecked(path, RUNTIME_LIMITS.entryBytes, signal, expected, capture);
+      if (relativePath === npm) npmBytes = data.bytes;
+      if (relativePath === 'include/node/node_version.h') headerBytes = data.bytes;
+      pending.delete(relativePath);
+    }
+    if (!unchanged(initial, await admitted(directory, true, false, signal))) throw invalid('Runtime directory changed during verification');
+  }
+  await visit(paths.directory); directories.delete('');
+  if (pending.size || directories.size || !npmBytes || !headerBytes) throw invalid('Runtime file set is incomplete');
+  const npmVersion = (JSON.parse(npmBytes.toString('utf8')) as { version?: unknown }).version;
+  const headerVersion = ['MAJOR', 'MINOR', 'PATCH'].map(key => new RegExp(`^#define NODE_${key}_VERSION\\s+(\\d+)`, 'm').exec(headerBytes!.toString('utf8'))?.[1]).join('.');
+  if (npmVersion !== runtimePolicy.npmVersion || headerVersion !== runtimePolicy.headersVersion) throw invalid('Runtime npm or headers differ');
+  if (!unchanged(initial, await admitted(root, true, true, signal))) throw invalid('Runtime entry changed during verification');
+  signal.throwIfAborted();
+}
+
 /** Caller gets paths only after complete exact-tree verification. No durable cache. */
 export async function resolveRuntimeStore(locationInput: InstallationLocation, identityInput: RuntimeIdentity,
   options: { signal?: AbortSignal | undefined } = {}): Promise<ResolvedPrivateRuntime> {
@@ -95,47 +151,7 @@ export async function resolveRuntimeStore(locationInput: InstallationLocation, i
       if (current === location.home) break;
       const next = dirname(current); if (next === current) throw invalid('Runtime root escapes home'); current = next;
     }
-    const rootEntries = await readdir(paths.root); signal.throwIfAborted();
-    if (rootEntries.sort().join(',') !== 'completion.json,distribution,inventory.json') throw invalid('Runtime entry membership differs');
-    const completion = (await readChecked(paths.completion, RUNTIME_LIMITS.completionBytes, signal)).bytes!;
-    const expectedCompletion = runtimeCompletionJson({ schemaVersion: 1, identity, profileVersion: RUNTIME_PROFILE_VERSION,
-      inventorySha256: profile.inventorySha256, npmVersion: runtimePolicy.npmVersion, headersVersion: runtimePolicy.headersVersion });
-    if (completion.toString('utf8') !== expectedCompletion) throw invalid('Runtime completion identity or canonical bytes differ');
-    const bytes = (await readChecked(paths.inventory, RUNTIME_LIMITS.inventoryBytes, signal)).bytes!;
-    const files = verifyRuntimeInventory(bytes, profile), pending = new Map(files.map(file => [file.path, file]));
-    const directories = new Set(['']);
-    for (const file of files) {
-      let path = dirname(file.path).split(sep).join('/');
-      while (path !== '.') { directories.add(path); path = dirname(path).split(sep).join('/'); }
-    }
-    if (pending.get(identity.relativeExecutable)?.sha256 !== profile.nodeSha256) throw invalid('Executable profile digest differs');
-    const npm = target.os === 'win32' ? 'node_modules/npm/package.json' : 'lib/node_modules/npm/package.json';
-    let npmBytes: Buffer | undefined, headerBytes: Buffer | undefined, entries = 0;
-    async function visit(directory: string, prefix = ''): Promise<void> {
-      const initial = await admitted(directory, true, false, signal);
-      for (const name of await readdir(directory)) {
-        signal.throwIfAborted(); if (++entries > RUNTIME_LIMITS.entries * 2) throw invalid('Runtime tree entry bound');
-        const path = join(directory, name), relativePath = prefix ? `${prefix}/${name}` : name;
-        const stat = await lstat(path); signal.throwIfAborted();
-        if (stat.isDirectory() && !stat.isSymbolicLink()) {
-          if (!directories.delete(relativePath)) throw invalid('Unexpected runtime directory');
-          await visit(path, relativePath); continue;
-        }
-        const expected = pending.get(relativePath); if (!expected) throw invalid('Unexpected runtime file');
-        const capture = relativePath === npm || relativePath === 'include/node/node_version.h';
-        if (capture && expected.bytes > 128 * 1024) throw invalid('Runtime version metadata bound');
-        const data = await readChecked(path, RUNTIME_LIMITS.entryBytes, signal, expected, capture);
-        if (relativePath === npm) npmBytes = data.bytes;
-        if (relativePath === 'include/node/node_version.h') headerBytes = data.bytes;
-        pending.delete(relativePath);
-      }
-      if (!unchanged(initial, await admitted(directory, true, false, signal))) throw invalid('Runtime directory changed during verification');
-    }
-    await visit(paths.directory); directories.delete('');
-    if (pending.size || directories.size || !npmBytes || !headerBytes) throw invalid('Runtime file set is incomplete');
-    const npmVersion = (JSON.parse(npmBytes.toString('utf8')) as { version?: unknown }).version;
-    const headerVersion = ['MAJOR', 'MINOR', 'PATCH'].map(key => new RegExp(`^#define NODE_${key}_VERSION\\s+(\\d+)`, 'm').exec(headerBytes!.toString('utf8'))?.[1]).join('.');
-    if (npmVersion !== runtimePolicy.npmVersion || headerVersion !== runtimePolicy.headersVersion) throw invalid('Runtime npm or headers differ');
+    await verifyRuntimeEntry(paths.root, identity, signal);
     for (const [path, initial] of roots) if (!unchanged(initial, await admitted(path, true, true, signal))) throw invalid('Runtime root changed during verification');
     signal.throwIfAborted();
     Object.freeze(identity.target); Object.freeze(identity);

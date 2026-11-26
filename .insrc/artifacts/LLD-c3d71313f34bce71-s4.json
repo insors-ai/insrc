@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1795455313411-1353nv",
+    "runId": "wf-1795668362232-muovqd",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-23T17:35:14.902Z",
+    "createdAt": "2026-11-26T04:57:02.132Z",
     "attribution": {
       "outputs": [
         {
@@ -14,15 +14,15 @@
         }
       ]
     },
-    "elapsedMs": 1220,
+    "elapsedMs": 659547,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
     "epicHash": "c3d71313f34bce71",
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
     "storyId": "s4",
-    "hldBaseRunId": "wf-1795445383474-itgkv3",
-    "hldEffectiveHash": "acb12724c31638094f715440e8d7679ed70268700c5e10e1d06197fb93ace475",
+    "hldBaseRunId": "wf-1795612799378-x1xqpi",
+    "hldEffectiveHash": "ca69fcdcd2b019a9f896c3de33519f2abd2ac93ed18efe96c628ba08dee66d48",
     "hldAmendmentsApplied": [
       "AMD-c3d71313f34bce71-1",
       "AMD-c3d71313f34bce71-2",
@@ -32,24 +32,38 @@
     "storyTitle": "Control daemon start and shutdown through IPC",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
-        "number": 5,
-        "contentHash": "050e1f0e80fa29419687a611526208b128b69383061d9d9c1b451f74ee9c2381",
-        "at": "2026-11-23T17:35:15.030Z",
+        "number": 6,
+        "contentHash": "1975f41f3310e5b333e3bb3aea3532e94d37375bf59cb3b10955d29351e30132",
+        "at": "2026-11-26T04:57:02.225Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 6,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T05:08:36.004Z"
+      }
     },
-    "revision": 5
+    "revision": 6,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
   },
   "body": {
     "hldContextSlice": {
-      "frameworkSummary": "Choose a1: one shared user-level installer/manager with bundle and dev delivery adapters. Install launched from either IDE runs the same public platform installer script interactively in a visible terminal; the script owns prompts and output. IDE-specific installation wizards and hidden background installs are excluded. Lifecycle, migration, runtime and privilege constraints remain shared and unchanged. Successful interactive installation hands the same terminal directly to the installed insrc TUI after daemon readiness; it does not finish at an idle shell.",
+      "frameworkSummary": "Choose a1: one shared user-level installer/manager with bundle and dev delivery adapters. Install launched from either IDE runs the same public platform installer script interactively in a visible terminal; the script owns prompts and output. IDE-specific installation wizards and hidden background installs are excluded. Lifecycle, migration, runtime and privilege constraints remain shared and unchanged. Successful interactive installation hands the same terminal directly to the installed insrc TUI after daemon readiness; it does not finish at an idle shell. Dependency delivery is separate from application delivery: live, verified private Node 22 acquisition and consented live Ollama acquisition apply to both bundle and dev modes.",
       "ownedContracts": [
         {
           "id": "sc4",
@@ -70,7 +84,7 @@
         {
           "id": "sc1",
           "name": "Installation and release identity",
-          "purpose": "One installation owns one selected delivery mode, zero or one active release and zero or one unresolved operation. Release identities are immutable; the controller metadata never stores application DB contents.",
+          "purpose": "One installation owns one selected delivery mode, zero or one active release and zero or one unresolved operation. Release identities are immutable; the controller metadata never stores application DB contents. A release references one pinned runtime identity; runtime bytes live in an independently verified private runtime store and may be shared by multiple releases. relativeExecutable is relative to that distribution root, not a release payload. Node and Ollama bytes are excluded from application/IDE payloads.",
           "interfaceSketch": "type Delivery = { mode: 'bundle'; repository: string; channel: string } | { mode: 'dev'; repository: string; branch: string };\ninterface Target { os: 'darwin' | 'linux' | 'win32'; arch: 'arm64' | 'x64'; baseline: string }\ninterface RuntimeIdentity { version: string; target: Target; sha256: string; relativeExecutable: string }\ninterface ReleaseManifest { schemaVersion: 1; releaseId: string; sourceCommit: string; target: Target; runtime: RuntimeIdentity; payloadSha256: string; daemonEntry: string; managerEntry: string; tuiEntry: string; protocolVersion: 1; compatiblePredecessors: string[]; migrations: HookReference[] }\ninterface Installation { schemaVersion: 1; installationId: string; dataHome: string; delivery: Delivery; activeReleaseId?: string; operationId?: string }",
           "ownedByStory": "s1",
           "consumedByStories": [
@@ -104,7 +118,7 @@
         {
           "id": "sc3",
           "name": "Dependency report and consent",
-          "purpose": "Foundation contract separates required private Node, Ollama availability and advisory agent CLI detection from their platform implementations in s3; IDEs cannot infer consent from plugin updates.",
+          "purpose": "Foundation contract separates required private Node, Ollama availability and advisory agent CLI detection from their platform implementations in s3; IDEs cannot infer consent from plugin updates. Node 22 is acquired live from the pinned official source by the bootstrap/runtime foundation. Ollama is acquired live from its pinned official source only after explicit install consent; neither is bundled with insrc. Verified matching private-runtime reuse is permitted.",
           "interfaceSketch": "interface DependencyReport { runtimeReady: boolean; ollama: 'ready' | 'installed-not-running' | 'missing' | 'unavailable'; ollamaInstallOffer?: { id: string; destination: string; version: string }; agents: { claude: boolean; codex: boolean; vibe: boolean }; recommendations: string[]; blockers: string[] }\ninterface DependencyDecision { offerId: string; choice: 'install' | 'decline' }",
           "ownedByStory": "s1",
           "consumedByStories": [
@@ -178,7 +192,7 @@
             "sc7"
           ],
           "depends": [],
-          "internal": "Own the foundational manifest, controller/operation/consent/hook/transport contracts because every branch already depends on s1. Private implementation covers bootstrap, runtime/payload integrity, bundle preparation/publication, platform lock adapter and atomic install records. Later stories implement lifecycle, checks and hooks behind these contracts. The canonical scripts and interactive installer mode are shared with manual invocation and both IDEs; terminal prompts and durable results are part of this foundation. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. The s1 LLD must explicitly reserve ManagerAction.install to the shared terminal bootstrap script and forbid IDE-adapter invocation. DEF traceability: E20261123c3d71313:S001:FR001 and this story's DEF acceptance criteria apply unchanged."
+          "internal": "Own the foundational manifest, controller/operation/consent/hook/transport contracts because every branch already depends on s1. Private implementation covers bootstrap, runtime/payload integrity, bundle preparation/publication, platform lock adapter and atomic install records. Later stories implement lifecycle, checks and hooks behind these contracts. The canonical scripts and interactive installer mode are shared with manual invocation and both IDEs; terminal prompts and durable results are part of this foundation. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. The s1 LLD must explicitly reserve ManagerAction.install to the shared terminal bootstrap script and forbid IDE-adapter invocation. DEF traceability: E20261123c3d71313:S001:FR001 and this story's DEF acceptance criteria apply unchanged. Resolve manifest runtime identity through the private live-downloaded runtime store; remove publisher duplication of tools/node and runtime archives, update probes/launchers/inventory validation and preserve digest/target checks."
         },
         {
           "storyId": "s2",
@@ -190,7 +204,7 @@
             "sc5",
             "sc6"
           ],
-          "internal": "Private dev checkout/branch sync, lockfile installation and native build preparation; returns the same immutable prepared candidate. It does not define a second lifecycle or migration engine. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. DEF traceability: E20261123c3d71313:S002:FR001 and this story's DEF acceptance criteria apply unchanged."
+          "internal": "Private dev checkout/branch sync, lockfile installation and native build preparation; returns the same immutable prepared candidate. It does not define a second lifecycle or migration engine. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. DEF traceability: E20261123c3d71313:S002:FR001 and this story's DEF acceptance criteria apply unchanged. Build with the identity-bound separately installed Node/npm; omit runtime archives/distributions from prepared dev payloads and share s1 runtime resolution."
         },
         {
           "storyId": "s3",
@@ -201,7 +215,7 @@
             "sc3",
             "sc6"
           ],
-          "internal": "Private platform dependency detection, user-level Ollama installation and agent CLI recommendations. It implements foundational reports/consent and never auto-installs agent CLIs. DEF traceability: E20261123c3d71313:S003:FR001 and this story's DEF acceptance criteria apply unchanged."
+          "internal": "Private platform dependency detection, user-level Ollama installation and agent CLI recommendations. It implements foundational reports/consent and never auto-installs agent CLIs. DEF traceability: E20261123c3d71313:S003:FR001 and this story's DEF acceptance criteria apply unchanged. Download the official pinned Ollama asset live only after consent; do not package Ollama or models. Preserve independent Node foundation ownership and disclose downloaded versus installed size."
         },
         {
           "storyId": "s5",
@@ -256,19 +270,19 @@
             "sc6",
             "sc7"
           ],
-          "internal": "Private isolated VM/runner fixtures, target matrix evidence and release qualification results, including real Windows named-pipe behavior and preservation of host v2 daemon. Terminal-install parity checks cover each IDE and manual invocation, paths with spaces/Unicode, missing terminal support, declined Ollama, Ctrl+C/close, duplicate windows, retained output and readiness-confirmed completion. Verify successful install enters TUI in the original terminal, install lock is released before TUI use, TUI exit leaves daemon running, and failure/cancellation never opens TUI. DEF traceability: E20261123c3d71313:S008:FR001 and this story's DEF acceptance criteria apply unchanged."
+          "internal": "Private isolated VM/runner fixtures, target matrix evidence and release qualification results, including real Windows named-pipe behavior and preservation of host v2 daemon. Terminal-install parity checks cover each IDE and manual invocation, paths with spaces/Unicode, missing terminal support, declined Ollama, Ctrl+C/close, duplicate windows, retained output and readiness-confirmed completion. Verify successful install enters TUI in the original terminal, install lock is released before TUI use, TUI exit leaves daemon running, and failure/cancellation never opens TUI. DEF traceability: E20261123c3d71313:S008:FR001 and this story's DEF acceptance criteria apply unchanged. Verify fresh live dependency acquisition and verified runtime reuse in both modes, application/IDE archives excluding Node/Ollama, decline/offline/digest failure behavior and resolved-runtime launch on each enabled target."
         }
       ],
       "rolloutPhase": "C — dependencies and lifecycle",
       "nonFunctional": {
         "performance": "Targets: local read-only inspection/reachability <=3 seconds; activation never blocks IDE UI. Progress/phase changes emit within 1 second after state changes. Ready startup target <=15 seconds excluding dependency/model initialization; startup probe deadline 30 seconds. Default graceful wait 60 seconds with configurable user deadline; timeout reports uncertainty and never silently escalates. Downloads/builds/hooks have per-operation budgets and progress, not an arbitrary task retry loop.",
-        "security": "No elevated commands, global PATH edits, user credential capture, LLM calls for dependency detection or shell-interpolated actions. Verify payload/runtime digests and targets, reject archive traversal/symlink escapes and module paths outside candidate payload. Local endpoints are user-scoped, capability-protected where needed; bind operation/instance/release identity. Signing deferred and no cryptographic authenticity claim from unsigned digest metadata. No IDE prompt automation or credential/input capture; terminal launch preserves argument boundaries. User-visible script identity matches manual release assets.",
+        "security": "No elevated commands, global PATH edits, user credential capture, LLM calls for dependency detection or shell-interpolated actions. Verify payload/runtime digests and targets, reject archive traversal/symlink escapes and module paths outside candidate payload. Local endpoints are user-scoped, capability-protected where needed; bind operation/instance/release identity. Signing deferred and no cryptographic authenticity claim from unsigned digest metadata. No IDE prompt automation or credential/input capture; terminal launch preserves argument boundaries. User-visible script identity matches manual release assets. Dependency acquisition uses pinned official HTTPS sources and verified digests; no Node/Ollama executable bytes or dependency archives are shipped in insrc/IDE payloads. Matching private runtime reuse must verify identity/integrity; no host PATH fallback.",
         "observability": "Structured operationId/installationId/from-to identity, platform/runtime/digest, phase/hook/stage, duration and actionable error code. Bounded NDJSON to IDE, logs in installation home with rotation; no credentials/tokens or full migration data. Report explicitly which platform/native checks passed and which were unavailable. Interactive installation prints human-readable phases and errors directly in the terminal. The terminal is retained after completion/failure; its output is not scraped or treated as success evidence.",
         "durability": "OS-backed mutation exclusivity plus atomic versioned controller records. Prepared payloads immutable; candidate data mutation is daemon-owned only. Record hook run-started before execution and require test before completion; failures/interruption retain blocked startup. Retry never substitutes a different candidate or starts the predecessor after data changes automatically. Installation completion and lock release precede the interactive TUI session. TUI exit/launch failure cannot roll back the completed installation or keep an installation lock held."
       }
     },
     "summary": {
-      "prose": "Daemon controls use instance-bound local IPC and a single shutdown state. Graceful shutdown drains work; an explicit immediate request bypasses that drain. Restart waits for observed child exit and then confirms the selected release is ready.",
+      "prose": "S4 connects the existing manager to real daemon start, graceful shutdown and explicit immediate shutdown through IPC. The selected daemon reports exact readiness, keeps its control lane available during draining, and a detached wrapper proves actual child exit before restart. Live launch admission and an exclusive pre-store data lease prevent competing store owners; runtime-store and manager capability prerequisites remain with S1/S2, and hook decisions remain S5.",
       "audience": "technical"
     },
     "contractDetails": {
@@ -291,11 +305,13 @@
           },
           "preconditions": [
             "Read shared boot guard before opening application stores.",
-            "Start uses the selected private runtime and validated payload."
+            "Start uses the selected private runtime and validated payload.",
+            "Resolve the canonical selected installation/installed receipt through sc1/sc6. Runtime selection is the separately acquired verified runtime store specified by HLD revision 7; no tools/node, host PATH, npm, checkout sync or build fallback. The S1/S2 runtime resolver correction is a production prerequisite."
           ],
           "postconditions": [
             "Already-ready matching instance is reused; conflicting identity or blocked migration is not success.",
-            "No sync/npm/build on start."
+            "No sync/npm/build on start.",
+            "Proposed private daemon.lifecycleStatus returns this exact identity on the same protected endpoint and main-thread control lane; preserve existing daemon.status response and consumers. Unknown, unreachable, blocked or mismatched identity is not absence."
           ],
           "errors": []
         },
@@ -317,12 +333,14 @@
           "preconditions": [
             "Validate operation/instance, mode, endpoint containment and nonce; default graceful at caller boundary.",
             "Control handler executes before general work queue and never awaits drain inside the IPC reply handler.",
-            "Immediate supersession of a live graceful operation is forwarded by the current manager owner through approved sc2; competing-manager lock admission cannot reject this forwarded request."
+            "Immediate supersession of a live graceful operation is forwarded by the current manager owner through approved sc2; competing-manager lock admission cannot reject this forwarded request.",
+            "Dispatch lifecycle status/shutdown before ordinary worker routing, maintenance admission and application queues. Same-user capability checks bind installation, current instance, operation and completion destination; validate protected path/pipe containment before connecting."
           ],
           "postconditions": [
             "Flush accepted reply before selected exit action.",
             "Repeated same request is idempotent; explicit immediate can supersede draining.",
-            "No timeout-triggered escalation, PID inspection, signal or kill fallback."
+            "No timeout-triggered escalation, PID inspection, signal or kill fallback.",
+            "The server exposes completion of this exact JSON-RPC reply's socket.write callback. Only successful write completion authorizes the selected exit path; aggregate flushPendingWrites, a timer, or scheduling a microtask is insufficient. Write failure/timeout remains uncertain. This is transport flush evidence, not proof of client receipt or process exit."
           ],
           "errors": [
             {
@@ -414,6 +432,55 @@
               "condition": "Receipt is malformed or identity/nonce/digest mismatches."
             }
           ]
+        },
+        {
+          "name": "LifecyclePort",
+          "signature": "interface LifecyclePort { observe(location: InstallationLocation): Promise<DaemonObservation>; shutdown(location: InstallationLocation, request: ShutdownRequest): Promise<ShutdownAccepted>; waitShutdownCompletion(location: InstallationLocation, request: ShutdownRequest): Promise<ShutdownCompletion>; reconcileShutdown(location: InstallationLocation, request: ShutdownRequest): Promise<ShutdownCompletion | undefined>; launchMigration(candidate: PreparedCandidate, admission: LaunchAdmission, assertLiveOwner: () => void): Promise<void>; readMigrationExitReceipt(expected: MigrationExitReceiptIdentity): Promise<MigrationExitReceipt>; migrationOwnership(expected: MigrationExitReceiptIdentity): Promise<'released' | 'held' | 'unknown'>; activate(candidate: PreparedCandidate, admission: LaunchAdmission, assertLiveOwner: () => void): Promise<ReadyEvidence>; reconcileActivation(candidate: PreparedCandidate, admission: LaunchAdmission): Promise<ReadyEvidence | undefined>; }",
+          "parameters": [
+            {
+              "name": "location/candidate",
+              "type": "InstallationLocation | PreparedCandidate",
+              "purpose": "Canonical selected installation or immutable candidate; never discover a different release.",
+              "optional": false
+            },
+            {
+              "name": "request/admission/expected",
+              "type": "ShutdownRequest | LaunchAdmission | MigrationExitReceiptIdentity",
+              "purpose": "Method-specific exact identity and protected evidence binding from existing sc2/sc4 protocol.",
+              "optional": true
+            },
+            {
+              "name": "assertLiveOwner",
+              "type": "() => void",
+              "purpose": "Existing in-process manager assertion; invoked before spawn and live-admission grants. Never serialized as executable child input.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Existing method-specific Promise types in src/installer/peer-contracts.ts",
+            "meaning": "observe distinguishes known never-started or proven exit from unknown; shutdown is ack only; wait/reconcile validate exact exit evidence; launchMigration is admission only; activate/reconcile require exact ready identity plus admitted session/nonce/inventory."
+          },
+          "errors": [
+            {
+              "type": "lifecycle-prerequisite-unavailable",
+              "condition": "No verified runtime-store resolution, qualified primitive, live admission or required migration capability; fail closed without placeholders."
+            },
+            {
+              "type": "lifecycle-evidence-uncertain",
+              "condition": "Wrapper/session/receipt/lease proof is absent, mismatched or not durable; no competing child or success result."
+            }
+          ],
+          "preconditions": [
+            "Reuse InstallerManager operation lock/controller/admission/forwardImmediate; no second manager, migration engine or controller writer.",
+            "S4 production peer implements all nine methods. S5 owns migration-only execution, journal semantics and installed verification; no fake migration peer or no-op runner.",
+            "Start/activation validates selected runtime/receipt/entry/digest before wrapper spawn and verifies the exact readiness evidence before returning."
+          ],
+          "postconditions": [
+            "productionPeers adds only the real lifecycle port alongside existing delivery/dependency peers; migrations remains unavailable until S5.",
+            "observe absence requires recorded never-started evidence or exact observed-exit evidence plus ownership reconciliation. Connection refusal/socket disappearance/free lease alone is uncertain.",
+            "launchMigration consumes sc5 runner availability and sc2 admission; the wrapper persists mandatory migration exit receipt even after manager loss. ExitCode=0 never substitutes for hook tests/journal.",
+            "All shutdown/restart behavior concerns the insrc daemon; never stop or restart independently installed Ollama."
+          ]
         }
       ]
     },
@@ -421,74 +488,118 @@
       {
         "entity": "Daemon control state",
         "change": "new",
-        "details": "Proposed private boundary src/daemon/installation-lifecycle.ts integrates with current src/daemon/index.ts and src/daemon/server.ts. One state machine admits status/shutdown while rejecting ordinary new work during draining. Refactor only the control closure ordering: do not close the control listener before an immediate override can arrive. Existing queue/resource disposal remains application-owned; preserve storage-health checks and native ownership guards. APIs on src/daemon/lifecycle.ts remain model bootstrap, not a restored process engine.",
+        "details": "Proposed private boundary src/daemon/installation-lifecycle.ts integrates with current src/daemon/index.ts and src/daemon/server.ts. One state machine admits status/shutdown while rejecting ordinary new work during draining. Refactor only the control closure ordering: do not close the control listener before an immediate override can arrive. Existing queue/resource disposal remains application-owned; preserve storage-health checks and native ownership guards. APIs on src/daemon/lifecycle.ts remain model bootstrap, not a restored process engine. Proposed src/daemon/index.ts becomes a thin pre-store entry retaining out/daemon/index.js, with application startup moved to proposed src/daemon/application.ts by dynamic import. A dependency-minimal guard validates exact INSRC_HOME/installation/runtime/admission and takes the exclusive daemon data lease before importing src/shared/paths.ts, DB clients/native stores, or declaring live store ownership. INSRC_HOME is captured at import today. Keep main-thread control responsive through drain and storage/worker cleanup; close it only at the final exit boundary. Preserve existing native storage-health/ownership handling.",
         "callSites": [
           "src/daemon/index.ts",
           "src/daemon/server.ts",
-          "src/daemon/queue.ts"
+          "src/daemon/queue.ts",
+          "src/shared/paths.ts",
+          "src/daemon/threads/method-class.ts"
         ]
       },
       {
         "entity": "Immediate self-exit path",
         "change": "new",
-        "details": "Immediate is an authenticated explicit IPC request, not a drain timeout policy. After reply flush, a small target-qualified Node-API primitive performs calling-process _Exit(0), bypassing pending graceful promises and native atexit hooks. This is self-exit inside the daemon, not a PID-based or external termination command. It opens no control process handle and sends no signal. If unavailable, return an explicit unsupported-handler failure. Qualify crash recovery of actual native stores afterward; never claim immediate works when IPC itself is unresponsive.",
-        "callSites": []
+        "details": "Immediate is explicit authenticated IPC only. After successful per-reply transport flush, add a minimal calling-process _Exit(0) Node-API primitive to src/installer/native/control.c and its typed src/installer/native.ts binding; no process handle, PID, signal, external command, watchdog or automatic deadline escalation. _Exit skips CRT atexit/stream flushing; OS/DLL behavior and actual native-store recovery still require target qualification. No universal bounded-exit or cleanup-bypass guarantee is inferred from the symbol alone. Missing/unqualified primitive gives unsupported before accepting immediate; a non-exiting primitive remains uncertain, never stopped. Primary reference: https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/exit-exit-exit?view=msvc-170",
+        "callSites": [
+          "src/installer/native.ts",
+          "src/installer/native/control.c"
+        ]
       },
       {
         "entity": "Lifetime wrapper and ownership",
         "change": "new",
-        "details": "Wrapper starts detached from the install terminal with log-bound standard streams and a private child IPC channel; child readiness binds installation/release/instance. It observes child exit, produces ShutdownCompletion on the manager's protected local endpoint and optionally an atomic receipt keyed by operation/nonce, then exits. It has no watchdog, respawn or kill policy. Normal daemon and migration-only process share an exclusive daemon-owned data-lease primitive; manager never opens DB. All managed boot paths apply foundation startup guard and refuse conflicting ownership before store open. Consume the sole-controller-writer/admitted-candidate crash protocol from approved sc2. Only the lock-owning manager writes controller.json. Only the candidate daemon writes its operation/candidate-bound hook journal atomically while holding the exclusive data lease; it never writes controller.json or inherits the manager lock. Journal run-started commits before mutation. Stage events are advisory; OperationRecord is a possibly lagging projection, never migration validation evidence. Validate journal identity/version/order/digests before accepting results. On manager exit, a live candidate may finish its admitted hooks/journal but cannot activate or write controller state. A new lock owner first reconciles the exact candidate session, lease and protected observed-exit evidence; held/unknown ownership means busy/uncertain, never a second runner. Lease availability alone is not migration success. Only after prior candidate actual exit may explicit recovery validate the journal and resume the same operation or retry unvalidated hooks under hook policy. Reject stale session/revision writes; no PID/age inference or predecessor restart. Initial migration in migrating and candidate normal boot in activating require matching live-owner admission; independent ordinary boot remains denied. General shutdown receipts remain optional; migration-only children additionally require the mandatory receipt protocol below.",
-        "callSites": []
+        "details": "Wrapper starts detached from the install terminal with log-bound standard streams and a private child IPC channel; child readiness binds installation/release/instance. It observes child exit, produces ShutdownCompletion on the manager's protected local endpoint and optionally an atomic receipt keyed by operation/nonce, then exits. It has no watchdog, respawn or kill policy. Normal daemon and migration-only process share an exclusive daemon-owned data-lease primitive; manager never opens DB. All managed boot paths apply foundation startup guard and refuse conflicting ownership before store open. Consume the sole-controller-writer/admitted-candidate crash protocol from approved sc2. Only the lock-owning manager writes controller.json. Only the candidate daemon writes its operation/candidate-bound hook journal atomically while holding the exclusive data lease; it never writes controller.json or inherits the manager lock. Journal run-started commits before mutation. Stage events are advisory; OperationRecord is a possibly lagging projection, never migration validation evidence. Validate journal identity/version/order/digests before accepting results. On manager exit, a live candidate may finish its admitted hooks/journal but cannot activate or write controller state. A new lock owner first reconciles the exact candidate session, lease and protected observed-exit evidence; held/unknown ownership means busy/uncertain, never a second runner. Lease availability alone is not migration success. Only after prior candidate actual exit may explicit recovery validate the journal and resume the same operation or retry unvalidated hooks under hook policy. Reject stale session/revision writes; no PID/age inference or predecessor restart. Initial migration in migrating and candidate normal boot in activating require matching live-owner admission; independent ordinary boot remains denied. General shutdown receipts remain optional; migration-only children additionally require the mandatory receipt protocol below. Cardinality/ownership: installation has at most one store-owning daemon; each admitted session has one detached wrapper observing exactly one child; controller has many historical sessions but only the lock owner writes it; migration session has one child-written journal and one wrapper-written immutable receipt. Wrapper does not inherit/hold manager or data locks and never opens DB. Normal activation also binds wrapper/child to admitted session; capture exact actual-exit evidence for live completion, with optional protected shutdown receipt for later reconciliation. If optional evidence was not retained, later recovery stays uncertain. Release a data lease only after all stores and DB workers close, or let OS release it at actual process exit; cleanup uncertainty cannot authorize another store owner.",
+        "callSites": [
+          "src/installer/manager.ts",
+          "src/installer/peer-contracts.ts",
+          "src/installer/native.ts",
+          "src/daemon/index.ts"
+        ]
       },
       {
         "entity": "Platform transport integration",
         "change": "new",
-        "details": "Unix retains protected daemon.sock and existing application payloads; never unlink a live endpoint. Windows uses the sc6 per-user/install named pipe with protected capability handshake before lifecycle control. Foundation manager adapters and application IPC consumers use identical location resolution. Existing application cleanup signal handlers can remain for OS/application disposal; manager stop/restart never sends those signals. Legacy daemons without qualified completion evidence are a diagnosed adoption precondition, not automatically replaceable.",
-        "callSites": []
+        "details": "Unix retains protected daemon.sock and existing application payloads; never unlink a live endpoint. Windows uses the sc6 per-user/install named pipe with protected capability handshake before lifecycle control. Foundation manager adapters and application IPC consumers use identical location resolution. Existing application cleanup signal handlers can remain for OS/application disposal; manager stop/restart never sends those signals. Legacy daemons without qualified completion evidence are a diagnosed adoption precondition, not automatically replaceable. Add proposed daemon.lifecycleStatus without changing legacy daemon.status fields; register its identity schema and main-thread routing plus daemon.shutdown consistently in server/method registries and parity tests. Authentication/control must work while ordinary workers are blocked. Socket write callbacks are flush barriers only; positive wrapper child-exit observation remains the stopped proof. Node semantics reference: https://nodejs.org/download/release/v22.22.1/docs/api/net.html",
+        "callSites": [
+          "src/daemon/server.ts",
+          "src/daemon/threads/method-class.ts",
+          "src/shared/paths.ts"
+        ]
       },
       {
         "entity": "Existing-operation escalation consumer",
         "change": "new",
         "details": "Consume the approved s1-owned sc2 escalateShutdown method, not a new lock or lifecycle controller. An immediate override during quiescing/draining is a message to the current operation, not a competing mutation. Invoke escalateShutdown with the existing installationId/operationId, action='stop', shutdownMode='immediate'. Before ordinary lock admission, the manager command forwards it to the current lock owner's user-protected local control endpoint. The owner remains responsive while awaiting drain/exit, validates recorded instance/operation and alone sends s4 IPC using its original completion endpoint/nonce and writes controller state. Cross-window requests use this path; duplicates coalesce; all independent mutations still return busy. Private endpoint discovery binds installation/operation/owner-session nonce, validates same-user authorization and phase/identity, and rejects stale endpoints. No lock release/steal to escalate. Missing/dead owner returns escalation-unavailable/uncertain; explicit recovery must acquire the lock and reconcile instance/exit evidence before acting, never automatically replace the daemon. The s4 daemon handler/wrapper preserves its existing operation, instance and completion nonce on immediate supersession.",
-        "callSites": []
+        "callSites": [
+          "src/installer/manager.ts",
+          "src/installer/operation-control.ts"
+        ]
       },
       {
         "entity": "Mandatory migration lifetime receipt",
         "change": "new",
         "details": "Every migration-only child is launched through the s4 lifetime wrapper. Before spawn, the manager atomically records an immutable admission containing installationId, operationId, candidateReleaseId, candidateInventorySha256, sessionId, childInstanceId, completionNonce and the exact protected receipt path <home>/install/receipts/<operationId>/<sessionId>.json. IDs are validated opaque path-safe tokens, never arbitrary paths. Wrapper/child acknowledge that admission; a delayed unstarted child must still validate the live owner admission before acquiring the data lease/opening stores. The wrapper is detached from manager/terminal lifetime and never opens application stores. After observing that exact child actually exit, it MUST atomically persist MigrationExitReceipt to the predeclared path, flush file and containing directory where supported, then notify any live observer and exit. This requirement applies to natural migration completion, hook failure and child self-exit; it does not depend on a shutdown request or surviving manager IPC. Wrapper is the sole receipt writer; candidate alone writes hook journal; manager alone writes controller.json. Receipt is immutable per session, user-protected, identity/nonce/digest validated and retained until operation completion/recovery no longer needs it. Native lock/receipt filesystem durability support is qualified before target enablement. A replacement manager under the operation lock reconciles the admitted session, mandatory receipt, lease and exact journal; only matching actual-exit evidence plus released ownership permits another runner/start. ExitCode=0 is never migration success by itself: successful applicable hook tests and exact journal validation are also required. A failure receipt may authorize same-candidate explicit hook recovery, never automatic activation. Missing/corrupt/forged receipt or wrapper death remains blocked/uncertain, never inferred from PID, endpoint disappearance, free lease or completed journal. The wrapper never kills/restarts the child. This mandatory migration receipt does not make general shutdown's optional receipt mandatory.",
-        "callSites": []
+        "callSites": [
+          "src/installer/manager.ts",
+          "src/installer/peer-contracts.ts",
+          "src/installer/controller-store.ts"
+        ]
+      },
+      {
+        "entity": "Live launch admission handshake",
+        "change": "new",
+        "details": "Manager's assertLiveOwner closure is process-local. The detached wrapper/child instead use a protected bounded local rendezvous bound to the exact persisted LaunchAdmission and fresh capability. Manager validates its held OS lock, current operation phase/revision, ownerNonce and canonical admission before granting; do not pass a closure string or trust an admission file alone. Validate live admission immediately before spawn and before acquiring the data lease; after acquiring lease obtain final current-owner grant before application imports/store open. The final accepted grant is the admission linearization point: owner loss before it denies startup and closes the lease; owner loss afterward permits that already-admitted candidate to finish its owned work/journal but not activate a new process or mutate controller state. No inherited manager lock. Every later activation requires its own current admission. Cross-process tests exercise delayed launch, revoked/replaced admission, manager loss at each barrier and a live child retaining the lease.",
+        "callSites": [
+          "src/installer/manager.ts",
+          "src/installer/peer-contracts.ts",
+          "src/installer/operation-control.ts",
+          "src/daemon/index.ts"
+        ]
+      },
+      {
+        "entity": "Production composition and owned prerequisites",
+        "change": "invariant-change",
+        "details": "Proposed src/installer/lifecycle-peer.ts and detached wrapper implement existing LifecyclePort; src/installer/production-peers.ts publishes the real lifecycle alongside the existing S1/S2/S3 peers, leaving S5 migrations absent. Existing factory tests must assert lifecycle methods and retain migrations undefined. Two prerequisite corrections stay with their owners: S1/S2 must replace installed-launcher/dev preparation tools/node assumptions with HLD7's verified external runtime store; S1/sc2 must scope manager required-peer admission by action so stop does not need migrations. Record linked tracked corrective work and passing owner-contract evidence before production lifecycle acceptance. Do not silently implement those owner-owned changes in S4, add a no-op migrations peer, launch from PATH, or report full install/upgrade/start acceptance before S5. Preserve S3 install-only explicit Retry/cleanup and retained installed Ollama; update recovery is not install Retry.",
+        "callSites": [
+          "src/installer/production-peers.ts",
+          "src/installer/installed-launcher.ts",
+          "src/installer/runtime-policy.ts",
+          "src/installer/manager.ts",
+          "src/installer/peer-contracts.ts"
+        ]
       }
     ],
     "interactionWithShared": [
       {
         "contractId": "sc1",
         "role": "consumes",
-        "howDetails": "Consume foundation identity/state/home/report/hook-shape boundary; only lifecycle/readiness implementation is owned here."
+        "howDetails": "Selected immutable release/installed receipt and separately verified private runtime are foundation inputs, not S4 delivery work. S1/S2 HLD7 runtime-store correction must be linked and validated first; no release-local tools/node or PATH fallback."
       },
       {
         "contractId": "sc2",
         "role": "consumes",
-        "howDetails": "Consume foundation identity/state/home/report/hook-shape boundary; only lifecycle/readiness implementation is owned here."
+        "howDetails": "Consume exact persisted LaunchAdmission, held OS mutation lock, manager-only controller writer and existing same-operation escalation endpoint. Live admission rendezvous supplies current-owner proof without serializing assertLiveOwner. S1 owns action-specific capability admission correction; no fake S5 port."
       },
       {
         "contractId": "sc3",
         "role": "consumes",
-        "howDetails": "Consume foundation identity/state/home/report/hook-shape boundary; only lifecycle/readiness implementation is owned here."
+        "howDetails": "Preserve S3 dependency reports/consent and independent Ollama ownership. No lifecycle operation installs dependencies or applies install-only Retry cleanup to update."
       },
       {
         "contractId": "sc5",
         "role": "consumes",
-        "howDetails": "Consume foundation identity/state/home/report/hook-shape boundary; only lifecycle/readiness implementation is owned here."
+        "howDetails": "Consume hook/journal verification and candidate migration-only runner from S5. Supply launch/lease/exit evidence only; no hook policy or placeholder journal success. Until S5 is real, production actions requiring migration capability fail closed."
       },
       {
         "contractId": "sc6",
         "role": "consumes",
-        "howDetails": "Consume foundation identity/state/home/report/hook-shape boundary; only lifecycle/readiness implementation is owned here."
+        "howDetails": "Use one canonical installation location, exact home, protected Unix/named-pipe endpoints and platform policy in manager/wrapper/daemon/clients; never unlink a live endpoint or require elevated commands."
       },
       {
         "contractId": "sc4",
         "role": "implements",
-        "howDetails": "Own request/acknowledgement/readiness/completion semantics, control-lane ordering, wrapper exit proof and platform-qualified immediate self-exit."
+        "howDetails": "Implement existing LifecyclePort, exact readiness/shutdown/ack/completion/migration receipt semantics, pre-store lease guard, main-thread authenticated control with per-reply flush, detached lifetime observation and qualified immediate self-exit. Shared wire types stay unchanged."
       }
     ],
     "errorPaths": {
@@ -520,6 +631,48 @@
           "response": "Explicit unsupported/qualification failure; no alternate process killer.",
           "userImpact": "Target cannot claim this lifecycle behavior yet.",
           "recoverable": true
+        },
+        {
+          "scenario": "Shutdown reply cannot be flushed",
+          "detection": "The write callback for the exact accepted request errors, the socket closes before callback success, or its bounded flush deadline expires.",
+          "response": "Do not invoke the newly selected exit action. Preserve observable phase/diagnostics and any prior admitted shutdown; reconciliation still requires actual child exit evidence.",
+          "userImpact": "The caller sees control failure/uncertainty; no stopped result or replacement is inferred.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Admission stale, owner lost, or child delayed",
+          "detection": "Live rendezvous fails or current lock/ownerNonce/controller revision/phase/admission differs at a pre-spawn/pre-store barrier.",
+          "response": "Reject unadmitted startup before store imports, close any acquired data lease, retain records for reconciliation; already-admitted child may finish its owned work, never write controller or independently activate.",
+          "userImpact": "Explicit retry after exact session reconciliation; no lock stealing or parallel candidate.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Boot guard ordering or home/runtime identity invalid",
+          "detection": "Thin entry validation rejects malformed/canonical-home mismatch, selected receipt/runtime/digest mismatch, missing foundation resolver, or held/unknown data lease.",
+          "response": "Fail before application/DB imports and live-store ownership declaration; do not fall back to PATH/tools/node, a different release or raw source launch.",
+          "userImpact": "Actionable missing-prerequisite or conflicting-owner error; installed host daemon remains untouched.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Wrapper disappears or receipt publication/durability fails",
+          "detection": "No matching live completion/immutable receipt after deadline, wrapper channel closes early, or exclusive publication/fsync/protection fails.",
+          "response": "Keep uncertain/blocked; never synthesize completion from socket absence, free lease, PID, exit code or hook journal. Retain exact admission and diagnostic evidence; migration recovery needs mandatory receipt and ownership/journal validation.",
+          "userImpact": "No automatic competing process or predecessor restart.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Wrong endpoint, stale session, or invalid control capability",
+          "detection": "Canonical location/protected channel validation or installation/operation/instance/session/nonce comparison fails before command execution or proof acceptance.",
+          "response": "Reject and log bounded identity diagnostics without secrets; never unlink an active endpoint or redirect completion to arbitrary paths.",
+          "userImpact": "No unauthenticated control or falsely matched stopped state.",
+          "recoverable": true
+        },
+        {
+          "scenario": "S1/S2 runtime or capability prerequisites absent; S5 not built",
+          "detection": "Production peer admission and selected runtime resolution report unavailable capability; current all-port manager gate still blocks stop without S5 until its owning correction.",
+          "response": "Report the linked owner prerequisite and stop before launch. S4 contributes only its real lifecycle port; no fake migrations, alternate manager, duplicated runtime installer or untracked foundation patch.",
+          "userImpact": "S4 fixture evidence is distinct from production acceptance; full action coverage awaits actual prerequisites.",
+          "recoverable": true
         }
       ],
       "edgeCases": [
@@ -534,6 +687,26 @@
         {
           "input": "Daemon is unresponsive to IPC",
           "expected": "Report inability to stop; do not claim an immediate override can bypass an unreachable control channel."
+        },
+        {
+          "input": "Graceful request and duplicates overlap explicit immediate",
+          "expected": "Coalesce same operation/instance/nonce; an accepted immediate is monotonic, preserves completion identity, and awaits its own successful reply flush. Wrong operation is refused; timeout never chooses immediate."
+        },
+        {
+          "input": "Manager exits after final live-admission grant while child is running",
+          "expected": "Detached wrapper/child continue only their admitted lifetime. Data lease protects stores; migration child may complete hooks/journal, wrapper writes receipt without manager IPC. New manager reconciles before further action."
+        },
+        {
+          "input": "Normal daemon exits without a shutdown request",
+          "expected": "Wrapper may retain optional bound normal-lifetime evidence; no ShutdownCompletion is invented for an unknown future operation. Missing retained evidence leaves later recovery uncertain."
+        },
+        {
+          "input": "Fresh installation, stopped installation, or already-ready daemon",
+          "expected": "Only persisted never-started or exact exit evidence plus ownership permits absent; matching ready identity is reused under manager serialization, and blocked/mismatched/unreachable never counts as ready/absent."
+        },
+        {
+          "input": "Target not actually qualified or isolated VM unavailable",
+          "expected": "Record route pending with reason, never fabricate Mac/Linux/Windows evidence or touch host v2/Ollama. Missing immediate/native qualification cannot silently enable that target."
         }
       ],
       "invariantsToPreserve": [
@@ -548,11 +721,15 @@
         {
           "text": "DEF E20261123c3d71313:S004:FR001 and this story acceptance criteria apply unchanged.",
           "source": "c3"
+        },
+        {
+          "text": "S3 install-only explicit Retry and retained Ollama boundaries; no update cleanup semantics or lifecycle control of Ollama. Existing daemon.status response, pre-store native ownership safeguards and no direct DB access from manager/clients are preserved.",
+          "source": "c4"
         }
       ]
     },
     "testStrategy": {
-      "testFramework": "node:test + node:assert/strict; canonical *.test.ts coordinator. Real platform/IDE qualification is recorded separately and not inferred from fakes.",
+      "testFramework": "node:test + node:assert/strict through the canonical *.test.ts coordinator, using Node 22.22.1 and ONNXRUNTIME_NODE_INSTALL_CUDA=skip when unset. Each build task runs surrounding tests only; after all story tasks run the full installer/lifecycle scoped regression once, preserving intentional S2 long-file budgets. Record the selected test files, controller/run IDs, fingerprints, actor closure and cleanup. S3 baseline is 209 tests/44 files (run 3cdda64a-f71b-40ea-a4c7-336a32dce819), not a requirement to freeze test counts. Human BUILD approval follows all tasks; automated reviews unavailable. Native route qualification is separate and never inferred from fixture success.",
       "testLevels": [
         {
           "level": "contract",
@@ -560,7 +737,13 @@
           "subjects": [
             "wrong-instance/stale/duplicate requests",
             "ack cannot authorize restart",
-            "forged completion rejected"
+            "forged completion rejected",
+            "production-peers-exposes-nine-real-lifecycle-methods-and-no-placeholder-migrations",
+            "legacy-daemon-status-payload-preserved-and-lifecycle-control-registry-parity",
+            "control-auth-validates-installation-instance-operation-and-endpoint",
+            "observe-connection-refusal-and-free-lease-remain-uncertain",
+            "missing-runtime-store-resolver-fails-before-launch",
+            "receipt-decoder-rejects-extra-identity-mismatch-wrong-purpose-path-escape-and-replacement"
           ]
         },
         {
@@ -574,20 +757,39 @@
             "Real separate manager/IDE client escalates while original operation lock is held; duplicate/stale/owner-loss cases and unchanged nonce.",
             "Candidate live after manager death denies competing store ownership; only admitted activating boot proceeds.",
             "Wrapper survives manager self-exit; natural/failed migration child exit persists exact receipt without shutdown IPC.",
-            "Receipt fsync/publication crash points, wrong session/nonce/digest, wrapper death and missing receipt cannot authorize replacement."
+            "Receipt fsync/publication crash points, wrong session/nonce/digest, wrapper death and missing receipt cannot authorize replacement.",
+            "thin-entry-guard-runs-before-path-capture-db-imports-and-live-store-declaration",
+            "exclusive-data-lease-held-until-all-store-workers-close-or-actual-exit",
+            "delayed-child-revalidates-live-admission-before-spawn-lease-and-store-open",
+            "owner-loss-before-final-grant-denies-start-owner-loss-after-grant-retains-single-owner",
+            "lifecycle-control-bypasses-stalled-worker-maintenance-and-drain-queues",
+            "per-request-write-callback-success-authorizes-exit-not-global-flush",
+            "failed-or-backpressured-ack-never-triggers-new-immediate-action",
+            "receipt-selected-private-runtime-and-bound-ready-evidence-no-path-tools-node-or-sync-build",
+            "normal-lifetime-optional-receipt-and-missing-evidence-recovery-remain-truthful",
+            "S3-install-retry-still-install-only-update-cannot-clean-admission-and-Ollama-is-never-stopped"
           ],
           "fixturesNeeded": [
-            "Disposable daemon/queue/store peers and isolated IPC paths."
+            "Disposable private INSRC_HOME directories, short protected sockets/pipes, detached wrapper and exact self-exiting children; all owned actors accounted for by canonical coordinator.",
+            "Instrumented pre-import sentinel and fake queue/store peers for ordering; real cross-process admission/lease/receipt cases so callbacks alone cannot fake lifetime proof.",
+            "Separate live-admission manager process and current operation-control endpoint; children self-exit or use the explicit tested IPC path, never daemon PID/signal/kill.",
+            "Actual manager integration with production lifecycle and real S1/S2 prerequisite evidence. Missing S5 stays a declared unavailable dependency; fake migration runners are fixtures only and cannot qualify production install/start."
           ]
         },
         {
           "level": "live",
-          "purpose": "Prove actual native shutdown/recovery on every target.",
+          "purpose": "Qualify real native process/transport/store behavior on each enabled OS/architecture. First use isolated Linux OrbStack and macOS UTM guests when available; Windows and unavailable routes remain pending until actual runner evidence exists. S3 Linux dependency qualification does not qualify S4 lifecycle.",
           "subjects": [
             "Mac/Linux/Windows graceful and immediate exit",
             "restart exact release ready",
             "no PID/kill command execution",
-            "native DB reopen after immediate self-exit"
+            "native DB reopen after immediate self-exit",
+            "qualified-_Exit-with-native-cleanup-hang-and-atexit-fixture-plus-real-LMDB-Lance-reopen",
+            "Unix-owner-protection-endpoint-length-stale-socket-safety-and-directory-durability",
+            "Windows-named-pipe-same-user-capability-protection-real-CRT-DLL-exit-and-lock-release",
+            "manager-terminal-loss-retains-wrapper-child-receipt-with-no-inherited-owner-lock",
+            "both-delivery-modes-use-verified-separate-runtime-store-and-no-host-fallback",
+            "leave-installed-host-v2-daemon-and-host-Ollama-untouched-use-only-isolated-test-homes"
           ]
         }
       ],
@@ -597,7 +799,10 @@
           "provingTests": [
             "serialized-start-reuse-and-identity",
             "start-no-sync-install-build",
-            "conflicting-instance-refused"
+            "conflicting-instance-refused",
+            "thin-entry-guard-runs-before-path-capture-db-imports-and-live-store-declaration",
+            "delayed-child-revalidates-live-admission-before-spawn-lease-and-store-open",
+            "production-peers-exposes-nine-real-lifecycle-methods-and-no-placeholder-migrations"
           ]
         },
         {
@@ -606,7 +811,10 @@
             "graceful-drain-before-exit-completion",
             "restart-waits-actual-child-exit",
             "ready-identity-matches-selected-release",
-            "cross-process-immediate-during-held-lock"
+            "cross-process-immediate-during-held-lock",
+            "lifecycle-control-bypasses-stalled-worker-maintenance-and-drain-queues",
+            "exclusive-data-lease-held-until-all-store-workers-close-or-actual-exit",
+            "receipt-selected-private-runtime-and-bound-ready-evidence-no-path-tools-node-or-sync-build"
           ]
         },
         {
@@ -615,7 +823,10 @@
             "explicit-immediate-bypasses-drain-and-native-exit-hooks",
             "immediate-ack-flushed-before-self-exit",
             "native-recovery-per-target",
-            "same-operation-nonce-preserved-on-override"
+            "same-operation-nonce-preserved-on-override",
+            "per-request-write-callback-success-authorizes-exit-not-global-flush",
+            "failed-or-backpressured-ack-never-triggers-new-immediate-action",
+            "qualified-_Exit-with-native-cleanup-hang-and-atexit-fixture-plus-real-LMDB-Lance-reopen"
           ]
         },
         {
@@ -626,7 +837,10 @@
             "deadline-does-not-auto-escalate",
             "dead-owner-escalation-no-replacement",
             "migration-natural-exit-durable-receipt-after-manager-loss",
-            "missing-or-invalid-migration-receipt-blocks"
+            "missing-or-invalid-migration-receipt-blocks",
+            "observe-connection-refusal-and-free-lease-remain-uncertain",
+            "missing-runtime-store-resolver-fails-before-launch",
+            "owner-loss-before-final-grant-denies-start-owner-loss-after-grant-retains-single-owner"
           ]
         }
       ]
@@ -634,38 +848,42 @@
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "One in-daemon control state and lifetime exit wrapper",
-        "oneLineSummary": "Daemon owns drain/immediate decisions; wrapper proves actual child exit.",
-        "approach": "A single daemon control lane transitions ready to draining and still admits authenticated shutdown/status requests. Start and restart use s1 controller serialization and release identity.\n\nA minimal detached lifetime wrapper observes child exit and emits the nonce-bound completion; it never signals, kills, retries or selects another release.",
+        "name": "One daemon control lane and detached lifetime wrapper",
+        "oneLineSummary": "Keep the existing selected design and implement the existing LifecyclePort behind one instance-bound daemon control lane.",
+        "approach": "Reuse InstallerManager, LaunchAdmission, operation-control forwarding, private home resolution and server write-completion tracking. A dependency-minimal daemon entry admits the selected installed runtime/identity and exclusive daemon data lease before importing application/store code. One local control lane remains responsive through graceful drain; a detached wrapper observes actual child exit and writes required migration receipts without taking controller or hook-journal ownership. Keep runtime-store corrections with S1/S2 and hook execution with S5.",
         "pros": [
-          "Immediate override can bypass the graceful work queue.",
-          "Restart does not confuse acknowledgement/socket closure with process exit."
+          "Smallest complete shape preserving already approved sc4 request/ack/completion and manager serialization.",
+          "Keeps wrapper observation, daemon-owned stores and manager-only controller updates distinct.",
+          "Reuses existing operation forwarding and write callback mechanisms; no watchdog or restart policy."
         ],
         "cons": [
-          "Wrapper and completion receipt must be qualified on all target runtimes."
+          "Real production acceptance depends on existing S1/S2 runtime-store and manager capability integration corrections and S5 hook validation.",
+          "Immediate native self-exit and actual store recovery still require independent exact-platform qualification."
         ],
-        "costEstimate": "M"
+        "costEstimate": "L"
       },
       {
         "id": "a2",
-        "name": "Separate daemon-local control worker",
-        "oneLineSummary": "A dedicated worker brokers shutdown while the application drains.",
-        "approach": "A daemon-owned control worker handles the same public IPC contracts and forwards resource draining to the application. The wrapper still observes process exit.\n\nWorker boot/channel health and shutdown handoff add a second control lifetime inside the daemon, despite an existing main-thread server.",
+        "name": "Daemon-local control worker plus lifetime wrapper",
+        "oneLineSummary": "A separate daemon-owned worker handles lifecycle requests while the lifetime wrapper observes exit.",
+        "approach": "Keep all shared sc4 and manager contracts, but add a control worker within the daemon, communicating through a dedicated internal channel to application resource draining. The external detached lifetime wrapper still owns actual-exit receipts and has no kill/respawn policy. Runtime selection, data-lease and S5 dependencies are identical to a1.",
         "pros": [
-          "Can isolate some control work from application scheduling."
+          "Can isolate some asynchronous control handling from ordinary application queues."
         ],
         "cons": [
-          "Adds worker lifecycle and transport handoff without making an unresponsive process externally stoppable under IPC-only rules."
+          "Adds another internal lifetime/channel and failure state without removing wrapper or native qualification requirements.",
+          "Does not make an entirely unresponsive process reachable through IPC.",
+          "Existing main-thread server and independent shutdown admission suffice for the documented asynchronous-drain scenario."
         ],
         "costEstimate": "L",
-        "reasonRejected": "A second control worker adds lifecycle/channel states; it does not eliminate the required wrapper or solve a fully unresponsive process under IPC-only constraints."
+        "reasonRejected": "Can meet the same ACs and sc1–sc6 but adds worker admission, control-channel failure and closure states without reducing required wrapper or owner prerequisites."
       }
     ],
     "chosenAlternative": "a1",
     "openQuestions": [],
     "sequenceDefinition": {
       "id": "ipc-shutdown-completion",
-      "narrative": "Shutdown acknowledgement never proves exit. The daemon keeps its control lane available while draining, immediate mode is explicit, and the wrapper reports actual child exit before restart can proceed.",
+      "narrative": "Shutdown and launch are separate evidence boundaries: exact reply flush precedes an exit action, and wrapper-observed actual exit precedes replacement. Live manager admission and an exclusive pre-store data lease guard each managed launch; migration receipt publication remains independent of manager lifetime.",
       "participants": [
         {
           "id": "other",
@@ -690,7 +908,7 @@
         {
           "id": "next",
           "label": "Next daemon",
-          "description": "Starts only after verified completion and ownership release."
+          "description": "Selected child begins through the dependency-minimal entry and live admission/data lease before dynamic application/store imports."
         },
         {
           "id": "migration",
@@ -699,6 +917,12 @@
         }
       ],
       "messages": [
+        {
+          "from": "manager",
+          "to": "manager",
+          "label": "Resolve selected receipt and verified external runtime",
+          "description": "Consume S1/S2 runtime-store prerequisite; never PATH or release-local tools/node, sync/npm/build on start."
+        },
         {
           "from": "manager",
           "to": "daemon",
@@ -732,9 +956,16 @@
         },
         {
           "from": "daemon",
+          "to": "manager",
+          "label": "Flush this immediate ShutdownAccepted reply",
+          "kind": "return",
+          "description": "Its exact socket.write callback must succeed; global flush/timer is insufficient. Failure remains uncertain and does not authorize this exit action."
+        },
+        {
+          "from": "daemon",
           "to": "daemon",
           "label": "Self-exit after selected shutdown path",
-          "description": "Immediate path bypasses draining/native cleanup through bounded self-exit primitive."
+          "description": "Graceful exits after owned work/store/worker closure; explicit immediate uses target-qualified calling-process primitive after its own ack flush. Unproven native exit remains uncertain."
         },
         {
           "from": "wrapper",
@@ -745,9 +976,53 @@
         },
         {
           "from": "manager",
+          "to": "wrapper",
+          "label": "Persist activation admission; launch selected child",
+          "description": "Only after exact prior completion and ownership release; assert current operation owner and validated candidate."
+        },
+        {
+          "from": "wrapper",
           "to": "next",
-          "label": "Start selected release and verify identity",
-          "description": "No replacement on missing/uncertain completion."
+          "label": "Launch thin daemon entry through selected private Node",
+          "description": "Bound admission/session and log stdio; wrapper does not open DB or inherit manager/data locks."
+        },
+        {
+          "from": "next",
+          "to": "manager",
+          "label": "Validate live admission before lease",
+          "description": "Protected current owner rendezvous; persisted admission alone cannot authorize a delayed child."
+        },
+        {
+          "from": "next",
+          "to": "next",
+          "label": "Acquire exclusive daemon-owned data lease",
+          "description": "Exact INSRC_HOME validated before shared paths/application imports; conflicts deny startup."
+        },
+        {
+          "from": "next",
+          "to": "manager",
+          "label": "Request final pre-store admission grant",
+          "description": "Revalidate current lock/owner/phase/revision/canonical admission after lease acquisition."
+        },
+        {
+          "from": "manager",
+          "to": "next",
+          "label": "Grant exact still-current admission",
+          "kind": "return",
+          "description": "Final grant is admission linearization; owner loss before grant denies stores and releases lease."
+        },
+        {
+          "from": "next",
+          "to": "next",
+          "label": "Import application; open stores and serve",
+          "description": "No DB/native store/live owner before guard. Already-admitted child retains data lease if manager later exits."
+        },
+        {
+          "from": "next",
+          "to": "manager",
+          "label": "Exact ReadyEvidence",
+          "kind": "return",
+          "description": "Identity, endpoint, admitted session, nonce and inventory must match; no success on PID/ack alone."
         },
         {
           "from": "manager",
@@ -759,7 +1034,7 @@
           "from": "wrapper",
           "to": "migration",
           "label": "Run admitted migration-only child",
-          "description": "Live owner admission precedes data lease/store open. Wrapper outlives manager IPC loss."
+          "description": "Same live pre-spawn/pre-lease/final pre-store admission and exclusive lease barriers as activation; no fake hook runner. Wrapper outlives manager IPC loss; S5 owns hook/journal decisions."
         },
         {
           "from": "migration",
@@ -839,7 +1114,7 @@
     {
       "id": "c9",
       "kind": "doc",
-      "ref": "https://nodejs.org/docs/latest-v22.x/api/net.html"
+      "ref": "https://nodejs.org/download/release/v22.22.1/docs/api/net.html"
     },
     {
       "id": "c10",
@@ -860,6 +1135,76 @@
       "id": "c13",
       "kind": "prior-artifact",
       "ref": ".insrc/artifacts/AMD-c3d71313f34bce71-4.json"
+    },
+    {
+      "id": "c14",
+      "kind": "analyze-bundle",
+      "ref": "src/installer/manager.ts"
+    },
+    {
+      "id": "c15",
+      "kind": "analyze-bundle",
+      "ref": "src/installer/peer-contracts.ts"
+    },
+    {
+      "id": "c16",
+      "kind": "analyze-bundle",
+      "ref": "src/installer/operation-control.ts"
+    },
+    {
+      "id": "c17",
+      "kind": "analyze-bundle",
+      "ref": "src/installer/production-peers.ts"
+    },
+    {
+      "id": "c18",
+      "kind": "analyze-bundle",
+      "ref": "src/installer/installed-launcher.ts"
+    },
+    {
+      "id": "c19",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/threads/method-class.ts"
+    },
+    {
+      "id": "c20",
+      "kind": "analyze-bundle",
+      "ref": "src/shared/paths.ts"
+    },
+    {
+      "id": "c21",
+      "kind": "code",
+      "ref": "src/installer/native.ts"
+    },
+    {
+      "id": "c22",
+      "kind": "code",
+      "ref": "src/installer/native/control.c"
+    },
+    {
+      "id": "c23",
+      "kind": "code",
+      "ref": "src/installer/controller-store.ts"
+    },
+    {
+      "id": "c24",
+      "kind": "code",
+      "ref": "src/installer/runtime-policy.ts"
+    },
+    {
+      "id": "c25",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/LLD.md"
+    },
+    {
+      "id": "c26",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/BUILD.md"
+    },
+    {
+      "id": "c27",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S003/TESTS.md"
     }
   ]
 }

@@ -20,6 +20,20 @@ import { launchInstalledTui, selectInstalledTui } from './installed-launcher.js'
 /** Substituted only by the digest-bound release publisher, never wire/env input. */
 declare const __INSRC_INSTALLER_TARGET__: unknown;
 export async function terminalMain(args = process.argv.slice(2)): Promise<void> {
+  if (args[0] === '--bootstrap-publication') {
+    if (typeof __INSRC_INSTALLER_TARGET__ === 'undefined') throw new InstallerError('target-unqualified', 'Use the target-specific control bootstrap');
+    const abort = new AbortController(), cancel = () => abort.abort(new InstallerError('cancelled', 'Bootstrap publication interrupted'));
+    process.once('SIGINT', cancel); process.once('SIGTERM', cancel);
+    try {
+      const { publishBootstrapFoundation } = await import('./bootstrap-foundation.js');
+      await publishBootstrapFoundation(parseInstaller('target', __INSRC_INSTALLER_TARGET__), args.slice(1), abort.signal);
+      abort.signal.throwIfAborted();
+      process.exit(0);
+    } catch (error) {
+      process.stderr.write(`${error instanceof InstallerError ? error.code : 'bootstrap-failed'}: ${error instanceof Error ? error.message : 'Bootstrap publication failed'}\n`);
+      process.exit(1);
+    } finally { process.removeListener('SIGINT', cancel); process.removeListener('SIGTERM', cancel); }
+  }
   if (args[0] === '--ollama-service-worker') {
     if (args.length !== 4 || !args[1] || !args[2] || !args[3]) throw new InstallerError('schema-invalid', 'Service worker requires installation home, identity and attempt record');
     if (typeof __INSRC_INSTALLER_TARGET__ === 'undefined') throw new InstallerError('target-unqualified', 'Use the target-specific control bootstrap');

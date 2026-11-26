@@ -22,14 +22,14 @@ const stages = new WeakMap<StagedRuntime, { owner: RuntimeStageOwner; dev: numbe
 const DRAIN_MS = 5_000;
 
 /** On abort, wait for positive operation closure. Unknown actors retain their stage. */
-export async function closedRuntimeOperation(operation: Promise<void>, signal: AbortSignal): Promise<void> {
+export async function closedRuntimeOperation<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let aborted!: () => void;
   const uncertain = new Promise<never>((_resolve, reject) => {
     aborted = () => { timer ??= setTimeout(() => reject(new InstallerError('resource-close-uncertain', 'Runtime actor closure remains unconfirmed; retain its owned stage')), DRAIN_MS); };
     signal.addEventListener('abort', aborted, { once: true }); if (signal.aborted) aborted();
   });
-  try { await Promise.race([operation, uncertain]); }
+  try { return await Promise.race([operation, uncertain]); }
   finally { signal.removeEventListener('abort', aborted); if (timer) clearTimeout(timer); }
 }
 async function removeOwned(work: string, expected: { dev: number; ino: number }): Promise<void> {

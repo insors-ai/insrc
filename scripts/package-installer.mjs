@@ -68,7 +68,7 @@ async function assembleRelease({ files, directory, manifest, baseUrl, bootstrap,
   writeFileSync(join(directory, 'control.node'), native, { flag: 'wx', mode: 0o600 });
   writeFileSync(join(directory, 'release.json'), JSON.stringify(descriptor, null, 2) + '\n', { flag: 'wx', mode: 0o600 });
   const target = `${manifest.target.os}-${manifest.target.arch}`;
-  const assets = { [target]: { bootstrap: descriptor.bootstrap, native: descriptor.native } };
+  const assets = { [target]: { target: manifest.target, bootstrap: descriptor.bootstrap, native: descriptor.native } };
   const script = manifest.target.os === 'win32' ? 'install.ps1' : 'install.sh';
   const scriptBytes = renderInstallerBootstrap(manifest.target.os === 'win32' ? 'powershell' : 'posix', assets);
   writeFileSync(join(directory, script), scriptBytes, { flag: 'wx', mode: 0o700 });

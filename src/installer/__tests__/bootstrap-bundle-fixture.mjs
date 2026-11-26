@@ -1,0 +1,11 @@
+import { copyFileSync, mkdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { createRun } from '../../../scripts/test-harness/context.mjs';
+import { withRun } from '../../../scripts/test-harness/process.mjs';
+import { bundleControlEntrypoint } from '../../../scripts/package-installer.mjs';
+const [root, entry, output, target] = process.argv.slice(2);
+const binary = `node_modules/@esbuild/${process.platform}-${process.arch}/${process.platform === 'win32' ? 'esbuild.exe' : 'bin/esbuild'}`;
+mkdirSync(dirname(join(root, binary)), { recursive: true });
+copyFileSync(new URL(`../../../${binary}`, import.meta.url), join(root, binary));
+const run = createRun(root, { mode: 'build' });
+await withRun(run, async scope => { await bundleControlEntrypoint(run, scope, entry, output, JSON.parse(target)); });

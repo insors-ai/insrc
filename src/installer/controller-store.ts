@@ -10,6 +10,7 @@ import { flushDirectory, flushDirectoryTree, flushParents } from './durability.j
 import type { StagedRuntime } from './runtime-acquire.js';
 import { runtimeStorePaths } from './runtime-policy.js';
 import { RUNTIME_LIMITS } from './runtime-metadata.js';
+import type { BootstrapHashes } from './bootstrap-control.js';
 import { BUNDLE_LIMITS } from './release-descriptor.js';
 
 export type ControllerInspection = { kind: 'missing' } | { kind: 'present'; snapshot: ControllerSnapshot } | { kind: 'corrupt'; reason: string };
@@ -208,6 +209,42 @@ export class ControllerStore {
       if (cause instanceof InstallerError && cause.code === 'resource-close-uncertain') retainUncertainRuntimeStage(stage, this);
       throw cause;
     }
+  }
+  /** Copies authenticated bytes into a fresh nonexecuting control stage. */
+  async publishBootstrapControl(input: { bootstrap: Buffer; native: Buffer }, hashes: BootstrapHashes, signal?: AbortSignal): Promise<string> {
+    this.assertHeld();
+    const { assertBootstrapHashes, assertBootstrapBytes, verifyBootstrapControl } = await import('./bootstrap-control.js');
+    const { mkdir, mkdtemp, open, rm } = await import('node:fs/promises');
+    const { closeOwnedFile } = await import('./owned-file.js');
+    const { closedRuntimeOperation } = await import('./runtime-acquire.js');
+    const deadline = AbortSignal.timeout(RUNTIME_LIMITS.verificationMs);
+    signal = signal ? AbortSignal.any([deadline, signal]) : deadline;
+    signal.throwIfAborted();
+    return closedRuntimeOperation((async () => {
+      assertBootstrapHashes(hashes);
+      assertBootstrapBytes(input.bootstrap, hashes.bootstrap); assertBootstrapBytes(input.native, hashes.native);
+      const bytes = { bootstrap: Buffer.from(input.bootstrap), native: Buffer.from(input.native) };
+      const parent = join(this.#root, 'bootstrap'), destination = join(parent, `${hashes.bootstrap}-${hashes.native}`);
+      this.assertHeld(); signal?.throwIfAborted();
+      if (present(destination)) { await verifyBootstrapControl(destination, hashes, this.location.home, signal); this.assertHeld(); signal?.throwIfAborted(); return destination; }
+      assertLocalControlRoot(parent, process.platform === 'win32' ? path => controlBinding().localVolume(path) : undefined);
+      if (!present(parent)) { mkdirSync(parent, { mode: 0o700 }); controlBinding().protect(parent); }
+      if (!controlBinding().safePath(parent, true, true)) throw new InstallerError('permissions-invalid', 'Unsafe bootstrap publication root');
+      const work = await mkdtemp(join(this.#root, 'bootstrap-publication-'));
+      const candidate = join(work, 'candidate');
+      await mkdir(join(candidate, 'native'), { recursive: true, mode: 0o700 });
+      // Errors deliberately retain this owned stage; no uncertain actor is discarded.
+      for (const [name, value] of [['bootstrap.mjs', bytes.bootstrap], ['native/control.node', bytes.native]] as const) {
+        this.assertHeld(); signal?.throwIfAborted();
+        const file = await open(join(candidate, name), 'wx', 0o600);
+        try { await file.writeFile(value); await file.sync(); } finally { await closeOwnedFile(file); }
+      }
+      await verifyBootstrapControl(candidate, hashes, this.location.home, signal); await flushDirectoryTree(candidate, signal);
+      this.assertHeld(); signal?.throwIfAborted();
+      controlBinding().publishDirectory(this.#handle, candidate, destination);
+      flushDirectory(parent); flushDirectory(work); flushDirectory(this.#root); flushDirectory(this.location.home);
+      await rm(work, { recursive: true }); signal?.throwIfAborted(); return destination;
+    })(), signal);
   }
   close(): void { if (!this.#closed) { controlBinding().close(this.#handle); this.#closed = true; } }
 }

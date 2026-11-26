@@ -15,17 +15,19 @@ export function renderInstallerBootstrap(platform, assets) {
       if (!/^https:\/\//.test(asset[kind]?.url ?? '') || !/^[a-f0-9]{64}$/.test(asset[kind]?.sha256 ?? '') || /[\r\n\0]/.test(asset[kind].url)) throw new Error('invalid digest-bound control asset');
     }
     const root = `node-v${policy.nodeVersion}-${target.replace('win32-', 'win-')}`;
-    const values = { runtime_url: `https://nodejs.org/download/release/v${policy.nodeVersion}/${root}.${windows ? 'zip' : 'tar.gz'}`, runtime_sha: policy.archives[target], runtime_root: root, bootstrap_url: asset.bootstrap.url, bootstrap_sha: asset.bootstrap.sha256, native_url: asset.native.url, native_sha: asset.native.sha256 };
+    const baseline = asset.target?.baseline ?? 'native-v1';
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(baseline) || asset.target && `${asset.target.os}-${asset.target.arch}` !== target) throw new Error('invalid bootstrap target identity');
+    const profile = policy.profiles[target], headers = policy.supplemental.headers, library = policy.supplemental.libraries[target.endsWith('-arm64') ? 'arm64' : 'x64'];
+    const values = { runtime_url: `https://nodejs.org/download/release/v${policy.nodeVersion}/${root}.${windows ? 'zip' : 'tar.gz'}`, runtime_sha: policy.archives[target], runtime_bytes: String(profile.archiveBytes), runtime_root: root, node_sha: profile.nodeSha256, baseline,
+      headers_url: headers.url, headers_sha: headers.sha256, headers_bytes: String(headers.bytes), library_url: library.url, library_sha: library.sha256, library_bytes: String(library.bytes),
+      bootstrap_url: asset.bootstrap.url, bootstrap_sha: asset.bootstrap.sha256, native_url: asset.native.url, native_sha: asset.native.sha256 };
     const assignments = Object.entries(values).map(([name, value]) => `${windows ? '$' + name.replace(/_([a-z])/g, (_, c) => c.toUpperCase()) : name}=${quote(value)}`).join(windows ? '; ' : '\n');
     cases.push(windows ? `${quote(target)} { ${assignments} }` : `${target})\n${assignments}\n;;`);
   }
   const targets = windows ? `$runtimeUrl = $null\nswitch ($target) {\n${cases.join('\n')}\n}` : `case "$target" in\n${cases.join('\n')}\nesac`;
   const source = readFileSync(new URL(windows ? './install.ps1' : './install.sh', import.meta.url), 'utf8');
-  const runtime = windows
-    ? `& $node -e ${quote(publisher)} runtime $runtimeStage (Join-Path $HomeDirectory "runtimes/22.22.1/$target") $os $arch\n    if ($LASTEXITCODE -ne 0) { throw 'runtime-invalid' }`
-    : `"$node" -e ${quote(publisher)} runtime "$stage/$runtime_root" "$home/runtimes/22.22.1/$target" "$os" "$arch" || fail 'runtime-invalid'`;
-  const control = windows
-    ? `& $node -e ${quote(publisher)} control $controlStage $control $os $arch\n    if ($LASTEXITCODE -ne 0) { throw 'control publication failed' }`
-    : `"$node" -e ${quote(publisher)} control "$stage/control" "$control" "$os" "$arch" || fail 'control publication failed'`;
-  return source.replace('# @@TARGETS@@', targets).replace('# @@PUBLISH_RUNTIME@@', runtime).replace('# @@PUBLISH_CONTROL@@', control);
+  const publication = windows
+    ? `& $node -e ${quote(publisher)} $HomeDirectory $InstallationId $stage $controlSource $bootstrapSha $nativeSha`
+    : `"$node" -e ${quote(publisher)} "$home" "$identity" "$stage" "$control_source" "$bootstrap_sha" "$native_sha"`;
+  return source.replace('# @@TARGETS@@', targets).replace('# @@PUBLISH_FOUNDATION@@', publication);
 }

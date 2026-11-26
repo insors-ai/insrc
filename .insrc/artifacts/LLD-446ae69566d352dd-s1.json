@@ -1,0 +1,981 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795676543322-bhz2eh",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-26T07:02:24.716Z",
+    "epicCreatedAt": "2026-11-26T06:29:10.586Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 1087,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "446ae69566d352dd",
+    "epicSlug": "complete-shared-external-node-runtime-foundation",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1795676543322-bhz2eh",
+    "hldEffectiveHash": "10ef12ead6b254cbedba52b0a686d5ac69d8cc140f0eae618893fef9f7b40926",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Complete the shared external Node runtime foundation",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "711c2f19bb42f64207babba68a6f68b81b61ea3a15c2b078025ae87ee4febe36",
+        "at": "2026-11-26T07:02:24.850Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T07:06:58.612Z"
+      }
+    },
+    "revision": 3,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "37b832d463bd07d76b6800a1ad1f0dcac3ef54c6"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Complete the shared external Node runtime foundation"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "summary": {
+      "audience": "technical",
+      "prose": "Bundle and dev installations will share one verified Node distribution stored independently of application releases. A read-only resolver binds every installed launch to the manifest runtime identity; bootstrap and preparation acquire missing runtimes through the existing controller lock. Application and IDE payloads contain no Node or Ollama distributions or archives. This correction supplies S4's runtime prerequisite without implementing daemon lifecycle or migration behavior."
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "runtimeArchive",
+          "signature": "runtimeArchive(target: Pick<Target, 'os' | 'arch'>): { url: string; sha256: string; root: string }",
+          "parameters": [
+            {
+              "name": "target",
+              "type": "Pick<Target, 'os' | 'arch'>",
+              "purpose": "Select the exact pinned official archive; enablement still requires native qualification.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ url: string; sha256: string; root: string }",
+            "meaning": "Unchanged official archive identity, never a runtime path or proof of installation."
+          },
+          "errors": [
+            {
+              "type": "InstallerError('runtime-invalid')",
+              "condition": "Missing or inconsistent target/version/header policy."
+            }
+          ],
+          "preconditions": [
+            "Use fixed release-owned policy, not user URL/hash overrides.",
+            "Grounding and proposed correction are traced by c1,c2,c7; public/behavioral constraints by c4,c6,c8."
+          ],
+          "postconditions": [
+            "Archive URL/hash/root retain their existing meaning. Distribution integrity metadata extends private policy, not public RuntimeIdentity."
+          ]
+        },
+        {
+          "name": "privateRuntimePaths",
+          "signature": "privateRuntimePaths(location: InstallationLocation, identity: RuntimeIdentity, options?: { signal?: AbortSignal | undefined }): Promise<ResolvedPrivateRuntime>",
+          "parameters": [
+            {
+              "name": "location",
+              "type": "InstallationLocation",
+              "purpose": "Explicit installation-home trust boundary; no global PATHS import or ambient home selection.",
+              "optional": false
+            },
+            {
+              "name": "identity",
+              "type": "RuntimeIdentity",
+              "purpose": "Exact manifest identity, including target/baseline, pinned archive digest and relative executable.",
+              "optional": false
+            },
+            {
+              "name": "options",
+              "type": "{ signal?: AbortSignal | undefined }",
+              "purpose": "Bounded cancellable read-only integrity verification.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<ResolvedPrivateRuntime>",
+            "meaning": "Frozen exact-identity result: identity, directory, node, npmCli, headers and inventorySha256; Windows nodeLib included when qualified. This existing unused path-constructor export becomes the single verified read-only resolver."
+          },
+          "errors": [
+            {
+              "type": "InstallerError('runtime-invalid')",
+              "condition": "Wrong policy, executable/target/baseline/npm/header identity, missing/corrupt completion or inventory, changed/missing/extra runtime files."
+            },
+            {
+              "type": "InstallerError('path-invalid'|'permissions-invalid'|'target-unsupported')",
+              "condition": "Noncanonical/linked/reparse/network/unsafe root or unqualified target."
+            }
+          ],
+          "preconditions": [
+            "A complete runtime store entry already exists. The resolver never downloads, extracts, repairs, creates directories, acquires controller ownership, changes release selection or opens application stores.",
+            "Use only Node builtins and installer-only schemas/policy/lazy native path checks. No src/shared/paths.ts, application entry, DB, provider or source-builder imports.",
+            "No arbitrary trusted runtimeDirectory string from a request/receipt is accepted. Exact full Target identity is validated; path segments use validated safe tokens.",
+            "Grounding and proposed correction are traced by c1,c2,c7; public/behavioral constraints by c4,c6,c8."
+          ],
+          "postconditions": [
+            "Absolute node/npm/header paths are contained in the exact verified distribution; no PATH, tools/node, legacy layout or process.execPath fallback.",
+            "Verify bounded receipt/inventory against release-owned pinned distribution inventory digest; verify each selected file's digest/size/mode and exact tree membership once per resolution. No application/Ollama payload traversal. Consumer may pass this result within the same launch operation, never persist a JS capability as a wire flag.",
+            "The change has no known production callers of the former helper; add real consumers in this correction, with S4 consuming it later."
+          ]
+        },
+        {
+          "name": "readInstalledReceipt",
+          "signature": "readInstalledReceipt(directory: string, target: Target): Promise<InstalledReceipt>",
+          "parameters": [
+            {
+              "name": "directory",
+              "type": "string",
+              "purpose": "Canonical installed immutable application release directory.",
+              "optional": false
+            },
+            {
+              "name": "target",
+              "type": "Target",
+              "purpose": "Qualified exact target for descriptor/receipt validation.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<InstalledReceipt>",
+            "meaning": "Strict bundle-format2 or dev-format2 application receipt and unchanged manifest; runtime identity is metadata only."
+          },
+          "errors": [
+            {
+              "type": "InstallerError('candidate-conflict'|'manifest-invalid'|'runtime-invalid')",
+              "condition": "Ambiguous/unsafe/noncanonical receipt, mismatched release/target or old embedded-runtime format."
+            }
+          ],
+          "preconditions": [
+            "Keep bounded private regular receipt checks and canonical byte equality. Receipt loading does not run source tools or acquire runtime.",
+            "Grounding and proposed correction are traced by c1,c2,c7; public/behavioral constraints by c4,c6,c8."
+          ],
+          "postconditions": [
+            "Installed consumer separately calls privateRuntimePaths(location, manifest.runtime). Receipt metadata alone is not runtime readiness.",
+            "Reject descriptor1/dev receipt1 with actionable legacy-runtime-format diagnostic, never silently reinterpret or migrate them."
+          ]
+        },
+        {
+          "name": "renderInstallerBootstrap",
+          "signature": "renderInstallerBootstrap(platform: 'posix' | 'powershell', assets: QualifiedBootstrapAssets): string",
+          "parameters": [
+            {
+              "name": "platform",
+              "type": "'posix' | 'powershell'",
+              "purpose": "Render shared manual/IDE terminal script from the same template.",
+              "optional": false
+            },
+            {
+              "name": "assets",
+              "type": "QualifiedBootstrapAssets",
+              "purpose": "Digest-bound control assets and pinned distribution metadata derived from official archives; never ambient runtime overrides.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "Shared bootstrap script with exact runtime/control identities and foreground install-to-TUI handoff."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Unknown/unqualified target, mismatched fixed policy or missing digest-bound control assets."
+            }
+          ],
+          "preconditions": [
+            "Before using any Node executable, script hashes it against the release-owned nodeSha256 for the pinned distribution profile. Fresh archive digest is verified before extraction/execution.",
+            "Cached canonical runtime reuse first verifies that exact node executable with OS hashing, then runs only trusted embedded verifier/control bytes after their digest checks; no receipt-supplied code is executed.",
+            "Grounding and proposed correction are traced by c1,c2,c7; public/behavioral constraints by c4,c6,c8."
+          ],
+          "postconditions": [
+            "No host Node needed. Valid matching runtime/control may be reused offline; missing runtime requires live official download, and missing uncached control assets fail offline.",
+            "Fresh bootstrap runtime publication helper holds the same native operation.lock used by managers and exits before final canonical-node manager acquires a fresh lock; the shell/PowerShell waits for that exact child, not PID/kill/file age.",
+            "Final manager revalidates controller state and ordinary admission; bootstrap does not transfer an OS handle, manager session or selection authority.",
+            "Windows publication never renames/moves the currently executing staged node.exe or loaded native DLL: helper executes from one owned stage and publishes a separate verified copy with native directory publication. Retain the execution stage until exact helper exit."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Private runtime policy and ResolvedPrivateRuntime",
+        "change": "invariant-change",
+        "details": "Public RuntimeIdentity remains {version,target,sha256,relativeExecutable}; ReleaseManifest stays schemaVersion1. Extend private src/installer/runtime-policy.json with a versioned deterministic distribution profile and per os/arch archive-derived nodeSha256/inventorySha256, calculated from the verified official archive without executing target bytes. The profile selects node, complete npm subtree and required include/node headers, excludes command aliases/symlinks; Windows includes the official matching arch/node.lib, acquiring a separately pinned official header/library asset if the ZIP lacks it. Pin any such extra asset URL/hash in the same policy and bind it in the profile inventory; do not fake header availability. Policy records are checked into release-owned source and changing their generated values requires qualification review, not an install-time override. archive metadata presence alone never enables a target. The result type is a frozen process-local value, not a serializable authority token. Proposed runtime-only source files src/installer/runtime-store.ts and src/installer/runtime-acquire.ts separate read-only verification from acquisition; src/installer/runtime-policy.ts exposes the existing helper name as the resolver. Pin archive byte counts alongside hashes for exact-size bounded downloads, plus independently verified extra header/library assets where required. (c1,c2,c7)",
+        "callSites": [
+          "src/installer/runtime-policy.ts",
+          "src/installer/contracts.ts",
+          "src/installer/production-peers.ts",
+          "src/installer/dev-toolchain.ts",
+          "scripts/package-installer.mjs"
+        ]
+      },
+      {
+        "entity": "RuntimeStoreEntry and RuntimeCompletion",
+        "change": "new",
+        "details": "Canonical root is <home>/runtimes/22.22.1/<os>-<arch>-<validated-baseline>/<archiveSha256>/; distribution/ contains the exact profiled runtime, inventory.json lists path/bytes/mode/sha256, completion.json is a bounded schemaVersion1 canonical private record naming full RuntimeIdentity, profileVersion, policy-bound inventorySha256 and npm/header versions. Inventory hash must equal the release-owned policy value, not merely a receipt-supplied hash. Completion plus inventory do not self-authenticate arbitrary bytes. One home has 0..N runtime entries, each entry owns exactly one distribution, inventory and completion; each application release refers to exactly one RuntimeIdentity; 0..N bundle/dev releases may share it. Entries are immutable after publication, never selected by free-form path and never removed by application cleanup. Do not add per-release pointer files. Use private current-user ownership/ACL, local filesystem, no symlink/reparse/hardlink/special-file acceptance; no writes from the resolver. Metadata/path/file/tree counts, sizes and runtime I/O have explicit fixed finite bounds in implementation tests. Fixed runtime limits: completion 64 KiB, inventory 16 MiB, 32768 entries, 128 MiB per file, 1 GiB expanded and 256 MiB per compressed asset; reject excess before allocation/publication. Network operation deadline 600 s and read-only verification deadline 120 s are finite, cancellable runtime-only budgets and are qualified on enabled targets; no 20 s full-payload assumption. These caps do not broaden application bundle limits. (c1,c2,c7)",
+        "callSites": [
+          "src/installer/runtime-policy.ts",
+          "src/installer/installed-receipt.ts",
+          "src/installer/installed-launcher.ts",
+          "src/installer/manager-entry.ts"
+        ]
+      },
+      {
+        "entity": "Runtime acquisition and bootstrap handoff",
+        "change": "new",
+        "details": "Proposed internal src/installer/runtime-acquire.ts provides controller-owned acquisition using the existing ControllerStore/PreparationLease lock capability; it is not an added public manager action. It accepts validated identity and location plus live owner checks, never wire trust flags or arbitrary runtimeDirectory. Reuse verified matching entry before network. Missing entry: live official HTTPS download under fixed per-asset caps/deadline, pinned archive digest, bounded safe extraction of exact deterministic profile, private stage, Node/npm/header/library/version/target inventory checks, durable receipt/inventory, native exclusive directory publication under operation.lock. Conflicting/incomplete immutable destination is an error and is retained; never overwrite or infer actor death. Bootstrap uses the same policy/profile/receipt validation compiled into a minimal digest-bound control helper: all Node/control bytes verified before execution; helper acquires operation.lock, checks real owner/root, publishes from nonexecuting stage and exits. It does not enroll/select a release or pretend an admitted install finished. Outer script observes exact child exit and starts final manager under canonical verified Node, obtaining ordinary fresh ownership. If installed manager already holds the controller lock, acquisition reuses that original capability and never creates a second controller. Keep staged downloads/network handles closed before cleanup; no new supervisor, PID/kill control or privileged dependency. (c1,c2,c7)",
+        "callSites": [
+          "scripts/render-installer-bootstrap.mjs",
+          "scripts/bootstrap-publish.cjs",
+          "src/installer/terminal-entry.ts",
+          "src/installer/production-peers.ts",
+          "src/installer/bundle.ts",
+          "src/installer/dev-worker.ts"
+        ]
+      },
+      {
+        "entity": "Application-only bundle descriptor and dev receipt",
+        "change": "field-modify",
+        "details": "Private ReleaseDescriptor schemaVersion2 removes runtimeArchive entirely; manifest.runtime retains exact official identity. PayloadInventory schemaVersion1 is now application-only for descriptor2. Private DevReleaseReceipt advances to schemaVersion2 and its recipeVersion advances for application-only inventory; old receipts/offers remain distinguishable and incompatible, not silently rewritten. All canonical hashing/offer persistence/readers are updated together. App inventory includes runtime native dependencies (e.g. .node modules), bootstrap/manager/TUI and production closure, but no Node/Ollama executable/distribution/archive contributions. Publisher collects app allowlisted sources independently from the official runtime used for build/probes; provenance/inventory checks catch renamed dependency archive/distribution inclusion, rather than claiming filename matching can identify arbitrary compressed bytes. Runtime archives may be transient publisher/download/test inputs outside app/IDE payloads. Native qualification, inventory limits, exact source/target/offer hashes and unsafe archive checks remain. Reject old embedded-runtime formats diagnostically; no automatic adoption, migration, uninstall or modification of host v2. (c1,c2,c7)",
+        "callSites": [
+          "src/installer/release-descriptor.ts",
+          "src/installer/bundle.ts",
+          "src/installer/safe-zip.ts",
+          "src/installer/dev-payload.ts",
+          "src/installer/dev-worker.ts",
+          "src/installer/installed-receipt.ts",
+          "scripts/package-installer.mjs"
+        ]
+      },
+      {
+        "entity": "Installed launch and preparation binding",
+        "change": "invariant-change",
+        "details": "manager-entry and terminal-entry resolve explicit location plus receipt/policy identity and compare realpath process.execPath to resolved node before control work. Installed manager, daemon launch selection, TUI, Retry, bridge/bootstrap and publisher probes all consume the same foundation; no release tools/node selection remains. productionPeers receives the verified result for dependency/toolchain use; S3 runtime readiness uses verified external paths rather than a directory guess. Both bundle and dev preparation resolve/acquire the candidate manifest identity under original manager ownership before destructive lifecycle work and use absolute verified npm/header/node paths; dev payload/publisher omit runtime bytes. No source checkout/npm/compiler is used for installed start/status or receipt resolution. Existing S2 closed-worker/source proof, S3 consent/Retry/retained Ollama and same-terminal TUI behavior remain. This batch does not supply fake lifecycle/migration peers or change manager action gates; S4 T3/T11 consume the runtime resolver after this batch passes. (c1,c2,c7)",
+        "callSites": [
+          "src/installer/installed-launcher.ts",
+          "src/installer/manager-entry.ts",
+          "src/installer/production-peers.ts",
+          "src/installer/terminal-entry.ts",
+          "src/installer/dev-toolchain.ts",
+          "src/installer/dev-worker.ts",
+          "src/installer/bundle.ts",
+          "scripts/package-installer.mjs"
+        ]
+      },
+      {
+        "entity": "External installer epic compatibility constraints",
+        "change": "invariant-change",
+        "details": "This ISSUE is standalone and has no formal parent shared-contract entries. External epic c3d71313f34bce71 HLD7 sc1–sc7 are compatibility references only: preserve its public runtime/manifest/manager/dependency/IPC/terminal shapes, keep S4 daemon lifecycle and S5 hook execution owned by their existing stories, and leave action-specific manager gating outside this batch. No shared contract is re-owned or redefined. Local acceptance ac1–ac6 are derived from this approved issue, not new epic FRs. See cited prior ISSUE/HLD/S004 PLAN (c4,c6,c8). (c1,c2,c7)",
+        "callSites": [
+          "src/installer/contracts.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Missing or corrupt external runtime",
+          "detection": "Resolver requires exact policy/full identity, canonical completion and inventory; pinned expected inventory digest plus exact file set/digests/modes/npm/header checks detect absent or changed bytes, including rewritten self-consistent local metadata.",
+          "response": "Read-only consumer fails runtime-invalid without download, PATH/tools-node fallback or application import. Acquisition handles only missing entries under controller ownership; conflicting canonical entries are retained for explicit recovery.",
+          "userImpact": "Launch/preparation stops before daemon disruption or store access with actionable runtime diagnosis.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Invalid official runtime download or unsafe archive",
+          "detection": "HTTPS/status/redirect/size/deadline/hash checks run before extraction; bounded parser validates entry paths/types/collisions/links and deterministic profile before executing any target binary.",
+          "response": "Abort, close download/parser handles and clean only the positively owned closed stage; no runtime completion or release selection is published.",
+          "userImpact": "Install/upgrade fails safely; existing runtime/release stays selected.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Bootstrap cached executable or control helper is tampered",
+          "detection": "OS hashing compares exact node bytes and cached control/native assets to independent release-owned expected digests before their execution; receipt cannot supply these expectations.",
+          "response": "Do not execute suspect cached code. Missing entry can be acquired live; conflicting canonical entry fails with diagnostic rather than overwrite. No elevation or unsigned legacy adoption.",
+          "userImpact": "Offline use succeeds only with verified cached prerequisites; missing/corrupt cache yields explicit failure.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Controller is busy/lost or bootstrap child closure is uncertain",
+          "detection": "Native operation.lock acquisition/held checks and original owner assertions bracket publication; outer launcher observes the actual child process exit status, never a PID/file-age heuristic.",
+          "response": "No publish/selection with missing ownership; final manager never starts while publication helper may still own the lock. Retain uncertain stage evidence; do not send kill or infer lock release from close(void).",
+          "userImpact": "Concurrent installation reports busy or uncertain completion; no duplicate controller writer.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Windows publishing attempts to move an executing runtime or DLL",
+          "detection": "Bootstrap contract separates execution-stage paths from publication-stage paths; tests trap accidental equality and native Windows fixture observes directory publication with loaded control DLL outside destination.",
+          "response": "Use the separately verified owned publication tree; native publication failure leaves existing entry untouched and no completion claim.",
+          "userImpact": "No successful Windows install claim without actual native evidence.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Receipt/offer from embedded-runtime format1",
+          "detection": "Private descriptor/dev-receipt schemaVersion and dev recipe discriminator distinguish old semantics before inventory opening or runtime selection.",
+          "response": "Reject with legacy-runtime-format diagnosis. Never reinterpret old receipt, rewrite completed ledger, auto-migrate host v2 or resolve its release-local runtime.",
+          "userImpact": "Old rewrite-test fixtures must be rebuilt in isolated homes; real legacy migration remains S5-owned.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unqualified target or missing exact dev header/library provenance",
+          "detection": "Full target/baseline native qualification gate plus fixed policy profiles require official pinned Node/npm/header/library files and source metadata.",
+          "response": "Block publication/preparation explicitly. Cross-target inventory extraction may compute metadata without executing target bytes but cannot qualify the target.",
+          "userImpact": "Unsupported routes remain unavailable until genuine platform qualification.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Runtime/application payload provenance contamination",
+          "detection": "Publisher separates runtime acquisition inputs from application collection and validates an allowlisted production closure/inventory; tests deliberately attempt ordinary and renamed runtime/archive contributions. Bundle/dev validators enforce format2 application semantics.",
+          "response": "Reject publication or candidate; do not silently strip unknown files or declare that filename filters detect all arbitrary binary content.",
+          "userImpact": "No Node/Ollama distributions or archives shipped in app/IDE artifacts.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Matching verified runtime used by multiple bundle/dev releases, including offline reuse",
+          "expected": "One identity-derived entry reused, no copy into releases and no network if needed runtime and control assets are verified cached; no per-release pointer state."
+        },
+        {
+          "input": "Two bootstraps have staged the same official runtime",
+          "expected": "Only one holds operation.lock at a time; later holder verifies matching complete entry and reuses it. Neither overwrites a conflicting entry nor transfers a lock to final manager."
+        },
+        {
+          "input": "Paths with spaces, apostrophes or Unicode and custom installation homes",
+          "expected": "Preserve exact quoted argv and explicit home identity in POSIX/PowerShell; no shell-interpolated wire path and canonical local containment enforced."
+        },
+        {
+          "input": "Dev builds invoking npm/npx and native header/library tools",
+          "expected": "Exact resolved private Node/npm/header paths and existing owned aliases/environment remain; CUDA skip default only if unset, user value preserved; no ambient npm/node/toolchain fallback."
+        },
+        {
+          "input": "Cancellation before/after durable runtime publication",
+          "expected": "Before publish remove only owned closed stage; after atomic publication preserve verified reusable runtime while ordinary install result may be cancelled. No TUI launch after failed/cancelled install."
+        },
+        {
+          "input": "Status/readiness and repeated grant checks",
+          "expected": "No acquisition, source build or full application/Ollama payload rehash; runtime integrity is bounded and verified at process/launch trust boundary, not rescanned by each status/control message."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "RuntimeIdentity and ReleaseManifest public fields/schema remain unchanged; pinned Node22.22.1, matching npm10.9.4, headers22.22.1 and full target must agree.",
+          "source": "c1"
+        },
+        {
+          "text": "Strict canonical installed receipt bytes, bounded metadata, exact release-id/target and no source-tool execution during receipt loading remain.",
+          "source": "c2"
+        },
+        {
+          "text": "Controller mutation needs the existing live OS operation.lock; bootstrap publication never adds a simultaneous controller or substitutes PID/kill ownership.",
+          "source": "c3"
+        },
+        {
+          "text": "Shared terminal script owns install and same-terminal TUI handoff; S3 Ollama consent/retention, install-only Retry and agent recommendations remain.",
+          "source": "c4"
+        },
+        {
+          "text": "S2 retains actual worker/source closure proof and absolute verified private npm/header execution; qualification cannot be replaced by fixture-only evidence.",
+          "source": "c5"
+        },
+        {
+          "text": "S4 owns daemon boot/admission/data lease/shutdown/wrapper; S5 hooks and action-specific manager gating are outside this correction.",
+          "source": "c6"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Verify unchanged public wire types and strict new private runtime/application formats.",
+          "subjects": [
+            "runtime-policy-exact-identity-target-baseline-profile-and-pinned-inventory",
+            "descriptor2-and-dev-receipt2-application-only-with-public-manifest1-unchanged",
+            "legacy-embedded-runtime-formats-rejected-without-adoption",
+            "resolver-import-boundary-excludes-application-paths-storage-provider-and-source-build"
+          ],
+          "fixturesNeeded": [
+            "Existing bootstrap, bundle, publisher and dev receipt fixtures adapted to application-only semantics; explicit old-format rejection fixtures."
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Exercise bounded read-only resolution and integrity failures without application startup.",
+          "subjects": [
+            "resolver-returns-canonical-node-npm-headers-and-win-library-from-exact-identity",
+            "resolver-rejects-missing-corrupt-extra-files-wrong-mode-target-digest-npm-headers-inventory-receipt",
+            "rewritten-self-consistent-local-runtime-metadata-cannot-replace-policy-inventory-digest",
+            "resolver-does-no-mkdir-download-lock-selection-db-or-provider-work",
+            "runtime-caps-and-cancellation-are-finite-and-do-not-trigger-app-or-Ollama-hashing"
+          ],
+          "fixturesNeeded": [
+            "Protected isolated runtime stores, independent pinned profile expectations and FS/network/DB traps."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove actual bootstrap/publication ordering, reuse and all installed consumer paths.",
+          "subjects": [
+            "bootstrap-no-host-node-verifies-archive-and-executable-before-execution",
+            "verified-runtime-and-control-reuse-offline-across-bundle-and-dev",
+            "bootstrap-native-operation-lock-exclusive-publication-exact-helper-exit-then-fresh-manager-lock",
+            "bootstrap-publication-stage-distinct-from-running-node-and-loaded-native-library",
+            "runtime-stage-cancellation-conflict-and-uncertain-closure-retain-safe-state",
+            "bundle-dev-manager-terminal-TUI-Retry-bridge-and-publisher-probes-use-shared-resolver",
+            "private-dev-node-npm-headers-native-env-and-worker-source-closure-preserved",
+            "publisher-app-and-IDE-inventory-exclude-Node-Ollama-distributions-and-archives-including-renamed-contributions"
+          ],
+          "fixturesNeeded": [
+            "Trap host node/npm binaries; actual helper/controller subprocesses and native lock; closed actor evidence; isolated homes with spaces/Unicode; bounded deterministic HTTPS transport fixture."
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Preserve surrounding installer behavior and avoid repeating the prior expensive reconciliation.",
+          "subjects": [
+            "S3-Ollama-consent-retention-agent-recommendations-and-install-only-Retry-preserved",
+            "terminal-install-success-ready-lock-release-same-terminal-TUI-and-failure-no-TUI-preserved",
+            "status-readiness-and-control-checks-do-not-scan-full-app-Ollama-payload",
+            "final-scoped-installer-publisher-bootstrap-dev-dependencies-terminal-regression"
+          ],
+          "fixturesNeeded": [
+            "Existing S2/S3/terminal fixtures updated to external runtime; real surrounding test selectors, no fake lifecycle/migration production peers."
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Record actual native qualification separately from fixtures before enabling/publishing a target.",
+          "subjects": [
+            "UTM-macOS-fresh-live-acquisition-offline-reuse-and-isolated-installed-consumer-smoke",
+            "OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke",
+            "native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication",
+            "unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests"
+          ],
+          "fixturesNeeded": [
+            "Isolated UTM macOS and OrbStack Linux VM homes; genuine Windows runner/VM when available. Preserve host v2 daemon/Ollama. Missing infrastructure is reported unavailable, not pass; native qualification gates remain."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "runtime-policy-exact-identity-target-baseline-profile-and-pinned-inventory",
+            "resolver-returns-canonical-node-npm-headers-and-win-library-from-exact-identity",
+            "resolver-rejects-missing-corrupt-extra-files-wrong-mode-target-digest-npm-headers-inventory-receipt",
+            "rewritten-self-consistent-local-runtime-metadata-cannot-replace-policy-inventory-digest"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "descriptor2-and-dev-receipt2-application-only-with-public-manifest1-unchanged",
+            "publisher-app-and-IDE-inventory-exclude-Node-Ollama-distributions-and-archives-including-renamed-contributions",
+            "verified-runtime-and-control-reuse-offline-across-bundle-and-dev"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "bundle-dev-manager-terminal-TUI-Retry-bridge-and-publisher-probes-use-shared-resolver",
+            "resolver-import-boundary-excludes-application-paths-storage-provider-and-source-build",
+            "private-dev-node-npm-headers-native-env-and-worker-source-closure-preserved"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "bootstrap-no-host-node-verifies-archive-and-executable-before-execution",
+            "bootstrap-native-operation-lock-exclusive-publication-exact-helper-exit-then-fresh-manager-lock",
+            "bootstrap-publication-stage-distinct-from-running-node-and-loaded-native-library",
+            "runtime-stage-cancellation-conflict-and-uncertain-closure-retain-safe-state",
+            "resolver-does-no-mkdir-download-lock-selection-db-or-provider-work"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "legacy-embedded-runtime-formats-rejected-without-adoption",
+            "S3-Ollama-consent-retention-agent-recommendations-and-install-only-Retry-preserved",
+            "terminal-install-success-ready-lock-release-same-terminal-TUI-and-failure-no-TUI-preserved",
+            "status-readiness-and-control-checks-do-not-scan-full-app-Ollama-payload",
+            "final-scoped-installer-publisher-bootstrap-dev-dependencies-terminal-regression"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "UTM-macOS-fresh-live-acquisition-offline-reuse-and-isolated-installed-consumer-smoke",
+            "OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke",
+            "native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication",
+            "unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests"
+          ]
+        }
+      ],
+      "testFramework": "Existing node:test TypeScript suites run by the repository's canonical npm test coordinator under Node22.22.1 with tsx; extend src/installer/__tests__/bootstrap.test.ts, src/installer/__tests__/bundle.test.ts, src/installer/__tests__/publisher.test.ts and the named dev/terminal surrounding suites. Per user instruction run only surrounding tests per task, then the full scoped installer regression after every task is built. Native qualifications are recorded separately with exact platform/runtime/actor cleanup evidence; do not claim unavailable Windows/VM evidence. Local ac1–ac6 respectively name the approved issue's runtime-integrity, external-delivery, consumer-binding, safe-publication/reuse, preserved-behavior and native-evidence groups (the issue-* ids scored in s3)."
+    },
+    "migration": {
+      "stateBefore": "Completed bounded s1 context bundles (c1,c2,c5) show bundle/dev validation, installed launchers and publisher retaining tools/node plus runtime archive payloads, while runtime-policy has only a path constructor. Existing completed epic S1/S2 artifacts are preserved. Host v2 is outside this transition.",
+      "stateAfter": "New application-only descriptor2/dev receipt2 and independent verified runtime store are used together by new rewrite installations. Public manifest/identity/IPC stay unchanged; old embedded-runtime private formats are identified and rejected, never automatically converted.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Publish the pinned deterministic runtime profile metadata, shared resolver/acquisition and bootstrap contracts together with focused tests; preserve existing completed epic records and current host daemon.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Update all new application bundle/dev publisher, receipt/offer validators and installed consumers as one format transition; rebuild isolated test artifacts under the new format rather than editing existing immutable receipts.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Validate fresh isolated runtime acquisition, shared cross-mode reuse, consumer binding and real available native qualification. Enable/publish only qualified targets; reject old embedded formats with actionable diagnostic. Preserve incumbent host installation and runtime entries.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "After corrective build validation and human approval, S4 resumes consumption of the verified runtime foundation. Any real legacy installation or application-data migration remains a separately approved S5 hook concern; no host migration or release selection is performed by this correction.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Public RuntimeIdentity, ReleaseManifest schemaVersion1, manager/IPC and terminal contracts remain. The formerly unused privateRuntimePaths helper gains an asynchronous verified-resolver signature and all new consumers are updated together. Private bundle descriptor1/dev receipt1 and old dev recipe are deliberately incompatible and diagnosed; they are not public release formats to reinterpret. No automatic legacy fallback/adoption or completed-artifact rewrite. Old host v2 remains running as instructed.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Resolve RuntimeIdentity directly in one protected external store",
+        "oneLineSummary": "One shared resolver maps the unchanged RuntimeIdentity to a verified immutable distribution; application receipts contain identity only.",
+        "approach": "Retain public RuntimeIdentity and ReleaseManifest. A runtime-owned completion receipt and bounded inventory live beside the external distribution under the installation home. Read-only resolution checks policy, target, canonical containment and receipt/inventory/file integrity; acquisition alone may publish through the existing controller lock. Bundle/dev receipts describe application bytes and reference manifest.runtime. All consumer modes use that same resolution result, without per-release runtime pointers.",
+        "pros": [
+          "Smallest shared contract shape; no duplicate runtime selectors or per-release runtime metadata.",
+          "Runtime lifetime is independent of a release; both modes can reuse one verified Node/npm/header distribution.",
+          "Keeps read-only resolution separate from acquisition and S4 daemon lifecycle."
+        ],
+        "cons": [
+          "Bootstrap and installed consumers must converge on the same receipt/layout validation rules.",
+          "Private payload descriptors need an explicit new format because embedded-runtime semantics change."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "External store with per-release runtime reference receipt",
+        "oneLineSummary": "Keep one external distribution but add a digest-bound runtime pointer beside every application release.",
+        "approach": "Use the same unchanged public identity, protected external store, controller-owned publication and shared verifier as a1. Add a private runtime-reference record in each bundle/dev receipt identifying the external root and completion receipt digest. Consumers cross-check this extra record with manifest.runtime and the canonical installation-home store before launch. Neither application mode includes Node/Ollama bytes.",
+        "pros": [
+          "Each release explicitly records its selected external runtime completion record.",
+          "Can diagnose mismatched application/runtime references locally."
+        ],
+        "cons": [
+          "Duplicates information derivable from RuntimeIdentity and installation location.",
+          "Adds pointer compatibility and reconciliation states without changing required verification.",
+          "Does not remove bootstrap/reuse verification or native qualification work."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Also feasible, but adds release-pointer format and reconciliation work while all mandatory verification remains."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "erDefinition": {
+      "id": "external-runtime-store-ownership",
+      "narrative": "Application releases refer to a shared external runtime identity; the runtime entry owns integrity metadata and executable distribution independently of release cleanup. This documents ownership and many-release-to-one-runtime cardinality without changing public wire fields.",
+      "classes": {
+        "ApplicationRelease": {
+          "description": "Bundle or dev application-only payload with unchanged ReleaseManifest.",
+          "attributes": {
+            "releaseId": {
+              "description": "Immutable application release identifier.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "runtimeIdentity": {
+              "description": "Unchanged manifest reference to exactly one runtime identity; inverse release membership is shown on RuntimeEntry.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "RuntimeEntry": {
+          "description": "One immutable runtime identity under an explicit installation home; owned by the runtime foundation, not a release.",
+          "attributes": {
+            "identity": {
+              "description": "Exact version/full target/archive digest/profile key validated against pinned policy.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "completion": {
+              "description": "Exactly one completion/inventory metadata set published with the entry.",
+              "range": "RuntimeIntegrity",
+              "required": true,
+              "minimum_cardinality": 1,
+              "maximum_cardinality": 1
+            },
+            "distribution": {
+              "description": "Exactly one canonical distribution containing verified Node/npm/headers; never app payload bytes.",
+              "range": "string",
+              "required": true
+            },
+            "releases": {
+              "description": "Derived inverse association: one runtime can be referenced by zero or many application releases. This is not a stored runtime-owned release list and does not grant cascade deletion ownership.",
+              "range": "ApplicationRelease",
+              "multivalued": true,
+              "minimum_cardinality": 0
+            }
+          }
+        },
+        "RuntimeIntegrity": {
+          "description": "Bounded canonical completion and inventory checked against the independent release-owned policy digest.",
+          "attributes": {
+            "inventorySha256": {
+              "description": "Pinned expected distribution inventory digest; arbitrary receipt-supplied hashes are insufficient.",
+              "range": "string",
+              "required": true
+            },
+            "profileVersion": {
+              "description": "Deterministic extraction/profile version shared by bootstrap and resolver.",
+              "range": "string",
+              "required": true
+            }
+          }
+        }
+      }
+    },
+    "sequenceDefinition": {
+      "id": "verified-runtime-bootstrap-handoff",
+      "narrative": "The first-install bootstrap verifies staged code before it executes, publishes an independent runtime while holding the existing native operation lock, and waits for that exact helper to exit before starting the ordinary manager. Reuse follows the same independent integrity expectations without a second controller or an application payload scan.",
+      "participants": [
+        {
+          "id": "terminal",
+          "label": "Shared terminal script",
+          "description": "POSIX/PowerShell script used by manual invocation and both IDEs; retains terminal I/O."
+        },
+        {
+          "id": "stage",
+          "label": "Verified execution stage",
+          "description": "Owned temporary Node/control bytes authenticated by pinned expected hashes before execution; kept until child exit."
+        },
+        {
+          "id": "helper",
+          "label": "Publication helper",
+          "description": "Minimal trusted control helper; does not select releases or implement daemon lifecycle."
+        },
+        {
+          "id": "lock",
+          "label": "Native operation.lock",
+          "description": "The same exclusive controller lock used by the ordinary manager, never inherited or inferred from PID."
+        },
+        {
+          "id": "store",
+          "label": "External runtime store",
+          "description": "Canonical immutable distribution plus policy-bound inventory/completion, outside application payloads."
+        },
+        {
+          "id": "manager",
+          "label": "Final canonical manager",
+          "description": "Runs under resolved private Node; performs ordinary admission with fresh ownership."
+        }
+      ],
+      "messages": [
+        {
+          "from": "terminal",
+          "to": "terminal",
+          "label": "Check exact cached executable/control hashes; choose verified reuse or fresh acquisition",
+          "kind": "recurse",
+          "description": "Cached bytes are checked against release-owned independent expectations, not receipt-supplied executable hashes."
+        },
+        {
+          "from": "terminal",
+          "to": "stage",
+          "label": "Fresh path: download official pinned Node and release control assets; verify before execution",
+          "description": "Official Node and release-control assets keep their separate fixed origins/digest bindings; archive safety and target checks precede execution."
+        },
+        {
+          "from": "terminal",
+          "to": "helper",
+          "label": "Launch trusted helper using verified staged Node",
+          "description": "No host Node or release tools/node fallback."
+        },
+        {
+          "from": "helper",
+          "to": "lock",
+          "label": "Acquire existing native exclusive operation lock",
+          "description": "Publication is forbidden if another manager owns it."
+        },
+        {
+          "from": "helper",
+          "to": "store",
+          "label": "Verify profile and publish separate nonexecuting stage, or verify exact existing entry",
+          "description": "Windows running node.exe/loaded DLL stay in execution stage; publication is durable and no-replace."
+        },
+        {
+          "from": "store",
+          "to": "helper",
+          "label": "Complete policy-bound runtime identity and immutable result",
+          "kind": "return",
+          "description": "No application release selection or hook execution is implied by runtime publication."
+        },
+        {
+          "from": "helper",
+          "to": "terminal",
+          "label": "Actual helper exit observed by its parent",
+          "kind": "return",
+          "description": "Process exit releases helper lock ownership; close(void), record age and PID checks are not substitutes."
+        },
+        {
+          "from": "terminal",
+          "to": "store",
+          "label": "Resolve canonical verified private runtime",
+          "description": "Fresh publication and cached reuse both bind to the same identity-derived store. Reuse need not download if required runtime/control assets are cached verified."
+        },
+        {
+          "from": "terminal",
+          "to": "manager",
+          "label": "Start final manager with canonical absolute Node; preserve terminal I/O",
+          "description": "Do not transfer helper lock handle, session, flag or selected-release authority."
+        },
+        {
+          "from": "manager",
+          "to": "lock",
+          "label": "Acquire fresh controller ownership and ordinary admission",
+          "description": "Final manager rechecks current state; concurrent intervening ownership yields normal busy handling."
+        },
+        {
+          "from": "manager",
+          "to": "store",
+          "label": "Consume shared read-only runtime resolution",
+          "description": "Resolver performs no acquisition, application import, DB open or full app/Ollama hash."
+        }
+      ],
+      "truncations": [
+        {
+          "atParticipant": "manager",
+          "note": "Ordinary install flow and successful same-terminal TUI use existing S1/S3 contracts. Daemon boot/lease/shutdown belongs to S4; migrations belong to S5."
+        }
+      ]
+    },
+    "componentDependencyDefinition": {
+      "id": "external-runtime-dependencies",
+      "narrative": "Installed consumers share a dependency-minimal resolver. Only acquisition/publication can mutate the external runtime store under the existing controller lock; application releases retain identity metadata and never own runtime bytes.",
+      "components": [
+        {
+          "id": "consumers",
+          "label": "Installed control / TUI / Retry consumers",
+          "path": "src/installer/installed-launcher.ts",
+          "description": "Existing launch consumers are adapted together; daemon boot remains an S4 consumer of this foundation."
+        },
+        {
+          "id": "resolver",
+          "label": "Verified read-only runtime resolver",
+          "path": "src/installer/runtime-policy.ts",
+          "description": "Existing privateRuntimePaths becomes verified async resolution; proposed src/installer/runtime-store.ts contains installer-only implementation."
+        },
+        {
+          "id": "acquisition",
+          "label": "Controller-owned acquisition (proposed)",
+          "path": "src/installer/runtime-acquire.ts",
+          "description": "New runtime acquisition implementation, not yet existing code; no additional public manager action."
+        },
+        {
+          "id": "bootstrap",
+          "label": "Bootstrap publication helper",
+          "path": "scripts/bootstrap-publish.cjs",
+          "description": "Existing helper is adapted to qualified native controller-owned publication and exact-exit handoff."
+        },
+        {
+          "id": "store",
+          "label": "External immutable runtime entry",
+          "description": "Owns distribution/inventory/completion, independently of release lifetime."
+        },
+        {
+          "id": "app",
+          "label": "Bundle/dev application receipt",
+          "path": "src/installer/installed-receipt.ts",
+          "description": "Reads application-only format2 receipts with unchanged public RuntimeIdentity metadata."
+        }
+      ],
+      "dependencies": [
+        {
+          "from": "consumers",
+          "to": "app",
+          "label": "Read exact manifest identity"
+        },
+        {
+          "from": "consumers",
+          "to": "resolver",
+          "label": "Resolve absolute verified paths"
+        },
+        {
+          "from": "resolver",
+          "to": "store",
+          "label": "Read-only bounded integrity check"
+        },
+        {
+          "from": "acquisition",
+          "to": "resolver",
+          "label": "Reuse matching verified entry"
+        },
+        {
+          "from": "acquisition",
+          "to": "store",
+          "label": "Publish under existing lock"
+        },
+        {
+          "from": "bootstrap",
+          "to": "store",
+          "label": "Same pinned profile / native publication rules"
+        },
+        {
+          "from": "app",
+          "to": "store",
+          "label": "Many releases reference one runtime identity, with no runtime payload ownership"
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "diagram-er",
+        "diagram-sequence",
+        "diagram-component",
+        "functional-coverage"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/er-model.html",
+        "title": "ER model"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/component-dependency.html",
+        "title": "Component dependencies"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/installer/runtime-policy.ts",
+      "quotedText": "Completed bounded installer foundation analyzer: official archive metadata/path constructor; incomplete graph supplemented by source and rg."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/installer/installed-receipt.ts",
+      "quotedText": "Completed bounded bootstrap/runtime analyzer: exact receipt signature and managerMain caller; graph flags31 ignored relationships, with direct source supplements."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/installer/controller-store.ts",
+      "quotedText": "Original ControllerStore retains native operation.lock capability and checks held ownership before publication. This is direct source evidence, not a claim of complete analyzer call coverage."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md",
+      "quotedText": "External installer epic HLD7 compatibility constraints; not the formal parent HLD for this standalone issue."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "src/installer/dev-toolchain.ts",
+      "quotedText": "Supplemental analyzer anchors existing private Node/npm/header toolchain; direct source reads ground owned aliases, environment and worker proof behavior."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S004/LLD.md",
+      "quotedText": "S4 lifecycle ownership and dependency-minimal real runtime prerequisite remain unchanged."
+    },
+    {
+      "id": "c7",
+      "kind": "step-output",
+      "ref": "s4",
+      "quotedText": "Proposed runtime-store/runtime-acquire types, canonical external store, pinned distribution inventory, private format2 and all-consumer binding; no claim these new sources already exist."
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/ISSUE.md",
+      "quotedText": "Approved coherent runtime correction scope; no host v2 daemon mutation or action-specific gating work."
+    },
+    {
+      "id": "c9",
+      "kind": "convention",
+      "ref": "AGENTS.md",
+      "quotedText": "Node22 canonical test coordinator, surrounding tests per task and full scoped regression after all tasks per user's instruction; human artifact gates retained."
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "scripts/bootstrap-publish.cjs",
+      "quotedText": "Current helper executes only after archive verification but currently performs whole-tree comparison and direct rename; proposed correction replaces publication behavior, including loaded Windows binary handling."
+    },
+    {
+      "id": "c11",
+      "kind": "step-output",
+      "ref": "s6",
+      "quotedText": "ac1–ac6 are local issue acceptance groups; test strategies are planned subjects, not evidence of executed tests/native qualification."
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "scripts/render-installer-bootstrap.mjs",
+      "quotedText": "Existing renderInstallerBootstrap uses fixed official runtime policy and digest-bound control assets; source templates are scripts/install.sh and scripts/install.ps1."
+    }
+  ]
+}

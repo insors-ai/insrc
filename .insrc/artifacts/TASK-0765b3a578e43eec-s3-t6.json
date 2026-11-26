@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a12ea5fa-f23e-423c-9d3f-467d71240e7f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T04:18:35.151Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Register the insrc_security_review_step daemon IPC method + MCP tool (sc3)",
+      "parent": {
+        "entityId": "STORY-0765b3a578e43eec-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0765b3a578e43eec-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-0765b3a578e43eec-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#264",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 3,
+        "contentHash": "eeeca263452ac6fa4905cc3f595234d7aa07b8dcc2236de80baee53524bbf939",
+        "at": "2026-11-25T15:57:07.283Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T04:18:35.153Z"
+      }
+    },
+    "revision": 3
+  },
+  "body": {
+    "title": "Register the insrc_security_review_step daemon IPC method + MCP tool (sc3)",
+    "summary": "Wire handleSecurityReviewStep as the daemon's new IPC method and as the insrc_security_review_step MCP tool's phase-driven handler, mirroring insrc_code_review_step's registration shape.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "insrc_security_review_step is registered as an MCP tool with the SecurityReviewStepRequest/SecurityReviewStepResponse shape, routed to handleSecurityReviewStep and nowhere else",
+      "the daemon's step-call dispatch recognizes the new tool id the same way it already recognizes insrc_code_review_step/insrc_review_step for bound-connection-execution purposes",
+      "calling the registered tool end-to-end (fresh request, fresh index) returns a next:'done' response with a real report and markdown, proving the registration -> handler wiring is live, not just type-checked"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "calling the registered insrc_security_review_step tool end-to-end (fresh request, fresh index) returns a next:'done' response with a real report and markdown"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

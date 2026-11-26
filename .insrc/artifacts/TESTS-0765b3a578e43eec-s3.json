@@ -1,0 +1,874 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 43,
+        "contentHash": "07f9a85e1bad3db5a5b699031741175e8a0e5d965306917c2424a0c815035025",
+        "at": "2026-11-26T08:40:42.556Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s3",
+    "createdAt": "2026-11-24T04:53:33.388Z",
+    "updatedAt": "2026-11-26T08:40:42.401Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "epicSlug": "add-dedicated-security-reviews",
+    "revision": 43
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "78f2e8441",
+        "ranAt": "2026-11-24T04:53:33.388Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "deriveReceiptIdentity: same contentIdentity re-derives the identical pair; a different identity derives a different pair",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/run-security-review.test.ts",
+                "title": "deriveReceiptIdentity: same contentIdentity re-derives the identical pair; a different identity derives a different pair",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "deriveReceiptIdentity's output round-trips through a REAL persistVerificationReceipt + readReceiptRecord call without being rejected by the storage layer",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/run-security-review.test.ts",
+                "title": "deriveReceiptIdentity's output round-trips through a REAL persistVerificationReceipt + readReceiptRecord call without being rejected by the storage layer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "verifyContentIdentityMatch: resolves on a match with contentStable:true; throws on identity mismatch; throws on contentStable:false even when identity matches",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/run-security-review.test.ts",
+                "title": "verifyContentIdentityMatch: resolves on a match with contentStable:true; throws on identity mismatch; throws on contentStable:false even when identity matches",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/security-review/__tests__/run-security-review.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 713,
+            "titles": [
+              {
+                "title": "deriveReceiptIdentity: same contentIdentity re-derives the identical pair; a different identity derives a different pair",
+                "result": "pass"
+              },
+              {
+                "title": "deriveReceiptIdentity's output round-trips through a REAL persistVerificationReceipt + readReceiptRecord call without being rejected by the storage layer",
+                "result": "pass"
+              },
+              {
+                "title": "verifyContentIdentityMatch: resolves on a match with contentStable:true; throws on identity mismatch; throws on contentStable:false even when identity matches",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "015898b0e",
+        "ranAt": "2026-11-26T08:40:42.401Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "buildSecurityRoundHooks: hooks.ground always resolves to [] without I/O; hooks.security delegates to the injected code-pass function",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/security-round-hooks.test.ts",
+                "title": "buildSecurityRoundHooks: hooks.ground always resolves to [] without I/O; hooks.security delegates to the injected code-pass function",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CapabilityQualificationTable lookup for 'cli-claude' (qualified), 'cli-codex' (not qualified), 'ollama' (qualified trivially)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/capability-qualification.test.ts",
+                "title": "CapabilityQualificationTable: 'claude' is qualified for strict-read-analyze",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/capability-qualification.test.ts",
+                "title": "CapabilityQualificationTable: 'codex' is NOT qualified for strict-read-analyze",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/capability-qualification.test.ts",
+                "title": "CapabilityQualificationTable: 'ollama' is qualified for strict-read-analyze",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CliProvider.runReadOnlySession throwing UnqualifiedCapabilityPolicyError for an unqualified provider + capabilityPolicy:'strict-read-analyze' before spawning any subprocess",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-readonly-session.test.ts",
+                "title": "runReadOnlySession rejects an unqualified provider's strict-read-analyze request before spawning any subprocess",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/capability-qualification.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 436,
+            "titles": [
+              {
+                "title": "CapabilityQualificationTable: 'claude' is qualified for strict-read-analyze",
+                "result": "pass"
+              },
+              {
+                "title": "CapabilityQualificationTable: 'codex' is NOT qualified for strict-read-analyze",
+                "result": "pass"
+              },
+              {
+                "title": "CapabilityQualificationTable: 'ollama' is qualified for strict-read-analyze",
+                "result": "pass"
+              },
+              {
+                "title": "CapabilityQualificationTable: 'vibe' is NOT qualified for strict-read-analyze",
+                "result": "pass"
+              },
+              {
+                "title": "every provider is qualified for write-sandboxed (the default policy)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/cli-readonly-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 44819,
+            "titles": [
+              {
+                "title": "claude reviewer-session arguments allow reading and insrc analyze only",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments use a read-only sandbox and ONE combined native per-server allowlist",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments throw when insrc is not registered, with no argv constructed",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments throw when insrc is registered but globally disabled, with no argv constructed",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments quote a dotted (or otherwise special) server name as a TOML key, not as a dotted -c path",
+                "result": "pass"
+              },
+              {
+                "title": "a claude read-only session runs in the repo with the session arguments and returns the checked answer",
+                "result": "pass"
+              },
+              {
+                "title": "a codex read-only session takes the LAST message as the answer",
+                "result": "pass"
+              },
+              {
+                "title": "a session with no checked answer fails",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce throws CodexProjectMcpServersUnexcludableError and calls neither discoverCodexMcpServers nor runCodex when walkProjectMcpConfigLayers returns true",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce throws ReadOnlySessionTimeoutError and never calls runCodex when discovery consumes the entire remaining budget",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce calls runCodex with the recomputed remaining timeoutMs, not the original, after discovery consumes part of the budget",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError naming the server codex's own bootstrap-rejection message names (case 1 of 2 unsafe servers)",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError naming the server codex's own bootstrap-rejection message names (case 2 of 2 unsafe servers)",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce proceeds normally (no new error) when the servers list includes an ordinary server whose override codex accepts, and runCodex succeeds, exactly as today",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce re-throws the original, unmodified error when runCodex fails for a reason that does NOT match the bootstrap-rejection wording (e.g. a generic non-zero exit, or the existing 'no agent_message item' case)",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce retries once with the offending server removed from the disable list, and succeeds, when the first attempt throws CodexMcpServerOverrideUnsafeError and the servers list has another, safe server remaining",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce retries once with no non-insrc disable overrides at all, and succeeds, when the first attempt's unsafe server was the only non-insrc entry",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce clears every unexcludable server it encounters in turn, and succeeds once none are left to disable",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError at the bound (never an unbounded loop) when every attempt, including the last override-free one, still reports a bootstrap-rejection match",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce re-throws the original, unmodified error (no retry attempted) when the first attempt's failure does not match the bootstrap-rejection pattern",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce's retry uses the recomputed remaining budget, not a fresh one, and still throws ReadOnlySessionTimeoutError if the combined attempts exhaust it",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is retried once",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is never retried more than once",
+                "result": "pass"
+              },
+              {
+                "title": "an error that is not transient is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "a session is stopped at its deadline and that is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "the retry gets only the time that remains",
+                "result": "pass"
+              },
+              {
+                "title": "no attempt starts once the deadline has passed",
+                "result": "pass"
+              },
+              {
+                "title": "one-shot calls and the edit session build the same arguments as before",
+                "result": "pass"
+              },
+              {
+                "title": "a codex read-only session that produces no model output is killed early and retried once as a fresh run",
+                "result": "pass"
+              },
+              {
+                "title": "a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "only the read-only session is watched: a one-shot codex call that is silent at first is not cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints no output and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed",
+                "result": "pass"
+              },
+              {
+                "title": "claude ignores stallMs and read-only sessions keep the first-output watchdog",
+                "result": "pass"
+              },
+              {
+                "title": "a codex read-only session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a codex read-only session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is",
+                "result": "pass"
+              },
+              {
+                "title": "with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions",
+                "result": "pass"
+              },
+              {
+                "title": "without effort every argv is byte-identical to today's",
+                "result": "pass"
+              },
+              {
+                "title": "capabilityPolicy omitted skips the qualification check entirely (zero calls), defaulting to write-sandboxed -- today's exact dispatch is unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "runReadOnlySession rejects an unqualified provider's strict-read-analyze request before spawning any subprocess",
+                "result": "pass"
+              },
+              {
+                "title": "runReadOnlySession dispatches normally for a qualified provider requesting strict-read-analyze",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce's retry attempt carries the identical capabilityPolicy value as the original call",
+                "result": "pass"
+              },
+              {
+                "title": "readOnlySessionOnce's unsafe-MCP-server retry loop carries the identical capabilityPolicy across every attempt, even for codex under 'write-sandboxed' (the only policy codex qualifies for)",
+                "result": "pass"
+              },
+              {
+                "title": "a qualified claude session under capabilityPolicy:'strict-read-analyze' actually closes the MCP surface: its argv carries --strict-mcp-config + an --mcp-config naming ONLY the insrc server, unlike a 'write-sandboxed' session's argv, which carries neither",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/security-review/__tests__/security-round-hooks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 619,
+            "titles": [
+              {
+                "title": "buildSecurityRoundHooks: hooks.ground always resolves to [] without I/O; hooks.security delegates to the injected code-pass function",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "e08a38ca3",
+        "ranAt": "2026-11-25T15:35:16.751Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Already covered by the prior BUILD record's test run; no new test required by this re-plan.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/run-security-review.test.ts",
+                "title": "assembleSecurityReport: confirmed matches map to dependency-advisory SecurityFindings with checkId:'dependency-advisory' and NO receiptId; round-1/round-2 code findings keep whatever receiptId they already carry",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/run-security-review.test.ts",
+                "title": "assembleSecurityReport: unresolvedDependencies/unavailableSources pass through verbatim; empty inputs produce an empty findings array",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/run-security-review.test.ts",
+                "title": "assembleSecurityReport: effectiveModel equals modelSelection exactly as passed in, even when it differs from the repo-configured tier default",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/run-security-review.test.ts",
+                "title": "assembleSecurityReport: reconciliation and receipts are carried through verbatim; baseReportMarkdown is the supplied base markdown",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/security-review/__tests__/run-security-review.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 711,
+            "titles": [
+              {
+                "title": "deriveReceiptIdentity: same contentIdentity re-derives the identical pair; a different identity derives a different pair",
+                "result": "pass"
+              },
+              {
+                "title": "deriveReceiptIdentity's output round-trips through a REAL persistVerificationReceipt + readReceiptRecord call without being rejected by the storage layer",
+                "result": "pass"
+              },
+              {
+                "title": "verifyContentIdentityMatch: resolves on a match with contentStable:true; throws on identity mismatch; throws on contentStable:false even when identity matches",
+                "result": "pass"
+              },
+              {
+                "title": "assembleSecurityReport: confirmed matches map to dependency-advisory SecurityFindings with checkId:'dependency-advisory' and NO receiptId; round-1/round-2 code findings keep whatever receiptId they already carry",
+                "result": "pass"
+              },
+              {
+                "title": "assembleSecurityReport: unresolvedDependencies/unavailableSources pass through verbatim; empty inputs produce an empty findings array",
+                "result": "pass"
+              },
+              {
+                "title": "assembleSecurityReport: effectiveModel equals modelSelection exactly as passed in, even when it differs from the repo-configured tier default",
+                "result": "pass"
+              },
+              {
+                "title": "assembleSecurityReport: reconciliation and receipts are carried through verbatim; baseReportMarkdown is the supplied base markdown",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "015898b0e",
+        "ranAt": "2026-11-26T08:34:51.711Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a targets.entries path resolving outside repoPath throws synchronously before any I/O is attempted",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/run-security-review-orchestrator.test.ts",
+                "title": "a targets.entries path resolving outside repoPath throws SYNCHRONOUSLY (never a rejected Promise) with no dispatch, before any receipt or round work",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runSecurityReview invoked from inside an ALREADY-BOUND step context (a real connectionExecution set via runInStepContext in the test) succeeds",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/run-security-review-orchestrator.test.ts",
+                "title": "runSecurityReview binds the call to a step context over repoPath, preserving an already-bound outer connectionExecution",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runSecurityReview refuses before any round dispatches on modelSelection.status:'unavailable', verified via the fake CLI session never being called",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/run-security-review-orchestrator.test.ts",
+                "title": "refuses before any round dispatches when modelSelection.status is 'unavailable'; the fake CLI session is never called",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runSecurityReview refuses before any round dispatches on a contentIdentity mismatch",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/run-security-review-orchestrator.test.ts",
+                "title": "refuses before any round dispatches when the pre-flight verifyContentIdentityMatch fails, and no receipt is persisted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runSecurityReview persists ONE VerificationReceipt per round (round1, round2), each with the correct result; a round-1 failure persists only round1's fail receipt and never dispatches round 2",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/run-security-review-orchestrator.test.ts",
+                "title": "persists exactly ONE VerificationReceipt per round, both 'pass' on a clean run; epicHash/storyId supplied are threaded through unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/run-security-review-orchestrator.test.ts",
+                "title": "a round's own execution failure persists only that round's 'fail' receipt and never dispatches a later round",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runSecurityReview reverifies contentIdentity before round 2 and before finalization; a repository edit injected between round 1 and round 2 is caught and aborts with ContentIdentityMismatchError, with round1's receipt already durably persisted as 'pass' from before the edit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/run-security-review-orchestrator.test.ts",
+                "title": "reverifies contentIdentity before round 2: a repository edit injected between round 1 and round 2 is caught and aborts with ContentIdentityMismatchError, with round 1's receipt already durably persisted as pass",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/run-security-review-orchestrator.test.ts",
+                "title": "reverifies contentIdentity immediately before final persistence too: a repository edit injected after round 2 completes is caught and aborts with ContentIdentityMismatchError, with BOTH round receipts already durably persisted as pass",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runSecurityReview run with repoPath=B while the test harness's own ambient cwd is A: writeCheckpoint/reconcileRound/renderReviewReport/finalizeAndCleanup all read/write under B, never A",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/run-security-review-orchestrator.test.ts",
+                "title": "run with repoPath=B while the test harness's own ambient cwd is A: checkpoint/reconciliation/report-render/cleanup resolve the repo through runSecurityReview's OWN step-context binding, never through a test-hardcoded override, and never resolve to A",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "SecurityReviewReport.effectiveModel matches the modelSelection actually passed in, in a case where it differs from the repo's currently-configured tier default",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/run-security-review-orchestrator.test.ts",
+                "title": "integration: SecurityReviewReport.effectiveModel matches the modelSelection actually passed in, in a case where it differs from the repo's currently-configured tier default",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "two sequential runSecurityReview calls with the SAME reviewId -- the first failing a round, the second succeeding -- persist TWO distinct receipts per round slot (different attemptId); the first attempt's 'fail' receipt is never overwritten",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/run-security-review-orchestrator.test.ts",
+                "title": "two sequential calls with the SAME reviewId -- the first failing at ROUND 2, the second succeeding -- persist TWO distinct receipts in EACH round slot; neither attempt's receipt is ever overwritten",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/security-review/__tests__/run-security-review-orchestrator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1137,
+            "titles": [
+              {
+                "title": "a targets.entries path resolving outside repoPath throws SYNCHRONOUSLY (never a rejected Promise) with no dispatch, before any receipt or round work",
+                "result": "pass"
+              },
+              {
+                "title": "runSecurityReview binds the call to a step context over repoPath, preserving an already-bound outer connectionExecution",
+                "result": "pass"
+              },
+              {
+                "title": "refuses before any round dispatches when modelSelection.status is 'unavailable'; the fake CLI session is never called",
+                "result": "pass"
+              },
+              {
+                "title": "refuses before any round dispatches when the pre-flight verifyContentIdentityMatch fails, and no receipt is persisted",
+                "result": "pass"
+              },
+              {
+                "title": "persists exactly ONE VerificationReceipt per round, both 'pass' on a clean run; epicHash/storyId supplied are threaded through unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "integration: SecurityReviewReport.effectiveModel matches the modelSelection actually passed in, in a case where it differs from the repo's currently-configured tier default",
+                "result": "pass"
+              },
+              {
+                "title": "without epicHash/storyId, deriveReceiptIdentity's output is used and standalone:true is set",
+                "result": "pass"
+              },
+              {
+                "title": "a round's own execution failure persists only that round's 'fail' receipt and never dispatches a later round",
+                "result": "pass"
+              },
+              {
+                "title": "reverifies contentIdentity before round 2: a repository edit injected between round 1 and round 2 is caught and aborts with ContentIdentityMismatchError, with round 1's receipt already durably persisted as pass",
+                "result": "pass"
+              },
+              {
+                "title": "two sequential calls with the SAME reviewId -- the first failing at ROUND 2, the second succeeding -- persist TWO distinct receipts in EACH round slot; neither attempt's receipt is ever overwritten",
+                "result": "pass"
+              },
+              {
+                "title": "reverifies contentIdentity immediately before final persistence too: a repository edit injected after round 2 completes is caught and aborts with ContentIdentityMismatchError, with BOTH round receipts already durably persisted as pass",
+                "result": "pass"
+              },
+              {
+                "title": "on success, both round receipts exist and finalizeAndCleanup has run (the review temp dir is gone); on a pre-flight refusal, neither a receipt nor a checkpoint exists",
+                "result": "pass"
+              },
+              {
+                "title": "run with repoPath=B while the test harness's own ambient cwd is A: checkpoint/reconciliation/report-render/cleanup resolve the repo through runSecurityReview's OWN step-context binding, never through a test-hardcoded override, and never resolve to A",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "5349cee4e",
+        "ranAt": "2026-11-26T05:13:11.592Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "handleSecurityReviewStep: a stale-index fresh request returns confirm_wait with a state token, never runs a round; a resumed call with proceed:true or proceed:false both reach done; epicHash/storyId supplied on the request are threaded into the persisted receipt unchanged, while an omitted pair is derived via deriveReceiptIdentity with standalone:true",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/handle-security-review-step.test.ts",
+                "title": "a fresh request against a repo with a STALE index returns {next:\"confirm_wait\", state, guidance} without running resolveSecurityModel, collectDependencyAdvisories, or any round",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/handle-security-review-step.test.ts",
+                "title": "a resumed call ({phase:'start', state, proceed:true}) waits for the index before running the review end-to-end to done, with degraded:false",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/handle-security-review-step.test.ts",
+                "title": "a resumed call ({phase:'start', state, proceed:false}) runs the review against the index as-is (a degraded run) and still reaches done with a fully populated report, with degraded:true and a coverage-status note in the markdown",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/handle-security-review-step.test.ts",
+                "title": "epicHash/storyId supplied on the ORIGINAL request are passed straight through into runSecurityReview's opts unchanged, never re-derived or second-guessed here",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/handle-security-review-step.test.ts",
+                "title": "integration: handleSecurityReviewStep: a fresh-index request calls the REAL runSecurityReview; epicHash/storyId supplied on the request land unchanged in the persisted receipt, while an omitted pair is derived via deriveReceiptIdentity with standalone:true -- the repo IS genuinely registered here (via the SAME content-identity seam this test already wires), proving admission is not merely faked away",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/handle-security-review-step.test.ts",
+                "title": "integration: a STALE-index request pauses at confirm_wait, then a resumed proceed:false call runs the REAL runSecurityReview degraded and persists receipts; a separate resumed proceed:true call waits for freshness before running it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/security-review/__tests__/handle-security-review-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1138,
+            "titles": [
+              {
+                "title": "a fresh request against a repo with a FRESH index reaches {next:\"done\"} directly, never confirm_wait",
+                "result": "pass"
+              },
+              {
+                "title": "a fresh request against a repo with a STALE index returns {next:\"confirm_wait\", state, guidance} without running resolveSecurityModel, collectDependencyAdvisories, or any round",
+                "result": "pass"
+              },
+              {
+                "title": "a resumed call ({phase:'start', state, proceed:true}) waits for the index before running the review end-to-end to done, with degraded:false",
+                "result": "pass"
+              },
+              {
+                "title": "a resumed call ({phase:'start', state, proceed:false}) runs the review against the index as-is (a degraded run) and still reaches done with a fully populated report, with degraded:true and a coverage-status note in the markdown",
+                "result": "pass"
+              },
+              {
+                "title": "epicHash/storyId supplied on the ORIGINAL request are passed straight through into runSecurityReview's opts unchanged, never re-derived or second-guessed here",
+                "result": "pass"
+              },
+              {
+                "title": "ContentIdentityMismatchError and SecurityModelUnavailableError from runSecurityReview propagate out of handleSecurityReviewStep unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "a fresh request naming an UNREGISTERED repoPath is refused with SecurityReviewRepoNotRegisteredError before any stat, model probe, advisory audit or round",
+                "result": "pass"
+              },
+              {
+                "title": "a resumed call is RE-AUTHORIZED against the registry at resume time, never merely trusting that its state token's repoPath was authorized once at pause time",
+                "result": "pass"
+              },
+              {
+                "title": "proceed:true's wait re-authorizes on every poll iteration too -- a repo de-registered MID-WAIT stops the wait with SecurityReviewRepoNotRegisteredError rather than spinning forever",
+                "result": "pass"
+              },
+              {
+                "title": "a PERMANENTLY MISSING target (not merely stale) refuses immediately with SecurityReviewTargetUnreachableError on a fresh request, rather than silently treating it as ordinary lag",
+                "result": "pass"
+              },
+              {
+                "title": "proceed:true's wait refuses with SecurityReviewTargetUnreachableError instead of looping forever when a target becomes permanently missing mid-wait",
+                "result": "pass"
+              },
+              {
+                "title": "an already-aborted signal refuses immediately with SecurityReviewCancelledError, before any admission check, stat, model probe or round",
+                "result": "pass"
+              },
+              {
+                "title": "proceed:true's wait is cancellable: aborting mid-poll stops the loop with SecurityReviewCancelledError rather than waiting for freshness",
+                "result": "pass"
+              },
+              {
+                "title": "a PERSISTENT non-ENOENT stat failure (e.g. EACCES) refuses with SecurityReviewTargetUnreachableError on a fresh request, exactly like a missing target -- it is never treated as ordinary index lag",
+                "result": "pass"
+              },
+              {
+                "title": "proceed:true's wait refuses with SecurityReviewTargetUnreachableError, never looping forever, when a target stat starts failing with a PERSISTENT non-ENOENT error (e.g. ENOTDIR) mid-wait",
+                "result": "pass"
+              },
+              {
+                "title": "a TRANSIENT stat failure (e.g. EMFILE) is treated as ordinary lag -- proceed:true's wait keeps polling through it rather than refusing, and eventually succeeds once the target genuinely stats fresh",
+                "result": "pass"
+              },
+              {
+                "title": "the confirm_wait state is an OPAQUE, daemon-minted token -- a resumed call cannot substitute a different repoPath/targets by handing back caller-crafted JSON instead of the real token",
+                "result": "pass"
+              },
+              {
+                "title": "a fresh request with malformed targets (no entries, an empty entries array, or an entry with no path) is refused before any admission check, stat, model probe or round",
+                "result": "pass"
+              },
+              {
+                "title": "a fresh request whose targets.entries resolves OUTSIDE repoPath is refused with SecurityReviewTargetOutOfScopeError before this module's own freshness stat ever touches the resolved path",
+                "result": "pass"
+              },
+              {
+                "title": "integration: handleSecurityReviewStep: a fresh-index request calls the REAL runSecurityReview; epicHash/storyId supplied on the request land unchanged in the persisted receipt, while an omitted pair is derived via deriveReceiptIdentity with standalone:true -- the repo IS genuinely registered here (via the SAME content-identity seam this test already wires), proving admission is not merely faked away",
+                "result": "pass"
+              },
+              {
+                "title": "integration: a request naming a repoPath that is NOT the one registered (via the same real content-identity seam) is refused with SecurityReviewRepoNotRegisteredError, never silently run against an unauthorized root",
+                "result": "pass"
+              },
+              {
+                "title": "integration: a STALE-index request pauses at confirm_wait, then a resumed proceed:false call runs the REAL runSecurityReview degraded and persists receipts; a separate resumed proceed:true call waits for freshness before running it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "11e552c56",
+        "ranAt": "2026-11-25T18:31:09.247Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "calling the registered insrc_security_review_step tool end-to-end (fresh request, fresh index) returns a next:'done' response with a real report and markdown",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/security-review-step.test.ts",
+                "title": "smoke: calling the REGISTERED insrc_security_review_step tool through the real step.call dispatch (createStepCallHandler + stepToolTable), with a fresh index, reaches {next:'done'} with a REAL report and markdown -- proving the registration -> handler wiring is live, not just type-checked",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/security-review-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1164,
+            "titles": [
+              {
+                "title": "insrc_security_review_step is registered in the step host table under exactly its own name",
+                "result": "pass"
+              },
+              {
+                "title": "handleSecurityReviewStepCall: a valid fresh request wraps handleSecurityReviewStep's reply as {content:[{type:\"text\",text}]}, routed through handleSecurityReviewStep and nowhere else",
+                "result": "pass"
+              },
+              {
+                "title": "handleSecurityReviewStepCall: malformed input (missing phase, neither a fresh nor a resumed shape, a MIXED fresh+resumed shape, or a lone epicHash/storyId without its pair) is refused with an error envelope, never a throw",
+                "result": "pass"
+              },
+              {
+                "title": "handleSecurityReviewStepCall: a thrown error from handleSecurityReviewStep (e.g. SecurityModelUnavailableError) is reported as an error envelope, not an uncaught rejection",
+                "result": "pass"
+              },
+              {
+                "title": "handleSecurityReviewStepCall forwards a given AbortSignal into handleSecurityReviewStep: an already-aborted signal refuses with SecurityReviewCancelledError before the admission check ever runs",
+                "result": "pass"
+              },
+              {
+                "title": "smoke: calling the REGISTERED insrc_security_review_step tool through the real step.call dispatch (createStepCallHandler + stepToolTable), with a fresh index, reaches {next:'done'} with a REAL report and markdown -- proving the registration -> handler wiring is live, not just type-checked",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -1,0 +1,137 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-85216ec1-2142-4887-8266-d60d3174b03f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T04:18:35.144Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Implement runSecurityReview",
+      "parent": {
+        "entityId": "STORY-0765b3a578e43eec-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0765b3a578e43eec-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-0765b3a578e43eec-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-0765b3a578e43eec-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-0765b3a578e43eec-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#262",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 3,
+        "contentHash": "bf102734d422b3fa01051529827cf5595b80ce783181bf43ca24687c51336faf",
+        "at": "2026-11-25T15:57:07.273Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T04:18:35.145Z"
+      }
+    },
+    "revision": 3
+  },
+  "body": {
+    "title": "Implement runSecurityReview",
+    "summary": "Built and passed (commits 358e14013, 087fee3ae).",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "a targets.entries path resolving outside repoPath throws synchronously before computeContentIdentity, any CLI dispatch, or any receipt persistence is attempted",
+      "the entire call body runs under a step context bound to {cwd:repoPath, envRepo:repoPath} while preserving an outer connectionExecution exactly as src/shared/step-context.ts's own runInStepContext spread pattern requires -- a case with a REAL bound connectionExecution set beforehand succeeds, not just the unbound ambient-cwd case",
+      "refuses before any round dispatches when modelSelection.status is 'unavailable', throwing SecurityModelUnavailableError with the blockerReason, and the fake CLI session is never called",
+      "refuses before any round dispatches when the pre-flight verifyContentIdentityMatch fails, and no receipt is persisted",
+      "persists exactly ONE VerificationReceipt per round (round1, round2), each 'pass' on a clean run; a round's own execution failure persists only that round's 'fail' receipt and never dispatches a later round",
+      "reverifies contentIdentity immediately before round 2 and immediately before final persistence; a content change injected between round 1 and round 2 in a test fixture is caught and aborts with ContentIdentityMismatchError, with round 1's receipt already durably persisted as 'pass'",
+      "two sequential calls with the SAME reviewId -- the first failing a round, the second succeeding -- persist TWO distinct receipts per round slot (different attemptId), both independently readable via readReceiptRecord; the first attempt's 'fail' receipt is never overwritten",
+      "run with repoPath=B while the test harness's own ambient cwd is A: every nested helper (checkpoint, reconciliation, report render, cleanup) reads/writes under B only, never A",
+      "epicHash/storyId supplied on the call are threaded directly into persistVerificationReceipt's ident with standalone left unset; when omitted, deriveReceiptIdentity's output is used with standalone:true",
+      "on success both round receipts exist and finalizeAndCleanup has run; on a pre-flight refusal, neither a receipt nor a checkpoint exists"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a targets.entries path resolving outside repoPath throws synchronously before any I/O is attempted"
+      },
+      {
+        "level": "integration",
+        "name": "runSecurityReview invoked from inside an ALREADY-BOUND step context (a real connectionExecution set via runInStepContext in the test) succeeds"
+      },
+      {
+        "level": "integration",
+        "name": "runSecurityReview refuses before any round dispatches on modelSelection.status:'unavailable', verified via the fake CLI session never being called"
+      },
+      {
+        "level": "integration",
+        "name": "runSecurityReview refuses before any round dispatches on a contentIdentity mismatch"
+      },
+      {
+        "level": "integration",
+        "name": "runSecurityReview persists ONE VerificationReceipt per round (round1, round2), each with the correct result; a round-1 failure persists only round1's fail receipt and never dispatches round 2"
+      },
+      {
+        "level": "integration",
+        "name": "runSecurityReview reverifies contentIdentity before round 2 and before finalization; a repository edit injected between round 1 and round 2 is caught and aborts with ContentIdentityMismatchError, with round1's receipt already durably persisted as 'pass' from before the edit"
+      },
+      {
+        "level": "integration",
+        "name": "runSecurityReview run with repoPath=B while the test harness's own ambient cwd is A: writeCheckpoint/reconcileRound/renderReviewReport/finalizeAndCleanup all read/write under B, never A"
+      },
+      {
+        "level": "integration",
+        "name": "SecurityReviewReport.effectiveModel matches the modelSelection actually passed in, in a case where it differs from the repo's currently-configured tier default"
+      },
+      {
+        "level": "integration",
+        "name": "two sequential runSecurityReview calls with the SAME reviewId -- the first failing a round, the second succeeding -- persist TWO distinct receipts per round slot (different attemptId); the first attempt's 'fail' receipt is never overwritten"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

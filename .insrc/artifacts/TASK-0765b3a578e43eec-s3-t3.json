@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fa6d3aa7-db33-4813-9e85-a88877d4c6ef",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T04:18:35.142Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Implement assembleSecurityReport",
+      "parent": {
+        "entityId": "STORY-0765b3a578e43eec-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0765b3a578e43eec-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-0765b3a578e43eec-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#261",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 3,
+        "contentHash": "f0aac9757a67c11d6476fa4efbdbf99595c99a4fd18f39462cef81035afde056",
+        "at": "2026-11-25T15:57:07.268Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T04:18:35.143Z"
+      }
+    },
+    "revision": 3
+  },
+  "body": {
+    "title": "Implement assembleSecurityReport",
+    "summary": "Built and passed (commit e08a38ca3).",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "confirmed advisoryEvidence.matches map to dependency-advisory SecurityFindings with checkId:'dependency-advisory' and NO receiptId set",
+      "round-1 code findings carry receiptId === receipts.round1.id; round-2 code findings carry receiptId === receipts.round2.id",
+      "unresolvedDependencies and unavailableSources pass through verbatim onto the returned SecurityReviewReport",
+      "empty advisoryEvidence.matches and empty codeFindings together produce an empty findings array, never an error",
+      "effectiveModel on the returned report equals modelSelection exactly as passed in, even when it differs from the repo's currently-configured tier default"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "assembleSecurityReport: confirmed matches map to dependency-advisory SecurityFindings with checkId:'dependency-advisory'; unresolvedDependencies/unavailableSources pass through verbatim; empty inputs produce an empty findings array"
+      },
+      {
+        "level": "unit",
+        "name": "assembleSecurityReport leaves receiptId unset on every dependency-advisory finding, and sets it only on the code findings produced by the matching round"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

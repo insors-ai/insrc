@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b9a6df81-c5da-4e20-ae21-b5864cc49ebb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T04:18:35.146Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Implement handleSecurityReviewStep + SecurityReviewStepRequest/Response types",
+      "parent": {
+        "entityId": "STORY-0765b3a578e43eec-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0765b3a578e43eec-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-0765b3a578e43eec-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#263",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 3,
+        "contentHash": "0ae769e3519ce21a9e8bef1e6461efdc0ed5ffd5dff3897ab9551baf0366666d",
+        "at": "2026-11-25T15:57:07.278Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T04:18:35.147Z"
+      }
+    },
+    "revision": 3
+  },
+  "body": {
+    "title": "Implement handleSecurityReviewStep + SecurityReviewStepRequest/Response types",
+    "summary": "The sc3 entry-point body: on a fresh phase:'start' request, checks resolveRepoLastIndexedAt(repoPath) against the request's targets and returns {next:'confirm_wait', state, guidance} when stale and the caller has not said proceed; otherwise (or on a resumed call) resolves s1's SecurityModelSelection (resolveSecurityModel) and s2's SecurityAdvisoryEvidence (collectDependencyAdvisories) itself, then calls t4's runSecurityReview and returns {next:'done', report, markdown}.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "a fresh request against a repo with a FRESH index reaches {next:'done'} directly, never confirm_wait",
+      "a fresh request against a repo with a STALE index returns {next:'confirm_wait', state, guidance} without running resolveSecurityModel, collectDependencyAdvisories, or any round",
+      "a resumed call ({phase:'start', state, proceed:true}) waits for the index before running the review end-to-end to done",
+      "a resumed call ({phase:'start', state, proceed:false}) runs the review against the index as-is (a degraded run) and still reaches done with a fully populated report",
+      "epicHash/storyId supplied on the ORIGINAL request are passed straight through into runSecurityReview's opts unchanged, never re-derived or second-guessed here",
+      "ContentIdentityMismatchError and SecurityModelUnavailableError from runSecurityReview propagate out of handleSecurityReviewStep unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "handleSecurityReviewStep: a stale-index fresh request returns confirm_wait with a state token, never runs a round; a resumed call with proceed:true or proceed:false both reach done; epicHash/storyId supplied on the request are threaded into the persisted receipt unchanged, while an omitted pair is derived via deriveReceiptIdentity with standalone:true"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

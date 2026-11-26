@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-46d73557-f256-4820-af8d-8b0b1e6c55cb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T04:18:35.140Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Implement buildSecurityRoundHooks and runSecurityCodePass",
+      "parent": {
+        "entityId": "STORY-0765b3a578e43eec-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0765b3a578e43eec-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#260",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 3,
+        "contentHash": "500f09297334560d576d4251c6b978e2bbc9bd67913405de2b6227815eae808f",
+        "at": "2026-11-25T15:57:07.263Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T04:18:35.141Z"
+      }
+    },
+    "revision": 3
+  },
+  "body": {
+    "title": "Implement buildSecurityRoundHooks and runSecurityCodePass",
+    "summary": "Built and passed (commits 2005164f4, 0354f78f5, plus the capabilityPolicy widening 92129cd47..8fb5a6f44).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "buildSecurityRoundHooks's returned hooks.ground always resolves to [] without performing any I/O",
+      "buildSecurityRoundHooks's returned hooks.security delegates to runSecurityCodePass bound to the exact repoPath/targets/modelSelection/reviewId the factory was called with",
+      "runSecurityCodePass dispatches CliProvider.runReadOnlySession with capabilityPolicy:'strict-read-analyze', the pinned modelId from modelSelection, restricted to READ_ONLY_SESSION_READ_TOOLS + READ_ONLY_SESSION_ANALYZE_TOOLS",
+      "a ReadOnlySessionTimeoutError from runReadOnlySession propagates out of runSecurityCodePass unchanged, never internally retried",
+      "a pinned provider that fails qualification (e.g. cli-codex) causes runSecurityCodePass to propagate UnqualifiedCapabilityPolicyError unchanged, never silently substituting a different provider/model"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "buildSecurityRoundHooks: hooks.ground always resolves to [] without I/O; hooks.security delegates to the injected code-pass function"
+      },
+      {
+        "level": "unit",
+        "name": "CapabilityQualificationTable lookup for 'cli-claude' (qualified), 'cli-codex' (not qualified), 'ollama' (qualified trivially)"
+      },
+      {
+        "level": "unit",
+        "name": "CliProvider.runReadOnlySession throwing UnqualifiedCapabilityPolicyError for an unqualified provider + capabilityPolicy:'strict-read-analyze' before spawning any subprocess"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

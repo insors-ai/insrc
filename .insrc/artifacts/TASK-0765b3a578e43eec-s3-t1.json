@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d7ffd2f2-11d2-481d-9be3-a96fb664574c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T04:18:35.137Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Implement deriveReceiptIdentity, verifyContentIdentityMatch, and s3's new error/report types",
+      "parent": {
+        "entityId": "STORY-0765b3a578e43eec-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0765b3a578e43eec-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#259",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 3,
+        "contentHash": "5a906275a7b63a37c3aa6e32855cb3d6d15726859189109f33cd1d1008d4f830",
+        "at": "2026-11-25T15:57:07.258Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T04:18:35.139Z"
+      }
+    },
+    "revision": 3
+  },
+  "body": {
+    "title": "Implement deriveReceiptIdentity, verifyContentIdentityMatch, and s3's new error/report types",
+    "summary": "Built and passed (commit 78f2e8441). Adds ContentIdentityMismatchError and SecurityModelUnavailableError, the in-memory SecurityReviewReport interface, deriveReceiptIdentity(contentIdentity), and verifyContentIdentityMatch(repoPath, targets, advisoryEvidence).",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "deriveReceiptIdentity(contentIdentity) returns {epicHash, storyId:'s1'} where epicHash is exactly 16 lowercase hex characters derived deterministically from contentIdentity; the SAME contentIdentity always re-derives the identical pair, a different one derives a different pair",
+      "the derived identity round-trips through a REAL persistVerificationReceipt + readReceiptRecord call without being rejected by the storage layer's own id-shape checks",
+      "verifyContentIdentityMatch resolves silently when computeContentIdentity(repoPath, targets) === advisoryEvidence.contentIdentity and advisoryEvidence.contentStable is true",
+      "verifyContentIdentityMatch throws ContentIdentityMismatchError when the recomputed identity does not match advisoryEvidence.contentIdentity",
+      "verifyContentIdentityMatch throws ContentIdentityMismatchError when contentStable is false even though the identity strings match"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "deriveReceiptIdentity: same contentIdentity re-derives the identical pair; a different identity derives a different pair"
+      },
+      {
+        "level": "unit",
+        "name": "deriveReceiptIdentity's output round-trips through a REAL persistVerificationReceipt + readReceiptRecord call without being rejected by the storage layer"
+      },
+      {
+        "level": "unit",
+        "name": "verifyContentIdentityMatch: resolves on a match with contentStable:true; throws on identity mismatch; throws on contentStable:false even when identity matches"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

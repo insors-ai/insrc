@@ -22,6 +22,16 @@ async function probe(home: string, children: ChildProcess[]): Promise<string> {
   const closed = once(child, 'close'); const line = await childLine(child, 10_000);
   assert.deepEqual(await closed, [0, null]); return line.trim();
 }
+async function command(child: ChildProcess, value: string): Promise<string> {
+  const reply = childLine(child, 10_000); child.stdin!.write(`${value}\n`); return (await reply).trim();
+}
+async function exitOwner(child: ChildProcess): Promise<void> {
+  const closed = once(child, 'close'); child.stdin!.end('exit\n'); assert.deepEqual(await closed, [0, null]);
+}
+async function controlledOwner(home: string, children: ChildProcess[]): Promise<ChildProcess> {
+  const child = spawnFixture(process.execPath, [fixture, home, 'controlled'], { stdio: ['pipe', 'pipe', 'pipe'] }); children.push(child);
+  assert.match(await childLine(child, 10_000), /ready/); return child;
+}
 
 test('daemon data lease excludes separate processes survives GC and releases only on owner exit', async () => {
   const f = setup(), children: ChildProcess[] = [];
@@ -42,38 +52,37 @@ test('daemon data lease excludes separate processes survives GC and releases onl
 
 test('daemon data lease waits for every store and worker closure and coalesces disposal', async () => {
   const f = setup(), children: ChildProcess[] = [];
-  const lease = DaemonDataLease.acquire(f.location);
-  let storeClosed!: () => void, workerClosed!: () => void, calls = 0;
-  const stores = new Promise<void>(resolve => { storeClosed = resolve; });
-  const worker = new Promise<void>(resolve => { workerClosed = resolve; });
   try {
-    const closing = lease.releaseAfterResources(async () => { calls++; await stores; await worker; });
-    assert.equal(lease.releaseAfterResources(async () => { throw new Error('Second close must not run'); }), closing);
+    const owner = await controlledOwner(f.home, children);
+    assert.equal(await command(owner, 'drain'), 'draining');
+    assert.equal(await command(owner, 'coalesce'), 'coalesced');
     assert.equal(await probe(f.home, children), 'busy');
-    storeClosed(); assert.equal(await probe(f.home, children), 'busy');
-    workerClosed(); await closing;
-    assert.equal(calls, 1); assert.equal(await probe(f.home, children), 'acquired');
-    assert.throws(() => lease.assertHeld(), { code: 'data-lease-lost' });
-    await lease.releaseAfterResources(async () => { throw new Error('Closed lease must not repeat cleanup'); });
-  } finally { storeClosed(); workerClosed(); await lease.releaseAfterResources(async () => {}); await stopOwnedChildren(children); f.cleanup(); }
+    assert.equal(await command(owner, 'store'), 'store-closed');
+    assert.equal(await probe(f.home, children), 'busy');
+    assert.equal(await command(owner, 'worker'), 'resources-closed-lease-held');
+    // Even complete application disposal cannot turn close(void) into proof.
+    assert.equal(await probe(f.home, children), 'busy');
+    await exitOwner(owner); assert.equal(await probe(f.home, children), 'acquired');
+  } finally { await stopOwnedChildren(children); f.cleanup(); }
 });
 
 test('unconfirmed store closure retains original lease and rejects competing startup', async () => {
   const f = setup(), children: ChildProcess[] = [];
-  const lease = DaemonDataLease.acquire(f.location);
   try {
-    await assert.rejects(lease.releaseAfterResources(async () => { throw new Error('Native store close failed'); }), { code: 'data-lease-release-uncertain' });
-    lease.assertHeld(); assert.equal(await probe(f.home, children), 'busy');
-    await lease.releaseAfterResources(async () => {});
+    const owner = await controlledOwner(f.home, children);
+    assert.equal(await command(owner, 'fail'), 'uncertain-lease-held');
+    assert.equal(await probe(f.home, children), 'busy');
+    assert.equal(await command(owner, 'retry'), 'resources-closed-lease-held');
+    assert.equal(await probe(f.home, children), 'busy');
+    await exitOwner(owner);
     assert.equal(await probe(f.home, children), 'acquired');
-  } finally { await lease.releaseAfterResources(async () => {}); await stopOwnedChildren(children); f.cleanup(); }
+  } finally { await stopOwnedChildren(children); f.cleanup(); }
 });
 
 test('daemon data lease rejects unsafe roots and never allocates enrollment or follows links', async () => {
-  const f = setup();
+  const f = setup(), children: ChildProcess[] = [];
   try {
-    const lease = DaemonDataLease.acquire(f.location);
-    await lease.releaseAfterResources(async () => {});
+    assert.equal(await probe(f.home, children), 'acquired');
     assert.throws(() => lstatSync(join(f.home, 'install/enrollment.json')), { code: 'ENOENT' });
     const missing = resolveInstallationLocation('fixture', { home: join(f.home, 'missing') });
     assert.throws(() => DaemonDataLease.acquire(missing));
@@ -85,5 +94,5 @@ test('daemon data lease rejects unsafe roots and never allocates enrollment or f
       const alias = join(f.home, 'alias'); symlinkSync(join(f.home, 'install'), alias);
       assert.throws(() => DaemonDataLease.acquire(resolveInstallationLocation('fixture', { home: alias })));
     }
-  } finally { f.cleanup(); }
+  } finally { await stopOwnedChildren(children); f.cleanup(); }
 });

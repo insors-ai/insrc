@@ -7,7 +7,8 @@ import { controlBinding } from './native.js';
 import { parseInstaller } from './schemas.js';
 
 // Native external handles finalize on GC. Losing an application reference must
-// never release its stores' lease; retain until explicit confirmed disposal.
+// never release its stores' lease. Retain through the daemon's actual exit:
+// the legacy native close(void) cannot attest OS-handle release on every target.
 const retained = new Set<DaemonDataLease>();
 
 function validateRoot(location: InstallationLocation): void {
@@ -22,7 +23,7 @@ function validateRoot(location: InstallationLocation): void {
 export class DaemonDataLease {
   readonly #handle: object;
   readonly #location: InstallationLocation;
-  #closed = false;
+  #resourcesClosed = false;
   #closing: Promise<void> | undefined;
   private constructor(location: InstallationLocation, handle: object) {
     this.#location = structuredClone(location); this.#handle = handle;
@@ -34,25 +35,24 @@ export class DaemonDataLease {
     retained.add(lease); return lease;
   }
   assertHeld(): void {
-    if (this.#closed || !controlBinding().held(this.#handle)) throw new InstallerError('data-lease-lost', 'Original daemon data lease is unavailable; store ownership is uncertain');
+    if (!controlBinding().held(this.#handle)) throw new InstallerError('data-lease-lost', 'Original daemon data lease is unavailable; store ownership is uncertain');
     validateRoot(this.#location);
   }
-  /** The callback is the application's actual store/worker close barrier, never
-   * a wire boolean. Failure retains the OS lock; process exit is the last resort.
-   * Returning does NOT prove child exit or authorize a replacement daemon. */
-  releaseAfterResources(closeOwnedResources: () => Promise<void>): Promise<void> {
-    if (this.#closed) return Promise.resolve();
+  /** Complete only the application's real store/worker close barrier, never a
+   * wire boolean. Success and failure both retain the native lease until exit.
+   * We deliberately never call close(void) and mistake its return for proof.
+   * Only the wrapper's observed actual exit can establish released ownership. */
+  closeResources(closeOwnedResources: () => Promise<void>): Promise<void> {
+    if (this.#resourcesClosed) return Promise.resolve();
     if (this.#closing) return this.#closing;
     const closing = (async () => {
       try {
         this.assertHeld();
         await closeOwnedResources();
         this.assertHeld();
-        controlBinding().close(this.#handle);
-        this.#closed = true;
-        retained.delete(this);
+        this.#resourcesClosed = true;
       } catch (cause) {
-        throw new InstallerError('data-lease-release-uncertain', 'Owned store/worker or native lease closure is unconfirmed', { cause });
+        throw new InstallerError('data-lease-release-uncertain', 'Owned store/worker closure is unconfirmed; retain the lease until exit', { cause });
       }
     })();
     this.#closing = closing;

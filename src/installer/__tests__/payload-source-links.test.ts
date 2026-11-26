@@ -19,7 +19,7 @@ test('payload collector snapshots complete internal native build hardlink pairs 
     const before = lstatSync(f.original), files = collectTree(f.root, f.tree, 'node_modules/native');
     assert.equal(files.size, 2);
     for (const file of files.values()) {
-      assert.equal(file.bytes.toString(), 'controlled native build bytes'); assert.equal(file.mode, 0o755);
+      assert.equal(file.bytes.toString(), 'controlled native build bytes'); assert.equal(file.mode, (before.mode & 0o111) ? 0o755 : 0o644);
     }
     assert.equal(lstatSync(f.original).ino, before.ino); assert.equal(lstatSync(f.original).nlink, 2);
     writeFileSync(f.alias, 'changed after snapshot');

@@ -1,5 +1,6 @@
 import type { OllamaPolicy } from './ollama-policy.js';
 import { parseOllamaPolicy } from './ollama-policy.js';
+import { ollamaDistributionAsset } from './distribution-artifacts.js';
 
 /** Exact official policies enabled only by recorded native qualification.
  * Unlisted targets retain manual user-level guidance. No dependency bytes ship here. */
@@ -11,12 +12,7 @@ export const ollamaPolicies: readonly OllamaPolicy[] = Object.freeze([parseOllam
     "baseline": "glibc-2.35"
   },
   "version": "0.40.18",
-  "asset": {
-    "url": "https://github.com/ollama/ollama/releases/download/v0.40.18/ollama-linux-arm64.tar.zst",
-    "sha256": "63f01dae3b65641866991e75e2aecb7aed8a4041f4c2c3c7d92862c5a47ebed6",
-    "bytes": 1704011634,
-    "format": "tar.zst"
-  },
+  "asset": ollamaDistributionAsset,
   "limits": {
     "expandedBytes": 5368709120,
     "fileBytes": 1073741824,

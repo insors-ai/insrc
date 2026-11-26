@@ -16,7 +16,7 @@ export function assertContained(root, path) {
 function validPath(path) {
   if (!path || /[\\:\x00-\x1f<>"|?*]/.test(path) || path.split('/').some(p => !p || p === '.' || p === '..' || /[. ]$/.test(p) || /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(p))) throw new Error(`Unsafe payload path: ${path}`);
 }
-export function collectTree(root, directory, prefix, { skipNodeModules = false } = {}) {
+export function collectTree(root, directory, prefix, { skipNodeModules = false, admitFile } = {}) {
   const files = new Map(), stack = new Set();
   function visit(source, target) {
     const actual = assertContained(root, source), stat = lstatSync(actual);
@@ -29,16 +29,17 @@ export function collectTree(root, directory, prefix, { skipNodeModules = false }
       }
       stack.delete(actual);
     } else {
-      if (!stat.isFile()) throw new Error('Payload special file is forbidden');
+      if (!stat.isFile() || stat.nlink !== 1) throw new Error('Payload special or hardlinked file is forbidden');
       validPath(target);
-      files.set(target, { bytes: readFileSync(actual), mode: (stat.mode & 0o111) ? 0o755 : 0o644 });
+      admitFile?.(actual, target, stat);
+      files.set(target, { bytes: readFileSync(actual), mode: (stat.mode & 0o111) ? 0o755 : 0o644, source: actual });
     }
   }
   visit(directory, prefix); return files;
 }
 /** Resolve actual installed production/optional/peer closure, retaining nested
  * versions and native sibling packages. Only in-root workspace links may expand. */
-export function productionClosure(root) {
+export function productionClosure(root, { admitFile } = {}) {
   root = realpathSync(root);
   const result = new Map(), visited = new Set();
   const workspacePaths = (JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).workspaces ?? []).map(path => resolve(root, path));
@@ -71,12 +72,13 @@ export function productionClosure(root) {
         if (!workspacePaths.includes(actual)) throw new Error('Dependency link is not a declared in-root workspace');
         const manifest = JSON.parse(readFileSync(join(actual, 'package.json'), 'utf8'));
         if (!Array.isArray(manifest.files)) throw new Error('Workspace must declare production files');
-        packageFiles = new Map([[`${destination}/package.json`, { bytes: readFileSync(join(actual, 'package.json')), mode: 0o644 }]]);
+        admitFile?.(join(actual, 'package.json'), `${destination}/package.json`, lstatSync(join(actual, 'package.json')));
+        packageFiles = new Map([[`${destination}/package.json`, { bytes: readFileSync(join(actual, 'package.json')), mode: 0o644, source: join(actual, 'package.json') }]]);
         for (const file of manifest.files) {
           validPath(file);
-          for (const [name, value] of collectTree(root, join(actual, file), `${destination}/${file}`, { skipNodeModules: true })) packageFiles.set(name, value);
+          for (const [name, value] of collectTree(root, join(actual, file), `${destination}/${file}`, { skipNodeModules: true, admitFile })) packageFiles.set(name, value);
         }
-      } else packageFiles = collectTree(root, actual, destination, { skipNodeModules: true });
+      } else packageFiles = collectTree(root, actual, destination, { skipNodeModules: true, admitFile });
       for (const [file, value] of packageFiles) {
         if (result.has(file)) throw new Error('Dependency payload collision'); result.set(file, value);
       }

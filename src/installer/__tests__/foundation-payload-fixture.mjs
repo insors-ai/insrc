@@ -1,6 +1,6 @@
 import { createRun } from '../../../scripts/test-harness/context.mjs';
 import { withRun } from '../../../scripts/test-harness/process.mjs';
-import { assembleFixtureRelease, bundleControlEntrypoint, collectProductionPayload, extractOfficialRuntime, probePayload } from '../../../scripts/package-installer.mjs';
+import { assembleFixtureRelease, bundleControlEntrypoint, collectProductionPayload, preparePublisherRuntime, probePayload } from '../../../scripts/package-installer.mjs';
 import { validateEntrypoints, sha256 } from '../../../scripts/installer-payload.mjs';
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -15,16 +15,18 @@ await withRun(run, async scope => {
   const bootstrap = join(root, 'bootstrap.mjs'), manager = join(root, 'manager.mjs');
   await bundleControlEntrypoint(run, scope, join(source, 'out/installer/terminal-entry.js'), bootstrap, target);
   await bundleControlEntrypoint(run, scope, join(source, 'out/installer/manager-entry.js'), manager, target);
-  const runtime = await extractOfficialRuntime(run, scope, archive, join(root, 'runtime'), target);
-  const files = collectProductionPayload(source, runtime), archivePath = `runtime/${process.platform === 'win32' ? 'node.zip' : 'node.tar.gz'}`;
+  const context = await preparePublisherRuntime(run, archive, undefined, target);
+  try {
+  const files = collectProductionPayload(source, { excludedInputs: [context.location.home, archive] });
   const native = readFileSync(join(source, 'out/installer/native/control.node'));
   files.set('bootstrap.mjs', { bytes: readFileSync(bootstrap), mode: 0o644 }); files.set('manager.mjs', { bytes: readFileSync(manager), mode: 0o644 });
-  files.set('native/control.node', { bytes: native, mode: 0o755 }); files.set(archivePath, { bytes: readFileSync(archive), mode: 0o644 });
-  const manifest = { schemaVersion: 1, releaseId: 'complete-foundation-fixture', sourceCommit: 'a'.repeat(40), target, runtime: { version: '22.22.1', target, sha256: sha256(readFileSync(archive)), relativeExecutable: process.platform === 'win32' ? 'node.exe' : 'bin/node' }, daemonEntry: 'out/daemon/index.js', managerEntry: 'manager.mjs', tuiEntry: 'out/cli/index.js', protocolVersion: 1, compatiblePredecessors: [], migrations: [] };
-  const descriptor = await assembleFixtureRelease({ files, directory: join(root, 'release'), manifest, baseUrl: 'https://example.invalid/complete-foundation-fixture', bootstrap: readFileSync(bootstrap), native, runtimeArchive: { path: archivePath, sha256: manifest.runtime.sha256, bytes: statSync(archive).size } });
+  files.set('native/control.node', { bytes: native, mode: 0o755 });
+  const manifest = { schemaVersion: 1, releaseId: 'complete-foundation-fixture', sourceCommit: 'a'.repeat(40), target, runtime: context.identity, daemonEntry: 'out/daemon/index.js', managerEntry: 'manager.mjs', tuiEntry: 'out/cli/index.js', protocolVersion: 1, compatiblePredecessors: [], migrations: [] };
+  const descriptor = await assembleFixtureRelease({ files, directory: join(root, 'release'), manifest, baseUrl: 'https://example.invalid/complete-foundation-fixture', bootstrap: readFileSync(bootstrap), native });
   const { extractSafeZip } = await import(pathToFileURL(join(source, 'out/installer/safe-zip.js')).href);
   const probe = join(root, 'probe'); mkdirSync(probe);
   await extractSafeZip(join(root, 'release/payload.zip'), probe, descriptor);
-  await probePayload(run, scope, probe, target);
-  writeFileSync(join(root, 'result.json'), JSON.stringify({ publication: descriptor.publication, files: files.size, payloadBytes: descriptor.payload.bytes, consumerExtraction: 'passed', nativeProbe: 'passed', managerAndTerminalBundled: true }));
+  await probePayload(run, scope, probe, target, context);
+  writeFileSync(join(root, 'result.json'), JSON.stringify({ publication: descriptor.publication, files: files.size, payloadBytes: descriptor.payload.bytes, consumerExtraction: 'passed', nativeProbe: 'passed', managerAndTerminalBundled: true, runtimeOutsidePayload: !Array.from(files.keys()).some(path => path.startsWith('tools/node/') || path.startsWith('runtime/')), descriptorFormat: descriptor.schemaVersion }));
+  } finally { if (!scope.cancellationErrors.length && !scope.evidenceErrors.length) context.cleanup(); }
 });

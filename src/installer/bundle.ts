@@ -1,8 +1,8 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { lstat, mkdir, mkdtemp, open, readdir, rm, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
-import { InstallerError, PRIVATE_NODE_VERSION } from './contracts.js';
+import { join } from 'node:path';
+import { InstallerError } from './contracts.js';
 import type { Delivery, Target, ReleaseManifest } from './contracts.js';
 import { parseInstaller } from './schemas.js';
 import { assertToken, assertLocalControlRoot } from './location.js';
@@ -15,16 +15,14 @@ import type { DownloadTransport } from './download.js';
 import { extractSafeZip, readBoundedFile, verifyPublishedPayload } from './safe-zip.js';
 import type { ExtractionLimits } from './safe-zip.js';
 import { flushDirectoryTree } from './durability.js';
+import { privateRuntimePaths } from './runtime-policy.js';
 export interface PreparedCandidate {
   releaseId: string; directory: string; manifest: ReleaseManifest; descriptorSha256: string; payloadSha256: string; inventorySha256: string;
 }
-export type PreparationLease = Pick<ControllerStore, 'location' | 'assertHeld' | 'inspect' | 'publishCandidate'>;
+export type PreparationLease = Pick<ControllerStore, 'location' | 'assertHeld' | 'inspect' | 'publishCandidate' | 'ensureRuntime'>;
 export interface PrepareOptions {
   target: Target; predecessorId?: string | undefined; signal?: AbortSignal | undefined;
   transport?: DownloadTransport | undefined; limits?: Partial<ExtractionLimits> | undefined;
-  /** Internal trusted runtime root, not a wire request option. Bootstrap/installed
-   * manager normally derives it from its verified absolute private executable. */
-  runtimeDirectory?: string | undefined;
 }
 function local(directory: string): void { assertLocalControlRoot(directory, process.platform === 'win32' ? path => controlBinding().localVolume(path) : undefined); }
 async function exists(path: string): Promise<boolean> { try { await lstat(path); return true; } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false; throw error; } }
@@ -33,8 +31,8 @@ async function fileDigest(file: string, expectedBytes: number, signal?: AbortSig
   for await (const chunk of createReadStream(file)) { signal?.throwIfAborted(); const data = chunk as Buffer; bytes += data.length; if (bytes > expectedBytes) throw new InstallerError('runtime-invalid', 'Runtime file grew'); hash.update(data); }
   if (bytes !== expectedBytes) throw new InstallerError('runtime-invalid', 'Runtime file size differs'); return hash.digest('hex');
 }
-/** Compare an inventory-bound expanded runtime with the verified bootstrap tree.
- * Shared by qualified bundle and local dev receipts; neither mode changes trust. */
+/** Legacy dev-receipt verifier, retained until the T7 receipt transition.
+ * Bundle format2 uses the shared external runtime resolver instead. */
 export async function verifyPayloadRuntime(inventory: PayloadInventory, target: Target, trustedRoot: string, signal?: AbortSignal): Promise<void> {
   const expected = new Map(inventory.files.filter(file => file.path.startsWith('tools/node/')).map(file => [file.path.slice(11), file]));
   let count = 0;
@@ -55,10 +53,6 @@ export async function verifyPayloadRuntime(inventory: PayloadInventory, target: 
   const manifest = JSON.parse((await readBoundedFile(join(trustedRoot, npm), 128 * 1024)).toString('utf8')) as { version?: string };
   if (manifest.version !== '10.9.4') throw new InstallerError('runtime-invalid', 'Verified runtime npm differs');
 }
-function currentRuntime(target: Target): string {
-  if (process.version !== `v${PRIVATE_NODE_VERSION}` || process.platform !== target.os || process.arch !== target.arch) throw new InstallerError('runtime-invalid', 'Candidate preparation requires its exact verified private runtime');
-  return target.os === 'win32' ? dirname(process.execPath) : dirname(dirname(process.execPath));
-}
 /** No selection/daemon/migration/application-data mutation occurs here. */
 export async function prepareBundle(store: PreparationLease, input: unknown, options: PrepareOptions): Promise<PreparedCandidate> {
   store.assertHeld(); options.signal?.throwIfAborted();
@@ -70,12 +64,13 @@ export async function prepareBundle(store: PreparationLease, input: unknown, opt
   const releaseId = descriptor.manifest.releaseId; assertToken(releaseId);
   const descriptorBytes = canonicalJson(descriptor), descriptorSha256 = digest(descriptorBytes), destination = join(store.location.home, 'releases', releaseId);
   const candidate = (directory: string): PreparedCandidate => Object.freeze({ releaseId, directory, manifest: descriptor.manifest, descriptorSha256, payloadSha256: descriptor.payload.sha256, inventorySha256: descriptor.inventorySha256 });
-  const runtime = options.runtimeDirectory ?? currentRuntime(options.target); local(runtime); local(join(store.location.home, 'releases'));
+  await store.ensureRuntime(descriptor.manifest.runtime, { signal: options.signal, transport: options.transport });
+  store.assertHeld(); options.signal?.throwIfAborted(); local(join(store.location.home, 'releases'));
   if (await exists(destination)) {
     local(destination);
     const receipt = await readBoundedFile(join(destination, '.release.json'), BUNDLE_LIMITS.descriptorBytes);
     if (receipt.toString('utf8') !== descriptorBytes) throw new InstallerError('candidate-conflict', 'Release identity already names different immutable bytes');
-    const inventory = await verifyPublishedPayload(destination, descriptor, options.signal); await verifyPayloadRuntime(inventory, descriptor.manifest.target, runtime, options.signal); store.assertHeld(); options.signal?.throwIfAborted(); return candidate(destination);
+    await verifyPublishedPayload(destination, descriptor, options.signal); store.assertHeld(); options.signal?.throwIfAborted(); return candidate(destination);
   }
   const stagingRoot = join(store.location.home, 'install/staging'); local(stagingRoot);
   await mkdir(stagingRoot, { recursive: true, mode: 0o700 }); controlBinding().protect(stagingRoot);
@@ -83,8 +78,8 @@ export async function prepareBundle(store: PreparationLease, input: unknown, opt
   try {
     const archive = join(stage, 'payload.zip'), payload = join(stage, 'payload'); await mkdir(payload, { mode: 0o700 });
     await downloadVerifiedAsset(descriptor.payload, archive, { signal: options.signal, transport: options.transport }); store.assertHeld();
-    const inventory = await extractSafeZip(archive, payload, descriptor, { signal: options.signal, limits: options.limits });
-    await verifyPayloadRuntime(inventory, descriptor.manifest.target, runtime, options.signal); options.signal?.throwIfAborted(); store.assertHeld();
+    await extractSafeZip(archive, payload, descriptor, { signal: options.signal, limits: options.limits });
+    options.signal?.throwIfAborted(); store.assertHeld();
     await writeFile(join(payload, '.release.json'), descriptorBytes, { flag: 'wx', mode: 0o600 });
     const receipt = await open(join(payload, '.release.json'), 'r+'); try { await receipt.sync(); } finally { await receipt.close(); }
     await flushDirectoryTree(payload, options.signal); store.assertHeld(); options.signal?.throwIfAborted();
@@ -107,12 +102,12 @@ export async function resolveBundleDelivery(delivery: Delivery, target: Target, 
 
 /** Read-only opening of an already selected immutable release. Unlike preparing
  * an upgrade, opening the selected release does not require self-predecessorship. */
-export async function openPreparedBundle(location: import('./contracts.js').InstallationLocation, releaseId: string, target: Target, options: { runtimeDirectory?: string | undefined; signal?: AbortSignal | undefined } = {}): Promise<PreparedCandidate> {
+export async function openPreparedBundle(location: import('./contracts.js').InstallationLocation, releaseId: string, target: Target, options: { signal?: AbortSignal | undefined } = {}): Promise<PreparedCandidate> {
   assertToken(releaseId); const directory = join(location.home, 'releases', releaseId); local(directory);
   const raw = await readBoundedFile(join(directory, '.release.json'), BUNDLE_LIMITS.descriptorBytes);
   const descriptor = parseReleaseDescriptor(JSON.parse(raw.toString('utf8')) as unknown, { target });
   if (descriptor.manifest.releaseId !== releaseId || canonicalJson(descriptor) !== raw.toString('utf8')) throw new InstallerError('candidate-conflict', 'Stored release identity differs');
-  const inventory = await verifyPublishedPayload(directory, descriptor, options.signal);
-  await verifyPayloadRuntime(inventory, descriptor.manifest.target, options.runtimeDirectory ?? currentRuntime(target), options.signal);
+  await privateRuntimePaths(location, descriptor.manifest.runtime, options);
+  await verifyPublishedPayload(directory, descriptor, options.signal);
   return Object.freeze({ releaseId, directory, manifest: descriptor.manifest, descriptorSha256: digest(raw), payloadSha256: descriptor.payload.sha256, inventorySha256: descriptor.inventorySha256 });
 }

@@ -220,6 +220,7 @@ export class InstallerManager {
       if (signal?.aborted) fail('cancelled', 'Preparation owner cancelled');
     };
     return { location: active.store.location, assertHeld, inspect: () => { assertHeld(); return active.store.inspect(); },
+      ensureRuntime: (identity, options) => { assertHeld(); return active.store.ensureRuntime(identity, options); },
       publishCandidate: (directory, releaseId) => { assertHeld(); return active.store.publishCandidate(directory, releaseId); } };
   }
   #acceptedSource(active: Active): DevSourceOffer {

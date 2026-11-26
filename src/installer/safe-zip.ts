@@ -8,7 +8,7 @@ import { Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { InstallerError } from './contracts.js';
 import { assertRelativeFile } from './location.js';
-import { BUNDLE_LIMITS, digest, parseInventory } from './release-descriptor.js';
+import { BUNDLE_LIMITS, digest, parseInventory, parseApplicationInventory } from './release-descriptor.js';
 import type { PayloadInventory, ReleaseDescriptor } from './release-descriptor.js';
 import { closeOwnedFile } from './owned-file.js';
 export type ExtractionLimits = typeof BUNDLE_LIMITS extends infer T ? { [K in keyof T]: number } : never;
@@ -93,7 +93,7 @@ export async function extractSafeZip(archive: string, destination: string, descr
     }
     const inventoryBytes = await readBoundedFile(join(destination, 'inventory.json'), limits.inventoryBytes);
     if (inventoryBytes.length > limits.inventoryBytes || digest(inventoryBytes) !== descriptor.inventorySha256) throw unsafe('Inventory identity differs');
-    const inventory = parseInventory(JSON.parse(inventoryBytes.toString('utf8')) as unknown);
+    const inventory = parseApplicationInventory(JSON.parse(inventoryBytes.toString('utf8')) as unknown);
     if (inventory.files.length + 1 !== extracted.size) throw unsafe('Inventory and archive membership differ');
     for (const record of inventory.files) {
       const actual = extracted.get(record.path);
@@ -108,18 +108,16 @@ export async function extractSafeZip(archive: string, destination: string, descr
 export function validatePayloadEntries(inventory: PayloadInventory, descriptor: ReleaseDescriptor): void {
   const files = new Map(inventory.files.map(file => [file.path, file]));
   const manifest = descriptor.manifest;
-  for (const path of [manifest.daemonEntry, manifest.managerEntry, manifest.tuiEntry, `tools/node/${manifest.runtime.relativeExecutable}`, ...manifest.migrations.map(hook => hook.module)]) if (!files.has(path)) throw unsafe(`Payload entrypoint absent: ${path}`);
-  if (manifest.target.os !== 'win32' && files.get(`tools/node/${manifest.runtime.relativeExecutable}`)?.mode !== 0o755) throw unsafe('Private runtime is not executable');
+  parseApplicationInventory(inventory);
+  for (const path of [manifest.daemonEntry, manifest.managerEntry, manifest.tuiEntry, ...manifest.migrations.map(hook => hook.module)]) if (!files.has(path)) throw unsafe(`Payload entrypoint absent: ${path}`);
   for (const [name, asset] of [['bootstrap.mjs', descriptor.bootstrap], ['native/control.node', descriptor.native]] as const) { const file = files.get(name); if (!file || file.sha256 !== asset.sha256 || file.bytes !== asset.bytes) throw unsafe('Control asset identity differs from inventory'); }
-  const archive = files.get(descriptor.runtimeArchive.path);
-  if (!archive || archive.sha256 !== descriptor.runtimeArchive.sha256 || archive.bytes !== descriptor.runtimeArchive.bytes) throw unsafe('Runtime archive identity differs from inventory');
 }
 /** Existing release retry is a full revalidation, never trust a success marker. */
 export async function verifyPublishedPayload(directory: string, descriptor: ReleaseDescriptor, signal?: AbortSignal): Promise<PayloadInventory> {
   const root = await lstat(directory); if (!root.isDirectory() || root.isSymbolicLink()) throw unsafe('Unsafe immutable release root');
   const inventoryBytes = await readBoundedFile(join(directory, 'inventory.json'), BUNDLE_LIMITS.inventoryBytes);
   if (inventoryBytes.length > BUNDLE_LIMITS.inventoryBytes || digest(inventoryBytes) !== descriptor.inventorySha256) throw unsafe('Immutable inventory differs');
-  const inventory = parseInventory(JSON.parse(inventoryBytes.toString('utf8')) as unknown);
+  const inventory = parseApplicationInventory(JSON.parse(inventoryBytes.toString('utf8')) as unknown);
   await verifyPayloadInventory(directory, inventory, { receipt: '.release.json', signal });
   validatePayloadEntries(inventory, descriptor); return inventory;
 }

@@ -6,24 +6,25 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { once } from 'node:events';
 import yauzl from 'yauzl';
-import { assembleFixtureRelease, assertManagerBoundary, collectProductionPayload } from '../../../scripts/package-installer.mjs';
-import { productionClosure, sha256, isContainedPath } from '../../../scripts/installer-payload.mjs';
-import { node22Fixture } from './_runtime-fixture.js';
+import { assembleFixtureRelease, assertManagerBoundary, collectProductionPayload, assertApplicationSources } from '../../../scripts/package-installer.mjs';
+import { productionClosure, collectTree, sha256, isContainedPath } from '../../../scripts/installer-payload.mjs';
+import { runtimeArchive } from '../runtime-policy.js';
+import { node22Fixture, archiveFixture } from './_runtime-fixture.js';
 import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
 import type { ChildProcess } from 'node:child_process';
 import { copyInstallerAssets, stageClientInstallerAssets } from '../../../scripts/sync-client-runtime-assets.mjs';
-const manifest = { schemaVersion: 1, releaseId: 'fixture-release', sourceCommit: 'a'.repeat(40), target: { os: 'darwin', arch: 'arm64', baseline: 'macos-13' }, runtime: { version: '22.22.1', target: { os: 'darwin', arch: 'arm64', baseline: 'macos-13' }, sha256: sha256(Buffer.from('controlled runtime archive fixture')), relativeExecutable: 'bin/node' }, daemonEntry: 'out/daemon/index.js', managerEntry: 'manager.mjs', tuiEntry: 'out/cli/index.js', protocolVersion: 1, compatiblePredecessors: ['fixture-old'], migrations: [] };
+const manifest = { schemaVersion: 1, releaseId: 'fixture-release', sourceCommit: 'a'.repeat(40), target: { os: 'darwin', arch: 'arm64', baseline: 'macos-13' }, runtime: { version: '22.22.1', target: { os: 'darwin', arch: 'arm64', baseline: 'macos-13' }, sha256: runtimeArchive({ os: 'darwin', arch: 'arm64' }).sha256, relativeExecutable: 'bin/node' }, daemonEntry: 'out/daemon/index.js', managerEntry: 'manager.mjs', tuiEntry: 'out/cli/index.js', protocolVersion: 1, compatiblePredecessors: ['fixture-old'], migrations: [] };
 async function fixture(root: string, os: 'darwin' | 'win32' = 'darwin') {
   const target = { ...manifest.target, os, baseline: os === 'win32' ? 'windows-10' : 'macos-13' };
-  const specific = { ...manifest, target, runtime: { ...manifest.runtime, target, relativeExecutable: os === 'win32' ? 'node.exe' : 'bin/node' } };
+  const specific = { ...manifest, target, runtime: { ...manifest.runtime, target, sha256: runtimeArchive(target).sha256, relativeExecutable: os === 'win32' ? 'node.exe' : 'bin/node' } };
   const files = new Map([
     ['out/daemon/index.js', { bytes: Buffer.from('// controlled daemon fixture'), mode: 0o644 }],
     ['out/cli/index.js', { bytes: Buffer.from('// controlled TUI fixture'), mode: 0o644 }],
     ['manager.mjs', { bytes: Buffer.from('// controlled manager fixture'), mode: 0o644 }],
-    ['runtime/node.tar.gz', { bytes: Buffer.from('controlled runtime archive fixture'), mode: 0o644 }],
-    [os === 'win32' ? 'tools/node/node.exe' : 'tools/node/bin/node', { bytes: Buffer.from('controlled runtime fixture'), mode: 0o755 }],
+    ['bootstrap.mjs', { bytes: Buffer.from('// fixture bootstrap'), mode: 0o644 }],
+    ['native/control.node', { bytes: Buffer.from('fixture binding'), mode: 0o755 }],
   ]);
-  return { files, descriptor: await assembleFixtureRelease({ files, directory: join(root, 'release'), manifest: specific, baseUrl: 'https://example.invalid/fixture-release', bootstrap: Buffer.from('// fixture bootstrap'), native: Buffer.from('fixture binding'), runtimeArchive: { path: 'runtime/node.tar.gz', sha256: sha256(Buffer.from('controlled runtime archive fixture')), bytes: Buffer.byteLength('controlled runtime archive fixture') } }) };
+  return { files, descriptor: await assembleFixtureRelease({ files, directory: join(root, 'release'), manifest: specific, baseUrl: 'https://example.invalid/fixture-release', bootstrap: Buffer.from('// fixture bootstrap'), native: Buffer.from('fixture binding') }) };
 }
 async function readZip(path: string): Promise<Map<string, Buffer>> {
   const zip = await new Promise<yauzl.ZipFile>((resolve, reject) => yauzl.open(path, { lazyEntries: true, strictFileNames: true, validateEntrySizes: true }, (error, value) => error ? reject(error) : resolve(value!)));
@@ -38,10 +39,11 @@ async function readZip(path: string): Promise<Map<string, Buffer>> {
   });
   zip.readEntry(); await end; return files;
 }
-test('publisher binds exact source target runtime inventory and independent archive digest', async () => {
+test('publisher format2 binds app-only inventory public manifest1 source and exact external runtime identity', async () => {
   const root = mkdtempSync(join(tmpdir(), 'insrc-publisher-'));
   try {
     const { descriptor, files } = await fixture(root);
+    assert.equal(descriptor.schemaVersion, 2); assert.equal(descriptor.manifest.schemaVersion, 1); assert.equal('runtimeArchive' in descriptor, false);
     assert.equal(descriptor.publication, 'fixture'); assert.equal(descriptor.manifest.sourceCommit, manifest.sourceCommit);
     assert.deepEqual(descriptor.manifest.target, manifest.target); assert.deepEqual(descriptor.manifest.runtime, manifest.runtime);
     const archive = readFileSync(join(root, 'release/payload.zip'));
@@ -50,9 +52,35 @@ test('publisher binds exact source target runtime inventory and independent arch
     assert.match(descriptor.payload.url, /insrc-fixture-release-darwin-arm64\.zip$/);
     assert.deepEqual(archive, readFileSync(join(root, 'release/insrc-fixture-release-darwin-arm64.zip')));
     const zip = await readZip(join(root, 'release/payload.zip')), inventory = JSON.parse(zip.get('inventory.json')!.toString());
+    assert.equal(inventory.files.some((file: { path: string }) => /^(?:tools\/node|runtime\/)/.test(file.path)), false);
     assert.equal(sha256(zip.get('inventory.json')), descriptor.inventorySha256);
     assert.equal(inventory.files.length, files.size); assert.ok(!inventory.files.some((file: { path: string }) => file.path === 'inventory.json' || file.path === 'release.json'));
     for (const file of inventory.files) { assert.equal(sha256(zip.get(file.path)), file.sha256); assert.equal(zip.get(file.path)!.length, file.bytes); }
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('publisher rejects a real pinned Node archive even when renamed as an application resource', { timeout: 120_000 }, async () => {
+  const root = mkdtempSync(join(tmpdir(), 'ipb-'));
+  try {
+    const { descriptor, files } = await fixture(root);
+    files.set('out/assets/innocent-resource.bin', { bytes: readFileSync(await archiveFixture()), mode: 0o644 });
+    await assert.rejects(assembleFixtureRelease({ files, directory: join(root, 'rejected'), manifest: descriptor.manifest, baseUrl: 'https://example.invalid/rejected', bootstrap: files.get('bootstrap.mjs')!.bytes, native: files.get('native/control.node')!.bytes }), /runtime distribution contribution/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('publisher source provenance excludes renamed runtime inputs and preserves native dependency contributions', () => {
+  const root = mkdtempSync(join(tmpdir(), 'ips-'));
+  const put = (path: string, bytes: string) => { mkdirSync(join(root, path, '..'), { recursive: true }); writeFileSync(join(root, path), bytes); };
+  try {
+    put('package.json', JSON.stringify({ dependencies: { native: '1' } }));
+    for (const path of ['out/daemon/index.js', 'out/cli/index.js', 'out/installer/terminal-entry.js', 'out/installer/manager-entry.js']) put(path, '// application fixture');
+    put('node_modules/native/package.json', '{"name":"native"}'); put('node_modules/native/addon.node', 'native fixture');
+    put('downloads/renamed-distribution.bin', 'controlled Node/Ollama input');
+    const input = join(root, 'downloads'), contribution = collectTree(root, input, 'runtime-input');
+    const renamed = new Map([['out/assets/looks-like-data.dat', [...contribution.values()][0]!]]);
+    assert.throws(() => assertApplicationSources(renamed, { sourceRoot: root, excludedInputs: [input] }), /Runtime distribution source/);
+    const app = collectProductionPayload(root, { excludedInputs: [input] });
+    assert.ok(app.has('node_modules/native/addon.node')); assert.equal([...app.keys()].some(path => path.startsWith('tools/node')), false);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 

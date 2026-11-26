@@ -1,13 +1,12 @@
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
-import { readFileSync } from 'node:fs';
+import { createReadStream, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { ZipFile } from 'yazl';
 import { privateRuntimeTest } from './_private-runtime-test.js';
-import { archiveFixture, completeNode22Fixture } from './_runtime-fixture.js';
+import { archiveFixture } from './_runtime-fixture.js';
 import { managerFixture } from './_manager-fixture.js';
-import { collectTree } from '../../../scripts/installer-payload.mjs';
 import { bundleDelivery } from '../bundle-delivery.js';
 import { ControllerStore } from '../controller-store.js';
 import { InstallerError, MAX_CONTROL_BYTES } from '../contracts.js';
@@ -15,34 +14,41 @@ import { BUNDLE_LIMITS, canonicalJson, digest, parseReleaseDescriptor } from '..
 import type { ReleaseDescriptor } from '../release-descriptor.js';
 import { runtimeArchive } from '../runtime-policy.js';
 import { requireTerminal } from '../terminal-admission.js';
+import { httpsDownloadTransport } from '../download.js';
 import type { DownloadTransport } from '../download.js';
 
-async function payload(f: ReturnType<typeof managerFixture>, runtime: string): Promise<{ zip: Buffer; descriptor: ReleaseDescriptor }> {
-  const archive = readFileSync(await archiveFixture()), native = readFileSync('out/installer/native/control.node');
-  const files = [...collectTree(runtime, runtime, 'tools/node')].map(([path, value]) => ({ path, bytes: value.bytes, mode: value.mode & 0o111 ? 0o755 : 0o644 }));
-  const bootstrap = Buffer.from('// controlled bootstrap fixture'), runtimePath = `runtime/node.${f.target.os === 'win32' ? 'zip' : 'tar.gz'}`;
-  files.push({ path: 'out/daemon/index.js', bytes: Buffer.from('// controlled daemon fixture'), mode: 0o644 },
+async function seedRuntime(f: ReturnType<typeof managerFixture>): Promise<void> {
+  const archive = await archiveFixture(), official = runtimeArchive(f.target), store = ControllerStore.acquire(f.location);
+  try { await store.ensureRuntime({ ...f.next.manifest.runtime, sha256: official.sha256 }, { transport: async (url, signal) => {
+    if (url.href !== official.url) return httpsDownloadTransport(url, signal);
+    const body = createReadStream(archive); return { status: 200, body, closed: new Promise<void>(resolve => body.once('close', resolve)) };
+  } }); } finally { store.close(); }
+}
+async function payload(f: ReturnType<typeof managerFixture>): Promise<{ zip: Buffer; descriptor: ReleaseDescriptor }> {
+  const native = readFileSync('out/installer/native/control.node'), bootstrap = Buffer.from('// controlled bootstrap fixture');
+  const files = [
+    { path: 'out/daemon/index.js', bytes: Buffer.from('// controlled daemon fixture'), mode: 0o644 },
     { path: 'out/cli/index.js', bytes: Buffer.from('// controlled TUI fixture'), mode: 0o644 },
     { path: 'manager.mjs', bytes: Buffer.from('// controlled manager fixture'), mode: 0o644 },
     { path: 'bootstrap.mjs', bytes: bootstrap, mode: 0o644 }, { path: 'native/control.node', bytes: native, mode: 0o755 },
-    { path: runtimePath, bytes: archive, mode: 0o644 });
+  ];
   const inventory = Buffer.from(JSON.stringify({ schemaVersion: 1, files: files.map(file => ({ path: file.path, bytes: file.bytes.length, sha256: digest(file.bytes), mode: file.mode })) }));
   const zip = new ZipFile(), chunks: Buffer[] = []; zip.outputStream.on('data', (chunk: Buffer) => chunks.push(chunk)); const closed = once(zip.outputStream, 'end');
-  for (const file of [...files, { path: 'inventory.json', bytes: inventory, mode: 0o644 }]) zip.addBuffer(file.bytes, file.path, { mode: 0o100000 | file.mode, compress: file.path !== runtimePath });
+  for (const file of [...files, { path: 'inventory.json', bytes: inventory, mode: 0o644 }]) zip.addBuffer(file.bytes, file.path, { mode: 0o100000 | file.mode });
   zip.end(); await closed; const bytes = Buffer.concat(chunks), official = runtimeArchive(f.target);
-  const descriptor = parseReleaseDescriptor({ schemaVersion: 1, publication: 'qualified',
+  const descriptor = parseReleaseDescriptor({ schemaVersion: 2, publication: 'qualified',
     manifest: { ...f.next.manifest, releaseId: 'durable-candidate', runtime: { ...f.next.manifest.runtime, sha256: official.sha256 }, payloadSha256: digest(bytes) },
     inventorySha256: digest(inventory), payload: { url: 'https://fixture.invalid/payload.zip', bytes: bytes.length, sha256: digest(bytes) },
     bootstrap: { url: 'https://fixture.invalid/bootstrap', bytes: bootstrap.length, sha256: digest(bootstrap) },
-    native: { url: 'https://fixture.invalid/native', bytes: native.length, sha256: digest(native) },
-    runtimeArchive: { path: runtimePath, bytes: archive.length, sha256: official.sha256 } }, { target: f.target, predecessorId: 'old' });
+    native: { url: 'https://fixture.invalid/native', bytes: native.length, sha256: digest(native) } }, { target: f.target, predecessorId: 'old' });
   return { zip: bytes, descriptor };
 }
 
 privateRuntimeTest(import.meta.url, 'fresh-bundle-peer-validates-durable-descriptor-without-resolve-map', async () => {
-  const f = managerFixture(), runtime = await completeNode22Fixture();
+  const f = managerFixture();
   try {
-    const { zip, descriptor } = await payload(f, runtime.directory); let discovery = 0, downloads = 0;
+    await seedRuntime(f);
+    const { zip, descriptor } = await payload(f); let discovery = 0, downloads = 0;
     const transport: DownloadTransport = async input => {
       const url = input.href;
       if (url === descriptor.payload.url) { downloads++; return { status: 200, body: Readable.from([zip]) }; }
@@ -51,7 +57,7 @@ privateRuntimeTest(import.meta.url, 'fresh-bundle-peer-validates-durable-descrip
       assert.ok(url.startsWith('https://api.github.com/') || url === 'https://fixture.invalid/descriptor.json');
       return { status: 200, body: Readable.from([Buffer.from(JSON.stringify(value))]) };
     };
-    f.peers.bundle = bundleDelivery(f.target, { transport, runtimeDirectory: runtime.directory });
+    f.peers.bundle = bundleDelivery(f.target, { transport });
     const ready = await f.peers.dependencies!.inspect(f.location);
     f.peers.dependencies!.inspect = async () => ({ ...ready, ollama: 'missing', ollamaInstallOffer: { id: 'offer', version: 'fixture', destination: f.home }, blockers: ['missing'] });
     f.peers.dependencies!.decide = async () => { throw new InstallerError('dependency-uncertain', 'Interrupted before bundle download'); };
@@ -64,7 +70,7 @@ privateRuntimeTest(import.meta.url, 'fresh-bundle-peer-validates-durable-descrip
     const originalDiscovery = discovery;
     // New adapter closure: it has never resolved any descriptor. Recovery can
     // only fetch the exact payload from the durable, accepted descriptor.
-    f.peers.bundle = bundleDelivery(f.target, { runtimeDirectory: runtime.directory, transport: async url => {
+    f.peers.bundle = bundleDelivery(f.target, { transport: async url => {
       assert.equal(url.href, descriptor.payload.url, 'fresh peer must not resolve latest'); downloads++;
       return { status: 200, body: Readable.from([zip]) };
     } });
@@ -82,7 +88,7 @@ privateRuntimeTest(import.meta.url, 'fresh-bundle-peer-validates-durable-descrip
     assert.equal(result.state.candidateId, descriptor.manifest.releaseId); assert.equal(downloads, 1); assert.equal(discovery, originalDiscovery);
     assert.equal(f.state.migrations.length, 1); assert.equal(f.state.activations.length, 1);
     assert.equal(readFileSync(join(f.old.directory, 'marker'), 'utf8'), 'old'); assert.deepEqual(JSON.parse(readFileSync(file, 'utf8')), saved);
-  } finally { runtime.cleanup(); f.cleanup(); }
+  } finally { f.cleanup(); }
 });
 
 privateRuntimeTest(import.meta.url, 'private-release-offer-bound-supports-full-descriptors-without-widening-other-records', async () => {
@@ -90,10 +96,10 @@ privateRuntimeTest(import.meta.url, 'private-release-offer-bound-supports-full-d
   try {
     const official = runtimeArchive(f.target);
     const manifest = { ...f.next.manifest, runtime: { ...f.next.manifest.runtime, sha256: official.sha256 }, migrations: Array.from({ length: 512 }, (_, i) => ({ id: `hook-${i}`, version: '1', module: `out/migrations/${i}-${'m'.repeat(180)}.js` })) };
-    const descriptor = parseReleaseDescriptor({ schemaVersion: 1, publication: 'qualified', manifest, inventorySha256: digest('inventory'),
+    const descriptor = parseReleaseDescriptor({ schemaVersion: 2, publication: 'qualified', manifest, inventorySha256: digest('inventory'),
       payload: { url: 'https://fixture.invalid/payload', bytes: 1, sha256: manifest.payloadSha256 },
       bootstrap: { url: 'https://fixture.invalid/bootstrap', bytes: 1, sha256: digest('bootstrap') },
-      native: { url: 'https://fixture.invalid/native', bytes: 1, sha256: digest('native') }, runtimeArchive: { path: 'runtime/node.tar.gz', bytes: 1, sha256: official.sha256 } }, { target: f.target });
+      native: { url: 'https://fixture.invalid/native', bytes: 1, sha256: digest('native') } }, { target: f.target });
     const record = { schemaVersion: 2, kind: 'bundle', descriptor, descriptorSha256: digest(canonicalJson(descriptor)) };
     assert.ok(Buffer.byteLength(JSON.stringify(record)) > MAX_CONTROL_BYTES);
     const store = ControllerStore.acquire(f.location);

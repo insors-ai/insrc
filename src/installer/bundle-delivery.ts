@@ -4,10 +4,9 @@ import { canonicalJson, digest, parseReleaseDescriptor } from './release-descrip
 import type { DownloadTransport } from './download.js';
 import { openPreparedBundle, prepareBundle, resolveBundleDelivery } from './bundle.js';
 import type { DeliveryPort } from './peer-contracts.js';
-/** Trusted fixture inputs only; production resolves its verified process runtime.
- * Neither transport nor runtimeDirectory is accepted from a manager request. */
-export function bundleDelivery(target: Target, options: { transport?: DownloadTransport | undefined; runtimeDirectory?: string | undefined } = {}): DeliveryPort {
-  const { transport, runtimeDirectory } = options;
+/** Transport is internal only; runtime identity is always resolved explicitly. */
+export function bundleDelivery(target: Target, options: { transport?: DownloadTransport | undefined } = {}): DeliveryPort {
+  const { transport } = options;
   return {
     async resolve(delivery) {
       const descriptor = parseReleaseDescriptor(await resolveBundleDelivery(delivery, target, { transport }), { target });
@@ -21,11 +20,11 @@ export function bundleDelivery(target: Target, options: { transport?: DownloadTr
       if (digest(canonicalJson(descriptor)) !== offer.descriptorSha256 || canonicalJson(descriptor.manifest) !== canonicalJson(offer.manifest)) {
         throw new InstallerError('offer-stale', 'Accepted bundle descriptor differs from its durable identity');
       }
-      return prepareBundle(store, descriptor, { target, signal: context.signal, transport, runtimeDirectory });
+      return prepareBundle(store, descriptor, { target, signal: context.signal, transport });
     },
-    open: (location, releaseId) => openPreparedBundle(location, releaseId, target, { runtimeDirectory }),
+    open: (location, releaseId) => openPreparedBundle(location, releaseId, target),
     async verify(candidate, location) {
-      const verified = await openPreparedBundle(location, candidate.releaseId, target, { runtimeDirectory });
+      const verified = await openPreparedBundle(location, candidate.releaseId, target);
       if (verified.descriptorSha256 !== candidate.descriptorSha256 || verified.payloadSha256 !== candidate.payloadSha256 || verified.inventorySha256 !== candidate.inventorySha256 || canonicalJson(verified.manifest) !== canonicalJson(candidate.manifest)) throw new InstallerError('candidate-conflict', 'Prepared release differs from immutable storage');
     },
   };

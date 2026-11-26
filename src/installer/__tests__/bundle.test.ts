@@ -12,7 +12,8 @@ import type { ChildProcess } from 'node:child_process';
 import { ControllerStore } from '../controller-store.js';
 import { resolveInstallationLocation } from '../location.js';
 import { prepareBundle, resolveBundleDelivery } from '../bundle.js';
-import { digest, canonicalJson, parseInventory, BUNDLE_LIMITS } from '../release-descriptor.js';
+import { digest, canonicalJson, parseInventory, parseReleaseDescriptor, BUNDLE_LIMITS } from '../release-descriptor.js';
+import { readInstalledReceipt } from '../installed-receipt.js';
 import { runtimeArchive } from '../runtime-policy.js';
 import { downloadJson } from '../download.js';
 import type { DownloadTransport } from '../download.js';
@@ -29,7 +30,7 @@ async function zipBytes(files: File[]): Promise<Buffer> {
 }
 function descriptor(zip: Buffer, inventory: Buffer = Buffer.from('{}')) {
   const official = runtimeArchive(target);
-  return { schemaVersion: 1, publication: 'qualified', manifest: { schemaVersion: 1, releaseId: 'candidate', sourceCommit: 'a'.repeat(40), target, runtime: { version: '22.22.1', target, sha256: official.sha256, relativeExecutable: target.os === 'win32' ? 'node.exe' : 'bin/node' }, payloadSha256: digest(zip), daemonEntry: 'out/daemon/index.js', managerEntry: 'manager.mjs', tuiEntry: 'out/cli/index.js', protocolVersion: 1, compatiblePredecessors: ['old'], migrations: [] }, inventorySha256: digest(inventory), payload: { url: 'https://fixture.invalid/payload.zip', bytes: zip.length, sha256: digest(zip) }, bootstrap: { url: 'https://fixture.invalid/bootstrap', bytes: 1, sha256: digest('b') }, native: { url: 'https://fixture.invalid/native', bytes: 1, sha256: digest('n') }, runtimeArchive: { path: 'runtime/node.tar.gz', sha256: official.sha256, bytes: 1 } };
+  return { schemaVersion: 2, publication: 'qualified', manifest: { schemaVersion: 1, releaseId: 'candidate', sourceCommit: 'a'.repeat(40), target, runtime: { version: '22.22.1', target, sha256: official.sha256, relativeExecutable: target.os === 'win32' ? 'node.exe' : 'bin/node' }, payloadSha256: digest(zip), daemonEntry: 'out/daemon/index.js', managerEntry: 'manager.mjs', tuiEntry: 'out/cli/index.js', protocolVersion: 1, compatiblePredecessors: ['old'], migrations: [] }, inventorySha256: digest(inventory), payload: { url: 'https://fixture.invalid/payload.zip', bytes: zip.length, sha256: digest(zip) }, bootstrap: { url: 'https://fixture.invalid/bootstrap', bytes: 1, sha256: digest('b') }, native: { url: 'https://fixture.invalid/native', bytes: 1, sha256: digest('n') } };
 }
 function zipAttribute(zip: Buffer, update: (buffer: Buffer, offset: number, central: boolean) => void): Buffer {
   const output = Buffer.from(zip);
@@ -44,14 +45,15 @@ async function setup() {
   const store = ControllerStore.acquire(resolveInstallationLocation('fixture', { home }));
   const snapshot: ControllerSnapshot = { schemaVersion: 1, revision: 0, installation: { schemaVersion: 1, installationId: 'fixture', dataHome: home, delivery: { mode: 'bundle', repository: 'insors-ai/insrc', channel: 'stable' }, activeReleaseId: 'old', operationId: 'old-op' }, operation: { operationId: 'old-op', phase: 'ready', candidateId: 'old' } };
   store.commit(snapshot, null); writeFileSync(join(home, 'application-data'), 'retain');
-  const runtimeStage = join(home, 'trusted-runtime'); mkdirSync(runtimeStage);
   const archive = await archiveFixture();
-  const child = target.os === 'win32'
-    ? spawnFixture('powershell.exe', ['-NoProfile', '-Command', `Expand-Archive -LiteralPath '${archive.replaceAll("'", "''")}' -DestinationPath '${runtimeStage.replaceAll("'", "''")}'`], { stdio: 'ignore' })
-    : spawnFixture('tar', ['-xzf', archive, '-C', runtimeStage, `${rootName}/bin/node`, `${rootName}/lib/node_modules/npm`, `${rootName}/include/node`, `${rootName}/LICENSE`], { stdio: 'ignore' });
-  children.push(child); assert.deepEqual(await once(child, 'close'), [0, null]);
-  const runtime = join(runtimeStage, rootName);
-  if (target.os === 'win32') for (const name of ['npm', 'npm.cmd', 'npm.ps1', 'npx', 'npx.cmd', 'npx.ps1', 'corepack', 'corepack.cmd', 'corepack.ps1']) rmSync(join(runtime, name), { force: true });
+  const runtimeResult = await store.ensureRuntime({ version: '22.22.1', target, sha256: runtimeArchive(target).sha256, relativeExecutable: target.os === 'win32' ? 'node.exe' : 'bin/node' }, { transport: async url => {
+    const { createReadStream } = await import('node:fs');
+    if (url.href !== runtimeArchive(target).url) {
+      const { httpsDownloadTransport } = await import('../download.js'); return httpsDownloadTransport(url, AbortSignal.timeout(60_000));
+    }
+    const body = createReadStream(archive); return { status: 200, body, closed: new Promise<void>(resolve => body.once('close', resolve)) };
+  } });
+  const runtime = runtimeResult.directory;
   return { home, store, snapshot, runtime, archive, async cleanup() { store.close(); await stopOwnedChildren(children); rmSync(home, { recursive: true, force: true }); } };
 }
 const sendBytes = (bytes: Buffer): DownloadTransport => async () => ({ status: 200, body: Readable.from([bytes]) });
@@ -66,7 +68,7 @@ test('hostile ZIP corpus cannot escape staging or exceed bounded extraction', { 
     const base = await zipBytes([{ path: 'safe.txt', bytes: Buffer.from('safe') }]);
     for (const path of ['../a.txt', '/bad.txt', '//a/file', 'safe\0txt', 'C:/a.txt', 'safe:txt', 'saf\\e.tx', 'CON.file', 'safe.tx.']) {
       const zip = Buffer.from(base.toString('latin1').replaceAll('safe.txt', path), 'latin1');
-      await assert.rejects(prepareBundle(f.store, descriptor(zip), { target, runtimeDirectory: f.runtime, transport: sendBytes(zip) }), /path|filename|absolute|invalid/i); unchanged(f);
+      await assert.rejects(prepareBundle(f.store, descriptor(zip), { target, transport: sendBytes(zip) }), /path|filename|absolute|invalid/i); unchanged(f);
     }
     const corpora: Array<{ zip: Buffer; pattern: RegExp; limits?: { entries?: number; entryBytes?: number; expanded?: number; ratio?: number } }> = [
       { zip: await zipBytes([{ path: 'safe.txt', bytes: Buffer.from('a') }, { path: 'safe.txt', bytes: Buffer.from('b') }]), pattern: /Duplicate|colliding/ },
@@ -83,25 +85,25 @@ test('hostile ZIP corpus cannot escape staging or exceed bounded extraction', { 
       { zip: await zipBytes([{ path: 'bomb', bytes: Buffer.alloc(64 * 1024) }]), pattern: /size|ratio|bound/, limits: { ratio: 2 } },
       { zip: await zipBytes([{ path: 'a', bytes: Buffer.from('a') }, { path: 'b', bytes: Buffer.from('b') }]), pattern: /count|bound/, limits: { entries: 1 } },
     ];
-    for (const corpus of corpora) { await assert.rejects(prepareBundle(f.store, descriptor(corpus.zip), { target, runtimeDirectory: f.runtime, transport: sendBytes(corpus.zip), limits: corpus.limits }), corpus.pattern); unchanged(f); }
+    for (const corpus of corpora) { await assert.rejects(prepareBundle(f.store, descriptor(corpus.zip), { target, transport: sendBytes(corpus.zip), limits: corpus.limits }), corpus.pattern); unchanged(f); }
     assert.equal(readdirSync(f.home).includes('a.txt'), false);
   } finally { await f.cleanup(); }
 });
 
 async function completeFixture(f: Awaited<ReturnType<typeof setup>>) {
-  const files: File[] = [...collectTree(f.runtime, f.runtime, 'tools/node')].map(([path, value]) => ({ path, bytes: value.bytes, mode: 0o100000 | value.mode }));
+  const files: File[] = [];
   const native = readFileSync('out/installer/native/control.node'), bootstrap = Buffer.from('// controlled terminal bootstrap fixture');
-  files.push({ path: 'out/daemon/index.js', bytes: Buffer.from('// controlled daemon fixture') }, { path: 'out/cli/index.js', bytes: Buffer.from('// controlled TUI fixture') }, { path: 'manager.mjs', bytes: Buffer.from('// controlled manager fixture') }, { path: 'bootstrap.mjs', bytes: bootstrap }, { path: 'native/control.node', bytes: native, mode: 0o100755 }, { path: 'runtime/node.tar.gz', bytes: readFileSync(f.archive) });
+  files.push({ path: 'out/daemon/index.js', bytes: Buffer.from('// controlled daemon fixture') }, { path: 'out/cli/index.js', bytes: Buffer.from('// controlled TUI fixture') }, { path: 'manager.mjs', bytes: Buffer.from('// controlled manager fixture') }, { path: 'bootstrap.mjs', bytes: bootstrap }, { path: 'native/control.node', bytes: native, mode: 0o100755 });
   const inventory = Buffer.from(JSON.stringify({ schemaVersion: 1, files: files.map(file => ({ path: file.path, bytes: file.bytes.length, sha256: digest(file.bytes), mode: (file.mode ?? 0o100644) & 0o111 ? 0o755 : 0o644 })) }));
   const zip = await zipBytes([...files, { path: 'inventory.json', bytes: inventory }]), release = descriptor(zip, inventory);
-  release.bootstrap.bytes = bootstrap.length; release.bootstrap.sha256 = digest(bootstrap); release.native.bytes = native.length; release.native.sha256 = digest(native); release.runtimeArchive.bytes = readFileSync(f.archive).length;
+  release.bootstrap.bytes = bootstrap.length; release.bootstrap.sha256 = digest(bootstrap); release.native.bytes = native.length; release.native.sha256 = digest(native);
   return { zip, release };
 }
 
 test('download digest target runtime cancellation and retry preserve incumbent', { timeout: 240_000 }, async () => {
   const f = await setup();
   try {
-    const { zip, release } = await completeFixture(f), options = { target, predecessorId: 'old', runtimeDirectory: f.runtime, transport: sendBytes(zip) };
+    const { zip, release } = await completeFixture(f), options = { target, predecessorId: 'old', transport: sendBytes(zip) };
     await assert.rejects(prepareBundle(f.store, { ...release, payload: { ...release.payload, sha256: '0'.repeat(64) } }, options), /identities|digest/); unchanged(f);
     const corruptDigest = structuredClone(release); corruptDigest.payload.sha256 = '0'.repeat(64); corruptDigest.manifest.payloadSha256 = '0'.repeat(64);
     await assert.rejects(prepareBundle(f.store, corruptDigest, options), /size or digest/); unchanged(f);
@@ -143,4 +145,22 @@ test('inventory bound reserves the archive inventory entry', () => {
   assert.equal(parseInventory({ schemaVersion: 1, files }).files.length, BUNDLE_LIMITS.entries - 1);
   files.push({ ...files[0]!, path: 'files/overflow' });
   assert.throws(() => parseInventory({ schemaVersion: 1, files }), /inventory/i);
+});
+
+test('bundle descriptor2 and installed receipts preserve public manifest1 and reject embedded format1', async () => {
+  const release = descriptor(Buffer.from('fixture-payload'));
+  const parsed = parseReleaseDescriptor(release, { target });
+  assert.equal(parsed.schemaVersion, 2); assert.equal(parsed.manifest.schemaVersion, 1);
+  assert.equal('runtimeArchive' in parsed, false); assert.deepEqual(parsed.manifest.runtime, release.manifest.runtime);
+  const legacy = { ...release, schemaVersion: 1, runtimeArchive: { path: 'runtime/node.tar.gz', bytes: 1, sha256: runtimeArchive(target).sha256 } };
+  assert.throws(() => parseReleaseDescriptor(legacy, { target }), /Legacy embedded-runtime.*format1/);
+  const home = mkdtempSync(join(realpathSync(tmpdir()), 'ibl-')), directory = join(home, 'releases', release.manifest.releaseId);
+  try {
+    mkdirSync(directory, { recursive: true, mode: 0o700 });
+    writeFileSync(join(directory, '.release.json'), canonicalJson(release), { mode: 0o600 });
+    const receipt = await readInstalledReceipt(directory, target); assert.equal(receipt.mode, 'bundle'); assert.equal(receipt.manifest.schemaVersion, 1);
+    writeFileSync(join(directory, '.release.json'), canonicalJson(legacy));
+    await assert.rejects(readInstalledReceipt(directory, target), /Legacy embedded-runtime.*format1/);
+    assert.equal(lstatSync(directory).isDirectory(), true, 'legacy metadata is diagnosed without adoption or deletion');
+  } finally { rmSync(home, { recursive: true, force: true }); }
 });

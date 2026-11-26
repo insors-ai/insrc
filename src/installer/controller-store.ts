@@ -2,7 +2,9 @@ import { randomUUID } from 'node:crypto';
 import { closeSync, constants, existsSync, fstatSync, fsyncSync, lstatSync, mkdirSync, openSync, readSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, isAbsolute, sep } from 'node:path';
 import { InstallerError, MAX_CONTROL_BYTES } from './contracts.js';
-import type { ControllerSnapshot, InstallationLocation } from './contracts.js';
+import type { ControllerSnapshot, InstallationLocation, RuntimeIdentity } from './contracts.js';
+import type { DownloadTransport } from './download.js';
+import type { ResolvedPrivateRuntime } from './runtime-metadata.js';
 import { assertLocalControlRoot, assertToken, sameInstallationHome } from './location.js';
 import { controlBinding } from './native.js';
 import { parseInstaller } from './schemas.js';
@@ -175,6 +177,10 @@ export class ControllerStore {
     flushDirectory(releases); flushDirectory(dirname(stagedDirectory)); flushDirectory(this.location.home); return destination;
   }
   /** Runtime stages keep their original owner; no raw native handle escapes. */
+  async ensureRuntime(identity: RuntimeIdentity, options: { signal?: AbortSignal | undefined; transport?: DownloadTransport | undefined } = {}): Promise<ResolvedPrivateRuntime> {
+    this.assertHeld();
+    return (await import('./runtime-install.js')).ensurePrivateRuntime(this, identity, options);
+  }
   async publishRuntime(stage: StagedRuntime, signal?: AbortSignal): Promise<string> {
     this.assertHeld();
     const { assertRuntimeStage, retainUncertainRuntimeStage, closedRuntimeOperation } = await import('./runtime-acquire.js');

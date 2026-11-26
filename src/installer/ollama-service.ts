@@ -46,9 +46,11 @@ async function serviceState(frame: OllamaServiceFrame, record: string, report: D
   const paths = servicePaths(record);
   const admission = serviceJson(await readDependencyRecord(frame.location, paths.admission)); signal.throwIfAborted();
   if (canonicalJson(admission) !== canonicalJson(frame.admission)) throw dependencyUncertain('Service intent differs from the accepted immutable frame');
-  const launch = await fact(frame.location, paths.launch, frame); signal.throwIfAborted();
-  const running = await fact(frame.location, paths.running, frame); signal.throwIfAborted();
+  // Facts are immutable and published launch -> running -> exit. Observe
+  // successors first so a legal append cannot appear to lack its predecessor.
   const exit = await fact(frame.location, paths.exit, frame); signal.throwIfAborted();
+  const running = await fact(frame.location, paths.running, frame); signal.throwIfAborted();
+  const launch = await fact(frame.location, paths.launch, frame); signal.throwIfAborted();
   const result = await fact(frame.location, paths.result, frame); signal.throwIfAborted();
   const logError = await fact(frame.location, paths.logError, frame); signal.throwIfAborted();
   const diagnostic = existsSync(paths.diagnostic) ? parseServiceDiagnostic(frame.admission, serviceJson(await readDependencyRecord(frame.location, paths.diagnostic))) : undefined; signal.throwIfAborted();
@@ -207,7 +209,14 @@ export async function startOllamaService(location: InstallationLocation, prepare
       check = await probe(); current(); last = check.report;
       const state = await serviceState(frame, record, check.report, signal); current();
       if (state.ollama === 'ready') { writeDependencyRecord(location, handle, paths.result, serviceFact(admission, 'ready')); current(); return state; }
-      if (existsSync(paths.exit)) { writeDependencyRecord(location, handle, paths.result, serviceFact(admission, 'unverified')); current(); return state; }
+      if (existsSync(paths.exit)) {
+        // Exit may have arrived after the snapshot above. Recheck availability
+        // after that terminal observation, including an existing listener.
+        check = await probe(); current(); last = check.report;
+        const terminal = await serviceState(frame, record, check.report, signal); current();
+        writeDependencyRecord(location, handle, paths.result, serviceFact(admission, terminal.ollama === 'ready' ? 'ready' : 'unverified'));
+        current(); return terminal;
+      }
       await delay(100, undefined, { signal }); current();
     }
   };

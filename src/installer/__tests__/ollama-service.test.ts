@@ -29,15 +29,18 @@ async function until(check: () => boolean, budget = 5000) {
 }
 async function fixture() {
   const base = await ollamaFixture(), children: ChildProcess[] = [];
+  const workerDiagnostics = new Map<ChildProcess, string>();
+  const diagnostics = () => JSON.stringify(children.map(child => ({ exitCode: child.exitCode, signal: child.signalCode, stderr: workerDiagnostics.get(child) ?? '' })));
   const input = await base.input(), prepared = await prepareOllama(base.location, input.policy, input.offer, base.context(), { recheck: base.recheck, transport: base.transport });
   const record = join(base.home, prepared.identity.recordRelativePath), paths = servicePaths(record), state = join(base.root, 'service-state');
   let launches = 0;
   const launch = async (_frame: unknown, file: string, mode = 'ready') => {
     assert.equal(existsSync(paths.admission), true, 'durable admission precedes any retained process');
     launches++; const child = spawnFixture(base.options.runtime.node, [driver, base.home, file, mode], { stdio: ['ignore', 'ignore', 'pipe'] }); children.push(child);
-    let diagnostic = ''; child.stderr!.on('data', (bytes: Buffer) => { diagnostic = (diagnostic + bytes.toString()).slice(-8192); });
+    workerDiagnostics.set(child, '');
+    child.stderr!.on('data', (bytes: Buffer) => { workerDiagnostics.set(child, ((workerDiagnostics.get(child) ?? '') + bytes.toString()).slice(-8192)); });
     child.on('error', () => {}); await once(child, 'spawn');
-    return { started: true, diagnostic };
+    return { started: true };
   };
   const stop = async () => {
     if (children.some(child => child.exitCode === null && child.signalCode === null)) { mkdirSync(state, { recursive: true }); writeFileSync(join(state, 'stop'), 'close owned fixture'); }
@@ -48,8 +51,10 @@ async function fixture() {
     let result = '', diagnostic = ''; child.stdout!.on('data', (data: Buffer) => { result += data.toString(); assert.ok(result.length <= 16384); }); child.stderr!.on('data', (data: Buffer) => { diagnostic = (diagnostic + data.toString()).slice(-8192); });
     assert.deepEqual(await once(child, 'close'), [0, null], diagnostic); return JSON.parse(result) as { ollama: string; recommendations: string[] };
   };
-  return { ...base, prepared, record, paths, state, children, launch, count: () => launches, stop, inspectFresh,
-    service: { workerEntrypoint: driver, recheck: base.recheck, readinessMs: 3000, launch },
+  return { ...base, prepared, record, paths, state, children, launch, count: () => launches, stop, inspectFresh, diagnostics,
+    // Positive real-worker paths include full private-runtime verification.
+    // Keep their finite budget aligned with production, not the presence probe.
+    service: { workerEntrypoint: driver, recheck: base.recheck, readinessMs: 30_000, launch },
     async cleanup() { try { await stop(); } finally { await stopOwnedChildren(children); await base.cleanup(); } } };
 }
 function attemptBytes(root: string): unknown {
@@ -169,13 +174,13 @@ serviceTest('owned-service-start-port-conflict-and-readiness-failure-preserve-ex
     try {
       const listen = async () => { f.server.listen(f.port, '127.0.0.1'); await once(f.server, 'listening'); };
       if (mode === 'existing') await listen();
-      const result = await startOllamaService(f.location, f.prepared, f.context(), { ...f.service, readinessMs: mode === 'slow' ? 300 : 3000,
+      const result = await startOllamaService(f.location, f.prepared, f.context(), { ...f.service, ...(mode === 'slow' ? { readinessMs: 300 } : {}),
         launch: async (frame, record) => { if (mode === 'race') await listen(); return f.launch(frame, record, mode === 'slow' ? 'slow' : 'ready'); } });
       if (mode === 'slow') {
         assert.equal(result.ollama, 'unavailable'); assert.equal(f.children[0]!.exitCode, null);
         assert.equal((await dependencyPort(f.target, f.location, f.options).inspect(f.location)).ollama, 'unavailable');
       } else {
-        assert.equal(result.ollama, 'ready'); assert.equal(f.server.listening, true);
+        assert.equal(result.ollama, 'ready', JSON.stringify({ mode, result, workers: f.diagnostics() })); assert.equal(f.server.listening, true);
         assert.equal(f.count(), mode === 'existing' ? 0 : 1);
         if (mode === 'existing') assert.equal(existsSync(f.paths.admission), false);
         else { await until(() => existsSync(f.paths.exit)); assert.equal(JSON.parse(readFileSync(f.paths.exit, 'utf8')).endpointOwnership, 'unproven'); }
@@ -217,7 +222,11 @@ serviceTest('service-admission-cancellation-retains-only-explicitly-accepted-ser
     const cancel = new AbortController();
     await assert.rejects(startOllamaService(after.location, after.prepared, after.context('a'.repeat(64), cancel.signal), { ...after.service,
       launch: async (frame, record) => { cancel.abort(); return after.launch(frame, record); } }), { code: 'cancelled' });
-    assert.equal(after.count(), 1); await until(() => existsSync(join(after.state, 'ready')) && existsSync(after.paths.running));
+    assert.equal(after.count(), 1); await until(() => {
+      assert.equal(after.children[0]!.exitCode, null, after.diagnostics());
+      assert.equal(after.children[0]!.signalCode, null, after.diagnostics());
+      return existsSync(join(after.state, 'ready')) && existsSync(after.paths.running);
+    }, 30_000);
     assert.equal(after.children[0]!.exitCode, null); assert.equal((await dependencyPort(after.target, after.location, after.options).inspect(after.location)).ollama, 'ready');
     assert.equal(JSON.parse(readFileSync(after.paths.result, 'utf8')).state, 'unverified');
     assert.equal(JSON.parse(readFileSync(after.paths.admission, 'utf8')).retained, true);

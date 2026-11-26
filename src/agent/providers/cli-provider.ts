@@ -77,7 +77,8 @@ import { ModelResponseShapeError } from './model-call-error.js';
 import { checkOllamaTarget, OllamaTargetError } from './ollama-target.js';
 import { getModelRegistry } from '../../daemon/model-registry.js';
 import { daemonInstallRoot } from '../../daemon/mcp-register.js';
-import { openVerifiedVibeSession, runVerifiedVibeTurn, vibeAssistantOutput, VibeTurnError, type VibeCatalogModel } from '../../shared/vibe-session.js';
+import { openVerifiedVibeSession, runVerifiedVibeTurn, vibeAssistantOutput } from '../../shared/vibe-session.js';
+import { VibeTurnError, type VibeCatalogModel } from '../../shared/vibe-adapter.js';
 
 const log = getLogger('cli-provider');
 

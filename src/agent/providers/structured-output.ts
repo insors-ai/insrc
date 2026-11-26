@@ -37,7 +37,7 @@ import { formatAjvError, responseValidationIssue } from './structured-schema.js'
 export { codexStrictSchema, validateCodexReply, rootUnionKey, processSchemaForOpenAIStrict } from './structured-schema.js';
 export type { RootUnionKey } from './structured-schema.js';
 import { getLogger } from '../../shared/logger.js';
-import { VibeTurnError } from '../../shared/vibe-session.js';
+import { VibeTurnError } from '../../shared/vibe-adapter.js';
 import { ModelCallFailedError, ModelResponseShapeError } from './model-call-error.js';
 import type { StructuredSchema } from '../../shared/types.js';
 

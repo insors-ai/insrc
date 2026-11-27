@@ -1,0 +1,420 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795776322035-75xiwb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-27T10:51:43.135Z",
+    "epicCreatedAt": "2026-11-27T10:37:28.792Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 380790,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9c95950064e4b916",
+    "epicSlug": "insrc-present-cannot-show-tracked-epic",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1795776322035-75xiwb",
+    "hldEffectiveHash": "3a4bff303fb3a66de251642f900d063614dde4bd482a2be039c0782617ca6d2e",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "43cb4cab30e3f26894bfbc6d5058cc80d9101a63f8daad4d38d508bda2899031",
+        "at": "2026-11-27T10:51:43.266Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T11:30:34.239Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "f8ee49ef15c9f91ab824332cb4a47f187e166f23"
+  },
+  "body": {
+    "summary": {
+      "prose": "insrc_present currently refuses to open a document unless the daemon's pending-approval list includes it, and that list is also gated by a code-review-readiness rule that can never be satisfied while review is disabled -- so a perfectly normal, not-yet-decided artifact (like a tracked-epic Story's BUILD record) can never be shown. This Story adds a small, separate lookup the chat's present/approve flow uses instead: it answers only 'does this name resolve to exactly one real artifact record', regardless of that artifact's lifecycle status, leaving the existing pending-approval list (and the IDE plugins' review panel that also depends on it) completely unchanged.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": []
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "resolveOpenableArtifacts",
+          "signature": "resolveOpenableArtifacts(repoPath: string): readonly { readonly artifactId: string; readonly mdPath: string }[]",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Absolute repo path whose .insrc/artifacts directory is scanned.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly { readonly artifactId: string; readonly mdPath: string }[]",
+            "meaning": "One entry per PENDING_KINDS artifact file on disk, regardless of lifecycle status or the BUILD/CR-sibling precondition -- artifactId (filename minus .json) and mdPath (via the existing, status-independent deriveMdPath)."
+          },
+          "errors": [],
+          "preconditions": [
+            "repoPath is a registered repo"
+          ],
+          "postconditions": [
+            "Every PENDING_KINDS artifact file under .insrc/artifacts is represented exactly once, independent of its approvalStateOf result and independent of whether a sibling CR-*.json exists",
+            "A malformed artifact file is skipped (logged), matching listPendingArtifacts' existing one-bad-file-must-not-drop-the-rest behavior"
+          ]
+        },
+        {
+          "name": "deriveMdPath",
+          "signature": "deriveMdPath(repoPath: string, kind: ArtifactKind, meta: Readonly<Record<string, unknown>>): string",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Repo root.",
+              "optional": false
+            },
+            {
+              "name": "kind",
+              "type": "ArtifactKind",
+              "purpose": "The artifact's kind prefix.",
+              "optional": false
+            },
+            {
+              "name": "meta",
+              "type": "Readonly<Record<string, unknown>>",
+              "purpose": "The artifact's own meta block, used to derive its slug/anchor.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The artifact's rendered .md path, status-independent."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Unchanged existing behavior -- resolveOpenableArtifacts reuses it as-is, no modification"
+          ]
+        },
+        {
+          "name": "handleInsrcPresent",
+          "signature": "handleInsrcPresent(args: InsrcPresentArgs, deps: InsrcPresentDeps = {}): Promise<{ content: { type: 'text'; text: string }[]; isError?: boolean }>",
+          "parameters": [
+            {
+              "name": "args",
+              "type": "InsrcPresentArgs",
+              "purpose": "The declared document names (artifact ids or paths).",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "InsrcPresentDeps",
+              "purpose": "Test seams for the pending-list call and repo resolver.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ content: ...; isError?: boolean }>",
+            "meaning": "Unchanged external response shape: { presented: string[], notPending: string[] } as the text payload."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The openable set it filters names against now comes from resolveOpenableArtifacts instead of pending.artifacts (listPendingArtifacts via pendingWorkflow); namesPending's matching logic is reused unchanged since it only needs {artifactId, mdPath}",
+            "External request/response shape of the insrc_present MCP tool is unchanged -- only the internal data source for openability changes"
+          ]
+        }
+      ],
+      "dataModel": [],
+      "interactionWithShared": []
+    },
+    "dataModelChanges": [],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A declared name does not resolve to any artifact file at all (misspelled id or path).",
+          "detection": "resolveOpenableArtifacts' scan over .insrc/artifacts finds no PENDING_KINDS file whose artifactId or mdPath matches the declared name.",
+          "response": "handleInsrcPresent places the name in notPending, exactly as today for an unmatched name -- no behavior change for this case.",
+          "userImpact": "The caller sees notPending and must correct the name before presenting again.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A bare filename (e.g. a plain 'PLAN.md') matches more than one artifact across different Stories.",
+          "detection": "namesPending's filter over resolveOpenableArtifacts' output returns more than one match for the same declared name.",
+          "response": "The ambiguous name is reported as notPending, not guessed at -- the existing ambiguity rule in handleInsrcPresent is unchanged, now evaluated over the broader (status-independent) candidate set.",
+          "userImpact": "Caller must disambiguate with a more specific path or the artifact id.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A malformed artifact JSON file exists under .insrc/artifacts (corrupted or partially written).",
+          "detection": "JSON.parse throws while resolveOpenableArtifacts scans that file.",
+          "response": "The malformed file is skipped and logged, matching listPendingArtifacts' existing one-bad-file-must-not-drop-the-rest behavior; the scan continues over the remaining files.",
+          "userImpact": "That one malformed artifact cannot be presented, but every other declared name still resolves correctly.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An artifact kind outside PENDING_KINDS (e.g. a STUB or an EPIC/STORY/TASK record).",
+          "expected": "Not included in resolveOpenableArtifacts' output -- insrc_present never presents a non-reviewable kind, matching today's scope exactly."
+        },
+        {
+          "input": "An artifact whose lifecycle status is already 'approved' or 'rejected'.",
+          "expected": "Now included in resolveOpenableArtifacts' output (unlike listPendingArtifacts); insrc_present reports it as presented if its name resolves uniquely. Re-approving it is still governed separately by insrc_workflow_approve's own lifecycle checks, so presenting a decided artifact carries no approval risk."
+        },
+        {
+          "input": "A tracked-epic BUILD record with no CR-*.json sibling (the reported defect's exact case).",
+          "expected": "Now included in resolveOpenableArtifacts' output -- the CR-sibling precondition is not reapplied; insrc_present reports it as presented."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A malformed artifact file must not drop the rest of the scan: one bad file is skipped and logged, not a thrown error that fails the whole lookup.",
+          "source": "c1"
+        },
+        {
+          "text": "A declared name matching more than one document stays ambiguous and is reported notPending rather than guessed at.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove resolveOpenableArtifacts returns every PENDING_KINDS artifact file regardless of lifecycle status, and regardless of the BUILD/CR-sibling precondition, while still skipping non-PENDING_KINDS files and malformed JSON.",
+          "subjects": [
+            "resolveOpenableArtifacts returns a draft (never-decided) artifact",
+            "resolveOpenableArtifacts returns an approved artifact",
+            "resolveOpenableArtifacts returns a rejected artifact",
+            "resolveOpenableArtifacts returns a non-standalone BUILD with no CR sibling",
+            "resolveOpenableArtifacts excludes a non-PENDING_KINDS file (e.g. an EPIC/STORY/TASK record)",
+            "resolveOpenableArtifacts skips a malformed JSON file without dropping the rest of the scan"
+          ],
+          "fixturesNeeded": [
+            "temp repo with .insrc/artifacts containing one artifact per PENDING_KINDS member at draft/approved/rejected status",
+            "a non-standalone BUILD file with no CR sibling",
+            "a non-PENDING_KINDS file (e.g. EPIC-<hash>.json)",
+            "a malformed (non-JSON) artifact file"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove handleInsrcPresent now presents a name that listPendingArtifacts would have excluded, while preserving the existing ambiguous-name and unmatched-name behavior.",
+          "subjects": [
+            "handleInsrcPresent presents a tracked-epic BUILD by artifact id with no CR sibling (the reported defect's exact case)",
+            "handleInsrcPresent presents the same BUILD by its repo-relative doc path",
+            "handleInsrcPresent presents an already-approved artifact by name",
+            "handleInsrcPresent reports notPending for a name matching zero artifacts",
+            "handleInsrcPresent reports notPending for a bare filename matching more than one document (ambiguity preserved)",
+            "handleInsrcPresent's external response shape stays { presented: string[], notPending: string[] }"
+          ],
+          "fixturesNeeded": [
+            "same temp repo fixtures as the resolveOpenableArtifacts unit tests, exercised through handleInsrcPresent's existing test seams (InsrcPresentDeps)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "handleInsrcPresent presents a tracked-epic BUILD by artifact id with no CR sibling (the reported defect's exact case)",
+            "handleInsrcPresent presents the same BUILD by its repo-relative doc path"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "resolveOpenableArtifacts returns a draft (never-decided) artifact",
+            "resolveOpenableArtifacts returns an approved artifact",
+            "resolveOpenableArtifacts returns a rejected artifact",
+            "resolveOpenableArtifacts returns a non-standalone BUILD with no CR sibling",
+            "resolveOpenableArtifacts excludes a non-PENDING_KINDS file (e.g. an EPIC/STORY/TASK record)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "handleInsrcPresent reports notPending for a name matching zero artifacts",
+            "handleInsrcPresent reports notPending for a bare filename matching more than one document (ambiguity preserved)",
+            "resolveOpenableArtifacts skips a malformed JSON file without dropping the rest of the scan"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "handleInsrcPresent (src/mcp/server.ts:1105-1140) derives its entire openable set from pending.artifacts, sourced from listPendingArtifacts (src/workflow/pending.ts:116-157), which excludes any non-standalone BUILD lacking a CR-*.json sibling (pending.ts:152) and any artifact whose lifecycle state is not 'pending' (pending.ts:143).",
+      "stateAfter": "handleInsrcPresent derives its openable set from a new function, resolveOpenableArtifacts, that enumerates every PENDING_KINDS artifact file regardless of lifecycle status or CR-sibling existence; listPendingArtifacts, handleWorkflowPending and the workflow.pending IPC method are unchanged, so the IDE plugins' review panel's behavior is identical before and after.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the new resolveOpenableArtifacts function to src/workflow/pending.ts, reusing the existing file-scan shape and the already-exported deriveMdPath for path derivation, with no lifecycle-state or CR-sibling filter.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Change handleInsrcPresent in src/mcp/server.ts to read its openable set from resolveOpenableArtifacts instead of pending.artifacts (pendingWorkflow/listPendingArtifacts), keeping namesPending and the ambiguity rule unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Update/extend tests covering handleInsrcPresent and the new resolveOpenableArtifacts per the test strategy.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "insrc_present's external MCP request/response shape ({ documents } in, { presented, notPending } out) is unchanged. No caller of listPendingArtifacts/workflow.pending/the IDE panel is touched, so that consumer's behavior is byte-for-byte unchanged. The only observable behavior change is that insrc_present now also presents artifacts it previously refused (already-approved/rejected artifacts, and a tracked-epic BUILD with no CR sibling) -- a strict widening, not a narrowing, so no existing caller that depended on a name being presented can regress.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "New minimal status-independent resolver, exported from pending.ts",
+        "oneLineSummary": "Add a new, separate exported function in pending.ts that scans the same PENDING_KINDS artifact files but skips the lifecycle-state and CR-sibling filters, returning only {artifactId, mdPath} pairs; handleInsrcPresent uses it instead of listPendingArtifacts/pending.artifacts.",
+        "approach": "Reuse the existing file-scan loop shape and deriveMdPath (already exported, status-independent) to build a minimal descriptor {artifactId, mdPath} for every PENDING_KINDS artifact file on disk, with NO lifecycle-state check and NO BUILD/CR-sibling check. Export it from pending.ts as its own function, name TBD at contract.detail. handleInsrcPresent (server.ts:1105-1140) calls this new function as its sole source for the openable set, dropping its dependency on pending.artifacts entirely; namesPending's matching logic (server.ts:1098-1101) is unchanged since it only needs artifactId+mdPath. listPendingArtifacts itself, the workflow.pending IPC method, and the IDE plugins' review panel are completely untouched -- their 'awaiting a decision' semantics stay intact. The minimal {artifactId, mdPath} shape matches exactly what insrc_present's own response needs (it returns only presented[]/notPending[] string buckets, never title/kind/state), so no richer descriptor is needed.",
+        "pros": [
+          "Insrc_present's openability becomes fully independent of listPendingArtifacts' business rules, resolving the root cause directly",
+          "listPendingArtifacts and its one known production caller (handleWorkflowPending/workflow.pending, which the IDE panel also depends on) are untouched -- zero regression risk to that consumer",
+          "Reuses deriveMdPath (already exported, already status-independent) instead of duplicating path-derivation logic",
+          "Minimal new surface: one new function, one new call site change in handleInsrcPresent"
+        ],
+        "cons": [
+          "Introduces a second artifact-enumeration function in pending.ts alongside listPendingArtifacts, which a future reader must understand are deliberately different (mitigated by a doc comment explaining the split)",
+          "Does not share toDescriptor's richer PendingArtifact shape, so if a future caller of insrc_present's response ever wants title/kind, this function would need extending"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Widen listPendingArtifacts with an opt-out flag",
+        "oneLineSummary": "Add an optional parameter to listPendingArtifacts itself (e.g. an 'includeAllStatuses' flag) that skips the state/CR-sibling checks when set, and have handleInsrcPresent pass it while the IDE panel's call path keeps the default.",
+        "approach": "Change listPendingArtifacts's signature to accept an options object with an opt-in flag; when set, the loop body skips both the approvalStateOf check and the BUILD/CR-sibling check, returning every PENDING_KINDS artifact regardless of status. handleWorkflowPending (and therefore workflow.pending/the IDE panel) keeps calling it with the flag unset (default pending-only behavior unchanged); handleInsrcPresent's caller of pendingWorkflow would need its own new code path that calls listPendingArtifacts directly with the flag set, bypassing pendingWorkflow/workflow.pending IPC (since that IPC method has no reason to ever return all-statuses to the IDE panel).",
+        "pros": [
+          "Reuses listPendingArtifacts's existing loop body verbatim via a single conditional, no new function to maintain",
+          "toDescriptor's PendingArtifact shape (with richer fields) is reused as-is"
+        ],
+        "cons": [
+          "Conflates two genuinely different callers' needs into one function via an implicit boolean flag -- exactly the coupling the filed ISSUE identifies as the root cause, just moved one layer down instead of removed",
+          "A future caller could pass the wrong flag value by mistake, silently regressing either consumer; the two concerns (IDE pending-list vs insrc_present openability) no longer have separate call surfaces to catch that at compile time",
+          "toDescriptor's return type hardcodes state: 'pending' as a literal -- reusing it for a non-pending artifact produces a descriptor whose own state field lies about the artifact's real status, which would need a separate fix anyway"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "A boolean flag threaded through the same shared function listPendingArtifacts is a narrower, riskier form of decoupling than a separate function: a future caller could pass the wrong flag value and silently regress either consumer, and reusing toDescriptor's PendingArtifact shape would carry a state: 'pending' literal that lies about a non-pending artifact's real status."
+      },
+      {
+        "id": "a3",
+        "name": "Inline ad hoc resolution in server.ts, no shared helper",
+        "oneLineSummary": "Duplicate a minimal file-scan + path-derivation directly inside server.ts's handleInsrcPresent, without touching pending.ts at all.",
+        "approach": "handleInsrcPresent reads .insrc/artifacts directly, re-implementing enough of the kind-prefix parsing and path derivation to answer 'does this name match exactly one artifact file' without importing anything new from pending.ts.",
+        "pros": [
+          "Zero risk of touching pending.ts's own exports or its existing test suite"
+        ],
+        "cons": [
+          "Duplicates scan/path-derivation logic pending.ts's own module doc already centralizes as 'the single source of truth' for this exact concern (pending.ts:6-20), directly contradicting that stated design intent",
+          "Two independent implementations of 'how do I find an artifact's file' will drift as the artifact-id/path scheme evolves (e.g. if resolveArtifactMdPath's logic changes, this duplicate would silently go stale)",
+          "Does not reuse deriveMdPath even though it already does exactly what's needed"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Duplicates scan/path-derivation logic pending.ts's own module doc already calls the single source of truth for this concern, at higher cost (M) than a1 (S) for an inferior outcome, with a real drift risk as the artifact-id/path scheme evolves."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "cd1 (partial): resolveOpenableArtifacts is a genuinely new function (not grounded in s1's analyze bundle, since it doesn't exist yet) -- disclosed as new throughout, never claimed to pre-exist.",
+      "ep3 (partial): invariantsToPreserve cites c1/c2, now defined in this artifact's own citations[] against the real paths pending.ts:116-157/159-183 and server.ts:1105-1140 respectively.",
+      "ts2 (partial): testFramework 'node:test' reflects this session's direct, already-verified knowledge of this codebase's test convention rather than an explicit s1 test.locate/convention.detect lookup output."
+    ],
+    "epicImpact": {
+      "applies": false,
+      "reason": "Standalone bugfix Story with no prior Story of this Epic; there is nothing already built to analyse.",
+      "storiesCovered": [],
+      "findings": "",
+      "sources": []
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/pending.ts:116-157",
+      "quotedText": "if (kind === 'BUILD' && meta['standalone'] !== true && !names.has(`CR${file.slice('BUILD'.length)}`)) continue;"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/mcp/server.ts:1105-1140",
+      "quotedText": "const pending = await pendingWorkflow({ repo }, deps); ... const openable = pending.artifacts; ... const presented = names.filter((n) => openable.filter((a) => namesPending(n, a)).length === 1);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/pending.ts:246-262"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/path-scheme.ts:186-198"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/pending.ts:159-183"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/mcp/server.ts:1098-1101"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/pending.ts:74-88"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts:900-1120"
+    }
+  ]
+}

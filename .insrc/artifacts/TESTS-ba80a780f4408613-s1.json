@@ -1,0 +1,165 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 4,
+        "contentHash": "0cbdc27626469690aeca0bf4ef24675bef9965bed023d220b7537627542412c4",
+        "at": "2026-11-27T15:49:18.272Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "ba80a780f4408613",
+    "storyId": "s1",
+    "createdAt": "2026-11-27T14:13:08.214Z",
+    "updatedAt": "2026-11-27T15:49:17.922Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-27T12:30:18.584Z",
+    "epicSlug": "two-untracked-vs-code-plugin-test",
+    "revision": 4
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "24e76224e",
+        "ranAt": "2026-11-27T15:49:17.922Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Real panel type probes preserve positive and intended-negative diagnostics",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/test-harness-probes.test.ts",
+                "title": "Real panel type probes preserve positive and intended-negative diagnostics",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "compileProbe appends --skipLibCheck only when the per-probe skipLibCheck option is set and otherwise leaves its argv unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/test-harness.test.ts",
+                "title": "compileProbe appends --skipLibCheck only when the per-probe skipLibCheck option is set and otherwise leaves its argv unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "VS Code daemon commands delegate install and lifecycle through fixed shell and surface owned-runtime failures",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/daemon/__tests__/commands.test.ts",
+                "title": "VS Code daemon commands delegate install and lifecycle through fixed shell and surface owned-runtime failures",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/test-harness-probes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 57117,
+            "titles": [
+              {
+                "title": "Real panel type probes preserve positive and intended-negative diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "Compiler launch failure and interruption cannot pass a negative probe or pollute source includes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/test-harness.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 570,
+            "titles": [
+              {
+                "title": "Canonical-path contenders refuse overlap and preserve foreign/replaced/symlinked ownership",
+                "result": "pass"
+              },
+              {
+                "title": "Unsupported Node refuses before mutation and child environment resolves selected runtime",
+                "result": "pass"
+              },
+              {
+                "title": "Abandoned ownership cannot be stolen by age or PID absence",
+                "result": "pass"
+              },
+              {
+                "title": "Malformed lease records and parent symlinks refuse without removal",
+                "result": "pass"
+              },
+              {
+                "title": "compileProbe appends --skipLibCheck only when the per-probe skipLibCheck option is set and otherwise leaves its argv unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/daemon/__tests__/commands.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 379,
+            "titles": [
+              {
+                "title": "registers exactly the five insrc.daemon.* commands",
+                "result": "pass"
+              },
+              {
+                "title": "the install command asks sc4 and calls install() ONLY on accepted",
+                "result": "pass"
+              },
+              {
+                "title": "each lifecycle command runs the action (no gate) and pushes the resulting state into sc2",
+                "result": "pass"
+              },
+              {
+                "title": "a failing action pushes errored + the mapped message into the status surface",
+                "result": "pass"
+              },
+              {
+                "title": "commands.test.ts: restartDaemonAndReport resolves true only when the daemon is running again and reflects the result like the restart command",
+                "result": "pass"
+              },
+              {
+                "title": "VS Code daemon commands delegate install and lifecycle through fixed shell and surface owned-runtime failures",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

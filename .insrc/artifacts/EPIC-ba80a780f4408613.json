@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "unit-EPIC-ba80a780f4408613",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T12:52:38.849Z",
+    "epicCreatedAt": "2026-11-27T12:30:18.584Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba80a780f4408613",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#323",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "7f67311f00c6101c952763f219208b46e606b381c765f6354708dffd623980a3",
+        "at": "2026-11-27T12:52:38.849Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

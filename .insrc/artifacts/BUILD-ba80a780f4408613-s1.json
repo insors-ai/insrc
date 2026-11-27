@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 4,
+        "contentHash": "2486c960c4a31d538af36a1faaa8c1059c6f116190de567a974e140fc019d61e",
+        "at": "2026-11-27T15:50:03.955Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 4,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T16:18:04.349Z",
+        "override": {
+          "reason": "Automated code review is unavailable (endpoints being rewritten, per steering); human approval given in-chat for BUILD-ba80a780f4408613-s1 after presentation. Gate evidence: task s1 passed:true — typecheck clean, all 3 named cases pass gate-run under Node 22.22.1 (test-harness-probes 2/2, test-harness 5/5, commands 6/6); harness evidence for t3 probe tests on 7a47d0e28: 237 ok / 0 not ok (runs a76220f7, aa15f6e1) vs not-ok-78 pre-fix (4bde4114); review packet at /tmp/.insrc/review-packet-ba80a780f4408613-s1.md."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-ede87693-1220-47e2-adcc-937f75e75825",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T14:13:08.214Z",
+    "epicCreatedAt": "2026-11-27T12:30:18.584Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba80a780f4408613",
+    "storyId": "s1",
+    "revision": 4,
+    "updatedAt": "2026-11-27T15:49:17.922Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "epicSlug": "two-untracked-vs-code-plugin-test"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Validate turn 4 against approved LLD-ba80a780f4408613-s1 rev 4, with the repo build-command setting now pinning the gate test runner to the repo-required Node 22.22.1 (testCommand = node22 tsx --test-force-exit; the dev daemon itself runs v24, under which harness-aware backend tests refuse with harness-runtime-unsupported). Implementation on commits 7a47d0e28 + b23dd0e7e. All three subjects mapped and expected to pass gate-run under Node 22: real-panel probe behavior test (nested harness over the two t3 docs-review-panel tests), skipLibCheck wiring unit test, commands full-sequence argv test.",
+    "testRecord": {
+      "md": "docs/standalone/two-untracked-vs-code-plugin-test-E20261127ba80a780/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "scripts/test-harness/probe.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T15:49:17.922Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T15:49:17.922Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/daemon/__tests__/commands.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T15:49:17.922Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/test-harness.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T15:49:17.922Z"
+      }
+    ],
+    "commit": "b23dd0e7e"
+  },
+  "citations": []
+}

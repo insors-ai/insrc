@@ -30,7 +30,7 @@ import type { RunWorkflowResult, WorkflowProgress } from '../daemon/workflow-rpc
 import type { RunStatus } from '../daemon/workflow-run-registry.js';
 import type { WorkflowApproveResult } from '../workflow/gates.js';
 import type { StepClient } from '../shared/step-context.js';
-import type { WorkflowPendingError, WorkflowPendingResult } from '../workflow/pending.js';
+import type { WorkflowPendingError, WorkflowPendingResult, WorkflowOpenableError, WorkflowOpenableResult } from '../workflow/pending.js';
 import type { DocGenOutcome, RenderedDocumentShell, SerializableDocTypeRegistration } from '../docgen/types.js';
 import type { InsrcGuideResult } from '../daemon/guide-sections.js';
 import type { WorkflowReviewDone } from '../daemon/workflow-review-rpc.js';
@@ -317,6 +317,17 @@ export function pendingWorkflow(
 	deps: UnaryRpcDeps = {},
 ): Promise<WorkflowPendingResult | WorkflowPendingError> {
 	return unaryRpc<WorkflowPendingResult | WorkflowPendingError>('workflow.pending', req, deps);
+}
+
+/** Forward an openable-artifacts request to the daemon `workflow.openable`
+ *  IPC (ISSUE-9c95950064e4b916): every PENDING_KINDS artifact file on disk,
+ *  regardless of lifecycle status, or a structured `{ error }`. Pure forward,
+ *  mirroring pendingWorkflow. */
+export function openableWorkflow(
+	req: { repo: string },
+	deps: UnaryRpcDeps = {},
+): Promise<WorkflowOpenableResult | WorkflowOpenableError> {
+	return unaryRpc<WorkflowOpenableResult | WorkflowOpenableError>('workflow.openable', req, deps);
 }
 
 /** Abort a detached run mid-flight. */

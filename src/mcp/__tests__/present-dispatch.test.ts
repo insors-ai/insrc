@@ -1,7 +1,9 @@
 /**
  * Tests for the insrc_present tool handler (handleInsrcPresent): the controller declares
- * the documents a turn presents, and the tool answers which are pending and openable.
- * The daemon is a tiny in-process socket server answering `workflow.pending`.
+ * the documents a turn presents, and the tool answers which are openable. Presenting a
+ * document is a display concern, independent of its lifecycle status or the
+ * BUILD/CR-sibling precondition workflow.pending applies (ISSUE-9c95950064e4b916).
+ * The daemon is a tiny in-process socket server answering `workflow.openable`.
  *
  * Run: npx tsx --test src/mcp/__tests__/present-dispatch.test.ts
  */
@@ -14,7 +16,7 @@ import { join } from 'node:path';
 import { rmSync } from 'node:fs';
 
 import { handleInsrcPresent, PRESENT_MAX_DOCUMENTS } from '../server.js';
-import { handleWorkflowPending } from '../../workflow/pending.js';
+import { resolveOpenableArtifacts } from '../../workflow/pending.js';
 import { proposeAmendment, approveAmendment, rejectAmendment } from '../../workflow/amendments/store.js';
 import { mkAmendmentRepo } from '../../workflow/amendments/__tests__/epic-head.js';
 import { writeRepoSchema } from '../../workflow/artifact-core/repo-schema.js';
@@ -51,13 +53,13 @@ async function fakeDaemon(result: unknown): Promise<{ connect: () => Socket; see
 
 const PENDING = {
 	artifacts: [
-		{ artifactId: 'LLD-abc-s5', kind: 'LLD', title: 'lld', mdPath: '/repo/docs/standalone/x/S005/LLD.md', openQuestionCount: 0, state: 'pending' },
-		{ artifactId: 'BUILD-abc-S001', kind: 'BUILD', title: 'build', mdPath: '', openQuestionCount: 0, state: 'pending' },
+		{ artifactId: 'LLD-abc-s5', mdPath: '/repo/docs/standalone/x/S005/LLD.md' },
+		{ artifactId: 'BUILD-abc-S001', mdPath: '' },
 	],
 };
 const repoIs = (r: string) => async () => r;
 
-test('writer-created AMD heads are presented only while their lifecycle is pending', async () => {
+test('writer-created AMD heads are presented regardless of lifecycle status (draft, approved or rejected)', async () => {
 	const hash = '9b56cf09824e7110';
 	const repo = mkAmendmentRepo(hash);
 	try {
@@ -68,7 +70,7 @@ test('writer-created AMD heads are presented only while their lifecycle is pendi
 				id, epicHash: hash, epicSlug: 'pending-amendments', hldBaseRunId: 'base-1',
 				amendment: { type: 'sharedContract.fieldAdd', contractId: 'sc1', breaking: false,
 					field: { name: 'sortBy', type: 'string', optional: true, purpose: 'Sort order' } },
-				rationale: 'Exercise the real amendment writer and pending reader together.', citations: [],
+				rationale: 'Exercise the real amendment writer and openable reader together.', citations: [],
 				proposedBy: { workflow: 'design.story', runId: 'lld-1', storyId: 's1', stepId: 's4' },
 				proposedAt: '2026-11-23T00:00:00Z', status: 'pending',
 			});
@@ -76,27 +78,30 @@ test('writer-created AMD heads are presented only while their lifecycle is pendi
 		// Decisions affect only this disposable fixture, never workspace artifacts.
 		await approveAmendment(repo, ids[1]!, 'test-reviewer');
 		await rejectAmendment(repo, ids[2]!, 'Fixture rejection');
-		const pending = handleWorkflowPending({ repo }, undefined);
-		assert.ok('artifacts' in pending);
-		assert.deepEqual(pending.artifacts.filter(a => a.kind === 'AMD').map(a => [a.artifactId, a.mdPath]), [[ids[0], '']]);
-		const daemon = await fakeDaemon(pending);
+		const openable = { artifacts: resolveOpenableArtifacts(repo) };
+		assert.deepEqual(openable.artifacts.filter(a => a.artifactId.startsWith('AMD-')).map(a => a.artifactId).sort(), [...ids].sort());
+		const daemon = await fakeDaemon(openable);
 		try {
 			const result = await handleInsrcPresent({ documents: ids }, { connect: daemon.connect, resolveRepo: repoIs(repo) });
 			assert.ok(!result.isError, text(result));
-			assert.deepEqual(JSON.parse(text(result)), { presented: [ids[0]], notPending: ids.slice(1) });
+			assert.deepEqual(JSON.parse(text(result)), { presented: ids, notPending: [] });
 		} finally { await daemon.close(); }
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test("insrc_present answers presented and notPending against the daemon's pending list and rejects an empty or oversized list", async () => {
+test("insrc_present answers presented and notPending against the daemon's openable list and rejects an empty or oversized list", async () => {
 	const daemon = await fakeDaemon(PENDING);
 	try {
 		const deps = { connect: daemon.connect, resolveRepo: repoIs('/repo') };
 		// An id (story part in another case) and a repo-relative path are both presented, in the order given.
+		// LLD-abc-s5 stands in for an already-approved artifact: handleInsrcPresent itself never reads
+		// lifecycle status (the WorkflowOpenableResult carries no status field at all) -- resolveOpenableArtifacts
+		// is where approved/rejected inclusion is actually decided and unit-tested (pending.test.ts).
 		const ok = await handleInsrcPresent({ documents: ['LLD-ABC-S5', 'docs/standalone/x/S005/LLD.md', 'LLD-nope-S001'] }, deps);
 		assert.ok(!ok.isError, text(ok));
 		assert.deepEqual(JSON.parse(text(ok)), { presented: ['LLD-ABC-S5', 'docs/standalone/x/S005/LLD.md'], notPending: ['LLD-nope-S001'] });
-		assert.deepEqual(daemon.seen[0], { method: 'workflow.pending', params: { repo: '/repo' } });
+		// handleInsrcPresent calls the daemon's 'workflow.openable' method, not 'workflow.pending'.
+		assert.deepEqual(daemon.seen[0], { method: 'workflow.openable', params: { repo: '/repo' } });
 		// A name given twice is answered once.
 		const twice = await handleInsrcPresent({ documents: ['LLD-abc-s5', 'LLD-abc-s5'] }, deps);
 		assert.deepEqual(JSON.parse(text(twice)), { presented: ['LLD-abc-s5'], notPending: [] });
@@ -126,9 +131,10 @@ test('insrc_present with a resolver that finds no repo answers an error and pres
 	} finally { await daemon.close(); }
 });
 
-test('ISSUE-6dbf14435972af7a: a pending record with no document file is presented BY ID (the pane opens it through the evidence read)', async () => {
-	// The tool side: BUILD-abc-S001 is pending but has no .md (an empty mdPath) — it is still
-	// presentable by its artifact id, which is how the review pane opens document-less records.
+// ISSUE-6dbf14435972af7a / ISSUE-9c95950064e4b916: a tracked-epic BUILD record with no CR
+// sibling -- the reported defect's exact case -- is openable and presentable BY ID, with an
+// empty mdPath (document-less; the pane opens it through the evidence read).
+test('handleInsrcPresent presents a tracked-epic BUILD by artifact id with no CR sibling (the reported defect\'s exact case)', async () => {
 	const daemon = await fakeDaemon(PENDING);
 	try {
 		const out = await handleInsrcPresent({ documents: ['BUILD-abc-S001'] }, { connect: daemon.connect, resolveRepo: repoIs('/repo') });
@@ -136,8 +142,28 @@ test('ISSUE-6dbf14435972af7a: a pending record with no document file is presente
 	} finally { await daemon.close(); }
 });
 
-test('insrc_present: a daemon error or an unreachable daemon is answered as an error, never as presented', async () => {
-	const failing = await fakeDaemon({ error: 'workflow.pending: `repo` is required' });
+const OPENABLE_TRACKED_BUILD = {
+	artifacts: [
+		{ artifactId: 'BUILD-690f38931e7d3b57-s1', mdPath: '/repo/docs/epics/core-base-infrastructure-E20261126690f3893/S001/BUILD.md' },
+	],
+};
+
+test('handleInsrcPresent presents the same BUILD by its repo-relative doc path', async () => {
+	const daemon = await fakeDaemon(OPENABLE_TRACKED_BUILD);
+	try {
+		const out = await handleInsrcPresent(
+			{ documents: ['docs/epics/core-base-infrastructure-E20261126690f3893/S001/BUILD.md'] },
+			{ connect: daemon.connect, resolveRepo: repoIs('/repo') },
+		);
+		assert.deepEqual(JSON.parse(text(out)), {
+			presented: ['docs/epics/core-base-infrastructure-E20261126690f3893/S001/BUILD.md'],
+			notPending: [],
+		});
+	} finally { await daemon.close(); }
+});
+
+test('handleInsrcPresent answers a daemon error or an unreachable daemon as an explicit error, never as presented', async () => {
+	const failing = await fakeDaemon({ error: 'workflow.openable: `repo` is required' });
 	try {
 		const out = await handleInsrcPresent({ documents: ['LLD-abc-s5'] }, { connect: failing.connect, resolveRepo: repoIs('/repo') });
 		assert.equal(out.isError, true);
@@ -152,12 +178,12 @@ test('insrc_present: a daemon error or an unreachable daemon is answered as an e
 });
 
 // Shared vector: vscode-plugin/src/chat/__tests__/review-presenter.test.ts applies the same rule
-// to the same two pending documents (a name that matches more than one is ambiguous, never guessed).
-test('a name that matches more than one pending document is not presented, and a full repo-relative path or an id is', async () => {
+// to the same two documents (a name that matches more than one is ambiguous, never guessed).
+test('handleInsrcPresent reports notPending for a bare filename matching more than one document (ambiguity preserved)', async () => {
 	const daemon = await fakeDaemon({
 		artifacts: [
-			{ artifactId: 'PLAN-aaa-S001', kind: 'PLAN', title: 'a', mdPath: '/repo/docs/standalone/a/S001/PLAN.md', openQuestionCount: 0, state: 'pending' },
-			{ artifactId: 'PLAN-bbb-S001', kind: 'PLAN', title: 'b', mdPath: '/repo/docs/standalone/b/S001/PLAN.md', openQuestionCount: 0, state: 'pending' },
+			{ artifactId: 'PLAN-aaa-S001', mdPath: '/repo/docs/standalone/a/S001/PLAN.md' },
+			{ artifactId: 'PLAN-bbb-S001', mdPath: '/repo/docs/standalone/b/S001/PLAN.md' },
 		],
 	});
 	try {

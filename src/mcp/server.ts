@@ -42,7 +42,7 @@ import { errorEnvelope, forwardStep } from './forward-step.js';
 import type { StepMcpEnvelope } from './forward-step.js';
 import { mcpProgressSink } from './progress-forward.js';
 import type { ProgressEvent } from '../shared/types.js';
-import { startRun, pollRun, abortRun, approveWorkflow, pendingWorkflow, type UnaryRpcDeps } from './daemon-stream.js';
+import { startRun, pollRun, abortRun, approveWorkflow, openableWorkflow, type UnaryRpcDeps } from './daemon-stream.js';
 import type { WorkflowProgress } from '../daemon/workflow-rpc.js';
 import { WORKFLOW_NAMES } from '../workflow/types.js';
 import type { ZodRawShape } from 'zod';
@@ -1122,13 +1122,17 @@ export async function handleInsrcPresent(
 	const refusal = repoSchemaRefusal(repo);
 	if (refusal !== undefined) return err(`insrc_present: ${refusal}`);
 	try {
-		const pending = await pendingWorkflow({ repo }, deps);
-		if ('error' in pending) return err(`insrc_present: ${pending.error}`);
-		// Every pending record is presentable: document-backed ones (a non-empty mdPath) by
-		// path, and document-less ones (an empty mdPath, e.g. an AMD amendment) by artifact
-		// id — the review pane opens those through the daemon's evidence read
-		// (ISSUE-6dbf14435972af7a).
-		const openable = pending.artifacts;
+		// ISSUE-9c95950064e4b916: presenting a document is a display concern, not
+		// an approval-readiness one — openableWorkflow lists every PENDING_KINDS
+		// artifact file regardless of lifecycle status or the BUILD/CR-sibling
+		// precondition workflow.pending applies, so status alone never blocks
+		// presenting. Every record is presentable: document-backed ones (a
+		// non-empty mdPath) by path, and document-less ones (an empty mdPath,
+		// e.g. an AMD amendment) by artifact id — the review pane opens those
+		// through the daemon's evidence read (ISSUE-6dbf14435972af7a).
+		const result = await openableWorkflow({ repo }, deps);
+		if ('error' in result) return err(`insrc_present: ${result.error}`);
+		const openable = result.artifacts;
 		// A name that matches more than one document (a bare `PLAN.md` among several Stories') is
 		// ambiguous: it is reported as not presented rather than guessed at.
 		const presented = names.filter((n) => openable.filter((a) => namesPending(n, a)).length === 1);

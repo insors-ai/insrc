@@ -925,10 +925,14 @@ export function createVibeAdapter(context: VibeAdapterContext, deps: VibeAdapter
 	// This function never awaits, and never itself triggers, the live qualification
 	// suite: createVibeAdapter runs on EVERY turn's construction (dispatchVibeTurn,
 	// cli-provider.ts), including ordinary 'default'-mode turns that never touch
-	// read-only at all, so self-triggering here would spawn a qualification probe on
-	// every such turn's first cold descriptor. Triggering a fresh run on a cache miss
-	// belongs to startTurn's own read-only dispatch path instead (a later Task of this
-	// Story), which only runs when a caller actually requests mode:'read-only'.
+	// read-only at all. Confirmed by direct experiment: self-triggering here calls
+	// deps.spawn unconditionally on a cold descriptor, which breaks s1's own existing
+	// contract/test ("an already-aborted request must never spawn a subprocess" --
+	// vibe-adapter-turn.test.ts's spawnCalls.length===0 assertion -- becomes 1, a real
+	// regression, not just a test-isolation nuisance). Triggering a fresh run on a
+	// cache miss belongs to startTurn's own read-only dispatch path instead (a later
+	// Task of this Story), which only runs when a caller actually requests
+	// mode:'read-only'.
 	let readOnly: ReadOnlyCapability;
 	try {
 		const probeRequest: VibeTurnRequest = { prompt: QUALIFICATION_PROBE_PROMPT, outputMode: 'streaming', session: { kind: 'new' }, mode: 'read-only' };

@@ -7,10 +7,12 @@
  * Epic unify-vibe-one-plain-cli-adapter, s2/t4: createVibeAdapter's readOnly field -- a
  * pure, side-effect-free synchronous read of the qualification cache's current entry for
  * this adapter's own stable descriptor. Construction itself never triggers a qualification
- * run (it runs on every turn's construction, including ordinary 'default'-mode turns that
- * never touch read-only -- self-triggering here would spawn a probe on every such turn's
- * first cold descriptor); that belongs to startTurn's own read-only dispatch path instead
- * (a later Task of this Story).
+ * run: confirmed by direct experiment that self-triggering on a cache miss breaks s1's own
+ * existing contract (createVibeAdapter runs on EVERY turn's construction, including
+ * ordinary 'default'-mode turns -- an already-aborted-request test asserting
+ * spawnCalls.length===0 would see 1 instead, a real regression). Triggering a fresh run on
+ * a cache miss belongs to startTurn's own read-only dispatch path instead (a later Task of
+ * this Story).
  * Run: npx tsx --test src/shared/__tests__/vibe-adapter-readonly-field.test.ts
  */
 

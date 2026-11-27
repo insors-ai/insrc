@@ -13,3 +13,4 @@ export function harnessError(code: string, message: string): Error & { code: str
 export function assertSupportedVersion(version: string): void;
 export function recoverRun(root: string, options: { runId: string; confirmedActorsEnded: boolean }): void;
 export function childEnvironment(runtime: BuildRun['runtime'], inherited?: NodeJS.ProcessEnv): NodeJS.ProcessEnv;
+export function qualificationEnvironment(inherited: NodeJS.ProcessEnv): NodeJS.ProcessEnv;

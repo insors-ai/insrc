@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readdirSync, unlinkSync, writeFileSync, writeSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
-import { harnessError, participantContext } from './context.mjs';
+import { harnessError, participantContext, qualificationEnvironment } from './context.mjs';
 const markers = new WeakMap();
 
 /** A fixture retains its handle; a marker survives abrupt fixture death. */
@@ -74,6 +74,7 @@ export function processScope(run, { includeForeignActors = true } = {}) {
 	}
 	async function start(command, args, { cwd = run.root, env = run.environment(), budgetMs = run.budgets.fileMs, stdout, stderr, logPath, ownerChannel, outputLimitBytes } = {}) {
 		if (stopped) throw harnessError('interrupted', 'Harness admission stopped.');
+		env = qualificationEnvironment(env); // Includes custom/private-tool environments; reject before logging/spawn.
 		if (outputLimitBytes !== undefined && (!Number.isSafeInteger(outputLimitBytes) || outputLimitBytes <= 0 || stdout !== undefined || stderr !== undefined)) throw harnessError('context-invalid', 'Bounded capture needs a positive byte limit and owned stdout/stderr.');
 		run.assertOwner();
 		const childId = randomUUID();

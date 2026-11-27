@@ -3,7 +3,7 @@ import { Ajv } from 'ajv';
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
-import { createRun } from '../../scripts/test-harness/context.mjs';
+import { createRun, qualificationEnvironment } from '../../scripts/test-harness/context.mjs';
 import type { BuildRun } from '../../scripts/test-harness/context.mjs';
 import { withRun } from '../../scripts/test-harness/process.mjs';
 import type { CommandScope } from '../../scripts/test-harness/process.mjs';
@@ -17,6 +17,7 @@ import type { DevPreparationRecord, DevReleaseReceipt, DevSourceOffer } from './
 import { readVerifiedDevSourceResult } from './dev-worker.js';
 import { normalizeHome } from './location.js';
 import { readBoundedFile } from './safe-zip.js';
+import { QUALIFICATION_TIME_BUDGETS } from './qualification-time-budgets.mjs';
 
 const OUTPUT_LIMIT = 4 * 1024 * 1024;
 export interface DevGit {
@@ -51,11 +52,12 @@ export function ownedDevGit(run: BuildRun, scope: CommandScope, signal?: AbortSi
 
 /** Discovery allocates only an OS-temporary coordinator, never installation state. */
 export async function resolveDevSource(deliveryInput: Delivery, target: Target, runtime: RuntimeIdentity, options: { signal?: AbortSignal; environment?: NodeJS.ProcessEnv } = {}): Promise<DevSourceOffer> {
+  const environment = qualificationEnvironment(options.environment ?? process.env);
   const delivery = parseDevDelivery(deliveryInput), root = mkdtempSync(join(tmpdir(), 'insrc-dev-source-check-'));
   let run: BuildRun | undefined;
   try {
-    const base = createRun(root, { mode: 'build', budgets: { fileMs: 30_000, runMs: 40_000 } });
-    run = { ...base, environment: () => ({ ...(options.environment ?? process.env), INSRC_TEST_RUN_ID: base.runId, INSRC_TEST_ROOT: base.root, INSRC_BUILD_CONFIRM_CLOSURE: '1' }) };
+    const base = createRun(root, { mode: 'build', budgets: QUALIFICATION_TIME_BUDGETS.git });
+    run = { ...base, environment: () => ({ ...environment, INSRC_TEST_RUN_ID: base.runId, INSRC_TEST_ROOT: base.root, INSRC_BUILD_CONFIRM_CLOSURE: '1' }) };
     return await withRun(run, async scope => {
       const git = ownedDevGit(run!, scope, options.signal), ref = `refs/heads/${delivery.branch}`;
       const response = await git(['ls-remote', '--heads', '--refs', '--', delivery.repository, ref]);

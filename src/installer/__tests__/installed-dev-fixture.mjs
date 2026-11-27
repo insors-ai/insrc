@@ -124,6 +124,8 @@ await withRun(run,async scope=>{
       // at its source path; rebasing it into controls must only disable that entry.
       const cli=join(root,'cli');mkdirSync(join(cli,'scripts/test-harness'),{recursive:true});
       for(const name of ['build.mjs','context.mjs','process.mjs'])copyFileSync(`scripts/test-harness/${name}`,join(cli,'scripts/test-harness',name));
+      mkdirSync(join(cli,'src/installer'),{recursive:true});
+      copyFileSync('src/installer/qualification-time-budgets.mjs',join(cli,'src/installer/qualification-time-budgets.mjs'));
       const direct=await scope.start(process.execPath,[join(cli,'scripts/test-harness/build.mjs')],{env:{...process.env,INSRC_TEST_RUN_ID:undefined,INSRC_TEST_ROOT:undefined,NODE_OPTIONS:'',NODE_PATH:''}});
       assert.notEqual(direct.code,0);assert.match(readFileSync(direct.log,'utf8'),/harness-build-failed/);assert.equal(existsSync(join(cli,'.insrc/tmp/test-harness/active')),false);assert.equal(existsSync(join(cli,'.insrc/tmp/test-harness/runs')),true);
     }

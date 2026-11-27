@@ -17,6 +17,7 @@ export async function createDevPayloadRepository(run, scope, repository, target,
   file(join(repository, '.gitignore'), '.insrc/tmp/\nout/\nnode_modules/\npackages/fixture/dist/\n');
   file(join(repository, 'src/main.ts'), 'export const source = 1;\n');
   for (const name of ['context.mjs', 'process.mjs']) file(join(repository, 'scripts/test-harness', name), readFileSync(`scripts/test-harness/${name}`));
+  file(join(repository, 'src/installer/qualification-time-budgets.mjs'), readFileSync('src/installer/qualification-time-budgets.mjs'));
   file(join(repository, 'scripts/test-harness/owner.mjs'), readFileSync('scripts/test-harness/build.mjs'));
   file(join(repository, 'scripts/build-installer-control.mjs'), readFileSync('scripts/build-installer-control.mjs'));
   file(join(repository, 'src/installer/native/control.c'), readFileSync('src/installer/native/control.c'));

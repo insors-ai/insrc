@@ -68,6 +68,7 @@ await withRun(run, async scope => {
   assert.equal(observed.node, selected.node); assert.equal(observed.version, `v${runtimePolicy.nodeVersion}`);
   assert.equal(observed.cuda, env.ONNXRUNTIME_NODE_INSTALL_CUDA); assert.equal(observed.npm, runtimePolicy.npmVersion);
   assert.equal(observed.nodeOptions, null); assert.equal(observed.nodePath, null);
+  assert.equal(observed.profile, scenario === 'slow-profile' ? 'slow-vm' : (process.env.INSRC_QUALIFICATION_PROFILE ?? 'normal'));
   const helpers = await loadDevBuildHelpers(run);
   // The accepted checkout helper deliberately writes a marker so root resolution
   // cannot silently use the invoking installer's helper module.

@@ -6,8 +6,9 @@ import {
 import { randomUUID } from 'node:crypto';
 import { delimiter, dirname, isAbsolute, join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
+import { QUALIFICATION_TIME_BUDGETS } from '../../src/installer/qualification-time-budgets.mjs';
 
-export const DEFAULT_BUDGETS = Object.freeze({ buildMs: 600_000, fileMs: 600_000, runMs: 5_400_000, cleanupMs: 5_000 });
+export const DEFAULT_BUDGETS = QUALIFICATION_TIME_BUDGETS.coordinator;
 const PHASES = ['preparing', 'mutating', 'reading', 'draining', 'blocked'];
 const DIAGNOSTICS = ['NODE_OPTIONS', 'DEBUG', 'NODE_DEBUG', 'OLLAMA_DEBUG', 'GRPC_TRACE', 'GRPC_VERBOSITY', 'DPI_DEBUG_LEVEL', 'NODE_ORACLEDB_TRACE_LEVEL', 'NODE_ORACLEDB_DEBUG_PACKETS', 'ORA_DEBUG_JDWP'];
 
@@ -27,8 +28,23 @@ export function runtimeContext() {
 	return { executable: realpathSync(process.execPath), version: process.version };
 }
 
-export function childEnvironment(runtime, inherited = process.env) {
+/** Normalize case aliases too, so a custom Windows environment has one selector.
+ * Missing values inherit the admitted process policy; conflicts never switch it. */
+export function qualificationEnvironment(inherited) {
 	const env = { ...inherited };
+	for (const key of Object.keys(env)) {
+		if (key.toUpperCase() !== 'INSRC_QUALIFICATION_PROFILE') continue;
+		if (env[key] !== undefined && env[key] !== QUALIFICATION_TIME_BUDGETS.profile) {
+			throw Object.assign(new Error('Child qualification profile conflicts with the admitted process policy'), { code: 'qualification-profile-invalid' });
+		}
+		delete env[key];
+	}
+	env.INSRC_QUALIFICATION_PROFILE = QUALIFICATION_TIME_BUDGETS.profile;
+	return env;
+}
+
+export function childEnvironment(runtime, inherited = process.env) {
+	const env = qualificationEnvironment(inherited);
 	for (const key of DIAGNOSTICS) delete env[key];
 	// A coordinator may itself be exercised by node:test. Its children are new
 	// runners, not the parent's internal worker (which would skip all files).
@@ -84,6 +100,7 @@ function readRecord(active) {
 
 export function createRun(rootPath, { mode = 'test', selectedFiles = [], budgets: overrides = {}, runId: requestedRunId } = {}) {
 	const runtime = runtimeContext(); // Refuse before creating directories.
+	const environment = childEnvironment(runtime); // Validate before allocating an operation root/lease.
 	if (requestedRunId !== undefined && (typeof requestedRunId !== 'string' || !/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(requestedRunId))) throw harnessError('context-invalid', 'Explicit run identity must be a UUID.');
 	const budgets = checkedBudgets(overrides);
 	if (!['test', 'build'].includes(mode) || !Array.isArray(selectedFiles) || selectedFiles.some(file => typeof file !== 'string')) throw harnessError('context-invalid', 'Invalid run selection.');
@@ -135,7 +152,7 @@ export function createRun(rootPath, { mode = 'test', selectedFiles = [], budgets
 		unlinkSync(join(active, 'run.json'));
 		rmdirSync(active); // Never recursively remove a foreign or unexpected entry.
 	}
-	return { root, active, workspace, runtime, budgets, runId, get record() { return structuredClone(record); }, assertOwner, transition, release, environment: () => ({ ...childEnvironment(runtime), INSRC_TEST_RUN_ID: runId, INSRC_TEST_ROOT: root }) };
+	return { root, active, workspace, runtime, budgets, runId, get record() { return structuredClone(record); }, assertOwner, transition, release, environment: () => ({ ...environment, INSRC_TEST_RUN_ID: runId, INSRC_TEST_ROOT: root }) };
 }
 
 /** Explicit operator recovery only. Does not delete workspaces or signal PIDs. */

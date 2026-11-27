@@ -1,0 +1,393 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795802769090-lp8fm2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T18:10:15.610Z",
+    "epicCreatedAt": "2026-11-20T04:36:30.891Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "unknown",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 238709,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1e2052060dec3efb",
+    "epicSlug": "synchronize-model-settings-catalog-contract-tests",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1795802769090-lp8fm2",
+    "hldEffectiveHash": "d2a37ec9a3c048643aceed87e71169059c04254871a77cdcbaa3092d1a63a061",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "manifest sections + idempotency contract",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "880cd72016adbc94bbb7a47b86b7c229442a832bd28bafd9632dde7ae077dcc9",
+        "at": "2026-11-27T18:10:18.945Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T18:20:41.847Z"
+      }
+    },
+    "revision": 3,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "f0f6ee8103be08fbeb573ac3096b7151043f2d46"
+  },
+  "body": {
+    "summary": {
+      "prose": "Revision 3 per re-review feedback r2. Standalone small bugfix for ISSUE-1e2052060dec3efb: syncManifest v3 in vscode-plugin/scripts/sync-manifest-catalog.mjs owns the whole backend-derived manifest surface — (a) ONE shared row map (catalog rows whose insrc.<path> key is not plugin-local: excludes insrc.chat.* and the insrc.models.tasks.* prefix) drives BOTH update and insertion of catalog-backed keys; (b) a separate taxonomy pass owns the ENTIRE per-role prefix: every insrc.models.tasks.* key in every section is deleted, then the canonical \"Models — per-role tiers\" section is regenerated from buildPerRoleKeyMap() (created if missing; existing key order kept, new roles appended in taxonomy order); (c) DUPLICATE-TITLED sections get a lossless conflict policy: the FIRST section keeps its title and ALL section-level metadata; properties merge first-wins in section order, so distinct local properties from later duplicates survive; a key present in multiple duplicate-titled sections with CONFLICTING schemas is refused with a sync-duplicate-conflict diagnostic naming the key and both sections (ambiguous — cannot be repaired safely); (d) missing catalog-group sections are created, not thrown; (e) unrelated plugin-local keys are preserved everywhere, including inside the canonical per-role section. Stored setting VALUES are never rewritten — schemas/defaults only. Then package.json is regenerated once (gains \"Models — security\" with insrc.models.security.* and insrc.models.tasks.security.review). The repair fixture removes the FINAL taxonomy role so the append rule restores its committed position, and asserts the explicit key order of surviving and appended keys; the byte-identical rerun remains the idempotency check. Idempotent; --check exits 1 on drift. Manifest + script only — no product logic; core-floor and local-only embeddings untouched.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone small bugfix (ISSUE-1e2052060dec3efb); manifest + sync script only.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "vscode-plugin/scripts/sync-manifest-catalog.mjs v3 (shared row map, prefix-wide role ownership, lossless duplicate-section conflict policy)",
+          "vscode-plugin/package.json (regenerated)",
+          "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts (order-independent repair fixture, misplaced-role test, duplicate-section consolidation + collision-refusal test)"
+        ],
+        "depends": [
+          "backend CONFIG_CATALOG",
+          "role taxonomy via buildPerRoleKeyMap (key-map.ts)"
+        ],
+        "internal": "manifest sections + idempotency contract"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "single-step bugfix",
+      "nonFunctional": {
+        "security": "No trust-boundary change. Tier rows keep enum-less schema (values from daemon definitions); local-only embeddings untouched; stored user values preserved; ambiguous duplicate sections refused, never silently rewritten."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "syncManifest",
+          "signature": "syncManifest(pkg, catalog): typeof pkg",
+          "parameters": [
+            {
+              "name": "pkg",
+              "type": "object",
+              "purpose": "Parsed package.json",
+              "optional": false
+            },
+            {
+              "name": "catalog",
+              "type": "readonly ConfigOption[]",
+              "purpose": "Backend CONFIG_CATALOG rows",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "typeof pkg",
+            "meaning": "Manifest with the whole backend-derived surface regenerated per the v3 contract"
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Only malformed pkg.contributes.configuration, or a sync-duplicate-conflict (same key, conflicting schemas in duplicate-titled sections), throws; missing group/canonical sections are created, never thrown"
+            }
+          ],
+          "preconditions": [
+            "pkg.contributes.configuration is an array of {title, properties} sections"
+          ],
+          "postconditions": [
+            "SHARED ROW MAP: catalog rows whose insrc.<path> key is not isPluginLocalKey (insrc.chat.* or insrc.models.tasks.* prefix) drive BOTH update and insertion — the same filter cannot differ between the two",
+            "ROLE PREFIX OWNERSHIP: every insrc.models.tasks.* property in ALL sections is deleted; the canonical \"Models — per-role tiers\" section (first with that title; created if missing) is regenerated from buildPerRoleKeyMap(): key = nativeRoleKey, schema {type string, enum TIER_VALUES, default role.defaultTier, markdownDescription desc, scope machine}; existing key order preserved, new roles appended in taxonomy order",
+            "DUPLICATE-SECTION CONFLICT POLICY: duplicate-titled sections — the FIRST keeps title + all section-level metadata; properties merge first-wins in section order (distinct local keys from later duplicates survive losslessly); the SAME key with conflicting schemas in duplicate-titled sections throws sync-duplicate-conflict naming the key and the sections",
+            "LOCAL KEY PRESERVATION: insrc.chat.* and any other non-role property survive everywhere, including inside the canonical per-role section",
+            "MISSING GROUP SECTIONS: a catalog row whose group has no section gets one appended — no throw",
+            "IDEMPOTENT: syncManifest(syncManifest(pkg)) deep-equals syncManifest(pkg); stored setting VALUES never rewritten (schemas/defaults only)"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "package.json contributes.configuration",
+        "change": "field-modify",
+        "details": "Regenerated per the v3 contract: catalog-backed keys from the shared non-local row map; the per-role prefix owned wholly by the taxonomy pass; duplicate-titled sections consolidated losslessly (first keeps title + section metadata, properties first-wins, conflicting duplicate schemas refused); missing group sections created; non-role local properties preserved. package.json gains the \"Models — security\" section and insrc.models.tasks.security.review.",
+        "schemaDiff": "sections[]: {title, properties} regenerated per syncManifest v3",
+        "callSites": [
+          "vscode-plugin/scripts/sync-manifest-catalog.mjs",
+          "vscode-plugin/package.json",
+          "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Manifest drift vs catalog/taxonomy (models.security.* rows, security.review role)",
+          "detection": "manifest-catalog.test.ts:39/:62, per-role.test.ts:77/:86 fail; --check exits 1",
+          "response": "v3 sync owns both surfaces; one run regenerates package.json",
+          "userImpact": "6 config tests green; future drift caught by --check in build/prepublish",
+          "recoverable": true
+        },
+        {
+          "scenario": "Role key misplaced in another section or duplicated across sections",
+          "detection": "exactness test fails on the extra",
+          "response": "Prefix-wide deletion removes every insrc.models.tasks.* key everywhere before canonical regeneration — the misplaced copy cannot survive",
+          "userImpact": "No stale/duplicate role keys anywhere",
+          "recoverable": true
+        },
+        {
+          "scenario": "Canonical per-role section missing or duplicate-titled",
+          "detection": "regeneration target absent/ambiguous",
+          "response": "Missing: created. Duplicated: lossless consolidation — first section keeps title + section-level metadata, properties merge first-wins in section order",
+          "userImpact": "Deterministic canonical section; no metadata or distinct local key lost",
+          "recoverable": true
+        },
+        {
+          "scenario": "Same key with conflicting schemas in duplicate-titled per-role sections",
+          "detection": "schema inequality during first-wins merge",
+          "response": "Refuse: sync-duplicate-conflict diagnostic names the key and both sections; nothing is written — an ambiguous manifest is never silently repaired",
+          "userImpact": "Developer resolves the conflict by hand, then sync succeeds",
+          "recoverable": true
+        },
+        {
+          "scenario": "Catalog group has no section (Models — security)",
+          "detection": "previously threw",
+          "response": "Section appended with the row schema",
+          "userImpact": "New groups sync cleanly",
+          "recoverable": true
+        },
+        {
+          "scenario": "Retired role removed from taxonomy",
+          "detection": "manifest still declares it",
+          "response": "Prefix-wide deletion drops it",
+          "userImpact": "No stale role keys",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "second sync on a synced manifest",
+          "expected": "byte-identical; --check exits 0"
+        },
+        {
+          "input": "extended stale fixture: security section removed, the FINAL taxonomy role removed (append restores its committed position), retired role added, role schema corrupted, plus tier/shaper/core-model mutations",
+          "expected": "--check reports drift WITHOUT writing; one sync repairs to the committed manifest; EXPLICIT surviving + appended key order asserted; next sync byte-identical; unrelated local settings survive"
+        },
+        {
+          "input": "role key correct in the canonical section",
+          "expected": "order preserved, schema re-derived identically"
+        },
+        {
+          "input": "plugin-local key sharing the per-role section",
+          "expected": "preserved"
+        },
+        {
+          "input": "duplicate-titled per-role sections carrying distinct local properties",
+          "expected": "first section keeps title + metadata; distinct local properties merged first-wins; lossless"
+        },
+        {
+          "input": "same local key with conflicting schemas in duplicate-titled sections",
+          "expected": "sync-duplicate-conflict refusal naming key + sections; no write"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Tier rows (models.tiers.*) carry no enum and default '' — values from the daemon model definitions",
+          "source": "c1"
+        },
+        {
+          "text": "Stored setting VALUES never rewritten; effective defaults change only for unset settings if the taxonomy changes; core-floor and local-only embeddings untouched — no product logic",
+          "source": "c2"
+        },
+        {
+          "text": "Bundled key map maps every settings-catalog row without bundling the catalog or definitions file",
+          "source": "c4"
+        },
+        {
+          "text": "Idempotency: sync(sync(pkg)) === sync(pkg); --check exits 0 on the committed manifest",
+          "source": "c3"
+        },
+        {
+          "text": "Duplicate-titled sections never lose section metadata or distinct local keys; conflicting duplicate schemas are refused, not guessed",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via the repo harness (Node 22.22.1): npm test -- --suite=vscode src/config/__tests__/manifest-catalog.test.ts src/config/__tests__/per-role.test.ts src/config/__tests__/sync-manifest-catalog.test.ts src/config/__tests__/vscode-bundle-catalog.test.ts (guards: legacy-keys, doc-relations-status, repo-fields-contract). All subjects plain-assertion gate-runnable; the bundle test spawns tsc+esbuild itself. Pre-fix harness run 351dab36 showed the first 6 failing.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The 6 originally failing tests pass. The repair fixture is order-independent: the stale copy removes the security section and the FINAL taxonomy role, carries a retired role and a corrupted role schema; --check reports drift without writing; one sync repairs; the EXPLICIT surviving + appended key order is asserted; the next sync is byte-identical (idempotency). A misplaced/duplicated role-key test. A duplicate-section test with distinct local properties (lossless first-wins consolidation, first section metadata kept) and a collision case (conflicting schema for the same key refused with a diagnostic). Guards stay green.",
+          "subjects": [
+            "declared global insrc.* keys EXACTLY cover the global CONFIG_CATALOG paths (no missing, no extra)",
+            "each declared key's type/enum/default matches its ConfigOption, and scope is 'machine'",
+            "declared insrc.models.tasks.* keys EXACTLY cover the role taxonomy (no missing, no extra)",
+            "each per-role key is a machine-scoped enum with default = the role's defaultTier",
+            "sync-manifest-catalog.test.ts: the committed manifest is in sync, and the script is idempotent on a stale copy",
+            "sync-manifest-catalog.test.ts: a stale copy missing the security section and the final role, carrying a retired role and a corrupted role schema, is reported by --check without writing, repaired by one sync, and byte-identical on the next, with explicit surviving and appended key order",
+            "sync-manifest-catalog.test.ts: a misplaced or duplicated per-role key is removed from its wrong section and regenerated in the canonical section, while unrelated local keys survive",
+            "sync-manifest-catalog.test.ts: duplicate per-role sections consolidate losslessly (first section metadata kept, distinct local properties merged first-wins) and a colliding local key is refused with a diagnostic",
+            "vscode-bundle-catalog.test.ts: the extension type-checks and bundles; its key map, loaded without backend node_modules, maps every settings-catalog row without bundling the catalog or the definitions file"
+          ],
+          "fixturesNeeded": [
+            "committed package.json; backend CONFIG_CATALOG + taxonomy; temp stale/duplicate copies; esbuild bundle"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "declared global insrc.* keys EXACTLY cover the global CONFIG_CATALOG paths (no missing, no extra)",
+            "each declared key's type/enum/default matches its ConfigOption, and scope is 'machine'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "declared insrc.models.tasks.* keys EXACTLY cover the role taxonomy (no missing, no extra)",
+            "each per-role key is a machine-scoped enum with default = the role's defaultTier"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "sync-manifest-catalog.test.ts: the committed manifest is in sync, and the script is idempotent on a stale copy",
+            "sync-manifest-catalog.test.ts: a stale copy missing the security section and the final role, carrying a retired role and a corrupted role schema, is reported by --check without writing, repaired by one sync, and byte-identical on the next, with explicit surviving and appended key order",
+            "sync-manifest-catalog.test.ts: a misplaced or duplicated per-role key is removed from its wrong section and regenerated in the canonical section, while unrelated local keys survive",
+            "sync-manifest-catalog.test.ts: duplicate per-role sections consolidate losslessly (first section metadata kept, distinct local properties merged first-wins) and a colliding local key is refused with a diagnostic"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "vscode-bundle-catalog.test.ts: the extension type-checks and bundles; its key map, loaded without backend node_modules, maps every settings-catalog row without bundling the catalog or the definitions file"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "package.json stale vs catalog + taxonomy; sync script lacks prefix-wide role ownership, lossless duplicate-section conflict policy, missing-section creation, order-independent repair fixtures",
+      "stateAfter": "syncManifest v3 owns the whole backend-derived manifest surface with a lossless duplicate-section conflict policy; package.json regenerated; --check passes; idempotent; fixtures in place",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "One-time package.json regeneration via the extended sync script; stored values never rewritten (schemas/defaults only); ambiguous duplicates refused with a diagnostic; rollbackable by revert",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Manifest schemas/defaults only; stored user values preserved; effective defaults may change only for unset settings if the taxonomy changes. No runtime surface change.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "syncManifest v3: shared row map + prefix-wide role ownership + lossless duplicate-section policy (merge first-wins, refuse conflicting duplicates), then regenerate",
+        "oneLineSummary": "Own the whole backend-derived manifest surface with a safe, diagnosable duplicate-section policy; one sync run fixes package.json.",
+        "approach": "Shared non-local row map for update+insertion; taxonomy pass deletes the whole per-role prefix everywhere and regenerates the canonical section; duplicate-titled sections: first keeps title/metadata, properties merge first-wins, conflicting non-role property schemas REFUSE with a diagnostic; missing group sections created; local keys preserved. Idempotent.",
+        "pros": [
+          "Drift-proof; lossless where safe; ambiguous cases refuse loudly with a clear diagnostic",
+          "Repair paths test-covered incl. duplicate-section fixtures"
+        ],
+        "cons": [
+          "Script grows further"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "v2 shape (drop later duplicate sections after preserving non-role properties)",
+        "oneLineSummary": "First section canonical, later duplicates dropped.",
+        "approach": "As rev 2.",
+        "pros": [
+          "Simpler"
+        ],
+        "cons": [
+          "Review finding 1: a property merge cannot preserve conflicting schemas and dropping discards section metadata — needs a lossless policy and refusal diagnostic"
+        ],
+        "costEstimate": "S"
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "epicImpact": {
+      "applies": false,
+      "reason": "Standalone small bugfix (ISSUE-1e2052060dec3efb).",
+      "storiesCovered": [
+        "s1"
+      ],
+      "findings": "Manifest drift vs catalog (#230) and taxonomy (#229); sync script lacked prefix-wide role ownership, missing-section creation, duplicate-section policy, repair fixtures.",
+      "sources": [
+        "vscode-plugin/scripts/sync-manifest-catalog.mjs",
+        "vscode-plugin/src/config/key-map.ts",
+        "src/config/config-catalog.ts:142-144",
+        "src/config/role-taxonomy.ts:108"
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/scripts/sync-manifest-catalog.mjs:28-92"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/config/config-catalog.ts:142-144"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts:19-40"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts:15-45"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/config/key-map.ts:120-155"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/config/role-taxonomy.ts:107-108"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "vscode-plugin/src/config/__tests__/per-role.test.ts:77-97"
+    }
+  ]
+}

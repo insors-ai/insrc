@@ -70,6 +70,29 @@ test('ISSUE-6dbf14435972af7a: content() of a document-less artifact id (no mdPat
   assert.ok(calls.some((x) => x.method === 'workflow.artifactContent' && (x.params as { mdPath: string }).mdPath === 'docs/epics/x/S007/LLD.md'));
 });
 
+test("openableDocuments() calls the daemon's 'workflow.openable' method, not 'workflow.pending', and returns an approved/rejected/CR-less record pendingDocuments() would have excluded", async () => {
+  const openable = {
+    artifacts: [
+      { artifactId: 'BUILD-abc-s1', mdPath: '' },
+      { artifactId: 'LLD-abc-s7', mdPath: 'docs/epics/x/S007/LLD.md' },
+    ],
+  };
+  const { client, calls } = fakeIpc((m) => (m === 'workflow.openable' ? openable : { error: 'workflow.openable not called' }));
+  const c = createDocsReviewClient(client, { repo: () => '/repo' });
+  const docs = await c.openableDocuments();
+  assert.deepEqual(docs, [
+    { id: 'BUILD-abc-s1', mdPath: '' },
+    { id: 'LLD-abc-s7', mdPath: 'docs/epics/x/S007/LLD.md' },
+  ]);
+  assert.deepEqual(calls, [{ method: 'workflow.openable', params: { repo: '/repo' } }], 'calls workflow.openable, never workflow.pending');
+});
+
+test('openableDocuments() throws on the daemon { error } arm, never a silent empty result', async () => {
+  const { client } = fakeIpc(() => ({ error: 'workflow.openable: `repo` is required' }));
+  const c = createDocsReviewClient(client);
+  await assert.rejects(() => c.openableDocuments(), /repo.*required/);
+});
+
 test('pending() maps PendingArtifact -> DocsArtifactSummary (id/kind/title/status, and the open-question count)', async () => {
   const { client } = fakeIpc((m) => (m === 'workflow.pending' ? PENDING : { error: 'x' }));
   const c = createDocsReviewClient(client);
@@ -274,7 +297,7 @@ test('t2: content() still throws on the daemon { error } arm — unavailable sta
   assert.equal(empty.blocked, false);
 });
 
-test('t2: source-scan — docs-review-client calls exactly its four daemon methods', async () => {
+test('t2: source-scan — docs-review-client calls exactly its five daemon methods', async () => {
   const src = readFileSync(
     join(import.meta.dirname, '..', 'docs-review-client.ts'),
     'utf8',
@@ -282,7 +305,7 @@ test('t2: source-scan — docs-review-client calls exactly its four daemon metho
   const methods = [...src.matchAll(/'(workflow\.[A-Za-z.]+)'/g)].map((m) => m[1]).sort();
   assert.deepEqual(
     [...new Set(methods)],
-    ['workflow.artifactContent', 'workflow.deliveryEvidence', 'workflow.pending', 'workflow.reviewDecision'],
+    ['workflow.artifactContent', 'workflow.deliveryEvidence', 'workflow.openable', 'workflow.pending', 'workflow.reviewDecision'],
     'the list, the content, the evidence read for document-less ids (ISSUE-6dbf14435972af7a) and the one decision call; approve and resolveComment are no longer called from here',
   );
 });

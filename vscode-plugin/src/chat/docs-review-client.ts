@@ -15,7 +15,7 @@
  */
 
 import type { IpcClient } from '../../../src/shared/ipc-client.js';
-import type { PendingArtifact } from '../../../src/workflow/pending.js';
+import type { PendingArtifact, OpenableArtifact } from '../../../src/workflow/pending.js';
 import type { ArtifactReviewView } from '../../../src/workflow/artifact-content.js';
 import type { ReviewDecisionComment, ReviewDecisionOutcome, ReviewDecisionResult } from '../../../src/workflow/review-decision.js';
 import type { FeedbackDecision } from '../../../src/workflow/artifacts/provenance/types.js';
@@ -73,6 +73,13 @@ export interface DocsReviewClient {
    * path is skipped), in the daemon's order. It leaves what pending() retained alone.
    */
   pendingDocuments(): Promise<Array<{ readonly id: string; readonly mdPath: string }>>;
+  /**
+   * ISSUE-9c95950064e4b916: every PENDING_KINDS artifact's id with its .md path, regardless
+   * of lifecycle status or the BUILD/CR-sibling precondition pendingDocuments() applies --
+   * the client-side twin of the daemon's workflow.openable, backing the review presenter's
+   * insrc_present auto-open decision. pendingDocuments() and pending() are unchanged.
+   */
+  openableDocuments(): Promise<Array<{ readonly id: string; readonly mdPath: string }>>;
   /**
    * One artifact's verbatim rendered body + open questions + block state. The arg is the
    * artifact's id (the sc3 summary drops mdPath, so the client resolves the .md path the
@@ -159,6 +166,15 @@ export function createDocsReviewClient(client: IpcClient, opts: DocsReviewClient
       if (isError(res)) throw new Error(res.error);
       // ISSUE-6dbf14435972af7a: every pending record is presentable, including one with no
       // document file (an empty mdPath, e.g. an AMD amendment) — it is presented by id.
+      return res.artifacts.map((a) => ({ id: a.artifactId, mdPath: a.mdPath }));
+    },
+
+    async openableDocuments(): Promise<Array<{ readonly id: string; readonly mdPath: string }>> {
+      const res = await client.rpc<{ artifacts: readonly OpenableArtifact[] } | DaemonError>(
+        'workflow.openable',
+        where(),
+      );
+      if (isError(res)) throw new Error(res.error);
       return res.artifacts.map((a) => ({ id: a.artifactId, mdPath: a.mdPath }));
     },
 

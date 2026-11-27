@@ -200,6 +200,21 @@ test('a declared artifact id and a declared path each open the matching pending 
   assert.ok(!ids(k).includes('BUILD-ccc-S001'));
 });
 
+// ISSUE-9c95950064e4b916 (manual review finding #1): extension.ts now wires this presenter's
+// pendingDocuments dependency to DocsReviewClient.openableDocuments() (workflow.openable), not
+// pendingDocuments() (workflow.pending). The presenter itself has no status gating of its own --
+// it opens whatever the fed list contains -- so this proves it opens a document representing an
+// approved/rejected/CR-less record, which a workflow.pending-shaped list would never have carried.
+test('a declared document that is approved, rejected or a tracked-epic BUILD with no CR sibling still opens -- these never appear in a workflow.pending-shaped list', async () => {
+  const approvedLld = doc('LLD-aaa-S001');
+  const buildNoCr = doc('BUILD-bbb-S001', 'docs/epics/x/S001/BUILD.md');
+  const k = kit([approvedLld, buildNoCr]);
+  const turn = k.presenter.begin();
+  const outcome = await turn.declared(['LLD-aaa-S001', 'BUILD-bbb-S001']);
+  assert.deepEqual(outcome, { opened: ['LLD-aaa-S001', 'BUILD-bbb-S001'], notPending: [], unreadable: false });
+  assert.deepEqual(ids(k), ['LLD-aaa-S001', 'BUILD-bbb-S001']);
+});
+
 test('a declared name that is not pending opens nothing and is reported by name', async () => {
   const A = doc('LLD-aaa-S001');
   const k = kit([A]);

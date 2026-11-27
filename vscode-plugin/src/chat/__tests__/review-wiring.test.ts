@@ -147,7 +147,9 @@ test("extension wiring: the chat host's presenter opens a document through the r
   // The presenter: the pending list from the review client, the open through the review host, quietly.
   const made = /const reviewPresenter = createReviewPresenter\(\{([\s\S]*?)\n    \}\);/.exec(ext)?.[1];
   assert.ok(made, 'the presenter is built in extension.ts');
-  assert.match(made!, /pendingDocuments: \(\) => reviewClient\.pendingDocuments\(\),/);
+  // ISSUE-9c95950064e4b916: the presenter's auto-open decision now reads the daemon's
+  // openable list (workflow.openable), not the narrower pending list (workflow.pending).
+  assert.match(made!, /pendingDocuments: \(\) => reviewClient\.openableDocuments\(\),/);
   assert.match(made!, /open: \(target\) => docsReviewHost\?\.openArtifact\(\{ \.\.\.target, quiet: true \}\),/, "the target's id and path, as the list gave them, with quiet");
   assert.match(made!, /log: panelLog,/);
   // It is given to the chat host,

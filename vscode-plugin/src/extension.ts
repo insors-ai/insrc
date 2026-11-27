@@ -729,7 +729,7 @@ export function activate(context: vscode.ExtensionContext): void {
     // document is presented, by which time it exists.
     const reviewClient = createDocsReviewClient(client, { repo: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath });
     const reviewPresenter = createReviewPresenter({
-      pendingDocuments: () => reviewClient.pendingDocuments(),
+      pendingDocuments: () => reviewClient.openableDocuments(),
       open: (target) => docsReviewHost?.openArtifact({ ...target, quiet: true }),
       log: panelLog,
     });

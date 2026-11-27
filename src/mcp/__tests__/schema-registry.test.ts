@@ -144,6 +144,17 @@ test("the schema registry's expected tool list and the steering skeleton's tool 
 	assert.match(skeleton, /^\| `insrc_present` \|/m, 'the catalog table carries an insrc_present row');
 });
 
+test("ISSUE-9c95950064e4b916: insrc_present's registered description states presentation is independent of lifecycle status, not the old lifecycle-gated wording", () => {
+	const { schemaRegistry } = buildInsrcMcpServerWithRegistry();
+	const record = schemaRegistry.get('insrc_present');
+	assert.ok(record, 'the registry records insrc_present');
+	const description = record!.description;
+	assert.ok(!description.includes('pending approval and openable'), 'the stale phrase is gone');
+	assert.ok(!/notPending`[^.]*already approved/.test(description), 'notPending no longer lists an approved artifact as an example');
+	assert.match(description, /already approved or rejected is presented/, 'states that an approved/rejected artifact IS presented, not excluded');
+	assert.match(description, /independent of lifecycle status/, 'states the real, status-independent behavior');
+});
+
 test('c00559b7 — insrc_triage start serves the optional specHash field, so an MCP client can send it', () => {
 	const { schemaRegistry } = buildInsrcMcpServerWithRegistry();
 	const r = handleInsrcSchema({ tool: 'insrc_triage', phase: 'start' }, schemaRegistry);

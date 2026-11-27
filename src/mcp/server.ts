@@ -874,10 +874,11 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 				'Declare the documents you are asking the user to review, BEFORE you ask them ' +
 				'to approve: the chat opens exactly the documents named here in its review pane. ' +
 				'Pass one to twenty artifact ids (for example `LLD-<hash>-s1`) or repo-relative ' +
-				'document paths. The answer lists which names are `presented` (pending approval ' +
-				'and openable) and which are `notPending` (misspelt, already approved, with no ' +
-				'document file yet, or a path that matches more than one document), so you can ' +
-				'correct a mistake at once. Changes nothing and ' +
+				'document paths. Presentation is independent of lifecycle status: an artifact that ' +
+				'is already approved or rejected is presented like any other. The answer lists ' +
+				'which names are `presented` and which are `notPending` (misspelt, with no document ' +
+				'file yet, or a path that matches more than one document), so you can correct a ' +
+				'mistake at once. Changes nothing and ' +
 				'approves nothing. `repo` falls back to the session workspace / INSRC_REPO.',
 			annotations: {
 				readOnlyHint:   true,

@@ -1,0 +1,605 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795782054396-yhkp3s",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T12:28:17.979Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 435628,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "epicHash": "639cd2159a87aedb",
+    "epicSlug": "unify-vibe-one-plain-cli-adapter",
+    "storyId": "s5",
+    "hldBaseRunId": "wf-1795535373279-l4wumn",
+    "hldEffectiveHash": "67d59677de6a7a14a26bdb819949a499c3171f1bd551c1f73af1201b624e872c",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "The Vibe model family advertises exactly what the new launch path honors",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 4,
+        "contentHash": "2f8a5e8a1b1320c0c2660662be1a64e879465fb2e9d827656763a71d61f9cf12",
+        "at": "2026-11-27T12:28:21.258Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 4,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T12:49:34.765Z"
+      }
+    },
+    "revision": 4,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "This round renames the shipped catalog's mid-tier model id from 'mistral-vibe-cli-latest' to 'mistral-medium-latest' -- the id the installed binary's own export.json actually reports and treats as canonical -- keeping the old id and the existing display alias as declared aliases, so the active-model matcher this Story builds has a real, passing case for the exact model the prior review round tested. It also corrects the effort classifier: an effort that was never actually probed (budget exhausted, unreachable, or no usable evidence at all) now reports 'rejected', reusing the exact meaning the daemon's existing claude-check procedure already gives that verdict, so the existing approval gate genuinely refuses it rather than merely being asked to.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "One shared plain-CLI Vibe execution adapter module owns the whole launch contract — argv construction, model/thinking pinning for new sessions with explicit resumed-session selection semantics (qualify or reject before dispatch, never silent substitution), prompt transport, budget guards, the execution context (cwd, environment, dual process-group policy with defined escalation and cleanup ownership per mode, abort signal, host deadline), the ordinary-session approval input with the existing chat mapping, rich turn events with session identity and tool-result output content, the qualified MCP tool naming split into general identity parsing and the analysis allowlist, and the fail-closed read-only mode whose qualification the ADAPTER owns and validates. The backend provider and the VS Code plugin chat both import and call it directly; the session-based app-server transport is deleted, not demoted. A sibling shared real-TOML config module (smol-toml, parse-for-understanding with surgical, byte-preserving edits) replaces every hand-written Vibe TOML reader. This is alternative a1, revised per the design reviews of 2026-11-24: the only shape that satisfies all seven Epic constraints, with k1/k2/k3 satisfied structurally — the safety gate, its qualification, the approval mapping, the process-group policy and the naming convention live inside the one module both surfaces must call.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "assumptions": [
+            "c13",
+            "c5"
+          ],
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s5"
+          ],
+          "id": "sc1",
+          "interfaceSketch": "/** The single Vibe launch contract. Construction fixes the execution context; each turn carries its own cancellation and approval choice. */\ninterface VibeAdapterContext {\n\treadonly cwd: string;\n\treadonly env?: Readonly<Record<string, string>> | undefined;\n\treadonly processGroup: 'adapter-owned' | 'supervisor-owned';\n}\ninterface VibeNewSession {\n\treadonly kind: 'new';\n\treadonly model?: string | undefined;\n\treadonly thinking?: string | undefined;\n}\ninterface VibeResumedSession {\n\treadonly kind: 'resume';\n\treadonly resumeHandle: string;\n\treadonly selection?: undefined;\n}\ntype VibeSessionRequest = VibeNewSession | VibeResumedSession;\ntype VibeApproval = 'default' | 'manual' | 'edit-auto' | 'auto';\ninterface VibeTurnRequest {\n\treadonly prompt: string;\n\treadonly outputMode: 'text' | 'json' | 'streaming';\n\treadonly session: VibeSessionRequest;\n\treadonly mode: 'default' | 'read-only';\n\treadonly approval?: VibeApproval | undefined;\n\treadonly readDirs?: readonly string[] | undefined;\n\treadonly budget?: { readonly maxTurns?: number | undefined; readonly timeLimitSeconds?: number | undefined; readonly maxPriceDollars?: number | undefined; readonly maxTokens?: number | undefined } | undefined;\n\treadonly signal?: AbortSignal | undefined;\n\treadonly deadlineMs?: number | undefined;\n}\ntype VibeTurnEvent =\n\t| { readonly kind: 'session'; readonly sessionId: string; readonly resumeHandle?: string | undefined }\n\t| { readonly kind: 'status'; readonly phase: 'starting' | 'thinking' | 'refused' }\n\t| { readonly kind: 'assistant-text'; readonly text: string }\n\t| { readonly kind: 'tool-call'; readonly toolCallId: string; readonly toolName: string; readonly arguments: Readonly<Record<string, unknown>> }\n\t| { readonly kind: 'tool-result'; readonly toolCallId: string; readonly ok: boolean; readonly output: string; readonly error?: string | undefined }\n\t| { readonly kind: 'error'; readonly message: string };\ninterface VibeExitEvidence {\n\treadonly stopReason?: string | undefined;\n\treadonly outcome?: string | undefined;\n\treadonly effectiveSelection?: { readonly model?: string | undefined; readonly thinking?: string | undefined } | undefined;\n}\ninterface VibeTurnResult {\n\treadonly text: string;\n\treadonly sessionId?: string | undefined;\n\treadonly resumeHandle?: string | undefined;\n\treadonly exitEvidence?: VibeExitEvidence | undefined;\n}\ninterface VibeExecutionAdapter {\n\tstartTurn(request: VibeTurnRequest): AsyncIterable<VibeTurnEvent> & { readonly result: Promise<VibeTurnResult> };\n}",
+          "name": "Vibe execution adapter interface",
+          "ownedByStory": "s1",
+          "purpose": "The one launch contract every Vibe turn goes through. It carries: an explicit launch mode on every request (default | read-only) with an ordinary-session approval input mapped as chat maps it today, that is REJECTED for read-only requests; an adapter-construction context carrying cwd, environment and a DUAL process-group policy; rich turn events whose tool-result variant carries the normalized OUTPUT content; and the resumed-session selection semantics expressed IN THE TYPE — a resumed turn has no selection fields, the session's effective selection is read back from exit evidence and reported, and a caller wanting a different selection starts a new session. Silent substitution is unrepresentable. Owning it in s1 makes k2 true by construction."
+        }
+      ],
+      "boundary": {
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The model-family alignment: catalog, registry, check and definitions entries for cli-vibe rebuilt to exactly the models and thinking levels the adapter honors (verified against the installed tool's catalog), the selection-delivery semantics through the adapter — new sessions take the selection, resumed sessions inherit and report — and the fail-before-dispatch error naming supported choices. No other story consumes these records; settings and tier resolution do.",
+        "owns": [],
+        "storyId": "s5"
+      },
+      "adjacentBoundaries": [
+        {
+          "depends": [],
+          "internal": "Everything behind the adapter interface: argv construction from the qualified 3.1.4 flag surface, the adapter-construction execution context with the DUAL process-group policy and per-turn cancellation, transient-error classification and the bounded retry semantics, the local schema-validation loop for structured-output requests, the tool-result output normalization, the type-level resumed-session selection rule, and the deletion of src/shared/vibe-session.ts plus the rewiring of the backend provider paths and structured-output.ts onto the adapter.",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "storyId": "s1"
+        },
+        {
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The narrow-authorization design itself: the live qualification suite against the real installed binary, the adapter-owned ReadOnlyCapability wiring, the unavailable-state reporting when qualification fails, and the adapter's read-only mode enablement.",
+          "owns": [
+            "sc3"
+          ],
+          "storyId": "s2"
+        },
+        {
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The chat surface migration: the vibe mapper and job runner become consumers of the adapter, while the transcript rendering, streaming event mapping, worker lifecycle, resume handles and attachments keep their existing behavior. Also internal: the live verifications whose outcomes s6 records.",
+          "owns": [],
+          "storyId": "s3"
+        },
+        {
+          "depends": [],
+          "internal": "The reader's internals: parse-for-understanding via the existing smol-toml dependency, the surgical byte-preserving edit engine, the refusal path for configs that cannot be changed safely, and the rewiring of the daemon's registration checks and cleanup and the plugin's config writer onto it.",
+          "owns": [
+            "sc4"
+          ],
+          "storyId": "s4"
+        },
+        {
+          "depends": [
+            "sc3"
+          ],
+          "internal": "The reconciliation work itself: verifying the chat prompt-transport fix, the approval parity cases, the tool-result output parity, the resume-selection behavior and the worker cleanup parity live with s3's evidence, checking catalog coverage, closing the implemented issues, stamping the review-dependent deferrals, and attaching evidence to every closure.",
+          "owns": [],
+          "storyId": "s6"
+        }
+      ],
+      "rolloutPhase": "Phase B — Adapter consumers",
+      "nonFunctional": {
+        "durability": "User configuration files are edited surgically with byte-for-byte preservation of unrelated content, and a config that cannot be changed safely is left untouched with the failure reported (k4); the issue ledger records closures only with evidence (k7). Temporary files the adapter creates for a turn are cleaned by the adapter on every exit path in both process-group policies.",
+        "observability": "Every turn result carries the tool's structured exit evidence and the session identity; tool-result events carry the normalized OUTPUT content; per-turn outcomes, qualification results and refusal reasons are logged through the daemon's pino logger; the ledger reconciliation (s6) records its verification evidence on the artifacts it closes or defers.",
+        "performance": "One subprocess per turn, as the claude and codex clients already do. The adapter forwards the tool's own budget guards AND enforces the host-side deadline. Structured-output requests keep the existing bounded retry semantics.",
+        "security": "k1 is structural in the strict sense: the read-only launch mode is part of the single adapter's request shape, its narrow authorization is qualified live BY THE ADAPTER against the installed binary. Ordinary approval settings are REJECTED for read-only requests. Resumed turns cannot carry a changed model or thinking level: the session's effective selection is read back from exit evidence and reported in the result, and a caller who wants a different selection starts a new session — silent substitution is unrepresentable. All model access stays through the local CLI binary's own auth (k6) — no direct cloud REST."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "checkVibe",
+          "signature": "async function checkVibe(ctx: Context, claimed: readonly EffortLevel[]): Promise<Procedure>",
+          "parameters": [
+            {
+              "name": "ctx",
+              "type": "Context",
+              "purpose": "The check's CLI binary, family, modelId, run() seam, timeout and cwd (unchanged shape).",
+              "optional": false
+            },
+            {
+              "name": "claimed",
+              "type": "readonly EffortLevel[]",
+              "purpose": "The effort/thinking levels the user claims the model supports.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Procedure>",
+            "meaning": "cliVersion, whether the model ran (active_model-confirmed), and a per-claimed-effort EffortCheck verdict: 'rejected' for any case with no usable completion evidence at all (never attempted or probe failure), 'recognised-unconfirmed' only for a genuinely completed, model-confirmed run whose specific effort remains unverifiable, and never 'accepted' (no effective-thinking evidence exists anywhere in the installed tool)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The model-liveness probe counts as runs:true ONLY when readVibeExportEvidence reports a success-class outcome with no error AND vibeActiveModelMatches(ctx.modelId, evidence.activeModel, registry) is true; this round's catalog rename gives the matcher a real passing case for the shipped 'mid' tier model",
+            "If the model-liveness probe does not satisfy both conditions, no effort probes run; every claimed effort is reported via the existing notChecked-style wording with verdict 'rejected' ('not checked: the CLI could not be reached' or naming the active_model mismatch) -- unchanged from the shared convention every CLI-kind procedure already uses",
+            "Otherwise, each claimed effort is classified by a REVISED ordered table: (1) deterministic refusal (stderr downgrade warning, or export outcome/error naming the effort) -> 'rejected'; (2) no usable run for THIS effort at all -- never probed because the shared deadline was exhausted before its turn, OR its own probe was unreachable/timed out/returned a malformed export with no completion evidence whatsoever -> 'rejected', evidence naming which of the two applies, reusing the exact 'no affirmative basis' meaning checkClaude's own undefined-names branch already gives this verdict (not an invented new semantics); (3) a run that DID complete, with the model positively confirmed, and no refusal signal, but no effective-thinking evidence for the specific value -> 'recognised-unconfirmed', evidence stating the model was confirmed but the effort's effective application is unverifiable",
+            "approveCheck's existing, unchanged block-only-on-'rejected' rule now genuinely refuses an effort from case (2), closing the admission gap rather than merely documenting it"
+          ]
+        },
+        {
+          "name": "readVibeExportEvidence",
+          "signature": "async function readVibeExportEvidence(exportDir: string, readFile: (path: string) => Promise<string>): Promise<{ readonly activeModel?: string | undefined; readonly outcome?: string | undefined; readonly errorMessage?: string | undefined }>",
+          "parameters": [
+            {
+              "name": "exportDir",
+              "type": "string",
+              "purpose": "The --output-dir path the probe was given.",
+              "optional": false
+            },
+            {
+              "name": "readFile",
+              "type": "(path: string) => Promise<string>",
+              "purpose": "Injected file-read seam.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<{activeModel?, outcome?, errorMessage?}>",
+            "meaning": "Unchanged from round 3: the three export.json fields both the model-liveness gate and the effort classifier consult; a missing/unreadable/unparseable export.json yields all three fields undefined, never a thrown error."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Unchanged; its all-undefined fallback is now explicitly one of case (2)'s 'no usable run' triggers rather than feeding a 'recognised-unconfirmed' result"
+          ]
+        },
+        {
+          "name": "vibeThinkingDowngradeWarning",
+          "signature": "function vibeThinkingDowngradeWarning(stderr: string, effort: string): boolean",
+          "parameters": [
+            {
+              "name": "stderr",
+              "type": "string",
+              "purpose": "The effort probe's captured stderr text.",
+              "optional": false
+            },
+            {
+              "name": "effort",
+              "type": "string",
+              "purpose": "The claimed effort value this probe requested.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "boolean",
+            "meaning": "Unchanged from round 3: true when stderr contains the installed CLI's own live-confirmed silent-downgrade wording naming this exact effort value."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Unchanged; remains one of the two deterministic-refusal signals in case (1)"
+          ]
+        },
+        {
+          "name": "vibeActiveModelMatches",
+          "signature": "function vibeActiveModelMatches(requestedId: string, observedActiveModel: string | undefined, registry: ModelRegistry): boolean",
+          "parameters": [
+            {
+              "name": "requestedId",
+              "type": "string",
+              "purpose": "The id or alias actually sent as --model.",
+              "optional": false
+            },
+            {
+              "name": "observedActiveModel",
+              "type": "string | undefined",
+              "purpose": "export.json's config.active_model, or undefined if absent.",
+              "optional": false
+            },
+            {
+              "name": "registry",
+              "type": "ModelRegistry",
+              "purpose": "The daemon's own registry, so equivalence is checked via the SAME resolveName-based id-or-alias lookup the daemon uses elsewhere.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "boolean",
+            "meaning": "Unchanged logic from round 3 (true on direct match or resolved-canonical-id match, false otherwise); this round's catalog rename is what makes the resolved-canonical-id branch actually succeed for the shipped 'mid' tier model, since its canonical id now equals the observed active_model directly."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Used identically by checkVibe's model-liveness gate and the live-matrix test"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "cli-vibe family's 'mid' tier model entry (src/assets/models/cloud-model-catalog.json)",
+        "change": "field-modify",
+        "details": "The model entry's canonical `id` is renamed from 'mistral-vibe-cli-latest' to 'mistral-medium-latest' -- the id the installed vibe 3.1.4 binary's own export.json reports as active_model and treats as canonical in its own internal alias table. 'mistral-vibe-cli-latest' and the existing 'mistral-medium-3.5' both become declared aliases (aliases: ['mistral-vibe-cli-latest', 'mistral-medium-3.5']); displayName and efforts are unchanged.",
+        "callSites": [
+          "src/assets/models/cloud-model-catalog.json:53",
+          "src/daemon/model-catalog.ts:166-168"
+        ]
+      },
+      {
+        "entity": "cli-vibe family's tierDefaults.mid (src/assets/models/cloud-model-catalog.json)",
+        "change": "field-modify",
+        "details": "tierDefaults.mid.model is updated from 'mistral-vibe-cli-latest' to 'mistral-medium-latest' so it keeps resolving to the same, now-renamed model definition; validateFamily's own tierDefaults.mid.model-must-resolve rule continues to enforce this at load time.",
+        "callSites": [
+          "src/assets/models/cloud-model-catalog.json:59"
+        ]
+      },
+      {
+        "entity": "model-check.ts's checkVibe effort classification",
+        "change": "invariant-change",
+        "details": "Reclassifies a never-attempted or no-usable-evidence effort from 'recognised-unconfirmed' to 'rejected', reusing checkClaude's and the shared notChecked helper's own existing precedent for this exact meaning; reserves 'recognised-unconfirmed' strictly for a genuinely completed, model-confirmed run with only the specific effort's effective application unverifiable.",
+        "callSites": [
+          "src/daemon/model-check.ts:308-335",
+          "src/daemon/model-check.ts:435-457",
+          "src/daemon/model-check.ts:272-283"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Unchanged from round 3: checkVibe mirrors sc1's VibeNewSession model/thinking flag semantics via buildSelectionArgs and the verified-safe approval flag via buildApprovalArgs (round 2's still-pending additive export amendment). This round's catalog rename and classification correction touch neither sc1's shape nor this interaction."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A claimed effort is never actually probed because the shared overall deadline is exhausted before its turn.",
+          "detection": "Elapsed-time check against the shared budget before starting the probe.",
+          "response": "Verdict 'rejected', evidence naming the exhausted time budget -- now genuinely blocked from approval by approveCheck's existing rule, not merely documented as a risk.",
+          "userImpact": "A user cannot approve an effort that was never actually attempted.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An individual effort probe is unreachable, times out, or returns a malformed/unparseable export with no completion evidence of any kind.",
+          "detection": "The existing unreachable()/timeout check, or readVibeExportEvidence's own read/parse failure yielding all-undefined fields with no outcome/error signal at all.",
+          "response": "Verdict 'rejected', evidence naming the specific probe/read failure -- reusing checkClaude's own existing 'no affirmative basis' meaning for this verdict, not an invented new semantics.",
+          "userImpact": "A tooling/environment failure can no longer be approved as if it were a genuinely-run, merely-unconfirmed effort.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A claimed effort's probe DOES complete, with the model positively confirmed via vibeActiveModelMatches, but neither refusal signal is present and the export carries no effective-thinking field.",
+          "detection": "vibeThinkingDowngradeWarning returns false AND readVibeExportEvidence's outcome/errorMessage names no refusal, with a genuine success-class outcome present.",
+          "response": "Verdict 'recognised-unconfirmed' -- the ONLY case this verdict is now reserved for; evidence states the model was confirmed but the effort's effective application is unverifiable.",
+          "userImpact": "A user approving this verdict knows the model genuinely ran; the distinction from 'never attempted' is now real, not just a wording difference.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The model-liveness probe exits cleanly but export.json's active_model is missing, absent, or a genuinely different model than requested (not the renamed canonical id or a declared alias of it).",
+          "detection": "vibeActiveModelMatches(ctx.modelId, evidence.activeModel, registry) returns false.",
+          "response": "runs:false with an error naming the mismatch; no effort probes run.",
+          "userImpact": "A silent model substitution can never be mistaken for a confirmed liveness success.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The catalog JSON's id rename and tierDefaults.mid reference are edited inconsistently (one updated, the other left pointing at the pre-rename id).",
+          "detection": "validateFamily's existing tierDefaults.mid.model-must-resolve check fails to resolve the stale id against the renamed models list.",
+          "response": "validateModelCatalog throws ModelCatalogValidationError naming the faulty entry; the daemon fails fast at boot.",
+          "userImpact": "A build-time/boot-time failure with a clear reason, never a silent dangling reference.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A user who read round 3's LLD or an earlier check result assumes 'recognised-unconfirmed' always means 'the model ran, only the effort is unproven' -- now additionally true by construction rather than by convention alone.",
+          "detection": "This is a design clarification, not a runtime detection -- recorded here because it changes what a consumer of a stored ApprovedProfile should infer from 'recognised-unconfirmed' going forward.",
+          "response": "Documented plainly in the LLD; not a behavior this Story needs to migrate existing stored profiles for, since the stored verdict STRING is unchanged ('recognised-unconfirmed' already existed) -- only which SITUATIONS map to it going forward.",
+          "userImpact": "A profile decided under the OLD (pre-round-4) classification may still carry 'recognised-unconfirmed' for what would now be classified 'rejected'; this is the exact legacy-evidence gap named in finding 3, applying prospectively only.",
+          "recoverable": false
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A requested id is the renamed canonical id 'mistral-medium-latest' itself (not an alias).",
+          "expected": "vibeActiveModelMatches's direct-equality branch matches immediately; no alias resolution needed."
+        },
+        {
+          "input": "A requested id is one of the two declared aliases ('mistral-vibe-cli-latest' or 'mistral-medium-3.5').",
+          "expected": "registry.find resolves either alias to the renamed model, whose canonical id now equals the observed active_model -- the matcher's resolved-canonical-id branch now genuinely passes for the exact shipped case the review tested."
+        },
+        {
+          "input": "A requested id is NOT a catalog-declared alias of the model actually observed running (a real, unexpected substitution).",
+          "expected": "vibeActiveModelMatches returns false; the live-matrix assertion FAILS -- never silently passes a substitution the catalog does not itself declare."
+        },
+        {
+          "input": "A persisted tier setting or approved-model-store entry already references the OLD id 'mistral-vibe-cli-latest' before this round ships.",
+          "expected": "resolveName still matches it as a declared alias after the rename (it is retained, not dropped), so an existing reference keeps resolving to the same model unchanged."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A positive model-level claim requires the observed active_model to equal the requested id's resolved canonical id (directly or via a declared alias); the catalog's own canonical naming must agree with what the installed binary itself reports as canonical for any such claim to ever be checkable.",
+          "source": "c1"
+        },
+        {
+          "text": "checkVibe's effort verdict 'rejected' must mean 'no affirmative basis to believe this effort is supported' -- including a genuine no-usable-run failure -- exactly as checkClaude's own existing procedure already uses it, not only 'the CLI actively refused it at runtime'.",
+          "source": "c2"
+        },
+        {
+          "text": "The shared notChecked helper's existing convention (every claimed effort reported 'rejected' when the model-level CLI call is unreachable) must be the model this Story's own effort-level no-usable-run cases follow, not a separate, inconsistent convention.",
+          "source": "c3"
+        },
+        {
+          "text": "approveCheck's existing, unchanged rule (block only on a literal 'rejected' verdict) is the mechanism this Story's classification must route a no-usable-run effort through to achieve genuine admission control, since widening the rule itself is outside this Story's scope.",
+          "source": "c4"
+        },
+        {
+          "text": "ApprovedProfile's cliVersion/decidedAt fields cannot distinguish which check-procedure version produced a profile; this Story's positive-evidence guarantee is prospective only, an accepted limitation of the other Epic's own contract shape.",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "vitest",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Verify the renamed catalog's alias resolution, and checkVibe's revised classification table in isolation.",
+          "subjects": [
+            "validateModelCatalog loads the renamed catalog without throwing; tierDefaults.mid resolves to the model now canonically named 'mistral-medium-latest'",
+            "resolveName matches BOTH 'mistral-vibe-cli-latest' and 'mistral-medium-3.5' as aliases of the renamed model",
+            "vibeActiveModelMatches returns true when requestedId is 'mistral-vibe-cli-latest' and observedActiveModel is 'mistral-medium-latest' -- the exact shipped case the review's finding 2 demonstrated as failing",
+            "An effort never probed (deadline exhausted before its turn) is classified 'rejected' with evidence naming the exhausted budget",
+            "An effort probe that is unreachable, times out, or returns a malformed export with no completion evidence is classified 'rejected'",
+            "A claimed effort whose probe completes with the model confirmed and neither refusal signal present is classified 'recognised-unconfirmed' -- and ONLY this case produces that verdict",
+            "A deliberately-broken tierDefaults.mid (pointing at a non-resolving id) throws ModelCatalogValidationError (regression guard for an inconsistent rename edit)"
+          ],
+          "fixturesNeeded": [
+            "A temp models-asset directory (via _setModelCatalogDirForTests) holding the renamed catalog JSON plus a deliberately-broken variant for the regression guard",
+            "A fake Run seam (ModelCheckDeps.run) returning scripted ProcessGroupResult + export.json content per call",
+            "A test ModelRegistry fixture exercising vibeActiveModelMatches's alias-equivalence path against the real catalog's renamed entry"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise checkModel->approveCheck end to end, proving a never-attempted effort cannot enter a dispatchable (approved) profile under the EXISTING approveCheck contract.",
+          "subjects": [
+            "checkModel for a never-probed effort (budget exhaustion) returns verdict 'rejected'; approveCheck REFUSES to approve it (invalid-efforts) -- the integration test the review explicitly asked for, proving the fix structurally, not just by documentation",
+            "checkModel for a probe-failure effort (unreachable/malformed export) likewise returns 'rejected' and is likewise refused by approveCheck",
+            "approveCheck still accepts an effort whose verdict is 'recognised-unconfirmed' from a genuinely completed, model-confirmed run -- confirming the narrowed case is still approvable exactly as claude/codex's existing informed-consent pattern already allows",
+            "checkModel's existing invalid-params guard for an already-listed modelId is unaffected by the rename or the classification change"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Record real, alias-aware acceptance evidence across the whole shipped cli-vibe family against the installed binary, now exercising the renamed catalog entry.",
+          "subjects": [
+            "Every shipped cli-vibe model id (including the renamed 'mistral-medium-latest' and its retained aliases 'mistral-vibe-cli-latest'/'mistral-medium-3.5') dispatches successfully with vibeActiveModelMatches confirming the observed active_model",
+            "Every shipped model's full declared efforts list runs without a stderr downgrade match or an export.json backend rejection",
+            "The tier defaults (core/mid/cheap) and the summariser model each resolve to a model this sweep confirms via vibeActiveModelMatches, including the renamed mid-tier default"
+          ],
+          "fixturesNeeded": [
+            "Gated behind INSRC_LIVE_TESTS=1, matching the project's existing live-service test convention"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: vibeActiveModelMatches returns true for the exact shipped mistral-vibe-cli-latest/mistral-medium-latest pair the review demonstrated as failing",
+            "live: every shipped cli-vibe model x its full declared efforts list dispatches successfully, with vibeActiveModelMatches confirming the effective model including the renamed mid-tier default"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: an effort whose probe genuinely completes with the model confirmed is classified 'recognised-unconfirmed', never 'accepted' -- the evidence text accurately reflects what was and was not verified",
+            "integration: approveCheck persists a genuinely-run, model-confirmed effort exactly as its evidence describes"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: a never-attempted or probe-failed effort is classified 'rejected' and approveCheck REFUSES to approve it -- an unattempted effort cannot enter a dispatchable profile, closing the review's finding 1 with a structural integration test, not documentation alone",
+            "unit: a stderr downgrade match or an export.json backend rejection yields verdict 'rejected' for a genuinely-probed effort"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per this round's bundles: the shipped catalog's mid-tier entry has canonical id 'mistral-vibe-cli-latest' with alias 'mistral-medium-3.5' (bundle 1); vibeActiveModelMatches (round 3) resolves this id to itself via resolveName, never to the real binary's reported active_model 'mistral-medium-latest', so the matcher cannot pass for the shipped case. checkClaude's existing procedure (bundle 2) and the shared notChecked helper (bundle 3) already use verdict 'rejected' for a no-affirmative-basis/unreachable case; round 2/3's checkVibe inconsistently used 'recognised-unconfirmed' for an effort-level no-usable-run case instead. approveCheck (bundle 4) blocks only 'rejected'. ApprovedProfile (bundle 5) has no procedure-version field.",
+      "stateAfter": "The catalog's mid-tier model entry's canonical id is 'mistral-medium-latest', with 'mistral-vibe-cli-latest' and 'mistral-medium-3.5' both retained as declared aliases; tierDefaults.mid references the renamed id. vibeActiveModelMatches now has a real passing case for this model against the installed binary's own reported active_model. checkVibe's effort classification reclassifies any no-usable-run case (never attempted, unreachable, malformed export) as 'rejected', aligned with checkClaude's and notChecked's own existing convention; 'recognised-unconfirmed' is reserved strictly for a genuinely completed, model-confirmed run. approveCheck's existing rule now genuinely blocks a never-attempted effort.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Rename the cli-vibe family's mid-tier model entry's canonical id in cloud-model-catalog.json from 'mistral-vibe-cli-latest' to 'mistral-medium-latest', adding both 'mistral-vibe-cli-latest' and the existing 'mistral-medium-3.5' as declared aliases.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Update tierDefaults.mid.model to the renamed id.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Reclassify checkVibe's effort-level no-usable-run cases (never probed due to exhausted shared deadline, or probe unreachable/timed out/malformed export with no completion evidence) from 'recognised-unconfirmed' to 'rejected', aligning with checkClaude's and the shared notChecked helper's existing convention.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Narrow 'recognised-unconfirmed' to apply only when a probe genuinely completes, the model is positively confirmed via vibeActiveModelMatches, and neither refusal signal is present.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Add the integration test proving a never-attempted or probe-failed effort is now refused by approveCheck's existing, unchanged rule.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Add the LLD's explicit, prospective-only legacy-evidence statement for ApprovedProfile's cliVersion/decidedAt fields, and firm up s1's named ownership of the dispatch-time/resume-selection half of ac3.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No exported function signature changes anywhere; checkVibe remains internal and checkModel/approveCheck/EffortVerdict/ApprovedProfile are all untouched. The catalog rename keeps both the old id ('mistral-vibe-cli-latest') and the existing display alias ('mistral-medium-3.5') as declared aliases, so any existing persisted tier setting, UI selection or approved-model-store entry naming the old id keeps resolving unchanged via resolveName. A profile already approved under the pre-round-4 classification (which could have recorded 'recognised-unconfirmed' for what this round now classifies 'rejected') remains recorded as-is in the append-only store; this Story's stronger admission guarantee applies prospectively, to checks run after this round ships.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Rename the catalog's canonical id to match the binary's own canonical naming, reclassify no-usable-run efforts as 'rejected' reusing existing precedent, and state the legacy-evidence/ownership boundaries explicitly",
+        "oneLineSummary": "Rename 'mistral-vibe-cli-latest' to 'mistral-medium-latest' (keeping both the old id and 'mistral-medium-3.5' as declared aliases) so vibeActiveModelMatches has a real passing path; split checkVibe's no-usable-run effort cases into verdict 'rejected' (reusing checkClaude's and notChecked's own existing precedent for this exact meaning), reserving 'recognised-unconfirmed' for a genuinely completed, model-confirmed run; state plainly that the new evidence guarantee is prospective-only and name s1's dispatch-time ownership concretely.",
+        "approach": "cloud-model-catalog.json's cli-vibe mid-tier entry's canonical `id` is renamed from 'mistral-vibe-cli-latest' to 'mistral-medium-latest' -- the id the installed binary's own export.json reports as active_model and treats as canonical in its own catalog_model_aliases table -- while 'mistral-vibe-cli-latest' and the existing 'mistral-medium-3.5' both become declared aliases, and tierDefaults.mid.model is updated to the renamed id. This gives vibeActiveModelMatches's registry.find-based lookup a real model whose canonical id equals the observed active_model for the shipped case the review tested. checkVibe's effort classification keeps round 3's ordered structure but corrects cases (3)/(4): a claimed effort never probed at all (shared deadline exhausted before its turn) or whose probe never produced usable completion evidence (unreachable, timeout, malformed export) is now verdict 'rejected' -- the exact, already-established meaning checkClaude's own undefined-names branch and the shared notChecked helper already give 'rejected' ('no affirmative basis', not strictly 'actively refused at runtime') -- so approveCheck's EXISTING block-only-on-'rejected' rule now genuinely refuses it, with no widening of EffortVerdict. 'recognised-unconfirmed' is reserved strictly for case (2): a run that actually completed with the model positively confirmed, where only the specific effort's effective application remains unverifiable. The LLD states plainly that this Story's positive-evidence guarantee is PROSPECTIVE ONLY (a profile decided under a prior procedure version is not distinguishable from a new one by cliVersion/decidedAt alone, an accepted limitation of the other Epic's ApprovedProfile shape), and names s1's VibeSelectionError/resume-selection semantics, with their own existing BUILD/TESTS coverage, as the concrete, already-built owner of the HLD's dispatch-time and saved-session requirements -- unaffected by and independent of anything in this Story.",
+        "pros": [
+          "Gives vibeActiveModelMatches a REAL passing path for the exact shipped case the review tested, closing finding 2 completely rather than leaving the matcher permanently unable to pass for this model",
+          "Closes finding 1 completely using EXISTING, already-shipped EffortVerdict semantics (checkClaude's own undefined-names branch, the shared notChecked helper) -- no cross-Epic contract change, no new verdict value",
+          "Makes the legacy-evidence and ac3-ownership statements concrete and testable rather than merely asserted"
+        ],
+        "cons": [
+          "A second catalog rename in this Story's own history (round 1 proposed one, round 2/3 reversed it, round 4 reinstates a narrower, now correctly-grounded version) -- a real cost in review cycles, though each round's reasoning was itself grounded in the evidence available at the time"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Leave the catalog unchanged; bridge the two alias systems with a separate, hand-written mapping table inside model-check.ts",
+        "oneLineSummary": "Reject: duplicates alias knowledge in a third place, risks drifting from the real binary's own alias table across a future vibe version, and leaves the catalog's own self-description (settings UI, docs) still naming an id the binary does not consider canonical.",
+        "approach": "Add a small static map (e.g. {'mistral-vibe-cli-latest': 'mistral-medium-latest'}) inside model-check.ts that vibeActiveModelMatches consults in addition to registry.find, without touching the catalog's own id/alias data.",
+        "pros": [
+          "No catalog data change; smaller diff localized to model-check.ts"
+        ],
+        "cons": [
+          "A SECOND, independently-maintained copy of alias knowledge (beyond the catalog's own 'aliases' field and the real binary's own internal table) that can silently drift if a future vibe version changes its own canonical naming, with nothing to catch it",
+          "Does not fix the catalog's own displayed id for any OTHER consumer (settings UI, generated docs) that still shows 'mistral-vibe-cli-latest' as if it were the binary's own canonical choice"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Would close ac1's matching gap for the one known pair, but at the cost of a second, independently-maintained alias table that can silently drift from the real binary's own naming, and does not fix the catalog's own self-description for other consumers."
+      },
+      {
+        "id": "a3",
+        "name": "Rename the catalog id as in a1, but widen EffortVerdict with a new 'not-run' value instead of reusing 'rejected'",
+        "oneLineSummary": "Reject (same reasoning as round 3's rejected a2): closes finding 1 with a structural guarantee, but requires a cross-Epic contract change outside this Story's mandate.",
+        "approach": "Same catalog rename as a1, but add a fourth EffortVerdict value and have approveCheck refuse it alongside 'rejected'.",
+        "pros": [
+          "Would make the distinction self-evident in the type system, not just by convention"
+        ],
+        "cons": [
+          "EffortVerdict/approveCheck are the sc4 contract of a DIFFERENT, already-shipped Epic (ce99b72065d03b1b) shared with checkCodex/checkClaude; widening it is the same anti-overreach violation round 3's review already implicitly rejected by asking for a fix 'under the chosen contract' -- and a1 achieves the identical practical outcome (approval genuinely blocked) using code that already exists"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Would satisfy ac1-ac3 as fully as a1, but at the cost of a cross-Epic contract change this Story has no mandate to make -- the same anti-overreach violation already rejected in round 3."
+      },
+      {
+        "id": "a4",
+        "name": "Fix findings 1 and 3 as in a1, but leave the catalog id unchanged and hardcode the one known mistral-vibe-cli-latest/mistral-medium-latest pair inside vibeActiveModelMatches",
+        "oneLineSummary": "Reject: a hardcoded special case is a third, even more fragile alias mechanism, and the review explicitly offered the catalog rename as its preferred remedy over inventing a new relation.",
+        "approach": "Keep the catalog's id as 'mistral-vibe-cli-latest'; add a literal exception inside vibeActiveModelMatches recognizing this one pair as equivalent, alongside the registry-based lookup for every other model.",
+        "pros": [
+          "No catalog data change"
+        ],
+        "cons": [
+          "Hardcodes exactly the kind of fragile, undocumented special case the review's own remedy (changing the canonical id with a compatibility alias) was offered specifically to avoid; a future vibe version changing its own canonical naming for this model would silently stop matching with no catalog signal at all"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Closes ac1's immediate test case via a hardcoded exception, but is the most fragile of the rejected alternatives: a special case with no catalog signal at all if the real binary's own canonical naming ever changes."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "testFramework is inferred as 'vitest' from repository convention; no convention.detect analyzeBundle was run to confirm it.",
+      "approveCheck (model-check.ts:435-457, the sc4 contract of Epic ce99b72065d03b1b) blocks approval only on a literal 'rejected' verdict; this round routes every no-usable-run effort through that exact value, closing the admission gap within the existing contract. No further widening of EffortVerdict is proposed.",
+      "ApprovedProfile's cliVersion/decidedAt fields cannot identify which check-procedure version produced a profile; this Story's stronger admission guarantee is prospective only. A procedure-provenance field is a back-flow candidate for the owning Epic (ce99b72065d03b1b), not something s5 invents.",
+      "A staleness-comparison UI for legacy approvals belongs to the settings-consuming story per this Story's own boundary text, not to s5."
+    ],
+    "epicImpact": {
+      "applies": true,
+      "reason": "s1 built the shared adapter (sc1) this Story consumes; s1's own VibeSelectionError (dispatch-time) and resume-selection semantics remain entirely unaffected by this round's catalog rename and classification correction, both confined to the daemon's model catalog/check modules.",
+      "storiesCovered": [
+        "s1"
+      ],
+      "findings": "s1's BUILD changed the shared Vibe execution adapter and backend/plugin chat dispatch surfaces, none of which read or depend on the cli-vibe catalog's specific model id spellings -- s1's own dispatch path (dispatchVibeTurn) forwards whatever canonical id resolveTier/tierModelOf hands it, so renaming the catalog's mid-tier id from 'mistral-vibe-cli-latest' to 'mistral-medium-latest' (with both the old id and the existing alias retained as declared aliases) changes nothing about how s1's adapter constructs or dispatches a turn -- confirmed via s1's own build record describing no dependency on specific model id strings.",
+      "sources": [
+        ".insrc/artifacts/BUILD-639cd2159a87aedb-s1.json"
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/assets/models/cloud-model-catalog.json:45-62"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/model-check.ts:272-283"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/model-check.ts:308-335"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/model-check.ts:435-457"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/model-registry.ts:49-58"
+    }
+  ]
+}

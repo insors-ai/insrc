@@ -18,7 +18,25 @@
         "relation": "derived-from"
       },
       "references": [],
-      "attachments": []
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#322",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": [
+          {
+            "kind": "task-list",
+            "at": "2026-11-27T12:49:41.818Z"
+          },
+          {
+            "kind": "design",
+            "at": "2026-11-27T12:49:44.460Z"
+          }
+        ]
+      }
     },
     "lifecycle": {
       "status": "draft",

@@ -91,6 +91,10 @@ if (mode === 'remaining') {
     globalThis.setTimeout = (...args) => { sleeps++; return timer(...args); };
     try { assert.equal(await scope.drain(), false); assert.equal(sleeps, 0, 'a repeated drain must not reset the exhausted reserve'); }
     finally { globalThis.setTimeout = timer; fs.unlinkSync(actor); }
+    assert.equal(await scope.drain(), true, 'later actual closure can be observed');
+    fs.writeFileSync(actor, 'new controlled evidence after an observed close');
+    try { assert.equal(await scope.drain(), false, 'a previous success is not cached proof'); }
+    finally { fs.unlinkSync(actor); }
   });
   assert.equal(JSON.parse(fs.readFileSync(join(repeated.workspace, 'cleanup.json'), 'utf8')).confirmedClosed, true);
 } else if (mode === 'missing-proof') {

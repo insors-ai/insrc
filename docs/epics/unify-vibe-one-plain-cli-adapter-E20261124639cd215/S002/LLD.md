@@ -317,6 +317,11 @@ startTurn's read-only branch runs the qualification suite on every call -- no me
 - The HLD amendment proposal adding sc3's provenAgainst.stableDescriptorHash and effectiveConfigFingerprint fields has been submitted but no AMD-* artifact has been found on disk confirming it was formally filed/tracked separately -- disclosed honestly; the evidence contract is not claimed approved until this resolves.
 - Whether the corrected published-name values, combined with bounded-retry tolerance, actually succeed in practice against the real installed vibe binary is not proven at design time -- 'stays unavailable' is an explicit, accepted outcome if live proof fails; deferred to the Story's own build-phase live qualification-suite tests.
 
+## Resolved questions
+
+- `q81c55b63` — The HLD amendment proposal adding sc3's provenAgainst.stableDescriptorHash and effectiveConfigFingerprint fields has been submitted but no AMD-* artifact has been found on disk confirming it was formally filed/tracked separately -- disclosed honestly; the evidence contract is not claimed approved until this resolves.
+  - **resolved**: Proceed with disclosed caveat — Re-verified this session: direct listing of .insrc/artifacts/AMD-* confirms no AMD-639cd2159a87aedb-* exists -- the gap is real, not a naming/path mismatch. s6's reconciliation Story already formally raised this exact amendment proposal (approved, tracked as insors-ai/insrc#324) but raising a proposal in an LLD's contract.detail step does not itself create a standalone AMD artifact. Blocking s2's plan on that separate process gap would stall unrelated build work; proceed with the risk disclosed in the PLAN instead. _(2026-11-27T15:27:20.395Z)_
+
 ## Citations
 
 - **[[c1]]** `code` `src/shared/vibe-adapter.ts:639-665` — "createVibeAdapter / startTurn"

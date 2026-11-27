@@ -54,6 +54,15 @@
       "description": "",
       "references": [],
       "attachments": []
+    },
+    "questionResolutions": {
+      "q81c55b63": {
+        "question": "The HLD amendment proposal adding sc3's provenAgainst.stableDescriptorHash and effectiveConfigFingerprint fields has been submitted but no AMD-* artifact has been found on disk confirming it was formally filed/tracked separately -- disclosed honestly; the evidence contract is not claimed approved until this resolves.",
+        "status": "resolved",
+        "choice": "Proceed with disclosed caveat",
+        "rationale": "Re-verified this session: direct listing of .insrc/artifacts/AMD-* confirms no AMD-639cd2159a87aedb-* exists -- the gap is real, not a naming/path mismatch. s6's reconciliation Story already formally raised this exact amendment proposal (approved, tracked as insors-ai/insrc#324) but raising a proposal in an LLD's contract.detail step does not itself create a standalone AMD artifact. Blocking s2's plan on that separate process gap would stall unrelated build work; proceed with the risk disclosed in the PLAN instead.",
+        "resolvedAt": "2026-11-27T15:27:20.395Z"
+      }
     }
   },
   "body": {

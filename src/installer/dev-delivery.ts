@@ -3,7 +3,8 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createRun } from '../../scripts/test-harness/context.mjs';
+import { createRun, qualificationEnvironment } from '../../scripts/test-harness/context.mjs';
+import { QUALIFICATION_TIME_BUDGETS } from './qualification-time-budgets.mjs';
 import type { BuildRun } from '../../scripts/test-harness/context.mjs';
 import { withRun } from '../../scripts/test-harness/process.mjs';
 import type { CommandScope } from '../../scripts/test-harness/process.mjs';
@@ -31,14 +32,16 @@ export interface DevDeliveryOptions {
   environment?: (() => NodeJS.ProcessEnv) | undefined;
 }
 function uncertain(message: string, cause?: unknown): InstallerError { return new InstallerError('preparation-uncertain', message, { cause }); }
-async function ownedScope<T>(environment: NodeJS.ProcessEnv, work: (run: BuildRun, scope: CommandScope) => Promise<T>): Promise<T> {
+async function ownedScope<T>(environment: NodeJS.ProcessEnv, work: (run: BuildRun, scope: CommandScope, deadline: Readonly<{ expiresAt: number; reserveMs: number }>) => Promise<T>): Promise<T> {
+  const inherited = qualificationEnvironment(environment);
   const root = mkdtempSync(join(realpathSync(tmpdir()), 'insrc-dev-manager-'));
   let base: BuildRun;
-  try { base = createRun(root, { mode: 'build' }); }
+  try { base = createRun(root, { mode: 'build', budgets: QUALIFICATION_TIME_BUDGETS.manager }); }
   catch (cause) { rmSync(root, { recursive: true }); throw cause; }
-  const run: BuildRun = { ...base, environment: () => ({ ...environment, INSRC_TEST_RUN_ID: base.runId, INSRC_TEST_ROOT: base.root, INSRC_BUILD_CONFIRM_CLOSURE: '1' }) };
+  const run: BuildRun = { ...base, environment: () => ({ ...inherited, INSRC_TEST_RUN_ID: base.runId, INSRC_TEST_ROOT: base.root, INSRC_BUILD_CONFIRM_CLOSURE: '1' }) };
+  const deadline = Object.freeze({ expiresAt: performance.now() + run.budgets.runMs, reserveMs: run.budgets.cleanupMs });
   let result: T | undefined, failure: unknown;
-  try { result = await withRun(run, scope => work(run, scope)); } catch (cause) { failure = cause; }
+  try { result = await withRun(run, scope => work(run, scope, deadline)); } catch (cause) { failure = cause; }
   // Parent actor ownership is independent of the child worker's own proof.
   // Missing/unknown parent cleanup keeps evidence and blocks every publication.
   try {
@@ -136,8 +139,8 @@ export function devDelivery(target: Target, options: DevDeliveryOptions): Delive
       coordinatorRunId: randomUUID(), stage: 'accepted' });
     context.checkpoint(record); // Durable acceptance precedes every worker admission.
     context.checkpoint({ ...record, stage: 'building' });
-    const result = await ownedScope(environment, (run, scope) => launchDevWorker(scope, store.location, record, {
-      entrypoint: options.workerEntrypoint, environment, budgetMs: run.budgets.runMs - run.budgets.cleanupMs,
+    const result = await ownedScope(environment, (_run, scope, deadline) => launchDevWorker(scope, store.location, record, {
+      entrypoint: options.workerEntrypoint, environment, deadline,
       ...(context.signal ? { signal: context.signal } : {}),
     }));
     if (result.outcome !== 'prepared') {

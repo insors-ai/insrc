@@ -20,6 +20,7 @@ import { canonicalJson, digest, parseApplicationInventory } from './release-desc
 import { controlBinding } from './native.js';
 import { verifyPayloadInventory } from './safe-zip.js';
 import { flushDirectory, flushFile, flushParents } from './durability.js';
+import { QUALIFICATION_TIME_BUDGETS } from './qualification-time-budgets.mjs';
 
 export interface DevPreparationResult {
   schemaVersion: 1; installationId: string; operationId: string; attemptId: string; workerNonce: string;
@@ -296,6 +297,7 @@ export async function requireClosedDevAttempt(home: string, record: DevPreparati
 
 export async function launchDevWorker(scope: CommandScope, location: InstallationLocation, record: DevPreparationRecord, options: {
   entrypoint: string; signal?: AbortSignal; ownerInput?: Readable; environment: NodeJS.ProcessEnv; budgetMs?: number;
+  deadline?: Readonly<{ expiresAt: number; reserveMs: number }> | undefined;
 }): Promise<DevPreparationResult> {
   if (location.installationId !== record.installationId) throw uncertain('Worker location targets another installation');
   const paths = devWorkerPaths(location.home, record);
@@ -308,9 +310,17 @@ export async function launchDevWorker(scope: CommandScope, location: Installatio
   const runtime = await privateRuntimePaths(location, record.sourceOffer.runtime, { signal: options.signal });
   options.signal?.throwIfAborted();
   if (options.ownerInput?.readableEnded || options.ownerInput?.destroyed) throw new InstallerError('source-cancelled', 'Preparation owner input ended during runtime verification');
+  // Setup consumed real parent time. Keep this calculation immediately before
+  // admission; the deadline stays local and never enters the worker wire frame.
+  const remaining = options.deadline ? options.deadline.expiresAt - performance.now() - options.deadline.reserveMs : Infinity;
+  const budgetMs = Math.floor(Math.min(QUALIFICATION_TIME_BUDGETS.coordinator.runMs, options.budgetMs ?? Infinity, remaining));
+  if (!Number.isSafeInteger(budgetMs) || budgetMs <= 0
+    || (options.deadline && (!Number.isFinite(options.deadline.expiresAt) || !Number.isSafeInteger(options.deadline.reserveMs) || options.deadline.reserveMs <= 0))) {
+    throw new InstallerError('source-build-failed', 'Parent allowance exhausted before worker admission');
+  }
   const result = await scope.start(runtime.node, [options.entrypoint, '--dev-preparation-worker', location.home], {
     env: options.environment,
-    ...(options.budgetMs !== undefined ? { budgetMs: options.budgetMs } : {}),
+    budgetMs,
     ownerChannel: { initial: canonicalJson({ schemaVersion: 1, kind: 'prepare', checkpoint: record }) + '\n', cancel: cancelFrame, connect(channel) {
       const cancel = () => { channel.write(cancelFrame); channel.end(); };
       const end = () => channel.end();

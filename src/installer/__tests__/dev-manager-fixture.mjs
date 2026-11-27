@@ -2,6 +2,8 @@ import { register } from 'tsx/esm/api';
 register();
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
+import fs from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRun } from '../../../scripts/test-harness/context.mjs';
@@ -47,6 +49,16 @@ if (mode === '--dev-preparation-worker') {
     let publications = 0;
     const publish = ControllerStore.prototype.publishCandidate;
     ControllerStore.prototype.publishCandidate = function(...args) { this.assertHeld(); publications++; return publish.apply(this, args); };
+    const write = fs.writeFileSync, managerBudgets = [];
+    if (scenario === 'profile') {
+      fs.writeFileSync = (path, data, ...args) => {
+        if (/\/insrc-dev-manager-[^/]+\/\.insrc\/tmp\/test-harness\/active\/run\.json$/.test(String(path).replaceAll('\\', '/'))) {
+          managerBudgets.push(JSON.parse(String(data)).budgets);
+        }
+        return write(path, data, ...args);
+      };
+      syncBuiltinESMExports();
+    }
     const admission = requireTerminal({ stdin: {isTTY:true}, stdout: {isTTY:true}, stderr: {isTTY:true} });
     try {
       const originalPrepare = f.port.prepare.bind(f.port);
@@ -70,6 +82,9 @@ if (mode === '--dev-preparation-worker') {
         assert.equal(run.budgets.runMs,14400000);
         const observation=JSON.parse(readFileSync(join(home,checkpoint.checkoutRelativePath,'.insrc/tmp/dev-preparation/profile-observation.json'),'utf8'));
         assert.equal(observation.profile,'slow-vm');assert.equal(observation.budgets.runMs,14400000);
+        assert.equal(observation.budgets.cleanupMs,30000);
+        assert.ok(managerBudgets.length>0);
+        for(const budgets of managerBudgets)assert.deepEqual(budgets,{buildMs:2400000,fileMs:2400000,runMs:14400000,cleanupMs:120000});
         assert.ok(observation.node.startsWith(join(home,'runtimes')));
         assert.match(observation.npm,/npm[\\/]bin[\\/]npm-cli\.js$/);
         assert.equal(existsSync(join(home,checkpoint.checkoutRelativePath,'.insrc/tmp/test-harness/active')),false);
@@ -120,6 +135,6 @@ if (mode === '--dev-preparation-worker') {
         writeFileSync(join(selected.directory,'bootstrap.mjs'),'changed control');
         await assert.rejects(f.port.open(f.location,offer.releaseId));
       }
-    } finally {ControllerStore.prototype.publishCandidate=publish;}
+    } finally {ControllerStore.prototype.publishCandidate=publish;fs.writeFileSync=write;syncBuiltinESMExports();}
   });
 }

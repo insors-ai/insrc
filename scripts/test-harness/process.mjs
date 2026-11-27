@@ -34,6 +34,7 @@ export function processScope(run, { includeForeignActors = true } = {}) {
 	const cancellationErrors = [];
 	const evidenceErrors = [];
 	let stopped = false;
+	let drainSoftDeadline, drainHardDeadline;
 	let notifyStop;
 	const stopEvent = new Promise(resolve => { notifyStop = resolve; });
 	function cancel(child, signal) {
@@ -137,6 +138,13 @@ export function processScope(run, { includeForeignActors = true } = {}) {
 	}
 	async function drain() {
 		stopped = true;
+		// Nested owners may drain before withRun's final drain. Re-observe proof,
+		// but never grant the same scope a fresh cleanup allowance on a repeat.
+		if (drainHardDeadline === undefined) {
+			const started = performance.now();
+			drainSoftDeadline = started + run.budgets.cleanupMs / 2;
+			drainHardDeadline = started + run.budgets.cleanupMs;
+		}
 		const markersClosed = () => includeForeignActors ? actorsClosed(run) : [...ownedMarkers].every(path => !existsSync(path));
 		async function waitClosed(ms) {
 			const end = performance.now() + ms;
@@ -146,9 +154,9 @@ export function processScope(run, { includeForeignActors = true } = {}) {
 			}
 		}
 		for (const { child, disposed } of requireClosure ? admitted : children) if (!disposed) cancel(child, 'SIGTERM');
-		await waitClosed(run.budgets.cleanupMs / 2);
+		await waitClosed(Math.max(0, drainSoftDeadline - performance.now()));
 		for (const { child, disposed } of requireClosure ? admitted : children) if (!disposed) cancel(child, 'SIGKILL');
-		await waitClosed(run.budgets.cleanupMs / 2);
+		await waitClosed(Math.max(0, drainHardDeadline - performance.now()));
 		if (requireClosure) confirmDisposals();
 		const closed = children.size === 0 && markersClosed() && (!requireClosure || [...admitted].every(entry => entry.disposed)) && cancellationErrors.length === 0 && evidenceErrors.length === 0;
 		if (!closed) {

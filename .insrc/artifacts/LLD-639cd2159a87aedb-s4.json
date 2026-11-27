@@ -1,0 +1,684 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795776608768-2qq4yr",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T11:02:45.916Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 749649,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "epicHash": "639cd2159a87aedb",
+    "epicSlug": "unify-vibe-one-plain-cli-adapter",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1795535373279-l4wumn",
+    "hldEffectiveHash": "67d59677de6a7a14a26bdb819949a499c3171f1bd551c1f73af1201b624e872c",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Vibe configuration files are read with a real TOML parse and edited surgically",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 4,
+        "contentHash": "318db864360a6d23a9b8d7c7b2ea738486238e0c6c2033d3ada9ca6e0382b6f9",
+        "at": "2026-11-27T11:02:48.781Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 4,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T11:08:57.572Z"
+      }
+    },
+    "revision": 4,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "This revision replaces the mtime-age-based lock reclaim with a PID-liveness check (a dead process can be proven dead; a merely slow one cannot be mistaken for dead), so a lock is only ever reclaimed from a holder that genuinely no longer exists, and a holder never deletes a successor's lock on release. It also closes the one write path the lock never reached: the daemon's own registration now holds the same lock around its external `vibe mcp add` call. The field-merge rule is restated correctly as three explicit cases, and the remaining filesystem-contract gaps (the residual check-to-rename window, injecting the new IO into the existing writer, and first-time parent-directory creation) are now specified.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "One shared plain-CLI Vibe execution adapter module owns the whole launch contract — argv construction, model/thinking pinning for new sessions with explicit resumed-session selection semantics (qualify or reject before dispatch, never silent substitution), prompt transport, budget guards, the execution context (cwd, environment, dual process-group policy with defined escalation and cleanup ownership per mode, abort signal, host deadline), the ordinary-session approval input with the existing chat mapping, rich turn events with session identity and tool-result output content, the qualified MCP tool naming split into general identity parsing and the analysis allowlist, and the fail-closed read-only mode whose qualification the ADAPTER owns and validates. The backend provider and the VS Code plugin chat both import and call it directly; the session-based app-server transport is deleted, not demoted. A sibling shared real-TOML config module (smol-toml, parse-for-understanding with surgical, byte-preserving edits) replaces every hand-written Vibe TOML reader. This is alternative a1, revised per the design reviews of 2026-11-24: the only shape that satisfies all seven Epic constraints, with k1/k2/k3 satisfied structurally — the safety gate, its qualification, the approval mapping, the process-group policy and the naming convention live inside the one module both surfaces must call.",
+      "ownedContracts": [
+        {
+          "assumptions": [
+            "c6"
+          ],
+          "consumedByStories": [],
+          "id": "sc4",
+          "interfaceSketch": "/** Shared real-TOML Vibe config handling: parse for understanding, edit surgically, refuse rather than corrupt. */\ninterface VibeConfigEntry {\n\treadonly name: string;\n\treadonly command?: string | undefined;\n\treadonly args?: readonly string[] | undefined;\n}\ntype VibeConfigEditOutcome =\n\t| { readonly kind: 'written'; readonly bytePreserved: true }\n\t| { readonly kind: 'absent' }\n\t| { readonly kind: 'refused'; readonly reason: string };\ninterface VibeConfigAccess {\n\t/** Parse with a real TOML parser; answer from the parse, never from heuristics. */\n\treadonly declaresServer: (name: string) => boolean;\n\treadonly entries: readonly VibeConfigEntry[];\n\t/** Surgical edits: unrelated servers, settings and comments survive byte-for-byte. */\n\treadonly upsertServer: (entry: VibeConfigEntry) => VibeConfigEditOutcome;\n\treadonly removeServer: (name: string) => VibeConfigEditOutcome;\n}",
+          "name": "Real-TOML Vibe config reader",
+          "ownedByStory": "s4",
+          "purpose": "One real-parse reader for Vibe config files shared across MODULES (the daemon's registration checks and cleanup, and the plugin's MCP config writer) — both call sites live inside story s4, so no other story consumes it; it exists as a contract because the daemon and the plugin are separate codebases bundling the same shared module."
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "depends": [],
+        "internal": "The reader's internals: parse-for-understanding via the existing smol-toml dependency following the codex project-config guard's refuse-don't-rewrite precedent, the surgical byte-preserving edit engine (upsert/remove of exactly the insrc entry, comments and unrelated tables untouched), the refusal path for configs that cannot be changed safely, and the rewiring of the daemon's registration checks and cleanup (mcp-register) and the plugin's config writer (toml-mcp-writer) onto it — with src/shared/toml-inline-list.ts deleted.",
+        "owns": [
+          "sc4"
+        ],
+        "storyId": "s4"
+      },
+      "adjacentBoundaries": [
+        {
+          "depends": [],
+          "internal": "Everything behind the adapter interface: argv construction from the qualified 3.1.4 flag surface (headless mode selection, model and thinking pinning for NEW sessions, prompt transport through the programmatic input contract, budget-guard forwarding, the ordinary approval mapping — undefined/default→CLI defaults, manual→ask, edit-auto→accept-edits, auto→auto-approve, with the read-only request REJECTING any approval setting — exit-evidence parsing including the session's effective selection), the adapter-construction execution context with the DUAL process-group policy and per-turn cancellation (adapter-owned mode: the adapter leads a detached group and owns termination, escalation, descendant-exit confirmation and group cleanup on every exit path; supervisor-owned mode: the child inherits the caller's group, the supervisor owns escalation and sweeping, the adapter retains turn-scoped temporary-file cleanup only), transient-error classification and the bounded retry semantics shared with the claude/codex clients, the local schema-validation loop for structured-output requests, the tool-result output normalization (outputText/output, else error message, else reason — the existing chat precedence), the type-level resumed-session selection rule, and the deletion of src/shared/vibe-session.ts plus the rewiring of the backend provider paths (complete, completeStructured, runReadOnlySession's launch mechanics) and structured-output.ts onto the adapter. The read-only launch MODE exists from s1 but every 'read-only' request REFUSES before dispatch until the adapter's own qualification succeeds (s2) — the refusal reason is surfaced to the caller.",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "storyId": "s1"
+        },
+        {
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The narrow-authorization design itself: the live qualification suite against the real installed binary (custom policy/agent exploration, allowed-tool execution proof, blocked-tool proof, blanket-bypass absence proof, write-refusal check, AND the invalidation behavior — a changed binary version or effective policy returns the mode to refusing until re-qualified), the adapter-owned ReadOnlyCapability wiring (the adapter validates and exposes; callers never construct), the unavailable-state reporting when qualification fails, and the adapter's read-only mode enablement. The custom-agent/policy TOML a qualified design may need is authored with the same smol-toml dependency directly — it is not the Vibe-config reader (sc4).",
+          "owns": [
+            "sc3"
+          ],
+          "storyId": "s2"
+        },
+        {
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The chat surface migration: the vibe mapper and job runner become consumers of the adapter (argv and VIBE_ACTIVE_MODEL pinning deleted from the plugin; the worker's signal threads into the adapter's per-turn cancellation; the worker keeps its supervisor-owned process group and its forced-stop sweep), while the transcript rendering, streaming event mapping over the RICH events (tool-call identity and arguments for command correlation, tool-result OUTPUT content, session identity and resume-handle delivery), worker lifecycle, resume handles and attachments keep their existing behavior (lc2). Also internal: the live verifications whose outcomes s6 records — the approval parity cases (undefined/default, manual, edit-auto, auto map to the same tool policies the private launch path used today), the tool-result output parity fixture (actual output text, not only correlation and success/failure), the worker forced-termination and descendant-cleanup parity check under the supervisor-owned group, the prompt-transport check (multiline, option-like text), the resume round-trip including that a resumed turn preserves the session's model/thinking and that the tool rejects a selection change on a resumed session before dispatch, and the general-naming check that chat tool-activity rendering and insrc_present declarations parse through sc2's general identity.",
+          "owns": [],
+          "storyId": "s3"
+        },
+        {
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The model-family alignment: catalog, registry, check and definitions entries for cli-vibe rebuilt to exactly the models and thinking levels the adapter honors (verified against the installed tool's catalog), the selection-delivery semantics through the adapter — new sessions take the selection, resumed sessions inherit and report — and the fail-before-dispatch error naming supported choices. No other story consumes these records; settings and tier resolution do.",
+          "owns": [],
+          "storyId": "s5"
+        },
+        {
+          "depends": [
+            "sc3"
+          ],
+          "internal": "The reconciliation work itself: verifying the chat prompt-transport fix, the approval parity cases, the tool-result output parity, the resume-selection behavior and the worker cleanup parity live with s3's evidence, checking catalog coverage, closing the implemented issues (read-only authorization via sc3's qualification evidence incl. its provenAgainst record, TOML parsing via sc4's story validation), stamping the review-dependent deferrals with their recorded dependency on the review rewrite, and attaching evidence to every closure.",
+          "owns": [],
+          "storyId": "s6"
+        }
+      ],
+      "rolloutPhase": "Phase A — Shared foundations",
+      "nonFunctional": {
+        "durability": "User configuration files are edited surgically with byte-for-byte preservation of unrelated content, and a config that cannot be changed safely is left untouched with the failure reported (k4); the issue ledger records closures only with evidence (k7). Temporary files the adapter creates for a turn (prompt transport, exit-evidence export) are cleaned by the adapter on every exit path — normal completion, abort, deadline and crash — in BOTH process-group policies: adapter-owned cleanup extends to the child group sweep, supervisor-owned keeps the adapter's turn-scoped temp cleanup while the supervisor sweeps the group.",
+        "observability": "Every turn result carries the tool's structured exit evidence (stop reason, outcome) and the session identity (native session id, newly-created resume handle) so failures are attributable and resume is auditable; tool-result events carry the normalized OUTPUT content so the transcript shows what a tool actually returned, not only that it succeeded; per-turn outcomes, qualification results and refusal reasons are logged through the daemon's pino logger; the ledger reconciliation (s6) records its verification evidence on the artifacts it closes or defers.",
+        "performance": "One subprocess per turn, as the claude and codex clients already do — no persistent session to keep warm, and the deleted app-server transport removes its handshake overhead per explicit-selection request. The adapter forwards the tool's own budget guards (max turns, price, tokens, time limit) AND enforces the host-side deadline: the tool's budgets do not bound a bootstrap that stalls before the tool applies them, so the adapter's abort/deadline path is the authoritative bound. In adapter-owned mode the adapter sweeps the child group on every exit path; in supervisor-owned mode the supervisor's existing sweep is preserved unchanged. Structured-output requests keep the existing bounded retry semantics.",
+        "security": "k1 is structural in the strict sense: the read-only launch mode is part of the single adapter's request shape, its narrow authorization is qualified live BY THE ADAPTER against the installed binary (a caller cannot assert a status — the adapter exposes only the capability it validated), and a change in the binary's version or the effective approval policy invalidates the qualification and the mode returns to refusing until re-qualified. Ordinary approval settings (manual, edit-auto, auto) are REJECTED for read-only requests — the qualified narrow policy is the only authorization a read-only turn may run under, and it is chosen by the adapter, never by the caller. On any qualification failure the mode reports analysis unavailable and never falls back to a blanket approval. Resumed turns cannot carry a changed model or thinking level: the request type has no selection field on a resumed turn, a session's effective selection is read back from exit evidence and reported in the result, and a caller who wants a different selection starts a new session — silent substitution is unrepresentable. All model access stays through the local CLI binary's own auth (k6) — no direct cloud REST; prompts travel via the tool's programmatic input contract, never through shell-interpolated argv."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "acquireVibeConfigLock",
+          "signature": "function acquireVibeConfigLock(path: string, fs: VibeConfigFs): VibeConfigLockHandle | { readonly refused: true; readonly reason: string }",
+          "parameters": [
+            {
+              "name": "path",
+              "type": "string",
+              "purpose": "The config.toml path to lock.",
+              "optional": false
+            },
+            {
+              "name": "fs",
+              "type": "VibeConfigFs",
+              "purpose": "The same injected IO upsertServer/removeServer use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "VibeConfigLockHandle | { readonly refused: true; readonly reason: string }",
+            "meaning": "A handle carrying release() on success, or a busy/refused result when the lock cannot be acquired."
+          },
+          "errors": [],
+          "preconditions": [
+            "The lock file's parent directory is created first (mkdir recursive) if absent, mirroring HostFileSystem.write's own existing behavior"
+          ],
+          "postconditions": [
+            "Writes {pid: process.pid, token: <random>, acquiredAt} as the lock file's content via exclusive create; on EEXIST, reads the existing lock and attempts reclaim ONLY when process.kill(recordedPid, 0) throws ESRCH (confirmed dead this round) -- age is used only as a cheap pre-filter for whether a liveness check is worth making, never as the abandonment proof itself",
+            "A reclaim unlinks the dead holder's lock and immediately attempts its own exclusive create; if that create itself fails (another reclaimer won), refuses as busy rather than retrying a steal within the same attempt",
+            "release() re-reads the lock file and verifies it still carries this handle's own token before unlinking; a mismatch (a successor has since reclaimed it) means release() does NOT unlink, so a holder never deletes a successor's lock"
+          ]
+        },
+        {
+          "name": "VibeConfigAccess.upsertServer",
+          "signature": "upsertServer(entry: VibeConfigEntry): VibeConfigEditOutcome",
+          "parameters": [
+            {
+              "name": "entry",
+              "type": "VibeConfigEntry",
+              "purpose": "The fields to apply to the named entry. For each of command/args: the key omitted from the object retains the existing value; the key present with a defined value SETS the field to that value; the key present but explicitly set to undefined CLEARS it. Any property on the object outside name/command/args is read by nothing and never errors.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "VibeConfigEditOutcome",
+            "meaning": "'unchanged' when the existing entry already matches the intended state under this rule; 'written' after a verified, atomically-committed real change; 'refused' otherwise."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Uses acquireVibeConfigLock/release internally for its own held-lock window (unchanged in kind from round 3, now correctly specified via the shared primitive)",
+            "Immediately before the atomic rename, lstats and re-reads the destination; this closes the gap up to that check, but the interval between the check itself and the rename syscall is an accepted, bounded residual window this Story cannot close without a locking dependency barred by lc3 -- documented, not eliminated. The comparison's guarantee is content-only: an external replacement that happens to produce byte-identical content under a different inode is accepted as unchanged; mode/identity across such a replacement is out of scope."
+          ]
+        },
+        {
+          "name": "VibeConfigAccess.removeServer",
+          "signature": "removeServer(name: string): VibeConfigEditOutcome",
+          "parameters": [
+            {
+              "name": "name",
+              "type": "string",
+              "purpose": "The server name to remove.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "VibeConfigEditOutcome",
+            "meaning": "'absent' | 'written' | 'refused', as round 3, now backed by the hardened PID-liveness lock."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Same lock, residual-window and content-only guarantees as upsertServer"
+          ]
+        },
+        {
+          "name": "registerOne",
+          "signature": "async function registerOne(p: ClientPlan, mcpJs: string, run: (bin: string, args: readonly string[]) => Promise<CliRun>, entrypointExists: (mcpJs: string) => boolean, vibeConfigText: () => string | undefined, repoPath?: string, deps?: McpRegisterDeps): Promise<McpClientOutcome>",
+          "parameters": [
+            {
+              "name": "p",
+              "type": "ClientPlan",
+              "purpose": "The client's registration plan (unchanged).",
+              "optional": false
+            },
+            {
+              "name": "mcpJs",
+              "type": "string",
+              "purpose": "The insrc MCP entrypoint path (unchanged).",
+              "optional": false
+            },
+            {
+              "name": "run",
+              "type": "(bin, args) => Promise<CliRun>",
+              "purpose": "Non-throwing CLI runner (unchanged).",
+              "optional": false
+            },
+            {
+              "name": "entrypointExists",
+              "type": "(mcpJs: string) => boolean",
+              "purpose": "Unchanged.",
+              "optional": false
+            },
+            {
+              "name": "vibeConfigText",
+              "type": "() => string | undefined",
+              "purpose": "Unchanged.",
+              "optional": false
+            },
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Unchanged.",
+              "optional": true
+            },
+            {
+              "name": "deps",
+              "type": "McpRegisterDeps",
+              "purpose": "Unchanged.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<McpClientOutcome>",
+            "meaning": "The per-client registration outcome, unchanged in shape."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "For the vibe branch, the existing precheck (vibeConfigText + vibeConfigHasServer, lines ~517-521) and the external `vibe mcp add` subprocess call (line ~525) are now both performed while holding acquireVibeConfigLock(defaultVibeConfigPath(), fs) -- serializing this primary registration write against the plugin's own upsertServer/removeServer calls, even though the bytes are written by the external subprocess, not this Story's own code",
+            "vibeConfigHasServer throwing VibeConfigParseError is already caught by registerOne's existing outer try/catch and reported as action:'failed' with the parse-error message, distinct from a genuinely absent config (text===undefined, which proceeds to add) -- carried from round 2/3's own design, now explicitly documented as the mechanism that satisfies the 'distinguish missing from unreadable before the add path' requirement"
+          ]
+        },
+        {
+          "name": "defaultVibeConfigPath",
+          "signature": "function defaultVibeConfigPath(): string",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "join(VIBE_HOME ?? ~/.vibe, 'config.toml') -- the same path defaultVibeConfigText/defaultVibeHome already compute inline, now exposed as a reusable function."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "registerOne, removeVibeProjectServer and acquireVibeConfigLock all resolve the SAME path through this one function, so there is exactly one place the path is computed"
+          ]
+        },
+        {
+          "name": "createTomlMcpConfigWriter",
+          "signature": "function createTomlMcpConfigWriter(fs: HostFileSystem, vibeFs?: VibeConfigFs): McpConfigWriter",
+          "parameters": [
+            {
+              "name": "fs",
+              "type": "HostFileSystem",
+              "purpose": "Injected host file access for the writer's OWN existing sc5 contract surface (unchanged).",
+              "optional": false
+            },
+            {
+              "name": "vibeFs",
+              "type": "VibeConfigFs",
+              "purpose": "The IO this Story's own write path (createVibeConfigAccess) actually needs; defaults to the production node:fs-backed plugin adapter when omitted, giving callers and test fixtures an explicit injection point that round 3 never provided.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "McpConfigWriter",
+            "meaning": "{ writeInsrcServer, removeInsrcServer }."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Thin callers of createVibeConfigAccess(path, vibeFs ?? defaultPluginVibeConfigFs).upsertServer/removeServer, as round 3, now with vibeFs's source made explicit and injectable"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "VibeConfigAccess's lock protocol (createVibeConfigAccess / acquireVibeConfigLock)",
+        "change": "invariant-change",
+        "details": "Replaces round 3's mtime-age staleness test with a PID+token lock: the lock file's content carries {pid, token, acquiredAt}; reclaim is attempted only when process.kill(recordedPid, 0) throws ESRCH (live-tested this round, no new dependency), with age used only as a cheap pre-filter; release re-reads and verifies its own token before unlinking, so a holder never deletes a successor's lock; a reclaimer that loses the post-unlink exclusive-create race refuses as busy rather than retrying a steal. The acquire/release pair is exposed as its own primitive (acquireVibeConfigLock), not bundled only inside upsertServer/removeServer, so registerOne can hold the same lock.",
+        "callSites": [
+          "src/daemon/mcp-register.ts:259-324",
+          "src/daemon/mcp-register.ts:466-538",
+          "src/daemon/mcp-register.ts:110-119",
+          "vscode-plugin/src/hosts/toml-mcp-writer.ts"
+        ]
+      },
+      {
+        "entity": "registerOne (mcp-register.ts:466-538)",
+        "change": "invariant-change",
+        "details": "The vibe branch's existing precheck and external `vibe mcp add` call are now performed while holding acquireVibeConfigLock(defaultVibeConfigPath(), fs), closing the previously-unlocked third-writer gap; the existing try/catch's parse-error/absent distinction is unchanged and is now the documented mechanism satisfying that part of the finding.",
+        "callSites": [
+          "src/daemon/mcp-register.ts:466-538",
+          "src/daemon/mcp-register.ts:375-377"
+        ]
+      },
+      {
+        "entity": "defaultVibeConfigPath (new, mcp-register.ts)",
+        "change": "new",
+        "details": "Exposes the path defaultVibeConfigText/defaultVibeHome already compute inline, so registerOne, removeVibeProjectServer and the lock primitive agree on one path.",
+        "callSites": [
+          "src/daemon/mcp-register.ts:110-119"
+        ]
+      },
+      {
+        "entity": "VibeConfigAccess.upsertServer's field-merge rule",
+        "change": "invariant-change",
+        "details": "Corrected from round 3's backwards wording ('a present key, including explicit undefined, clears the field') to three explicit cases: key omitted retains; key present with a defined value sets it; key present but explicitly undefined clears it. Any incoming property outside name/command/args is simply never read.",
+        "callSites": [
+          "vscode-plugin/src/hosts/toml-mcp-writer.ts"
+        ]
+      },
+      {
+        "entity": "createTomlMcpConfigWriter (toml-mcp-writer.ts)",
+        "change": "field-add",
+        "details": "Gains an optional second parameter vibeFs?: VibeConfigFs (defaulting to the production plugin adapter) so the IO its own internal createVibeConfigAccess call needs has an explicit, injectable source; also now documents that its lock-file creation ensures the parent directory exists first, mirroring HostFileSystem.write's own mkdir-then-write behavior for a genuinely first-ever registration.",
+        "callSites": [
+          "vscode-plugin/src/hosts/toml-mcp-writer.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc4",
+        "role": "implements",
+        "howDetails": "Implements VibeConfigEntry/VibeConfigEditOutcome/VibeConfigAccess, including the additive 'unchanged' outcome already proposed, with the field-merge rule now stated correctly (set/clear/retain, not 'present means clear') and the lock protocol hardened to PID-liveness. No further contract-shape change is proposed this round; acquireVibeConfigLock and defaultVibeConfigPath are implementation primitives, not new sc4 members."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A lock holder is paused (GC pause, slow disk, suspended laptop) but still alive, past any age threshold a reclaimer might otherwise use.",
+          "detection": "process.kill(recordedPid, 0) succeeds (no ESRCH) when a reclaimer checks liveness.",
+          "response": "Refuse as busy; no reclaim is attempted regardless of the lock's age.",
+          "userImpact": "A merely slow operation is never preempted by a second writer believing it was abandoned.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A lock holder has genuinely crashed without releasing its lock.",
+          "detection": "process.kill(recordedPid, 0) throws ESRCH.",
+          "response": "Reclaim: unlink the dead holder's lock, then immediately attempt an exclusive create of a new lock under this reclaimer's own pid+token.",
+          "userImpact": "A crashed prior operation does not permanently block future registrations.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Two reclaimers both confirm the same dead pid and both attempt to unlink+recreate the lock.",
+          "detection": "The exclusive-create immediately after unlink fails for whichever reclaimer loses the race.",
+          "response": "Refuse as busy rather than retrying a steal within the same attempt; the caller may retry the whole acquisition fresh.",
+          "userImpact": "Two reclaimers never both believe they hold the lock simultaneously.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A holder's release() re-reads the lock file and finds its token no longer matches what it wrote at acquisition.",
+          "detection": "The content comparison on release.",
+          "response": "Do NOT unlink; a mismatch means a successor has since reclaimed what this holder no longer owns, so release() is a safe no-op instead of deleting the successor's lock.",
+          "userImpact": "A slow holder's eventual release never deletes a second writer's lock out from under it.",
+          "recoverable": true
+        },
+        {
+          "scenario": "registerOne's vibe branch cannot acquire the lock (another writer holds it) before its precheck and the external `vibe mcp add` call.",
+          "detection": "acquireVibeConfigLock returns a refused/busy result.",
+          "response": "Report action:'failed' with a busy reason rather than proceeding to precheck or add against a file another writer may be mid-edit on.",
+          "userImpact": "The user sees a clear 'try again' registration failure instead of a race with the plugin's own writer.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The external `vibe mcp add` subprocess itself fails or exits nonzero while registerOne holds the lock.",
+          "detection": "run()'s existing spawnError/exit-code handling (unchanged).",
+          "response": "The lock is released in a finally regardless of the subprocess outcome; the existing failure reporting (action:'failed') is unchanged.",
+          "userImpact": "A failed external add never leaves the lock held, blocking every subsequent writer.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A caller's incoming VibeConfigEntry has command as an own property explicitly set to undefined.",
+          "detection": "The own-property presence check distinguishes this from an entirely absent key.",
+          "response": "Clear the existing command value, per the corrected three-case rule.",
+          "userImpact": "A deliberate clear request is honored, distinct from omission (which retains).",
+          "recoverable": true
+        },
+        {
+          "scenario": "The lock file's parent directory does not exist yet (a genuinely first-ever registration, e.g. $VIBE_HOME has never been created).",
+          "detection": "The initial exclusive-create attempt would otherwise fail ENOENT.",
+          "response": "Create the parent directory (mkdir recursive) before attempting the exclusive create, mirroring HostFileSystem.write's own existing parent-creation behavior.",
+          "userImpact": "A user's very first registration succeeds without a confusing 'directory not found' failure.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "registerOne's lock-wrapped precheck+add and the plugin's own upsertServer both attempt to acquire the lock for the same path at nearly the same time.",
+          "expected": "Whichever acquires first proceeds to completion and releases; the other either waits within its own bounded retry or refuses busy and the caller retries -- no lost update regardless of which writer the bytes ultimately come from (this Story's own code or the external `vibe mcp add` subprocess)."
+        },
+        {
+          "input": "A lock file's recorded pid happens, by OS pid reuse, to match a DIFFERENT, currently-running process unrelated to the original holder.",
+          "expected": "The liveness check reports 'alive' (a correct, if coincidental, false positive on reuse), so reclaim is conservatively withheld -- consistent with 'a conservative busy refusal is an option when ownership cannot be proven'."
+        },
+        {
+          "input": "defaultVibeConfigPath() is called independently from registerOne, removeVibeProjectServer and acquireVibeConfigLock.",
+          "expected": "All three resolve to the byte-identical path string, since each calls the same one function rather than recomputing it inline."
+        },
+        {
+          "input": "upsertServer called with command/args both omitted from the incoming VibeConfigEntry, on an entry that already has both set.",
+          "expected": "Both existing values are retained unchanged; omission never implies clearing."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "registerOne's existing outer try/catch already distinguishes a config-parse failure (caught, reported as action:'failed') from a genuinely absent config (text===undefined, proceeds to add) -- this distinction predates this round and is preserved, not reimplemented.",
+          "source": "c1"
+        },
+        {
+          "text": "A lock is never reclaimed on the basis of age alone; abandonment is proven only by a dead-pid liveness check.",
+          "source": "c2"
+        },
+        {
+          "text": "Every writer against the same config path resolves that path through one shared function, never recomputing it independently.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "vitest",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Exercise the PID-liveness lock protocol, the field retain/set/clear rule, registerOne's lock-wrapped external add, and the parent-directory/injection fixes in isolation.",
+          "subjects": [
+            "A paused-but-alive holder (live pid) is never reclaimed regardless of lock age",
+            "A genuinely dead holder (process.kill throws ESRCH) is reclaimed via unlink-then-exclusive-create",
+            "Two simulated reclaimers racing the post-unlink exclusive-create: the loser refuses busy, never retries a steal in the same attempt",
+            "release() refusing to unlink when the lock's token no longer matches what was written at acquisition",
+            "registerOne's vibe branch acquiring the lock before its precheck and the external add call, and releasing it in a finally regardless of the subprocess outcome",
+            "registerOne reporting busy/failed when the lock cannot be acquired, without attempting the precheck or the external add",
+            "command/args retain (key absent) vs set (key present, defined) vs clear (key present, explicit undefined) as three distinct, correctly-ordered cases",
+            "defaultVibeConfigPath() returning the same string from every call site",
+            "Lock-file creation creating its parent directory first when absent",
+            "createTomlMcpConfigWriter accepting an injected VibeConfigFs fixture distinct from its HostFileSystem parameter"
+          ],
+          "fixturesNeeded": [
+            "A fake process.kill seam returning ESRCH for a chosen pid and succeeding for another",
+            "A fake VibeConfigFs exposing controllable exclusive-create race outcomes",
+            "A fresh, non-existent $VIBE_HOME-equivalent directory to exercise first-registration parent creation"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise registerOne's lock-wrapped registration against a real temp-file config and a real (or faithfully simulated) external add, alongside the plugin's writer racing it.",
+          "subjects": [
+            "registerOne's full vibe branch against a real temp-file config.toml, confirming the lock is held across the precheck and the simulated external add, then released",
+            "A real-file race between registerOne's lock-wrapped registration and the plugin's own upsertServer against the same path, confirming no lost update",
+            "createTomlMcpConfigWriter with its default production VibeConfigFs against a real temp-file config on a freshly-created parent directory"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: declaresServer/entries answering correctly against configs with quoted table names, inline tables, multiline strings and comments (carried from prior rounds)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: command/args retain/set/clear as three distinct cases, never clearing a caller-supplied value",
+            "integration: unrelated content preserved across the full lock/verification/commit protocol (carried from round 3)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: a paused-but-alive holder is never reclaimed; a genuinely dead holder is reclaimed via liveness, not age",
+            "unit: two racing reclaimers never both believe they hold the lock; release() never deletes a successor's lock",
+            "unit: registerOne refuses/fails cleanly when the lock is busy, without attempting the precheck or external add",
+            "integration: a real race between registerOne's lock-wrapped registration and the plugin's writer, confirming no lost update"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: registerOne, removeVibeProjectServer and createTomlMcpConfigWriter all resolve the same path via defaultVibeConfigPath with no independent recomputation",
+            "integration: registerOne's vibe branch exercised end to end with no remaining unlocked write path"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per s1's bundles: registerOne's vibe branch (bundle 1) precheck-reads config.toml then shells out to an external `vibe mcp add` subprocess as a THIRD writer round 3's lock never reached. process.kill(pid,0) (bundle 2, live-tested) is confirmed to distinguish a dead pid (ESRCH) from a live one with no new dependency. The config path (bundle 3) is computed inline in three places with no shared, reusable path function.",
+      "stateAfter": "The lock protocol is keyed on PID-liveness (process.kill(recordedPid,0) throwing ESRCH), not age; release re-verifies its own token before unlinking so a holder never deletes a successor's lock; a reclaim that loses the post-unlink create race refuses as busy. The acquire/release pair is exposed as acquireVibeConfigLock, which registerOne's vibe branch now holds around its existing precheck and the external `vibe mcp add` call. defaultVibeConfigPath() gives every caller the same path. upsertServer's field rule is three explicit cases (retain/set/clear). createTomlMcpConfigWriter accepts an optional VibeConfigFs for injection, and lock-file creation ensures its parent directory exists first.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add defaultVibeConfigPath(), exposing the path defaultVibeConfigText/defaultVibeHome already compute inline.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Replace the lock file's mtime-age staleness test with a PID+token content model; reclaim is attempted only when process.kill(recordedPid, 0) throws ESRCH.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Have a reclaim unlink the dead holder's lock and immediately attempt its own exclusive create; refuse as busy on a lost race rather than retrying a steal in the same attempt.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Have release() re-read and verify its own token before unlinking, never unlinking on a mismatch.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Expose the acquire/release pair as acquireVibeConfigLock, usable independently of upsertServer/removeServer.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Ensure the lock file's parent directory exists (mkdir recursive) before the first exclusive-create attempt.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "Wrap registerOne's vibe-branch precheck and external `vibe mcp add` call in acquireVibeConfigLock(defaultVibeConfigPath(), fs), releasing in a finally regardless of outcome.",
+          "rollbackable": true
+        },
+        {
+          "order": 8,
+          "action": "Correct upsertServer's field-merge rule to three explicit cases (omitted retains, defined value sets, explicit undefined clears) and specify that properties outside name/command/args are never read.",
+          "rollbackable": true
+        },
+        {
+          "order": 9,
+          "action": "Add an optional vibeFs parameter to createTomlMcpConfigWriter, defaulting to the production plugin VibeConfigFs adapter.",
+          "rollbackable": true
+        },
+        {
+          "order": 10,
+          "action": "Document the residual check-to-rename window as an accepted, bounded limit, and that the content comparison's guarantee is byte-content only (inode/mode identity across an external replacement is out of scope).",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "registerOne, removeVibeProjectServer and createTomlMcpConfigWriter keep their existing exported signatures (createTomlMcpConfigWriter's new parameter is optional and additive). The corrected field rule fixes a wording bug that, if ever implemented as round 3 literally described it, would have cleared caller-supplied values -- no caller today relies on that incorrect behavior since it was never built. No on-disk config format changes.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "PID+token lock with read-verify-before-unlink release + exported lock primitive wrapping registerOne's external add + corrected 3-case field semantics + documented residual window/adapter injection/parent-dir creation",
+        "oneLineSummary": "Replace mtime-age reclaim with PID-liveness-proven abandonment and token-verified release; expose the lock acquire/release itself so registerOne can hold it around its own precheck + the external `vibe mcp add` subprocess; state the field-merge rule as three distinct cases; document the unavoidable check-to-rename window and fix the adapter-injection/parent-dir gaps.",
+        "approach": "The lock file's content carries {pid, token, acquiredAt}. A reclaim attempt is made ONLY when process.kill(recordedPid, 0) throws ESRCH (confirmed dead this round, no new dependency) -- age is used only as a cheap pre-filter for whether it's worth checking liveness at all, never as the abandonment proof itself. On release, the holder re-reads the lock file and verifies its content still matches the token it wrote at acquisition before unlinking; a mismatch means a successor has since reclaimed what the holder no longer owns, so the holder does NOT unlink (never deletes a successor's lock). A reclaim that loses the exclusive-create race immediately after unlinking the dead holder's lock refuses as busy rather than retrying a steal within the same attempt. The lock acquire/release pair is exposed as its own primitive (not bundled only inside upsertServer/removeServer), so registerOne can hold the SAME lock around its existing precheck (vibeConfigText/vibeConfigHasServer) and the external `vibe mcp add` subprocess call, serializing it against the plugin's writer even though the external command, not this Story's own code, performs that particular write. A new defaultVibeConfigPath() helper (mirroring defaultVibeHome's naming) gives registerOne and the lock primitive the same path to agree on. upsertServer's field rule becomes three explicit cases per managed field: key omitted retains the existing value; key present with a defined value sets it; key present but explicitly undefined clears it; any property on the incoming object outside name/command/args is read by nothing and never errors. The residual window between the final content check and the rename syscall itself is documented as an accepted, bounded limit this Story cannot close without a locking dependency barred by lc3; the comparison's guarantee is content-only (an inode/mode change across an external byte-identical replacement is explicitly out of scope). createTomlMcpConfigWriter gains an optional second VibeConfigFs parameter (defaulting to the production plugin adapter) for fixture injection; the lock-file creation path ensures its parent directory exists first, mirroring HostFileSystem.write's own existing mkdir-then-write behavior.",
+        "pros": [
+          "PID-liveness is unambiguous (a pid is either running or not), closing the exact 'paused but alive gets reclaimed' race the review's finding 1 identified, which age alone cannot close",
+          "Token-verified release closes the 'predecessor deletes successor's lock' half of finding 1 directly",
+          "Wrapping registerOne's existing external-add call in the same lock closes finding 2 without replacing or revalidating what `vibe mcp add` itself does",
+          "The corrected three-case field rule and the explicit residual-window/injection/parent-dir documentation resolve findings 3 and 4 with precise, implementable rules rather than vague assurances"
+        ],
+        "cons": [
+          "The largest alternative: a token-based lock protocol, an exported lock primitive consumed by a second call site (registerOne) outside this Story's own new module, and several explicit documentation additions is substantial work beyond round 3's scope"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Replace registerOne's external `vibe mcp add` call with a direct upsertServer call, instead of locking around the subprocess",
+        "oneLineSummary": "Stop shelling out to `vibe mcp add` for the write itself; have registerOne call createVibeConfigAccess(...).upsertServer directly, so the write goes through the SAME code path (and lock) the plugin already uses, with no external-process write left to coordinate.",
+        "approach": "Same PID+token lock and field-rule/documentation fixes as a1, but registerOne's vibe branch no longer invokes `run(p.bin, p.addArgs(mcpJs))` for the write; it calls upsertServer({name:'insrc', command:'node', args:[mcpJs]}) directly, using the SAME lock-protected path as every other writer by construction (no separate lock-wrapping needed around an external command).",
+        "pros": [
+          "Removes the external-subprocess write entirely, so there is only ONE write implementation to ever get right, eliminating the whole class of 'a third writer we forgot to lock' bugs this round's finding 2 is an instance of"
+        ],
+        "cons": [
+          "`vibe mcp add` may perform vibe-specific validation, defaulting, or other side effects beyond writing the TOML entry (e.g. argument normalization its own CLI applies) that this Story's own upsertServer does not replicate -- silently dropping the external command changes what 'registering vibe' actually does, a behavior change well beyond what this round's review asked for, and outside what the s4 Story was ever scoped to verify"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Would also close ac3's third-writer gap, but by its own stated con risks silently changing what vibe registration actually does (dropping validation/defaulting `vibe mcp add` itself may apply) — a behavior change beyond this round's review scope and this Story's own verification mandate."
+      },
+      {
+        "id": "a3",
+        "name": "Keep mtime-age reclaim; only shorten the staleness threshold and add a warning log",
+        "oneLineSummary": "Reject: narrows the age-based race's window without closing it, the same category of fix the review already rejected for the atomic-commit race in an earlier round.",
+        "approach": "Same lock-file mechanism as round 3, but with a shorter staleness threshold and a logged warning on reclaim, with no PID-liveness check added.",
+        "pros": [
+          "Smallest possible change to the existing lock design"
+        ],
+        "cons": [
+          "A paused-but-alive process can still legitimately exceed even a SHORT threshold (e.g. a GC pause, a slow disk, a suspended laptop); this does not close the review's finding 1, only shrinks the window it already said was unacceptable for the earlier atomic-commit race"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Fails to close ac3's actual race — a shorter age threshold still misjudges a merely slow, live process as abandoned, the exact failure mode the review's finding 1 already rejected for the earlier atomic-commit race."
+      },
+      {
+        "id": "a4",
+        "name": "Widen VibeConfigEntry itself to carry arbitrary extra fields, instead of specifying that upsertServer ignores unnamed incoming properties",
+        "oneLineSummary": "Reject: changes sc4's own entry shape to solve a problem the existing merge-forward-of-EXISTING-fields behavior (from round 2/3) and a simple 'ignore unnamed incoming properties' rule already solve without touching the contract.",
+        "approach": "Change VibeConfigEntry to something like `{ name: string } & Record<string, unknown>`, so any field a caller passes through is captured structurally, requiring a further HLD amendment beyond the 'unchanged' outcome already proposed.",
+        "pros": [
+          "Would make 'what happens to an unsupported incoming field' moot, since nothing would be unsupported"
+        ],
+        "cons": [
+          "Round 2/3 already solved the actual risk (an EXISTING entry's extra fields surviving an upsert) via merge-forward; the only remaining gap finding 3 names is incoming-field handling, which a plain 'read only name/command/args, ignore the rest' rule resolves with no contract change at all -- this alternative proposes a second HLD amendment for a problem that does not need one"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Solves a problem that does not require a contract change, proposing a second HLD amendment where a1's plain 'ignore unnamed incoming properties' rule already resolves the same finding without touching sc4 at all."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "testFramework is inferred as 'vitest' from repository convention; no convention.detect analyzeBundle was run to confirm it, across any round of this Story."
+    ],
+    "epicImpact": {
+      "applies": true,
+      "reason": "The Epic has an already-built Story (s1), so this analysis records the check even though s4's own scope is independent, unchanged from rounds 1-3's finding.",
+      "storiesCovered": [
+        "s1"
+      ],
+      "findings": "s1's BUILD changed the shared Vibe execution adapter and the backend/plugin chat dispatch surfaces, none of which touch Vibe TOML config-file parsing, locking, or the external `vibe mcp add` registration path. s4's own boundary (depends: []) and sc4 (consumedByStories: []) remain confirmed independent of s1's changes; this round's 4 fixes (PID-liveness-based lock reclaim, routing the daemon's primary registration path through the same lock, corrected field retain/set/clear semantics, and the residual-window/adapter-injection/parent-directory documentation) are all internal to s4's own module and call sites.",
+      "sources": [
+        ".insrc/artifacts/BUILD-639cd2159a87aedb-s1.json"
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/mcp-register.ts:466-538"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/mcp-register.ts:259-324"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/mcp-register.ts:110-119"
+    }
+  ]
+}

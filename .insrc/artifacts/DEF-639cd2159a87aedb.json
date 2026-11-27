@@ -64,9 +64,12 @@
       "adapter": "github",
       "epicStatus": "open",
       "storyStatus": {
-        "s1": "open"
+        "s1": "open",
+        "s2": "open",
+        "s3": "open",
+        "s4": "open"
       },
-      "lastSyncedAt": "2026-11-26T10:36:55.523Z"
+      "lastSyncedAt": "2026-11-27T10:24:23.241Z"
     }
   },
   "body": {

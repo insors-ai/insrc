@@ -45,7 +45,7 @@ test('scratch editor protocol rejects invalid sessions, ancestry, versions and m
     { ...draft, draftSeq: 0 }, { ...draft, draftSeq: NaN }, { ...draft, draftSeq: 1.5 },
     { ...draft, baseVersion: 0 }, { ...draft, baseVersion: Infinity },
     { ...draft, baseDigest: 'not-a-digest' }, { ...draft, editId: '' },
-    { ...draft, parentEditId: 3 }, { ...draft, markdown: null },
+    { ...draft, parentEditId: 3 }, { ...draft, apply: 'yes' }, { ...draft, markdown: null }, { ...draft, markdown: '\ud800' },
     Object.assign(Object.create({ hidden: true }), draft),
     { ...session, type: 'send-selection', draftSeq: 0, docVersion: 1, selectedText: '' },
     { ...session, type: 'save', draftSeq: -1, docVersion: 1 },

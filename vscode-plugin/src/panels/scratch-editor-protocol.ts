@@ -20,6 +20,9 @@ export interface ScratchDraftProposal extends Session {
   readonly baseVersion: number;
   readonly baseDigest: string;
   readonly parentEditId?: string | undefined;
+  /** false reports the latest recovery draft while an older edit is in flight.
+   * Its same-id/text promotion to true uses the newly acknowledged base. */
+  readonly apply?: boolean | undefined;
   readonly markdown: string;
 }
 export interface ScratchSelectionSend extends Session {
@@ -56,7 +59,8 @@ const count = (value: unknown): value is number => Number.isSafeInteger(value) &
 const version = (value: unknown): value is number => count(value) && value >= 1;
 const digest = (value: unknown): value is string => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 const text = (value: unknown, limit: number): value is string =>
-  typeof value === 'string' && value.length <= limit && scratchUtf8Bytes(value) <= limit;
+  typeof value === 'string' && value.length <= limit &&
+  !/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(value) && scratchUtf8Bytes(value) <= limit;
 const keys = (m: Record<string, unknown>, required: readonly string[], optional: readonly string[] = []): boolean =>
   required.every(k => Object.hasOwn(m, k)) && Object.keys(m).every(k => required.includes(k) || optional.includes(k));
 const sessionKeys = (m: Record<string, unknown>, required: readonly string[], optional: readonly string[] = []): boolean =>
@@ -83,9 +87,9 @@ export function parseScratchEditorMessage(value: unknown): ScratchEditorToHost |
   switch (m.type) {
     case 'editor-ready': valid = sessionKeys(m, []); break;
     case 'draft':
-      valid = sessionKeys(m, ['draftSeq', 'editId', 'baseVersion', 'baseDigest', 'markdown'], ['parentEditId']) &&
+      valid = sessionKeys(m, ['draftSeq', 'editId', 'baseVersion', 'baseDigest', 'markdown'], ['parentEditId', 'apply']) &&
         count(m.draftSeq) && m.draftSeq > 0 && token(m.editId) && version(m.baseVersion) && digest(m.baseDigest) &&
-        (m.parentEditId === undefined || token(m.parentEditId)) && text(m.markdown, SCRATCH_NOTE_BYTES);
+        (m.parentEditId === undefined || token(m.parentEditId)) && (m.apply === undefined || typeof m.apply === 'boolean') && text(m.markdown, SCRATCH_NOTE_BYTES);
       break;
     case 'send-selection':
       valid = sessionKeys(m, ['draftSeq', 'docVersion', 'selectedText']) && count(m.draftSeq) && version(m.docVersion) &&

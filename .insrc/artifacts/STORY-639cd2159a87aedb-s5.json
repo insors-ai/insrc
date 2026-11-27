@@ -18,7 +18,19 @@
         "relation": "derived-from"
       },
       "references": [],
-      "attachments": [],
+      "attachments": [
+        {
+          "target": {
+            "entityId": "LLD-639cd2159a87aedb-s5",
+            "type": "LLD",
+            "relation": "documents",
+            "fragment": "docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/S005/LLD.md"
+          },
+          "revision": 4,
+          "at": "2026-11-27T12:51:05.308Z",
+          "externalId": "7218750245"
+        }
+      ],
       "binding": {
         "reference": {
           "entityId": "insors-ai/insrc#322",

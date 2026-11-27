@@ -1,0 +1,809 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795767098909-53x0zo",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T08:21:06.213Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 560769,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "epicHash": "639cd2159a87aedb",
+    "epicSlug": "unify-vibe-one-plain-cli-adapter",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1795535373279-l4wumn",
+    "hldEffectiveHash": "67d59677de6a7a14a26bdb819949a499c3171f1bd551c1f73af1201b624e872c",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "VS Code chat runs Vibe through the shared adapter with streaming preserved",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 4,
+        "contentHash": "aa52081abc7e9b57c49d9b21dc35c713da98db4fcaef062f2d06ee6ec162bc00",
+        "at": "2026-11-27T08:21:08.871Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 4,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T08:30:06.255Z"
+      }
+    },
+    "revision": 4,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "This revision replaces round 3's 'did we see any row' terminal guess with the real thing: the chat's direct Vibe launch now tracks dispatch the same way the shared adapter does, allocates its own per-turn export directory so it can read Vibe's own reported stop reason, and writes that real outcome into the one durable marker every reader (live or reattaching) already consults -- so a resumed turn is classified exactly as safely as a live one, and the approval-parity rollout gets an explicit go/no-go rule instead of an open-ended live check.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "One shared plain-CLI Vibe execution adapter module owns the whole launch contract — argv construction, model/thinking pinning for new sessions with explicit resumed-session selection semantics (qualify or reject before dispatch, never silent substitution), prompt transport, budget guards, the execution context (cwd, environment, dual process-group policy with defined escalation and cleanup ownership per mode, abort signal, host deadline), the ordinary-session approval input with the existing chat mapping, rich turn events with session identity and tool-result output content, the qualified MCP tool naming split into general identity parsing and the analysis allowlist, and the fail-closed read-only mode whose qualification the ADAPTER owns and validates. The backend provider and the VS Code plugin chat both import and call it directly; the session-based app-server transport is deleted, not demoted. A sibling shared real-TOML config module (smol-toml, parse-for-understanding with surgical, byte-preserving edits) replaces every hand-written Vibe TOML reader. This is alternative a1, revised per the design reviews of 2026-11-24: the only shape that satisfies all seven Epic constraints, with k1/k2/k3 satisfied structurally — the safety gate, its qualification, the approval mapping, the process-group policy and the naming convention live inside the one module both surfaces must call.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "assumptions": [
+            "c13",
+            "c5"
+          ],
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s5"
+          ],
+          "id": "sc1",
+          "interfaceSketch": "/** The single Vibe launch contract. Construction fixes the execution context; each turn carries its own cancellation and approval choice. */\ninterface VibeAdapterContext {\n\t/** Working directory: project config, repository context and resume scope. */\n\treadonly cwd: string;\n\treadonly env?: Readonly<Record<string, string>> | undefined;\n\treadonly processGroup: 'adapter-owned' | 'supervisor-owned';\n}\ninterface VibeNewSession {\n\treadonly kind: 'new';\n\treadonly model?: string | undefined;\n\treadonly thinking?: string | undefined;\n}\ninterface VibeResumedSession {\n\treadonly kind: 'resume';\n\treadonly resumeHandle: string;\n\treadonly selection?: undefined;\n}\ntype VibeSessionRequest = VibeNewSession | VibeResumedSession;\ntype VibeApproval = 'default' | 'manual' | 'edit-auto' | 'auto';\ninterface VibeTurnRequest {\n\treadonly prompt: string;\n\treadonly outputMode: 'text' | 'json' | 'streaming';\n\treadonly session: VibeSessionRequest;\n\treadonly mode: 'default' | 'read-only';\n\treadonly approval?: VibeApproval | undefined;\n\treadonly readDirs?: readonly string[] | undefined;\n\treadonly budget?: { readonly maxTurns?: number | undefined; readonly timeLimitSeconds?: number | undefined; readonly maxPriceDollars?: number | undefined; readonly maxTokens?: number | undefined } | undefined;\n\treadonly signal?: AbortSignal | undefined;\n\treadonly deadlineMs?: number | undefined;\n}\ntype VibeTurnEvent =\n\t| { readonly kind: 'session'; readonly sessionId: string; readonly resumeHandle?: string | undefined }\n\t| { readonly kind: 'status'; readonly phase: 'starting' | 'thinking' | 'refused' }\n\t| { readonly kind: 'assistant-text'; readonly text: string }\n\t| { readonly kind: 'tool-call'; readonly toolCallId: string; readonly toolName: string; readonly arguments: Readonly<Record<string, unknown>> }\n\t| { readonly kind: 'tool-result'; readonly toolCallId: string; readonly ok: boolean; readonly output: string; readonly error?: string | undefined }\n\t| { readonly kind: 'error'; readonly message: string };\ninterface VibeExitEvidence {\n\treadonly stopReason?: string | undefined;\n\treadonly outcome?: string | undefined;\n\treadonly effectiveSelection?: { readonly model?: string | undefined; readonly thinking?: string | undefined } | undefined;\n}\ninterface VibeTurnResult {\n\treadonly text: string;\n\treadonly sessionId?: string | undefined;\n\treadonly resumeHandle?: string | undefined;\n\treadonly exitEvidence?: VibeExitEvidence | undefined;\n}\ninterface VibeExecutionAdapter {\n\tstartTurn(request: VibeTurnRequest): AsyncIterable<VibeTurnEvent> & { readonly result: Promise<VibeTurnResult> };\n}",
+          "name": "Vibe execution adapter interface",
+          "ownedByStory": "s1",
+          "purpose": "The one launch contract every Vibe turn goes through, with resumed-session selection semantics expressed in the type and rich events carrying normalized output content. Owning it in s1 makes k2 true by construction."
+        },
+        {
+          "assumptions": [
+            "c13"
+          ],
+          "consumedByStories": [
+            "s2",
+            "s3"
+          ],
+          "id": "sc2",
+          "interfaceSketch": "interface VibeMcpToolIdentity {\n\treadonly server: string;\n\treadonly tool: string;\n\treadonly streamedName: string;\n}\ninterface VibeMcpNaming {\n\treadonly fromStreamedName: (streamedName: string) => VibeMcpToolIdentity | undefined;\n}\ntype VibeInsrcAnalysisToolId = 'insrc_analyze' | 'insrc_analyze_step';",
+          "name": "Qualified insrc tool naming — general identity plus the analysis allowlist",
+          "ownedByStory": "s1",
+          "purpose": "One spelling of the insrc MCP tool names, established once against the installed CLI, with general identity parsing separated from the restricted analysis allowlist."
+        }
+      ],
+      "boundary": {
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "The chat surface migration: the vibe mapper and job runner become consumers of the adapter, while transcript rendering, worker lifecycle, resume handles and attachments keep their existing behavior (lc2). Also internal: the live verifications s6 records.",
+        "owns": [],
+        "storyId": "s3"
+      },
+      "adjacentBoundaries": [
+        {
+          "depends": [],
+          "internal": "Everything behind the adapter interface: argv construction, the execution context, process-group policy, transient-error classification, and the deletion of src/shared/vibe-session.ts plus rewiring of backend provider paths onto the adapter.",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "storyId": "s1"
+        },
+        {
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The narrow-authorization design: live qualification suite, adapter-owned ReadOnlyCapability wiring, unavailable-state reporting.",
+          "owns": [
+            "sc3"
+          ],
+          "storyId": "s2"
+        },
+        {
+          "depends": [],
+          "internal": "The TOML reader's internals: parse-for-understanding, surgical byte-preserving edits, refusal path, rewiring of mcp-register and toml-mcp-writer.",
+          "owns": [
+            "sc4"
+          ],
+          "storyId": "s4"
+        },
+        {
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The model-family alignment: catalog, registry, check and definitions entries for cli-vibe.",
+          "owns": [],
+          "storyId": "s5"
+        },
+        {
+          "depends": [
+            "sc3"
+          ],
+          "internal": "The reconciliation work: verifying the chat prompt-transport fix, approval parity, tool-result output parity, resume-selection behavior and worker cleanup parity; closing implemented issues with evidence.",
+          "owns": [],
+          "storyId": "s6"
+        }
+      ],
+      "rolloutPhase": "Phase B — Adapter consumers",
+      "nonFunctional": {
+        "durability": "User configuration files are edited surgically; the issue ledger records closures only with evidence (k7). Temporary files the adapter creates for a turn are cleaned on every exit path.",
+        "observability": "Every turn result carries structured exit evidence and session identity; tool-result events carry normalized output content.",
+        "performance": "One subprocess per turn, as claude/codex clients already do; the adapter forwards the tool's own budget guards and enforces a host-side deadline.",
+        "security": "k1 is structural: the read-only launch mode's narrow authorization is qualified live by the adapter. Resumed turns cannot carry a changed model/thinking level. All model access stays through the local CLI binary's own auth (k6)."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "mapLine",
+          "signature": "function mapLine(line: string, turnId: string, state: DecoderState): TurnEvent[]",
+          "parameters": [
+            {
+              "name": "line",
+              "type": "string",
+              "purpose": "One line of the session's durable JSONL file -- a raw native Vibe journal row or a legacy worker-bridged row.",
+              "optional": false
+            },
+            {
+              "name": "turnId",
+              "type": "string",
+              "purpose": "Correlates emitted TurnEvent entries to the active turn.",
+              "optional": false
+            },
+            {
+              "name": "state",
+              "type": "DecoderState",
+              "purpose": "Carries selectionSeq/selectionBuffer/toolCommands/editPaths/sessionId across reader restarts.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "TurnEvent[]",
+            "meaning": "Zero or more decoded chat transcript events for this line."
+          },
+          "errors": [],
+          "preconditions": [
+            "line is one record from the turn's durable session file"
+          ],
+          "postconditions": [
+            "Carried unchanged from round 3: native reasoning/effect rows and legacy worker-bridged rows both decode through this one entry point (ac2, lc2)",
+            "An MCP tool name resolves via VibeMcpNaming.fromStreamedName (sc2), not a second independent parser (ac4)"
+          ]
+        },
+        {
+          "name": "vibeMapper.buildArgs",
+          "signature": "buildArgs(req: TurnRequest, outputDir?: string): string[]",
+          "parameters": [
+            {
+              "name": "req",
+              "type": "TurnRequest",
+              "purpose": "The chat's turn request.",
+              "optional": false
+            },
+            {
+              "name": "outputDir",
+              "type": "string",
+              "purpose": "This Story's new per-turn export directory, threaded to buildArgv's own required outputDir parameter.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "string[]",
+            "meaning": "argv for the direct-spawned vibe child process."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called only after run() has allocated outputDir for a vibe turn"
+          ],
+          "postconditions": [
+            "argv is built by calling the shared buildArgv(req, outputDir) -- buildArgv's REAL signature takes a required second outputDir argument, which round 3's contract wrongly omitted",
+            "The prompt is never embedded in argv; it is written to the child's stdin separately by the spawn call site (ac5)"
+          ]
+        },
+        {
+          "name": "buildArgv",
+          "signature": "function buildArgv(request: VibeTurnRequest, outputDir: string): readonly string[]",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "VibeTurnRequest",
+              "purpose": "sc1's shared turn-request shape.",
+              "optional": false
+            },
+            {
+              "name": "outputDir",
+              "type": "string",
+              "purpose": "A directory this Story's own code allocates (mkdtemp) and owns the lifecycle of; buildArgv embeds it as --output-dir.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly string[]",
+            "meaning": "argv for the vibe binary, embedding --output-dir among the other flags."
+          },
+          "errors": [],
+          "preconditions": [
+            "Caller does not also call VibeExecutionAdapter.startTurn for the same request",
+            "Caller owns outputDir's full lifecycle"
+          ],
+          "postconditions": [
+            "The chat's direct-spawn argv and the backend provider's argv are constructed by the identical function (ac1)"
+          ]
+        },
+        {
+          "name": "readExitEvidence",
+          "signature": "function readExitEvidence(exportPath: string, readFile: (path: string) => Promise<string>): Promise<VibeExitEvidence | undefined>",
+          "parameters": [
+            {
+              "name": "exportPath",
+              "type": "string",
+              "purpose": "Path to the turn's export.json, inside this Story's own allocated outputDir.",
+              "optional": false
+            },
+            {
+              "name": "readFile",
+              "type": "(path: string) => Promise<string>",
+              "purpose": "Injected file read, matching the pattern the shared adapter already uses.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<VibeExitEvidence | undefined>",
+            "meaning": "The real stopReason/outcome/effectiveSelection Vibe itself reported, or undefined when missing/unreadable/malformed."
+          },
+          "errors": [],
+          "preconditions": [
+            "Currently private in src/shared/vibe-adapter.ts; this Story requires it exported, mirroring buildArgv's own export precedent"
+          ],
+          "postconditions": [
+            "A clean exit with exitEvidence.stopReason === undefined is the ONLY case classified 'ok', replacing round 3's 'any row decoded' heuristic"
+          ]
+        },
+        {
+          "name": "VibeMcpNaming.fromStreamedName",
+          "signature": "fromStreamedName(streamedName: string): VibeMcpToolIdentity | undefined",
+          "parameters": [
+            {
+              "name": "streamedName",
+              "type": "string",
+              "purpose": "The MCP tool name exactly as the installed vibe binary streams it.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "VibeMcpToolIdentity | undefined",
+            "meaning": "The resolved {server, tool, streamedName}, or undefined if unrecognized."
+          },
+          "errors": [],
+          "preconditions": [
+            "Carried unchanged from round 3"
+          ],
+          "postconditions": [
+            "mapLine delegates to this instead of parseVibeMcpTool's own independent parser"
+          ]
+        },
+        {
+          "name": "sessionOutput.endTurn",
+          "signature": "endTurn(sessionId: string, turnId: string, exit: TurnExit): Promise<void>",
+          "parameters": [
+            {
+              "name": "sessionId",
+              "type": "string",
+              "purpose": "The session whose turn is closing.",
+              "optional": false
+            },
+            {
+              "name": "turnId",
+              "type": "string",
+              "purpose": "The turn being closed.",
+              "optional": false
+            },
+            {
+              "name": "exit",
+              "type": "TurnExit",
+              "purpose": "The process exit info, now carrying two new optional vibe-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Appends the turn-end marker, now including the new optional fields when present."
+          },
+          "errors": [],
+          "preconditions": [
+            "Already called today at the existing cli-adapter.ts call site"
+          ],
+          "postconditions": [
+            "A vibe turn's dispatchState/outcome are stamped onto the SAME durable turn-end marker claude/codex already rely on"
+          ]
+        },
+        {
+          "name": "parseMarker",
+          "signature": "function parseMarker(line: string): Marker | undefined",
+          "parameters": [
+            {
+              "name": "line",
+              "type": "string",
+              "purpose": "A line from the durable session file.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Marker | undefined",
+            "meaning": "The decoded host-written marker, or undefined for an ordinary CLI line."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The turn-end case now also extracts code, signal, unknown, and (when present) vibeDispatchState/vibeOutcome -- today it discards every field but turnId"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "vibeMapper (ProviderMapper, cli-adapter.ts) and run()'s vibe direct-spawn branch",
+        "change": "field-modify",
+        "details": "Carried from round 3 (inputIsPrompt: false; buildArgs delegates to the shared builder; stdin write-and-end added) PLUS: run() allocates its own per-turn export directory (mkdtemp) before spawning a vibe child, threads it through buildArgs's new outputDir parameter, and tracks a local dispatchState mirroring vibe-adapter.ts's own model exactly.",
+        "callSites": [
+          "vscode-plugin/src/chat/cli-adapter.ts:1021",
+          "vscode-plugin/src/chat/cli-adapter.ts:1234-1245",
+          "vscode-plugin/src/chat/cli-adapter.ts:1280-1324",
+          "src/shared/vibe-adapter.ts:436-490"
+        ]
+      },
+      {
+        "entity": "mapLine decoder (DecoderState row coverage)",
+        "change": "invariant-change",
+        "details": "Carried unchanged from round 3: new top-level reasoning/effect decoding added, legacy worker-bridged branches kept.",
+        "callSites": [
+          "vscode-plugin/src/chat/cli-adapter.ts:1037-1104",
+          "src/shared/vibe-adapter.ts:260-300"
+        ]
+      },
+      {
+        "entity": "parseVibeMcpTool",
+        "change": "invariant-change",
+        "details": "Carried unchanged from round 3: replaced by a direct call to VibeMcpNaming.fromStreamedName.",
+        "callSites": [
+          "vscode-plugin/src/chat/cli-adapter.ts:1003-1011"
+        ]
+      },
+      {
+        "entity": "TurnExit (session-output.ts)",
+        "change": "field-add",
+        "details": "Adds two new OPTIONAL fields: vibeDispatchState?: 'not-sent' | 'possibly-sent' | 'accepted' and vibeOutcome?: 'ok' | 'no-evidence' | 'replay-unsafe'. Backward-compatible: claude/codex never set them.",
+        "callSites": [
+          "vscode-plugin/src/chat/session-output.ts:40-43",
+          "vscode-plugin/src/chat/session-output.ts:183",
+          "vscode-plugin/src/chat/session-output.ts:541-546"
+        ]
+      },
+      {
+        "entity": "Marker's turn-end variant and parseMarker (session-output.ts)",
+        "change": "field-add",
+        "details": "Adds code, signal, unknown and the two new vibe fields to BOTH the Marker type and parseMarker's extraction -- today parseMarker discards every field but turnId even though endTurn already writes code/signal to disk.",
+        "callSites": [
+          "vscode-plugin/src/chat/session-output.ts:134-160",
+          "vscode-plugin/src/chat/session-output.ts:510"
+        ]
+      },
+      {
+        "entity": "Vibe direct-spawn terminal classification (replaces round 3's 'sawRow' heuristic)",
+        "change": "new",
+        "details": "On a clean exit, reads export.json via readExitEvidence; vibeOutcome is 'ok' ONLY when stopReason is undefined, 'no-evidence' when export.json is missing/unreadable/malformed, and 'replay-unsafe' when a stopReason IS present or on signal/nonzero exit once dispatchState reached at least 'possibly-sent'. For a host-loss unknown:true marker on a vibe turn, outcome is always replay-unsafe.",
+        "callSites": [
+          "vscode-plugin/src/chat/cli-adapter.ts:1045-1051",
+          "vscode-plugin/src/chat/cli-adapter.ts:1264-1265",
+          "vscode-plugin/src/chat/session-output.ts:510"
+        ]
+      },
+      {
+        "entity": "Follower's missing-result path (cli-adapter.ts resume())",
+        "change": "invariant-change",
+        "details": "For a vibe-mapped turn, reads the segment's turn-end marker's vibeOutcome/vibeDispatchState/unknown fields and surfaces replayUnsafe:true unless vibeOutcome==='ok'. claude/codex turns are unaffected.",
+        "callSites": [
+          "vscode-plugin/src/chat/cli-adapter.ts:1684-1693",
+          "vscode-plugin/src/chat/session-output.ts:602"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "This Story mirrors sc1's own dispatchState model and its export-directory/exit-evidence pattern rather than calling VibeExecutionAdapter.startTurn a second time. readExitEvidence is additionally required to be exported from sc1's module for this Story's direct reuse, mirroring buildArgv's own existing export."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Unchanged from round 3: mapLine and the tool-activity decoding path call VibeMcpNaming.fromStreamedName directly."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The stdin write/end call fails after the child process has already been spawned successfully (dispatchState already 'possibly-sent' or further).",
+          "detection": "The stdin write/end error callback fires while dispatchState already holds 'possibly-sent' or 'accepted'.",
+          "response": "Classify as replay-unsafe, never as a deterministic pre-dispatch failure.",
+          "userImpact": "The user sees the turn marked unsafe-to-auto-retry rather than silently treated as safe-to-resend.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The spawn call itself fails before any child process is created.",
+          "detection": "deps.spawn throws or its error event fires while dispatchState has never left 'not-sent'.",
+          "response": "Classify as a deterministic pre-dispatch failure, safe to replay automatically.",
+          "userImpact": "The user sees a clear launch failure and can safely resend the same turn.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The process exits cleanly (code 0, no signal) but export.json is missing, unreadable or malformed.",
+          "detection": "readExitEvidence returns undefined after a clean exit.",
+          "response": "Classify vibeOutcome as 'no-evidence', not 'ok'.",
+          "userImpact": "The user sees the turn flagged as unverified rather than definitively successful.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The process exits cleanly (code 0) but export.json reports a stopReason.",
+          "detection": "readExitEvidence returns a defined stopReason value.",
+          "response": "Classify vibeOutcome as 'replay-unsafe' even though the exit code was 0.",
+          "userImpact": "The user sees the turn marked unsafe-to-auto-retry despite a clean process exit.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The extension host exits before endTurn ever runs for a vibe turn; the next beginTurn synthesizes a conservative unknown:true turn-end marker.",
+          "detection": "The follower decodes a turn-end marker with unknown:true and no vibeOutcome field for a vibe-mapped turn.",
+          "response": "Treat ANY unknown:true marker on a vibe turn as replay-unsafe unconditionally.",
+          "userImpact": "The user sees the turn reported as interrupted/unsafe on reopening.",
+          "recoverable": true
+        },
+        {
+          "scenario": "This Story's own per-turn export directory cannot be created (mkdtemp fails).",
+          "detection": "The mkdtemp call itself throws before spawn is ever attempted.",
+          "response": "Classify as a deterministic pre-dispatch failure; surface a clear, actionable error.",
+          "userImpact": "The user sees a clear 'could not prepare the turn' failure and can safely retry.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The per-turn export directory cannot be removed during cleanup.",
+          "detection": "The best-effort rm call in the cleanup path throws or rejects.",
+          "response": "Log and continue; a cleanup failure never masks the turn's own already-determined real outcome.",
+          "userImpact": "No user-visible impact beyond a possible stray temp directory.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A turn reaches dispatchState 'accepted' but the user cancels it before further content streams.",
+          "expected": "The user-initiated cancellation keeps its own recognizable identity and is not misreported as replay-unsafe."
+        },
+        {
+          "input": "A resumed turn (VibeResumedSession) that produces its own export.json.",
+          "expected": "Each turn, including a resumed one, gets a fresh, independently allocated outputDir."
+        },
+        {
+          "input": "Two near-simultaneous vibe turns across different sessions, each allocating its own export directory.",
+          "expected": "mkdtemp's own uniqueness guarantee prevents any collision between the two turns' export.json files."
+        },
+        {
+          "input": "A claude or codex turn hits the follower's existing missing-result path.",
+          "expected": "Unaffected: the new marker fields are read only when mapper.id==='vibe'."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Dispatch is already 'possibly-sent' the instant spawn succeeds, before any stdin write is attempted; a stdin write/end failure never reverts dispatchState back to 'not-sent'.",
+          "source": "c1"
+        },
+        {
+          "text": "The durable turn-end marker is the ONE finalization record both the live writer and any follower consult.",
+          "source": "c2"
+        },
+        {
+          "text": "A host-loss (unknown:true) turn-end marker for a vibe turn is always treated as replay-unsafe on read, never inferred as a success.",
+          "source": "c3"
+        },
+        {
+          "text": "A clean process exit is not itself completion evidence; only exitEvidence.stopReason === undefined marks a vibe turn 'ok'.",
+          "source": "c4"
+        },
+        {
+          "text": "The migration's removal of the old --agent approval route is gated on the live approval-parity check's outcome.",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "vitest",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Exercise the mirrored dispatchState tracker, the export-evidence classification, the extended marker decode, and the follower's new branch in isolation.",
+          "subjects": [
+            "dispatchState transitions: 'not-sent' before spawn, 'possibly-sent' immediately after spawn succeeds, 'accepted' once a session-identity row is decoded; a subsequent stdin write/end failure does not revert it",
+            "readExitEvidence-driven outcome classification: stopReason undefined -> 'ok'; stopReason present -> 'replay-unsafe'; export.json missing/malformed -> 'no-evidence'",
+            "parseMarker's turn-end case extracting code, signal, unknown, vibeDispatchState and vibeOutcome",
+            "endTurn constructing the turn-end marker with the new fields present for vibe and absent for claude/codex",
+            "The follower's missing-result branch for mapper.id==='vibe'",
+            "vibeMapper.buildArgs threading outputDir through to buildArgv"
+          ],
+          "fixturesNeeded": [
+            "Sample export.json payloads",
+            "Sample turn-end marker lines with and without the new optional fields"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise the real plugin spawn seam, the export-directory lifecycle, and the live-writer/follower marker hand-off end to end.",
+          "subjects": [
+            "A fixture binary exiting cleanly with no stopReason -> vibeOutcome 'ok', read identically live and on reattach",
+            "A fixture binary exiting cleanly with a stopReason -> vibeOutcome 'replay-unsafe' despite exit code 0",
+            "A stdin write/end failure AFTER spawn succeeds -> 'replay-unsafe'",
+            "A spawn failure before any child exists -> deterministic pre-dispatch-safe",
+            "Detach/reattach producing identical classification",
+            "Host-loss simulation read as replayUnsafe",
+            "Export-directory lifecycle across success/signal/spawn-failure/abort paths",
+            "Prompt transport (carried from round 3)"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Verify export.json's real field shape and the approval-parity rollout rule against the installed vibe binary.",
+          "subjects": [
+            "export.json's real field names match readExitEvidence's expectations",
+            "Tool-activity naming parity (carried from round 3)",
+            "Approval-flag effective-equivalence comparison, gating the migration's cutover"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: vibeMapper.buildArgs delegates to buildArgv with outputDir",
+            "integration: single direct-spawn seam with its own export-directory lifecycle"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: mapLine decoding native reasoning/effect rows",
+            "integration: streaming transcript rendering parity fixture"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: live writer and follower produce identical classification on reattach",
+            "integration: host-loss simulation classified correctly",
+            "live: resumed session preserves model/thinking selection"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: parseVibeMcpTool delegates to VibeMcpNaming.fromStreamedName",
+            "live: tool-activity naming parity"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "integration: prompt write-and-end sequencing",
+            "live: the real installed vibe binary receives the complete prompt, outcome recorded on the ledger per k7"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per s1 bundles 1-5: the direct-spawn vibe branch would compute terminal/replay classification from a local 'sawRow' heuristic and treat a stdin write failure as pre-dispatch-safe -- both wrong against the shared adapter's own dispatchState model (bundle 1). The durable record a follower reads is session-output.ts's turn-end marker (bundle 2), which today carries only {turnId} after parseMarker's extraction even though code/signal are written; run()'s live classification is never persisted, so a follower hitting EOF without a terminal row gets a flat, unclassified error. Session-output.ts already synthesizes a conservative unknown:true marker for host loss (bundle 3) but nothing reads it for replay safety. buildArgv requires an outputDir argument (bundle 4) nothing allocates, and readExitEvidence is unexported. The live approval-parity verification has no stated consequence on a mismatch (bundle 5).",
+      "stateAfter": "The vibe direct-spawn branch mirrors the shared adapter's dispatchState model exactly, allocates and owns its own per-turn export directory, and computes a vibeOutcome from the REAL stopReason/outcome Vibe reports. That outcome and dispatchState are stamped onto the SAME durable turn-end marker every reader consults (TurnExit/Marker/parseMarker widened with backward-compatible optional fields); a host-loss unknown:true marker is always read as replay-unsafe for a vibe turn. The migration's removal of the old --agent approval route is explicitly gated on the live approval-parity check's result.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Export buildArgv from src/shared/vibe-adapter.ts (carried from round 3) -- its real signature is buildArgv(request, outputDir).",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Export readExitEvidence from src/shared/vibe-adapter.ts, mirroring buildArgv's own export precedent.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add new top-level reasoning/effect row branches to mapLine and replace parseVibeMcpTool's body with a call to VibeMcpNaming.fromStreamedName (carried from round 3).",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Change vibeMapper.buildArgs to accept an optional outputDir parameter and delegate to buildArgv(req, outputDir); set inputIsPrompt to false.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "In run()'s vibe direct-spawn branch, allocate a fresh per-turn export directory before spawn and track a local dispatchState mirroring vibe-adapter.ts's model.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Extend the stdin-write gate to cover mapper.id==='vibe' (carried from round 3); classify a write/end failure using whatever dispatchState already holds.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "On exit, read export.json via readExitEvidence and classify vibeOutcome; remove the export directory in a finally on every exit path.",
+          "rollbackable": true
+        },
+        {
+          "order": 8,
+          "action": "Widen TurnExit, Marker's turn-end variant, parseMarker and endTurn's marker construction with the two new optional vibe fields and the previously-discarded code/signal/unknown fields.",
+          "rollbackable": true
+        },
+        {
+          "order": 9,
+          "action": "Pass the computed vibeDispatchState/vibeOutcome through to the existing sessionOutput.endTurn call site for a vibe turn.",
+          "rollbackable": true
+        },
+        {
+          "order": 10,
+          "action": "Extend the follower's EOF-without-terminal path to read the new marker fields for mapper.id==='vibe' and surface replayUnsafe accordingly.",
+          "rollbackable": true
+        },
+        {
+          "order": 11,
+          "action": "Delete the vibeCatalog branch and vibe-session-worker.ts/vibe-session-process.ts's runVibeChatJob/historyLines (carried from round 3); update esbuild.mjs and packaging.test.ts.",
+          "rollbackable": true
+        },
+        {
+          "order": 12,
+          "action": "GATED: live-verify approval-flag effective equivalence; this outcome is a prerequisite for finalizing step 11's --agent-route removal -- proceed with --approval-policy only if parity holds, else keep --agent or record an explicit accepted deviation on the ledger before cutover. Also live-verify export.json's real field shape.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "mapLine keeps every pre-existing branch, so a session file written before this Story's build decodes exactly as before. TurnExit, Marker's turn-end variant and parseMarker gain only OPTIONAL fields claude/codex never populate or consult. No on-disk session file is rewritten. The approval-parity gate explicitly protects against a silent behavior change before the old route is removed.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Mirror dispatchState + own export-directory lifecycle, and widen the existing generic turn-end marker with two optional vibe-outcome fields",
+        "oneLineSummary": "One finalization protocol: the live writer computes dispatchState/outcome using its own mirrored tracker and export directory, then stamps it onto the SAME durable turn-end marker both live and follow readers already consume.",
+        "approach": "The direct-spawn vibe branch tracks its own dispatchState ('not-sent' -> 'possibly-sent' immediately after spawn succeeds, before the stdin write -> 'accepted' once a session-identity row is decoded), mirroring vibe-adapter.ts's own model exactly. It allocates its own per-turn export directory (mkdtemp) before spawn, passes it to buildArgv's outputDir parameter, and on a clean exit reads export.json for the real stopReason/outcome -- never inferring completion from merely having decoded a row. The computed outcome ('ok' | 'no-evidence' | 'replay-unsafe') and the final dispatchState are passed through the existing sessionOutput.endTurn(sessionId, turnId, exit) call site, which stamps them as two new OPTIONAL fields on the turn-end marker it already appends (session-output.ts's Marker union and parseMarker already tolerate extra fields on a recognized marker kind). The follower's existing EOF-without-terminal-row path reads these same fields off the segment's turn-end marker instead of returning a flat, unclassified error; the host-loss synthesized unknown:true marker is treated, for a vibe turn, as always replay-unsafe.",
+        "pros": [
+          "Exactly one durable record and one write site (the existing endTurn call), read identically by the live writer's own synthesis and any later follower -- directly satisfies finding 2's 'one finalization protocol for live and follow readers'",
+          "Two new OPTIONAL fields are backward-compatible: claude/codex turns never set them and keep decoding exactly as today",
+          "Completion evidence is the REAL export.json stopReason/outcome, not a row-observed heuristic -- directly satisfies finding 3"
+        ],
+        "cons": [
+          "Touches session-output.ts and endTurn's call signature -- generic, provider-agnostic chat infrastructure that no HLD sharedContract or adjacentBoundary explicitly owns, a small widening beyond this Story's own files that should be flagged rather than built silently"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Keep session-output.ts's marker untouched; have the vibe branch write its own second host-authored outcome line that mapLine alone decodes",
+        "oneLineSummary": "Stay strictly inside this Story's own files: write a vibe-specific durable line (decoded only by mapLine, not session-output.ts's generic marker parser) carrying the same dispatchState/outcome, landing in the segment like any other CLI-written row.",
+        "approach": "Same dispatchState mirroring and export-directory lifecycle as a1 for computing the real outcome, but instead of extending the generic turn-end marker, the vibe branch appends its own line into the turn's output stream (via the same output.outPath the process's own stdout already writes to, or a comparable write the plugin already owns) using a distinct marker shape mapLine recognizes as a terminal TurnEvent, exactly as it would decode any other vibe journal row. The follower decodes it the same way it decodes any other line -- no change to session-output.ts, parseMarker, or endTurn's signature.",
+        "pros": [
+          "Zero changes to shared infrastructure outside this Story's own files (mapLine, the vibe dispatch code) -- no cross-cutting widening to flag or justify"
+        ],
+        "cons": [
+          "Introduces a SECOND durable host-written line convention alongside session-output.ts's own MARKER_KEY mechanism, risking confusion about which one is authoritative for a future reader",
+          "Must independently reproduce session-output.ts's own durability guarantees (atomic append, correct ordering relative to the real turn-end marker) rather than reusing the write path that already provides them -- a real duplication risk, not just extra code"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Functionally equivalent to a1 but introduces a second durable host-written line convention alongside session-output.ts's own marker mechanism, duplicating durability/ordering guarantees a1 reuses for free."
+      },
+      {
+        "id": "a3",
+        "name": "Fix live dispatch/completion accuracy only; make the follower's missing-result path unconditionally replay-unsafe for any vibe turn with no decoded terminal",
+        "oneLineSummary": "Smallest change: mirror dispatchState and read real export.json evidence for live accuracy, but for durability just hard-code 'no terminal row for a vibe turn always means unsafe' in the follower, with no new marker fields at all.",
+        "approach": "Same dispatchState/export-directory fixes as a1/a2 for the live path. For the follower, add one conditional keyed only on mapper.id==='vibe' to its existing EOF-without-terminal branch: always report replayUnsafe:true, with no new persisted field and no change to session-output.ts.",
+        "pros": [
+          "Smallest possible change: no new marker fields, no endTurn signature change, no new write-ordering concern",
+          "Conservative by construction -- never silently reports an unsafe turn as safe"
+        ],
+        "cons": [
+          "Coarser than warranted: a vibe turn that actually completed cleanly, where a reattaching reader simply hasn't decoded the terminal row yet (a timing race, not a real failure), is ALSO always reported unsafe -- a real regression against ac2/ac3's 'exactly as before' requirement for the ordinary resume case",
+          "Records no actual stopReason/outcome anywhere, so the issue ledger's evidence requirement (k7) for the approval-parity/prompt-transport verifications this Story must also record has nothing durable to point at for a vibe turn's own outcome"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Fails ac2/ac3's 'exactly as before' requirement for the ordinary case: a cleanly-completed turn observed only via reattach would be unconditionally reported unsafe, and records no durable outcome for the ledger."
+      },
+      {
+        "id": "a4",
+        "name": "Propose an HLD amendment: have sc1 itself export dispatch-tracking and export-directory helpers for direct reuse, instead of this Story reimplementing them",
+        "oneLineSummary": "Ask the HLD to widen sc1's module surface (not just buildArgv) so the plugin reuses the adapter's own dispatchState tracker and export-directory lifecycle directly, rather than mirroring their logic a second time.",
+        "approach": "File an hld.amendmentProposal (sharedContract.methodAdd) asking sc1's owning Story (s1) to export its internal dispatchState tracker and export-directory helpers as first-class, reusable primitives, which this Story would then import rather than reimplement.",
+        "pros": [
+          "Avoids duplicating sc1's dispatchState/export-directory logic a second time in the plugin -- one implementation, reused by both surfaces"
+        ],
+        "cons": [
+          "Requires an HLD amendment widening sc1's deliberately-internal implementation surface (the interfaceSketch exposes only startTurn, not its internal dispatchState/export-dir machinery) -- a larger, cross-Story change outside this Story's own approval scope, not a small localized amendment",
+          "Still does not solve the DURABLE finalization problem (finding 2) by itself: sc1's dispatchState is per-call, in-memory state, never written to the session file either, so a1's marker extension (or an equivalent) would still be needed on top of it"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Depends on an HLD amendment widening sc1's deliberately-internal surface, outside this Story's own approval scope, and still would not solve the durable-finalization gap by itself."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "testFramework='vitest' is carried from round 3's inference (repo convention), not re-verified by an explicit convention.detect bundle this round.",
+      "Epic constraints (k1-k7) were scored transitively through the Story's acceptance criteria and shared contracts rather than as separate constraintScore rows per alternative.",
+      "Widening session-output.ts's TurnExit/Marker/parseMarker touches generic chat infrastructure that no HLD sharedContract or adjacentBoundary explicitly owns -- flagged for reviewer confirmation that this is acceptable scope for this Story rather than requiring a separate story or HLD back-flow.",
+      "The approval-flag effective-equivalence live verification is still unperformed; it now explicitly gates the migration's cutover (step 12) rather than being an open-ended check with no stated consequence."
+    ],
+    "epicImpact": {
+      "applies": true,
+      "storiesCovered": [
+        "s1"
+      ],
+      "findings": "Epic impact: this analysis covers s1. s1's BUILD (t7 FAILED per the digest) built the shared adapter module (src/shared/vibe-adapter.ts) including the dispatchState model, buildArgv's 2-argument export-directory contract, and the backend's own dispatch/exit-evidence handling -- but s1's own scope stopped at the backend provider; it did not give the plugin chat's direct-spawn vibe branch an equivalent dispatchState/export-directory/durable-terminal-marker mechanism. Rounds 1-3 of this Story's own design progressively underestimated how much of s1's internal machinery (not just its sc1/sc2 contracts) the plugin needs to mirror to get replay-safety and completion-evidence right: round 3 invented a local 'sawRow' heuristic and an untested assumption that the follower's existing missing-result path already classified replay safety, when in fact (a) the adapter's real dispatchState transitions BEFORE the stdin write, (b) the durable record both live and follow readers actually share is session-output.ts's turn-end marker, not run()'s in-memory doneEvent, and (c) buildArgv requires a caller-owned per-turn export directory that round 3 never allocated. Round 4 corrects all three, plus adds a rollout rule for the still-open approval-parity live-verification gap.",
+      "sources": [
+        "src/shared/vibe-adapter.ts:436-490",
+        "src/shared/vibe-adapter.ts:365-375",
+        "src/shared/vibe-adapter.ts:573-595",
+        "vscode-plugin/src/chat/cli-adapter.ts:1260-1285",
+        "vscode-plugin/src/chat/cli-adapter.ts:1636-1693",
+        "vscode-plugin/src/chat/session-output.ts:500-550",
+        ".insrc/artifacts/BUILD-639cd2159a87aedb-s1.json"
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/shared/vibe-adapter.ts:436-490"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:1636-1693"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/session-output.ts:500-550"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/shared/vibe-adapter.ts:365-375"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:1029-1034"
+    }
+  ]
+}

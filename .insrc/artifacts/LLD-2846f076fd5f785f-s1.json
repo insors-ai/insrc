@@ -54,6 +54,15 @@
       "description": "",
       "references": [],
       "attachments": []
+    },
+    "questionResolutions": {
+      "qb5f0cbbd": {
+        "question": "BUILD BLOCKER B1 — The installed native editor remembers global lock state. Identify and prove a supported idempotent per-target lock setter/readback that satisfies ac1 after other tabs are unlocked and on editable reopens. No such API is verified. If unavailable, obtain an explicit upstream acceptance/design amendment; toggling blindly is forbidden.",
+        "status": "resolved",
+        "choice": "Upstream acceptance / design amendment — honor the native editor's remembered mode",
+        "rationale": "User explicitly accepted this change in chat: S001 opens scratchpads in vscode.markdown.editor using its remembered native reading/editing mode and retains native pencil/lock controls. Remove the forced-locked-on-every-open guarantee; no blind toggle, private state edits, or global setting mutations. This records the approved product decision; propagate it into the upstream acceptance/design artifacts and tests before build, rather than claiming a supported lock setter exists. B2 and B3 remain unresolved.",
+        "resolvedAt": "2026-11-27T17:04:19.136Z"
+      }
     }
   },
   "body": {

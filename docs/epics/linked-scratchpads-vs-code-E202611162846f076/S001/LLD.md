@@ -296,6 +296,11 @@ Introduce a native-document controller injected into the scratch host and browse
 - Scope decisions: all existing pre-s7 pads remain in the explicit home scope; s7 must persist association and migrate stable IDs before rename/move/archive. The current resolver is read-only and no s7 metadata persistence is implemented.
 - Visual relevance: identity has only a one-reference-per-note value relationship with no DB/entity changes, so prose suffices without an ERD. Native layout is host-owned; no bespoke UX mock is proposed. The sequence companion documents asynchronous deletion ordering, not proof of live UI.
 
+## Resolved questions
+
+- `qb5f0cbbd` — BUILD BLOCKER B1 — The installed native editor remembers global lock state. Identify and prove a supported idempotent per-target lock setter/readback that satisfies ac1 after other tabs are unlocked and on editable reopens. No such API is verified. If unavailable, obtain an explicit upstream acceptance/design amendment; toggling blindly is forbidden.
+  - **resolved**: Upstream acceptance / design amendment — honor the native editor's remembered mode — User explicitly accepted this change in chat: S001 opens scratchpads in vscode.markdown.editor using its remembered native reading/editing mode and retains native pencil/lock controls. Remove the forced-locked-on-every-open guarantee; no blind toggle, private state edits, or global setting mutations. This records the approved product decision; propagate it into the upstream acceptance/design artifacts and tests before build, rather than claiming a supported lock setter exists. B2 and B3 remain unresolved. _(2026-11-27T17:04:19.136Z)_
+
 ## Citations
 
 - **[[c2]]** `code` `vscode-plugin/src/chat/scratch-store.ts` — "Flat ~/.insrc/scratches/*.md store, basename IDs, guarded read/write."

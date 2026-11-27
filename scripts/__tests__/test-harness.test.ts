@@ -7,6 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 // Script modules deliberately live outside the application's TypeScript include.
 import { assertSupportedVersion, checkedBudgets, childEnvironment, createRun, recoverRun, runtimeContext } from '../test-harness/context.mjs';
+import { compileProbe } from '../test-harness/probe.mjs';
 
 const moduleUrl = pathToFileURL(resolve('scripts/test-harness/context.mjs')).href;
 function temporary(t: { after: (fn: () => void) => void }) {
@@ -119,4 +120,35 @@ test('Malformed lease records and parent symlinks refuse without removal', t => 
 	symlinkSync(destination, join(other, '.insrc'));
 	assert.throws(() => createRun(other), { code: 'harness-context-invalid' });
 	assert.equal(existsSync(join(destination, 'tmp')), false);
+});
+
+test('compileProbe appends --skipLibCheck only when the per-probe skipLibCheck option is set and otherwise leaves its argv unchanged', async t => {
+	const root = temporary(t);
+	const compiler = join(root, 'stub-compiler.cjs');
+	writeFileSync(compiler, 'console.log(JSON.stringify(process.argv.slice(2)));\nconsole.error("probe.ts(1,1): error TS2304: Cannot find name \'x\'.");\nprocess.exit(2);\n');
+	const module = join(root, 'mod.ts');
+	writeFileSync(module, 'export const x = 1;\n');
+	const run = createRun(root);
+	const prevRoot = process.env.INSRC_TEST_ROOT, prevRunId = process.env.INSRC_TEST_RUN_ID;
+	process.env.INSRC_TEST_ROOT = run.record.canonicalRoot;
+	process.env.INSRC_TEST_RUN_ID = run.runId;
+	t.after(() => {
+		if (prevRoot === undefined) delete process.env.INSRC_TEST_ROOT; else process.env.INSRC_TEST_ROOT = prevRoot;
+		if (prevRunId === undefined) delete process.env.INSRC_TEST_RUN_ID; else process.env.INSRC_TEST_RUN_ID = prevRunId;
+	});
+	run.transition('reading');
+	try {
+		const snippet = (specifier: string) => `import { x } from ${JSON.stringify(specifier)};\nconsole.log(x);\n`;
+		const withFlag = await compileProbe({ root, target: module, compiler, snippet, budgetMs: 30000, skipLibCheck: true });
+		const withoutFlag = await compileProbe({ root, target: module, compiler, snippet, budgetMs: 30000 });
+		assert.equal(withFlag.ok, false);
+		assert.equal(withoutFlag.ok, false);
+		assert.match(withFlag.out, /error TS2304:/, 'the stub diagnostic is reported');
+		assert.match(withFlag.out, /"--skipLibCheck"/, 'the flag is appended exactly when the option is set');
+		assert.doesNotMatch(withoutFlag.out, /--skipLibCheck/, 'the default argv is unchanged for every existing caller');
+		assert.match(withoutFlag.out, /"--noEmit"[\s\S]*"--target"[\s\S]*"es2022"/, 'the base argv is intact');
+	} finally {
+		run.transition('draining');
+		run.release({ confirmedClosed: true });
+	}
 });

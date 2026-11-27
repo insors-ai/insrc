@@ -338,7 +338,7 @@ function computeNextAction(epicHash: string, s: NextActionInput): NextAction {
 		if (!s.define.approved) {
 			return {
 				kind: 'approve-define',
-				command: `insrc workflow approve ${s.define.path}`,
+				command: `insrc_workflow_approve({ artifactPath: "${s.define.path}" })`,
 			};
 		}
 		for (const story of s.stories) {
@@ -353,7 +353,7 @@ function computeNextAction(epicHash: string, s: NextActionInput): NextAction {
 				return {
 					kind: 'approve-lld',
 					storyId: story.id,
-					command: `insrc workflow approve ${story.path}`,
+					command: `insrc_workflow_approve({ artifactPath: "${story.path}" })`,
 				};
 			}
 		}
@@ -375,7 +375,7 @@ function computeNextAction(epicHash: string, s: NextActionInput): NextAction {
 	if (!s.define.approved) {
 		return {
 			kind: 'approve-define',
-			command: `insrc workflow approve ${s.define.path}`,
+			command: `insrc_workflow_approve({ artifactPath: "${s.define.path}" })`,
 		};
 	}
 	// 2. Pending amendments block downstream: surface them first.
@@ -396,7 +396,7 @@ function computeNextAction(epicHash: string, s: NextActionInput): NextAction {
 	if (!s.hld.approved) {
 		return {
 			kind: 'approve-hld',
-			command: `insrc workflow approve ${s.hld.path}`,
+			command: `insrc_workflow_approve({ artifactPath: "${s.hld.path}" })`,
 		};
 	}
 	// 4. LLDs: pick the first Story that's missing OR stale OR unapproved.
@@ -419,7 +419,7 @@ function computeNextAction(epicHash: string, s: NextActionInput): NextAction {
 			return {
 				kind: 'approve-lld',
 				storyId: story.id,
-				command: `insrc workflow approve ${story.path}`,
+				command: `insrc_workflow_approve({ artifactPath: "${story.path}" })`,
 			};
 		}
 	}
@@ -435,7 +435,7 @@ function computeNextAction(epicHash: string, s: NextActionInput): NextAction {
 	if (s.tracker.lastSyncedAt === undefined) {
 		return {
 			kind: 'sync-tracker',
-			command: `insrc workflow sync ${epicHash}`,
+			command: `insrc_workflow_step phase=start workflow=tracker.sync focus="sync ${epicHash} from GitHub" params={"epicHash":"${epicHash}"}`,
 		};
 	}
 	return { kind: 'chain-complete' };

@@ -1,0 +1,69 @@
+{
+  "observedAt": "2026-11-27T16:53:04.914Z",
+  "guest": {
+    "node": "v22.22.1",
+    "os": "darwin",
+    "arch": "arm64",
+    "uid": 501
+  },
+  "root": "/Users/insrc/iq-wZetTc",
+  "source": "/Users/insrc/insrc-foundation-888dfe714",
+  "attemptId": "64105aef-6036-461a-b20b-eab13556431c",
+  "workerRunId": "37f43e6d-b140-40e2-b529-62c72759cb0f",
+  "checkpointStage": "building",
+  "guard": {
+    "confirmed": false,
+    "code": "preparation-uncertain",
+    "message": "Preparation result/ownership could not be confirmed; retain this attempt",
+    "causeCode": "ENOENT"
+  },
+  "privateFiles": [
+    "identity.json",
+    "worker.lock"
+  ],
+  "workerLeasePresent": true,
+  "cleanupPresent": false,
+  "journals": {
+    "admissions": 24,
+    "closes": 24,
+    "disposals": 24,
+    "identitiesMatch": true,
+    "allDisposalsClosed": true
+  },
+  "before": {
+    "checkpointSha256": "aa8e38ce7e4eb9f6c863eb09d109f141786cb9bd14a3481e7a83c35dd6059287",
+    "leaseSha256": "7d1d6a6e489f98aabb7404c9870914c927267d756042ee185f8c9caeade789e3",
+    "identitySha256": "4e3f35770f4d636b29f67eccbeb4bdef3f13bd87f3b55fd0281e5f255f9f226a",
+    "stage": {
+      "dev": 16777234,
+      "ino": 488468,
+      "mtimeMs": 1795777015502.7024
+    }
+  },
+  "after": {
+    "checkpointSha256": "aa8e38ce7e4eb9f6c863eb09d109f141786cb9bd14a3481e7a83c35dd6059287",
+    "leaseSha256": "7d1d6a6e489f98aabb7404c9870914c927267d756042ee185f8c9caeade789e3",
+    "identitySha256": "4e3f35770f4d636b29f67eccbeb4bdef3f13bd87f3b55fd0281e5f255f9f226a",
+    "stage": {
+      "dev": 16777234,
+      "ino": 488468,
+      "mtimeMs": 1795777015502.7024
+    }
+  },
+  "retainedEvidenceUnchanged": true,
+  "newQualificationStarted": false,
+  "guestSourceCommit": "f5e9f2afe1de462870fac5829878da93b0c0537d",
+  "utm": {
+    "uuid": "E9BAC3AF-0AA7-482E-B675-0786A751640B",
+    "initialState": "started",
+    "gracefulRequest": {
+      "command": "utmctl stop --request --hide",
+      "cliExitCode": 0,
+      "error": "OSStatus -10004",
+      "stateAfter": "started",
+      "shutdownConfirmed": false
+    },
+    "forceOrKillUsed": false
+  },
+  "status": "blocked-before-admission"
+}

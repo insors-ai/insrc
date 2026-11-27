@@ -482,6 +482,50 @@ test('resolveOpenableArtifacts returns a non-standalone BUILD with no CR sibling
 	} finally { cleanup(repo); }
 });
 
+// ISSUE-9c95950064e4b916 (manual review finding #2): resolveOpenableArtifacts must reuse
+// toDescriptor's BUILD existence/marker check and AMD empty-path sentinel via the shared
+// mdPathForKind helper, not derive a path uniformly for every kind.
+
+test("resolveOpenableArtifacts returns '' for a BUILD record with no matching BUILD.md", () => {
+	const repo = fixtureRepo({ [`${BUILD_ID}.json`]: buildRecord() });
+	try {
+		const b = resolveOpenableArtifacts(repo).find(a => a.artifactId === BUILD_ID);
+		assert.ok(b, 'the BUILD record is still openable by id');
+		assert.equal(b.mdPath, '', 'no fabricated path when the BUILD.md its fields derive does not exist');
+	} finally { cleanup(repo); }
+});
+
+test("resolveOpenableArtifacts returns '' for a BUILD record whose BUILD.md exists but carries a different record's marker", () => {
+	const repo = fixtureRepo({ [`${BUILD_ID}.json`]: buildRecord() });
+	try {
+		writeBuildMd(repo, buildMeta(), `<!-- insrc:artifact BUILD-${HASH}-s2 -->\n\n# Build\n`);
+		const b = resolveOpenableArtifacts(repo).find(a => a.artifactId === BUILD_ID);
+		assert.ok(b);
+		assert.equal(b.mdPath, '', "another record's marker is never mistaken for this record's path");
+	} finally { cleanup(repo); }
+});
+
+test('resolveOpenableArtifacts returns the derived path for a BUILD record whose BUILD.md exists and carries its own marker', () => {
+	const repo = fixtureRepo({ [`${BUILD_ID}.json`]: buildRecord() });
+	try {
+		const md = writeBuildMd(repo, buildMeta(), `${MARKER}\n\n# Build — Story S001\n`);
+		const b = resolveOpenableArtifacts(repo).find(a => a.artifactId === BUILD_ID);
+		assert.ok(b);
+		assert.equal(b.mdPath, md, 'matches listPendingArtifacts exactly -- both now derive mdPath through the same mdPathForKind helper');
+	} finally { cleanup(repo); }
+});
+
+test("resolveOpenableArtifacts returns '' for an AMD record, never a fabricated AMD.md path", () => {
+	const repo = fixtureRepo({
+		[`AMD-${HASH}-1.json`]: { meta: { epicHash: HASH, epicCreatedAt: CREATED, ...draftMeta() }, body: {} },
+	});
+	try {
+		const a = resolveOpenableArtifacts(repo).find(x => x.artifactId === `AMD-${HASH}-1`);
+		assert.ok(a, 'the AMD record is still openable by id');
+		assert.equal(a.mdPath, '', 'an amendment is a JSON record with no document -- never a fabricated AMD.md path');
+	} finally { cleanup(repo); }
+});
+
 test('resolveOpenableArtifacts excludes a non-PENDING_KINDS file (e.g. an EPIC/STORY/TASK record)', () => {
 	const repo = fixtureRepo({
 		'LLD-238917216d8fd532-s1.json': { meta: { epicHash: HASH, epicCreatedAt: CREATED, storyId: 's1', ...draftMeta() }, body: { title: 's1' } },

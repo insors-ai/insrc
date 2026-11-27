@@ -192,10 +192,21 @@ export function resolveOpenableArtifacts(repoPath: string): readonly OpenableArt
 		}
 
 		const artifactId = file.replace(/\.json$/, '');
-		const mdPath = deriveMdPath(repoPath, kind as ArtifactKind, art.meta ?? {});
+		const mdPath = mdPathForKind(repoPath, kind as PendingKind, artifactId, art.meta ?? {});
 		out.push({ artifactId, mdPath });
 	}
 	return out;
+}
+
+/** The rendered-document path rule for one artifact kind, shared by toDescriptor
+ *  and resolveOpenableArtifacts so the two scanners can never diverge on it
+ *  (ISSUE-9c95950064e4b916): '' for AMD (a JSON-only record with no document),
+ *  buildRecordMdPath's existence+marker-checked result for BUILD, deriveMdPath
+ *  for every other kind. */
+function mdPathForKind(repoPath: string, kind: PendingKind, artifactId: string, meta: Readonly<Record<string, unknown>>): string {
+	return kind === 'BUILD' ? buildRecordMdPath(repoPath, artifactId, meta)
+		: kind === 'AMD' ? ''   // an amendment is a JSON record with no document; the pane opens it by id (ISSUE-6dbf14435972af7a)
+		: deriveMdPath(repoPath, kind as ArtifactKind, meta);
 }
 
 /**
@@ -235,9 +246,7 @@ function toDescriptor(repoPath: string, file: string, kind: PendingKind, art: Ar
 		artifactId,
 		kind,
 		title:  deriveTitle(kind, meta, body, workItemId, artifactId),
-		mdPath: kind === 'BUILD' ? buildRecordMdPath(repoPath, artifactId, meta)
-			: kind === 'AMD' ? ''   // an amendment is a JSON record with no document; the pane opens it by id (ISSUE-6dbf14435972af7a)
-			: deriveMdPath(repoPath, kind, meta),
+		mdPath: mdPathForKind(repoPath, kind, artifactId, meta),
 		openQuestionCount,
 		state:  'pending',
 	};

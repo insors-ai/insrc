@@ -6,19 +6,20 @@
  *  - ONE shared row map — every CONFIG_CATALOG row whose `insrc.<path>` key is not
  *    plugin-local (the key map's isPluginLocalKey: `insrc.chat.*` and the
  *    `insrc.models.tasks.*` prefix) — drives BOTH update and insertion of
- *    catalog-backed keys, so the two cannot drift apart. A row the catalog no
- *    longer has is removed; a new row is added to the section titled with its
- *    group, and a missing group section is CREATED (never thrown).
+ *    catalog-backed keys, so the two cannot drift apart. A new row is added to
+ *    the section titled with its group, and a missing group section is CREATED
+ *    (never thrown). A key for a declared-RETIRED path (RETIRED_PATHS) is dead
+ *    config and removed; any other non-catalog key is a plugin-local property
+ *    and survives everywhere.
  *  - A separate taxonomy pass owns the ENTIRE per-role prefix: every
  *    `insrc.models.tasks.*` key in every section is deleted, then the canonical
  *    per-role section is regenerated from buildPerRoleKeyMap() (created if
  *    missing; existing key order kept, new roles appended in taxonomy order).
  *  - Duplicate-titled sections consolidate losslessly: the FIRST keeps its title
  *    and all section-level metadata; properties merge first-wins in section
- *    order, so distinct local keys of later duplicates survive. The same
- *    NON-ROLE key with conflicting schemas in duplicate sections is refused with
- *    a `sync-duplicate-conflict` diagnostic (role keys are exempt — the taxonomy
- *    pass regenerates them canonically).
+ *    order, so distinct local keys of later duplicates survive. The SAME key
+ *    with CONFLICTING schemas in duplicate sections (compared key-order-
+ *    insensitively) is refused with a `sync-duplicate-conflict` diagnostic.
  *  - Plugin-local keys are preserved everywhere, including inside the canonical
  *    per-role section. Stored setting VALUES are never rewritten — schemas and
  *    defaults only. The tier rows (models.tiers.<tier>.runner/.model/.effort)
@@ -37,7 +38,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 // SYNC_MANIFEST_PKG: another manifest to sync (tests run it on a temp copy).
 const pkgPath = process.env.SYNC_MANIFEST_PKG ?? join(here, '..', 'package.json');
-const { CONFIG_CATALOG } = await import(pathToFileURL(join(here, '..', '..', 'src', 'config', 'config-catalog.ts')).href);
+const { CONFIG_CATALOG, RETIRED_PATHS } = await import(pathToFileURL(join(here, '..', '..', 'src', 'config', 'config-catalog.ts')).href);
 const { isPluginLocalKey: isLocal, buildPerRoleKeyMap, PER_ROLE_PATH_PREFIX } = await import(pathToFileURL(join(here, '..', 'src', 'config', 'key-map.ts')).href);
 
 /** A tier row: its valid values are the daemon's definitions, not a list in the manifest. */
@@ -56,13 +57,27 @@ const jsonType = (t) => (t === 'enum' ? 'string' : t);
 const ROLE_KEY_PREFIX = 'insrc.' + PER_ROLE_PATH_PREFIX;
 const isRoleKey = (key) => key.startsWith(ROLE_KEY_PREFIX);
 
+/** Whether a catalog dot-path is declared retired (exact leaf or prefix subtree):
+ *  a manifest key for a retired path is dead config and is removed; any OTHER
+ *  non-catalog key is a plugin-local property and is preserved. */
+const isRetiredPath = (path) => RETIRED_PATHS.some((r) => r.prefix ? path === r.path || path.startsWith(r.path + '.') : path === r.path);
+
+/** JSON.stringify with object keys sorted recursively, so two schemas that
+ *  differ only in key order compare EQUAL (no false conflict). */
+function stableStringify(value) {
+	if (Array.isArray(value)) return '[' + value.map(stableStringify).join(',') + ']';
+	if (value !== null && typeof value === 'object') {
+		return '{' + Object.keys(value).sort().map((k) => JSON.stringify(k) + ':' + stableStringify(value[k])).join(',') + '}';
+	}
+	return JSON.stringify(value);
+}
+
 /**
  * Merge duplicate-titled sections into the first of each title, losslessly: the
  * first keeps its title and ALL section-level metadata; properties merge
  * first-wins in section order, so distinct local keys of later duplicates
- * survive. The same non-role key with CONFLICTING schemas in duplicate sections
- * is refused — it cannot be repaired safely (role keys are exempt: the taxonomy
- * pass regenerates them canonically). Returns the consolidated section list.
+ * survive. The SAME key with CONFLICTING schemas in duplicate sections is
+ * refused — it cannot be repaired safely. Returns the consolidated section list.
  */
 function consolidateSections(sections) {
 	const out = [];
@@ -80,7 +95,7 @@ function consolidateSections(sections) {
 		const firstProps = (first.properties ??= {});
 		for (const [key, schema] of Object.entries(section.properties ?? {})) {
 			if (key in firstProps) {
-				if (!isRoleKey(key) && JSON.stringify(firstProps[key]) !== JSON.stringify(schema)) {
+				if (stableStringify(firstProps[key]) !== stableStringify(schema)) {
 					throw new Error(`sync-manifest-catalog: sync-duplicate-conflict: '${key}' is declared with conflicting schemas in the duplicate sections titled '${title}' (#${firstIndex + 1} and #${index + 1}); resolve the conflict by hand`);
 				}
 				continue; // first wins
@@ -139,9 +154,14 @@ export function syncManifest(pkg, catalog) {
 	const seen = new Set();
 	for (const section of sections) {
 		for (const key of Object.keys(section.properties ?? {})) {
-			if (isLocal(key)) continue;
+			if (isLocal(key)) continue; // plugin-local keys survive everywhere
 			const row = rows.get(key);
-			if (row === undefined) { delete section.properties[key]; continue; }
+			if (row === undefined) {
+				// Not a catalog row: a declared-RETIRED path is removed; any other
+				// non-role property survives everywhere.
+				if (isRetiredPath(key.slice('insrc.'.length))) delete section.properties[key];
+				continue;
+			}
 			seen.add(key);
 			section.properties[key] = schemaOf(section.properties[key], row);
 		}

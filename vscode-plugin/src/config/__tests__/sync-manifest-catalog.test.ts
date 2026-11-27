@@ -69,7 +69,6 @@ test('sync-manifest-catalog.test.ts: the committed manifest is in sync, and the 
     tiers.properties['insrc.models.tiers.core.model']!['default'] = '';
     delete tiers.properties['insrc.models.tiers.cheap.effort'];
     section(stale, 'Models — shaper').properties['insrc.models.shaper.ollamaNumCtx'] = { type: 'number', default: 32768, scope: 'machine' };
-    section(stale, 'General').properties['insrc.retired.global'] = { type: 'string', default: 'x', scope: 'machine' };
   });
   try {
     assert.equal(sync(copy, '--check').status, 1, 'a stale manifest fails --check');
@@ -105,7 +104,6 @@ test('sync-manifest-catalog.test.ts: a stale copy missing the security section a
     tiers.properties['insrc.models.tiers.core.model']!['default'] = '';
     delete tiers.properties['insrc.models.tiers.cheap.effort'];
     section(stale, 'Models — shaper').properties['insrc.models.shaper.ollamaNumCtx'] = { type: 'number', default: 32768, scope: 'machine' };
-    section(stale, 'General').properties['insrc.retired.global'] = { type: 'string', default: 'x', scope: 'machine' };
   });
   try {
     const check = sync(copy, '--check');
@@ -166,20 +164,26 @@ test('sync-manifest-catalog.test.ts: duplicate per-role sections consolidate los
     perRole['markdownDescription'] = 'canonical section note'; // section-level metadata on the FIRST
     const dup: Section = JSON.parse(JSON.stringify(perRole));
     dup['markdownDescription'] = 'duplicate note'; // must be dropped — the first keeps its metadata
-    dup.properties['insrc.chat.dupOnly'] = { type: 'boolean', default: true, scope: 'machine' }; // distinct local key, merged in
+    dup.properties['insrc.chat.dupOnly'] = { type: 'boolean', default: true, scope: 'machine' }; // distinct chat-local key, merged in
+    dup.properties['insrc.custom.local'] = { type: 'string', default: 'keep', scope: 'machine' }; // distinct NON-role local key, merged in and preserved
     const roleKey = Object.keys(perRole.properties).find((k) => k.startsWith('insrc.models.tasks.'))!;
-    dup.properties[roleKey] = { type: 'string', enum: ['cheap'], default: 'cheap', scope: 'machine' }; // conflicting ROLE schema — exempt, regenerated
+    // Same role schema with REORDERED fields: equal, not conflicting — must consolidate, not refuse.
+    const reordered: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(perRole.properties[roleKey]!).reverse()) reordered[k] = v;
+    dup.properties[roleKey] = reordered;
     stale.contributes.configuration.push(dup);
   });
   try {
-    assert.equal(sync(a.copy).status, 0, 'duplicate-titled sections consolidate');
+    assert.equal(sync(a.copy).status, 0, 'duplicate-titled sections consolidate (reordered equal schemas do not conflict)');
     const repaired = JSON.parse(readFileSync(a.copy, 'utf8')) as Manifest;
     const withTitle = repaired.contributes.configuration.filter((s) => s.title === PER_ROLE_TITLE);
     assert.equal(withTitle.length, 1, 'one canonical section survives');
     assert.equal(withTitle[0]!['markdownDescription'], 'canonical section note', 'the FIRST section keeps its metadata');
-    assert.deepEqual(withTitle[0]!.properties['insrc.chat.dupOnly'], { type: 'boolean', default: true, scope: 'machine' }, 'the duplicate\'s distinct local key is merged first-wins');
+    assert.deepEqual(withTitle[0]!.properties['insrc.chat.dupOnly'], { type: 'boolean', default: true, scope: 'machine' }, 'the duplicate\'s distinct chat-local key is merged first-wins');
+    assert.deepEqual(withTitle[0]!.properties['insrc.custom.local'], { type: 'string', default: 'keep', scope: 'machine' }, 'a merged NON-role local property survives everywhere');
     const expected = committed();
     section(expected, PER_ROLE_TITLE).properties['insrc.chat.dupOnly'] = { type: 'boolean', default: true, scope: 'machine' };
+    section(expected, PER_ROLE_TITLE).properties['insrc.custom.local'] = { type: 'string', default: 'keep', scope: 'machine' };
     (section(expected, PER_ROLE_TITLE) as Section)['markdownDescription'] = 'canonical section note';
     assert.deepEqual(repaired, expected, 'consolidation is lossless apart from the dropped duplicate metadata');
   } finally {

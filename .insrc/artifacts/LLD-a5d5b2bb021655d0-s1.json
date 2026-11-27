@@ -1,0 +1,939 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795787623125-0c9h3u",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-27T13:53:56.050Z",
+    "epicCreatedAt": "2026-11-27T13:29:55.493Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 12722,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a5d5b2bb021655d0",
+    "epicSlug": "propagate-longer-time-budgets-through-installer",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1795787623125-0c9h3u",
+    "hldEffectiveHash": "4d00a48b868b1fed99675a3c30f0abd14b9123b3063bc0908966aa86de5ba839",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Propagate longer time budgets through installer qualification",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2d8d50d15253c6f50aa737e9eb67754835303ac7879dd9a750f96183b9054bc8",
+        "at": "2026-11-27T13:53:56.150Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T14:16:44.372Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "d2ec7699868661fa5d978d63cebaedfab0d99e68"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Propagate longer time budgets through installer qualification"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "summary": {
+      "prose": "Add an explicit qualification profile for slow USB-backed VMs, with larger finite allowances reaching every nested preparation and runtime I/O scope. Normal operation keeps its existing numeric defaults. The design preserves exact integrity, durable writes, cancellation and ownership proof, while exposing the selected budgets in native evidence. [[c3]]",
+      "audience": "technical"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "checkedBudgets",
+          "signature": "checkedBudgets(overrides?: Partial<BuildRun['budgets']>): BuildRun['budgets']",
+          "parameters": [
+            {
+              "name": "overrides",
+              "type": "Partial<BuildRun['budgets']>",
+              "purpose": "Explicit per-scope ceilings, including deliberately short test clocks; overlay selected coordinator defaults.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "BuildRun['budgets']",
+            "meaning": "Exactly buildMs/fileMs/runMs/cleanupMs, all positive safe integer milliseconds."
+          },
+          "errors": [
+            {
+              "type": "qualification-profile-invalid",
+              "condition": "The process selector is present but is not normal or slow-vm."
+            },
+            {
+              "type": "harness-context-invalid",
+              "condition": "An override has an unknown key or a nonpositive/noninteger/nonfinite value."
+            }
+          ],
+          "preconditions": [
+            "The fixed qualification policy is selected once when its side-effect-free module is imported; select the environment before starting Node. [[c1]] [[c2]] [[c3]]",
+            "No numeric duration is accepted from the profile environment selector. [[c1]] [[c2]] [[c3]]"
+          ],
+          "postconditions": [
+            "Normal behavior remains byte-for-byte equivalent in numeric defaults. [[c1]] [[c2]] [[c3]]",
+            "Explicit overrides remain last and are never multiplied, allowing accelerated negative tests. [[c1]] [[c2]] [[c3]]",
+            "No filesystem/network/process operation is performed by policy selection or budget validation. [[c1]] [[c2]] [[c3]]"
+          ]
+        },
+        {
+          "name": "createRun",
+          "signature": "createRun(root: string, options?: { mode?: 'test' | 'build'; selectedFiles?: string[]; budgets?: Partial<BuildRun['budgets']>; runId?: string }): BuildRun",
+          "parameters": [
+            {
+              "name": "root",
+              "type": "string",
+              "purpose": "Existing canonical root whose lease is acquired by the existing coordinator.",
+              "optional": false
+            },
+            {
+              "name": "options",
+              "type": "Run options",
+              "purpose": "Existing scope metadata and explicit role budgets; callers pass selected role values instead of leaving hidden defaults.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "BuildRun",
+            "meaning": "Existing retained owner with resolved numeric budgets and unchanged persisted lease schema."
+          },
+          "errors": [
+            {
+              "type": "Error & { code: 'harness-context-invalid' | 'harness-busy' | 'harness-runtime-unsupported' | 'qualification-profile-invalid' }",
+              "condition": "Invalid budget/profile/runtime/root or an existing active lease; reject before admitting work."
+            }
+          ],
+          "preconditions": [
+            "Profile is selected before any operation-root allocation. [[c1]] [[c2]] [[c3]]",
+            "The manager uses its manager role, worker uses coordinator role, qualification uses qualification role, and Git resolution uses its existing narrow scope with its selected role override. [[c1]] [[c2]] [[c3]]"
+          ],
+          "postconditions": [
+            "Every child environment carries the canonical fixed profile name, including private npm aliases and worker launch; no process.env mutation is used to switch a live process. [[c1]] [[c2]] [[c3]]",
+            "Normal role caps match existing explicit defaults/overrides; slow-vm roles are all at least their normal role values. [[c1]] [[c2]] [[c3]]",
+            "Actual budgets remain present in existing run.json records for independent audit. [[c1]] [[c2]] [[c3]]"
+          ]
+        },
+        {
+          "name": "launchDevWorker",
+          "signature": "launchDevWorker(scope: CommandScope, location: InstallationLocation, record: DevPreparationRecord, options: { entrypoint: string; signal?: AbortSignal; ownerInput?: Readable; environment: NodeJS.ProcessEnv; budgetMs?: number; deadline?: Readonly<{ expiresAt: number; reserveMs: number }> }): Promise<DevPreparationResult>",
+          "parameters": [
+            {
+              "name": "scope",
+              "type": "CommandScope",
+              "purpose": "Existing retained manager command owner.",
+              "optional": false
+            },
+            {
+              "name": "location",
+              "type": "InstallationLocation",
+              "purpose": "Exact isolated installation identity.",
+              "optional": false
+            },
+            {
+              "name": "record",
+              "type": "DevPreparationRecord",
+              "purpose": "Existing accepted attempt and worker binding.",
+              "optional": false
+            },
+            {
+              "name": "options",
+              "type": "Existing launch options plus optional local deadline",
+              "purpose": "Carry canonical profile through environment; deadline is monotonic parent-process state, never JSON, IPC or persisted authority.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<DevPreparationResult>",
+            "meaning": "Existing qualified final result only after actual child and coordinator closure."
+          },
+          "errors": [
+            {
+              "type": "InstallerError('source-build-failed')",
+              "condition": "The selected parent allowance is exhausted before worker admission; no worker is spawned."
+            },
+            {
+              "type": "InstallerError('preparation-uncertain' | 'source-cancelled' | 'runtime-invalid')",
+              "condition": "Existing identity/ownership, actual closure, explicit cancellation or canonical runtime checks fail."
+            }
+          ],
+          "preconditions": [
+            "ownedScope captures its monotonic expiry when admitting manager work and passes it through this same parent process. [[c1]] [[c2]] [[c3]]",
+            "After runtime verification, immediately before scope.start, cap the child allowance by the selected worker cap, any explicit budgetMs and positive parent remaining time minus the manager cleanup reserve. [[c1]] [[c2]] [[c3]]",
+            "The worker receives only the canonical profile environment name; DevWorkerLaunch JSON is unchanged. [[c1]] [[c2]] [[c3]]"
+          ],
+          "postconditions": [
+            "Runtime verification/setup cannot consume the child's reserved cleanup time unnoticed. [[c1]] [[c2]] [[c3]]",
+            "Larger allowances never delay explicit cancellation; it still uses the existing cancel frame and retained owned-process coordinator. [[c1]] [[c2]] [[c3]]",
+            "Worker lifetime, manager cooperative drain and outer cancellation reserves are ordered so a child can attempt complete finalization before forced disposal; uncertainty still blocks handoff. [[c1]] [[c2]] [[c3]]"
+          ]
+        },
+        {
+          "name": "qualifyRuntimeFoundation",
+          "signature": "qualifyRuntimeFoundation(options?: { parent?: string; baseline?: string }): Promise<string>",
+          "parameters": [
+            {
+              "name": "options",
+              "type": "Existing parent/baseline options",
+              "purpose": "Choose a fresh evidence root and target baseline; profile is selected in the starting process environment.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<string>",
+            "meaning": "Existing result.json path, containing actual profile/caps as qualification evidence."
+          },
+          "errors": [
+            {
+              "type": "Error & { code: 'qualification-profile-invalid' }",
+              "condition": "Unsupported selector before a fresh home or lease is allocated."
+            },
+            {
+              "type": "AssertionError | InstallerError | DOMException | (Error & { code: 'harness-interrupted' | 'harness-cleanup-unconfirmed' })",
+              "condition": "An actual stage/integrity/native assertion, cancellation/deadline or positive closure check fails; preserve result and evidence."
+            }
+          ],
+          "preconditions": [
+            "Opt in using INSRC_QUALIFICATION_PROFILE=slow-vm before Node starts; absent/normal retains current role budgets. [[c1]] [[c2]] [[c3]]",
+            "Select the outer role before copying resources or allocating the evidence root. [[c1]] [[c2]] [[c3]]",
+            "The outer run's wall-clock cancellation is also connected to the qualification AbortController passed into acquisition/preparation, including in-process packaging. [[c1]] [[c2]] [[c3]]"
+          ],
+          "postconditions": [
+            "Outer cancellation propagates across independently owned manager and worker scopes; it is not limited to children directly registered with the outer scope. [[c1]] [[c2]] [[c3]]",
+            "Record profile, resolved role table and actual observed outcomes at the beginning of result.json; profile metadata is evidence, never an enablement or success claim. [[c1]] [[c2]] [[c3]]",
+            "The outer work allowance is five hours in slow-vm mode with a separately counted bounded final drain; a containing operator budget must include final drain and diagnostic headroom. [[c1]] [[c2]] [[c3]]",
+            "No host daemon/Ollama start, release enablement, automatic retry or old-attempt adoption is added. [[c1]] [[c2]] [[c3]]"
+          ]
+        },
+        {
+          "name": "closedRuntimeOperation",
+          "signature": "closedRuntimeOperation<T>(operation: Promise<T>, signal: AbortSignal): Promise<T>",
+          "parameters": [
+            {
+              "name": "operation",
+              "type": "Promise<T>",
+              "purpose": "Existing owned runtime I/O work, including its actual file/network/parser closure.",
+              "optional": false
+            },
+            {
+              "name": "signal",
+              "type": "AbortSignal",
+              "purpose": "Existing cancellation/deadline signal.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<T>",
+            "meaning": "Actual operation result or explicit uncertainty after the selected finite drain."
+          },
+          "errors": [
+            {
+              "type": "resource-close-uncertain",
+              "condition": "Actual resource closure is not confirmed within the selected drain interval."
+            }
+          ],
+          "preconditions": [
+            "Existing resource-drain guard is selected from the same process policy: five seconds normal, thirty seconds slow-vm. [[c1]] [[c2]] [[c3]]",
+            "A synchronous close has no invented asynchronous timeout; closeOwnedFile/Descriptor still require actual successful close. [[c1]] [[c2]] [[c3]]"
+          ],
+          "postconditions": [
+            "A timeout never counts as closure and never authorizes deleting a live/unknown stage. [[c1]] [[c2]] [[c3]]",
+            "ZIP decoder and enclosing download/file drain guards use the selected interval; no five-second literal silently truncates slow-vm work. [[c1]] [[c2]] [[c3]]"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "QualificationTimeBudgetPolicy",
+        "change": "new",
+        "details": "Proposed pure JS source src/installer/qualification-time-budgets.mjs with adjacent qualification-time-budgets.d.mts declaration. It exports one deeply frozen process-local QUALIFICATION_TIME_BUDGETS value selected once from INSRC_QUALIFICATION_PROFILE (absent/normal or slow-vm only). Reading the environment and validating the enum are the only import-time effects: no filesystem, network, application state, CLI provider or source-builder imports. One Node process owns exactly one selected policy for its lifetime; that value supplies zero or more scopes. Child processes independently load the same compiled table from the canonical inherited profile name. There is no persistent entity, foreign key or new wire field, so an ER diagram is unnecessary. Unknown values fail before work; changing the environment after import cannot change admitted budgets. [[c1]] [[c2]] [[c3]]",
+        "callSites": [
+          "scripts/test-harness/context.mjs",
+          "src/installer/runtime-metadata.ts",
+          "src/installer/dev-delivery.ts",
+          "src/installer/dev-worker.ts",
+          "scripts/qualify-runtime-foundation.mjs"
+        ]
+      },
+      {
+        "entity": "Role budget table",
+        "change": "invariant-change",
+        "details": "All durations below are milliseconds in code and are finite safe integers. Normal numeric defaults stay as they are. Slow-vm coordinator/worker: build40min,file40min,run4h,cleanup30s. Slow-vm manager: build40min,file40min,run4h,cleanup120s; its larger cooperative parent reserve contains the worker's30s drain and final evidence writes. Slow-vm qualification: build2h,file2h,run5h,cleanup5min; this raises the existing1h qualification override instead of lowering it to the issue's proposed general40min value. Git reference scope: normal file30s/run40s/cleanup5s; slow-vm file120s/run180s/cleanup30s. Runtime acquisition/download/extraction: normal10min,slow-vm40min; read-only verification/publication: normal2min,slow-vm8min; existing resource/decoder drain: normal5s,slow-vm30s. Larger explicit per-role caps are preserved; short intentional test overrides remain exact. Parent-child remaining-time calculation and cooperative cleanup reserves take precedence over a nominal full child cap. [[c1]] [[c2]] [[c3]]",
+        "callSites": [
+          "scripts/test-harness/context.mjs",
+          "scripts/test-harness/process.mjs",
+          "src/installer/dev-git.ts",
+          "src/installer/dev-delivery.ts",
+          "src/installer/dev-worker.ts",
+          "src/installer/runtime-metadata.ts",
+          "src/installer/runtime-acquire.ts",
+          "src/installer/runtime-store.ts",
+          "src/installer/controller-store.ts",
+          "src/installer/bootstrap-foundation.ts",
+          "src/installer/runtime-archive.ts",
+          "src/installer/download.ts",
+          "scripts/qualify-runtime-foundation.mjs"
+        ]
+      },
+      {
+        "entity": "Runtime limits and helper coverage",
+        "change": "invariant-change",
+        "details": "RUNTIME_LIMITS retains its existing object shape, profile/size/count limits and normal timing values; only its time fields come from the selected fixed policy. Update every existing acquisition, read-only store/publication/bootstrap and downloader timeout consumer, plus runtime abort-drain and ZIP memory-entry closure. downloadBoundedAsset continues consuming its owning operation's signal rather than creating a shorter nested timer. Generic downloadJson/downloadVerifiedAsset use the selected download allowance. owned-file close functions have no existing standalone timer to increase; retain actual close semantics and rely on the selected enclosing operation/drain. Do not invent successful closure or silently treat an unbounded await as proof. Shared test-harness process drain already uses run.budgets.cleanupMs; the correct role value must reach it. No change to exact hashes, safe archive rules, file size/count limits, durable writes or foreign-target admission. [[c1]] [[c2]] [[c3]]",
+        "callSites": [
+          "src/installer/runtime-metadata.ts",
+          "src/installer/runtime-acquire.ts",
+          "src/installer/runtime-store.ts",
+          "src/installer/bootstrap-foundation.ts",
+          "src/installer/controller-store.ts",
+          "src/installer/download.ts",
+          "src/installer/runtime-archive.ts",
+          "src/installer/owned-file.ts",
+          "scripts/test-harness/process.mjs"
+        ]
+      },
+      {
+        "entity": "Policy resource publication and imports",
+        "change": "new",
+        "details": "Dependency directions are scripts/test-harness/context.mjs -> source policy MJS, and installer TS modules -> the adjacent policy MJS. The policy imports neither consumer; read-only runtime resolution does not import test-harness context or application/source-builder code. copy-assets.mjs explicitly copies the single source policy resource to out/installer/qualification-time-budgets.mjs and verifies its bytes. TypeScript sees the adjacent .d.mts declaration. There is exactly one source policy asset per checkout and one copied policy asset per built output; esbuild includes that same resource in control bundles. Existing full-out collection/provenance and native/build inventories must include it, with no descriptor/receipt/manifest format change and no extra source/tooling directories shipped. No separate generated policy implementation is permitted. [[c1]] [[c2]] [[c3]]",
+        "callSites": [
+          "copy-assets.mjs",
+          "scripts/package-installer.mjs",
+          "scripts/installer-payload.mjs",
+          "src/installer/dev-payload.ts",
+          "scripts/test-harness/build.mjs"
+        ]
+      },
+      {
+        "entity": "CI and operator containment",
+        "change": "invariant-change",
+        "details": "Only the manual runtime-foundation job is affected; backend20min behavior is unchanged. Expose the same fixed normal/slow-vm selection for that validation scope, propagate it to the complete job environment, and replace its containing60min limit with the supported360min maximum when slow-vm is selected. Normal runtime-foundation containment must cover its existing2h qualifier and preflight as well; use240min rather than retaining a shorter60min cap. Hosted runners have an official6h maximum (https://docs.github.com/en/actions/reference/limits). In slow-vm mode bound checkout/SDK/preflight+selected surrounding tests to a combined at-most40min work allowance plus at-most5min setup/drain, reserve at-most5h for qualification work plus at-most7min cascading manager/outer cleanup, and reserve diagnostic upload time within360min. Refuse before native admission if remaining hosted job allowance cannot contain the selected qualifier and cleanup; never silently shorten it. Reuse existing owned coordinator boundaries for preflight, not an unmanaged detached test runner. Local detached VM supervisors must allow the five-hour work plus cleanup and diagnostics; record that containing ceiling and never reuse the old two-hour/90-minute supervisor caps. This does not authorize dispatching the Windows job before its separate ownership prerequisite is ready. [[c3]] [[c5]]",
+        "callSites": [
+          "scripts/qualify-runtime-foundation.mjs",
+          "scripts/test-harness/context.mjs",
+          "scripts/test-harness/process.mjs"
+        ]
+      },
+      {
+        "entity": "Evidence and compatibility",
+        "change": "field-add",
+        "details": "Add the selected profile and resolved time-budget table only to the diagnostic native-qualification result (not RuntimeIdentity, ReleaseManifest, DevWorkerLaunch, installation/controller snapshots, run lease schema or completion receipts). Existing run records already contain actual numeric budgets and remain the proof for each scope. Published runtime integrity inventories remain policy-bound and time-profile independent. A consumer without the environment selector remains normal; old receipts remain compatible. A user/operator can choose the profile name but cannot supply an arbitrary number or a flag that waives integrity or process closure. Missing retired worker closure, native Windows proof and current-source final regression remain unsatisfied gates. [[c1]] [[c2]] [[c3]]",
+        "callSites": [
+          "scripts/qualify-runtime-foundation.mjs",
+          "src/installer/dev-worker.ts",
+          "src/installer/runtime-policy.ts",
+          "src/installer/runtime-metadata.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Unknown or malformed qualification profile",
+          "detection": "The policy module validates the single process selector against normal/slow-vm before root allocation or lease admission; numeric strings, whitespace aliases, empty values and arbitrary factors are rejected. [[c1]] [[c2]] [[c3]]",
+          "response": "Throw qualification-profile-invalid; create no installation home, worker or scope. Do not fall back silently. [[c3]]",
+          "userImpact": "Operator gets a concrete configuration error without beginning expensive work.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Profile is lost or conflicts in a custom child environment",
+          "detection": "Before spawn, compare any supplied profile selector to the admitted process snapshot; canonicalize one environment key, including Windows case aliases. Omission is supplied from the snapshot; conflicting/invalid selectors fail. [[c1]] [[c2]] [[c3]]",
+          "response": "Restore an omitted canonical selector; reject a conflict before spawning. The admitted policy never changes mid-operation. [[c3]]",
+          "userImpact": "A child cannot silently revert to the normal90-minute cap or select a different budget policy.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Setup or runtime verification consumes parent allowance before worker admission",
+          "detection": "Immediately before starting the worker, calculate monotonic remaining time less the manager cleanup reserve and cap it by explicit/selected worker limits. [[c1]] [[c2]] [[c3]]",
+          "response": "If no positive allowance remains, fail before spawning, preserve accepted attempt evidence and follow existing explicit reconciliation rules; never reset the parent clock. [[c3]]",
+          "userImpact": "The operation fails within its enclosing budget rather than starting work that cannot be drained.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Outer deadline expires during in-process source packaging",
+          "detection": "The outer qualification work deadline drives its existing AbortController as well as the retained scope; the preparation context receives the abort. [[c1]] [[c2]] [[c3]]",
+          "response": "Send existing cooperative cancel frames immediately and drain under the selected role reserves. Return failure/cancellation or uncertainty, never a prepared result without closure. [[c3]]",
+          "userImpact": "A five-hour ceiling also bounds independently owned/in-process work, not only directly spawned outer commands.",
+          "recoverable": true
+        },
+        {
+          "scenario": "File, network, parser or process closure is still unconfirmed",
+          "detection": "Existing actual-close/journal checks and selected resource/worker/manager drain intervals expire without positive closure. [[c1]] [[c2]] [[c3]]",
+          "response": "Retain resource-close-uncertain/preparation-uncertain behavior, owned stage and lease evidence. A longer clock does not authorize deletion, process adoption or publication. [[c3]]",
+          "userImpact": "Operator can inspect/reconcile the failed attempt; no unsafe automatic retry is introduced.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Copied policy asset is missing or differs from source",
+          "detection": "Build copying verifies exact bytes; package/bundle and installed-runtime import tests check policy availability/provenance without application imports. [[c1]] [[c2]] [[c3]]",
+          "response": "Fail build/preparation before releasing a usable candidate; retain failure evidence. [[c3]]",
+          "userImpact": "No installed consumer silently falls back to another timeout table.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Hosted CI or detached supervisor has insufficient remaining allowance",
+          "detection": "The containing runner/operator ceiling is compared to selected native work and cascading drain/diagnostic reserves before native admission; hosted ceiling is capped by its supported six-hour limit. [[c1]] [[c2]] [[c3]]",
+          "response": "Fail preflight with selected/available allowances, or require a sufficiently bounded local VM supervisor; never run a five-hour qualifier under the old60/90/120-minute wrapper. [[c3]]",
+          "userImpact": "Long work is not predictably cut off by a shorter hidden outer clock.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Selector absent or explicitly normal",
+          "expected": "All existing role-specific numeric defaults/overrides remain unchanged, including the qualification harness's1h build/file and2h work budget. [[c1]] [[c2]] [[c3]]"
+        },
+        {
+          "input": "A slow-vm scope has explicit short budgets for a negative test",
+          "expected": "Validated explicit overrides win exactly; no scaling or flooring turns a millisecond timeout test into a multi-hour wait. [[c1]] [[c2]] [[c3]]"
+        },
+        {
+          "input": "The profile environment is changed after the policy module is imported",
+          "expected": "The admitted process snapshot is unchanged. A new profile requires a new process; process.env is never mutated to switch an active job. [[c1]] [[c2]] [[c3]]"
+        },
+        {
+          "input": "SIGINT, SIGTERM, terminal EOF or explicit cancellation arrives early",
+          "expected": "The existing signal/owner-channel cancellation starts immediately; larger budgets only change maximum allowances and grace windows. [[c1]] [[c2]] [[c3]]"
+        },
+        {
+          "input": "Previously failed native worker retains an unfinished lease",
+          "expected": "Profile selection neither adopts it nor clears it. Actual qualified closure/reconciliation must precede any fresh native attempt. [[c1]] [[c2]] [[c3]]"
+        },
+        {
+          "input": "Normal and slow-vm profiles inspect the same immutable runtime",
+          "expected": "Identity, independently pinned inventory, exact bytes, headers/npm and receipt formats agree; time profile is not part of runtime identity or release selection. [[c1]] [[c2]] [[c3]]"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Existing checkedBudgets validation rejects unknown keys and nonpositive/noninteger values; explicit overrides remain exact and ownership stays with createRun.",
+          "source": "c1"
+        },
+        {
+          "text": "Runtime-only resolution/acquisition retain their import boundaries, exact independent integrity limits and existing installation/manifest/worker JSON formats.",
+          "source": "c1"
+        },
+        {
+          "text": "Actual file/network/decoder/process closure is required; an expired timer cannot become successful closure or authorize stage deletion.",
+          "source": "c2"
+        },
+        {
+          "text": "The selector is a fixed process-local timing policy; it is not new IPC authority, a skip-validation flag or an unbounded duration supplied by a request.",
+          "source": "c2"
+        },
+        {
+          "text": "Graph/retrieval completeness is qualified; direct source/call-site and actual native evidence supplement it.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Validate the selected fixed policy and unchanged normal behavior in fresh Node22 processes without waiting for long deadlines. [[c3]]",
+          "subjects": [
+            "qualification-profile-selects-frozen-normal-and-slow-vm-role-budgets",
+            "invalid-profile-fails-before-any-filesystem-or-worker-admission",
+            "explicit-short-scope-overrides-remain-exact-under-slow-vm",
+            "profile-snapshot-cannot-change-after-module-import"
+          ],
+          "fixturesNeeded": [
+            "Fresh Node22 process imports of the actual source/built MJS policy; existing canonical coordinator and node:test fixtures. No duration-multiplier environment or verifier bypass."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove propagation and remaining-time/cleanup ordering through actual retained parent and child processes using accelerated explicit scope clocks. [[c3]]",
+          "subjects": [
+            "qualification-profile-reaches-manager-worker-private-npm-and-runtime-helpers",
+            "child-budget-is-parent-remaining-minus-reserve-after-runtime-setup",
+            "parent-cooperative-reserve-covers-worker-drain-and-final-evidence",
+            "outer-deadline-cancels-independent-in-process-preparation",
+            "omitted-child-profile-is-canonicalized-and-conflicting-profile-rejected",
+            "slow-vm-runtime-download-verification-and-decoder-drain-have-no-hidden-normal-cap"
+          ],
+          "fixturesNeeded": [
+            "Existing dev-worker/dev-toolchain/coordinator owned-process fixtures and official runtime byte fixtures.",
+            "Barrier-controlled setup and real existing cancel frames, unique admission/close/disposal journals, fake clocks or explicit millisecond scope overrides; no unmanaged child or application DB."
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Protect publication/import, integrity, compatibility and containing deadline boundaries. [[c3]]",
+          "subjects": [
+            "copied-policy-asset-has-source-bytes-and-loads-from-installed-control",
+            "normal-runtime-identity-inventory-worker-wire-and-controller-schema-remain-unchanged",
+            "profile-never-waives-positive-resource-or-process-closure",
+            "ci-and-operator-containment-admit-only-sufficient-native-work-and-cleanup-headroom"
+          ],
+          "fixturesNeeded": [
+            "Existing publisher/bootstrap/source-provenance fixtures; actual copied MJS under out and bundled control.",
+            "CI configuration inspection plus the same containment-admission function exercised with sufficient/insufficient remaining allowances; keep backend CI behavior unchanged."
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Record current-source surrounding checks and one final scoped regression after implementation is complete. [[c3]]",
+          "subjects": [
+            "current-budget-correction-surrounding-and-final-scoped-regression-have-confirmed-cleanup"
+          ],
+          "fixturesNeeded": [
+            "Node22 canonical coordinator; only surrounding policy/coordinator/runtime/preparation/bootstrap/publisher tests per task.",
+            "One final all-installer plus installation-home/build/scanner/coordinator regression and post-run exact-coverage/fingerprint/closure audit after all implementation tasks."
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Qualify the selected profile on real slow storage without weakening existing native proof. [[c3]]",
+          "subjects": [
+            "fresh-UTM-macOS-slow-vm-profile-completes-native-foundation-and-confirmed-closure"
+          ],
+          "fixturesNeeded": [
+            "Actual UTM macOS ordinary user and new isolated home; official live runtime acquisition, offline0networkreuse, actual private npm/build/payload and native consumer probes.",
+            "Record profile/caps, exact source/OS/runtime and parent/worker closure. Existing failed worker must have actual qualified closure/reconciliation before admission; missing proof is unsatisfied, never a pass. Windows native acceptance remains owned by its separate prerequisite and foundationT10."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "qualification-profile-selects-frozen-normal-and-slow-vm-role-budgets",
+            "invalid-profile-fails-before-any-filesystem-or-worker-admission",
+            "profile-snapshot-cannot-change-after-module-import",
+            "explicit-short-scope-overrides-remain-exact-under-slow-vm"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "qualification-profile-reaches-manager-worker-private-npm-and-runtime-helpers",
+            "slow-vm-runtime-download-verification-and-decoder-drain-have-no-hidden-normal-cap",
+            "omitted-child-profile-is-canonicalized-and-conflicting-profile-rejected"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "child-budget-is-parent-remaining-minus-reserve-after-runtime-setup",
+            "parent-cooperative-reserve-covers-worker-drain-and-final-evidence",
+            "outer-deadline-cancels-independent-in-process-preparation",
+            "ci-and-operator-containment-admit-only-sufficient-native-work-and-cleanup-headroom"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "normal-runtime-identity-inventory-worker-wire-and-controller-schema-remain-unchanged",
+            "profile-never-waives-positive-resource-or-process-closure"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "copied-policy-asset-has-source-bytes-and-loads-from-installed-control",
+            "current-budget-correction-surrounding-and-final-scoped-regression-have-confirmed-cleanup"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "fresh-UTM-macOS-slow-vm-profile-completes-native-foundation-and-confirmed-closure"
+          ]
+        }
+      ],
+      "testFramework": "Use existing node:test/node:assert strict TypeScript .test.ts fixtures through the canonical verified Node22 coordinator. This implied standalone issue Story has no upstream formal FR/AC list; local design acceptance IDs derive from its approved requirements: ac1 fixed opt-in selection/default compatibility, ac2 end-to-end timing propagation, ac3 finite parent/child/cancellation/containment ordering, ac4 integrity/schema/ownership invariants, ac5 built asset and complete regression evidence, ac6 actual UTM native result/closure. They are local design criteria, not invented upstream FR identifiers. Run surrounding tests only per task; one final scoped regression after all source tasks. Accelerate intentional negative clocks with existing mocks/explicit scope overrides, never an untrusted numeric scaling flag. Do not run unavailable review endpoints, mutate the installed host daemon/Ollama, recover an uncertain worker from PID/age, or dispatch known-blocked Windows CI. Human BUILD approval remains after all required tasks/tests; no per-task human approval. [[c1]] [[c2]] [[c3]]"
+    },
+    "migration": {
+      "stateBefore": "The two s1 analyzer passes and direct source reads show independent normal coordinator defaults (10min build/file,90min run,5s cleanup), a1h/2h qualification override, separate600s/120s runtime timers and5s resource guards, and no matching qualification-profile selector. Runtime/receipt/worker JSON formats are already in use. The retained f5 macOS attempt has incomplete worker-finalization proof and must remain isolated. [[c1]] [[c2]]",
+      "stateAfter": "New Node22 processes can explicitly select one fixed slow-vm policy before importing installer/build helpers; no selector retains the same normal role durations. Manager/worker, runtime I/O, cleanup and outer/containing deadlines agree, with larger parent reserves and actual remaining-time checks. Native evidence records the selection; installation data, identity, receipts, controller and private worker frames are unchanged. [[c3]]",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Implement the approved LLD/plan in the tracked budget work item, maintaining the pure policy asset and all source/bundled consumers together; run surrounding tests and validate copy/provenance before any new qualification. [[c3]]",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Leave existing normal processes and installations untouched. Start an isolated development/qualification process with the explicit profile environment and a sufficiently long retained supervisor; confirm the resolved role table in evidence before expensive work. [[c3]]",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Before admitting another actual UTM qualification, establish the retired attempt's worker closure/reconciliation through existing qualified ownership proof. Preserve old logs, stage and lease while proof is absent. Do not infer death from PID/age, alter its checkpoint or reclassify it as passing. [[c3]]",
+          "rollbackable": false,
+          "prerequisiteFlags": [
+            "retired-worker-closure-confirmed"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "Use a fresh isolated home and committed built source for the real UTM test. Record official live acquisition, offline reuse, private source build/payload/native probes and independent parent/worker closure with the selected profile. Keep missing native evidence unsatisfied. [[c3]]",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "After all implementation and native feedback corrections, run one current-source scoped installer regression and independent post-run audit, then submit build validation and final human approval. Do not hand off foundationS4 or dispatch Windows qualification while their separate gates remain unmet. [[c3]]",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public API or persisted data rewrite. DevWorkerLaunch, manifest, runtime identity and installed/controller formats retain their exact shapes. Normal numeric defaults remain unchanged. A new local-only monotonic deadline option is optional and never serialized. To roll back the opt-in behavior, launch future processes without the selector or with the previous code; never edit a running process's policy or discard an uncertain attempt. [[c1]] [[c2]] [[c3]]",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Named policy inherited by qualification processes",
+        "oneLineSummary": "One fixed opt-in policy selects immutable role budgets through the existing private environment.",
+        "approach": "Use a single side-effect-free policy surface readable by Node build scripts and installed installer code. A named normal/slow-vm selector travels through the already controlled local process environment; each operation snapshots its role budget and existing createRun/checkedBudgets perform scope ownership. Public manager/worker JSON and persisted installation formats remain unchanged. Explicit test overrides remain explicit; only the selected qualification job receives larger defaults. [[c1]] [[c2]] [[c3]]",
+        "pros": [
+          "Fits existing environment inheritance, command budgets and ownership mechanisms.",
+          "Keeps numeric values in one bounded policy and leaves ordinary defaults intact.",
+          "Adds no per-call public options or installation receipt format."
+        ],
+        "cons": [
+          "All relevant helper entrypoints must use the selected policy; one missed literal can restore a shorter cap.",
+          "Tests must prove environment inheritance and prevent selector changes during an admitted operation.",
+          "A shared JS resource needs explicit build copying/type declarations and publisher coverage."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Explicit private policy parameters",
+        "oneLineSummary": "Pass a frozen policy object explicitly through every internal acquisition and preparation call.",
+        "approach": "Resolve a policy at the qualification boundary and thread that process-local value through manager, worker launch, runtime acquisition/resolution, downloader and closure options. The worker receives only the selected fixed policy name through private launch composition and validates it locally; no arbitrary numeric budget is accepted on public IPC. Existing checkedBudgets/createRun still own actual scope timing. [[c1]] [[c2]] [[c3]]",
+        "pros": [
+          "Dependencies and per-operation snapshots are explicit.",
+          "Tests can provide a policy without changing environment values.",
+          "No shared ambient selector lookup in helper entrypoints."
+        ],
+        "cons": [
+          "Adds optional policy plumbing to many existing cross-module function signatures and their callers.",
+          "Normal standalone runtime/bootstrap callers still need a default policy, increasing branching.",
+          "More interface and caller maintenance than the requested qualification-only change."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Also satisfies propagation, compatibility and proof constraints, but introduces policy parameters across more APIs/callers to achieve the same bounded qualification behavior. The extra plumbing is unnecessary for the approved process-local opt-in use."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "qualification-budget-ordering",
+      "narrative": "The selected profile reaches independent scopes, while the worker allowance is calculated after runtime setup from the parent's remaining time. Conditional cancellation uses existing channels and actual closure evidence. [[c3]]",
+      "participants": [
+        {
+          "id": "q",
+          "label": "Qualification",
+          "description": "Existing explicit native harness and outer cancellation owner."
+        },
+        {
+          "id": "p",
+          "label": "Fixed policy",
+          "description": "Conceptual immutable policy value loaded separately in each Node process; not a service or wire authority."
+        },
+        {
+          "id": "m",
+          "label": "Manager scope",
+          "description": "Existing dev delivery retained command owner, with a larger parent cleanup reserve."
+        },
+        {
+          "id": "r",
+          "label": "Runtime resolver",
+          "description": "Existing exact-identity read-only verification under the selected finite cap."
+        },
+        {
+          "id": "w",
+          "label": "Source worker",
+          "description": "Existing isolated private source workload and worker-owned final proof."
+        }
+      ],
+      "messages": [
+        {
+          "from": "q",
+          "to": "p",
+          "label": "Select normal or slow-vm before allocating work",
+          "description": "Validate the fixed environment name and snapshot the role table; invalid input fails before admission."
+        },
+        {
+          "from": "q",
+          "to": "m",
+          "label": "Prepare a fresh candidate with outer abort signal",
+          "description": "Independent manager scope receives the canonical selected profile through its controlled environment."
+        },
+        {
+          "from": "m",
+          "to": "r",
+          "label": "Resolve the canonical private runtime",
+          "description": "Runtime verification consumes real parent time and uses the selected verification allowance."
+        },
+        {
+          "from": "r",
+          "to": "m",
+          "label": "Return verified runtime",
+          "kind": "return",
+          "description": "Integrity and exact runtime binding are unchanged."
+        },
+        {
+          "from": "m",
+          "to": "w",
+          "label": "Launch with remaining parent time minus reserve",
+          "description": "Compute the child allowance immediately before spawn after setup, retaining the same profile in the child."
+        },
+        {
+          "from": "w",
+          "to": "p",
+          "label": "Load the same fixed profile and worker role",
+          "description": "The worker snapshots its policy in a new process; no JSON launch-frame or receipt field is added."
+        },
+        {
+          "from": "q",
+          "to": "m",
+          "label": "On explicit cancellation or outer deadline only: abort",
+          "description": "This conditional path triggers immediately and is not delayed until a long allowance ends.",
+          "note": "Cancellation messages are conditional; normal completion need not send them."
+        },
+        {
+          "from": "m",
+          "to": "w",
+          "label": "On cancellation only: existing cancel frame",
+          "description": "Worker gets the existing operation/attempt-bound cancellation protocol; no new kill or trust flag is introduced."
+        },
+        {
+          "from": "w",
+          "to": "m",
+          "label": "Return actual result after owned drain and final proof",
+          "kind": "return",
+          "description": "Longer worker/resource grace is permitted, but unknown closure stays uncertain and cannot authorize handoff."
+        },
+        {
+          "from": "m",
+          "to": "q",
+          "label": "Verify final evidence within parent reserve",
+          "kind": "return",
+          "description": "The manager reserve contains worker drain/finalization and its own retained-command closure."
+        },
+        {
+          "from": "q",
+          "to": "q",
+          "label": "Record selected caps and actual native/cleanup outcome",
+          "kind": "recurse",
+          "description": "Budget metadata is diagnostic evidence only; a selected profile never certifies success or enables a target."
+        }
+      ]
+    },
+    "componentDependencyDefinition": {
+      "id": "qualification-policy-imports",
+      "narrative": "One proposed pure policy resource supplies both JavaScript coordination and installed TypeScript consumers. Its copied asset is published with the existing output, preserving runtime-only import boundaries. [[c1]] [[c2]] [[c3]]",
+      "components": [
+        {
+          "id": "p",
+          "label": "Proposed fixed policy",
+          "path": "src/installer/qualification-time-budgets.mjs",
+          "description": "New pure immutable timing table and fixed-name selection; imports no consumers, application state or source builder."
+        },
+        {
+          "id": "c",
+          "label": "Coordinator",
+          "path": "scripts/test-harness/context.mjs",
+          "description": "Existing positive-integer override validation and run leases use selected defaults."
+        },
+        {
+          "id": "r",
+          "label": "Runtime timing consumers",
+          "path": "src/installer/runtime-metadata.ts",
+          "description": "Existing acquisition, verification/publication, download and drain helpers receive selected finite timing fields."
+        },
+        {
+          "id": "m",
+          "label": "Manager and worker",
+          "path": "src/installer/dev-worker.ts",
+          "description": "Existing private launch/worker ownership consumes canonical inherited selection and remaining parent allowance."
+        },
+        {
+          "id": "q",
+          "label": "Qualification harness",
+          "path": "scripts/qualify-runtime-foundation.mjs",
+          "description": "Existing explicit native client owns outer work/cancellation and records selected policy as evidence."
+        },
+        {
+          "id": "b",
+          "label": "Build asset copy",
+          "path": "copy-assets.mjs",
+          "description": "Copies and verifies the proposed policy MJS bytes beside compiled installer consumers."
+        },
+        {
+          "id": "o",
+          "label": "Proposed built policy asset",
+          "path": "out/installer/qualification-time-budgets.mjs",
+          "description": "One copied runtime resource per build; existing full-out payload collection and control bundling include it."
+        }
+      ],
+      "dependencies": [
+        {
+          "from": "c",
+          "to": "p",
+          "label": "reads source policy"
+        },
+        {
+          "from": "r",
+          "to": "p",
+          "label": "reads fixed timing fields"
+        },
+        {
+          "from": "m",
+          "to": "p",
+          "label": "same selected profile in each process"
+        },
+        {
+          "from": "q",
+          "to": "p",
+          "label": "outer role and diagnostic policy snapshot"
+        },
+        {
+          "from": "b",
+          "to": "p",
+          "label": "copies verified source bytes"
+        },
+        {
+          "from": "b",
+          "to": "o",
+          "label": "emits one identical resource"
+        },
+        {
+          "from": "r",
+          "to": "o",
+          "label": "compiled consumers import adjacent built copy"
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "functional-coverage",
+        "diagram-sequence",
+        "diagram-component"
+      ]
+    },
+    "epicImpact": {
+      "applies": false,
+      "reason": "Standalone budget prerequisite; no prior approved BUILD in this work item.",
+      "storiesCovered": [],
+      "findings": "Foundation446ae69566d352dd/s1 is an external consumer. Its manifests, runtime identity, ownership proof and native acceptance are unchanged. Windows ownership cab5701fbefab736 remains a separate prerequisite; no daemon/S4/S5/S7 implementation or packaging optimization here.",
+      "sources": [
+        "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/ISSUE.md",
+        "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/component-dependency.html",
+        "title": "Component dependencies"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "Completed qualification budget ownership analysis 2026-11-27",
+      "quotedText": "Existing checkedBudgets/createRun; independent manager/worker/runtime/outer caps; context35importers; graph completeness not established."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "Completed qualification resource and publication analyses 2026-11-27",
+      "quotedText": "Located actual close/decoder helpers, DevWorkerLaunch, download interfaces, collector/inventory APIs; no existing matching profile selector found in searched source."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/ISSUE.md",
+      "quotedText": "Provide one explicit, bounded slow-VM qualification policy"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes",
+      "quotedText": "Network operation deadline 600 s and read-only verification deadline 120 s"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "https://docs.github.com/en/actions/reference/limits",
+      "quotedText": "Each job in a workflow can run for up to 6 hours of execution time."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/installer/dev-delivery.ts:139-142",
+      "quotedText": "budgetMs: run.budgets.runMs - run.budgets.cleanupMs"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/installer/download.ts:44",
+      "quotedText": "function deadline(signal?: AbortSignal): AbortSignal"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "copy-assets.mjs:29-44",
+      "quotedText": "const DIRS = ['prompts', 'assets'];"
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t10.md#follow-up-failure-explanation-deadline-timing-and-payload-metadata",
+      "quotedText": "43697 files/1329984102 bytes staged; failure89m56.111s after worker identity; exact parent exit result not retained."
+    }
+  ]
+}

@@ -510,7 +510,7 @@
               "core"
             ],
             "default": "core",
-            "markdownDescription": "Model tier for the `design.alternatives.enumerate` role (critical). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'design.alternatives.enumerate' role (critical). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.design.alternatives.judge": {
@@ -521,7 +521,7 @@
               "core"
             ],
             "default": "core",
-            "markdownDescription": "Model tier for the `design.alternatives.judge` role (critical). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'design.alternatives.judge' role (critical). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.design.contract.detail": {
@@ -532,7 +532,7 @@
               "core"
             ],
             "default": "core",
-            "markdownDescription": "Model tier for the `design.contract.detail` role (critical). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'design.contract.detail' role (critical). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.scope.audit": {
@@ -543,7 +543,7 @@
               "core"
             ],
             "default": "core",
-            "markdownDescription": "Model tier for the `scope.audit` role (critical). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'scope.audit' role (critical). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.build": {
@@ -554,7 +554,7 @@
               "core"
             ],
             "default": "core",
-            "markdownDescription": "Model tier for the `build` role (critical). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'build' role (critical). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.define.scope.assess": {
@@ -565,7 +565,7 @@
               "core"
             ],
             "default": "core",
-            "markdownDescription": "Model tier for the `define.scope.assess` role (critical). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'define.scope.assess' role (critical). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.define.epic.frame": {
@@ -576,7 +576,7 @@
               "core"
             ],
             "default": "core",
-            "markdownDescription": "Model tier for the `define.epic.frame` role (critical). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'define.epic.frame' role (critical). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.define.stories.compose": {
@@ -587,7 +587,7 @@
               "core"
             ],
             "default": "core",
-            "markdownDescription": "Model tier for the `define.stories.compose` role (critical). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'define.stories.compose' role (critical). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.context.assemble": {
@@ -598,7 +598,7 @@
               "core"
             ],
             "default": "mid",
-            "markdownDescription": "Model tier for the `context.assemble` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'context.assemble' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.design.decompose": {
@@ -609,7 +609,7 @@
               "core"
             ],
             "default": "mid",
-            "markdownDescription": "Model tier for the `design.decompose` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'design.decompose' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.design.error.paths": {
@@ -620,7 +620,7 @@
               "core"
             ],
             "default": "mid",
-            "markdownDescription": "Model tier for the `design.error.paths` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'design.error.paths' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.design.test.strategy": {
@@ -631,7 +631,7 @@
               "core"
             ],
             "default": "mid",
-            "markdownDescription": "Model tier for the `design.test.strategy` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'design.test.strategy' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.design.migration.write": {
@@ -642,7 +642,7 @@
               "core"
             ],
             "default": "mid",
-            "markdownDescription": "Model tier for the `design.migration.write` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'design.migration.write' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.design.framework.write": {
@@ -653,7 +653,7 @@
               "core"
             ],
             "default": "mid",
-            "markdownDescription": "Model tier for the `design.framework.write` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'design.framework.write' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.design.rollout.overview": {
@@ -664,7 +664,7 @@
               "core"
             ],
             "default": "mid",
-            "markdownDescription": "Model tier for the `design.rollout.overview` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'design.rollout.overview' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.synthesize": {
@@ -675,7 +675,7 @@
               "core"
             ],
             "default": "mid",
-            "markdownDescription": "Model tier for the `synthesize` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'synthesize' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.workflow.questions": {
@@ -686,7 +686,7 @@
               "core"
             ],
             "default": "mid",
-            "markdownDescription": "Model tier for the `workflow.questions` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'workflow.questions' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.brainstorm.decision.draft": {
@@ -697,7 +697,7 @@
               "core"
             ],
             "default": "mid",
-            "markdownDescription": "Model tier for the `brainstorm.decision.draft` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'brainstorm.decision.draft' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.tracker.render.issueBody": {
@@ -708,7 +708,7 @@
               "core"
             ],
             "default": "cheap",
-            "markdownDescription": "Model tier for the `tracker.render.issueBody` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'tracker.render.issueBody' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.tracker.render.summary": {
@@ -719,7 +719,7 @@
               "core"
             ],
             "default": "cheap",
-            "markdownDescription": "Model tier for the `tracker.render.summary` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'tracker.render.summary' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.tools.convert": {
@@ -730,7 +730,7 @@
               "core"
             ],
             "default": "cheap",
-            "markdownDescription": "Model tier for the `tools.convert` role (peripheral): converts the text output of a tool into its declared shape. Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'tools.convert' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.tools.convertEscalate": {
@@ -741,7 +741,7 @@
               "core"
             ],
             "default": "mid",
-            "markdownDescription": "Model tier for the `tools.convert.escalate` role (peripheral): the one escalation when the first conversion attempts fail. Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'tools.convert.escalate' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.analyze.decompose": {
@@ -752,7 +752,7 @@
               "core"
             ],
             "default": "mid",
-            "markdownDescription": "Model tier for the `analyze.decompose` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'analyze.decompose' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.analyze.synthesize": {
@@ -763,7 +763,7 @@
               "core"
             ],
             "default": "mid",
-            "markdownDescription": "Model tier for the `analyze.synthesize` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'analyze.synthesize' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.analyze.plan": {
@@ -774,7 +774,7 @@
               "core"
             ],
             "default": "mid",
-            "markdownDescription": "Model tier for the `analyze.plan` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'analyze.plan' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.analyze.classify": {
@@ -785,7 +785,7 @@
               "core"
             ],
             "default": "cheap",
-            "markdownDescription": "Model tier for the `analyze.classify` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'analyze.classify' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.analyze.adherence": {
@@ -796,7 +796,7 @@
               "core"
             ],
             "default": "mid",
-            "markdownDescription": "Model tier for the `analyze.adherence` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'analyze.adherence' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.analyze.aggregate": {
@@ -807,7 +807,7 @@
               "core"
             ],
             "default": "mid",
-            "markdownDescription": "Model tier for the `analyze.aggregate` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'analyze.aggregate' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.analyze.narrow": {
@@ -818,7 +818,7 @@
               "core"
             ],
             "default": "cheap",
-            "markdownDescription": "Model tier for the `analyze.narrow` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'analyze.narrow' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.indexer.summarise": {
@@ -829,7 +829,7 @@
               "core"
             ],
             "default": "cheap",
-            "markdownDescription": "Model tier for the `indexer.summarise` role (peripheral). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'indexer.summarise' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.indexer.docRelations": {
@@ -839,8 +839,8 @@
               "mid",
               "core"
             ],
-            "default": "mid",
-            "markdownDescription": "Model tier for the `indexer.docRelations` role (peripheral). Leave at the default to use the daemon's routing.",
+            "default": "cheap",
+            "markdownDescription": "Model tier for the 'indexer.docRelations' role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.understanding.classify": {
@@ -851,7 +851,7 @@
               "core"
             ],
             "default": "core",
-            "markdownDescription": "Model tier for the `understanding.classify` role (critical). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'understanding.classify' role (critical). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.understanding.generate": {
@@ -862,7 +862,7 @@
               "core"
             ],
             "default": "core",
-            "markdownDescription": "Model tier for the `understanding.generate` role (critical). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'understanding.generate' role (critical). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.understanding.grade": {
@@ -873,7 +873,7 @@
               "core"
             ],
             "default": "core",
-            "markdownDescription": "Model tier for the `understanding.grade` role (critical). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'understanding.grade' role (critical). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.understanding.verify": {
@@ -884,7 +884,7 @@
               "core"
             ],
             "default": "core",
-            "markdownDescription": "Model tier for the `understanding.verify` role (critical). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'understanding.verify' role (critical). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.understanding.guide": {
@@ -895,8 +895,60 @@
               "core"
             ],
             "default": "core",
-            "markdownDescription": "Model tier for the `understanding.guide` role (critical). Leave at the default to use the daemon's routing.",
+            "markdownDescription": "Model tier for the 'understanding.guide' role (critical). Leave at the default to use the daemon's routing.",
             "scope": "machine"
+          },
+          "insrc.models.tasks.security.review": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "core",
+            "markdownDescription": "Model tier for the 'security.review' role (critical). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          }
+        }
+      },
+      {
+        "title": "Models \u2014 security",
+        "properties": {
+          "insrc.models.security.runner": {
+            "type": "string",
+            "default": "",
+            "markdownDescription": "security-reviewer backend: '' (unset, falls through to the role's tier default) | 'cli-claude' | 'cli-codex' | 'cli-vibe' | 'ollama' | 'ollama-claude'",
+            "scope": "machine",
+            "enum": [
+              "",
+              "cli-claude",
+              "cli-codex",
+              "cli-vibe",
+              "ollama",
+              "ollama-claude"
+            ]
+          },
+          "insrc.models.security.model": {
+            "type": "string",
+            "default": "",
+            "markdownDescription": "security-reviewer model id or alias; '' (unset) falls through to the role's tier default",
+            "scope": "machine"
+          },
+          "insrc.models.security.effort": {
+            "type": "string",
+            "default": "",
+            "markdownDescription": "security-reviewer reasoning effort passed to the CLI ('' = the CLI's own default)",
+            "scope": "machine",
+            "enum": [
+              "",
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max",
+              "ultra",
+              "off"
+            ]
           }
         }
       }

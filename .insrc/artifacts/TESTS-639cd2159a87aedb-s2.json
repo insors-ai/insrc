@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "4756be2f65aa1a73c6d366ef52e3b6318b23ae5f93a3c1705388ac697d59b6c7",
-        "at": "2026-11-27T16:09:25.648Z",
+        "number": 5,
+        "contentHash": "58d4e58b003d4a4cfa561aaf6bb77c21424763a6b85f5f20c7d8a28d10cb271b",
+        "at": "2026-11-27T16:21:47.319Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "639cd2159a87aedb",
     "storyId": "s2",
     "createdAt": "2026-11-27T15:48:50.509Z",
-    "updatedAt": "2026-11-27T16:09:25.450Z",
+    "updatedAt": "2026-11-27T16:21:47.095Z",
     "epicCreatedAt": "2026-11-24T12:53:27.196Z",
     "epicSlug": "unify-vibe-one-plain-cli-adapter",
-    "revision": 3
+    "revision": 5
   },
   "body": {
     "tasks": [
@@ -321,6 +321,46 @@
               },
               {
                 "title": "the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "b6909db9d",
+        "ranAt": "2026-11-27T16:21:47.095Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the cache-miss-on-descriptor-change path when the binary content or pinned env changes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/vibe-adapter-readonly-field.test.ts",
+                "title": "the cache-miss-on-descriptor-change path when the binary content or pinned env changes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/vibe-adapter-readonly-field.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 426,
+            "titles": [
+              {
+                "title": "VibeExecutionAdapter.readOnly reflects the cached capability for this adapter's stable descriptor",
+                "result": "pass"
+              },
+              {
+                "title": "the cache-miss-on-descriptor-change path when the binary content or pinned env changes",
                 "result": "pass"
               }
             ],

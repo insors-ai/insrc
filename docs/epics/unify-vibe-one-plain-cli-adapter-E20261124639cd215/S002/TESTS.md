@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
+**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -115,3 +115,19 @@ Reported by the builder, not run by the gate: **pass**. Evidence: Direct verific
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/vibe-adapter-readonly-qualification.test.ts` | 0 | 7 | 0.6 s |  |
+
+## t4
+
+Run at 2026-11-27T16:21:47.095Z on commit `b6909db9d`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: the cache-miss-on-descriptor-change path when the binary content or pinned env changes**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the cache-miss-on-descriptor-change path when the binary content or pinned env changes | `src/shared/__tests__/vibe-adapter-readonly-field.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/vibe-adapter-readonly-field.test.ts` | 0 | 2 | 0.4 s |  |

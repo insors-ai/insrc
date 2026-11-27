@@ -876,6 +876,30 @@ async function runTurn(
 	}
 }
 
+/** Wraps `rm` (runTurn's own tempDir-cleanup seam) to read export.json's effective-config
+ *  fingerprint BEFORE the real cleanup deletes it, and invalidate the qualification cache
+ *  entry on a mismatch -- s2's own post-dispatch check (sc3), without touching runTurn
+ *  (s1-owned) or any s1-owned type. runTurn calls `rm` from its own `finally`, AFTER
+ *  resolveResult/rejectResult already settled, so this never affects the dispatch's own
+ *  already-returned result -- only the cache entry a LATER call would read. A read/parse
+ *  failure here is best-effort: it neither blocks nor fails the real cleanup. */
+function wrapDepsForPostDispatchFingerprintCheck(resolved: ResolvedVibeAdapterDeps, descriptorKey: string, cachedFingerprint: string): ResolvedVibeAdapterDeps {
+	return {
+		...resolved,
+		rm: async (path: string) => {
+			try {
+				const raw = await resolved.readFile(join(path, 'export.json'));
+				const exportObj = record(JSON.parse(raw));
+				if (exportObj !== undefined) {
+					const freshFingerprint = effectiveConfigFingerprintFrom(exportObj);
+					if (freshFingerprint !== undefined && freshFingerprint !== cachedFingerprint) readOnlyQualificationCache.delete(descriptorKey);
+				}
+			} catch { /* best-effort; never blocks or fails the real cleanup below */ }
+			await resolved.rm(path);
+		},
+	};
+}
+
 function resolvedDeps(deps: VibeAdapterDeps): ResolvedVibeAdapterDeps {
 	return {
 		spawn: deps.spawn ?? ((command, args, options) => nodeSpawn(command, args as string[], {
@@ -948,7 +972,26 @@ export function createVibeAdapter(context: VibeAdapterContext, deps: VibeAdapter
 		startTurn(request: VibeTurnRequest) {
 			if (request.mode === 'read-only') {
 				if (request.approval !== undefined) throw new VibeReadOnlyApprovalRejectedError();
-				throw new VibeReadOnlyUnavailableError('no qualified capability yet (added in a later Story of this Epic)');
+				// Always re-check the shared module-level cache by THIS call's own stable
+				// descriptor -- never trust readOnly's construction-time snapshot, which may
+				// be stale (a background qualification elsewhere may have since resolved).
+				let descriptorKey: string;
+				try {
+					descriptorKey = stableDescriptorHash(context, resolved.command, buildArgv(request, ''));
+				} catch (error) {
+					throw new VibeReadOnlyUnavailableError(`stable descriptor computation failed: ${(error as Error).message}`);
+				}
+				const cached = readOnlyQualificationCache.get(descriptorKey);
+				if (cached === undefined || cached.status !== 'qualified' || cached.provenAgainst === undefined) {
+					throw new VibeReadOnlyUnavailableError(cached?.reason ?? 'no qualified capability yet');
+				}
+				const queue = createEventQueue();
+				let resolveResult!: (value: VibeTurnResult) => void;
+				let rejectResult!: (error: Error) => void;
+				const result = new Promise<VibeTurnResult>((resolve, reject) => { resolveResult = resolve; rejectResult = reject; });
+				const fingerprintCheckedDeps = wrapDepsForPostDispatchFingerprintCheck(resolved, descriptorKey, cached.provenAgainst.effectiveConfigFingerprint);
+				void runTurn(context, request, fingerprintCheckedDeps, queue.push, queue.finish, resolveResult, rejectResult);
+				return Object.assign(Object.create(null) as object, queue.iterable, { result }) as AsyncIterable<VibeTurnEvent> & { readonly result: Promise<VibeTurnResult> };
 			}
 			const queue = createEventQueue();
 			let resolveResult!: (value: VibeTurnResult) => void;

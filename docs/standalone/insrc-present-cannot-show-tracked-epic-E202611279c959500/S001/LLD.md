@@ -244,6 +244,8 @@ Import resolveOpenableArtifacts (or a copy of it) directly into src/mcp/server.t
 
 - `qbba5d9d9` — cd1 (partial): handleWorkflowOpenable and openableWorkflow are two genuinely new functions, explicitly modeled as mirrors of the existing, grounded handleWorkflowPending and pendingWorkflow.
   - **resolved**: Add explicit mirror functions — Matches the approved LLD's chosen alternative (a1): handleWorkflowOpenable and openableWorkflow are separate, explicit mirrors of handleWorkflowPending/pendingWorkflow, not a shared-helper refactor. The LLD explicitly rejected widening/sharing (alternative a2) to avoid reintroducing the conflation this Story removes. _(2026-11-27T12:17:57.820Z)_
+- `qc6f708eb` — ep3 (partial): c5 resolves to src/mcp/__tests__/present-dispatch.test.ts:139-152; c6 resolves to src/daemon/__tests__/repo-call-audit.test.ts:19-34, src/daemon/threads/method-class.ts's coverage test, and src/daemon/__tests__/handler-runtime.test.ts:27-100, all independently verified this session.
+  - **resolved**: Resolve ep3 before planning — Checked all four invariantsToPreserve in the LLD, not just c5/c6: c1 (pending.ts:116-157, the malformed-file try/catch at ~130-134) and c2 (server.ts:1105-1140, the ambiguity filter) were independently verified in the prior revision; c5 (present-dispatch.test.ts:139-152) and c6 (repo-call-audit.test.ts:19-34, method-class.ts's coverage test, handler-runtime.test.ts:27-100) were independently verified this revision. All four now resolve to real, precise citations with no remaining gap -- ep3 is fully resolved, not partial. _(2026-11-27T12:18:20.423Z)_
 
 ## Citations
 

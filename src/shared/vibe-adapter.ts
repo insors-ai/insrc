@@ -348,6 +348,194 @@ async function readExportSessionId(exportPath: string, readFile: (path: string) 
 	return typeof sessionId === 'string' && sessionId !== '' ? sessionId : undefined;
 }
 
+// -- Read-only qualification suite (sc3, Story s2) ---------------------------------------
+//
+// A STANDALONE probe dispatcher, deliberately separate from runTurn (s1's real-dispatch
+// path): the suite must read export.json BEFORE tempDir is removed, and needs none of
+// runTurn's caller-facing cancellation/deadline/dual-process-group machinery -- a probe is
+// an internal qualification concern, not a caller's turn. Always kills the whole process on
+// its own timeout; cleans up tempDir in a finally, after export.json has been read.
+
+const QUALIFICATION_PROBE_TIMEOUT_MS = 60_000;
+
+interface QualificationProbeResult {
+	readonly events: readonly VibeTurnEvent[];
+	readonly exportObj: Record<string, unknown> | undefined;
+	readonly error: Error | undefined;
+}
+
+async function dispatchQualificationProbe(
+	context: VibeAdapterContext,
+	deps: ResolvedVibeAdapterDeps,
+	request: VibeTurnRequest,
+): Promise<QualificationProbeResult> {
+	const events: VibeTurnEvent[] = [];
+	let tempDir: string | undefined;
+	try {
+		tempDir = await deps.mkdtemp();
+		const argv = buildArgv(request, tempDir);
+		const child = deps.spawn(deps.command, argv, { cwd: context.cwd, env: context.env, detached: false });
+		child.stdin?.on('error', () => undefined);
+		child.stdin?.end(request.prompt);
+
+		let buffer = '';
+		function handleLine(line: string): void {
+			const trimmed = line.trim();
+			if (trimmed === '') return;
+			for (const event of parseJournalLine(trimmed).events) events.push(event);
+		}
+		onUtf8Data(child.stdout, chunk => {
+			buffer += chunk;
+			let newline = buffer.indexOf('\n');
+			while (newline >= 0) { handleLine(buffer.slice(0, newline)); buffer = buffer.slice(newline + 1); newline = buffer.indexOf('\n'); }
+		});
+		child.stdout?.on('end', () => { if (buffer !== '') handleLine(buffer); buffer = ''; });
+		let stderrText = '';
+		onUtf8Data(child.stderr, chunk => { stderrText += chunk; });
+
+		const timeout = setTimeout(() => {
+			if (child.pid !== undefined) deps.killProcessGroup(child.pid); else child.kill('SIGKILL');
+		}, QUALIFICATION_PROBE_TIMEOUT_MS);
+		const exitCode = await new Promise<number | null>(resolve => {
+			child.once('error', () => resolve(null));
+			child.on('close', code => resolve(code));
+		});
+		clearTimeout(timeout);
+		if (exitCode !== 0) {
+			return { events, exportObj: undefined, error: new Error(stderrText.trim() !== '' ? stderrText.trim() : `qualification probe exited with code ${String(exitCode)}`) };
+		}
+
+		let exportObj: Record<string, unknown> | undefined;
+		try {
+			const raw = await deps.readFile(join(tempDir, 'export.json'));
+			exportObj = record(JSON.parse(raw));
+		} catch { exportObj = undefined; }
+		return { events, exportObj, error: undefined };
+	} catch (error) {
+		return { events, exportObj: undefined, error: error as Error };
+	} finally {
+		if (tempDir !== undefined) { try { await deps.rm(tempDir); } catch { /* best-effort cleanup */ } }
+	}
+}
+
+/** The qualification probe's own self-reported `enabled_tools` catalog (live-confirmed
+ *  export.json field: `config.enabled_tools`, a string array). `--enabled-tools` disables
+ *  every OTHER tool by construction (live-confirmed via `vibe --help`), so this one field
+ *  alone is sufficient structural evidence for BOTH required-tool presence and bypass
+ *  absence -- no second, separate probe is needed. */
+function enabledToolsFrom(exportObj: Record<string, unknown>): readonly string[] | undefined {
+	const config = record(exportObj['config']);
+	const enabled = config?.['enabled_tools'];
+	if (!Array.isArray(enabled)) return undefined;
+	return enabled.filter((t): t is string => typeof t === 'string');
+}
+
+/** A fingerprint of the probe's own effective configuration (live-confirmed export.json
+ *  fields: `vibe_version` + the full `config` object, which carries no per-run-volatile
+ *  fields of its own). Undefined when `config` itself could not be read. */
+function effectiveConfigFingerprintFrom(exportObj: Record<string, unknown>): string | undefined {
+	const config = record(exportObj['config']);
+	if (config === undefined) return undefined;
+	const vibeVersion = typeof exportObj['vibe_version'] === 'string' ? exportObj['vibe_version'] : '';
+	return createHash('sha256').update(JSON.stringify({ vibeVersion, config })).digest('hex');
+}
+
+/** True when some tool-result event for `toolId` shows a confirmed completed call --
+ *  matched by substring against the tool-call's own reported name, since the exact
+ *  qualified form (bare / connector-prefixed / MCP-streamed) is not pinned by this probe. */
+function hasConfirmedCompletedCall(events: readonly VibeTurnEvent[], toolId: VibeInsrcAnalysisToolId): boolean {
+	const callNamesById = new Map<string, string>();
+	for (const event of events) if (event.kind === 'tool-call') callNamesById.set(event.toolCallId, event.toolName);
+	return events.some(event => event.kind === 'tool-result' && event.ok && (callNamesById.get(event.toolCallId) ?? '').includes(toolId));
+}
+
+const QUALIFICATION_PROBE_PROMPT = 'Call the insrc_analyze tool once, then the insrc_analyze_step tool once, each with a trivial unrelated question. Report back briefly once both calls are done.';
+
+/** The live qualification suite itself: bounded-retry allow-side probe (an actual
+ *  completed call is required for EACH of the two required tools), immediate-fail
+ *  deny/bypass probes using the SAME probe's own structural catalog evidence (no second
+ *  call), and export.json fingerprint extraction with fail-closed behavior on a missing
+ *  or unparsable export. Never throws -- every failure mode resolves to 'unavailable'
+ *  with a reason naming it. */
+async function runQualificationSuite(
+	context: VibeAdapterContext,
+	deps: ResolvedVibeAdapterDeps,
+	descriptorKey: string,
+	maxAllowRetries: number,
+): Promise<ReadOnlyCapability> {
+	const required = VIBE_INSRC_ANALYSIS_TOOL_IDS.map(id => `connector_insrc_${id}`);
+	const probeRequest: VibeTurnRequest = { prompt: QUALIFICATION_PROBE_PROMPT, outputMode: 'streaming', session: { kind: 'new' }, mode: 'read-only' };
+
+	let lastReason = 'qualification probe never ran';
+	for (let attempt = 1; attempt <= Math.max(1, maxAllowRetries); attempt++) {
+		const probe = await dispatchQualificationProbe(context, deps, probeRequest);
+		if (probe.error !== undefined) { lastReason = `qualification probe failed to run: ${probe.error.message}`; continue; }
+		if (probe.exportObj === undefined) { lastReason = "qualification probe's export.json is missing or unparsable"; continue; }
+
+		const enabledTools = enabledToolsFrom(probe.exportObj);
+		if (enabledTools === undefined) { lastReason = "qualification probe's export.json carried no readable enabled_tools catalog"; continue; }
+
+		// Bypass-absence check (terminal, never retried): a tool outside the two-tool
+		// allowlist actually reachable under the pinned descriptor is a genuine safety
+		// finding, not ambient flakiness.
+		const bypassing = enabledTools.filter(t => !required.includes(t));
+		if (bypassing.length > 0) {
+			return { status: 'unavailable', allowedTools: [], reason: `bypass-absence failure: tool(s) outside the allowlist are enabled: ${bypassing.join(', ')}`, provenAgainst: undefined };
+		}
+		// Required-tool-exclusion check (terminal for THIS descriptor's launch profile,
+		// not ambient flakiness -- the profile itself is not enabling what it claims to):
+		// the reconciled polarity (review r3 finding 3).
+		const missingRequired = required.filter(t => !enabledTools.includes(t));
+		if (missingRequired.length > 0) {
+			return { status: 'unavailable', allowedTools: [], reason: `required tool(s) excluded from the enabled-tool catalog: ${missingRequired.join(', ')}`, provenAgainst: undefined };
+		}
+
+		// Allow-side probe: both required tools must show an actual confirmed completed
+		// call -- structural catalog presence alone is not enough. A failure here IS
+		// retried (bounded): ambient connector flakiness, not a structural finding.
+		const bothCompleted = VIBE_INSRC_ANALYSIS_TOOL_IDS.every(toolId => hasConfirmedCompletedCall(probe.events, toolId));
+		if (!bothCompleted) { lastReason = `allow-side probe: insrc_analyze and/or insrc_analyze_step did not show a confirmed completed call (attempt ${String(attempt)}/${String(maxAllowRetries)})`; continue; }
+
+		const fingerprint = effectiveConfigFingerprintFrom(probe.exportObj);
+		if (fingerprint === undefined) { lastReason = "qualification probe's export.json carried no readable config to fingerprint"; continue; }
+
+		return { status: 'qualified', allowedTools: VIBE_INSRC_ANALYSIS_TOOL_IDS, provenAgainst: { stableDescriptorHash: descriptorKey, effectiveConfigFingerprint: fingerprint } };
+	}
+	return { status: 'unavailable', allowedTools: [], reason: lastReason, provenAgainst: undefined };
+}
+
+const inFlightQualifications = new Map<string, Promise<ReadOnlyCapability>>();
+
+/** Runs the live qualification suite for this context/command's stable descriptor and
+ *  populates the module cache with the result. Concurrent calls for the IDENTICAL
+ *  descriptor share one in-flight run rather than each running the probe suite -- callers
+ *  that want a non-blocking snapshot read the module cache directly (via the adapter's own
+ *  readOnly field) instead of awaiting this. Never throws: a stable-descriptor computation
+ *  failure resolves to 'unavailable' with a reason, the same as every other failure mode. */
+export async function qualifyReadOnlyCapability(context: VibeAdapterContext, deps: VibeAdapterDeps = {}, maxAllowRetries = 3): Promise<ReadOnlyCapability> {
+	const resolved = resolvedDeps(deps);
+	let descriptorKey: string;
+	try {
+		const probeRequest: VibeTurnRequest = { prompt: QUALIFICATION_PROBE_PROMPT, outputMode: 'streaming', session: { kind: 'new' }, mode: 'read-only' };
+		const argv = buildArgv(probeRequest, '');
+		descriptorKey = stableDescriptorHash(context, resolved.command, argv);
+	} catch (error) {
+		return { status: 'unavailable', allowedTools: [], reason: `stable descriptor computation failed: ${(error as Error).message}`, provenAgainst: undefined };
+	}
+
+	const cached = readOnlyQualificationCache.get(descriptorKey);
+	if (cached !== undefined) return cached;
+
+	const inFlight = inFlightQualifications.get(descriptorKey);
+	if (inFlight !== undefined) return inFlight;
+
+	const run = runQualificationSuite(context, resolved, descriptorKey, maxAllowRetries).finally(() => { inFlightQualifications.delete(descriptorKey); });
+	inFlightQualifications.set(descriptorKey, run);
+	const capability = await run;
+	readOnlyQualificationCache.set(descriptorKey, capability);
+	return capability;
+}
+
 /** `--output json` prints the SAME per-entry journal shape as `--output streaming`, just
  *  collected into one array at exit rather than streamed line by line (live-confirmed). The
  *  last `type:'message', role:'assistant'` entry's joined text blocks is the turn's answer --

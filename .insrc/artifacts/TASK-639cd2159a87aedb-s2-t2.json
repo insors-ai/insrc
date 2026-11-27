@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f5aa3e77-7068-4ef6-884a-a134a496ed97",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T15:37:34.012Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add buildArgv's read-only branch and the stable-descriptor computation",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#327",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ef64d586d9efd46126fa24a53c7f26feb84e10452583f4c45c6944a823475e4c",
+        "at": "2026-11-27T15:37:34.012Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T15:37:34.013Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add buildArgv's read-only branch and the stable-descriptor computation",
+    "summary": "Add a request.mode==='read-only' branch inside buildArgv (src/shared/vibe-adapter.ts:365) that emits exactly the two connector_insrc_* allow flags and no approval flag, plus a stableDescriptorHash function that hashes buildArgv's own output with --output-dir excluded, the binary's resolved content identity, the adapter's pinned env subset, and cwd.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "buildArgv's read-only branch emits exactly the two connector_insrc_* flags and no approval flag, for any approval value (read-only requests with an approval setting are already rejected upstream by startTurn)",
+      "stableDescriptorHash is identical across two calls differing only in --output-dir (confirmed: buildArgv mints a fresh mkdtemp() path into --output-dir on every call per vibe-adapter.ts:365-375,470,481-482)",
+      "stableDescriptorHash changes when the binary content identity, pinned env subset, or cwd changes"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "stableDescriptorHash computation excluding outputDir and its hit/miss decision -- two calls differing only in outputDir still hit the cache"
+      },
+      {
+        "level": "unit",
+        "name": "buildArgv's read-only branch emits exactly the two connector_insrc_* flags and no approval flag"
+      },
+      {
+        "level": "integration",
+        "name": "the recorded argv matching buildArgv's own values exactly except outputDir"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

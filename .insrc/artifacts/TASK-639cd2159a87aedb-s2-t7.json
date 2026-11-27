@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-38b53e9c-e963-43d5-a95a-341a51274ea4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T15:37:34.026Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s2",
+    "envelope": {
+      "description": "File the HLD amendment for sc3's provenAgainst field shape",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#332",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "307c4e3e64167a7599f5f1d6185ef893b92bd8c27c47c46e75ebfbad571b3765",
+        "at": "2026-11-27T15:37:34.026Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T15:37:34.028Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "File the HLD amendment for sc3's provenAgainst field shape",
+    "summary": "File the HLD-amendment proposal (sharedContract.rename on sc3, breaking: true, replacing { binaryVersion, effectivePolicy } with { stableDescriptorHash, effectiveConfigFingerprint }) as a tracked artifact, reconciling the HLD document with this Story's own LLD shape. Non-code: a process/documentation action, not gated by t1-t6's implementation.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "The HLD amendment proposal for sc3's provenAgainst field rename is filed as a tracked artifact (previously raised by this Story's own LLD and again by s6's reconciliation Story, but never tracked as a standalone AMD-* artifact per this session's direct verification)",
+      "The filed amendment's rationale cites both this Story's LLD section 4.1-4.2 and s6's already-approved reconciliation LLD"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "the filed amendment exists as a tracked AMD-* artifact for sc3's provenAgainst rename and is readable via the workflow's own amendment listing"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

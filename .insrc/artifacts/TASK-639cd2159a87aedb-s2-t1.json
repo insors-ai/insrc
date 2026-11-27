@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-91df554f-a5f8-4d55-a1c3-4ac07f2eb67f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T15:37:34.009Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add ReadOnlyCapability type and the stableDescriptorHash-keyed qualification cache",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#326",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bfe7ef98027ad8f77b14b25588fbcf41b1ab411b97c2d112def9699c30b58990",
+        "at": "2026-11-27T15:37:34.009Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T15:37:34.011Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add ReadOnlyCapability type and the stableDescriptorHash-keyed qualification cache",
+    "summary": "Add the ReadOnlyCapability interface (status, allowedTools, reason?, provenAgainst: { stableDescriptorHash, effectiveConfigFingerprint } | undefined) to src/shared/vibe-adapter.ts, plus a module-level cache keyed by stableDescriptorHash. No behavior wiring yet -- this is the type/data-structure foundation the rest of the Story builds on.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "ReadOnlyCapability type matches sc3's amended interfaceSketch (stableDescriptorHash, effectiveConfigFingerprint) exactly, not the HLD's stale field names",
+      "The cache is a module-level Map (or equivalent) keyed by stableDescriptorHash, empty at module load"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "stableDescriptorHash computation excluding outputDir and its hit/miss decision -- two calls differing only in outputDir still hit the cache"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -102,6 +102,26 @@ export interface VibeExecutionAdapter {
 	startTurn(request: VibeTurnRequest): AsyncIterable<VibeTurnEvent> & { readonly result: Promise<VibeTurnResult> };
 }
 
+/** Fail-closed read-only authorization (sc3, Story s2) -- ADAPTER-OWNED. Callers never
+ *  construct this: the adapter runs the live qualification itself and exposes only the
+ *  validated result. `provenAgainst` binds the capability to a STABLE authorization
+ *  descriptor (excluding the per-turn --output-dir value) and to the binary's own
+ *  effective-config self-report; either changing invalidates the capability. */
+export interface ReadOnlyCapability {
+	readonly status: 'qualified' | 'unavailable';
+	readonly allowedTools: readonly VibeInsrcAnalysisToolId[];
+	/** Set when unavailable: the refusal reason, surfaced to the session's answer and the ledger. */
+	readonly reason?: string | undefined;
+	readonly provenAgainst: { readonly stableDescriptorHash: string; readonly effectiveConfigFingerprint: string } | undefined;
+}
+
+/** Module-level qualification cache, keyed by stableDescriptorHash. Empty at module load;
+ *  populated by the live qualification suite (a later Task of this Story). */
+const readOnlyQualificationCache = new Map<string, ReadOnlyCapability>();
+
+/** Test-only: inspect the qualification cache without exposing it to production callers. */
+export function _readOnlyQualificationCacheForTests(): Map<string, ReadOnlyCapability> { return readOnlyQualificationCache; }
+
 export interface VibeMcpToolIdentity {
 	readonly server: string;
 	readonly tool: string;

@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-afca6074-0ca0-4ca8-afb8-7b12ca2c98db",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T15:37:34.017Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Wire createVibeAdapter to populate the readOnly field from the cache",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#329",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "234401ec82d065367042e46dea07b080f01d06eadb12fb52078752f23c1d13ee",
+        "at": "2026-11-27T15:37:34.018Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T15:37:34.019Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire createVibeAdapter to populate the readOnly field from the cache",
+    "summary": "Add the readOnly field to the object createVibeAdapter (src/shared/vibe-adapter.ts:639) returns, populated synchronously from the qualification cache by stableDescriptorHash computed for this context.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "VibeExecutionAdapter.readOnly reflects the cached capability for this adapter's stable descriptor",
+      "A cache miss on first construction triggers qualification (via t3's suite) before readOnly is populated"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the cache-miss-on-descriptor-change path when the binary content or pinned env changes"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

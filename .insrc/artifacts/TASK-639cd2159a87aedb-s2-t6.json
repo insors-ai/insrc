@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8362ae1a-0c2d-47b0-af00-299506e25003",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T15:37:34.023Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Wire readOnlySessionOnce's vibe branch to await the dispatched turn",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s2-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#331",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3b561ec2a385dc3f62e5eeb3544175d7ad2b986a046a82349abaa343a7f9786c",
+        "at": "2026-11-27T15:37:34.023Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T15:37:34.025Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire readOnlySessionOnce's vibe branch to await the dispatched turn",
+    "summary": "In src/agent/providers/cli-provider.ts's readOnlySessionOnce, replace the vibe branch's current 'unreachable' throw with: call startTurn with mode:'read-only', await its result with the absolute deadline already computed at call entry, and parse the result against the caller's schema.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "readOnlySessionOnce's vibe branch returns the schema-validated answer on a qualified capability, end to end",
+      "readOnlySessionOnce's vibe branch surfaces VibeReadOnlyUnavailableError (with its reason) when the capability is unavailable, rather than throwing 'unreachable'",
+      "The absolute deadline computed once at call entry is honored even while waiting on a shared/in-flight qualification"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "readOnlySessionOnce's vibe branch returning the schema-validated answer on a qualified capability"
+      },
+      {
+        "level": "integration",
+        "name": "the recorded argv matching buildArgv's own values exactly except outputDir"
+      },
+      {
+        "level": "integration",
+        "name": "the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable"
+      },
+      {
+        "level": "integration",
+        "name": "the capabilityPolicy precondition refused before readOnlySessionOnce is reached"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

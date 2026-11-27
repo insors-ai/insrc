@@ -1,0 +1,131 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6367a07c-929e-4ded-b6c7-d8696c5777f8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T15:37:34.015Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Implement the live qualification suite",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#328",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a2ed47bfd825664a5e18911c0f045da256a406495d7a27daa56bf79a02bcea21",
+        "at": "2026-11-27T15:37:34.015Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T15:37:34.016Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement the live qualification suite",
+    "summary": "Implement a standalone function that runs the bounded-retry allow-side probe (insrc_analyze / insrc_analyze_step reachable and completing), the immediate-fail deny/bypass probes using structural catalog evidence with the reconciled pass/fail polarity (a REQUIRED tool's exclusion/denial fails qualification; a DISALLOWED tool's exclusion/denial passes it; an actual bypass-absence failure -- a disallowed tool completing -- fails immediately, never retried), and export.json fingerprint extraction (readExitEvidence, reused in-module) with fail-closed behavior on a missing/unparsable export. Concurrent qualification requests for the same stable descriptor are coalesced into one in-flight probe run.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "The allow-side probe retries a bounded number of times on simulated connector-not-registered failures, then reports 'unavailable' with the reason if still unresolved",
+      "A structural catalog exclusion/denial of a disallowed tool PASSES qualification; exclusion/denial of a REQUIRED tool FAILS it",
+      "A genuine bypass-absence failure (a disallowed tool actually completes) fails qualification immediately with no retry",
+      "A missing or unparsable export.json fails qualification closed, never silently treated as passing",
+      "effectiveConfigFingerprint is extracted from a successful qualification probe's own export.json",
+      "Two concurrent calls that miss the cache for the identical stable descriptor share one in-flight qualification promise rather than running the probe suite twice"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "effectiveConfigFingerprint extraction from a fake export.json at qualification time; a missing/unparsable export.json fails qualification closed"
+      },
+      {
+        "level": "unit",
+        "name": "concurrent cache misses for the identical stable descriptor coalescing into one in-flight qualification promise"
+      },
+      {
+        "level": "unit",
+        "name": "the allow-side probe's bounded retry tolerating simulated connector-not-registered attempts"
+      },
+      {
+        "level": "unit",
+        "name": "structural catalog evidence: exclusion/denial of a disallowed tool passes qualification; exclusion/denial of a REQUIRED tool fails it -- the reconciled polarity"
+      },
+      {
+        "level": "unit",
+        "name": "a genuine bypass-absence failure (a disallowed tool actually completes) failing qualification immediately, never retried"
+      },
+      {
+        "level": "integration",
+        "name": "the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable"
+      },
+      {
+        "level": "live",
+        "name": "the allowed-tool execution proof: a confirmed completed-call effect row for insrc_analyze and insrc_analyze_step under --enabled-tools connector_insrc_insrc_analyze/connector_insrc_insrc_analyze_step, tolerating connector flakiness via bounded retry -- an unresolved result here is accepted as 'stays unavailable', per review r3 finding 4, not a test failure"
+      },
+      {
+        "level": "live",
+        "name": "the blocked-tool proof via structural catalog enumeration (no actual write attempted)"
+      },
+      {
+        "level": "live",
+        "name": "the blanket-bypass absence proof via catalog enumeration"
+      },
+      {
+        "level": "live",
+        "name": "the ac4 no-mutation proof via structural catalog evidence that write/bash tools are absent or denied, never via an actual write under the production profile"
+      },
+      {
+        "level": "live",
+        "name": "the export.json effective-config fingerprint actually present and parsable on a real run"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

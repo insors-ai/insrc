@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-387b93bb-7d53-40e3-9ee5-33c48c5a7dcb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T15:37:34.020Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Wire startTurn's read-only dispatch and post-dispatch fingerprint invalidation",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#330",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2b3f281fbc26a9ba5ada90f8bcb56efb80da04541d1abc2332ba10dc3d9fb4ef",
+        "at": "2026-11-27T15:37:34.020Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T15:37:34.022Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire startTurn's read-only dispatch and post-dispatch fingerprint invalidation",
+    "summary": "Replace startTurn's mode:'read-only' placeholder throw (src/shared/vibe-adapter.ts:653-656) with: re-check the cache by stableDescriptorHash at dispatch time, dispatch via buildArgv's read-only branch (t2) when 'qualified', throw VibeReadOnlyUnavailableError with the recorded reason when 'unavailable'; after a qualified dispatch completes, compare its own export.json against the cached effectiveConfigFingerprint and invalidate the cache entry on a mismatch (the completed turn's own result is unaffected by the mismatch).",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "A read-only request with a 'qualified' cached capability dispatches via buildArgv's read-only branch and returns the schema-validated result",
+      "A read-only request with an 'unavailable' cached capability throws VibeReadOnlyUnavailableError carrying the cached reason, without spawning a process",
+      "A qualified dispatch whose own export.json diverges from the cached effectiveConfigFingerprint invalidates the cache entry for the NEXT call, while the current call's own result is returned unaffected"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a qualified dispatch whose own export.json diverges from the cached fingerprint invalidating the entry while still returning its own result"
+      },
+      {
+        "level": "unit",
+        "name": "startTurn's mode:'read-only' branch re-checking the cache by stableDescriptorHash at dispatch time"
+      },
+      {
+        "level": "integration",
+        "name": "a scripted post-dispatch export.json mismatch invalidating the cache for the NEXT call while the current call's result is unaffected"
+      },
+      {
+        "level": "integration",
+        "name": "the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

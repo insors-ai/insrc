@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795801324735-4aueaj",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-27T17:43:12.009Z",
+    "epicCreatedAt": "2026-11-27T17:43:12.009Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 67272,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "e1aed06b860a76cb",
+    "epicSlug": "align-controller-tests-retired-lifecycle-removal",
+    "standalone": true,
+    "magnitude": "small",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "334b2d879981c90f0628da5dbae7f28563887edc8f0c96eaab375f4e61f516c2",
+        "at": "2026-11-27T17:43:12.024Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T18:29:48.506Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "e1aed06b860a76cb",
+      "slug": "EPIC-e1aed06b860a76cb"
+    }
+  },
+  "body": {
+    "title": "Align controller tests with retired lifecycle removal",
+    "reproduction": "Under Node 22.22.1, run the two controller files directly, one file at a time, as prescribed in docs/testing.md. The independent pre-budget ae1b93f79 reproduction retained in .insrc/tmp/budget-t2-controller-baseline-ae1b93f79.tap fails three selected cases: Build stages and specialized launcher gate policies survive wrapper integration; Native refusal and saved-mode controls remain enforced; Five prepared consumers reuse helpers and raw invocations refuse missing context. The first expects retired builder commands; the other two select deleted test files. Expected: controller checks exercise current behavior and succeed without references to intentionally removed lifecycle implementation. This blocks the required final controller checks for the installer budget correction. [[c1]] [[c2]] [[c4]] [[c5]]",
+    "rootCause": "The lifecycle removal was intentional, but scripts/__tests__/test-harness-commands.test.ts:44 and scripts/__tests__/test-harness-commands.test.ts:79 retain an obsolete builder list and deleted daemon-process-client selector, while scripts/__tests__/test-harness-consumers.test.ts:12 retains five deleted lifecycle consumers. Current buildStages no longer contains those retired builders. The analyzer located the current helpers and all three literal sites; its caller graph was incomplete, so direct rg supplemented requirePreparedBuild uses and found only its helper plus coordinator fixtures. These are pre-existing test drift, separate from the budget implementation. [[c1]] [[c2]] [[c3]]",
+    "fixIntent": "Correct this as one bounded test-maintenance batch in the two controller test files. Align the build-stage expectation with the accepted current build pipeline. Replace the deleted native-refusal selector with relevant existing current refusal/control coverage while retaining the saved-mode check. Retire or replace the test devoted exclusively to removed consumers after checking actual current consumers; preserve applicable prepared admission refusal, immutable output, writer/drift protection, retirement mutation regression and positive cleanup. Run both controller files and surrounding controller checks directly under Node 22, serially, following the existing documented ownership model. Require actual selected test success and complete closure; no skip, failure waiver, acceptance of nonzero consumer outcomes, production helper/runtime/budget change or native release enablement. Do not alter or overlap the active UTM native run. [[c1]] [[c2]] [[c3]] [[c4]]"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "scripts/__tests__/test-harness-commands.test.ts:44",
+      "quotedText": "'build-process-broker.mjs', 'build-shutdown-watchdog.mjs'"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "scripts/__tests__/test-harness-consumers.test.ts:12",
+      "quotedText": "const consumers = ['src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts'"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "scripts/test-harness/build.mjs:39",
+      "quotedText": "buildStages(run, { npmCli } = {})"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "docs/testing.md#testing-the-coordinator-itself",
+      "quotedText": "Controller integration tests create and test ownership themselves, so run them directly with Node 22 and one file at a time:"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": ".insrc/tmp/budget-t2-controller-baseline-ae1b93f79.tap",
+      "quotedText": "# tests 3\n# pass 0\n# fail 3"
+    }
+  ]
+}

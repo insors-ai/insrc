@@ -41,7 +41,7 @@ function reportProperty(file: string, name: string): ts.Expression {
 test('Build stages and specialized launcher gate policies survive wrapper integration', () => {
 	const stages = buildStages({ environment: () => process.env });
 	assert.deepEqual(stages.map(args => args[0].endsWith('npm-cli.js') ? args.slice(1).join(' ') : args.join(' ')), [
-		'scripts/clean-output.mjs', 'run build --workspace @insrc/project-memory', 'node_modules/typescript/bin/tsc --inlineSources', 'run typecheck:tools', 'scripts/forbidden-spawn-scan.mjs --fail', 'build-process-broker.mjs', 'build-shutdown-watchdog.mjs', 'scripts/check-model-definitions.mjs', 'copy-assets.mjs',
+		'scripts/clean-output.mjs', 'run build --workspace @insrc/project-memory', 'node_modules/typescript/bin/tsc --inlineSources', 'run typecheck:tools', 'scripts/forbidden-spawn-scan.mjs --fail', 'scripts/check-model-definitions.mjs', 'copy-assets.mjs', 'scripts/build-installer-control.mjs',
 	]);
 	const expression = reportProperty('scripts/connection-management-regression.mjs', 'ready');
 	const ready = new Function('build', 'sweep', 'sourceDrift', 'compiledDrift', `return (${expression.getText()});`);
@@ -50,7 +50,7 @@ test('Build stages and specialized launcher gate policies survive wrapper integr
 	const plugin = JSON.parse(readFileSync(join(ROOT, 'vscode-plugin/package.json'), 'utf8'));
 	assert.equal(plugin.scripts.pretest, undefined);
 	assert.equal(plugin.scripts.test, 'node ../scripts/test-harness/run.mjs --suite=vscode');
-	assert.match(plugin.scripts['sync-assets'], /INSRC_PACKAGED_INSTALLER/);
+	assert.equal(plugin.scripts['sync-assets'], 'node ../scripts/sync-client-runtime-assets.mjs vscode');
 	assert.deepEqual(parseArgs(ROOT, ['--suite=vscode', 'src/chat/__tests__/docs-review-panel.test.ts']).files, ['vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts']);
 });
 
@@ -76,9 +76,19 @@ test('Specialized stages retain writer ownership and reader closure precedes lat
 });
 
 test('Native refusal and saved-mode controls remain enforced', { timeout: 120000 }, async () => {
-	const selection = parseArgs(ROOT, ['--concurrency=1', '--test-name-pattern=spawn, readiness, malformed identity and native permission failures|owner context is immutable lazy quiet', 'src/shared/__tests__/daemon-process-client.test.ts', 'src/daemon/db/__tests__/driver-log-policy.test.ts']);
-	const result = await runHarness(ROOT, selection);
+	const selection = parseArgs(ROOT, ['--concurrency=1', '--test-name-pattern=^controller rejects lock replacement and unsafe records or control roots$|owner context is immutable lazy quiet', 'src/installer/__tests__/controller-store.test.ts', 'src/daemon/db/__tests__/driver-log-policy.test.ts']);
+	const result = await runHarness(ROOT, selection, {
+		testArgs: (file: string) => ['--import', 'tsx', '--test', '--test-force-exit', '--test-reporter=tap', ...selection.testFlags, file],
+	});
 	assert.equal(result.code, 0, JSON.stringify(result));
 	assert.equal(result.results.length, 2);
-	for (const file of result.results) { assert.equal(file.code, 0, file.log); assert.equal(file.coverage.counts.pass, 1); assert.equal(file.coverage.counts.fail, 0); }
+	for (const file of result.results) {
+		assert.equal(file.code, 0, file.log); assert.equal(file.coverageIncomplete, false);
+		assert.equal(file.coverage.counts.pass, 1); assert.equal(file.coverage.counts.fail, 0);
+		assert.equal(file.coverage.counts.cancelled, 0);
+	}
+	const cleanup = JSON.parse(readFileSync(join(result.workspace, 'cleanup.json'), 'utf8'));
+	assert.equal(cleanup.confirmedClosed, true); assert.equal(cleanup.closureMode, 'owned-groups');
+	assert.deepEqual(cleanup.evidenceErrors, []); assert.deepEqual(cleanup.cancellationErrors, []);
+	assert.equal(existsSync(join(ROOT, '.insrc/tmp/test-harness/active')), false);
 });

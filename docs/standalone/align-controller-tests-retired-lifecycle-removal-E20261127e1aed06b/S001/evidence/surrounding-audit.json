@@ -1,0 +1,105 @@
+{
+  "status": "pass",
+  "checkedAt": "2026-11-27T19:57:02.252920+00:00",
+  "runtime": "v22.22.1",
+  "log": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/maintenance-e1-main-corrected.tap",
+  "logSha256": "df9b815b132e8681d442fec191d6ad3cbe42e6729330ea200d6fcbda871e54e5",
+  "tests": 16,
+  "pass": 16,
+  "fail": 0,
+  "cancelled": 0,
+  "skipped": 0,
+  "runs": [
+    {
+      "runId": "0da2ce70-ff4e-4316-94e8-12a0091ad148",
+      "commands": 0,
+      "cleanup": {
+        "confirmedClosed": true,
+        "interrupted": false,
+        "cancellationErrors": [],
+        "evidenceErrors": [],
+        "childCloseJournal": "child-results.jsonl",
+        "closureMode": "owned-groups"
+      },
+      "resultCodes": [],
+      "journalSha256": {
+        "child-admissions.jsonl": null,
+        "child-results.jsonl": null,
+        "child-disposals.jsonl": null
+      }
+    },
+    {
+      "runId": "0d5d78b4-bcca-4cb6-9530-90a6b5875254",
+      "commands": 11,
+      "cleanup": {
+        "confirmedClosed": true,
+        "interrupted": false,
+        "cancellationErrors": [],
+        "evidenceErrors": [],
+        "childCloseJournal": "child-results.jsonl",
+        "closureMode": "owned-groups"
+      },
+      "resultCodes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "journalSha256": {
+        "child-admissions.jsonl": "40a9fb14846723c808ca4259ba5a3435606ab8896894db95fa7951bed96f9320",
+        "child-results.jsonl": "33008359457214d2ab261d417e9aaf03eef1e2e40c4be8164709a0976405e6e0",
+        "child-disposals.jsonl": "20fd769af68b9f8d8898995a247d6206bc5c8775a94a2153b2f170d136f5e4f4"
+      }
+    },
+    {
+      "runId": "bf1eb568-c790-4f5f-afef-e1f910101ebf",
+      "commands": 19,
+      "cleanup": {
+        "confirmedClosed": true,
+        "interrupted": false,
+        "cancellationErrors": [],
+        "evidenceErrors": [],
+        "childCloseJournal": "child-results.jsonl",
+        "closureMode": "owned-groups"
+      },
+      "resultCodes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "journalSha256": {
+        "child-admissions.jsonl": "e2c18e8db3680cfe6b5147f9b31901bfb12c299e18463642eb0579c3661cb744",
+        "child-results.jsonl": "56818105e4cb1035f98080f9ad077bb31bcd7c52dbd38d48203627b7c0230118",
+        "child-disposals.jsonl": "3a1b378ee680a9133c83d6290e14aafedfd978eb99d5bdfaadaeac5c261d32ae"
+      }
+    }
+  ],
+  "sourceFilesSha256": {
+    "scripts/__tests__/test-harness-commands.test.ts": "f1076a8cc706df0c935be9dd1732e18d7df2fc47f814a43c9b214798fd59f395",
+    "scripts/__tests__/test-harness-consumers.test.ts": "98876b5d7020435b9e1c83952aaed1c5e7c3454218a734b258053263ad61f037"
+  },
+  "limits": "Main-checkout corrected focused run only. Interrupted stale isolated run d7a67629 remains blocked; no cleanup or pass claimed for it."
+}

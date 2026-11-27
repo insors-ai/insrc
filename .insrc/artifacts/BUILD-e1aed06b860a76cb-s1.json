@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "8ed25dfe9cf080508bf59f6cd3f8dc73da2353bd821b65beaafaeeaff52d3211",
+        "at": "2026-11-27T18:30:14.178Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-e5e2dfc2-fb9d-43d7-ab5f-952526d36f52",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-27T18:30:14.128Z",
+    "epicCreatedAt": "2026-11-27T17:43:12.009Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e1aed06b860a76cb",
+    "storyId": "s1",
+    "revision": 1,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Approved small bugfix, magnitude small; no LLD/plan required. Exactly two controller test files with stale references to intentionally retired lifecycle implementation.",
+    "epicSlug": "align-controller-tests-retired-lifecycle-removal"
+  },
+  "body": {
+    "focus": "Align controller tests with retired lifecycle removal: fix three stale baseline cases in scripts/__tests__/test-harness-commands.test.ts and test-harness-consumers.test.ts using the approved ISSUE-e1aed06b860a76cb scope. Keep production helpers/runtime/budgets unchanged and preserve current refusal, prepared-reader/drift, mutation and positive cleanup checks.",
+    "producesLld": false,
+    "commit": "2fca011a6"
+  },
+  "citations": []
+}

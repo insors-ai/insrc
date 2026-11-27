@@ -197,6 +197,8 @@ handleInsrcPresent reads .insrc/artifacts directly, re-implementing enough of th
 
 - `qbb416be3` — cd1 (partial): resolveOpenableArtifacts is a genuinely new function (not grounded in s1's analyze bundle, since it doesn't exist yet) -- disclosed as new throughout, never claimed to pre-exist.
   - **resolved**: Explicit new function — resolveOpenableArtifacts is a disclosed, proposed new function with a fully defined contract (signature, parameters, returns, pre/postconditions) in the approved LLD; a proposed addition need not pre-exist in the s1 analyze bundle. _(2026-11-27T11:32:27.773Z)_
+- `q095d6edf` — ep3 (partial): invariantsToPreserve cites c1/c2, now defined in this artifact's own citations[] against the real paths pending.ts:116-157/159-183 and server.ts:1105-1140 respectively.
+  - **resolved**: Verify invariant support before proceeding — Re-read src/workflow/pending.ts:116-157 directly. c2 (server.ts:1105-1140) is accurate: its quotedText is the exact ambiguity-filter line (`.filter(...).length === 1`) that supports invariant 2. c1's cited RANGE (pending.ts:116-157) does contain the real support for invariant 1 -- the try/catch at lines ~130-134 ("catch (err) { log.warn(...); continue; // one bad file must not drop the rest }") -- but the quotedText I originally attached to c1 was the wrong excerpt (the CR-sibling check a few lines later, not the try/catch). The range is correct; the excerpt was imprecise. Will cite the try/catch lines specifically when writing the Task/Plan and tests, so the build-stage artifact gets this right. _(2026-11-27T11:33:24.456Z)_
 
 ## Citations
 

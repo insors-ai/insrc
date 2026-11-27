@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1795791735075-nr6b7e",
+    "runId": "wf-1795794420060-78gc0h",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-27T15:08:59.085Z",
+    "createdAt": "2026-11-27T15:51:20.247Z",
     "epicCreatedAt": "2026-11-27T10:37:28.792Z",
     "attribution": {
       "outputs": [
@@ -15,14 +15,14 @@
         }
       ]
     },
-    "elapsedMs": 403709,
+    "elapsedMs": 259900,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "9c95950064e4b916",
     "epicSlug": "insrc-present-cannot-show-tracked-epic",
     "storyId": "s1",
-    "hldBaseRunId": "wf-1795791735075-nr6b7e",
-    "hldEffectiveHash": "0ace2ee99a7e9cf13899563e0ca198429b347d0424ac40112f8d15ab6a31af6b",
+    "hldBaseRunId": "wf-1795794420060-78gc0h",
+    "hldEffectiveHash": "110cc3052e0c7d5810d7b7ccdfbb77cb5d98469166edaea695196c1430980719",
     "hldAmendmentsApplied": [],
     "storyTitle": "insrc_present cannot show a tracked-epic artifact when code review is unavailable",
     "standalone": true,
@@ -30,9 +30,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 4,
-        "contentHash": "347fd5412bcf6e0758e057c8f9cb7ea6f6a36ac435440ec6050cc86b2e45fc94",
-        "at": "2026-11-27T15:08:59.175Z",
+        "number": 5,
+        "contentHash": "6c61e20ea22a5fbf17195782762bf78b679069bf1f8e5dacf4f840c517d1df15",
+        "at": "2026-11-27T15:51:20.333Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -41,13 +41,13 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 4,
+        "revision": 5,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-27T15:14:26.939Z"
+        "at": "2026-11-27T15:52:20.920Z"
       }
     },
     "envelope": {
@@ -55,12 +55,12 @@
       "references": [],
       "attachments": []
     },
-    "revision": 4,
-    "rangeBase": "53d493dc490e91db1eb6cfbdf6a38132ebea8eed"
+    "revision": 5,
+    "rangeBase": "efea25b048791a417ba1d3d7c571471678a497c4"
   },
   "body": {
     "summary": {
-      "prose": "Corrects three gaps a manual code review found in the already-built fix: the VS Code chat extension's own copy of the presentability check still reads the old pending-only list, so the MCP tool can report a document as presented while the editor pane still refuses to open it; the new daemon-side scanner (resolveOpenableArtifacts) derives a BUILD or AMD record's document path without the existing safety checks that keep a dead or wrong path out of the list; and the registered insrc_present tool description still describes the old, lifecycle-gated behavior. This correction wires the VS Code client to the same openable list the daemon already serves, extracts the existing per-kind path rules into one shared helper so both scanners use them, and updates the tool description's wording.",
+      "prose": "Completes the HIGH-severity fix the second manual review found only partially done: the review presenter now decides what to auto-open from the correct, lifecycle-independent list, but the panel's own open path still resolved content exclusively off a cache only the narrower pending list populates, so a newly-openable document-less or not-pending record's body failed to load even though its tab appeared. Adds a small, explicit seeding method to DocsReviewClient and uses it at the one call site that needs it, so content reads for these records resolve the same way existing pending-sourced reads already do.",
       "audience": "technical"
     },
     "hldContextSlice": {
@@ -81,123 +81,57 @@
       "surfaceLevel": "internal",
       "api": [
         {
-          "name": "openableDocuments",
-          "signature": "openableDocuments(): Promise<Array<{ readonly id: string; readonly mdPath: string }>>",
-          "parameters": [],
-          "returns": {
-            "type": "Promise<Array<{ id: string; mdPath: string }>>",
-            "meaning": "Every PENDING_KINDS artifact the daemon's workflow.openable answers, regardless of lifecycle status -- the client-side twin of resolveOpenableArtifacts, added to DocsReviewClient (vscode-plugin/src/chat/docs-review-client.ts) beside the existing pendingDocuments()."
-          },
-          "errors": [
-            {
-              "type": "Error",
-              "condition": "the daemon is unreachable or answers a structured { error } -- propagated exactly as pendingDocuments() already propagates workflow.pending's failures."
-            }
-          ],
-          "preconditions": [
-            "A repo path is resolvable (the same repo() option pendingDocuments() already uses)."
-          ],
-          "postconditions": [
-            "Resolves to the daemon's workflow.openable artifacts unchanged; makes no daemon write call."
-          ]
-        },
-        {
-          "name": "mdPathForKind",
-          "signature": "function mdPathForKind(repoPath: string, kind: PendingKind, artifactId: string, meta: Readonly<Record<string, unknown>>): string",
+          "name": "noteKnownPath",
+          "signature": "noteKnownPath(artifactId: string, mdPath: string): void",
           "parameters": [
-            {
-              "name": "repoPath",
-              "type": "string",
-              "purpose": "The repo root to resolve the document path inside.",
-              "optional": false
-            },
-            {
-              "name": "kind",
-              "type": "PendingKind",
-              "purpose": "Which artifact kind's path rule to apply.",
-              "optional": false
-            },
             {
               "name": "artifactId",
               "type": "string",
-              "purpose": "The exact artifact id a BUILD.md's marker comment must carry for that file to count as this record's document.",
+              "purpose": "The artifact id content() will be asked to read.",
               "optional": false
             },
             {
-              "name": "meta",
-              "type": "Readonly<Record<string, unknown>>",
-              "purpose": "The artifact's meta, passed through to deriveMdPath.",
+              "name": "mdPath",
+              "type": "string",
+              "purpose": "Its known .md path, or '' for a document-less record (e.g. an AMD amendment, or a tracked BUILD with no matching marked BUILD.md) -- exactly the shape openableDocuments() and pendingDocuments() already return.",
               "optional": false
             }
           ],
           "returns": {
-            "type": "string",
-            "meaning": "'' for AMD; buildRecordMdPath's existence+marker-checked result for BUILD; deriveMdPath's result for every other kind. Extracted from toDescriptor's existing inline branching so toDescriptor and resolveOpenableArtifacts share one definition."
+            "type": "void",
+            "meaning": "Writes directly into the same mdPathById/noDocIds maps pending() already populates: '' goes to noDocIds (content() takes the evidence-read branch), a real path goes to mdPathById (content() takes the markdown-read branch with that path). No daemon call."
           },
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "toDescriptor and resolveOpenableArtifacts both call this instead of each deciding the per-kind rule inline."
+            "A subsequent content(artifactId) call resolves correctly without requiring artifactId to have come from a prior pending() call."
           ]
         },
         {
-          "name": "resolveOpenableArtifacts",
-          "signature": "function resolveOpenableArtifacts(repoPath: string): readonly OpenableArtifact[]",
+          "name": "openArtifactFrom",
+          "signature": "function openArtifactFrom(ctx: PanelCtx, target: { readonly artifactId: string; readonly mdPath: string; readonly presentKey?: string | undefined }): Promise<void>",
           "parameters": [
             {
-              "name": "repoPath",
-              "type": "string",
-              "purpose": "The repo to scan .insrc/artifacts under.",
+              "name": "ctx",
+              "type": "PanelCtx",
+              "purpose": "The panel context to open into.",
+              "optional": false
+            },
+            {
+              "name": "target",
+              "type": "{ readonly artifactId: string; readonly mdPath: string; readonly presentKey?: string | undefined }",
+              "purpose": "The review presenter's open target, sourced from openableDocuments() -- its mdPath is already correct and lifecycle-independent.",
               "optional": false
             }
           ],
           "returns": {
-            "type": "readonly OpenableArtifact[]",
-            "meaning": "Reshaped only internally: mdPath now comes from mdPathForKind(repoPath, kind, artifactId, art.meta) instead of a direct deriveMdPath call, so a BUILD entry's path is '' unless the file exists and carries this record's marker, and an AMD entry's path is always ''."
+            "type": "Promise<void>",
+            "meaning": "Reshaped only in its 'not found in pending()' branch: it now calls deps.client.noteKnownPath(target.artifactId, target.mdPath) before calling openDoc(ctx, target.artifactId, { readOnly: true, reveal: true }) with NO path option (previously { path: target.mdPath, readOnly: true, reveal: true }). The 'found in pending()' branch (passing { kind: summary.kind, reveal: true }) is unchanged."
           },
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "Every returned BUILD path is file-existence- and marker-verified; every returned AMD path is ''; every other kind is unchanged."
-          ]
-        },
-        {
-          "name": "toDescriptor",
-          "signature": "function toDescriptor(repoPath: string, file: string, kind: PendingKind, art: ArtifactShape): PendingArtifact",
-          "parameters": [
-            {
-              "name": "repoPath",
-              "type": "string",
-              "purpose": "The repo the artifact file lives in.",
-              "optional": false
-            },
-            {
-              "name": "file",
-              "type": "string",
-              "purpose": "The artifact's filename.",
-              "optional": false
-            },
-            {
-              "name": "kind",
-              "type": "PendingKind",
-              "purpose": "The artifact's kind.",
-              "optional": false
-            },
-            {
-              "name": "art",
-              "type": "ArtifactShape",
-              "purpose": "The parsed artifact JSON.",
-              "optional": false
-            }
-          ],
-          "returns": {
-            "type": "PendingArtifact",
-            "meaning": "Unchanged descriptor shape; its mdPath field now comes from the shared mdPathForKind instead of an inline ternary -- same values, same behavior, single source."
-          },
-          "errors": [],
-          "preconditions": [],
-          "postconditions": [
-            "listPendingArtifacts' own tests (pending/approved/rejected filtering, the BUILD/CR-sibling gate) keep passing unmodified: this is a pure refactor of toDescriptor's path derivation, not a behavior change."
+            "openDoc's existing opts.path ?? artifactId correctly falls back to artifactId (opts.path is now undefined, never ''); content(artifactId) resolves via the freshly-seeded cache entry, taking the evidence-read branch for a document-less record and the markdown-read branch with the correct path otherwise."
           ]
         }
       ]
@@ -207,57 +141,42 @@
     "errorPaths": {
       "errorCases": [
         {
-          "scenario": "openableDocuments() daemon round-trip fails (unreachable daemon or a structured { error } from workflow.openable)",
-          "detection": "The same IpcClient rejection / structured-error path pendingDocuments() already uses for workflow.pending -- no new detection logic.",
-          "response": "Propagated as a thrown Error, exactly as pendingDocuments() propagates a workflow.pending failure today; review-presenter's existing catch in read() sets outcome.unreadable = true and logs a warning.",
-          "userImpact": "The turn's declared documents are reported unreadable and nothing opens -- identical to today's failure mode for pendingDocuments(), just reached via a different method name.",
+          "scenario": "The daemon itself rejects the content read after the cache is correctly seeded (e.g. workflow.deliveryEvidence or workflow.artifactContent answers a structured { error } for a genuinely missing/corrupt record)",
+          "detection": "content()'s existing isError(res) check on either RPC's response -- unchanged by this fix.",
+          "response": "openDoc's existing catch block renders 'unavailable: <message>' in the pane, exactly as it already does for any other content() failure today.",
+          "userImpact": "Same failure UX as every other existing content-read failure; not a new error class.",
           "recoverable": true
         },
         {
-          "scenario": "mdPathForKind is asked for a BUILD record whose BUILD.md is missing, or exists but does not carry THIS record's exact artifact marker",
-          "detection": "buildRecordMdPath's existing existsSync check and `<!-- insrc:artifact <id> -->` substring check, now reached through mdPathForKind instead of toDescriptor's inline call.",
-          "response": "Returns '' (document-less); the record is still openable by artifact id.",
-          "userImpact": "No change from today's listPendingArtifacts behavior for the same BUILD record -- resolveOpenableArtifacts now matches it exactly instead of returning a dead or wrong path.",
-          "recoverable": true
-        },
-        {
-          "scenario": "mdPathForKind is asked for an AMD record",
-          "detection": "An explicit kind === 'AMD' branch, unconditional -- no file-system check at all (an amendment is JSON-only).",
-          "response": "Returns '' always.",
-          "userImpact": "The amendment is openable by artifact id, exactly as listPendingArtifacts already presents it; resolveOpenableArtifacts stops fabricating a nonexistent AMD.md path.",
+          "scenario": "An unrelated pending() refresh (e.g. a file-watcher-triggered reopen of a different open document) clears mdPathById/noDocIds in the narrow window between noteKnownPath's seed and openDoc's content() call",
+          "detection": "None new: the seeded entry is simply gone, so resolvePath falls back to its pre-existing `?? idOrPath` behavior and the lookup misses exactly as the original bug did.",
+          "response": "No new handling; this is a known, narrow residual timing window inherited from the pre-existing single-entry-cache design, not introduced by this fix.",
+          "userImpact": "In this narrow window the open can still fail once; re-declaring (re-running insrc_present or re-clicking the pending-list row) reseeds and succeeds. Not fixed by this Task; noted as a residual limitation.",
           "recoverable": true
         }
       ],
       "edgeCases": [
         {
-          "input": "A repo with zero PENDING_KINDS artifact files.",
-          "expected": "openableDocuments() and resolveOpenableArtifacts both return []; review-presenter reports every declared name as notPending -- unchanged from today's behavior for an empty/absent store."
+          "input": "target.mdPath === '' (an AMD amendment, or a tracked BUILD with no matching marked BUILD.md) and target.artifactId is NOT in the pending() list",
+          "expected": "noteKnownPath seeds noDocIds; content(artifactId) takes the evidence-read branch (workflow.deliveryEvidence) and the record's rendered body loads."
         },
         {
-          "input": "A BUILD.md on disk whose marker comment names a DIFFERENT artifactId than the record being resolved (a stale or superseded file).",
-          "expected": "mdPathForKind returns '' for this record, never the other record's path -- the marker check is exact-match, not existence-only."
+          "input": "target.mdPath is a real non-empty path (a CR-less tracked BUILD with a valid marked BUILD.md) and target.artifactId is NOT in the pending() list",
+          "expected": "noteKnownPath seeds mdPathById with the real path; content(artifactId) resolves to that exact path and takes the markdown-read branch (workflow.artifactContent)."
         },
         {
-          "input": "The JetBrains plugin's own review panel, reading the SAME repo at the same time via its own daemon IPC call to workflow.pending.",
-          "expected": "Fully unaffected: it is a different client, a different call, and this Story does not touch it or listPendingArtifacts."
+          "input": "target.artifactId IS found in the pending() list (summary !== undefined)",
+          "expected": "Unchanged: openArtifactFrom's other branch (passing { kind: summary.kind, reveal: true }) runs exactly as before; noteKnownPath is never called for this case."
         }
       ],
       "invariantsToPreserve": [
         {
-          "text": "createReviewPresenter's only production wiring point is extension.ts's activate() (lines 104-1090, wiring at 730-734); openableDocuments must be wired at that exact call site with no other caller introduced, since the analyze bundle and a direct grep both found no second VS Code consumer of the pending/openable list.",
+          "text": "Line 1476 (openArtifactFrom's 'not found in pending()' branch) is the ONLY openDoc call site that needs changing; reopen (1712-1722) and handleMessage's call (2502) must stay exactly as they are -- neither passes an empty-string path today.",
           "source": "c1"
         },
         {
-          "text": "toDescriptor's BUILD path is '' unless the derived BUILD.md exists AND its head carries this record's exact `<!-- insrc:artifact <id> -->` marker (buildRecordMdPath, pending.ts:259-276); mdPathForKind must preserve this check exactly, not approximate it with an existence-only test.",
+          "text": "content()'s own branching logic -- `noDocIds.has(idOrPath)` for the evidence-read decision, `resolvePath` -> `mdPathById.get(idOrPath) ?? idOrPath` for the markdown-read path -- must stay exactly as it is; this fix only ever adds an earlier, explicit WRITE to the same two maps, never changes how content() reads them.",
           "source": "c2"
-        },
-        {
-          "text": "toDescriptor's AMD path is always '' (pending.ts:238-240) because an amendment is a JSON record with no rendered document; mdPathForKind must preserve this unconditional empty-path rule exactly.",
-          "source": "c2"
-        },
-        {
-          "text": "The registered insrc_present tool description (server.ts:870-895) must state that presentation is independent of lifecycle status, matching handleInsrcPresent's actual openableWorkflow-backed behavior: an already-approved or already-rejected artifact is presented, not notPending.",
-          "source": "c3"
         }
       ]
     },
@@ -265,191 +184,134 @@
       "testLevels": [
         {
           "level": "unit",
-          "purpose": "Prove openableDocuments() forwards to workflow.openable (not workflow.pending) and propagates a daemon failure exactly like pendingDocuments() does.",
+          "purpose": "Prove noteKnownPath seeds the same caches pending() populates, so a subsequent content() call for an id that never went through pending() resolves correctly.",
           "subjects": [
-            "DocsReviewClient.openableDocuments"
+            "DocsReviewClient.noteKnownPath",
+            "DocsReviewClient.content (regression: existing pending()-sourced behavior unchanged)"
           ],
           "fixturesNeeded": [
-            "a fake daemon/IpcClient stand-in recording the method name it was called with, mirroring the existing pendingDocuments() test fixture"
-          ]
-        },
-        {
-          "level": "unit",
-          "purpose": "Prove review-presenter's declared() auto-open path is now driven by the openable list, so an approved/rejected document is opened, not refused.",
-          "subjects": [
-            "review-presenter.ts declared() via createReviewPresenter"
-          ],
-          "fixturesNeeded": [
-            "the existing kit() fixture in review-presenter.test.ts, fed an openable-shaped PendingDocument list including an entry that would have been excluded under the old pending-only semantics"
-          ]
-        },
-        {
-          "level": "unit",
-          "purpose": "Prove mdPathForKind reproduces toDescriptor's exact existing per-kind rules: BUILD file-existence + marker check, AMD unconditional empty string, every other kind via deriveMdPath unchanged.",
-          "subjects": [
-            "mdPathForKind",
-            "toDescriptor (regression: unchanged output)"
-          ],
-          "fixturesNeeded": [
-            "the existing pending.test.ts fixtureRepo() helper; a BUILD.md with a matching marker, one missing, one with a mismatched marker; an AMD record"
-          ]
-        },
-        {
-          "level": "unit",
-          "purpose": "Prove resolveOpenableArtifacts now returns '' for a missing/mismatched BUILD.md and for every AMD record, closing the gap the manual review found.",
-          "subjects": [
-            "resolveOpenableArtifacts"
-          ],
-          "fixturesNeeded": [
-            "the same fixtureRepo() fixtures as the mdPathForKind tests"
+            "the existing fakeIpc fixture in docs-review-client.test.ts"
           ]
         },
         {
           "level": "integration",
-          "purpose": "Confirm the registered insrc_present tool description text states presentation is lifecycle-status-independent and no longer claims an approved artifact is notPending.",
+          "purpose": "Reproduce the manual review's exact four-case matrix against the real openArtifactFrom/openDoc/content chain over a fake daemon: a CR-less tracked BUILD with no BUILD.md, an approved AMD, a pending AMD control, and a CR-less tracked BUILD with a valid marked BUILD.md control.",
           "subjects": [
-            "insrc_present tool registration description (server.ts)"
+            "openArtifactFrom (docs-review-panel.ts)",
+            "openDoc (docs-review-panel.ts)"
           ],
-          "fixturesNeeded": []
+          "fixturesNeeded": [
+            "a fakeIpc-style daemon stand-in answering workflow.pending/workflow.deliveryEvidence/workflow.artifactContent, matching the four-case matrix from the manual review's reproduction"
+          ]
         }
       ],
       "acceptanceMapping": [
         {
           "criterionId": "ac1",
           "provingTests": [
-            "DocsReviewClient.openableDocuments calls the daemon's 'workflow.openable' method, not 'workflow.pending'",
-            "review-presenter declared() opens a document that is approved/rejected/has no CR sibling when its source list is openable-shaped, where the old pending-only fixture would have refused it"
+            "noteKnownPath seeds noDocIds for an empty mdPath, so content(id) takes the evidence-read branch without a prior pending() call",
+            "noteKnownPath seeds mdPathById for a real mdPath, so content(id) takes the markdown-read branch with that exact path without a prior pending() call"
           ]
         },
         {
           "criterionId": "ac2",
           "provingTests": [
-            "mdPathForKind returns '' for a BUILD record whose BUILD.md is missing",
-            "mdPathForKind returns '' for a BUILD record whose BUILD.md exists but carries a different record's marker",
-            "mdPathForKind returns the derived path for a BUILD record whose BUILD.md exists and carries its own marker",
-            "mdPathForKind returns '' for every AMD record, unconditionally",
-            "resolveOpenableArtifacts returns '' for a BUILD record with no matching BUILD.md",
-            "resolveOpenableArtifacts returns '' for an AMD record",
-            "toDescriptor's existing listPendingArtifacts tests still pass unmodified after the mdPathForKind extraction"
-          ]
-        },
-        {
-          "criterionId": "ac3",
-          "provingTests": [
-            "the registered insrc_present description no longer contains the phrase 'pending approval and openable' or lists an approved artifact under notPending's examples, and instead states presentation is independent of lifecycle status"
+            "openArtifactFrom's 'not found in pending()' branch calls noteKnownPath then opens with no path option, and the resulting pane body loads for a document-less target (reproducing the reviewer's CR-less-BUILD-with-no-BUILD.md and approved-AMD cases)",
+            "openArtifactFrom's 'not found in pending()' branch opens correctly for a document-backed, not-pending target (reproducing the reviewer's CR-less-BUILD-with-valid-BUILD.md case)",
+            "openArtifactFrom's 'found in pending()' branch is unchanged: it still opens via { kind: summary.kind, reveal: true } with no call to noteKnownPath (reproducing the reviewer's pending-AMD control case)"
           ]
         }
       ],
       "testFramework": "node:test"
     },
     "migration": {
-      "stateBefore": "Per c1: vscode-plugin's DocsReviewClient.pendingDocuments() calls workflow.pending, and extension.ts:730-734 wires it as review-presenter.ts's sole pendingDocuments dependency, so the VS Code chat's auto-open flow still applies the pending-only/BUILD-CR-sibling gate the daemon side of this Story already removed for the MCP tool. Per c2: resolveOpenableArtifacts calls deriveMdPath uniformly, bypassing toDescriptor's existing buildRecordMdPath existence/marker check and AMD empty-path sentinel. Per c3: server.ts's registered insrc_present description still states the pre-fix, lifecycle-gated semantics.",
-      "stateAfter": "DocsReviewClient gains openableDocuments() (calls workflow.openable); extension.ts:732 wires review-presenter's pendingDocuments dependency to it instead of pendingDocuments(). pending.ts gains a shared mdPathForKind helper carrying toDescriptor's exact BUILD/AMD rules; both toDescriptor and resolveOpenableArtifacts call it. server.ts's insrc_present description states presentation is independent of lifecycle status.",
+      "stateBefore": "Per c1: docs-review-panel.ts's openArtifactFrom (1456-1479) looks the target up only via client.pending(); when absent, it calls openDoc with { path: target.mdPath, ... }, and target.mdPath is '' for a document-less openable-but-not-pending record. Per c2: DocsReviewClient.content() (181-204) decides evidence-vs-markdown solely via mdPathById/noDocIds, both populated only by pending() (112-148); openableDocuments() (172-179) writes to neither. The two compound: the empty string survives openDoc's opts.path ?? artifactId fallback, and even if it didn't, content() has no cached fact about an openable-only id either way.",
+      "stateAfter": "DocsReviewClient gains noteKnownPath(artifactId, mdPath), seeding the same two caches directly. openArtifactFrom's 'not found in pending()' branch calls it with target.mdPath (already correct) then calls openDoc with no path option at all, letting the existing ?? artifactId fallback and the existing noDocIds/resolvePath branching in content() both resolve correctly.",
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Add mdPathForKind(repoPath, kind, artifactId, meta) to src/workflow/pending.ts, extracting toDescriptor's existing BUILD/AMD branching verbatim (no behavior change).",
+          "action": "Add noteKnownPath(artifactId, mdPath) to DocsReviewClient (vscode-plugin/src/chat/docs-review-client.ts), writing directly into the existing mdPathById/noDocIds maps.",
           "rollbackable": true
         },
         {
           "order": 2,
-          "action": "Change toDescriptor to call mdPathForKind instead of its inline ternary; change resolveOpenableArtifacts to call mdPathForKind instead of calling deriveMdPath directly.",
-          "rollbackable": true
-        },
-        {
-          "order": 3,
-          "action": "Add openableDocuments() to DocsReviewClient (vscode-plugin/src/chat/docs-review-client.ts), mirroring pendingDocuments()'s shape but forwarding to workflow.openable.",
-          "rollbackable": true
-        },
-        {
-          "order": 4,
-          "action": "Change extension.ts:732's reviewPresenter pendingDocuments dependency to call reviewClient.openableDocuments() instead of reviewClient.pendingDocuments().",
-          "rollbackable": true
-        },
-        {
-          "order": 5,
-          "action": "Reword the registered insrc_present tool description in server.ts to state presentation is independent of lifecycle status, removing the 'already approved' notPending example.",
+          "action": "Change openArtifactFrom's 'not found in pending()' branch (docs-review-panel.ts) to call deps.client.noteKnownPath(target.artifactId, target.mdPath) then openDoc(ctx, target.artifactId, { readOnly: true, reveal: true }) with no path option, replacing the previous { path: target.mdPath, readOnly: true, reveal: true }.",
           "rollbackable": true
         }
       ],
-      "backwardCompat": "pendingDocuments() and workflow.pending stay exactly as they are -- the JetBrains review panel and any other caller of pendingDocuments() keep today's pending-only semantics unchanged. No field, method or IPC message is removed; openableDocuments() is purely additive on the client, mirroring the daemon side's existing additive openableWorkflow. toDescriptor's output is bit-for-bit unchanged (pure refactor via mdPathForKind), so listPendingArtifacts' own tests need no change.",
+      "backwardCompat": "pending(), pendingDocuments(), openableDocuments() and content()'s own branching logic are all unchanged. noteKnownPath is purely additive on the client. The 'found in pending()' branch of openArtifactFrom, reopen, and handleMessage's openDoc call are all untouched, since none of them pass an empty-string path today.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Full correction: client-side openable twin + shared path-rule helper + description fix",
-        "oneLineSummary": "Add openableDocuments() to DocsReviewClient (mirrors pendingDocuments, calls workflow.openable), rewire review-presenter's dependency to it, extract toDescriptor's per-kind mdPath rules into a shared helper both it and resolveOpenableArtifacts call, and correct the insrc_present tool description.",
-        "approach": "Three independent, additive corrections, each mirroring an existing pattern: (1) vscode-plugin/src/chat/docs-review-client.ts gains openableDocuments() (same shape as pendingDocuments, forwards to workflow.openable instead of workflow.pending); vscode-plugin/src/extension.ts:732 rewires reviewPresenter's pendingDocuments dependency to call it. (2) src/workflow/pending.ts extracts a shared mdPathForKind(repoPath, kind, artifactId, meta) helper from toDescriptor's existing BUILD/AMD special-casing (buildRecordMdPath + '' sentinel) and both toDescriptor and resolveOpenableArtifacts call it, so the two scanners can never again diverge on path-derivation correctness. (3) server.ts's insrc_present description is reworded to state presentation is independent of lifecycle status.",
+        "name": "Seed the existing path/no-doc caches from the already-correct openable target before reading content",
+        "oneLineSummary": "Add DocsReviewClient.noteKnownPath(artifactId, mdPath), seeding mdPathById/noDocIds for one id without a round trip; openArtifactFrom calls it with target.mdPath (already correct, from openableDocuments()) when the target is absent from pending(), then calls openDoc with no path option at all so the existing ?? artifactId fallback and existing noDocIds-based content() branching both work unchanged.",
+        "approach": "DocsReviewClient gains one new method, noteKnownPath(artifactId, mdPath): void, that writes directly into the same mdPathById/noDocIds maps pending() already populates -- '' goes to noDocIds, a real path to mdPathById. openArtifactFrom's 'not found in pending()' branch calls deps.client.noteKnownPath(target.artifactId, target.mdPath) then openDoc(ctx, target.artifactId, { readOnly: true, reveal: true }) -- no path option, so opts.path is undefined and the existing opts.path ?? artifactId correctly falls back to the artifactId; content(artifactId) then finds the freshly-seeded cache entry and takes the correct branch (evidence read for '', markdown read for a real path) with zero changes to content() itself.",
         "pros": [
-          "Each fix is additive/mirrors an already-reviewed pattern (openableWorkflow already mirrors pendingWorkflow daemon-side) -- minimal new design risk",
-          "Closes the HIGH-severity end-to-end gap: the MCP tool's presented answer and the VS Code editor's actual open behavior agree again",
-          "Single source of truth for per-kind path rules removes the exact class of bug the reviewer found, not just today's instance of it",
-          "listPendingArtifacts / pendingDocuments / the JetBrains review panel keep their narrower pending-only semantics untouched"
+          "Smallest diff: one new 3-line method, one changed call site; content()'s existing branching logic is untouched and unduplicated",
+          "Reuses the exact cache the rest of the client already trusts -- no second source of truth for 'does this id have a document'",
+          "Fixes BOTH confirmed bugs at once: the empty-string ?? bug (by omitting path entirely) and the cache-never-populated-by-openableDocuments bug (by seeding it directly from data the caller already has)"
         ],
         "cons": [
-          "Touches vscode-plugin/, outside the Plan's original 4-task surface -- requires a new Task and a VS Code extension test",
-          "Three unrelated-looking edits in one Story; must keep each one's scope tight so a reviewer can tell them apart"
+          "A narrow race remains: if an unrelated pending() refresh (e.g. a file-watcher-triggered reopen on another document) clears the caches in the microtask window between the seed and openDoc's content() call, the seeded entry is lost and the open fails again -- same class of fragility the review already flagged in the pre-existing design, not newly introduced",
+          "Leans on call-order discipline (seed immediately before use) rather than making the seeded fact a value passed all the way through"
         ],
         "costEstimate": "S"
       },
       {
         "id": "a2",
-        "name": "Partial: fix only pending.ts's path rules + the tool description",
-        "oneLineSummary": "Keep the original LLD's 'leave all IDE consumers untouched' decision; only fix resolveOpenableArtifacts' path derivation and the stale tool description.",
-        "approach": "Apply (2) and (3) from a1 but skip (1): do not touch vscode-plugin. The daemon-side scanner and the MCP tool description become correct, but the VS Code chat UI's own pendingDocuments() call is left reading workflow.pending.",
+        "name": "A dedicated openableContent(target) method that decides evidence-vs-markdown from the given mdPath directly, bypassing the cache entirely",
+        "oneLineSummary": "Add DocsReviewClient.openableContent({id, mdPath}): Promise<DocsContent>, which inspects the given mdPath itself (empty vs real) to pick the evidence or markdown read, with no cache involved; openArtifactFrom's panel-side open path calls it instead of the generic content() for a not-in-pending-list target.",
+        "approach": "Extract content()'s branching body into a shared internal helper parameterized on (artifactId, knownMdPath: string | undefined), called both by content(idOrPath) (resolving knownMdPath from the existing caches, unchanged behavior for every existing caller) and by the new openableContent(target), which passes target.mdPath directly with no cache lookup at all. docs-review-panel.ts's openArtifactFrom would call deps.client.openableContent(target) in its 'not found' branch.",
         "pros": [
-          "Smallest possible diff -- stays entirely inside the already-approved Plan's file surface",
-          "Fixes two of the three reviewer findings with no new Task"
+          "Eliminates the race a1 has: the decision is made from a value passed straight through the call, never from a cache that something else can clear in between",
+          "Makes the document-less/openable-content path explicit and self-contained -- a future reader does not have to trace cache population order to understand it"
         ],
         "cons": [
-          "Does NOT fix the HIGH-severity finding: insrc_present would still report presented while the VS Code editor pane refuses to open the document -- the reported defect's end-to-end symptom survives for VS Code users",
-          "Repeats the exact mistake the review caught: assuming an IDE consumer that is a documented 'twin' of server-side logic can be left out of a server-side behavior change"
+          "Larger diff: a new client method, a refactor of content()'s body into a shared helper, and a new call shape in openDoc/openArtifactFrom (openDoc would need a way to carry the resolved DocsContent through its existing setOpened/postToAll plumbing without going through its own client.content(opts.path ?? artifactId) call, which touches more of openDoc than a1 does)",
+          "Two read paths into the same daemon RPCs (content() and openableContent()) to keep conceptually aligned, even though the extraction keeps the actual branching logic shared"
         ],
-        "costEstimate": "XS",
-        "reasonRejected": "Violates the HIGH-severity finding by design: leaves the VS Code auto-open path on workflow.pending, so the MCP tool would keep reporting presented while the editor pane refuses to open the document."
+        "costEstimate": "M",
+        "reasonRejected": "Strictly more robust (no residual race) but at M cost for a fix a1 already gets right at S cost; the residual race is pre-existing fragility, not a new regression."
       },
       {
         "id": "a3",
-        "name": "Widen pendingDocuments() itself in place",
-        "oneLineSummary": "Change DocsReviewClient.pendingDocuments() to call workflow.openable directly, with no new method and no rename.",
-        "approach": "Since the analyze bundle (usage.example on createReviewPresenter) and a direct grep both found no other VS Code consumer of pendingDocuments()/workflow.pending, redefine pendingDocuments() in place to call workflow.openable, forwarding the result unchanged.",
+        "name": "Have openableDocuments() itself populate the shared caches (merge, not seed-one)",
+        "oneLineSummary": "Change openableDocuments() to merge its results into mdPathById/noDocIds (without clearing), so a later openArtifactFrom's pending() call finds the openable-only entries already cached.",
+        "approach": "openableDocuments() writes every returned artifact into the same two maps pending() uses, additively (no .clear()). Since review-presenter.declared() already calls openableDocuments() before invoking open(), the cache is warm by the time openArtifactFrom runs its own pending() call and looks up the target.",
         "pros": [
-          "No new method name to introduce or wire",
-          "Slightly smaller diff than a1's client-side half"
+          "No change to openArtifactFrom's control flow or to openDoc's call shape at all"
         ],
         "cons": [
-          "The method is still literally named pendingDocuments while it would return lifecycle-independent (including approved/rejected) results -- misleading to any future reader or second consumer",
-          "A future genuine VS Code 'pending-approvals' feature (mirroring the JetBrains review panel) would have to re-split this method later, repeating work a1 avoids by naming the two concerns separately from the start",
-          "Breaks DocsReviewClient's own interface contract comment ('pending()' -> 'workflow.pending') without updating it, reintroducing the same kind of stale-description drift Finding 3 just caught server-side"
+          "Reproduces exactly the flaw the manual review called out: 'a cache that pending refreshes clear' -- pending()'s own .clear() still wipes these merged entries on its very next call, so the fix is order-dependent on nothing having called pending() again since openableDocuments() ran, which is not guaranteed (a boot ping, a watch-triggered reopen, or another panel's refresh could run pending() in between)",
+          "Couples two methods' internal caches implicitly through call order across two different files (review-presenter.ts and docs-review-panel.ts), which is harder to verify than a1's single, local seed-then-use"
         ],
-        "costEstimate": "XS",
-        "reasonRejected": "Functionally closes the HIGH gap but via a misleadingly-named method (pendingDocuments would return lifecycle-independent results) and an unmaintained interface-contract comment, and does not itself address the MED/LOW findings."
+        "costEstimate": "S",
+        "reasonRejected": "Reproduces exactly the flaw the manual review named: relying on a cache that pending() refreshes clear."
       },
       {
         "id": "a4",
-        "name": "Invert control: insrc_present's own response carries the open targets",
-        "oneLineSummary": "Stop having review-presenter poll a separate pendingDocuments()/openableDocuments() list at all; have the chat host open documents directly from insrc_present's tool-call result.",
-        "approach": "Change the chat-host/provider-mapper protocol so the declared documents and their resolved mdPaths travel on the insrc_present tool-call event itself, and review-presenter opens from that payload instead of making its own daemon round-trip.",
+        "name": "Push the fix server-side: have workflow.artifactContent accept an empty/absent mdPath and render by artifactId",
+        "oneLineSummary": "Change the daemon's workflow.artifactContent handler to accept a missing or empty mdPath and resolve the record by artifactId instead, so the client's existing content(idOrPath) always succeeds regardless of which cache (if any) populated it.",
+        "approach": "Widen the daemon-side artifactContent handler's contract so a request with no mdPath (or an empty one) falls back to looking the artifact up by id, mirroring what workflow.deliveryEvidence already does for a document-less record.",
         "pros": [
-          "Eliminates the whole class of client/server drift this review found, permanently -- there would be only one source of truth for 'what did insrc_present just decide'",
-          "Removes a full daemon round-trip from the auto-open path"
+          "Fixes the failure for every current and future VS Code (or other IDE) client in one place, with no client-side cache logic to get right at all"
         ],
         "cons": [
-          "A protocol change across the chat-host, provider-mapper and both extension clients (VS Code + any future consumer) -- far beyond a bugfix Story's scope",
-          "No existing design covers this; it would need its own Epic/HLD, not a Story-level LLD correction",
-          "Changes behavior unrelated to the three reviewer findings (which are all fixable without touching the tool-call protocol)"
+          "Touches daemon code (src/workflow/*, the artifactContent handler and its own completeness/contract tests) -- out of this Story's established boundary, which this correction round's own reviewer and the Story's own scope have kept to the VS Code client only (daemon-side resolveOpenableArtifacts/mdPathForKind were already fixed and are not the problem here)",
+          "Widens workflow.artifactContent's contract for every caller (including the JetBrains plugin and any other daemon client), a much larger blast radius than this bugfix Story's scope"
         ],
         "costEstimate": "L",
-        "reasonRejected": "An unscoped, oversized protocol change across the chat-host/provider-mapper boundary -- needs its own Epic/HLD, not a Story-level correction."
+        "reasonRejected": "Violates this Story's established VS-Code-client-only scope boundary by touching daemon code and widening a shared IPC contract."
       }
     ],
     "chosenAlternative": "a1",
     "openQuestions": [],
     "epicImpact": {
       "applies": false,
-      "reason": "Standalone, ISSUE-anchored bugfix Story with no sibling Stories; this is a correction round on this same Story's own already-approved LLD/PLAN/BUILD, not a later Story of a multi-Story Epic.",
+      "reason": "Standalone, ISSUE-anchored bugfix Story with no sibling Stories; third correction round on this same Story's own already-approved LLD/PLAN/BUILD.",
       "storiesCovered": [],
       "findings": "",
       "sources": []
@@ -459,44 +321,14 @@
     {
       "id": "c1",
       "kind": "analyze-bundle",
-      "ref": "vscode-plugin/src/extension.ts:730-734",
-      "quotedText": "pendingDocuments: () => reviewClient.pendingDocuments(),"
+      "ref": "vscode-plugin/src/chat/docs-review-panel.ts:1456-1479",
+      "quotedText": ": openDoc(ctx, target.artifactId, { path: target.mdPath, readOnly: true, reveal: true });"
     },
     {
       "id": "c2",
       "kind": "code",
-      "ref": "src/workflow/pending.ts:175-198",
-      "quotedText": "const mdPath = deriveMdPath(repoPath, kind as ArtifactKind, art.meta ?? {});"
-    },
-    {
-      "id": "c3",
-      "kind": "code",
-      "ref": "src/mcp/server.ts:876-880",
-      "quotedText": "'and openable). Pass one to twenty artifact ids"
-    },
-    {
-      "id": "c4",
-      "kind": "code",
-      "ref": "src/workflow/pending.ts:222-246",
-      "quotedText": "mdPath: kind === 'BUILD' ? buildRecordMdPath(repoPath, artifactId, meta)"
-    },
-    {
-      "id": "c5",
-      "kind": "code",
-      "ref": "src/workflow/pending.ts:259-276",
-      "quotedText": "return head.includes(`<!-- insrc:artifact ${artifactId} -->`) ? derived : '';"
-    },
-    {
-      "id": "c6",
-      "kind": "code",
-      "ref": "vscode-plugin/src/chat/docs-review-client.ts:154-162",
-      "quotedText": "'workflow.pending',"
-    },
-    {
-      "id": "c7",
-      "kind": "code",
-      "ref": "vscode-plugin/src/chat/review-presenter.ts:72-73",
-      "quotedText": "const namesDocument = (name: string, doc: PendingDocument): boolean =>"
+      "ref": "vscode-plugin/src/chat/docs-review-client.ts:181-204",
+      "quotedText": "if (noDocIds.has(idOrPath)) {"
     }
   ]
 }

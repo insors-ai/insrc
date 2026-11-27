@@ -321,6 +321,11 @@ Insrc must additionally own dirty tracking, Save commands, backup recovery, exte
 - Qualify exact supported Markdown syntax and note-size budget against real files: zero writes on open, no silent loss of unknown content, custom links, front matter, HTML/comments and diagram fences. Unsupported edits preserve the original and report the limitation. No live qualification has been performed.
 - Shared sc1/sc2/sc3 and all story dependencies remain unchanged. S007 owns persisted repo association and rename/move/archive identity; S008 owns cited attachments. No need for an ERD because this revision adds no new persistent entity relationship; component, sequence and illustrative one-pane UX definitions document the changed boundary.
 
+## Resolved questions
+
+- `q5818e4e2` — BACKFLOW REQUIRED BEFORE BUILD — Current DEF k3, FR005, S001 FR001/lc1/lc2 and ac1/ac3 require the built-in editor. Proposed replacement: scratchpads open in one insrc-owned Milkdown + Crepe CustomTextEditorProvider pane on the real .md TextDocument; rich editing and insrc-owned lock/pencil/selection Send are in that pane; normal VS Code document save/conflict applies. Retire the old textarea/document-save protocol, not all webview rendering. Update/reapprove DEF and rebase/reapprove S001 LLD before PLAN/build; this HLD draft does not mutate or approve those upstream records.
+  - **resolved**: Full DEF/LLD rebase — DEF revision 7 and HLD revision 5 have both been explicitly presented and approved by the user. DEF now replaces k3, S001 native-only clauses and records explicit click-only Send (ac4), with sibling stories/IDs preserved. This run is the required regeneration of the S001 LLD; its separate approval remains required before PLAN/build. _(2026-11-27T18:31:41.505Z)_
+
 ## Citations
 
 - **[[c1]]** `doc` `docs/reqs/enhanced-scratchpad-prd.html` — "Settled mock UI decisions: menu cap 10; list panel 20 pads newest-first, 3-line previews, per-row delete, in-panel relevance search; pad = built-in Markdown Editor locked with pencil inline-edit; sepa"

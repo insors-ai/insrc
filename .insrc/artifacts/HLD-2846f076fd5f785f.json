@@ -49,7 +49,16 @@
       "references": [],
       "attachments": []
     },
-    "revision": 5
+    "revision": 5,
+    "questionResolutions": {
+      "q5818e4e2": {
+        "question": "BACKFLOW REQUIRED BEFORE BUILD — Current DEF k3, FR005, S001 FR001/lc1/lc2 and ac1/ac3 require the built-in editor. Proposed replacement: scratchpads open in one insrc-owned Milkdown + Crepe CustomTextEditorProvider pane on the real .md TextDocument; rich editing and insrc-owned lock/pencil/selection Send are in that pane; normal VS Code document save/conflict applies. Retire the old textarea/document-save protocol, not all webview rendering. Update/reapprove DEF and rebase/reapprove S001 LLD before PLAN/build; this HLD draft does not mutate or approve those upstream records.",
+        "status": "resolved",
+        "choice": "Full DEF/LLD rebase",
+        "rationale": "DEF revision 7 and HLD revision 5 have both been explicitly presented and approved by the user. DEF now replaces k3, S001 native-only clauses and records explicit click-only Send (ac4), with sibling stories/IDs preserved. This run is the required regeneration of the S001 LLD; its separate approval remains required before PLAN/build.",
+        "resolvedAt": "2026-11-27T18:31:41.505Z"
+      }
+    }
   },
   "body": {
     "summary": {

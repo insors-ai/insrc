@@ -5,7 +5,6 @@
 ## Summary
 
 **Flavor:** enhancement
-**Tracker:** [insors-ai/insrc#185](https://github.com/insors-ai/insrc/issues/185)
 
 Turns the VS Code scratchpads from a flat list of recent files into a linked knowledge surface: pads open in a native rendered Markdown editor, notes link to each other and to code symbols and workflow artifacts with visible backlinks, the list panel and in-pad find make the corpus searchable, and dated entries, stable IDs, and archive/delete lifecycle make notes durable. Note evidence can be explicitly attached to a chat turn or promoted into a tracked SPEC/ISSUE draft — never implicitly.
 

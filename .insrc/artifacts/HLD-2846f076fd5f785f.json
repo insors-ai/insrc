@@ -1,21 +1,21 @@
 {
   "meta": {
     "workflow": "design.epic",
-    "runId": "wf-1794821904095-ndy0d1",
-    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-16T10:09:10.844Z",
+    "runId": "wf-1795803141296-eodyo2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T18:13:36.281Z",
     "epicCreatedAt": "2026-11-16T07:56:36.838Z",
     "attribution": {
       "outputs": [
         {
           "role": "(client)",
           "tier": "core",
-          "runner": "cli-claude",
+          "runner": "cli-codex",
           "model": "unknown"
         }
       ]
     },
-    "elapsedMs": 1846456,
+    "elapsedMs": 67457,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "2846f076fd5f785f",
@@ -24,76 +24,40 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 4,
-        "contentHash": "2dbf87a7a15a865a0b17ccb53f4f70f9c6c0d12d459e296b44bd2b2e11e4d18a",
-        "at": "2026-11-16T10:38:04.031Z",
+        "number": 5,
+        "contentHash": "ba109d32e3ee5af348ba9773830ca3e1a10cafca355217ae73a55fc11a1d6e44",
+        "at": "2026-11-27T18:13:39.534Z",
         "by": {
-          "id": "insrc:controller",
-          "kind": "agent",
-          "name": "claude-sonnet-5",
-          "properties": {
-            "reason": "HLD cleanup: fix stale sc2/Phase-B references left over from the B1/B2 split"
-          }
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
         }
       },
       "signoffs": [],
       "approval": {
-        "revision": 4,
+        "revision": 5,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-16T10:55:50.448Z",
-        "override": {
-          "reason": "Mandatory HLD design review (insrc_review_step) is unavailable this session (the same tool that paused on technical_retry_exhausted for the DEF). In its place, two rounds of controller-led critical self-review were run and applied directly to the HLD (now at content revision 5): round 1 found and fixed an internal contradiction between the design.epic resolve-questions record (\"Sequence s2 after s7\") and what the Epic's immutable dependsOn graph actually permits (recorded as an open question), plus moved the insrc.scratchpad.backlinks flag so it actually covers sc2's daemon code rather than only its consumers; round 2 caught that the flag fix over-broadened to s2/s3/s4/s7 and split Phase B into B1 (s5, flagged) / B2 (the rest, unflagged) to correct it, then cleaned up stale cross-references the split left behind. Two earlier-flagged gaps (f2: some reused module names under-cited within this stage's own analyze pass; nf1: no quantified non-functional targets, deferred to the DEF's own open question) remain recorded as open questions for s5/s6's design.story, not blockers on this artifact. User gave explicit in-chat approval (\"go ahead with approval\") after being presented this HLD."
-        }
+        "at": "2026-11-27T18:20:30.263Z"
       }
     },
-    "revision": 4,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
-    "questionResolutions": {
-      "q76fbf6b1": {
-        "question": "Item f2 (partial): architectureShape names entities.ts and relations.ts (present in s1's structural-map bundle's own summary/structure text for src/db, just not duplicated into that bundle's pathsCited array) and ArtifactIds (src/workflow/artifact-ids.ts, grounded only via the approved DEF's citation c14 and this controller's earlier direct repo verification, not via an insrc_analyze_step pass run during this HLD's own context.assemble). Nothing is fabricated, but design.story for s5/s6 should re-verify ArtifactIds' exact exported surface before building sc2 against it.",
-        "status": "resolved",
-        "choice": "Re-verify before sc2",
-        "rationale": "Not s1's concern; defers ArtifactIds' exact exported-surface re-verification to s5/s6's own design.story, where sc2 is actually built.",
-        "resolvedAt": "2026-11-16T11:12:43.451Z"
-      },
-      "q6240d0f2": {
-        "question": "Item nf1 (partial): none of the four nonFunctional properties carries a quantified target (a latency figure, a size cap, an SLA) — performance explicitly defers the real numbers to the DEF's own unresolved open question (note-size cap, latency targets, minimum daemon/extension IPC version). design.story for s5/s6 must resolve concrete numbers before sc2's daemon IPC is built, not just before Phase C's rollout.",
-        "status": "resolved",
-        "choice": "Set all targets in s5/s6",
-        "rationale": "Not s1's concern; the note-size cap, latency targets, and IPC version negotiation belong to sc2 (owned by s5), to be set concretely before s5/s6 build.",
-        "resolvedAt": "2026-11-16T11:13:32.952Z"
-      },
-      "q5c06aa6f": {
-        "question": "This HLD contradicts its own resolved design.epic open question: at the open-questions gate, the choice recorded for s2's content/title-source gap was 'Sequence s2 after s7' (make s2 depend on s7's durable metadata). What was actually built here is the opposite: sc3 (ScratchpadListReadModel) is owned by s2 alone, with no dependency on anything s7 owns, and Phase B places s2 and s7 in parallel, not sequenced. This is not an oversight in the architecture — the Epic's own dependsOn graph has s2.dependsOn = [s1] only, never s7, and framework.write cannot invent a new Epic dependency edge; 'Sequence s2 after s7' was not actually buildable under that graph, and what got built (sc3 self-contained at s2) was the only graph-consistent option, equivalent to the 'Interim file parsing' choice that was not selected at the gate. The resolve-question record itself was not corrected when this was discovered. design.story for s2 and s7 should treat this HLD, not that resolution record, as authoritative, and should not expect to depend on s7 for list/title data.",
-        "status": "resolved",
-        "choice": "Keep sc3 self-contained in s2",
-        "rationale": "This is the only option consistent with the Epic's immutable dependsOn graph (s2.dependsOn=[s1] only); formally closes the loop the HLD's self-review already resolved.",
-        "resolvedAt": "2026-11-16T11:14:10.778Z"
-      },
-      "q520ed625": {
-        "question": "Self-correction during HLD self-review: the first fix for the sc2-risk mitigation moved insrc.scratchpad.backlinks onto the whole of the original Phase B, which would have gated s2/s3/s4/s7 (none of which touch the new daemon index) behind a flag meant only for s5. Phase B is now split into B1 (s5 alone, flagged) and B2 (s2/s3/s4/s7, unflagged) to fix this.",
-        "status": "resolved",
-        "choice": "Keep the B1/B2 split",
-        "rationale": "Confines insrc.scratchpad.backlinks to s5 (the actual daemon-index risk), consistent with the HLD's own correction.",
-        "resolvedAt": "2026-11-16T11:14:29.372Z"
-      }
-    }
+    "revision": 5
   },
   "body": {
-    "frameworkSummary": "The Epic adopts the daemon-owned link/backlink index (winning alternative a1): a new, private, repository-keyed scratchpad index lives in src/db alongside doc-relations.ts, built on the existing graph (entities.ts, relations.ts) and ArtifactIds, and becomes the single source of truth for link resolution, backlinks, and the list's title/preview read-model. vscode-plugin's chat/ and panels/ modules stay thin UI clients over daemon IPC for everything except the native editor's own file-opening mechanics, which remain entirely client-side.",
-    "architectureShape": "Three layers: (1) the native-editor substrate (s1; host-capability probe via hosts/specs.ts's getExtension; openWith on the real file) stays wholly client-side and establishes the Epic's one cross-cutting identity primitive, ScratchpadRef (sc1); (2) a new daemon-side scratchpad-link module, extending src/db alongside doc-relations.ts and reusing entities.ts/relations.ts/ArtifactIds, owns link-target resolution and the private repository-keyed backlink index (sc2, owned by s5, per k4's invariant); (3) a daemon-served list read-model (sc3, owned by s2) gives the list panel real title/preview/mtime data without per-render re-parsing, closing the content/title-source gap found when scratch-store.ts's listScratches() was shown to do no content reads. Every story's new command/menu/openWith registration lands through the same vscode-plugin/src/extension.ts activation wiring already dominant in both chat/ and panels/ import graphs.",
     "summary": {
-      "audience": "product",
-      "prose": "The Epic builds the scratchpad into a daemon-backed knowledge surface: a new, private per-repository link index lets notes point at other notes, code, and tracked workflow artifacts, with backlinks visible from any of those targets. The scratchpad list becomes fast and searchable by relevance, and the pad itself opens in VS Code's own native Markdown editor instead of a bespoke webview."
+      "audience": "technical",
+      "prose": "Scratchpads use one Milkdown + Crepe editor pane with rich Markdown editing, insrc-owned lock controls and a selection Send button. The actual .md file remains a VS Code TextDocument, so standard save/conflict and backup behavior apply. The daemon index, shared contracts and story dependencies remain unchanged. This draft replaces the built-in-editor-only choice and requires aligned DEF and S001 LLD approval before build."
     },
+    "frameworkSummary": "The daemon-owned private repository-keyed index remains authoritative for link resolution, backlinks and the title/preview list read-model. Client-side scratchpad editing now uses Milkdown + Crepe inside a VS Code CustomTextEditorProvider on the existing .md TextDocument, replacing the host's built-in vscode.markdown.editor. Insrc owns its selection toolbar and lock state without a native-editor extension API dependency. [[c40]] [[c41]] [[c42]]",
+    "architectureShape": "The existing three layers remain: client editor/host boundary owns document interactions and sc1; daemon index owns sc2; daemon list read-model owns sc3. The Milkdown model drives presentation while the VS Code TextDocument is canonical. Versioned transactions pass through the host bridge; host-origin edits, undo/redo and external changes synchronize back without echo or a second independent undo history. The exact transaction/patch policy is an S001 LLD requirement. This is explicit user-directed backflow; old DEF k3 is not claimed satisfied. [[c40]] [[c42]]\n\nSelection -> display an accessible Send popup is local UI only. Click -> capture selected text and document identity/version -> validate/bound it in the host -> reveal chat and insert without submission. No clipboard, two-view split or automatic agent context. Read-only is insrc-owned; Send remains usable while locked. [[c40]] [[c41]]\n\nRelationships: one URI has one TextDocument per window and may have multiple views. Each view owns transient selection/lock state and subscribes to that document; explicit selection snapshots feed the existing chat route. Daemon graph/index relationships and sc1/sc2/sc3 ownership are unchanged. Prose documents these cardinalities; a sequence companion documents changed interaction order. [[c42]]",
     "sharedContracts": [
       {
         "id": "sc1",
@@ -149,7 +113,7 @@
           "sc1"
         ],
         "depends": [],
-        "internal": "The vscode.markdown.editor openWith integration, the host-capability probe (reusing hosts/specs.ts's getExtension) and its default-editor fallback UX, and the lock/pencil toggle UI are private to s1 — no other story needs the mechanics of how the editor opens, only the stable ScratchpadRef identity (sc1) it establishes for every pad."
+        "internal": "Milkdown + Crepe hosted in one VS Code CustomTextEditorProvider pane is private to s1. It owns rendering/editing, per-pane lock/pencil controls, explicit selection Send popup, versioned transaction/document synchronization, local asset packaging and TextDocument lifecycle integration. It preserves the .md file and sc1 identity, replaces the old textarea/save protocol atomically and retains browse/new/delete/send/list-refresh behavior. Locked mode keeps selection and Send available; a custom tooltip may be needed because default formatting toolbars can hide when read-only. No s8 attachments, s7 metadata persistence, backlinks or search ranking are implemented here."
       },
       {
         "storyId": "s2",
@@ -225,21 +189,21 @@
       }
     ],
     "nonFunctional": {
-      "performance": "The list panel (s2) must not re-parse every on-disk pad file per render; sc3's read-model is served from the daemon's index instead. Backlink-query latency targets and the note-size cap for sc2's new daemon IPC are explicitly an open PRD decision (DEF §8) to resolve before s2/s5/s6 build.",
-      "security": "The home-dir scratchpad store stays outside repo enrollment per k4; the daemon's new index only joins validated target identity (sc1/sc2), never widening default document search or repo registration to the store itself.",
-      "observability": "Not specified by the Epic; left to design.story.",
-      "durability": "sc1's stableId must survive rename/move/archive/restore (s7); the daemon index's reconciliation strategy against the home-dir store's actual file state (so it never serves a stale binding indefinitely) is a design.story decision."
+      "performance": "The list panel (s2) must not re-parse every on-disk pad file per render; sc3's read-model is served from the daemon's index instead. Backlink-query latency targets and the note-size cap for sc2's new daemon IPC are explicitly an open PRD decision (DEF §8) to resolve before s2/s5/s6 build. Avoid full reparses/echo loops on selection updates; set a supported note-size/performance budget in S001 LLD.",
+      "security": "The home-dir scratchpad store stays outside repo enrollment per k4; the daemon's new index only joins validated target identity (sc1/sc2), never widening default document search or repo registration to the store itself. Bundle editor assets locally under CSP. Validate bridge actions, target URI and version; no arbitrary file paths, command dispatch or cloud calls from document content. Library AI features remain disabled. Native I/O follows accepted VS Code behavior; guarded store operations remain distinct.",
+      "observability": "Log identity/version and operation failures without note text. Surface unsupported syntax and synchronization errors while preserving original content/drafts. Distinguish fake tests from live host evidence.",
+      "durability": "sc1's stableId must survive rename/move/archive/restore (s7); the daemon index's reconciliation strategy against the home-dir store's actual file state (so it never serves a stale binding indefinitely) is a design.story decision. Never write/normalize merely by opening a file. Unknown syntax, custom links and diagram fences must round-trip or unsafe edits must be refused with the original preserved. Never silently overwrite newer revisions. Validate cross-window conflict, undo/redo, reload and recovery against normal VS Code behavior."
     },
     "rolloutOverview": {
       "phases": [
         {
-          "name": "Phase A — Native editor foundation",
+          "name": "Phase A — Milkdown editor foundation",
           "includesStories": [
             "s1"
           ],
-          "rationale": "Establishes sc1 (ScratchpadRef) and retires the custom webview; every other story depends only on s1 in the Epic's graph and needs this surface + identity primitive before building on it.",
-          "backwardCompat": "Retires the custom scratchpad document webview and its scratch-save/scratch-saved protocol; the on-disk file contract in scratch-store.ts must stay byte-compatible so every existing pad opens correctly in the native editor with no migration step.",
-          "featureFlag": "insrc.scratchpad.nativeEditor"
+          "rationale": "S001 establishes sc1 and the one-pane Milkdown/Crepe CustomTextEditorProvider. Before building, align and reapprove the DEF built-in-editor-only clauses and revised S001 LLD. Qualification of transaction sync, undo, locks, selection Send, assets and Markdown fidelity belongs to this phase.",
+          "backwardCompat": "Retain .md files and IDs, existing browse/new/delete and bounded explicit Send insertion. Replace the old document textarea/save channel atomically. Use normal VS Code save/conflict lifecycle. A disabled new rich-editor path opens the file as text with an explicit notice; never silently no-op or preserve the legacy custom document editor.",
+          "featureFlag": "insrc.scratchpad.richEditor"
         },
         {
           "name": "Phase B1 — Link authoring + daemon backlink index",
@@ -286,83 +250,283 @@
       "orderingRationale": "Phase order follows the Epic’s own dependsOn edges plus the HLD’s contract-ownership placement: s1 is the sole Phase A story because every other story depends on it (directly or transitively) and it owns sc1. Phase B1 isolates s5 (owner of sc2, the new daemon index/IPC) behind its own flag; Phase B2 groups the remaining stories whose only dependency is s1 and which carry no daemon-index risk (s2, owner of sc3; s3; s4; s7). Both B1 and B2 depend only on Phase A and can land in either order relative to each other, but both must precede Phase C. Phase C groups every story whose dependencies are fully satisfied once B1+B2 ship (s6→s5, s8→s5+s7, s10→s2+s7). Phase D is s9 alone, the only story depending on a Phase C story (s8). No phase contains a story whose dependency lands in a later phase.",
       "riskyBits": [
         {
-          "area": "New daemon IPC surface (sc2, the backlink index)",
-          "why": "s5/s6 introduce the Epic's first new daemon-side persisted index and IPC contract; the note-size cap, latency targets, and minimum daemon/extension version negotiation are still an open PRD decision (DEF §8), not yet resolved.",
-          "mitigation": "Resolve the note-size/latency/version-negotiation decision during s5's design.story before any daemon code is written; s5 ships in its own Phase B1 behind the insrc.scratchpad.backlinks flag (not mixed with the unrelated B2 stories), and Phase C's consumers stay behind the same flag until that decision is validated against real note counts."
+          "area": "Upstream requirement alignment",
+          "why": "Current DEF k3 and S001 acceptance/local constraints explicitly require the built-in Markdown editor, conflicting with this user-selected replacement.",
+          "mitigation": "Carry the proposed replacement wording in this HLD; update/reapprove DEF, then regenerate/reapprove S001 LLD before PLAN/build. HLD approval alone does not silently rewrite those records."
         },
         {
-          "area": "Host-capability fallback for s1's native editor",
-          "why": "vscode.markdown.editor may not be registered on every host the plugin supports (vscode-plugin/src/hosts/specs.ts already treats Cursor as a distinct host); getting the fallback UX wrong blocks every downstream story, since s2 through s10 all depend on s1.",
-          "mitigation": "Resolve the getExtension probe and its default-editor fallback in s1's own design.story first, per the DEF's open question, and verify it on at least one non-standard host before approving s1's BUILD — nothing in Phase B1, B2, or later should start first."
+          "area": "Markdown preservation and synchronization",
+          "why": "A rich editor serializer may normalize or discard unsupported Markdown; independent histories and stale patches can overwrite user edits.",
+          "mitigation": "Use TextDocument as authority, define versioned transactions/undo ownership in LLD, never save on open, and run lossless/unsupported-syntax, undo/redo, external-edit and multi-window conflict fixtures. Refuse unsafe edits and retain original/draft content."
         },
         {
-          "area": "sc1 owned at s1 rather than s7",
-          "why": "Stable identity is semantically s7's topic but sc1 is owned at s1 to satisfy s2's position in the dependency graph (the nearest-common-ancestor rule); a reviewer unfamiliar with that rule could try to move sc1 to s7, which would break s2's and s5's dependency chain to it.",
-          "mitigation": "This HLD's storyBoundaries documents the nearest-common-ancestor rationale explicitly; s1's and s7's design.story stages should cite this section rather than re-deciding contract ownership."
+          "area": "Single-pane UX and packaged assets",
+          "why": "Default formatting tooltip behavior may hide in read-only mode; image/file handling and CSP can break a library integration.",
+          "mitigation": "Provide an owned accessible Send tooltip usable when locked, capture selection only on click, package assets locally, retain native lifecycle behavior and verify actual host lock/send/image/recovery flows."
         }
       ]
     },
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Daemon-owned link/backlink index, client-only UI",
-        "oneLineSummary": "A new daemon-side scratchpad index (alongside doc-relations.ts) owns link resolution, backlinks, and validated target identity; vscode-plugin is a thin UI client over daemon IPC for everything beyond the native editor itself.",
-        "approach": "Extend src/db with a scratchpad-link module that joins the home-dir store's typed links (note/file/symbol/artifact) against the existing graph (entities.ts, relations.ts) and ArtifactIds, producing a private, repository-keyed index per k4's invariant. The daemon becomes the single source of truth for resolution state and for backlink aggregation on files, symbols, and (once available) workflow artifacts; vscode-plugin only renders what the daemon returns and calls back on authoring actions.\n\nMetadata that must be queryable cross-repo (stable ID, archive state, link graph) lives in this daemon index rather than only in the markdown files, directly addressing the s2 content/title-source gap by giving the list a durable, daemon-served source instead of a client-side interim parse.",
+        "name": "Daemon-owned index plus a Milkdown custom text editor backed by VS Code TextDocument",
+        "oneLineSummary": "Keep the established daemon framework; use a single library-backed editable scratchpad pane with VS Code as document authority.",
+        "approach": "Preserve the HLD's daemon-owned, private repository-keyed link/backlink and list read-model framework, sc1/sc2/sc3 ownership and every story dependency. Replace only S001's editor substrate with Milkdown + Crepe inside a CustomTextEditorProvider view of the existing Markdown file. VS Code TextDocument is canonical for dirty state, save/conflict and backups.\n\nInsrc owns presentation, editable/locked state and a selection Send action in that same pane. The editor's transaction stream is version-synchronized to the TextDocument; host-origin changes are synchronized back without feedback loops or duplicate undo histories. No separate reader, clipboard workaround, local cloud client or patched built-in editor. All syntax fidelity and lifecycle claims require validation before shipping.",
         "pros": [
-          "Reuses the daemon's existing graph machinery (entities.ts, relations.ts, ArtifactIds) instead of building a second, client-side index from scratch.",
-          "One source of truth for resolution state means s2's list, s5's link authoring, and s6's backlinks all read the same daemon answer — no drift between surfaces.",
-          "Matches k4's invariant directly: a private, repository-keyed index is the daemon's natural shape, not a bolt-on."
+          "Direct control of the selection toolbar and lock state without a VS Code selection API dependency.",
+          "Real .md file and standard VS Code document lifecycle are retained while existing daemon contracts remain unchanged.",
+          "The user-selected component supplies rich editing rather than another bespoke textarea/save protocol."
         ],
         "cons": [
-          "Adds a new daemon IPC surface and a new persisted index the daemon must version/migrate going forward.",
-          "Every scratchpad read now has a round-trip dependency on the daemon being up; today's scratch-store.ts is pure client-side fs.",
-          "Backlink aggregation at daemon scale needs its own latency/size-cap decisions (already flagged as open) before this can ship."
+          "Requires DEF native-editor-only clauses and S001 LLD to be amended and reapproved before build.",
+          "Transaction mapping, undo coordination, external edits, unsupported syntax preservation, images and locked-mode selection require integration work and evidence; no lossless guarantee is assumed."
         ],
-        "costEstimate": "L"
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c1",
+          "c16",
+          "c24"
+        ]
       },
       {
         "id": "a2",
-        "name": "Client-owned metadata, daemon-assisted resolution",
-        "oneLineSummary": "vscode-plugin extends scratch-store.ts with a metadata envelope (stable ID, archive state, tags, entry boundaries) per pad; the daemon is called only for the heavier cross-repo lookups (symbol/artifact target resolution), not for backlink storage.",
-        "approach": "scratch-store.ts grows a small metadata layer — frontmatter or a sidecar record — that carries the stable ID, archive/lifecycle state, tags, and dated-entry boundaries, read directly without a daemon round-trip. Link authoring still calls the daemon to resolve a symbol or workflow-artifact target, but the resulting resolved reference and backlink relationship are cached/stored client-side.\n\nThis keeps the home-dir store close to self-contained: listing/preview/lifecycle work without the daemon running, only losing live link-target validation and cross-note backlink views when it's down.",
+        "name": "Daemon-owned index plus a Milkdown webview with store-owned document lifecycle",
+        "oneLineSummary": "Use the same single-pane library but make insrc's guarded store own editing and save state.",
+        "approach": "Keep the same daemon index and shared contracts, embedding Milkdown in an editor-area webview with its own buffer and guarded ScratchStore persistence. Selection Send and locking are fully owned, and the existing store is the only publisher.\n\nInsrc must additionally own dirty tracking, Save commands, backup recovery, external-file synchronization, conflicts and undo persistence for the custom document model. This avoids relying on native file I/O but moves responsibility away from the standard TextDocument flow the user accepted.",
         "pros": [
-          "Scratchpad listing/preview/lifecycle keeps working with the daemon offline.",
-          "Smaller new daemon surface — the daemon answers resolution queries it's already positioned to answer.",
-          "Resolves the s2 content/title-source gap with a local, synchronous fix rather than a network round-trip."
+          "Selection and lock UI remain in one pane.",
+          "Store-owned writes can retain the store's own existing guards."
         ],
         "cons": [
-          "Backlinks become a client-side aggregation, duplicating indexing logic the daemon already has for the main corpus.",
-          "Two sources of truth for the link graph can drift when a target is renamed/moved outside the scratchpad flow.",
-          "A sidecar/frontmatter schema change touches every existing scratchpad file or needs a lazy-migration path."
+          "Duplicates document lifecycle infrastructure and departs from the user-accepted normal VS Code save boundary.",
+          "More application-owned failure/recovery behavior and maintenance than a CustomTextEditorProvider."
         ],
-        "costEstimate": "M",
-        "reasonRejected": "Only partially satisfies k4: target resolution goes through the daemon with validated identity, but the backlink graph itself is cached/stored client-side rather than daemon-backed through a private, repository-keyed index as k4 specifies — a real gap against an invariant, not a stylistic one."
-      },
-      {
-        "id": "a3",
-        "name": "Fully client-local, no new daemon surface",
-        "oneLineSummary": "vscode-plugin parses and indexes scratchpad links/backlinks/metadata entirely itself, in-memory or in a local cache file; the daemon is not extended at all.",
-        "approach": "All ten stories are delivered inside vscode-plugin: a client module re-parses scratch files to resolve links against a client-maintained map of known files/symbols and workflow-artifact ids (via read-only daemon queries). Backlinks, tags, and lifecycle state are computed and cached client-side; doc-relations.ts and the daemon's graph are left untouched.\n\nCheapest and fastest to build, adding no daemon migration risk or new IPC contract — but it re-implements, in miniature, indexing/relationship-tracking logic the daemon's src/db module already has for the main corpus.",
-        "pros": [
-          "No new daemon IPC surface, no daemon-side migration risk, no dependency on the daemon being up.",
-          "Fastest to ship — smallest blast radius, easiest to roll back.",
-          "Keeps k4's invariant trivially true for the store itself: nothing moves daemon-side."
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c1",
+          "c16",
+          "c24"
         ],
-        "cons": [
-          "Duplicates indexing/relationship logic the daemon's db module already solves for the main corpus.",
-          "Client-side re-parsing of all scratch files to keep links/backlinks current does not scale as note count grows.",
-          "No natural place for cross-session/cross-window consistency if the client cache goes stale."
-        ],
-        "costEstimate": "S",
-        "reasonRejected": "Violates k4 outright: there is no daemon-backed, private, repository-keyed index for backlinks to join through, just client-side computation. Also only partially meets k2 at scale, since list rendering requires re-parsing every file."
+        "reasonRejected": "Duplicates save/backup/conflict lifecycle and loses the selected normal VS Code document boundary."
       }
     ],
     "chosenAlternative": "a1",
     "openQuestions": [
-      "Item f2 (partial): architectureShape names entities.ts and relations.ts (present in s1's structural-map bundle's own summary/structure text for src/db, just not duplicated into that bundle's pathsCited array) and ArtifactIds (src/workflow/artifact-ids.ts, grounded only via the approved DEF's citation c14 and this controller's earlier direct repo verification, not via an insrc_analyze_step pass run during this HLD's own context.assemble). Nothing is fabricated, but design.story for s5/s6 should re-verify ArtifactIds' exact exported surface before building sc2 against it.",
-      "Item nf1 (partial): none of the four nonFunctional properties carries a quantified target (a latency figure, a size cap, an SLA) — performance explicitly defers the real numbers to the DEF's own unresolved open question (note-size cap, latency targets, minimum daemon/extension IPC version). design.story for s5/s6 must resolve concrete numbers before sc2's daemon IPC is built, not just before Phase C's rollout.",
-      "This HLD contradicts its own resolved design.epic open question: at the open-questions gate, the choice recorded for s2's content/title-source gap was 'Sequence s2 after s7' (make s2 depend on s7's durable metadata). What was actually built here is the opposite: sc3 (ScratchpadListReadModel) is owned by s2 alone, with no dependency on anything s7 owns, and Phase B places s2 and s7 in parallel, not sequenced. This is not an oversight in the architecture — the Epic's own dependsOn graph has s2.dependsOn = [s1] only, never s7, and framework.write cannot invent a new Epic dependency edge; 'Sequence s2 after s7' was not actually buildable under that graph, and what got built (sc3 self-contained at s2) was the only graph-consistent option, equivalent to the 'Interim file parsing' choice that was not selected at the gate. The resolve-question record itself was not corrected when this was discovered. design.story for s2 and s7 should treat this HLD, not that resolution record, as authoritative, and should not expect to depend on s7 for list/title data.",
-      "Self-correction during HLD self-review: the first fix for the sc2-risk mitigation moved insrc.scratchpad.backlinks onto the whole of the original Phase B, which would have gated s2/s3/s4/s7 (none of which touch the new daemon index) behind a flag meant only for s5. Phase B is now split into B1 (s5 alone, flagged) and B2 (s2/s3/s4/s7, unflagged) to fix this."
+      "BACKFLOW REQUIRED BEFORE BUILD — Current DEF k3, FR005, S001 FR001/lc1/lc2 and ac1/ac3 require the built-in editor. Proposed replacement: scratchpads open in one insrc-owned Milkdown + Crepe CustomTextEditorProvider pane on the real .md TextDocument; rich editing and insrc-owned lock/pencil/selection Send are in that pane; normal VS Code document save/conflict applies. Retire the old textarea/document-save protocol, not all webview rendering. Update/reapprove DEF and rebase/reapprove S001 LLD before PLAN/build; this HLD draft does not mutate or approve those upstream records.",
+      "The user previously accepted remembered lock mode for the built-in editor because no lock API existed. Milkdown allows insrc-owned locking. Proposed UX restores locked-by-default per new pane with pencil/lock controls; confirm this in the revised S001 LLD rather than silently treating a mode preference as mandatory to preserve.",
+      "S001 LLD must define concrete synchronization/undo ownership, version rejection, pending-edit drain, conflict recovery, text/image insertion and save notifications. Libraries are not proof of working VS Code integration.",
+      "Qualify exact supported Markdown syntax and note-size budget against real files: zero writes on open, no silent loss of unknown content, custom links, front matter, HTML/comments and diagram fences. Unsupported edits preserve the original and report the limitation. No live qualification has been performed.",
+      "Shared sc1/sc2/sc3 and all story dependencies remain unchanged. S007 owns persisted repo association and rename/move/archive identity; S008 owns cited attachments. No need for an ERD because this revision adds no new persistent entity relationship; component, sequence and illustrative one-pane UX definitions document the changed boundary."
+    ],
+    "componentDependencyDefinition": {
+      "id": "milkdown-document-authority",
+      "narrative": "The one-pane editor owns presentation and user actions; the VS Code TextDocument remains authoritative. Daemon index contracts retain their existing ownership.",
+      "components": [
+        {
+          "id": "pane",
+          "label": "Milkdown + Crepe pane",
+          "description": "Owned rich editor and locked-mode Send tooltip; proposed integration."
+        },
+        {
+          "id": "bridge",
+          "label": "Extension-host bridge",
+          "description": "Validates versioned edits, selections and source URIs; proposed S001 wiring.",
+          "path": "vscode-plugin/src/extension.ts"
+        },
+        {
+          "id": "document",
+          "label": "VS Code TextDocument",
+          "description": "Canonical .md buffer, save/conflict and backup lifecycle."
+        },
+        {
+          "id": "chat",
+          "label": "Chat composer route",
+          "description": "Existing bounded explicit insertion route; no automatic submission.",
+          "path": "vscode-plugin/src/chat/scratch-host.ts"
+        },
+        {
+          "id": "store",
+          "label": "ScratchStore + sc1",
+          "description": "Existing file discovery/creation and proposed shared identity resolver.",
+          "path": "vscode-plugin/src/chat/scratch-store.ts"
+        },
+        {
+          "id": "daemon",
+          "label": "Daemon index sc2 / sc3",
+          "description": "Existing HLD proposal retained, owned by s5/s2; not built in S001."
+        }
+      ],
+      "dependencies": [
+        {
+          "from": "pane",
+          "to": "bridge",
+          "label": "versioned edits / explicit Send click"
+        },
+        {
+          "from": "bridge",
+          "to": "document",
+          "label": "apply edits and observe changes"
+        },
+        {
+          "from": "document",
+          "to": "bridge",
+          "label": "undo / external edits / save events"
+        },
+        {
+          "from": "bridge",
+          "to": "pane",
+          "label": "authoritative document updates"
+        },
+        {
+          "from": "bridge",
+          "to": "chat",
+          "label": "clicked selected-text snapshot"
+        },
+        {
+          "from": "bridge",
+          "to": "store",
+          "label": "validate scratchpad identity"
+        },
+        {
+          "from": "bridge",
+          "to": "daemon",
+          "label": "later-story IPC only"
+        }
+      ]
+    },
+    "sequenceDefinition": {
+      "id": "milkdown-send-selection",
+      "narrative": "Selection changes are local UI only. A click captures a document-bound snapshot before focus changes, then the host inserts bounded text into chat without submission.",
+      "participants": [
+        {
+          "id": "user",
+          "label": "User",
+          "description": "Selects text and explicitly clicks Send."
+        },
+        {
+          "id": "pane",
+          "label": "Milkdown pane",
+          "description": "One rendered/editable view with owned selection and lock state."
+        },
+        {
+          "id": "host",
+          "label": "Extension host",
+          "description": "Validates document/version and bounds the selected snapshot."
+        },
+        {
+          "id": "chat",
+          "label": "Chat composer",
+          "description": "Receives insertion; submission stays a separate user action."
+        }
+      ],
+      "messages": [
+        {
+          "from": "user",
+          "to": "pane",
+          "label": "select text",
+          "description": "No chat request or context emission."
+        },
+        {
+          "from": "pane",
+          "to": "pane",
+          "kind": "recurse",
+          "label": "show accessible Send popup",
+          "description": "Also available while locked; empty selection hides it."
+        },
+        {
+          "from": "user",
+          "to": "pane",
+          "label": "click Send",
+          "description": "Capture actual selection before focus changes."
+        },
+        {
+          "from": "pane",
+          "to": "host",
+          "label": "selection snapshot + source identity/version",
+          "description": "Host rejects stale or invalid source actions."
+        },
+        {
+          "from": "host",
+          "to": "chat",
+          "label": "reveal / await ready / insert bounded text",
+          "description": "No submit, model call or automatic attachment."
+        }
+      ]
+    },
+    "uxDefinition": {
+      "type": "AdaptiveCard",
+      "version": "1.5",
+      "narrative": "Illustrative single-pane scratchpad state: lock controls, rendered content and Send beside a selection. This mock documents intended behavior, not a verified Milkdown implementation.",
+      "body": [
+        {
+          "type": "TextBlock",
+          "text": "Scratchpad — investigation.md",
+          "weight": "bolder",
+          "description": "One editor tab on the actual Markdown file."
+        },
+        {
+          "type": "ActionSet",
+          "description": "Pane-level controls; locked mode still permits selection.",
+          "actions": [
+            {
+              "type": "Action.Submit",
+              "title": "Edit (pencil)",
+              "description": "Unlock this same pane for editing."
+            },
+            {
+              "type": "Action.Submit",
+              "title": "Lock",
+              "description": "Return this pane to rendered read-only mode."
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "text": "Retry policy investigation",
+          "weight": "bolder",
+          "description": "Rendered Markdown heading in the one editor."
+        },
+        {
+          "type": "Container",
+          "description": "Illustrative selected passage with its nearby action; selection alone does nothing.",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "Retry only when the previous attempt has stopped.",
+              "wrap": true,
+              "description": "The selected text snapshot."
+            },
+            {
+              "type": "ActionSet",
+              "description": "Popup action shown for non-empty selection.",
+              "actions": [
+                {
+                  "type": "Action.Submit",
+                  "title": "Send to chat",
+                  "description": "Only a click inserts selected text in the composer; it never submits."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "ux-mock",
+        "relPath": "docs/epics/linked-scratchpads-vs-code-E202611162846f076/ux-mock.html",
+        "title": "UX mock"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/linked-scratchpads-vs-code-E202611162846f076/sequence-diagram.html",
+        "title": "Sequence diagram"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/linked-scratchpads-vs-code-E202611162846f076/component-dependency.html",
+        "title": "Component dependencies"
+      }
     ]
   },
   "citations": [
@@ -429,6 +593,30 @@
       "id": "c27",
       "kind": "code",
       "ref": "vscode-plugin/src/chat/chat-panel.ts"
+    },
+    {
+      "id": "c40",
+      "kind": "stakeholder",
+      "ref": "User chat — Milkdown direction selected, 2026-11-27",
+      "quotedText": "User rejected clipboard/two views, requested embeddable JS Markdown libraries, checked Milkdown and said it looks good. Normal VS Code save behavior accepted; Send requires a click and only inserts into composer."
+    },
+    {
+      "id": "c41",
+      "kind": "doc",
+      "ref": "https://milkdown.dev/docs/api/crepe",
+      "quotedText": "Crepe has a configurable floating selection toolbar; library controls and plugins are owned by the embedding application. Source confirms editable control and customizable tooltip; no integration/round-trip proof implied."
+    },
+    {
+      "id": "c42",
+      "kind": "doc",
+      "ref": "https://code.visualstudio.com/api/extension-guides/custom-editors",
+      "quotedText": "CustomTextEditorProvider renders an owned webview over a VS Code TextDocument; changes must synchronize to that document."
+    },
+    {
+      "id": "c43",
+      "kind": "analyze-bundle",
+      "ref": "design.epic/context.assemble — scratchpad profile/import/convention and selection-reuse analysis",
+      "quotedText": "Existing scratchpad controller, store, scratch host, activation and tests provide integration seams. Graph coverage is incomplete and supplemented by direct reads."
     }
   ]
 }

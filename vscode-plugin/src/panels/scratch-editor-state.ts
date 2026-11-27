@@ -24,15 +24,16 @@ export class ScratchRendererState {
   get hasPending(): boolean { return this.sequence > this.acknowledged; }
   get conflicted(): boolean { return this.frozen; }
 
-  edit(markdown: string): void {
+  edit(markdown: string, applyAllowed = true): void {
     if (this.frozen) throw new Error('Resolve the conflicting draft before editing.');
     if (markdown === this.value) return;
     this.value = markdown; this.sequence++;
     const draft: ScratchDraftProposal = { type: 'draft', paneSessionId: this.paneSessionId, draftSeq: this.sequence,
       editId: scratchEditId(this.sequence), baseVersion: this.canonical.version, baseDigest: this.canonical.digest,
-      markdown, apply: this.inFlight === undefined, ...(this.inFlight ? { parentEditId: this.inFlight.editId } : {}) };
+      markdown, apply: applyAllowed && this.inFlight === undefined, ...(this.inFlight ? { parentEditId: this.inFlight.editId } : {}) };
     if (!parseScratchEditorMessage(draft)) { this.frozen = true; throw new Error('Draft exceeds editor transport limits; local text is retained.'); }
     this.latest = draft;
+    if (!applyAllowed) this.frozen = true;
     if (draft.apply) this.inFlight = draft;
     this.post(draft);
   }

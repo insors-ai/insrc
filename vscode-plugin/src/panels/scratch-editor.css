@@ -14,3 +14,14 @@
   --crepe-font-code: var(--vscode-editor-font-family, monospace);
 }
 body { margin: 0; background: var(--vscode-editor-background); color: var(--vscode-editor-foreground); }
+.scratch-pane > nav { position: sticky; top: 0; z-index: 20; display: flex; gap: 8px; padding: 8px; background: var(--vscode-editor-background, #fff); border-bottom: 1px solid var(--vscode-panel-border, #888); }
+.scratch-pane button { color: var(--vscode-button-foreground, #fff); background: var(--vscode-button-background, #006ab1); border: 1px solid var(--vscode-contrastBorder, transparent); padding: 5px 9px; cursor: pointer; }
+.scratch-pane button:focus-visible { outline: 2px solid var(--vscode-focusBorder, #0090ff); outline-offset: 2px; }
+.scratch-pane button:disabled { opacity: .6; cursor: default; }
+.scratch-status { margin: 0; padding: 0 12px; white-space: pre-wrap; }
+.scratch-status[role='alert'] { color: var(--vscode-errorForeground, #c00); padding: 8px 12px; }
+.scratch-selection-send { position: fixed; z-index: 1000; border-radius: 4px; }
+.scratch-pane [hidden] { display: none !important; }
+/* Selection Send is independent of Crepe's formatting toolbar, so it remains
+ * available when Milkdown is readonly. No mutation popups while locked. */
+.scratch-pane[data-locked='true'] :is(.milkdown-toolbar, .milkdown-block-handle, .milkdown-slash-menu, .milkdown-link-tooltip, .milkdown-image-block .operation, .milkdown-image-block .caption-input) { display: none !important; }

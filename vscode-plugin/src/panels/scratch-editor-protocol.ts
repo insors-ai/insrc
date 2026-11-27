@@ -42,6 +42,7 @@ export function sameScratchDraft(left: ScratchDraftProposal, right: ScratchDraft
 }
 export type ScratchEditorToHost =
   | (Session & { readonly type: 'editor-ready' })
+  | (Session & { readonly type: 'open-text' })
   | ScratchDraftProposal
   | ScratchSelectionSend
   | (Session & { readonly type: 'lock'; readonly locked: boolean })
@@ -94,7 +95,7 @@ export function parseScratchEditorMessage(value: unknown): ScratchEditorToHost |
   const m = value;
   let valid = false;
   switch (m.type) {
-    case 'editor-ready': valid = sessionKeys(m, []); break;
+    case 'editor-ready': case 'open-text': valid = sessionKeys(m, []); break;
     case 'draft':
       valid = sessionKeys(m, ['draftSeq', 'editId', 'baseVersion', 'baseDigest', 'markdown'], ['parentEditId', 'apply']) &&
         count(m.draftSeq) && m.draftSeq > 0 && m.editId === scratchEditId(m.draftSeq) && version(m.baseVersion) && digest(m.baseDigest) &&

@@ -8,7 +8,8 @@ export interface ScratchEditorAssets {
   readonly cspSource: string;
 }
 
-export function scratchEditorHtml(assets: ScratchEditorAssets, nonce: string): string {
+export function scratchEditorHtml(assets: ScratchEditorAssets, nonce: string, paneSessionId?: string): string {
+  if (paneSessionId !== undefined && !/^[A-Za-z0-9_-]{1,128}$/.test(paneSessionId)) throw new Error('Invalid scratchpad editor session');
   if (!/^[A-Za-z0-9_-]+$/.test(nonce) ||
       !/^(?:vscode-webview:\/\/[A-Za-z0-9-]+|https:\/\/\*\.vscode-cdn\.net)$/.test(assets.cspSource)) {
     throw new Error('Invalid scratchpad webview resource policy');
@@ -21,7 +22,7 @@ export function scratchEditorHtml(assets: ScratchEditorAssets, nonce: string): s
     if (!local || parsed.username || parsed.password) throw new Error('Scratchpad assets must be local webview resources');
   }
   const source = assets.cspSource;
-  return shellHtml('Scratchpad', '<main id="scratch-editor"></main><p id="scratch-status" role="status"></p>', nonce, undefined, {
+  return shellHtml('Scratchpad', `<main id="scratch-editor"${paneSessionId === undefined ? '' : ` data-pane-session="${paneSessionId}"`}></main>`, nonce, undefined, {
     hideTitle: true,
     resourceSource: source,
     cspExtra: ` connect-src 'none'; img-src ${source} data: blob:; font-src ${source} data:;`,

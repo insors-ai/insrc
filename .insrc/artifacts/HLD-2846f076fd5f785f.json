@@ -57,6 +57,13 @@
         "choice": "Full DEF/LLD rebase",
         "rationale": "DEF revision 7 and HLD revision 5 have both been explicitly presented and approved by the user. DEF now replaces k3, S001 native-only clauses and records explicit click-only Send (ac4), with sibling stories/IDs preserved. This run is the required regeneration of the S001 LLD; its separate approval remains required before PLAN/build.",
         "resolvedAt": "2026-11-27T18:31:41.505Z"
+      },
+      "qecf05066": {
+        "question": "The user previously accepted remembered lock mode for the built-in editor because no lock API existed. Milkdown allows insrc-owned locking. Proposed UX restores locked-by-default per new pane with pencil/lock controls; confirm this in the revised S001 LLD rather than silently treating a mode preference as mandatory to preserve.",
+        "status": "resolved",
+        "choice": "Keep remembered mode with insrc-owned pencil/lock controls",
+        "rationale": "The user explicitly accepted remembered mode earlier; no later request explicitly reverses that behavior. Preserve it rather than silently imposing a fresh lock on every open. Use an insrc-owned preference for Milkdown, initially locked when no preference exists, with per-pane immediate lock/pencil controls and future-pane remembered mode. Do not read or mutate the bundled editor's private storage. Declare this behavior in the new LLD for review.",
+        "resolvedAt": "2026-11-27T18:32:49.459Z"
       }
     }
   },

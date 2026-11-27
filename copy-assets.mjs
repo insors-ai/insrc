@@ -27,6 +27,8 @@ const srcRoot = resolve(here, 'src');
 const outRoot = resolve(here, 'out');
 
 const DIRS = ['prompts', 'assets'];
+// tsc does not emit MJS resources; installed consumers import this adjacent copy.
+const RUNTIME_FILES = ['installer/qualification-time-budgets.mjs'];
 
 let copied = 0;
 for (const dir of DIRS) {
@@ -44,6 +46,12 @@ for (const dir of DIRS) {
 
 if (copied === 0) {
 	console.log('[copy-assets] no runtime resources to copy');
+}
+for (const name of RUNTIME_FILES) {
+	const source = resolve(srcRoot, name), destination = resolve(outRoot, name);
+	mkdirSync(dirname(destination), { recursive: true });
+	cpSync(source, destination);
+	if (!readFileSync(source).equals(readFileSync(destination))) throw new Error(`Runtime resource differs: ${name}`);
 }
 
 // Deployment-code attestation only; no repository inputs, settings or Session data.
@@ -65,5 +73,9 @@ function attest(directory, prefix = '') {
 	}
 }
 attest(srcRoot);
+for (const name of RUNTIME_FILES) {
+	sourceFiles[name] = digest(readFileSync(resolve(srcRoot, name)));
+	compiledFiles[name] = digest(readFileSync(resolve(outRoot, name)));
+}
 mkdirSync(resolve(outRoot, 'assets'), { recursive: true });
 writeFileSync(resolve(outRoot, 'assets/connection-management-build.json'), JSON.stringify({ version: 1, producerDigest: digest(readFileSync(fileURLToPath(import.meta.url))), sourceFiles, compiledFiles }, null, 2) + '\n');

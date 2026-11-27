@@ -19,6 +19,7 @@ node_modules/**
 
 # Build / typecheck / bundler config
 tsconfig.json
+tsconfig.webview.json
 esbuild.mjs
 
 # Repo tooling that is not part of the runtime package

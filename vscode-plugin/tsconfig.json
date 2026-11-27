@@ -20,6 +20,8 @@
   ],
   "exclude": [
     "**/__tests__/**",
-    "**/*.test.ts"
+    "**/*.test.ts",
+    "src/panels/scratch-editor-webview.ts",
+    "src/panels/scratch-markdown-milkdown.ts"
   ]
 }

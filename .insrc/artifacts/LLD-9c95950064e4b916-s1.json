@@ -55,7 +55,16 @@
       "attachments": []
     },
     "revision": 3,
-    "rangeBase": "c3f0bd33ed4fce92257cd51d54beceb47ba92b3b"
+    "rangeBase": "c3f0bd33ed4fce92257cd51d54beceb47ba92b3b",
+    "questionResolutions": {
+      "qbba5d9d9": {
+        "question": "cd1 (partial): handleWorkflowOpenable and openableWorkflow are two genuinely new functions, explicitly modeled as mirrors of the existing, grounded handleWorkflowPending and pendingWorkflow.",
+        "status": "resolved",
+        "choice": "Add explicit mirror functions",
+        "rationale": "Matches the approved LLD's chosen alternative (a1): handleWorkflowOpenable and openableWorkflow are separate, explicit mirrors of handleWorkflowPending/pendingWorkflow, not a shared-helper refactor. The LLD explicitly rejected widening/sharing (alternative a2) to avoid reintroducing the conflation this Story removes.",
+        "resolvedAt": "2026-11-27T12:17:57.820Z"
+      }
+    }
   },
   "body": {
     "summary": {

@@ -239,3 +239,25 @@ Import resolveOpenableArtifacts (or a copy of it) directly into src/mcp/server.t
 
 - cd1 (partial): handleWorkflowOpenable and openableWorkflow are two genuinely new functions, explicitly modeled as mirrors of the existing, grounded handleWorkflowPending and pendingWorkflow.
 - ep3 (partial): c5 resolves to src/mcp/__tests__/present-dispatch.test.ts:139-152; c6 resolves to src/daemon/__tests__/repo-call-audit.test.ts:19-34, src/daemon/threads/method-class.ts's coverage test, and src/daemon/__tests__/handler-runtime.test.ts:27-100, all independently verified this session.
+
+## Resolved questions
+
+- `qbba5d9d9` — cd1 (partial): handleWorkflowOpenable and openableWorkflow are two genuinely new functions, explicitly modeled as mirrors of the existing, grounded handleWorkflowPending and pendingWorkflow.
+  - **resolved**: Add explicit mirror functions — Matches the approved LLD's chosen alternative (a1): handleWorkflowOpenable and openableWorkflow are separate, explicit mirrors of handleWorkflowPending/pendingWorkflow, not a shared-helper refactor. The LLD explicitly rejected widening/sharing (alternative a2) to avoid reintroducing the conflation this Story removes. _(2026-11-27T12:17:57.820Z)_
+
+## Citations
+
+- **[[c1]]** `code` `src/workflow/pending.ts:116-157` — "if (kind === 'BUILD' && meta['standalone'] !== true && !names.has(`CR${file.slice('BUILD'.length)}`)) continue;"
+- **[[c2]]** `code` `src/mcp/server.ts:1105-1140` — "const pending = await pendingWorkflow({ repo }, deps); ... const openable = pending.artifacts; ... const presented = names.filter((n) => openable.filter((a) => namesPending(n, a)).length === 1);"
+- **[[c3]]** `code` `src/mcp/daemon-stream.ts:313-320` — "export function pendingWorkflow(
+	req: { repo: string },
+	deps: UnaryRpcDeps = {},
+): Promise<WorkflowPendingResult | WorkflowPendingError> {
+	return unaryRpc<WorkflowPendingResult | WorkflowPendingEr"
+- **[[c4]]** `code` `src/daemon/handler-runtime.ts:598-607` — "'workflow.pending': async (params) => {
+	const { handleWorkflowPending } = await import('../workflow/pending.js');
+	return handleWorkflowPending(params as { repo?: string } | undefined, process.env['I"
+- **[[c5]]** `code` `src/mcp/__tests__/present-dispatch.test.ts:139-152` — "test('insrc_present: a daemon error or an unreachable daemon is answered as an error, never as presented', async () => { ... }"
+- **[[c6]]** `code` `src/daemon/__tests__/repo-call-audit.test.ts:19-34` — "assert.deepEqual(Object.keys(RPC_AUDIT).sort(), registeredMethods(), 'the audit lists exactly the registered RPC methods');"
+- **[[c7]]** `code` `src/daemon/threads/method-class.ts:1-40` — "A test fails when it differs from the handler tables buildHandlerRuntime constructs."
+- **[[c8]]** `code` `src/daemon/__tests__/handler-runtime.test.ts:27-100` — "assert.deepEqual(Object.keys(runtime.rpcHandlers).sort(), [...RECORDED_RPC, ...ADDED_RPC].sort());"

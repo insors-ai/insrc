@@ -6,6 +6,7 @@ import { pipeline } from 'node:stream/promises';
 import { InstallerError } from './contracts.js';
 import type { ReleaseAsset } from './release-descriptor.js';
 import { BUNDLE_LIMITS, httpsUrl } from './release-descriptor.js';
+import { QUALIFICATION_TIME_BUDGETS } from './qualification-time-budgets.mjs';
 export interface DownloadResponse { status: number; location?: string | undefined; body: Readable; closed?: Promise<void> | undefined }
 /** Internal deterministic test seam; never selected by an untrusted request. */
 export type DownloadTransport = (url: URL, signal: AbortSignal) => Promise<DownloadResponse>;
@@ -41,7 +42,10 @@ async function responseFor(url: string, signal: AbortSignal, send: DownloadTrans
   }
   throw new InstallerError('download-invalid', 'Too many HTTPS redirects');
 }
-function deadline(signal?: AbortSignal): AbortSignal { return signal ? AbortSignal.any([signal, AbortSignal.timeout(600_000)]) : AbortSignal.timeout(600_000); }
+function deadline(signal?: AbortSignal): AbortSignal {
+  const timeout = AbortSignal.timeout(QUALIFICATION_TIME_BUDGETS.runtime.acquisitionMs);
+  return signal ? AbortSignal.any([signal, timeout]) : timeout;
+}
 export async function downloadVerifiedAsset(asset: ReleaseAsset, destination: string, options: { signal?: AbortSignal | undefined; transport?: DownloadTransport | undefined } = {}): Promise<void> {
   return downloadBoundedAsset(asset, destination, BUNDLE_LIMITS.compressed, deadline(options.signal), options.transport);
 }

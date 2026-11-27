@@ -23,7 +23,7 @@ import type { DefineArtifact } from './artifacts/define.js';
 import type { HldArtifact } from './artifacts/hld.js';
 import type { IssueArtifact } from './artifacts/issue.js';
 import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, impliedIssueStories, issueArtifactId, issueArtifactPaths, lldArtifactId, lldArtifactPaths, readRevision, workItemAnchorCreatedAt, workItemKindOf } from './storage.js';
-import { listAmendments } from './amendments/store.js';
+import { amendmentPath, listAmendments } from './amendments/store.js';
 import { unitIssueOf } from './tracker/unit-head.js';
 import { scanLldStaleness } from './amendments/staleness.js';
 
@@ -104,9 +104,10 @@ export function buildChainReport(repoPath: string, epicHash: string): ChainRepor
 	const hld    = readHldIfPresent(repoPath, epicHash);
 	const stories = readStoryLldStatus(repoPath, epicHash, define, hld);
 	const amendments = countAmendments(repoPath, epicHash);
+	const firstPendingAmendment = firstPendingAmendmentOf(repoPath, epicHash);
 	const tracker = readTrackerMeta(repoPath, epicHash, define.artifact, define.issue);
 	const nextAction = computeNextAction(epicHash, {
-		define, hld, stories, amendments, tracker,
+		define, hld, stories, amendments, firstPendingAmendment, tracker,
 	});
 	const epicSlug = define.artifact?.meta.epicSlug;
 	return {
@@ -273,6 +274,14 @@ function countAmendments(repoPath: string, epicHash: string): ChainReport['amend
 	return { pending, approved, rejected };
 }
 
+/** The first pending amendment (listAmendments's own AMD-<hash>-<n> ascending
+ *  order), for review-amendment to name a real artifact. `undefined` when
+ *  none is pending, or when a concurrent approve/reject raced the count. */
+function firstPendingAmendmentOf(repoPath: string, epicHash: string): { readonly id: string; readonly path: string } | undefined {
+	const row = listAmendments(repoPath, epicHash).find(r => r.status === 'pending');
+	return row === undefined ? undefined : { id: row.id, path: amendmentPath(repoPath, row.id) };
+}
+
 /** The Epic's issue is the binding of its EPIC head; the time of the last sync is the Define's `meta.tracker`. */
 function readTrackerMeta(repoPath: string, epicHash: string, define?: DefineArtifact, issue?: IssueArtifact): ChainReport['tracker'] {
 	if (define === undefined && issue === undefined) return { pushed: false };
@@ -314,6 +323,9 @@ interface NextActionInput {
 	readonly hld:       HldState;
 	readonly stories:   ChainReport['stories'];
 	readonly amendments: ChainReport['amendments'];
+	/** The first pending amendment's real id/path, precomputed so
+	 *  review-amendment can name a real artifact; see firstPendingAmendmentOf. */
+	readonly firstPendingAmendment: { readonly id: string; readonly path: string } | undefined;
 	readonly tracker:   ChainReport['tracker'];
 }
 
@@ -380,11 +392,21 @@ function computeNextAction(epicHash: string, s: NextActionInput): NextAction {
 	}
 	// 2. Pending amendments block downstream: surface them first.
 	if (s.amendments.pending > 0) {
-		return {
-			kind: 'review-amendment',
-			amendmentId: `<list via: insrc workflow amend ${epicHash} --list>`,
-			command: `insrc workflow amend ${epicHash} --list`,
-		};
+		const pending = s.firstPendingAmendment;
+		return pending === undefined
+			// A concurrent approve/reject raced this report's two amendment
+			// reads between countAmendments and firstPendingAmendmentOf; never
+			// throw -- the next buildChainReport call re-reads and recovers.
+			? {
+				kind: 'review-amendment',
+				amendmentId: `<amendments changed since this report was computed; recompute the chain report and retry>`,
+				command: `<no fixed command: recompute the chain report for ${epicHash} (amendment state changed mid-read) and retry>`,
+			}
+			: {
+				kind: 'review-amendment',
+				amendmentId: pending.id,
+				command: `insrc_present documents=["${pending.path}"] then insrc_workflow_approve({ artifactPath: "${pending.path}" })`,
+			};
 	}
 	// 3. HLD.
 	if (!s.hld.exists) {
@@ -435,7 +457,7 @@ function computeNextAction(epicHash: string, s: NextActionInput): NextAction {
 	if (s.tracker.lastSyncedAt === undefined) {
 		return {
 			kind: 'sync-tracker',
-			command: `insrc_workflow_step phase=start workflow=tracker.sync focus="sync ${epicHash} from GitHub" params={"epicHash":"${epicHash}"}`,
+			command: `insrc workflow sync ${epicHash}`,
 		};
 	}
 	return { kind: 'chain-complete' };

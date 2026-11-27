@@ -64,6 +64,13 @@
         "choice": "Keep remembered mode with insrc-owned pencil/lock controls",
         "rationale": "The user explicitly accepted remembered mode earlier; no later request explicitly reverses that behavior. Preserve it rather than silently imposing a fresh lock on every open. Use an insrc-owned preference for Milkdown, initially locked when no preference exists, with per-pane immediate lock/pencil controls and future-pane remembered mode. Do not read or mutate the bundled editor's private storage. Declare this behavior in the new LLD for review.",
         "resolvedAt": "2026-11-27T18:32:49.459Z"
+      },
+      "q414b9943": {
+        "question": "S001 LLD must define concrete synchronization/undo ownership, version rejection, pending-edit drain, conflict recovery, text/image insertion and save notifications. Libraries are not proof of working VS Code integration.",
+        "status": "resolved",
+        "choice": "VS Code TextDocument authority with a versioned extension-host bridge; no daemon document authority",
+        "rationale": "Approved HLD revision 5 explicitly makes TextDocument canonical and keeps editor integration client-side. Reject generated choices that add daemon editing/CRDT ownership. The LLD will specify serialized per-document edits, version checks, one in-flight proposal per pane, pending-edit drain before Send/save/undo, host undo/redo authority, error/draft recovery and scoped save notifications; none are claimed implemented or tested.",
+        "resolvedAt": "2026-11-27T18:33:34.001Z"
       }
     }
   },

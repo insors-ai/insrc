@@ -315,7 +315,7 @@ require an ERD for isolated class edits. Use structured companion definitions on
 
 An amendment is a small, typed, mechanically-appliable delta to an Epic's
 **HLD** — never to an LLD (there is no LLD amendment kind; a Story's LLD is
-corrected by re-running `design.story`, not amended). Ten kinds across four
+corrected by re-running `design.story`, not amended). Eleven kinds across four
 families: `sharedContract.fieldAdd` / `fieldRemove` / `rename` / `methodAdd`;
 `storyBoundary.reassignOwnership` / `addConsumer` / `addStory`;
 `nonFunctional.retarget`; `rollout.reorder` / `splitPhase` / `mergePhases`.
@@ -326,9 +326,11 @@ be running:
 - `define`'s `scope.assess` step files a `storyBoundary.addStory` amendment
   automatically when it classifies an ask as "extend" (builds on an existing
   Epic) rather than "new".
-- A `design.story` step's own structured output may include an `amendment`
-  field (any of the ten kinds); at finalize this is validated against the
-  current effective HLD and, if valid, persisted — an invalid proposal is
+- `design.story`'s own step sequence can carry a proposal at steps `s4` or
+  `s5` only, nested as `hld.amendmentProposal: { amendment, rationale,
+  citations? }` (any of the eleven kinds) — not a bare top-level `amendment`
+  field, and not from any other step. At finalize this is validated against
+  the current effective HLD and, if valid, persisted — an invalid proposal is
   dropped with a warning rather than failing the LLD. `plan` and `build` never
   propose amendments.
 

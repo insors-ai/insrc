@@ -966,10 +966,13 @@
     "gen:webview-libs": "node gen-webview-libs.mjs"
   },
   "devDependencies": {
+    "@vscode/vsce": "3.2.1",
     "esbuild": "^0.28.1",
     "highlight.js": "^11.11.1"
   },
   "dependencies": {
+    "@milkdown/crepe": "7.23.0",
+    "@milkdown/kit": "7.23.0",
     "marked": "^4.3.0"
   }
 }

@@ -1,0 +1,16 @@
+/* Keep Crepe readable under the host's light, dark and high-contrast themes. */
+.milkdown {
+  --crepe-color-background: var(--vscode-editor-background, #fff);
+  --crepe-color-on-background: var(--vscode-editor-foreground, #222);
+  --crepe-color-surface: var(--vscode-editorWidget-background, #eee);
+  --crepe-color-surface-low: var(--vscode-editor-background, #fff);
+  --crepe-color-on-surface: var(--vscode-editor-foreground, #222);
+  --crepe-color-on-surface-variant: var(--vscode-descriptionForeground, #666);
+  --crepe-color-primary: var(--vscode-textLink-foreground, #006ab1);
+  --crepe-color-outline: var(--vscode-panel-border, #888);
+  --crepe-color-hover: var(--vscode-list-hoverBackground, #ddd);
+  --crepe-color-selected: var(--vscode-editor-selectionBackground, #add6ff);
+  --crepe-font-default: var(--vscode-editor-font-family, sans-serif);
+  --crepe-font-code: var(--vscode-editor-font-family, monospace);
+}
+body { margin: 0; background: var(--vscode-editor-background); color: var(--vscode-editor-foreground); }

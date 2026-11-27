@@ -22,8 +22,8 @@ import { escapeHtml } from './html.js';
  * `default-src` (e.g. the chat panel's load-bearing `img-src data:` for its header
  * glyph), so a caller's full policy stays byte-identical to its pre-extraction form.
  */
-export function shellCsp(nonce: string, extra?: string): string {
-  return `default-src 'none';${extra ?? ''} style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
+export function shellCsp(nonce: string, extra?: string, resourceSource?: string): string {
+  return `default-src 'none';${extra ?? ''} style-src 'unsafe-inline'${resourceSource === undefined ? '' : ` ${resourceSource}`}; script-src 'nonce-${nonce}';`;
 }
 
 /** The chat panel's load-bearing `img-src data:` directive (header glyph data-URI SVG). */
@@ -37,8 +37,8 @@ export const cspWithImgData = (nonce: string): string => shellCsp(nonce, IMG_DAT
  * only permits the nonce'd bootstrap script (and inline styles); `bootstrap`,
  * when present, is that single nonce'd script. VS-Code-theme-friendly, minimal.
  */
-export function shellHtml(title: string, content: string, nonce: string, bootstrap?: string, opts?: { readonly cspExtra?: string | undefined; readonly headExtra?: string | undefined; readonly bodyClass?: string | undefined; readonly hideTitle?: boolean | undefined }): string {
-  const csp = shellCsp(nonce, opts?.cspExtra);
+export function shellHtml(title: string, content: string, nonce: string, bootstrap?: string, opts?: { readonly cspExtra?: string | undefined; readonly headExtra?: string | undefined; readonly bodyClass?: string | undefined; readonly hideTitle?: boolean | undefined; readonly resourceSource?: string | undefined }): string {
+  const csp = shellCsp(nonce, opts?.cspExtra, opts?.resourceSource);
   const script = bootstrap !== undefined ? `<script nonce="${nonce}">${bootstrap}</script>` : '';
   const titleEl = opts?.hideTitle === true ? '' : `<h2>${escapeHtml(title)}</h2>`;
   const bodyClass = opts?.bodyClass !== undefined ? ` class="${escapeHtml(opts.bodyClass)}"` : '';

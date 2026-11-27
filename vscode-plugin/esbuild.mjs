@@ -52,6 +52,26 @@ export async function bundle(outdir) {
   // manifest (see the header). This file ships in the .vsix (out/ is kept by
   // .vscodeignore); vsce reads only the ROOT package.json for the manifest.
   writeFileSync(join(outdir, 'package.json'), `${JSON.stringify({ type: 'commonjs' }, null, 2)}\n`);
+  await bundleScratchEditor(join(outdir, 'scratch-editor'));
+}
+
+/** An entirely local webview bundle, distinct from the Node/CJS host entries. */
+export async function bundleScratchEditor(outdir) {
+  return build({
+    entryPoints: { editor: join(here, 'src/panels/scratch-editor-webview.ts') },
+    bundle: true,
+    platform: 'browser',
+    format: 'iife',
+    globalName: 'InsrcScratchEditor',
+    target: 'chrome120',
+    outdir,
+    minify: true,
+    metafile: true,
+    // Any fonts referenced by a theme ship beside the bundle, never from a CDN.
+    loader: { '.woff': 'file', '.woff2': 'file', '.ttf': 'file', '.svg': 'dataurl' },
+    assetNames: 'assets/[name]-[hash]',
+    logLevel: 'silent',
+  });
 }
 
 // Run as a script (`node esbuild.mjs`) -> bundle into ./out.

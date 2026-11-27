@@ -14,6 +14,9 @@ src/**
 **/*.test.ts
 **/*.ts
 
+# Both the host and the Milkdown webview are bundled into out/.
+node_modules/**
+
 # Build / typecheck / bundler config
 tsconfig.json
 esbuild.mjs

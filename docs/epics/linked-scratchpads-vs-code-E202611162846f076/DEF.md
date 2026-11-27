@@ -6,7 +6,7 @@
 
 **Flavor:** enhancement
 
-Turns the VS Code scratchpads from a flat list of recent files into a linked knowledge surface: pads open in a native rendered Markdown editor, notes link to each other and to code symbols and workflow artifacts with visible backlinks, the list panel and in-pad find make the corpus searchable, and dated entries, stable IDs, and archive/delete lifecycle make notes durable. Note evidence can be explicitly attached to a chat turn or promoted into a tracked SPEC/ISSUE draft — never implicitly.
+Turns the VS Code scratchpads from a flat list of recent files into a linked knowledge surface: pads open in one Milkdown + Crepe editor pane backed by the real Markdown file and VS Code TextDocument, notes link to each other and to code symbols and workflow artifacts with visible backlinks, the list panel and in-pad find make the corpus searchable, and dated entries, stable IDs, and archive/delete lifecycle make notes durable. Note evidence can be explicitly attached to a chat turn or promoted into a tracked SPEC/ISSUE draft — never implicitly.
 
 ## Contents
 
@@ -29,7 +29,7 @@ A scratchpad today is a flat, unlinked Markdown file: easy to find when recent (
 - **E202611162846f076:FR002** — The system shows outgoing and incoming links for a note, and surfaces scratchpad backlinks on file and symbol views, grouped by source note; backlinks on a workflow artifact's own detail view follow once vscode-plugin has a persistent per-artifact surface to host them (none exists today). _(Rediscovery of notes from the code or design they concern; the artifact-surface slice is deferred pending that surface (see open questions).)_
 - **E202611162846f076:FR003** — The "insrc scratchpads" list panel shows up to 20 pads newest-first with first-3-line previews and per-row delete, and a search box that filters the list by relevance (title hits first, then mtime, then stable id); any card opens the pad. The chat recent menu shows up to 10 pads by mtime alongside New/Browse-all. _(Settled UI: search box in the list panel, not a nav view and not inside the pad.)_
 - **E202611162846f076:FR004** — An in-pad find action highlights matches with an N-of-M count and prev/next wraparound, closable with Escape, showing a zero-match state, operating on live text regardless of editor lock state. _(Find inside the open pad is a separate surface per the mock.)_
-- **E202611162846f076:FR005** — A pad opens in a rendered Markdown editor on its real file, locked by default, with inline click-to-edit toggled by a pencil and a lock button returning to read-only rendered view; image paste/drop, URL-as-link paste, and insert-link/insert-image-from-workspace work natively. _(Pad editing must feel native, not like a custom webview.)_
+- **E202611162846f076:FR005** — A pad opens in one Milkdown + Crepe rendered/editable editor pane on its real .md TextDocument with lock/pencil controls, rich image/link authoring and an explicit selection Send icon; normal VS Code document save/conflict/backup behavior applies through a verified synchronization bridge. _(Pad editing must feel native, not like a custom webview.)_
 - **E202611162846f076:FR006** — Notes carry dated entries in day-grouped newest-first collapsible sections with an Undated bucket for legacy content, plus a stable ID surviving rename/move/archive/restore, reversible archive, and explicit permanent delete. _(P0 lifecycle portion of SP-4.)_
 - **E202611162846f076:FR007** — A user can explicitly attach selected note excerpts to a chat turn, with a removable preview showing source and revision, bounded to the controller/daemon payload routes, pinning the revision for queued turns. _(P1: evidence into a turn only on explicit selection.)_
 - **E202611162846f076:FR008** — A user can promote a saved note selection into a workflow draft (SPEC via brainstorm or ISSUE) through the existing approval chain, with a provenance link back on the note and idempotent retry. _(P1: promotion through the existing approval chain.)_
@@ -37,7 +37,7 @@ A scratchpad today is a flat, unlinked Markdown file: easy to find when recent (
 
 **s1:**
 
-- **E202611162846f076:S001:FR001** — A pad opens rendered-in-place in the host's built-in Markdown editor on its real file, locked by default, with inline edit toggled by a pencil and lock returning to read-only. _(SP-4 editing substrate: native rendered editor on the real file.)_
+- **E202611162846f076:S001:FR001** — A pad opens as a single Milkdown + Crepe rendered/editable Markdown pane on its real VS Code TextDocument, with insrc-owned pencil/lock controls; selecting text reveals a Send icon, and only clicking it inserts the bounded selection into chat without submitting. _(Approved HLD revision 5 replaces the built-in-editor-only implementation while preserving the single-pane rich Markdown experience and existing explicit selected-text insertion.)_
 - **E202611162846f076:S001:FR002** — Image paste/drop, URL-to-link paste, and insert-link/insert-image-from-workspace work in the pad editor. _(Rich authoring affordances without bespoke code.)_
 
 **s2:**
@@ -101,31 +101,32 @@ A scratchpad today is a flat, unlinked Markdown file: easy to find when recent (
 | :--- | :--- | :--- | :--- |
 | `k1` | contract | Two distinct search surfaces: cross-note relevance search lives only in the list panel; find-in-note (Ctrl/Cmd+F) stays a separate in-pad action operating on live unsaved text, independent of lock state. | [[c1]] |
 | `k2` | contract | UI parameters are fixed by the PRD mock: recent menu cap 10; list panel cap 20 newest-first with first-3-line previews and per-row delete; relevance ranking puts title hits ahead of body-only hits, ties by mtime then stable id. | [[c1]] |
-| `k3` | contract | The pad editor is VS Code's built-in vscode.markdown.editor opened on the scratchpad's real file (openWith), replacing the custom webview and its save protocol; VS Code's own text-document model owns save/undo/conflict. | [[c8]] |
+| `k3` | contract | The pad uses Milkdown + Crepe in one VS Code CustomTextEditorProvider pane backed by its real .md TextDocument. Insrc owns rendered editing, lock/pencil controls and a selection Send action; selecting text alone sends nothing, and clicking Send inserts selected text into the chat composer without submission. VS Code owns the document save/conflict/backup lifecycle; synchronization and undo integration must be verified. Replace the legacy textarea and document-save protocol; the host built-in Markdown editor is no longer required. | [[c17]] |
 | `k4` | invariant | The home-dir scratchpad store stays outside repo enrollment and default document search; daemon-backed backlinks join only through a private, repository-keyed scratchpad index using validated target identity (note=repo+stable ID; file/symbol=repo+path+qualified name; artifact=repo+canonical ID). | [[c4]] |
 | `k5` | invariant | No implicit agent context: note evidence enters a turn or workflow draft only on explicit user selection (SP-5/SP-6), never by default. | [[c1]] |
 | `k6` | stakeholder | Non-goals are binding: no vault import/sync, shared/collaborative editing, general-purpose canvas/graph browser, unlinked-mention suggestions, arbitrary transclusion, automatic project-memory ingestion, CLI/JetBrains surfaces, semantic embedding search, or analyzer-output links in this epic. | [[c1]] |
 
 ## 6. Stories
 
-### 6.1 STORY-2846f076fd5f785f-s1 — Native Markdown Editor pad surface
+### 6.1 STORY-2846f076fd5f785f-s1 — Single-pane Milkdown Markdown editor
 
 **User value:** `size: M`
 
-Pads feel native: rendered Markdown in place, inline editing with a lock/pencil toggle, and real rich-authoring affordances (links, images) instead of the current custom read-only webview.
+Pads provide rendered Markdown and rich inline editing in one editor tab, with lock/pencil controls and a Send icon on text selection; only clicking Send inserts into the chat composer.
 
 **Extends:** [[c2]] [[c3]] [[c8]] [[c12]]
 
 **Acceptance criteria:**
 
-- **ac1:** Given a scratchpad file on disk and the VS Code host with the bundled Markdown Editor, when the user opens the pad from the chat menu or the list panel, then the pad opens as a rendered Markdown view of its real file (not a custom webview), locked read-only by default; image paste/drop, URL-as-link paste, and insert-link/insert-image-from-workspace work; save/undo/conflict are handled by the editor's own document model. _(operationalizes `k3`)_
+- **ac1:** Given a scratchpad .md file and the insrc Milkdown + Crepe editor registered in the VS Code host, when the user opens the pad from the chat menu or the list panel, then the pad opens as one rendered/editable Markdown editor pane on its real TextDocument, with lock/pencil controls and working image paste/drop, URL-as-link paste, and workspace link/image insertion; standard VS Code save/conflict and backup behavior applies, and editor/document undo and synchronization work without duplicate edits or stale overwrites. _(operationalizes `k3`)_
 - **ac2:** Given an unlocked pad, when the user toggles edit/lock in the open pad, then a pencil control toggles inline click-to-edit and a lock control returns to the rendered read-only view. _(operationalizes `k3`)_
-- **ac3:** Given the plugin build, when the old custom document view path is exercised, then no custom scratchpad document webview or its save channel remains in the open-pad path; the scratchpad file contract on disk is unchanged. _(operationalizes `k3`)_
+- **ac3:** Given the plugin build, when the old custom document view path is exercised, then the legacy scratchpad textarea renderer and scratch-save/scratch-saved protocol are absent from the open-pad path; the new library-backed pane uses the real .md file and TextDocument; existing file names/content remain readable and opening alone does not rewrite content. _(operationalizes `k3`)_
+- **ac4:** Given non-empty selected text in the same scratchpad pane, whether locked or editable, when the user selects text and then explicitly clicks its Send icon, then selection alone only reveals the icon; clicking it captures that selected text, applies the existing size bound and inserts it into the chat composer without submitting, clipboard steps or a separate reading view. _(operationalizes `k3`, `k5`)_
 
 **Local constraints:**
 
-- `lc1` (contract) Pad editor must be the host's built-in vscode.markdown.editor custom editor (openWith on the real file), never a bespoke rich-text webview. [[c8]]
-- `lc2` (invariant) The target host must register a built-in rendered+editable Markdown custom editor (today: vscode.markdown.editor) before this surface can open. Host-capability detection reuses the plugin's existing by-extension check (HostEnv.getExtension('vscode.markdown-language-features') — vscode-plugin/src/hosts/specs.ts, hosts/types.ts); only the fallback/error UX for a host that lacks it (e.g. an editor fork) needs new design. [[c12]]
+- `lc1` (contract) Use Milkdown + Crepe inside one CustomTextEditorProvider pane; retain the same file and TextDocument for rendered reading and inline editing. Do not introduce separate reading/editing views or depend on private built-in-editor APIs. [[c17]]
+- `lc2` (invariant) Package editor assets locally under the webview CSP. Register the custom text editor through extension activation and validate bridge messages/document versions. Do not require markdown-language-features presence as the capability gate. Unsupported hosts fail visibly; implementation must not silently no-op or retain the legacy editor. [[c17]]
 
 ### 6.2 STORY-2846f076fd5f785f-s2 — List panel caps, previews, delete, and relevance search (menu cap 10)
 
@@ -323,6 +324,7 @@ Pads can be tagged and filtered, and new pads can start from an investigation or
 - **[[c14]]** `code` `src/workflow/artifact-ids.ts` — "ArtifactIds is 'the one identity scheme for every artifact' — it already builds and parses every artifact id form (DEF-<h>, LLD-<h>-s1, TASK-<h>-s1-t3, AMD-<h>-2, ...) and RequirementIds does the same"
 - **[[c15]]** `code` `vscode-plugin/src/chat/attachment-store.ts` — "createAttachmentStore already copies a reference into the session's own directory, assigns it a stable id, and enforces size/count limits (MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_MESSAGE); its attac"
 - **[[c16]]** `code` `vscode-plugin/src/chat/scratch-store.ts` — "ScratchEntry is {id, name, mtime, size} only; `name` is 'Reconstructed from the id (the <yyyymmdd-hhmmss>-<slug> basename)' — a lossy slug, not the title text typed. listScratches() is pure readdir+st"
+- **[[c17]]** `stakeholder` `User chat and approved HLD revision 5, 2026-11-27` — "Selected Milkdown + Crepe in a single editor pane, normal VS Code document/save behavior, and a selection Send icon that inserts into chat only after a click. Replaces the built-in-editor-only impleme"
 
 ## 8. Open questions
 
@@ -381,3 +383,4 @@ Pads can be tagged and filtered, and new pads can start from an investigation or
 - **[[c14]]** `code` `src/workflow/artifact-ids.ts` — "ArtifactIds is 'the one identity scheme for every artifact' — it already builds and parses every artifact id form (DEF-<h>, LLD-<h>-s1, TASK-<h>-s1-t3, AMD-<h>-2, ...) and RequirementIds does the same"
 - **[[c15]]** `code` `vscode-plugin/src/chat/attachment-store.ts` — "createAttachmentStore already copies a reference into the session's own directory, assigns it a stable id, and enforces size/count limits (MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_MESSAGE); its attac"
 - **[[c16]]** `code` `vscode-plugin/src/chat/scratch-store.ts` — "ScratchEntry is {id, name, mtime, size} only; `name` is 'Reconstructed from the id (the <yyyymmdd-hhmmss>-<slug> basename)' — a lossy slug, not the title text typed. listScratches() is pure readdir+st"
+- **[[c17]]** `stakeholder` `User chat and approved HLD revision 5, 2026-11-27` — "Selected Milkdown + Crepe in a single editor pane, normal VS Code document/save behavior, and a selection Send icon that inserts into chat only after a click. Replaces the built-in-editor-only impleme"

@@ -1,15 +1,15 @@
 <!-- insrc:artifact LLD-2846f076fd5f785f-s1 -->
 
-# LLD: STORY-2846f076fd5f785f-s1 — Native Markdown Editor pad surface
+# LLD: STORY-2846f076fd5f785f-s1 — Single-pane Milkdown Markdown editor
 
 ## Summary
 
 **Epic:** `linked-scratchpads-vs-code`
-**HLD base run:** `wf-1794821904095-ndy0d1`
-**HLD effective hash:** `a1e1d0dc0f84...`
+**HLD base run:** `wf-1795803141296-eodyo2`
+**HLD effective hash:** `6a3ff5cbf2ff...`
 **Tracker:** [insors-ai/insrc#194](https://github.com/insors-ai/insrc/issues/194)
 
-S001 replaces the custom scratchpad document webview with the host's native Markdown editor while preserving existing opening, deletion, text-to-chat and recency behavior. The revised contract makes identity, file resolution, native tab operations, save notifications and error ownership explicit; flag-off uses the plain text fallback. Native release remains blocked until initial-lock control, rendered selection and native save-boundary guarantees are proved or the affected upstream requirements are explicitly amended; the installed editor's toggle and remembered mode are insufficient evidence.
+S001 replaces the legacy scratchpad textarea with Milkdown + Crepe in one VS Code custom text-editor pane backed by the real Markdown TextDocument. It provides remembered lock/pencil controls and a selection Send icon that acts only on a click, alongside safe versioned editing, native document lifecycle integration and explicit error/recovery handling. It preserves identity, browse/new/delete and recency behavior. Published APIs support the design, while real Markdown, undo, save/conflict and host qualification remain mandatory build checks.
 
 ## Contents
 
@@ -23,8 +23,8 @@ S001 replaces the custom scratchpad document webview with the host's native Mark
 8. [Test strategy](#8-test-strategy)
 9. [Migration](#9-migration)
 10. [Alternatives considered](#10-alternatives-considered)
-11. [References](#11-references)
-12. [Open questions](#12-open-questions)
+11. [UX](#11-ux)
+12. [References](#12-references)
 
 ## 1. Epic impact analysis
 
@@ -34,7 +34,7 @@ S001 replaces the custom scratchpad document webview with the host's native Mark
 
 > See **HLD-2846f076fd5f785f** § 2. Framework summary
 
-**Rollout phase:** Phase A — Native editor foundation
+**Rollout phase:** Phase A — Milkdown editor foundation
 **Owns:** `sc1` (ScratchpadRef)
 
 **Adjacent scope (owned by other stories — do NOT implement here):**
@@ -59,18 +59,20 @@ createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels
 ```
 
 **Parameters:**
-- `deps: ScratchPanelsDeps` — Existing dependencies plus injected native open/close, capability admission, settings and notification operations. Only extension activation imports vscode.
+- `deps: ScratchPanelsDeps` — Existing store/browse dependencies plus injected editor-open, tab/dirty/close, save-listener, persisted-mode and notification seams. VS Code bindings remain in activation.
 
-**Returns:** `ScratchPanels` — Browse controller and asynchronous native-document actions with one disposal owner.
+**Returns:** `ScratchPanels` — Browse and one-pane rich-document action boundary.
 
 **Preconditions:**
-- Activation supplies typed host seams; capability admission cannot be inferred from getExtension alone.
+- Activation registers proposed viewType insrc.scratchpad.editor as CustomTextEditorProvider, restricted to validated scratchpad URIs; do not replace Markdown editors globally.
+- Pin compatible @milkdown packages to published 7.23.0 and lock dependencies. Bundle browser code/CSS locally with the existing VS Code webview CSP pattern; no CDN or library AI/provider calls.
 
 **Postconditions:**
-- HostEnv.getExtension remains the first inexpensive availability check. Native mode additionally requires a host-version-qualified implementation of idempotent initial lock establishment and state verification. A toggle command or remembered default is insufficient. No private webview RPC, extension-global-state edits, guessed command arguments or user setting mutation.
-- insrc.scratchpad.nativeEditor defaults true. Off selects the same plain text fallback as absent editor; open/new never silently no-op. Available-but-unqualified native hosts report the blocker and can open a clearly identified text fallback, which is degraded access and never an ac1 pass.
-- Only the browse webview remains. Remove documentBodyHtml/documentBootstrap, document protocol types/arrays, replySaved, onDocMessage and document-only callbacks, dirty/title state, generations, epochs, invalidateId and showingId; migrate all production and test callers atomically.
-- Native operations use validated file URIs produced by the store seam. Native save/undo/conflict belong to VS Code only after the save-boundary qualification described under ScratchStore. No automatic second write through updateScratch.
+- Use Milkdown + Crepe for rich content; the backing TextDocument is the only committed buffer. Proposed new private modules: vscode-plugin/src/panels/scratch-editor-provider.ts (VS Code-free host controller) and vscode-plugin/src/panels/scratch-editor-webview.ts (browser entry). Activation supplies all vscode APIs.
+- Preserve the previously accepted remembered-mode behavior with an insrc-owned globalState preference; initial value is locked. A new pane snapshots that preference. Pencil/lock changes this pane and the future-pane preference, not other already-open panes. Call Crepe.setReadonly explicitly, never touch native editor private storage.
+- Provide a separate Send-only TooltipProvider with explicit non-empty selection visibility even when readonly; Crepe's formatting tooltip hides when readonly and is not sufficient. Hide mutation tools while locked. Preserve selection on pointer activation and offer keyboard activation with accessible name Send to chat.
+- Flag insrc.scratchpad.richEditor defaults true. Off opens the same file in a plain TextDocument editor with one notice; no silent no-op or legacy textarea fallback. A failed rich editor initialization preserves the original file and offers that same explicit fallback.
+- Images: override onUpload/inline/block upload to send a host request; persist user-supplied image bytes under a validated scratch-root asset directory with exclusive names and a 10 MiB per-image bound. Preserve relative Markdown paths; use proxyDomURL only for display resolution through asWebviewUri. Never persist blob:/vscode-webview: URLs. Workspace link/image actions use host pickers and explicit user selection. No default remote upload or AI feature.
 
 ### 3.2 `ScratchStore`
 
@@ -78,22 +80,21 @@ createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels
 interface ScratchStore { listScratches(limit?: number): Promise<ScratchEntry[]>; createScratch(title: string, body?: string): Promise<ScratchEntry>; readScratch(id: string): Promise<{ entry: ScratchEntry; content: string }>; updateScratch(id: string, text: string): Promise<void>; deleteScratch(id: string): Promise<void>; resolveScratch(id: string): Promise<{ ref: ScratchpadRef; filePath: string }>; }
 ```
 
-**Returns:** `ScratchStore` — Existing guarded store plus a new validated identity/path resolver; resolution does not imply safe future native I/O.
+**Returns:** `ScratchStore` — Existing guarded store plus deterministic shared identity/path resolution.
 
 **Errors:**
-- `ScratchRefused` when Malformed/traversal ID, non-regular or symlink target, or target outside canonical store root.
-- `ScratchNotFound` when Required source file missing.
-- `ScratchStoreError` when I/O or permissions failure.
+- `ScratchRefused` when Unsafe ID/path, symlink/non-regular target or invalid root containment.
+- `ScratchNotFound` when Required file is absent.
+- `ScratchStoreError` when Filesystem operation fails.
 
 **Preconditions:**
-- resolveScratch reuses the store's basename validation, canonical root containment and guarded regular-file validation. Activation converts its absolute filePath with vscode.Uri.file; no raw ID concatenation elsewhere.
-- All current legacy pads are unassigned. The active workspace never changes their identity.
+- Reuse basename/root/regular-file validation before editor-open, delete and asset actions. No direct URI concatenation from messages.
 
 **Postconditions:**
-- Define ScratchpadRef and HOME_SCRATCHPAD_SCOPE = 'insrc:scratchpads:home' in proposed vscode-plugin/src/chat/scratch-identity.ts; export it for later consumers. Until s7 adds persisted association/lifecycle mapping, ref is exactly {repo: HOME_SCRATCHPAD_SCOPE, stableId: existing validated basename including .md}. resolveScratch is read-only, repeatable across windows and usable without opening a pad.
-- StableId is not a mutable display title. S001 supports no rename/move/archive. S007 must persist and migrate identity before enabling those operations, retain this legacy mapping, and explicitly associate notes rather than infer repo from active window. No s7 persistence/index is implemented here.
-- File naming, existing contents and format are unchanged. Existing store operations retain their guards. Native file reads/writes are a separate boundary: a preflight resolve/read cannot enforce O_NOFOLLOW on later host saves and is not claimed to do so.
-- Build blocker B2: qualify native save failure, stale-window conflict, deleted/replaced/symlink targets and any required no-follow protection against the approved file contract. The current native-on-real-file design has no demonstrated equivalence to guarded store writes. If equivalence cannot be achieved with supported host APIs, stop and obtain an explicit upstream requirement/design amendment; do not add a bespoke editor, intercepted duplicate save or custom URI scheme silently.
+- Proposed shared vscode-plugin/src/chat/scratch-identity.ts exports ScratchpadRef {repo,stableId} and HOME_SCRATCHPAD_SCOPE = 'insrc:scratchpads:home'. Until s7 supplies persisted association/lifecycle mapping, all legacy/new pre-s7 pads resolve to that home scope and existing validated basename including .md. Active workspace never changes their identity.
+- resolveScratch is read-only and available without opening a pane. S007 must migrate and preserve that identity before rename/move/archive; no s7 metadata persistence or daemon index is built here.
+- Native TextDocument I/O follows normal VS Code save/conflict/backup behavior, as explicitly accepted. Existing store operations retain their guards; do not route native saves through updateScratch or claim ongoing O_NOFOLLOW protection for native saves.
+- Rich document admission bound is 1 MiB UTF-8, with a 2 MiB encoded message cap (image transfer is a separate bounded action). Larger notes are refused for rich editing without truncation or file writes. This is a proposed support budget to qualify, not a claim of measured capacity.
 
 ### 3.3 `ScratchPanels`
 
@@ -101,220 +102,222 @@ interface ScratchStore { listScratches(limit?: number): Promise<ScratchEntry[]>;
 interface ScratchPanels { openBrowse(): Promise<ScratchPanelHandle | undefined>; openDocument(id: string): Promise<void>; refreshBrowse(): Promise<void>; deleteDocument(id: string): Promise<'deleted' | 'cancelled'>; dispose(): void; }
 ```
 
-**Returns:** `ScratchPanels` — One document action boundary used by chat and browse; asynchronous completion/cancellation is explicit.
+**Returns:** `ScratchPanels` — Explicit asynchronous open/delete and controller lifetime.
 
 **Errors:**
-- `ScratchRefused | ScratchNotFound | ScratchStoreError` when Store resolution/deletion refused or failed.
-- `Error` when Native/fallback open or tab operation fails.
+- `ScratchRefused | ScratchNotFound | ScratchStoreError` when Store validation or deletion fails.
+- `Error` when Editor open, synchronization or targeted tab operation fails.
 
 **Preconditions:**
-- Every entry point catches returned promises; no void promise without an attached catch. Controller operations propagate errors; boundary handlers show one actionable message and log the cause.
-- Host tab matching uses the resolved canonical URI, across all tab groups, including text and custom-editor inputs. Never close whichever unrelated tab happens to be active.
+- Every chat/browse event boundary attaches a rejection handler. Creation and open failure are reported separately; refresh failures do not suppress opening.
+- One per-TextDocument queue is shared by every pane in a window. Bind each message to its registered URI, random paneSessionId, monotonic draftSeq/editId and accepted baseVersion/digest; reject cross-document, stale-session, oversized, duplicate-conflicting and unknown messages.
 
 **Postconditions:**
-- openDocument validates the source first, then attempts qualified native open. Missing/refused input is not retried in a different editor. Genuine provider unavailability/open failure permits one text fallback and distinct notice; fallback failure is reported once. scratch-new reports created-but-open-failed separately and still refreshes lists.
-- deleteDocument serializes against opens/deletes for the same ID in this window. It revalidates immediately before unlink. Chat and browse both call it; neither separately invokes deleteScratch or a removed invalidateId.
-- Safe minimal dirty policy: if any matching native/text document has unsaved changes, leave file and tabs intact, return cancelled and tell the user to save or revert first. Do not prompt to discard, force-close or call Save As. Close matching clean tabs via awaited targeted host operation; on refusal/cancellation leave file intact. Recheck dirty state and matching tabs before unlink; if they changed, cancel. After successful unlink refresh both lists. If unlink fails after clean tabs closed, attempt to reopen the still-existing pad and report the failure. Cross-window exclusion is not promised; dirty buffers in other windows must survive external deletion and cannot silently recreate a deleted note via insrc.
-- Native save lifecycle: activation subscribes once to workspace.onDidSaveTextDocument for validated scratch-root file URIs, queues/coalesces refreshBrowse and a new ScratchHost.refreshList operation, and catches each refresh failure independently. New/create/delete and fallback saves use the same refresh path. Dispose subscriptions on deactivation and drop pending UI work. No daemon index or s2 read-model is added.
-- Preserve Send to chat as an explicit native-editor-context command. Required contract: obtain the actual selected text, source URI and document version from the focused native editor, apply existing capUtf8 and route through ScratchHost.onMessage({type:'send-to-chat',text}); reveal chat, wait ready, insert without submitting. Never use a stale activeTextEditor from another tab or silently copy the whole document. Build blocker B3: rendered selection extraction must be demonstrated on the qualified host. Supported manual alternative: native Copy followed by an explicit insrc command that reads the clipboard once and inserts into chat, with no automatic clipboard monitoring; whether this replaces the direct existing action requires explicit product acceptance, so it is not treated as an automatic waiver. Text fallback can use its actual TextEditor.selection.
+- Synchronization: every local doc-changing transaction immediately reports its latest Markdown draft to the host, even while another edit is in flight; selection-only transactions report no edit. Host retains the latest draft for recovery, serializes one WorkspaceEdit at a time, and coalesces superseded queued snapshots. Before applying, recheck base version/digest. A queued descendant may advance only after its identified parent was acknowledged and no unrelated document edit intervened; otherwise reject and retain it as a recovery draft.
+- Compute a minimal contiguous text replacement from the accepted source to the admitted Markdown proposal; do not full-replace solely for convenience. Await workspace.applyEdit and acknowledge with draftSeq, document version/digest and canonical snapshot. Match self-origin onDidChange events to the in-flight proposal. Broadcast host/undo/external updates to all panes without echo. An acknowledgement for an older local sequence advances the base but must not overwrite a newer local draft. Any unmatched update freezes mutation and preserves the competing draft for explicit recovery, never last-writer-wins.
+- Keep a bounded per-document recovery record in extension-owned local storage for received but unapplied drafts, keyed by canonical URI and sequence, with 1 MiB text bound. Persist before acknowledging receipt; clear only when committed or explicitly discarded. A normal tab dispose must not cancel an already accepted document edit or delete its recovery record. On reopening, show pending recovery without silently overwriting the canonical document. Test close/reload while edits are in flight; if host lifecycle safety cannot be demonstrated, validation fails.
+- Single undo authority: remove the published Milkdown history plugin array via Editor.remove before create and replace its key/toolbar actions with host undo/redo commands for the intended document. Drain pending proposals and verify active target before invoking; host change broadcasts are authoritative, never added to another Milkdown history. Standard save command drains first. onWillSaveTextDocument is only a best-effort drain hook because VS Code can bypass it; normal save/autosave guarantees apply, and pending drafts remain recoverable rather than falsely marked saved.
+- Fidelity admission: opening, parsing, toggling lock or selecting never writes. Retain the original source. Before allowing a proposal, compare the configured Markdown parse/serialize/parse structure and required raw-syntax fingerprints, including front matter, HTML/comments, code/diagram fences and literal future link syntax. Unknown constructs need exact preservation through an explicitly tested opaque node/plugin; absent that, refuse mutation with the original/draft intact. A minimal diff is not a fidelity proof. Test that supported edits cannot drop unrelated unknown content; no best-effort destructive save.
+- Send: clicking captures immutable {paneSessionId,draftSeq,docVersion,selectedText} before focus changes. selectedText is plain selected content from the current ProseMirror document, preserving paragraph boundaries. Drain the captured draft sequence, validate source/session/version and cap with existing capUtf8 (65,536 bytes including ellipsis). If the source changed incompatibly, retain the captured text and report retry; never silently recapture different text. Then use the existing scratch-host send-to-chat route: reveal, await ready, check disposed, insert into composer. No submit, clipboard, attachment or model call.
+- Deletion: both chat and browse call deleteDocument. Serialize against local document edits, drain pending drafts and inspect all exact-URI text/custom tabs across groups. Dirty/pending/recovery state cancels and asks the user to save/revert; never force discard. Await targeted closure of clean matching tabs, cancel on false, recheck state and revalidate before deleteScratch. On unlink failure attempt to reopen the still-existing note and report failure. Cross-window global exclusion is not promised; native external-delete/conflict behavior must preserve other windows' dirty drafts.
+- Save notifications: activation owns one disposable onDidSaveTextDocument listener scoped to validated scratchpad URIs; coalesce refreshBrowse and proposed ScratchHost.refreshList. Catch each refresh separately, never open closed UI or turn a successful save into a failed save. Creation/deletion and fallback saves use the same refresh boundary.
+- Remove legacy documentBodyHtml/documentBootstrap, scratch-save/scratch-saved/scratch-dirty/readiness/content messages and associated types, callbacks, onDocMessage, replySaved, showingId, invalidateId and old generations in one change. Retain capUtf8, the browse webview, six chat intents and existing guarded store APIs. The new versioned editor bridge is a different typed protocol, not reuse of the retired save channel.
 
 ## 4. Data model changes
 
 ### 4.1 `ScratchpadRef` — new
 
-One pad resolves to exactly one reference; its repo field denotes the explicit home scope until s7 owns persisted association. Many windows may resolve the same pad; they must return identical references. No graph/entity/daemon registry rows are allocated. Resolution is available to later consumers without opening the document.
+One deterministic reference per pre-s7 pad, independent of window/workspace: repo is the exported explicit home-scope value; stableId is the validated existing basename. Many panes reference one document; pane sessions and selection state are transient and are never the stable identity. No daemon registry/graph rows are allocated.
 
 ```
-export const HOME_SCRATCHPAD_SCOPE = 'insrc:scratchpads:home';
 export interface ScratchpadRef { readonly repo: string; readonly stableId: string; }
-// New shared definitions proposed for vscode-plugin/src/chat/scratch-identity.ts.
+export const HOME_SCRATCHPAD_SCOPE = 'insrc:scratchpads:home';
 ```
 
 **Call sites:**
 - `vscode-plugin/src/chat/scratch-store.ts`
 - `vscode-plugin/src/panels/scratch-panels.ts`
 
-### 4.2 `ScratchPanelsDeps` — field-add
+### 4.2 `ScratchEditorProtocol` — new
 
-Inject host operations in extension activation, not vscode imports into the controller. Provide validated native/text open, exact-URI tab enumeration/close with cancellation result, current dirty state, capability admission and notification callbacks. Proposed capability seam is an application contract, not a claim of an existing supported VS Code lock or selection API. Host implementation must identify actual supported APIs and live evidence before build admission.
+Proposed private protocol discriminants cover editor-ready/document-state/draft/receipt/apply-ack/conflict/lock/send-selection/undo/redo/save/asset-request. Every document action is bound to the host-owned pane session and URI. Host state includes accepted version/digest, in-flight operation, latest pending recovery draft and pane subscribers. Define closed runtime-validated unions; never forward arbitrary commands/paths from Markdown content. Asset payloads are separately bounded. New private browser/provider modules are proposed, not existing capabilities.
+
+```
+interface ScratchDraftProposal { readonly type: 'draft'; readonly paneSessionId: string; readonly draftSeq: number; readonly baseVersion: number; readonly baseDigest: string; readonly parentEditId?: string | undefined; readonly markdown: string; }
+interface ScratchSelectionSend { readonly type: 'send-selection'; readonly paneSessionId: string; readonly draftSeq: number; readonly docVersion: number; readonly selectedText: string; }
+```
 
 **Call sites:**
 - `vscode-plugin/src/panels/scratch-panels.ts`
 - `vscode-plugin/src/extension.ts`
+- `vscode-plugin/src/chat/scratch-host.ts`
 
 ### 4.3 `DocumentWebviewProtocol` — field-remove
 
-Remove scratch-save, scratch-saved, scratch-dirty, scratch-ready, scratch-content and their document-only types/constants, callbacks and tests together. Remove replySaved, showingId, invalidateId and ScratchHost.onDocMessage; retain capUtf8 and the six chat intents. Rewire chat and browse delete to deleteDocument, preserve native selection-to-chat, and replace save-driven refresh with an explicitly disposed host save subscription. Do not remove list webview protocol or S008's independent future attachment work.
+Retire legacy textarea renderer and save/dirty/ready/content protocol, generation state and obsolete methods/callbacks/tests atomically. Keep browse/list protocol, capUtf8 and six chat intents. Add the typed rich-editor bridge, unified async delete and save notification refresh. Preserve direct explicit selected-text insertion; cited attachments remain s8.
 
 **Call sites:**
 - `vscode-plugin/src/panels/scratch-panels.ts`
 - `vscode-plugin/src/chat/scratch-host.ts`
 - `vscode-plugin/src/extension.ts`
-- `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts`
-- `vscode-plugin/src/chat/__tests__/scratch-host.test.ts`
 - `vscode-plugin/src/panels/__tests__/scratch-panel.test.ts`
+- `vscode-plugin/src/chat/__tests__/scratch-host.test.ts`
+- `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts`
 
 ## 5. Diagrams
 
 - [Sequence diagram](./sequence-diagram.html)
+- [Component dependencies](./component-dependency.html)
 
 ## 6. Interaction with shared contracts
 
 | Contract | Role | How |
 | :--- | :--- | :--- |
-| `sc1` | implements | Define one exported reference and deterministic resolver now. All pre-s7 pads use the explicit home scope and existing basename stableId. S007 later owns persisted repo association and identity-preserving rename/move/archive; it must migrate this mapping, not regenerate identities from an active workspace or renamed filename. No sc2/sc3 or adjacent UI features are implemented. |
+| `sc1` | implements | Export shared identity and read-only resolver now. Pre-s7 home/basename mapping stays deterministic across panes and windows; s7 owns persisted association and lifecycle migration. No sc2/sc3 or adjacent story feature is designed here. |
 
 ## 7. Error paths
 
 **Error cases**
 
-- **Native lock control or rendered selection capability is unqualified.** (terminal)
-  - Detection: A host-version admission record lacks supported API evidence and passing live tests; extension presence/toggle alone never qualifies.
-  - Response: Report B1/B3 and block native build/validation completion; retain explicit degraded text access. Do not claim full acceptance or fabricate a capability.
-  - User impact: Notes remain accessible through text fallback; native release cannot be signed off.
-- **ID/path invalid, missing or replaced by a symlink/non-file.** (recoverable)
-  - Detection: resolveScratch rejects before URI creation/open; revalidation before delete rejects changed targets.
-  - Response: Handle ScratchRefused/ScratchNotFound distinctly at every caller. No fallback open for refused/missing files. B2 remains open for replacements occurring after preflight during native I/O.
-  - User impact: Clear refusal/not-found message; no unintended file opens.
-- **Native open fails or the editor is genuinely unavailable.** (recoverable)
-  - Detection: Probe absence or rejected open command after source validation.
-  - Response: Attempt one plain text fallback with reason-specific notice. Catch a second failure at chat and browse boundaries; scratch-new identifies that creation succeeded even if opening failed.
-  - User impact: Text access when possible; one actionable error otherwise.
-- **Delete encounters dirty documents or close cancellation.** (recoverable)
-  - Detection: Host enumerates all URI-matching text/custom tabs and live document dirtiness; awaited targeted close returns false or matching state changes.
-  - Response: Return cancelled without unlink. Ask user to save/revert first; preserve dirty buffers. Serialize same-ID operations locally; no global lock claim.
-  - User impact: Existing draft and source remain intact.
-- **Deletion fails after clean tabs close.** (recoverable)
-  - Detection: deleteScratch rejects after pre-unlink validation.
-  - Response: Report failure, refresh list truthfully, and best-effort reopen the existing source; a reopen failure is also caught.
-  - User impact: No successful-deletion message; note remains listed if present.
-- **Native save, external edit or concurrent-window conflict cannot meet the required file contract.** (terminal)
-  - Detection: Qualification matrix exercises save failure, conflicts, replacement, symlinks and external deletion; absence of proof is B2, not pass.
-  - Response: Keep prior committed data and drafts as required; if supported host behavior cannot guarantee it, block build and require explicit upstream amendment.
-  - User impact: No silent loss or falsely qualified native release.
-- **Refresh or chat insertion fails/disposes while awaiting readiness.** (recoverable)
-  - Detection: Save subscription/refresh promise rejects or chat seam reports disposed after ready.
-  - Response: Log refresh failures independently; don't turn successful saves into failed saves. Preserve the existing disposed-chat drop and catch behavior. Dispose event subscriptions and pending work on deactivation.
-  - User impact: Persisted file remains valid; UI failure is observable without duplicate submission.
+- **Unsafe or missing target** (recoverable)
+  - Detection: resolveScratch/runtime message validation rejects basename/root/type/session mismatch.
+  - Response: Report refusal/not-found; no fallback opening of a refused target or arbitrary command/path.
+  - User impact: Original remains untouched.
+- **Stale base or concurrent external edit** (recoverable)
+  - Detection: Queued base version/digest or identified parent no longer matches authoritative TextDocument.
+  - Response: Reject, stop automatic mutation, preserve recovery draft and canonical source; never overwrite/merge heuristically.
+  - User impact: User retains both versions for deliberate recovery.
+- **Unsupported Markdown or serializer loss** (recoverable)
+  - Detection: Parse/serialize/parse or required raw-syntax fingerprints differ, or a node has no exact-preservation handler.
+  - Response: Refuse unsafe mutation, keep original and draft; display limitation in the same pane. Opening alone never writes.
+  - User impact: No silent content loss; qualification failure blocks acceptance.
+- **applyEdit/save/undo failure or pane closes during pending edit** (recoverable)
+  - Detection: Awaited operation fails, document version changes unexpectedly, or session disposes with pending drafts.
+  - Response: Retain bounded recovery record, reject stale acknowledgements, let already accepted safe edits finish, and report actual operation state. Never falsely mark local-only text saved.
+  - User impact: Pending text remains recoverable; no duplicate history.
+- **Rich-editor initialization or note-size admission failure** (recoverable)
+  - Detection: create rejects, assets cannot load, or note exceeds 1 MiB UTF-8.
+  - Response: Keep file intact, report reason and offer explicit same-file plain text fallback; never truncate or silently no-op.
+  - User impact: Source remains accessible without a normal two-view flow.
+- **Dirty/pending/cancelled deletion** (recoverable)
+  - Detection: Exact-URI inspection finds dirty/recovery/pending state or awaited close returns false.
+  - Response: Cancel before unlink. On filesystem failure after clean close, attempt reopening and report failure.
+  - User impact: Draft/file retained; unrelated tabs untouched.
+- **Asset failure or invalid Send** (recoverable)
+  - Detection: Image type/size/path action rejects; selected snapshot is stale/oversized; chat disposed before ready.
+  - Response: No broken asset reference is inserted on failed upload. Reject invalid source snapshot; preserve captured selection. Use existing bounded insertion and disposed-chat handling; no auto-submit.
+  - User impact: Failures are visible and no different text is silently sent.
 
 **Edge cases**
 
 | Input | Expected |
 | :--- | :--- |
-| Flag disabled, editor absent or workspace-free legacy note. | Validated source opens in text fallback; identity remains {repo:'insrc:scratchpads:home',stableId:basename}. No no-op or inferred repo association. |
-| Another Markdown tab was unlocked before opening a scratchpad; same pad already open editable. | Mandatory qualification proves targeted, idempotent locked initial state; a toggle/default assumption fails B1. |
-| Two pads open concurrently in different groups. | Independent canonical-URI targets, no reliance on active editor when closing/locking/transferring selection; no false singleton assumption. |
-| Same ID opened/deleted concurrently in this window. | Per-ID serialized sequence preserves intentional operation order. Delete barrier/cancellation prevents a queued stale open from silently reopening a removed note. No generation protocol for webview content remains. |
-| Rendered editor selected text while a different text editor was previously active. | Only actual selected rendered source is inserted; stale activeTextEditor is rejected. B3 requires host proof, never whole-note substitution. |
-| Save occurs while browse or chat is closed, or extension deactivates. | Refresh uses existing instances only; no UI opens as a side effect. Later menu/list reads see saved mtime. Disposed listeners cannot post. |
+| Locked pane with non-empty selection. | Independent Send tooltip remains available, mutation controls hidden; only click inserts. |
+| New pane after a prior pane changed lock state. | Use insrc remembered preference, initially locked; do not change already-open panes. |
+| Host ack arrives after newer local typing. | Advance base/ack sequence without replacing the newer draft; latest received draft is retained for recovery. |
+| Same document in several editor groups. | One host queue/authority, independent pane sessions/selection; broadcasts have no echo and inactive panes cannot send another pane's selection. |
+| Save/autosave/close before the last edit is applied. | Pane Save explicitly drains. Native autosave may save an earlier canonical version; pending drafts remain recoverable, and no receipt alone claims saved state. Close/reload pending tests must pass. |
+| No edits, just open/select/lock. | Zero WorkspaceEdits and file writes, including initialization/trailing/normalization transactions. |
 
 **Invariants to preserve**
 
-- Existing .md basename naming and content format remain readable; store operations retain guarded read/write/delete. Native I/O equivalence is explicitly unverified and build-blocking, rather than falsely attributed to preflight. [[c2]]
-- Browse/list webview and its six chat-side intents remain, with open/new/delete migrated deliberately. Preserve selection Send to chat and save-driven list refresh through replacement seams. [[c3]]
-- Explicit selection inserts bounded text into the composer after reveal/ready and never automatically submits; no implicit note evidence is added. [[c17]]
+- Existing .md paths, IDs and source files remain; store-managed operations retain their guards. Normal native TextDocument I/O has the explicitly accepted host boundary. [[c2]]
+- Browse webview and six chat intents remain; all old document protocol consumers migrate together. [[c3]]
+- Explicit selected text is capped and inserted after chat reveal/readiness without submitting; save/create/delete refresh existing menus and browse. [[c17]]
 
 ## 8. Test strategy
 
-**Test framework:** `node:test and node:assert, extending existing scratch-panel.test.ts, scratch-host.test.ts, scratch-store.test.ts and extension-chat-wiring.test.ts; real host qualification recorded separately and required for native acceptance.`
+**Test framework:** `node:test/assert for existing host/store/panel suites; browser tests for the packaged Milkdown webview and real VS Code extension-host tests for lifecycle behavior. No implementation tests have been run for this design.`
 
 **Test levels**
 
-- **unit** — Verify controller/store contracts independently of private native editor behavior.
-  - Subjects: `Deterministic home-scope identity without opening; multiple windows/workspace choices resolve the same existing ID identically.`, `Validated URI resolution refuses traversal, symlinks and non-files; missing sources never reach native/fallback open.`, `Flag false selects text fallback; native failure selects one fallback; both-fail and missing/refused errors are caught on chat open, browse open and new.`, `Async delete: dirty, multi-group, cancellation, failed-close, unlink failure, changed state and per-ID open/delete ordering.`, `Save notification coalescing, independent refresh failures and disposal; explicit bounded text insertion without auto-submit.`
-  - Fixtures: `Existing fakeScratchFs and fakePanels updated to new contracts.`, `Injected fake native host with explicit URI/tab/dirty/close/capability operations; command success alone never marks lock capability supported.`
-- **integration** — Prove all production routes use the new contracts and retired protocol has no callers.
-  - Subjects: `Activation supplies seams and one scoped save listener; chat and browse share deleteDocument; every async event entry has an error sink.`, `Native and fallback saves refresh open browse and menu without opening closed UI; listener disposal prevents late posts.`, `Remove document protocol/types/constants/callbacks/replySaved/showingId/invalidateId/onDocMessage atomically while preserving capUtf8 and six chat intents.`
-  - Fixtures: `Existing extension-chat-wiring test harness and scratch-host fakes.`
-- **live** — Mandatory release qualification on each supported host/version; presently NOT RUN. Missing APIs/evidence fail admission and block acceptance.
-  - Subjects: `B1: open after another Markdown editor unlocked, reopen editable pad, empty pad, simultaneous opens and lock/pencil focus targeting; assert initial locked state without editing private extension storage or global settings.`, `B3: select rendered text with unsaved edits while another text tab is active; transfer exact selection once and only insert into composer. Manual clipboard flow is not acceptance-equivalent without explicit product decision.`, `B2: native/fallback save failure, stale-window conflict, delete/recreate, symlink replacement before open and before save, external edits/deletion; demonstrate retained committed data/drafts and required guard semantics.`, `Native rich authoring: image paste/drop, URL link paste, insert workspace link/image, undo/redo and save on actual scratch-root files.`, `Dirty/multi-group deletion cancel/success/failure; ensure unrelated tabs and dirty drafts survive.`
-  - Fixtures: `VS Code 1.146.0 / markdown-language-features 10.0.0 baseline plus any claimed supported forks.`, `Disposable scratch root and controlled second window; no real user notes in destructive probes.`, `Evidence identifies exact supported APIs, versions, steps and observed results; static manifests or mocks cannot satisfy B1/B2/B3.`
+- **unit** — Exercise host contract decisions and existing invariants.
+  - Subjects: `Deterministic identity, URI/type/symlink refusal, note/image/message bounds and no-op-on-open guards.`, `One-in-flight/queued-descendant behavior, duplicate/stale/cross-pane messages, self echo versus external change and late acknowledgements.`, `Dirty/recovery/cancelled/failed deletion, created-but-open-failed reporting, save refresh/disposal and bounded composer insertion.`
+  - Fixtures: `Existing fakeScratchFs/panel/chat seams extended with deterministic document queue and tab operations.`
+- **integration** — Prove production wiring and actual library behavior together.
+  - Subjects: `Published 7.23.0 local bundle under production CSP, setReadonly/mode preference and independent Send tooltip with keyboard focus preservation.`, `Remove Milkdown history provider/commands/keymap; bind host-targeted undo/redo, drain and broadcast without loops.`, `Parse/serialize/edit corpus: headings, tight/loose lists, tables, links/images, escaping, front matter, HTML/comments, Unicode, CRLF, fenced code/diagrams and literal custom links. Assert original unchanged on open and no unknown-content loss on supported edits.`, `Asset onUpload/proxyDomURL keeps portable relative source paths; failures never insert transient/broken URLs.`, `Static/typecheck migration: no legacy document protocol/method consumers; six chat intents remain.`
+  - Fixtures: `Pinned library package and a browser runner; exact real-note fixtures plus adversarial/unsupported syntax cases.`
+- **live** — Required VS Code qualification; do not substitute fake evidence or mark skipped checks passed.
+  - Subjects: `Real .md open/edit/save/dirty/undo/redo/revert, native autosave and external edits in same and second windows.`, `Close/reload while draft receipt/apply/ack is delayed; prove recovery without false saved state or draft loss.`, `Multiple groups/panes, remembered lock, locked selection, select->click Send with chat closed/ready/disposed, and no automatic submission.`, `Real image paste/drop, URL paste, workspace link/image insertion, CSP/offline operation and error paths.`, `Budget: 1 MiB UTF-8 note and boundaries; responsiveness target <=150 ms median keystroke-to-render and <=1 s p95 host acknowledgement on a recorded reference host, with a smaller supported bound or explicit design revision if unmet.`
+  - Fixtures: `Real VS Code host at the supported engine floor and current 1.146.0 where available; capture versions and unavailable coverage honestly.`, `Disposable note/asset roots and second window; never destructive probes on user notes.`
 
 **Acceptance mapping**
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `Unit/integration: validated URI, true/off/absent/failure branches, error ownership and save-refresh wiring.`, `MANDATORY LIVE B1/B2: locked initial state and safe native document lifecycle; richer authoring matrix. Current status BLOCKED/UNVERIFIED, not a passing result.` |
-| `ac2` | `MANDATORY LIVE: pencil/lock controls target the intended native pad and preserve unrelated editor state; baseline includes globally remembered unlocked state.` |
-| `ac3` | `Integration/typecheck: no retired document protocol/API callers, list UI still functions, native editor used without a bespoke replacement webview.`, `Existing store tests plus MANDATORY LIVE B2: names/content format retained, real save/conflict boundary matches approved guarantees; otherwise upstream amendment required.` |
+| `ac1` | `Browser/live: one Milkdown pane, rich authoring, TextDocument authority, version/recovery/undo/save/conflict matrix and note-size qualification.` |
+| `ac2` | `Browser/live: remembered default initially locked, pencil/lock in the same pane, mutation disabled while locked and independent selection Send retained.` |
+| `ac3` | `Migration/typecheck: retired textarea/save channel absent; store and existing .md format remain.`, `Corpus/browser/live: zero writes on open and refused unsafe serialization preserves original/draft.` |
+| `ac4` | `Browser/live: non-empty selection reveals Send; mouse and keyboard click capture exact text, cap and insert once without submit; locked, stale, cross-pane and disposed-chat cases.` |
 
 ## 9. Migration
 
-**State before:** Analyzer passes and direct reads identify createScratchPanels in vscode-plugin/src/panels/scratch-panels.ts as owner of a custom document singleton, generation/epoch state, documentBootstrap, selection-to-chat and document save callbacks. vscode-plugin/src/chat/scratch-host.ts receives chat open/new/delete and document saves; saves update the guarded ScratchStore then refresh browse/menu. Activation in vscode-plugin/src/extension.ts wires those callbacks. Store naming/content and guards are covered in vscode-plugin/src/chat/__tests__/scratch-store.test.ts. Existing source-pinned tests must migrate with the protocol.
+**State before:** The analyzer/direct reads show a singleton custom textarea document view in vscode-plugin/src/panels/scratch-panels.ts, save/dirty/ready/content messages, generation state, and chat-host persistence/refresh callbacks. DEF7/HLD5 now approve the library-backed single-pane replacement; current production scratchpad code is unchanged and no S001 PLAN/BUILD exists.
 
-**State after:** Qualified hosts open the same file in the native Markdown editor; flag-off/absent hosts use explicit text fallback. One shared resolver supplies home-scoped identity and validated file paths. One asynchronous deletion flow owns local open/delete ordering and dirty/cancellation policy. Native save events replace document save messages for list refresh, and explicit selection Send to chat remains. No native release/build completion is allowed while B1 initial lock, B2 native save-boundary equivalence or B3 rendered selection evidence is missing. This design does not claim private host operations already exist.
+**State after:** One Milkdown/Crepe CustomTextEditorProvider pane on the existing .md TextDocument, versioned host synchronization/recovery and host undo/save authority. Insrc-owned remembered locks and click-only selected-text Send replace the unavailable built-in-editor hook. Browse/new/delete, identity and recency are preserved; legacy document channel is removed.
 
 **Zero downtime:** yes — **Data rewrite:** no
 
 **Steps**
 
-1. Before implementation, resolve B1/B2/B3 by proving supported native APIs and live behaviors, or obtain explicit upstream approval for an alternative requirement/design. Record exact host versions and evidence. A toggle alone, raw URI preflight or successful mock cannot clear these blockers. — ↩ rollbackable
-2. Add shared identity definitions and resolveScratch with canonical home scope and existing basename mapping. Do not rewrite files, enroll the home store, infer workspace association or implement s7 lifecycle persistence. — ↩ rollbackable
-3. Introduce tested injected native operations and boundary error handling; replace both deletion routes with awaited dirty-aware deleteDocument, update every removed-method consumer, and preserve explicit selection-to-chat. Keep runtime behavior unchanged until the replacement is complete. — ↩ rollbackable
-4. Add one scoped/disposable host save subscription and ScratchHost.refreshList; cover text fallback and native saves. Define insrc.scratchpad.nativeEditor default true and off -> plain text fallback. Add no no-op path and no revival of legacy viewer. — ↩ rollbackable _(needs: `insrc.scratchpad.nativeEditor`)_
-5. In one atomic change, activate the qualified native/text opener and remove document renderer/bootstrap, protocol types/arrays, onDocMessage, save/dirty callbacks, replySaved/showingId/invalidateId and generation state. Update activation, chat host, browse callbacks and all fakes/tests together. Native editor owns document buffers; insrc still owns asynchronous action ordering. — ↩ rollbackable
-6. Run targeted behavioral suites, plugin typecheck/build through the supported test harness, static retired-reference checks and the mandatory live acceptance matrix. Attach evidence and stop for human approval. If qualification fails, do not mark complete or ship a partial native guarantee. — ↩ rollbackable
+1. Introduce shared identity/resolver and typed private editor/host protocol with runtime bounds, version checks and recovery ownership; preserve all files and sibling story scope. — ↩ rollbackable
+2. Package pinned Milkdown 7.23.0 browser assets locally; register the custom editor through activation seams and configure lock, independent Send tooltip, host-backed images and removal/rebinding of independent history. — ↩ rollbackable
+3. Integrate the per-document edit queue, receipts/acks/broadcasts, host commands, recovery and save notifications. Route both deletion entry points through one asynchronous safe operation; catch every event rejection. — ↩ rollbackable
+4. Switch open/new to the new editor under insrc.scratchpad.richEditor (default true); flag-off is explicit same-file text fallback. Atomically remove old document renderer/protocol/types/callbacks/methods and update all fakes/tests. — ↩ rollbackable _(needs: `insrc.scratchpad.richEditor`)_
+5. Run mapped host/store/browser suites, production bundle/CSP checks and the mandatory live/corpus/performance qualification. Any missing/failed required check blocks validation; retain data/drafts on all failures. Present BUILD only after validation passes. — ↩ rollbackable
 
-**Backward compat:** Existing Markdown files and IDs remain unchanged and no data rewrite is needed. ScratchPanels/ScratchHost internal API changes are breaking and all call sites migrate atomically: openDocument resolves void, deleteDocument returns deleted/cancelled, invalidation/generation/save-reply/onDocMessage APIs disappear, and refreshList replaces save-channel list pushes. The six chat intents and explicit Send to chat semantics remain. Text fallback is available when native flag is off. Reverting the complete source change is possible because data format is unchanged; the old viewer must not remain reachable in the shipped replacement. S007 owns future persisted identity association and migration. Native I/O preservation is blocked until proved or upstream-amended, never described as unchanged merely because store tests pass.
+**Backward compat:** No upfront data rewrite or rename; .md files, existing basename IDs, list UI and six chat intents stay. New edits may use the qualified supported Markdown serialization, but no write on open or silent unknown-content loss is allowed. Internal openDocument return type, deletion method, refreshList and private protocol require atomic caller migration. Legacy nativeEditor flag was design-only; use richEditor for the revised implementation. Normal VS Code file save behavior applies; no claim of store O_NOFOLLOW on native saves. Existing stored artifact history remains readable; old LLD native-editor blockers are superseded by approved upstream changes.
 
 ## 10. Alternatives considered
 
-### 10.1 a1: Extend existing injected panel dependencies with qualified native operations — **CHOSEN**
+### 10.1 a1: Versioned minimal-edit bridge — **CHOSEN**
 
-Keep the existing controller and store; inject native opening, targeted closing, selection transfer and save notifications.
+Keep TextDocument authoritative and send coalesced, versioned renderer proposals that become minimal text edits.
 
-Extend ScratchPanelsDeps rather than importing vscode into the controller. Share ScratchpadRef through a small identity module and expose deterministic validated resolution through ScratchStore. Extension activation supplies native operations, event subscriptions and a capability admission result. Native mode is not shippable until lock establishment, selection transfer and file/save guarantees are qualified against a concrete host; unsupported assumptions are explicit build blockers. Flag-off and genuinely absent-editor hosts use the documented text fallback. Existing deletion and Send to chat remain accessible.
+Milkdown maintains the transient rendered draft while the extension host serializes changes per TextDocument. Each pane has one in-flight proposal and coalesces later local changes. The host validates URI, pane session, base document version and content digest, derives a minimal contiguous text replacement against the accepted base, and uses WorkspaceEdit. Host snapshots acknowledge edits and synchronize all panes.
 
-### 10.2 a2: Dedicated native scratchpad controller with the same qualified boundary
+Only acknowledged state is canonical. Host updates never echo into new proposals. Independent Milkdown history is removed; explicit undo/redo drains the pending queue then invokes the host stack for the intended resource. Stale proposals preserve recovery drafts instead of overwriting new content. Rich editing is admitted only when the supported syntax round-trips without semantic/opaque-content loss.
 
-Move document operations to a new controller while the existing controller owns only the browse panel.
+### 10.2 a2: Versioned whole-document checkpoint bridge
 
-Introduce a native-document controller injected into the scratch host and browse controller, consuming the same shared identity resolver. Activation owns subscriptions and host capability checks. This is the same native editor framework and unchanged acceptance requirements; lock, selection and save qualification remain mandatory. All routes delegate to one asynchronous delete/open flow.
+Use the same authoritative TextDocument but apply an acknowledged full-buffer replacement per coalesced checkpoint.
 
-**Rejected because:** No improvement to unknown ac1/k3 or partial ac3; adds another controller and routing. Both respect lc1 native-editor ownership and lc2 reuse of the initial extension probe, but neither is qualified until B1/B2/B3 clear.
+The renderer emits a full Markdown snapshot after a short coalescing interval. The host validates base version/digest and applies a whole-document WorkspaceEdit, then broadcasts authoritative state. Selection Send, lock control, input validation and syntax admission are identical to a1.
 
-## 11. References
+This reduces mapping logic but entire-buffer edits disturb ranges and undo granularity and can produce large replacements for small edits. It still cannot bypass stale-version rejection, fidelity checks or normal save/conflict behavior.
+
+**Rejected because:** No benefit to ac2/ac3/ac4 or sc1; full replacements weaken ac1's document interaction behavior.
+
+## 11. UX
+
+- [UX mock](./ux-mock.html)
+
+## 12. References
 
 - **[[c2]]** `code` `vscode-plugin/src/chat/scratch-store.ts` — "Flat ~/.insrc/scratches/*.md store, basename IDs, guarded read/write."
 - **[[c3]]** `code` `vscode-plugin/src/panels/scratch-panels.ts` — "Custom webview document view (documentBodyHtml/documentBootstrap, scratch-save/scratch-saved); unbounded browse list (browseHtml/renderBrowse/openBrowse) with per-row open/delete icons."
-- **[[c8]]** `stakeholder` `user (VS Code host inspection, 2026-11-15)` — "Confirmed on the user's VS Code install: code --list-extensions --show-versions lists markdown-language-features@10.0.0; its manifest registers customEditors vscode.markdown.preview.editor and vscode."
-- **[[c12]]** `code` `vscode-plugin/src/hosts/specs.ts:23` — "env.getExtension(detection.extensionId) is an existing, reusable by-extension host-capability check (HostEnv.getExtension, vscode-plugin/src/hosts/types.ts:33; wired via vscode.extensions.getExtension"
 - **[[c17]]** `code` `vscode-plugin/src/chat/scratch-host.ts` — "createScratchHost's onMessage is the primary driver of the functions this Story touches: case 'scratch-open' calls deps.panels.openDocument(msg.id) (line 150); case 'scratch-new' awaits deps.panels.op"
-- **[[c30]]** `analyze-bundle` `S001 revision context.assemble; five deterministic probes and prior panel-profile pass` — "Existing ScratchStore and ScratchPanels located; no ScratchpadRef returned; graph incomplete and source reads supplement caller coverage."
 - **[[c31]]** `code` `vscode-plugin/src/extension.ts:1023` — "Activation supplies store and document send/save/dirty callbacks to createScratchPanels."
 - **[[c32]]** `doc` `docs/reqs/enhanced-scratchpad-prd.html#requirements` — "SP-5 retains existing Send to chat; SP-4 requires preserved committed data and drafts on failure/conflict."
-- **[[c33]]** `code` `/usr/share/code/resources/app/extensions/markdown-language-features/dist/extension.js` — "Installed VS Code 1.146.0 initializes native readonly from markdown.editor.readonly global state; not a per-open locked guarantee."
-- **[[c34]]** `code` `/usr/share/code/resources/app/extensions/markdown-language-features/package.json` — "Bundled version 10.0.0 registers vscode.markdown.editor and markdown.editor.toggleLocked; no live behavior qualification performed."
-- **[[c35]]** `step-output` `design.story/s4-s8` — "Proposed contract and migration address eight review findings; B1/B2/B3 explicitly block native build admission. Local lc1/lc2 stay intact; adjacent work deferred."
-
-## 12. Open questions
-
-- BUILD BLOCKER B1 — The installed native editor remembers global lock state. Identify and prove a supported idempotent per-target lock setter/readback that satisfies ac1 after other tabs are unlocked and on editable reopens. No such API is verified. If unavailable, obtain an explicit upstream acceptance/design amendment; toggling blindly is forbidden.
-- BUILD BLOCKER B2 — Opening a validated file URI does not retain guarded store I/O on later native reads/writes. Prove the approved failure/conflict/no-follow requirements through supported host behavior, or obtain an explicit upstream amendment defining the accepted native-file boundary. Unchanged file format is not unchanged write guarantees.
-- BUILD BLOCKER B3 — Preserve direct selected-text Send to chat from the rendered editor through a supported host selection mechanism. No rendered selection API is verified. A manual Copy → explicit Insert clipboard action is a concrete alternative but requires explicit product acceptance; never substitute a stale TextEditor or the whole note.
-- Native operations are typed application requirements, not invented VS Code APIs. Before plan/build, replace the capability evidence gaps with exact API/version/evidence or revise the upstream design with human approval. No live host behavior or visual rendering has been verified in this amendment.
-- Scope decisions: all existing pre-s7 pads remain in the explicit home scope; s7 must persist association and migrate stable IDs before rename/move/archive. The current resolver is read-only and no s7 metadata persistence is implemented.
-- Visual relevance: identity has only a one-reference-per-note value relationship with no DB/entity changes, so prose suffices without an ERD. Native layout is host-owned; no bespoke UX mock is proposed. The sequence companion documents asynchronous deletion ordering, not proof of live UI.
-
-## Resolved questions
-
-- `qb5f0cbbd` — BUILD BLOCKER B1 — The installed native editor remembers global lock state. Identify and prove a supported idempotent per-target lock setter/readback that satisfies ac1 after other tabs are unlocked and on editable reopens. No such API is verified. If unavailable, obtain an explicit upstream acceptance/design amendment; toggling blindly is forbidden.
-  - **resolved**: Upstream acceptance / design amendment — honor the native editor's remembered mode — User explicitly accepted this change in chat: S001 opens scratchpads in vscode.markdown.editor using its remembered native reading/editing mode and retains native pencil/lock controls. Remove the forced-locked-on-every-open guarantee; no blind toggle, private state edits, or global setting mutations. This records the approved product decision; propagate it into the upstream acceptance/design artifacts and tests before build, rather than claiming a supported lock setter exists. B2 and B3 remain unresolved. _(2026-11-27T17:04:19.136Z)_
-- `q2fedb6b0` — BUILD BLOCKER B2 — Opening a validated file URI does not retain guarded store I/O on later native reads/writes. Prove the approved failure/conflict/no-follow requirements through supported host behavior, or obtain an explicit upstream amendment defining the accepted native-file boundary. Unchanged file format is not unchanged write guarantees.
-  - **resolved**: Accept normal VS Code native save/conflict behavior — User explicitly accepted normal VS Code behavior in chat. Native and fallback editors delegate subsequent file reads/saves, conflicts, undo and backups to VS Code. Insrc still validates basename/root/regular-file status and refuses symlinks at open; existing store-managed operations retain their guards. Do not claim ongoing O_NOFOLLOW or guarded-publication protection for native saves, or attempt an unenforceable pre-save shim. Propagate this accepted boundary into upstream requirements, LLD and acceptance tests before build. B3 remains unresolved. _(2026-11-27T17:08:25.137Z)_
-- `q5ee29197` — BUILD BLOCKER B3 — Preserve direct selected-text Send to chat from the rendered editor through a supported host selection mechanism. No rendered selection API is verified. A manual Copy → explicit Insert clipboard action is a concrete alternative but requires explicit product acceptance; never substitute a stale TextEditor or the whole note.
-  - **resolved**: Use Milkdown + Crepe in one insrc-owned CustomTextEditorProvider pane — User rejected manual clipboard and separate reader/editor views, asked about embeddable JS Markdown libraries, then checked Milkdown and said it looks good. Selected design direction is Milkdown + Crepe in one normal VS Code custom text-editor pane backed by the existing .md TextDocument. Insrc owns selection popup, explicit Send click and lock controls; selection alone never sends and clicking inserts into composer without submitting. This removes the built-in-editor selection-API dependency by an upstream design change, not by claiming such an API exists. Requires synchronized DEF/HLD/LLD amendments and human artifact approval before plan/build; no implementation approval or completed host/round-trip validation is implied. _(2026-11-27T18:05:22.936Z)_
+- **[[c40]]** `stakeholder` `User chat — Milkdown direction selected, 2026-11-27` — "User rejected clipboard/two views, requested embeddable JS Markdown libraries, checked Milkdown and said it looks good. Normal VS Code save behavior accepted; Send requires a click and only inserts in"
+- **[[c41]]** `doc` `https://milkdown.dev/docs/api/crepe` — "Crepe has a configurable floating selection toolbar; library controls and plugins are owned by the embedding application. Source confirms editable control and customizable tooltip; no integration/roun"
+- **[[c42]]** `doc` `https://code.visualstudio.com/api/extension-guides/custom-editors` — "CustomTextEditorProvider renders an owned webview over a VS Code TextDocument; changes must synchronize to that document."
+- **[[c50]]** `prior-artifact` `docs/epics/linked-scratchpads-vs-code-E202611162846f076/DEF.md` — "Approved DEF7; S001 single-pane Milkdown editor, remembered lock, explicit Send click."
+- **[[c51]]** `prior-artifact` `docs/epics/linked-scratchpads-vs-code-E202611162846f076/HLD.md` — "Approved HLD5; shared sc1 ownership and sibling boundaries preserved."
+- **[[c52]]** `doc` `/tmp/.insrc/scratchpad-s001-capability-check/milkdown-7.23.0/` — "Published 7.23.0 package metadata/types inspected without installing: Crepe.setReadonly, Editor.remove, history plugin array and image upload/display callbacks. Integration still untested."
+- **[[c53]]** `doc` `https://raw.githubusercontent.com/Milkdown/milkdown/main/packages/crepe/src/feature/toolbar/index.ts` — "Default formatting tooltip requires editable view; a separate owned selection Send tooltip is required."
 
 ## Citations
 
 - **[[c2]]** `code` `vscode-plugin/src/chat/scratch-store.ts` — "Flat ~/.insrc/scratches/*.md store, basename IDs, guarded read/write."
 - **[[c3]]** `code` `vscode-plugin/src/panels/scratch-panels.ts` — "Custom webview document view (documentBodyHtml/documentBootstrap, scratch-save/scratch-saved); unbounded browse list (browseHtml/renderBrowse/openBrowse) with per-row open/delete icons."
-- **[[c8]]** `stakeholder` `user (VS Code host inspection, 2026-11-15)` — "Confirmed on the user's VS Code install: code --list-extensions --show-versions lists markdown-language-features@10.0.0; its manifest registers customEditors vscode.markdown.preview.editor and vscode."
-- **[[c12]]** `code` `vscode-plugin/src/hosts/specs.ts:23` — "env.getExtension(detection.extensionId) is an existing, reusable by-extension host-capability check (HostEnv.getExtension, vscode-plugin/src/hosts/types.ts:33; wired via vscode.extensions.getExtension"
 - **[[c17]]** `code` `vscode-plugin/src/chat/scratch-host.ts` — "createScratchHost's onMessage is the primary driver of the functions this Story touches: case 'scratch-open' calls deps.panels.openDocument(msg.id) (line 150); case 'scratch-new' awaits deps.panels.op"
-- **[[c30]]** `analyze-bundle` `S001 revision context.assemble; five deterministic probes and prior panel-profile pass` — "Existing ScratchStore and ScratchPanels located; no ScratchpadRef returned; graph incomplete and source reads supplement caller coverage."
 - **[[c31]]** `code` `vscode-plugin/src/extension.ts:1023` — "Activation supplies store and document send/save/dirty callbacks to createScratchPanels."
 - **[[c32]]** `doc` `docs/reqs/enhanced-scratchpad-prd.html#requirements` — "SP-5 retains existing Send to chat; SP-4 requires preserved committed data and drafts on failure/conflict."
-- **[[c33]]** `code` `/usr/share/code/resources/app/extensions/markdown-language-features/dist/extension.js` — "Installed VS Code 1.146.0 initializes native readonly from markdown.editor.readonly global state; not a per-open locked guarantee."
-- **[[c34]]** `code` `/usr/share/code/resources/app/extensions/markdown-language-features/package.json` — "Bundled version 10.0.0 registers vscode.markdown.editor and markdown.editor.toggleLocked; no live behavior qualification performed."
-- **[[c35]]** `step-output` `design.story/s4-s8` — "Proposed contract and migration address eight review findings; B1/B2/B3 explicitly block native build admission. Local lc1/lc2 stay intact; adjacent work deferred."
+- **[[c40]]** `stakeholder` `User chat — Milkdown direction selected, 2026-11-27` — "User rejected clipboard/two views, requested embeddable JS Markdown libraries, checked Milkdown and said it looks good. Normal VS Code save behavior accepted; Send requires a click and only inserts in"
+- **[[c41]]** `doc` `https://milkdown.dev/docs/api/crepe` — "Crepe has a configurable floating selection toolbar; library controls and plugins are owned by the embedding application. Source confirms editable control and customizable tooltip; no integration/roun"
+- **[[c42]]** `doc` `https://code.visualstudio.com/api/extension-guides/custom-editors` — "CustomTextEditorProvider renders an owned webview over a VS Code TextDocument; changes must synchronize to that document."
+- **[[c50]]** `prior-artifact` `docs/epics/linked-scratchpads-vs-code-E202611162846f076/DEF.md` — "Approved DEF7; S001 single-pane Milkdown editor, remembered lock, explicit Send click."
+- **[[c51]]** `prior-artifact` `docs/epics/linked-scratchpads-vs-code-E202611162846f076/HLD.md` — "Approved HLD5; shared sc1 ownership and sibling boundaries preserved."
+- **[[c52]]** `doc` `/tmp/.insrc/scratchpad-s001-capability-check/milkdown-7.23.0/` — "Published 7.23.0 package metadata/types inspected without installing: Crepe.setReadonly, Editor.remove, history plugin array and image upload/display callbacks. Integration still untested."
+- **[[c53]]** `doc` `https://raw.githubusercontent.com/Milkdown/milkdown/main/packages/crepe/src/feature/toolbar/index.ts` — "Default formatting tooltip requires editable view; a separate owned selection Send tooltip is required."

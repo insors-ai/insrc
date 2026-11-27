@@ -73,6 +73,9 @@ test('chain: unapproved Define → approve-define', () => {
 		assert.equal(r.nextAction.kind, 'approve-define');
 		assert.equal(r.define.exists, true);
 		assert.equal(r.define.approved, false);
+		if (r.nextAction.kind === 'approve-define') {
+			assert.equal(r.nextAction.command, `insrc_workflow_approve({ artifactPath: "${r.define.path}" })`);
+		}
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -94,6 +97,9 @@ test('chain: unapproved HLD → approve-hld', () => {
 		writeHld(repo, HASH, 'hld-1');
 		const r = buildChainReport(repo, HASH);
 		assert.equal(r.nextAction.kind, 'approve-hld');
+		if (r.nextAction.kind === 'approve-hld') {
+			assert.equal(r.nextAction.command, `insrc_workflow_approve({ artifactPath: "${r.hld.path}" })`);
+		}
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -119,6 +125,10 @@ test('chain: unapproved LLD blocks the chain → approve-lld', () => {
 		writeLld(repo, HASH, 's1', 'hld-1', hash);
 		const r = buildChainReport(repo, HASH);
 		assert.equal(r.nextAction.kind, 'approve-lld');
+		if (r.nextAction.kind === 'approve-lld') {
+			const story = r.stories.find(s => s.id === 's1');
+			assert.equal(r.nextAction.command, `insrc_workflow_approve({ artifactPath: "${story?.path}" })`);
+		}
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -131,6 +141,11 @@ test('chain: pending amendment surfaces before further LLDs', async () => {
 		const r = buildChainReport(repo, HASH);
 		assert.equal(r.nextAction.kind, 'review-amendment');
 		assert.equal(r.amendments.pending, 1);
+		if (r.nextAction.kind === 'review-amendment') {
+			assert.equal(r.nextAction.amendmentId, `AMD-${HASH}-1`);
+			assert.match(r.nextAction.command, /^insrc_present documents=\["[^"]*AMD-[^"]*"\] then insrc_workflow_approve\(\{ artifactPath: "[^"]*AMD-[^"]*" \}\)$/);
+			assert.doesNotMatch(r.nextAction.command, /--list/);
+		}
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 

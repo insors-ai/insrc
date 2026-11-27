@@ -5,10 +5,10 @@
 ## Summary
 
 **Epic:** `insrc-present-cannot-show-tracked-epic`
-**LLD run:** `wf-1795781226716-e61wgy`
-**LLD effective hash:** `4aa2b6f12b0f...`
+**LLD run:** `wf-1795791735075-nr6b7e`
+**LLD effective hash:** `0ace2ee99a7e...`
 
-Building this Story is a four-task change: t1 (already built) added the status-independent artifact scanner; t2 registers its daemon-side IPC handler in every completeness table the daemon enforces; t3 adds the client-side forward and re-points insrc_present at it; t4 extends the two affected test files and confirms the daemon's own four completeness suites pass. Nothing outside pending.ts, handler-runtime.ts, repo-call-audit.ts, method-class.ts, daemon-stream.ts, server.ts and their four test files changes.
+Building this correction is three small, independent edits: a shared path-derivation helper in the daemon's workflow module so the new openable scanner can't drift from the existing pending scanner's safety checks; a client-side mirror method in the VS Code extension so its own auto-open logic reads the same openable list the MCP tool already reads; and a one-paragraph wording fix to a tool description. None of the three depend on each other, and none change any existing method's behavior.
 
 ## Contents
 
@@ -19,90 +19,63 @@ Building this Story is a four-task change: t1 (already built) added the status-i
 
 ## 1. Epic impact analysis
 
-**Does not apply**: Standalone bugfix Story with no prior Story of this Epic; there is nothing already built to analyse.
+**Does not apply**: Standalone, ISSUE-anchored bugfix Story with no sibling Stories; this is a correction round on this same Story's own already-approved LLD/PLAN/BUILD, not a later Story of a multi-Story Epic.
 
 ## 2. Tasks
 
 | # | Task | Size | Status | Depends on | Tests | Derived from |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | **`t1`** Add resolveOpenableArtifacts to src/workflow/pending.ts | S | approved r1 | — | unit: resolveOpenableArtifacts returns a draft (never-decided) artifact; unit: resolveOpenableArtifacts returns an approved artifact; unit: resolveOpenableArtifacts returns a rejected artifact; unit: resolveOpenableArtifacts returns a non-standalone BUILD with no CR sibling; unit: resolveOpenableArtifacts excludes a non-PENDING_KINDS file (e.g. an EPIC/STORY/TASK record); unit: resolveOpenableArtifacts skips a malformed JSON file without dropping the rest of the scan | [[c1]] [[c4]] |
-| 2 | **`t2`** Register the daemon-side 'workflow.openable' handler and every completeness registry it requires | M | approved r1 | `t1` | unit: handleWorkflowOpenable returns { artifacts } from a fixture repo via resolveOpenableArtifacts; unit: handleWorkflowOpenable returns { error } when repo cannot be resolved from params or repoEnv; integration: repo-call-audit.test.ts: every method of the handler registry has an audit entry, now including workflow.openable; integration: method-class.test.ts: the method set equals the keys of the constructed rpcHandlers and streamHandlers, now including workflow.openable; integration: handler-runtime.test.ts: RECORDED_RPC + ADDED_RPC equals the registered method set, now including workflow.openable in ADDED_RPC | [[c1]] [[c2]] [[c4]] |
-| 3 | **`t3`** Add openableWorkflow and wire handleInsrcPresent to it | S | approved r1 | `t2` | unit: handleInsrcPresent presents a tracked-epic BUILD by artifact id with no CR sibling (the reported defect's exact case); unit: handleInsrcPresent presents the same BUILD by its repo-relative doc path; unit: handleInsrcPresent presents an already-approved artifact by name; unit: handleInsrcPresent reports notPending for a name matching zero artifacts; unit: handleInsrcPresent reports notPending for a bare filename matching more than one document (ambiguity preserved); unit: handleInsrcPresent's external response shape stays { presented: string[], notPending: string[] }; unit: handleInsrcPresent calls the daemon's 'workflow.openable' method, not 'workflow.pending'; unit: handleInsrcPresent answers a daemon error or an unreachable daemon as an explicit error, never as presented | [[c1]] [[c2]] [[c4]] |
-| 4 | **`t4`** Add/extend tests for handleWorkflowOpenable and handleInsrcPresent, and confirm every completeness suite passes | M | — | `t1`, `t2`, `t3` | integration: repo-call-table.test.ts: every registered method is a table row or on the reviewed read-only list -- workflow.openable satisfies this via its RPC_AUDIT kind:'read-only' entry with no separate edit; smoke: all t1/t2/t3 proving tests exist as real, passing test cases across pending.test.ts, present-dispatch.test.ts and the three completeness-test files | [[c3]] |
+| 1 | **`t1`** Extract mdPathForKind and wire toDescriptor + resolveOpenableArtifacts to it | S | draft r2 | — | unit: mdPathForKind returns '' for a BUILD record whose BUILD.md is missing; unit: mdPathForKind returns '' for a BUILD record whose BUILD.md exists but carries a different record's marker; unit: mdPathForKind returns the derived path for a BUILD record whose BUILD.md exists and carries its own marker; unit: mdPathForKind returns '' for every AMD record, unconditionally; unit: resolveOpenableArtifacts returns '' for a BUILD record with no matching BUILD.md; unit: resolveOpenableArtifacts returns '' for an AMD record; unit: toDescriptor's existing listPendingArtifacts tests still pass unmodified after the mdPathForKind extraction | [[c2]] [[c4]] [[c5]] |
+| 2 | **`t2`** Add openableDocuments() to DocsReviewClient and wire the VS Code auto-open path to it | S | draft r2 | — | unit: DocsReviewClient.openableDocuments calls the daemon's 'workflow.openable' method, not 'workflow.pending'; unit: review-presenter declared() opens a document that is approved/rejected/has no CR sibling when its source list is openable-shaped, where the old pending-only fixture would have refused it; unit: docs-review-client.test.ts source-scan completeness test passes with 'workflow.openable' added to its expected method list | [[c1]] [[c6]] [[c7]] |
+| 3 | **`t3`** Correct the insrc_present tool description's stale lifecycle-gated wording | S | draft r2 | — | integration: the registered insrc_present description no longer contains the phrase 'pending approval and openable' or lists an approved artifact under notPending's examples, and instead states presentation is independent of lifecycle status | [[c3]] |
 
-### 2.1 TASK-9c95950064e4b916-s1-t1 — Add resolveOpenableArtifacts to src/workflow/pending.ts
+### 2.1 TASK-9c95950064e4b916-s1-t1 — Extract mdPathForKind and wire toDescriptor + resolveOpenableArtifacts to it
 
-Add the new exported function resolveOpenableArtifacts(repoPath): readonly {artifactId, mdPath}[], copying listPendingArtifacts' file-scan loop but keeping only the kind-filter (PENDING_KINDS) and the malformed-JSON try/catch guards; drop the approvalStateOf/AMD-status pending check and the BUILD/CR-sibling check entirely. Derive mdPath via the existing, already-exported deriveMdPath. (Already implemented and validated; unchanged by this revision.)
-
-**Acceptance checks:**
-- resolveOpenableArtifacts returns an entry for a PENDING_KINDS artifact file regardless of its lifecycle status (draft, approved or rejected)
-- resolveOpenableArtifacts returns an entry for a non-standalone BUILD with no CR sibling
-- resolveOpenableArtifacts excludes a non-PENDING_KINDS file
-- resolveOpenableArtifacts skips a malformed JSON file (logged) without dropping the rest of the scan
-- listPendingArtifacts itself is untouched -- no change to its own exported behavior
-
-### 2.2 TASK-9c95950064e4b916-s1-t2 — Register the daemon-side 'workflow.openable' handler and every completeness registry it requires
-
-Add handleWorkflowOpenable (plus WorkflowOpenableResult/WorkflowOpenableError interfaces) to src/workflow/pending.ts, mirroring handleWorkflowPending's repo-resolution rule exactly. Register a new 'workflow.openable' entry in src/daemon/handler-runtime.ts's method table (mirroring 'workflow.pending'). Add the matching entry to src/daemon/repo-call-audit.ts's RPC_AUDIT (kind: 'read-only'), to src/daemon/threads/method-class.ts's TABLE (['workflow.openable', 'session', false]), and to src/daemon/__tests__/handler-runtime.test.ts's ADDED_RPC array. These five edits must land together: the daemon's own completeness tests (repo-call-audit.test.ts, method-class.test.ts, handler-runtime.test.ts) fail if any one is missing.
+Add mdPathForKind(repoPath, kind, artifactId, meta) to src/workflow/pending.ts, extracting toDescriptor's existing BUILD (buildRecordMdPath existence+marker check) and AMD (always '') path rules verbatim. Change toDescriptor's inline ternary and resolveOpenableArtifacts' direct deriveMdPath call to both call the new helper instead.
 
 **Acceptance checks:**
-- handleWorkflowOpenable returns { artifacts } from a fixture repo via resolveOpenableArtifacts
-- handleWorkflowOpenable returns { error } when repo cannot be resolved from params or repoEnv
-- repo-call-audit.test.ts passes with 'workflow.openable' present in RPC_AUDIT
-- method-class.test.ts's coverage test passes with 'workflow.openable' present in the TABLE
-- handler-runtime.test.ts passes with 'workflow.openable' present in ADDED_RPC
-- repo-call-table.test.ts passes with no separate edit (workflow.openable's read-only RPC_AUDIT kind satisfies it)
+- mdPathForKind returns '' for a BUILD record whose BUILD.md is missing
+- mdPathForKind returns '' for a BUILD record whose BUILD.md exists but carries a different record's marker
+- mdPathForKind returns the derived path for a BUILD record whose BUILD.md exists and carries its own marker
+- mdPathForKind returns '' for every AMD record, unconditionally
+- resolveOpenableArtifacts returns '' for a BUILD record with no matching BUILD.md (regression test for the reviewer's fabricated-path finding)
+- resolveOpenableArtifacts returns '' for an AMD record (regression test for the reviewer's fabricated-AMD.md-path finding)
+- toDescriptor's existing listPendingArtifacts tests (pending/approved/rejected filtering, BUILD/CR-sibling gate) still pass unmodified
 
-### 2.3 TASK-9c95950064e4b916-s1-t3 — Add openableWorkflow and wire handleInsrcPresent to it
+### 2.2 TASK-9c95950064e4b916-s1-t2 — Add openableDocuments() to DocsReviewClient and wire the VS Code auto-open path to it
 
-Add openableWorkflow to src/mcp/daemon-stream.ts, mirroring pendingWorkflow's unaryRpc forward but naming 'workflow.openable'. Change handleInsrcPresent in src/mcp/server.ts to call openableWorkflow instead of pendingWorkflow; remove the now-unused pendingWorkflow import from server.ts if nothing else there needs it. Keep namesPending and the ambiguity-filter unchanged.
-
-**Acceptance checks:**
-- handleInsrcPresent presents a tracked-epic BUILD by artifact id with no CR sibling (the reported defect's exact case)
-- handleInsrcPresent presents the same BUILD by its repo-relative doc path
-- handleInsrcPresent presents an already-approved or already-rejected artifact by name
-- handleInsrcPresent still reports notPending for a name matching zero artifacts
-- handleInsrcPresent still reports notPending for a bare filename matching more than one document
-- handleInsrcPresent still answers a daemon error or an unreachable daemon as an explicit error
-- handleInsrcPresent's external response shape stays { presented: string[], notPending: string[] }
-
-### 2.4 TASK-9c95950064e4b916-s1-t4 — Add/extend tests for handleWorkflowOpenable and handleInsrcPresent, and confirm every completeness suite passes
-
-Extend src/workflow/__tests__/pending.test.ts with handleWorkflowOpenable unit tests. Update src/mcp/__tests__/present-dispatch.test.ts: every fakeDaemon() assertion of the called method name changes from 'workflow.pending' to 'workflow.openable', and every fixture object is trimmed to the minimal {artifactId, mdPath} shape. Run repo-call-audit.test.ts, method-class.test.ts, handler-runtime.test.ts and repo-call-table.test.ts to confirm their completeness checks pass with no further edits.
+Add openableDocuments() to vscode-plugin/src/chat/docs-review-client.ts, mirroring pendingDocuments()'s shape but calling workflow.openable. Change vscode-plugin/src/extension.ts:732's reviewPresenter pendingDocuments dependency to call reviewClient.openableDocuments() instead of reviewClient.pendingDocuments(). Update docs-review-client.test.ts's source-scan completeness test (t2: source-scan, lines 277-288) to include 'workflow.openable' in its expected method list -- it currently hard-fails on any new daemon-method string literal in the file.
 
 **Acceptance checks:**
-- Every subject named in the LLD's testStrategy.testLevels has a corresponding real test case
-- Every criterionId in testStrategy.acceptanceMapping (ac1-ac4) has its provingTests present and passing
-- No existing test in pending.test.ts, present-dispatch.test.ts or the three completeness-test files needs to change beyond the planned method-name/fixture-shape updates
+- DocsReviewClient.openableDocuments calls the daemon's 'workflow.openable' method, not 'workflow.pending'
+- review-presenter declared() opens a document that is approved/rejected/has no CR sibling when its source list is openable-shaped, where the old pending-only fixture would have refused it
+- docs-review-client.test.ts's source-scan completeness test passes with 'workflow.openable' added to its expected method list
+- pendingDocuments() and workflow.pending are untouched -- the JetBrains review panel's narrower semantics keep working
+
+### 2.3 TASK-9c95950064e4b916-s1-t3 — Correct the insrc_present tool description's stale lifecycle-gated wording
+
+Reword the registered insrc_present tool description in src/mcp/server.ts to state presentation is independent of lifecycle status, removing the 'already approved' notPending example and the 'pending approval and openable' phrase.
+
+**Acceptance checks:**
+- the registered insrc_present description no longer contains the phrase 'pending approval and openable' or lists an approved artifact under notPending's examples, and instead states presentation is independent of lifecycle status
 
 ## 3. Test-strategy coverage
 
 | LLD strategy item | Covered by |
 | :--- | :--- |
-| resolveOpenableArtifacts returns a draft (never-decided) artifact | `t1`, `t4` |
-| resolveOpenableArtifacts returns an approved artifact | `t1`, `t4` |
-| resolveOpenableArtifacts returns a rejected artifact | `t1`, `t4` |
-| resolveOpenableArtifacts returns a non-standalone BUILD with no CR sibling | `t1`, `t4` |
-| resolveOpenableArtifacts excludes a non-PENDING_KINDS file (e.g. an EPIC/STORY/TASK record) | `t1`, `t4` |
-| resolveOpenableArtifacts skips a malformed JSON file without dropping the rest of the scan | `t1`, `t4` |
-| handleWorkflowOpenable returns { artifacts } from a fixture repo via resolveOpenableArtifacts | `t2`, `t4` |
-| handleWorkflowOpenable returns { error } when repo cannot be resolved from params or repoEnv | `t2`, `t4` |
-| handleInsrcPresent presents a tracked-epic BUILD by artifact id with no CR sibling (the reported defect's exact case) | `t3`, `t4` |
-| handleInsrcPresent presents the same BUILD by its repo-relative doc path | `t3`, `t4` |
-| handleInsrcPresent presents an already-approved artifact by name | `t3`, `t4` |
-| handleInsrcPresent reports notPending for a name matching zero artifacts | `t3`, `t4` |
-| handleInsrcPresent reports notPending for a bare filename matching more than one document (ambiguity preserved) | `t3`, `t4` |
-| handleInsrcPresent's external response shape stays { presented: string[], notPending: string[] } | `t3`, `t4` |
-| handleInsrcPresent calls the daemon's 'workflow.openable' method, not 'workflow.pending' | `t3`, `t4` |
-| handleInsrcPresent answers a daemon error or an unreachable daemon as an explicit error, never as presented | `t3`, `t4` |
-| repo-call-audit.test.ts: every method of the handler registry has an audit entry, now including workflow.openable | `t2`, `t4` |
-| method-class.test.ts: the method set equals the keys of the constructed rpcHandlers and streamHandlers, now including workflow.openable | `t2`, `t4` |
-| handler-runtime.test.ts: RECORDED_RPC + ADDED_RPC equals the registered method set, now including workflow.openable in ADDED_RPC | `t2`, `t4` |
-| repo-call-table.test.ts: every registered method is a table row or on the reviewed read-only list -- workflow.openable satisfies this via its RPC_AUDIT kind:'read-only' entry with no separate edit | `t4` |
+| DocsReviewClient.openableDocuments | `t2` |
+| review-presenter.ts declared() via createReviewPresenter | `t2` |
+| mdPathForKind | `t1` |
+| toDescriptor (regression: unchanged output) | `t1` |
+| resolveOpenableArtifacts | `t1` |
+| insrc_present tool registration description (server.ts) | `t3` |
 
 ## 4. References
 
-- **[[c1]]** `prior-artifact` `LLD-9c95950064e4b916-s1 contractDetails`
-- **[[c2]]** `prior-artifact` `LLD-9c95950064e4b916-s1 errorPaths`
-- **[[c3]]** `prior-artifact` `LLD-9c95950064e4b916-s1 testStrategy`
-- **[[c4]]** `prior-artifact` `LLD-9c95950064e4b916-s1 migration`
+- **[[c1]]** `prior-artifact` `LLD s1 invariantsToPreserve[0] -- createReviewPresenter's sole production wiring point (extension.ts:730-734)`
+- **[[c2]]** `prior-artifact` `LLD s1 invariantsToPreserve[1] -- toDescriptor's BUILD marker check (pending.ts:259-276)`
+- **[[c3]]** `prior-artifact` `LLD s1 invariantsToPreserve[3] -- insrc_present tool description must state status-independent presentation (server.ts:870-895)`
+- **[[c4]]** `prior-artifact` `LLD s1 contractDetails.api -- toDescriptor (pending.ts:222-246)`
+- **[[c5]]** `prior-artifact` `LLD s1 contractDetails.api -- resolveOpenableArtifacts (pending.ts:175-198)`
+- **[[c6]]** `code` `vscode-plugin/src/chat/docs-review-client.ts:154-162`
+- **[[c7]]** `code` `vscode-plugin/src/chat/review-presenter.ts:72-73`

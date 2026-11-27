@@ -192,3 +192,19 @@ handleInsrcPresent reads .insrc/artifacts directly, re-implementing enough of th
 - cd1 (partial): resolveOpenableArtifacts is a genuinely new function (not grounded in s1's analyze bundle, since it doesn't exist yet) -- disclosed as new throughout, never claimed to pre-exist.
 - ep3 (partial): invariantsToPreserve cites c1/c2, now defined in this artifact's own citations[] against the real paths pending.ts:116-157/159-183 and server.ts:1105-1140 respectively.
 - ts2 (partial): testFramework 'node:test' reflects this session's direct, already-verified knowledge of this codebase's test convention rather than an explicit s1 test.locate/convention.detect lookup output.
+
+## Resolved questions
+
+- `qbb416be3` — cd1 (partial): resolveOpenableArtifacts is a genuinely new function (not grounded in s1's analyze bundle, since it doesn't exist yet) -- disclosed as new throughout, never claimed to pre-exist.
+  - **resolved**: Explicit new function — resolveOpenableArtifacts is a disclosed, proposed new function with a fully defined contract (signature, parameters, returns, pre/postconditions) in the approved LLD; a proposed addition need not pre-exist in the s1 analyze bundle. _(2026-11-27T11:32:27.773Z)_
+
+## Citations
+
+- **[[c1]]** `code` `src/workflow/pending.ts:116-157` — "if (kind === 'BUILD' && meta['standalone'] !== true && !names.has(`CR${file.slice('BUILD'.length)}`)) continue;"
+- **[[c2]]** `code` `src/mcp/server.ts:1105-1140` — "const pending = await pendingWorkflow({ repo }, deps); ... const openable = pending.artifacts; ... const presented = names.filter((n) => openable.filter((a) => namesPending(n, a)).length === 1);"
+- **[[c3]]** `code` `src/workflow/pending.ts:246-262`
+- **[[c4]]** `code` `src/workflow/path-scheme.ts:186-198`
+- **[[c5]]** `code` `src/workflow/pending.ts:159-183`
+- **[[c6]]** `code` `src/mcp/server.ts:1098-1101`
+- **[[c7]]** `code` `src/workflow/pending.ts:74-88`
+- **[[c8]]** `code` `src/workflow/storage.ts:900-1120`

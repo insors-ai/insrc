@@ -55,7 +55,16 @@
       "references": [],
       "attachments": []
     },
-    "rangeBase": "f8ee49ef15c9f91ab824332cb4a47f187e166f23"
+    "rangeBase": "f8ee49ef15c9f91ab824332cb4a47f187e166f23",
+    "questionResolutions": {
+      "qbb416be3": {
+        "question": "cd1 (partial): resolveOpenableArtifacts is a genuinely new function (not grounded in s1's analyze bundle, since it doesn't exist yet) -- disclosed as new throughout, never claimed to pre-exist.",
+        "status": "resolved",
+        "choice": "Explicit new function",
+        "rationale": "resolveOpenableArtifacts is a disclosed, proposed new function with a fully defined contract (signature, parameters, returns, pre/postconditions) in the approved LLD; a proposed addition need not pre-exist in the s1 analyze bundle.",
+        "resolvedAt": "2026-11-27T11:32:27.773Z"
+      }
+    }
   },
   "body": {
     "summary": {

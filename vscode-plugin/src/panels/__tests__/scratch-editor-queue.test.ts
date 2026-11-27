@@ -67,8 +67,8 @@ test('scratch queue retains every newer draft while an old ack promotes only the
   const h = harness(), a = h.bind('a'), b = h.bind('b'), gate = h.block();
   a.edit('# First\n'); await until(() => h.edits.length === 1);
   a.edit('# Second\n'); a.edit('# Latest\n');
-  await until(() => h.retained.length === 3);
-  assert.equal(h.retained[1]?.apply, false); assert.equal(h.retained[2]?.apply, false);
+  await until(() => h.retained.length === 2);
+  assert.equal(h.retained[1]?.apply, false); assert.equal(h.retained[1]?.draftSeq, 3);
   assert.equal(a.markdown, '# Latest\n'); assert.equal(h.recovery.get('a')?.markdown, '# Latest\n');
   gate.resolve(); await h.settle();
   assert.equal(a.markdown, '# Latest\n'); assert.equal(b.markdown, '# Latest\n');
@@ -121,7 +121,7 @@ test('scratch queue does not apply without persisted receipt and lets accepted w
 test('scratch queue captured-sequence barrier waits across asynchronous ack and promotion delivery', async () => {
   const h = harness(), a = h.bind('a', true), gate = h.block();
   a.edit('# First\n'); await until(() => h.edits.length === 1);
-  a.edit('# Pending two\n'); a.edit('# Latest three\n'); await until(() => h.retained.length === 3);
+  a.edit('# Pending two\n'); a.edit('# Latest three\n'); await until(() => h.retained.length === 2);
   let completed = false;
   const barrier = h.controller.waitForSequence('a', 3).then(snapshot => { completed = true; return snapshot; });
   gate.resolve(); await h.controller.flush(); assert.equal(completed, false);

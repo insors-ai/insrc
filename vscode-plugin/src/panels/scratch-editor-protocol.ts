@@ -33,6 +33,13 @@ export interface ScratchSelectionSend extends Session {
   readonly docVersion: number;
   readonly selectedText: string;
 }
+/** All protocol fields are scalar; include every own field so a future field
+ * cannot silently bypass idempotency. Optional absent/undefined are equivalent. */
+export function sameScratchDraft(left: ScratchDraftProposal, right: ScratchDraftProposal): boolean {
+  const fields = new Set([...Object.keys(left), ...Object.keys(right)] as (keyof ScratchDraftProposal)[]);
+  for (const field of fields) if (left[field] !== right[field]) return false;
+  return true;
+}
 export type ScratchEditorToHost =
   | (Session & { readonly type: 'editor-ready' })
   | ScratchDraftProposal

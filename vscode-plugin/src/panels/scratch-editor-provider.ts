@@ -1,7 +1,7 @@
 /** VS Code-free, one-per-TextDocument edit controller. Activation supplies the
  * native document operations (t7), and t5 supplies durable recovery operations. */
 import { createHash } from 'node:crypto';
-import { parseScratchEditorMessage, parseScratchHostMessage, type ScratchDraftProposal, type ScratchHostToEditor } from './scratch-editor-protocol.js';
+import { parseScratchEditorMessage, parseScratchHostMessage, sameScratchDraft, type ScratchDraftProposal, type ScratchHostToEditor } from './scratch-editor-protocol.js';
 import type { ScratchSnapshot } from './scratch-editor-state.js';
 
 export interface ScratchTextEdit { readonly baseVersion: number; readonly start: number; readonly end: number; readonly text: string }
@@ -28,11 +28,6 @@ export function minimalScratchEdit(before: string, after: string, baseVersion: n
   return { baseVersion, start, end: before.length - suffix, text: after.slice(start, after.length - suffix) };
 }
 
-const sameDraft = (left: ScratchDraftProposal, right: ScratchDraftProposal): boolean =>
-  left.type === right.type && left.paneSessionId === right.paneSessionId && left.draftSeq === right.draftSeq &&
-  left.editId === right.editId && left.baseVersion === right.baseVersion && left.baseDigest === right.baseDigest &&
-  left.parentEditId === right.parentEditId && left.apply === right.apply && left.markdown === right.markdown;
-
 interface Pane {
   readonly id: string;
   readonly post: (message: ScratchHostToEditor) => void;
@@ -48,6 +43,7 @@ export class ScratchDocumentController {
   private readonly panes = new Map<string, Pane>();
   private readonly jobs: { pane: Pane; draft: ScratchDraftProposal }[] = [];
   private receipts: Promise<void> = Promise.resolve();
+  private readonly pendingReceipts = new Map<Pane, { draft: ScratchDraftProposal; promise: Promise<void> }>();
   private worker: Promise<void> | undefined;
   private inFlight: { readonly pane: Pane; readonly draft: ScratchDraftProposal; readonly base: ScratchSnapshot } | undefined;
   private known: ScratchSnapshot;
@@ -57,16 +53,16 @@ export class ScratchDocumentController {
 
   constructor(private readonly deps: ScratchDocumentControllerDeps) { this.known = this.read(); }
   private read(): ScratchSnapshot { const value = this.deps.read(); return { ...value, digest: scratchDigest(value.markdown) }; }
-  private post(pane: Pane, message: ScratchHostToEditor): void {
-    if (!pane.attached) return;
+  private post(pane: Pane, message: ScratchHostToEditor): boolean {
+    if (!pane.attached) return false;
     if (!parseScratchHostMessage(message)) {
       this.frozen = true; pane.failure = 'Document exceeds rich editor transport limits; original source is retained. Use the text editor.';
       try { pane.post({ type: 'conflict', paneSessionId: pane.id, draftSeq: pane.latest?.draftSeq ?? 0, message: pane.failure }); }
       catch { this.deps.warn('Scratchpad limit notice could not be delivered.'); }
-      this.notify(); return;
+      this.notify(); return false;
     }
-    try { pane.post(message); } catch { this.deps.warn('Scratchpad message delivery failed; recovery data is retained.'); }
-    this.notify();
+    try { pane.post(message); } catch { this.deps.warn('Scratchpad message delivery failed; recovery data is retained.'); this.notify(); return false; }
+    this.notify(); return true;
   }
   private notify(): void { for (const check of this.waiters) check(); }
   private conflict(pane: Pane, seq: number, message: string): void {
@@ -96,7 +92,7 @@ export class ScratchDocumentController {
     if (!pane?.attached || this.disposed || !parsed || parsed.type !== 'draft' || parsed.paneSessionId !== id) return Promise.reject(new Error('Invalid scratchpad draft/session'));
     const draft = { ...parsed };
     if (pane.ack?.editId === draft.editId && pane.appliedSeq === draft.draftSeq) {
-      if (!sameDraft(pane.ack.request, draft)) return Promise.reject(new Error('Conflicting duplicate acknowledged draft'));
+      if (!sameScratchDraft(pane.ack.request, draft)) return Promise.reject(new Error('Conflicting duplicate acknowledged draft'));
       this.post(pane, { type: 'apply-ack', paneSessionId: id, draftSeq: draft.draftSeq, editId: draft.editId, ...pane.ack.snapshot });
       return Promise.resolve();
     }
@@ -104,7 +100,7 @@ export class ScratchDocumentController {
     const same = previous && previous.draftSeq === draft.draftSeq;
     if (previous && draft.draftSeq < previous.draftSeq) return Promise.reject(new Error('Stale draft sequence'));
     if (same) {
-      if (sameDraft(previous, draft)) return this.receipts;
+      if (sameScratchDraft(previous, draft)) return this.receipts;
       // A reported recovery draft may be promoted only with identical identity,
       // sequence and text, once its older in-flight parent has been acknowledged.
       if (previous.editId !== draft.editId || previous.markdown !== draft.markdown || previous.apply !== false || draft.apply !== true) return Promise.reject(new Error('Conflicting duplicate draft'));
@@ -121,9 +117,23 @@ export class ScratchDocumentController {
       }
     } else if (previous?.editId === draft.editId) return Promise.reject(new Error('Reused edit identity'));
     pane.latest = draft;
+    const pendingReceipt = this.pendingReceipts.get(pane);
+    if (pendingReceipt && draft.parentEditId !== pendingReceipt.draft.editId) {
+      // Only the latest waiting snapshot is needed. Do not retain one full
+      // Markdown string per keystroke while storage is slow. No receipt is
+      // emitted for a superseded snapshot that was never persisted.
+      pendingReceipt.draft = draft;
+      return pendingReceipt.promise;
+    }
+    const entry = { draft, promise: Promise.resolve() };
+    this.pendingReceipts.set(pane, entry);
     const receipt = this.receipts.then(async () => {
+      if (this.pendingReceipts.get(pane) === entry) this.pendingReceipts.delete(pane);
+      const draft = entry.draft;
       await this.deps.retainDraft(draft);
-      this.post(pane, { type: 'receipt', paneSessionId: id, draftSeq: draft.draftSeq, editId: draft.editId });
+      if (!this.post(pane, { type: 'receipt', paneSessionId: id, draftSeq: draft.draftSeq, editId: draft.editId }) && pane.attached) {
+        this.conflict(pane, draft.draftSeq, 'Draft receipt could not be delivered; draft retained.'); return;
+      }
       if (this.frozen || pane.locked) { this.conflict(pane, draft.draftSeq, 'Source changed or pane is locked; draft retained.'); return; }
       if (draft.apply === false) return;
       const superseded = this.jobs.findIndex(job => job.pane === pane && job.draft.parentEditId === draft.parentEditId);
@@ -131,7 +141,8 @@ export class ScratchDocumentController {
       else this.jobs.push({ pane, draft });
       this.start();
     });
-    this.receipts = receipt.catch(() => { this.conflict(pane, draft.draftSeq, 'Recovery could not be persisted; draft was not applied.'); });
+    entry.promise = receipt;
+    this.receipts = receipt.catch(() => { this.conflict(pane, entry.draft.draftSeq, 'Recovery could not be persisted; draft was not applied.'); });
     return receipt;
   }
   private start(): void {
@@ -163,9 +174,18 @@ export class ScratchDocumentController {
         }
         pane.appliedSeq = draft.draftSeq;
         pane.ack = { editId: draft.editId, baseVersion: base.version, baseDigest: base.digest, snapshot: applied, request: draft };
-        this.post(pane, { type: 'apply-ack', paneSessionId: pane.id, draftSeq: draft.draftSeq, editId: draft.editId, ...applied });
+        if (!this.post(pane, { type: 'apply-ack', paneSessionId: pane.id, draftSeq: draft.draftSeq, editId: draft.editId, ...applied }) && pane.attached) {
+          await this.deps.retainDraft(pane.latest ?? draft);
+          this.conflict(pane, draft.draftSeq, 'Edit applied but acknowledgement could not be delivered; draft retained.');
+        }
         for (const other of this.panes.values()) if (other !== pane) this.post(other, { type: 'document-state', paneSessionId: other.id, ...applied, locked: other.locked });
-      } catch { this.conflict(pane, draft.draftSeq, 'Edit could not be confirmed; source and recovery draft retained.'); }
+      } catch {
+        // A clear can fail after unlink (for example directory fsync). Restore
+        // the latest snapshot before reporting an unconfirmed operation.
+        try { await this.deps.retainDraft(pane.latest ?? draft); }
+        catch { this.deps.warn('Scratchpad recovery could not be persisted; keep this pane open and copy the draft before closing.'); }
+        this.conflict(pane, draft.draftSeq, 'Edit could not be confirmed; source and recovery draft retained where storage is available.');
+      }
       finally { this.inFlight = undefined; if (!pane.attached && (pane.latest?.draftSeq ?? 0) <= pane.appliedSeq && !this.jobs.some(job => job.pane === pane)) this.panes.delete(pane.id); }
     }
   }

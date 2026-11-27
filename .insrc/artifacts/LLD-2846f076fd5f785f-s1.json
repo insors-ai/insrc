@@ -62,6 +62,13 @@
         "choice": "Upstream acceptance / design amendment — honor the native editor's remembered mode",
         "rationale": "User explicitly accepted this change in chat: S001 opens scratchpads in vscode.markdown.editor using its remembered native reading/editing mode and retains native pencil/lock controls. Remove the forced-locked-on-every-open guarantee; no blind toggle, private state edits, or global setting mutations. This records the approved product decision; propagate it into the upstream acceptance/design artifacts and tests before build, rather than claiming a supported lock setter exists. B2 and B3 remain unresolved.",
         "resolvedAt": "2026-11-27T17:04:19.136Z"
+      },
+      "q2fedb6b0": {
+        "question": "BUILD BLOCKER B2 — Opening a validated file URI does not retain guarded store I/O on later native reads/writes. Prove the approved failure/conflict/no-follow requirements through supported host behavior, or obtain an explicit upstream amendment defining the accepted native-file boundary. Unchanged file format is not unchanged write guarantees.",
+        "status": "resolved",
+        "choice": "Accept normal VS Code native save/conflict behavior",
+        "rationale": "User explicitly accepted normal VS Code behavior in chat. Native and fallback editors delegate subsequent file reads/saves, conflicts, undo and backups to VS Code. Insrc still validates basename/root/regular-file status and refuses symlinks at open; existing store-managed operations retain their guards. Do not claim ongoing O_NOFOLLOW or guarded-publication protection for native saves, or attempt an unenforceable pre-save shim. Propagate this accepted boundary into upstream requirements, LLD and acceptance tests before build. B3 remains unresolved.",
+        "resolvedAt": "2026-11-27T17:08:25.137Z"
       }
     }
   },

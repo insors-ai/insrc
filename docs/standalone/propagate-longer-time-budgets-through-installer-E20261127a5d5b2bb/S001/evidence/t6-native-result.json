@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-runtime-foundation",
+  "target": {
+    "os": "darwin",
+    "arch": "arm64",
+    "baseline": "macos27.2.1-utm-arm64"
+  },
+  "platformRelease": "27.2.0",
+  "orchestrator": {
+    "executable": "/Users/insrc/insrc-sdk-20261127/node-v22.22.1-darwin-arm64/bin/node",
+    "version": "v22.22.1"
+  },
+  "root": "/Users/insrc/iq-ZuiTzc",
+  "home": "/Users/insrc/iq-ZuiTzc/h",
+  "profile": "slow-vm",
+  "timeBudgets": {
+    "profile": "slow-vm",
+    "coordinator": {
+      "buildMs": 2400000,
+      "fileMs": 2400000,
+      "runMs": 14400000,
+      "cleanupMs": 30000
+    },
+    "manager": {
+      "buildMs": 2400000,
+      "fileMs": 2400000,
+      "runMs": 14400000,
+      "cleanupMs": 120000
+    },
+    "qualification": {
+      "buildMs": 7200000,
+      "fileMs": 7200000,
+      "runMs": 18000000,
+      "cleanupMs": 300000
+    },
+    "git": {
+      "buildMs": 2400000,
+      "fileMs": 120000,
+      "runMs": 180000,
+      "cleanupMs": 30000
+    },
+    "runtime": {
+      "acquisitionMs": 2400000,
+      "verificationMs": 480000,
+      "resourceDrainMs": 30000
+    }
+  },
+  "startedAt": "2026-11-27T17:16:42.961Z",
+  "releaseEnablement": false,
+  "status": "pass",
+  "runId": "eac466ab-18ee-431e-a09e-252206144f1e",
+  "sourceCommit": "2fca011a69ec3b0ce5e9e53e9074928baec02495",
+  "runtime": {
+    "identity": {
+      "version": "22.22.1",
+      "target": {
+        "os": "darwin",
+        "arch": "arm64",
+        "baseline": "macos27.2.1-utm-arm64"
+      },
+      "sha256": "679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2",
+      "relativeExecutable": "bin/node"
+    },
+    "directory": "/Users/insrc/iq-ZuiTzc/h/runtimes/22.22.1/darwin-arm64-macos27.2.1-utm-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution",
+    "executable": "/Users/insrc/iq-ZuiTzc/h/runtimes/22.22.1/darwin-arm64-macos27.2.1-utm-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node",
+    "inventorySha256": "e0e9f1ed798739cb51be5c5dd710c304b7fccdde21af345d149a896403bcb6a5",
+    "liveFirstAcquisition": true,
+    "offlineNetworkRequests": 0,
+    "sameExecutableInode": true,
+    "bindingProbeLog": "/Users/insrc/iq-ZuiTzc/.insrc/tmp/test-harness/runs/eac466ab-18ee-431e-a09e-252206144f1e/child-188d2131-6215-4481-babb-1ce824ba8102.log",
+    "npmVersion": "10.9.4",
+    "publicationOutsideRunningNodeAndLoadedControl": true
+  },
+  "application": {
+    "releaseId": "dev-b3dbe21776c0155d9b2f1e8a5991f15ec83dbfc86c1b2383",
+    "sourceCommit": "2fca011a69ec3b0ce5e9e53e9074928baec02495",
+    "files": 55082,
+    "payloadBytes": 1742727108,
+    "receiptVersion": 2,
+    "privateBuildPolicy": {
+      "cuda": "skip",
+      "nodeVersion": "22.22.1",
+      "npmVersion": "10.9.4",
+      "schemaVersion": 1
+    },
+    "nativeProbeLog": "/Users/insrc/iq-ZuiTzc/.insrc/tmp/test-harness/runs/eac466ab-18ee-431e-a09e-252206144f1e/child-eb05f243-0d6f-488b-903c-15c2d40090da.log",
+    "freshManagerLog": "/Users/insrc/iq-ZuiTzc/.insrc/tmp/test-harness/runs/eac466ab-18ee-431e-a09e-252206144f1e/child-92d075c9-6079-4ecf-91d1-4ff50f2d788f.log",
+    "controllerPhase": "preparing",
+    "daemonActivationTested": false,
+    "ollamaInstalledOrStarted": false
+  },
+  "confirmedClosed": true,
+  "finishedAt": "2026-11-27T19:33:53.812Z"
+}

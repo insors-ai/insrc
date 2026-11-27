@@ -1,0 +1,38 @@
+{
+  "observedAt": "2026-11-27T18:22:54.947Z",
+  "parent": {
+    "runId": "eac466ab-18ee-431e-a09e-252206144f1e",
+    "budgets": {
+      "buildMs": 7200000,
+      "fileMs": 7200000,
+      "runMs": 18000000,
+      "cleanupMs": 300000
+    },
+    "runtimeVersion": "v22.22.1",
+    "phase": "preparing"
+  },
+  "manager": {
+    "runId": "500f4400-1c07-48d8-a743-1bc5efe2f718",
+    "budgets": {
+      "buildMs": 2400000,
+      "fileMs": 2400000,
+      "runMs": 14400000,
+      "cleanupMs": 120000
+    },
+    "runtimeVersion": "v22.22.1",
+    "phase": "preparing"
+  },
+  "worker": {
+    "runId": "46bae4d3-1541-4374-bc8a-577f9912b817",
+    "budgets": {
+      "buildMs": 2400000,
+      "fileMs": 2400000,
+      "runMs": 14400000,
+      "cleanupMs": 30000
+    },
+    "runtimeVersion": "v22.22.1",
+    "phase": "preparing"
+  },
+  "status": "actual-running-records",
+  "passClaim": false
+}

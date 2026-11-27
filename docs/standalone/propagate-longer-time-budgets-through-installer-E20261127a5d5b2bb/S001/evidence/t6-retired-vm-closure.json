@@ -1,0 +1,48 @@
+{
+  "observedAt": "2026-11-27T17:09:01.324251+00:00",
+  "vmUuid": "E9BAC3AF-0AA7-482E-B675-0786A751640B",
+  "observationCommand": "/Applications/UTM.app/Contents/MacOS/utmctl status E9BAC3AF-0AA7-482E-B675-0786A751640B",
+  "observationExitCode": 0,
+  "observedState": "stopped",
+  "userConfirmedNormalGuestShutdown": true,
+  "actorClosureBoundary": "entire stopped guest virtual machine",
+  "closureInferenceFromPidOrAge": false,
+  "retiredAttemptResultReclassified": false,
+  "retiredFilesRemovedOrRewritten": false,
+  "workerFinalizationGuardReconstructedOrOverridden": false,
+  "freshQualificationStarted": false,
+  "startedAfterStoppedObservation": true,
+  "startRequest": {
+    "cliReportedOsStatus": -10004,
+    "actualStateConfirmed": "started",
+    "note": "Status and successful SSH confirm startup despite the UI event errors; no second start was issued."
+  },
+  "postBootSessionUuid": "6D8AC47A-DC77-4F00-A000-685A2CDA72DE",
+  "postBootObservation": {
+    "observedAt": "2026-11-27T17:13:50.255Z",
+    "guestNode": "v22.22.1",
+    "uid": 501,
+    "checkpointSha256": "aa8e38ce7e4eb9f6c863eb09d109f141786cb9bd14a3481e7a83c35dd6059287",
+    "leaseSha256": "7d1d6a6e489f98aabb7404c9870914c927267d756042ee185f8c9caeade789e3",
+    "identitySha256": "4e3f35770f4d636b29f67eccbeb4bdef3f13bd87f3b55fd0281e5f255f9f226a",
+    "stage": {
+      "dev": 16777230,
+      "ino": 488468,
+      "mtimeMs": 1795777015502.7024
+    },
+    "retiredPrivateFiles": [
+      "identity.json",
+      "worker.lock"
+    ],
+    "retiredReportStatus": "fail"
+  },
+  "retiredSmallEvidenceHashesUnchanged": true,
+  "retiredInodeUnchanged": true,
+  "scope": "Machine-wide retired actor closure for a separate fresh qualification home; does not reconstruct worker finalization, authorize cleanup/adoption, or make the failed attempt pass.",
+  "kernelBoot": {
+    "epochSeconds": 1795799345,
+    "utc": "2026-11-27T17:09:05+00:00",
+    "afterRetiredFailure": true,
+    "observationCommand": "/usr/sbin/sysctl -n kern.boottime"
+  }
+}

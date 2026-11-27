@@ -1,0 +1,103 @@
+{
+  "status": "pass",
+  "stage": "complete",
+  "sourceCommit": "2fca011a69ec3b0ce5e9e53e9074928baec02495",
+  "root": "/Users/insrc/insrc-budget-2fca011a6",
+  "ops": "/Users/insrc/insrc-budget-ops-20261127-r4",
+  "pid": 1115,
+  "startedAt": "2026-11-27T17:15:51.602Z",
+  "runtime": {
+    "executable": "/Users/insrc/insrc-sdk-20261127/node-v22.22.1-darwin-arm64/bin/node",
+    "version": "v22.22.1",
+    "headers": "/Users/insrc/insrc-sdk-20261127/node-v22.22.1-darwin-arm64/include/node"
+  },
+  "uid": 501,
+  "profile": "slow-vm",
+  "timeBudgets": {
+    "profile": "slow-vm",
+    "coordinator": {
+      "buildMs": 2400000,
+      "fileMs": 2400000,
+      "runMs": 14400000,
+      "cleanupMs": 30000
+    },
+    "manager": {
+      "buildMs": 2400000,
+      "fileMs": 2400000,
+      "runMs": 14400000,
+      "cleanupMs": 120000
+    },
+    "qualification": {
+      "buildMs": 7200000,
+      "fileMs": 7200000,
+      "runMs": 18000000,
+      "cleanupMs": 300000
+    },
+    "git": {
+      "buildMs": 2400000,
+      "fileMs": 120000,
+      "runMs": 180000,
+      "cleanupMs": 30000
+    },
+    "runtime": {
+      "acquisitionMs": 2400000,
+      "verificationMs": 480000,
+      "resourceDrainMs": 30000
+    }
+  },
+  "containing": {
+    "jobMs": 21600000,
+    "preflightMs": 2400000,
+    "setupAndDrainMs": 300000,
+    "diagnosticsMs": 480000,
+    "nativeMs": 18420000,
+    "supervisorMs": 18900000
+  },
+  "retiredActorClosure": {
+    "vmUuid": "E9BAC3AF-0AA7-482E-B675-0786A751640B",
+    "stoppedObservedBeforeStart": true,
+    "bootSession": "6D8AC47A-DC77-4F00-A000-685A2CDA72DE",
+    "oldAttemptRetainedAsFailed": true
+  },
+  "dependencyReuse": {
+    "sourceCommit": "888dfe7146905219dd1bddeb865101a8d66150a0",
+    "buildRunId": "18c5382d-0a9c-4685-ba88-d8dd649e47ee",
+    "reason": "Dependency manifests matched by git diff before APFS clone; development only, never injected into fresh qualification home"
+  },
+  "buildRunId": "1f0266cd-996f-48b2-bbec-dddca7e65a67",
+  "buildWorkspace": "/Users/insrc/insrc-budget-2fca011a6/.insrc/tmp/test-harness/runs/1f0266cd-996f-48b2-bbec-dddca7e65a67",
+  "inputFingerprint": "8a7b77214a67430f3793bee26fe8982eefa8451757d92c6a43ef51ddff530668",
+  "prepared": {
+    "runId": "1f0266cd-996f-48b2-bbec-dddca7e65a67",
+    "canonicalRoot": "/Users/insrc/insrc-budget-2fca011a6",
+    "runtimeExecutable": "/Users/insrc/insrc-sdk-20261127/node-v22.22.1-darwin-arm64/bin/node",
+    "buildExitCode": 0,
+    "completedAt": "2026-11-27T17:16:41.686Z",
+    "inputFingerprint": "8a7b77214a67430f3793bee26fe8982eefa8451757d92c6a43ef51ddff530668",
+    "outputFingerprint": "4f1f98b9b8e85c096cb65948b8fe2eef0a6e20d21c850ca2a04102b33ec88454",
+    "requiredArtifacts": [
+      "out/daemon/index.js",
+      "out/bin/insrc-mcp.js",
+      "out/shared/daemon-run-files.js",
+      "out/cli/services/daemon.js",
+      "out/daemon/server.js",
+      "out/shared/daemon-process.js",
+      "out/installer/native/control.node"
+    ]
+  },
+  "buildCleanup": {
+    "confirmedClosed": true,
+    "interrupted": false,
+    "cancellationErrors": [],
+    "evidenceErrors": [],
+    "childCloseJournal": "child-results.jsonl",
+    "closureMode": "owned-groups"
+  },
+  "nativeHeadroom": {
+    "remainingMs": 21549485,
+    "requiredMs": 18900000
+  },
+  "nativeStartedAt": "2026-11-27T17:16:42.118Z",
+  "resultFile": "/Users/insrc/iq-ZuiTzc/result.json",
+  "finishedAt": "2026-11-27T19:33:53.813Z"
+}

@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9e3e1993-2ad4-4b83-b23d-9ac1b358bec2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-27T06:21:56.429Z",
+    "epicCreatedAt": "2026-11-27T05:59:27.472Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a697282df76a3c1d",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Extend chain.test.ts to assert the corrected command content for t1 and t2",
+      "parent": {
+        "entityId": "STORY-a697282df76a3c1d-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a697282df76a3c1d-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a697282df76a3c1d-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a697282df76a3c1d-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "a8bd4d2d7a3277214f8c601b653006af26ec32e29033a80f4eb76912a03ecc7b",
+        "at": "2026-11-27T06:21:56.429Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T06:21:56.439Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extend chain.test.ts to assert the corrected command content for t1 and t2",
+    "summary": "Add/extend assertions in src/workflow/__tests__/chain.test.ts (reusing the existing fixture helper) proving t1's 6 corrected sites and t2's review-amendment fix, while confirming chain-issue-anchored.test.ts's existing assertions (notably line 225's `.command.includes('DEF.md')`) still pass unmodified.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "New/updated test cases in chain.test.ts cover every acceptance check named in t1 and t2.",
+      "chain-issue-anchored.test.ts is run and its existing assertions pass with zero edits."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "chain.test.ts's new/updated assertions for t1 and t2 pass, and chain-issue-anchored.test.ts's existing assertions (including line 225's DEF.md check) pass unmodified"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 6,
+        "contentHash": "6e9aa1c736d231e5c0726068c2bcfda760369c0d98c8288426296f09c363c0bd",
+        "at": "2026-11-27T06:57:40.858Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 6,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T07:01:24.376Z",
+        "override": {
+          "reason": "Code review is unavailable (declared \"being rewritten\" per project CLAUDE.md); self-check evidence substitutes. All 4 Tasks' typecheck/tests pass and a real declaration-emitting build is clean; each Task's gate verdict is literally \"failed\" only because it holds to the approved PLAN's acceptance-check wording, which itself inherited a flawed premise (sync-tracker was assumed to be a dead CLI reference like the other 5 sites, but Story 315d510cb28100e2/s9's LLD and chain-report-tracker.test.ts show it is a deliberate, adapter-generic \"explicit refresh\" reachable only via the CLI). Disclosed and discussed with the user in-chat; user said \"yes, approved\" after reviewing this summary."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-ee62779e-3529-4e1f-a906-c7527991c48a",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-27T06:38:21.063Z",
+    "epicCreatedAt": "2026-11-27T05:59:27.472Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a697282df76a3c1d",
+    "storyId": "s1",
+    "revision": 6,
+    "updatedAt": "2026-11-27T06:57:11.881Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "chain-ts-s-next-step-advisor"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": false
+      },
+      {
+        "id": "t2",
+        "passed": false
+      },
+      {
+        "id": "t3",
+        "passed": false
+      },
+      {
+        "id": "t4",
+        "passed": false
+      }
+    ],
+    "summary": "Extended chain.test.ts with command-content assertions proving t1's corrected approve-*/sync-tracker sites and t2's review-amendment fix (single artifact, multi-artifact ordering, zero-pending bypass, race fallback). chain-issue-anchored.test.ts was not edited; its existing assertions, including the DEF.md check, pass unmodified.",
+    "testRecord": {
+      "md": "docs/standalone/chain-ts-s-next-step-advisor-E20261127a697282d/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/chain.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T06:57:11.881Z"
+      },
+      {
+        "target": {
+          "file": "docs/workflow.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T06:57:11.881Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/chain.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T06:57:11.881Z"
+      }
+    ],
+    "commit": "589390622"
+  },
+  "citations": []
+}

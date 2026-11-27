@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1fa4d9c2-080e-410b-86ee-898be75d782a",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-27T06:21:56.405Z",
+    "epicCreatedAt": "2026-11-27T05:59:27.472Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a697282df76a3c1d",
+    "storyId": "s1",
+    "envelope": {
+      "description": "docs/workflow.md: rewrite the two amendment sections' CLI examples to the real mechanism",
+      "parent": {
+        "entityId": "STORY-a697282df76a3c1d-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a697282df76a3c1d-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "aa2980644fa3efc595ec4a366614f8c54020bcf8d4136af1c4ab5c5f7aae2e5f",
+        "at": "2026-11-27T06:21:56.406Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T06:21:56.417Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "docs/workflow.md: rewrite the two amendment sections' CLI examples to the real mechanism",
+    "summary": "Replace the invented `insrc workflow amend <h16> --list/--show/--approve/--reject` code blocks at lines 298-311 and 445-451 with the real mechanism (discover the pending AMD artifact, then insrc_present + insrc_workflow_approve), leaving the surrounding AMD-lifecycle prose unchanged.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "Neither section contains the string 'insrc workflow amend' afterward.",
+      "The surrounding prose describing the AMD pending/approved/rejected lifecycle is unchanged."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Manual inspection: docs/workflow.md's two amendment sections no longer contain the string 'insrc workflow amend' and the surrounding AMD-lifecycle prose is unchanged (no automated test harness exists for this doc)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

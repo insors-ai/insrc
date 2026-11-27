@@ -1,0 +1,487 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 6,
+        "contentHash": "ebca17335ad72e5b1f13212a14a72307987bcf39bd46d372b22596f54835d80c",
+        "at": "2026-11-27T06:57:11.899Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "a697282df76a3c1d",
+    "storyId": "s1",
+    "createdAt": "2026-11-27T06:38:21.063Z",
+    "updatedAt": "2026-11-27T06:57:11.881Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-27T05:59:27.472Z",
+    "epicSlug": "chain-ts-s-next-step-advisor",
+    "revision": 6
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "7fe153d11",
+        "ranAt": "2026-11-27T06:38:21.063Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "computeNextAction returns insrc_workflow_approve/insrc_workflow_step call shapes (not the dead insrc-workflow-CLI strings) for approve-define, approve-hld, approve-lld and sync-tracker, across both the main and issue-anchored branches",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/chain.test.ts",
+                "title": "chain: unapproved Define → approve-define",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/chain.test.ts",
+                "title": "chain: unapproved HLD → approve-hld",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/chain.test.ts",
+                "title": "chain: unapproved LLD blocks the chain → approve-lld",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "title": "unapproved ISSUE yields approve-define naming the ISSUE document",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "title": "next actions follow run-lld, approve-lld, chain-complete and never name an HLD, amendment, stale or tracker step",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/chain-report-tracker.test.ts",
+                "title": "the stored TrackerMeta gains no field and the sync-tracker next action names the explicit refresh",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1664,
+            "titles": [
+              {
+                "title": "chain report for an ISSUE-anchored item returns the implied s1 with its LLD state",
+                "result": "pass"
+              },
+              {
+                "title": "chain report story path for an ISSUE-anchored item is the standalone folder",
+                "result": "pass"
+              },
+              {
+                "title": "chain report prefers a DEF when a DEF and an ISSUE share a hash",
+                "result": "pass"
+              },
+              {
+                "title": "definitionKind is issue for an ISSUE head and def for a DEF head",
+                "result": "pass"
+              },
+              {
+                "title": "formatChainReport labels an ISSUE head and leaves DEF output unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "unapproved ISSUE yields approve-define naming the ISSUE document",
+                "result": "pass"
+              },
+              {
+                "title": "rejected ISSUE yields run-define that reruns the issue stage",
+                "result": "pass"
+              },
+              {
+                "title": "next actions follow run-lld, approve-lld, chain-complete and never name an HLD, amendment, stale or tracker step",
+                "result": "pass"
+              },
+              {
+                "title": "the DEF-anchored next-action sequence is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/chain-report-tracker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 602,
+            "titles": [
+              {
+                "title": "the tracker record carries artifactId and revision for the Epic and each Story with an issue, 0 when absent",
+                "result": "pass"
+              },
+              {
+                "title": "the stored TrackerMeta gains no field and the sync-tracker next action names the explicit refresh",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/chain.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 578,
+            "titles": [
+              {
+                "title": "chain: no artifacts → next-action run-define",
+                "result": "pass"
+              },
+              {
+                "title": "chain: unapproved Define → approve-define",
+                "result": "pass"
+              },
+              {
+                "title": "chain: approved Define, no HLD → run-hld",
+                "result": "pass"
+              },
+              {
+                "title": "chain: unapproved HLD → approve-hld",
+                "result": "pass"
+              },
+              {
+                "title": "chain: approved HLD, no LLDs → run-lld for first Story",
+                "result": "pass"
+              },
+              {
+                "title": "chain: unapproved LLD blocks the chain → approve-lld",
+                "result": "pass"
+              },
+              {
+                "title": "chain: pending amendment surfaces before further LLDs",
+                "result": "pass"
+              },
+              {
+                "title": "chain: all Stories approved, no tracker → push-tracker",
+                "result": "pass"
+              },
+              {
+                "title": "formatChainReport prints all section headers",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "589390622",
+        "ranAt": "2026-11-27T06:55:21.075Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "computeNextAction's review-amendment names a real pending AMD artifact's id and path, selects the FIRST when several are pending, is never entered when none are pending, and never throws in the race-case fallback",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/chain.test.ts",
+                "title": "chain: pending amendment surfaces before further LLDs",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/chain.test.ts",
+                "title": "chain: two pending amendments → review-amendment names the first in ascending order",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/chain.test.ts",
+                "title": "computeNextAction: review-amendment race fallback never throws when firstPendingAmendment is undefined",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/chain.test.ts",
+                "title": "chain: unapproved LLD blocks the chain → approve-lld",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/chain.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 770,
+            "titles": [
+              {
+                "title": "chain: no artifacts → next-action run-define",
+                "result": "pass"
+              },
+              {
+                "title": "chain: unapproved Define → approve-define",
+                "result": "pass"
+              },
+              {
+                "title": "chain: approved Define, no HLD → run-hld",
+                "result": "pass"
+              },
+              {
+                "title": "chain: unapproved HLD → approve-hld",
+                "result": "pass"
+              },
+              {
+                "title": "chain: approved HLD, no LLDs → run-lld for first Story",
+                "result": "pass"
+              },
+              {
+                "title": "chain: unapproved LLD blocks the chain → approve-lld",
+                "result": "pass"
+              },
+              {
+                "title": "chain: pending amendment surfaces before further LLDs",
+                "result": "pass"
+              },
+              {
+                "title": "chain: two pending amendments → review-amendment names the first in ascending order",
+                "result": "pass"
+              },
+              {
+                "title": "computeNextAction: review-amendment race fallback never throws when firstPendingAmendment is undefined",
+                "result": "pass"
+              },
+              {
+                "title": "chain: all Stories approved, no tracker → push-tracker",
+                "result": "pass"
+              },
+              {
+                "title": "formatChainReport prints all section headers",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "589390622",
+        "ranAt": "2026-11-27T06:56:10.820Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Manual inspection: docs/workflow.md's two amendment sections no longer contain the string 'insrc workflow amend' and the surrounding AMD-lifecycle prose is unchanged (no automated test harness exists for this doc)",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "grep -n 'insrc workflow amend' docs/workflow.md returns no matches (exit 1); git diff docs/workflow.md shows only the two amendment code blocks replaced, with the AMD-lifecycle prose (pending/validated/persisted, folded into the effective HLD, LLDs marked stale) left unchanged"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      },
+      {
+        "taskId": "t4",
+        "commit": "589390622",
+        "ranAt": "2026-11-27T06:57:11.881Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "chain.test.ts's new/updated assertions for t1 and t2 pass, and chain-issue-anchored.test.ts's existing assertions (including line 225's DEF.md check) pass unmodified",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/chain.test.ts",
+                "title": "chain: unapproved Define → approve-define",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/chain.test.ts",
+                "title": "chain: unapproved HLD → approve-hld",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/chain.test.ts",
+                "title": "chain: unapproved LLD blocks the chain → approve-lld",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/chain.test.ts",
+                "title": "chain: pending amendment surfaces before further LLDs",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/chain.test.ts",
+                "title": "chain: two pending amendments → review-amendment names the first in ascending order",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/chain.test.ts",
+                "title": "computeNextAction: review-amendment race fallback never throws when firstPendingAmendment is undefined",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "title": "unapproved ISSUE yields approve-define naming the ISSUE document",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "title": "next actions follow run-lld, approve-lld, chain-complete and never name an HLD, amendment, stale or tracker step",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+                "title": "the DEF-anchored next-action sequence is unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/chain-report-tracker.test.ts",
+                "title": "the stored TrackerMeta gains no field and the sync-tracker next action names the explicit refresh",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/chain-issue-anchored.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1134,
+            "titles": [
+              {
+                "title": "chain report for an ISSUE-anchored item returns the implied s1 with its LLD state",
+                "result": "pass"
+              },
+              {
+                "title": "chain report story path for an ISSUE-anchored item is the standalone folder",
+                "result": "pass"
+              },
+              {
+                "title": "chain report prefers a DEF when a DEF and an ISSUE share a hash",
+                "result": "pass"
+              },
+              {
+                "title": "definitionKind is issue for an ISSUE head and def for a DEF head",
+                "result": "pass"
+              },
+              {
+                "title": "formatChainReport labels an ISSUE head and leaves DEF output unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "unapproved ISSUE yields approve-define naming the ISSUE document",
+                "result": "pass"
+              },
+              {
+                "title": "rejected ISSUE yields run-define that reruns the issue stage",
+                "result": "pass"
+              },
+              {
+                "title": "next actions follow run-lld, approve-lld, chain-complete and never name an HLD, amendment, stale or tracker step",
+                "result": "pass"
+              },
+              {
+                "title": "the DEF-anchored next-action sequence is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/chain-report-tracker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 658,
+            "titles": [
+              {
+                "title": "the tracker record carries artifactId and revision for the Epic and each Story with an issue, 0 when absent",
+                "result": "pass"
+              },
+              {
+                "title": "the stored TrackerMeta gains no field and the sync-tracker next action names the explicit refresh",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/chain.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 560,
+            "titles": [
+              {
+                "title": "chain: no artifacts → next-action run-define",
+                "result": "pass"
+              },
+              {
+                "title": "chain: unapproved Define → approve-define",
+                "result": "pass"
+              },
+              {
+                "title": "chain: approved Define, no HLD → run-hld",
+                "result": "pass"
+              },
+              {
+                "title": "chain: unapproved HLD → approve-hld",
+                "result": "pass"
+              },
+              {
+                "title": "chain: approved HLD, no LLDs → run-lld for first Story",
+                "result": "pass"
+              },
+              {
+                "title": "chain: unapproved LLD blocks the chain → approve-lld",
+                "result": "pass"
+              },
+              {
+                "title": "chain: pending amendment surfaces before further LLDs",
+                "result": "pass"
+              },
+              {
+                "title": "chain: two pending amendments → review-amendment names the first in ascending order",
+                "result": "pass"
+              },
+              {
+                "title": "computeNextAction: review-amendment race fallback never throws when firstPendingAmendment is undefined",
+                "result": "pass"
+              },
+              {
+                "title": "chain: all Stories approved, no tracker → push-tracker",
+                "result": "pass"
+              },
+              {
+                "title": "formatChainReport prints all section headers",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

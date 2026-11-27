@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-48190edc-c6fe-44dd-8bc2-fdfaa3c079c2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-27T06:21:56.388Z",
+    "epicCreatedAt": "2026-11-27T05:59:27.472Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a697282df76a3c1d",
+    "storyId": "s1",
+    "envelope": {
+      "description": "chain.ts: thread firstPendingAmendment through buildChainReport/NextActionInput and fix review-amendment",
+      "parent": {
+        "entityId": "STORY-a697282df76a3c1d-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a697282df76a3c1d-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "45a5a6a6d54a582627f6de02b5515b0f9d9617e9d0e0f5226c93f3cc032f81b4",
+        "at": "2026-11-27T06:21:56.388Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T06:21:56.397Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "chain.ts: thread firstPendingAmendment through buildChainReport/NextActionInput and fix review-amendment",
+    "summary": "Add firstPendingAmendment to NextActionInput, computed in buildChainReport from listAmendments(repoPath, epicHash) filtered to status==='pending' (first in existing deterministic order) mapped via amendmentPath. Update computeNextAction's review-amendment branch (lines 382-388) to return the real amendmentId + a command naming insrc_present + insrc_workflow_approve with that real path, with the non-throwing placeholder fallback for the race case where firstPendingAmendment is undefined despite amendments.pending > 0.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "With one pending AMD artifact present, review-amendment's amendmentId equals that artifact's real id and command names its real path.",
+      "With two pending AMD artifacts present, review-amendment names the FIRST in AMD-<hash>-<n> ascending order.",
+      "With zero pending amendments, review-amendment's branch is never entered (unchanged behavior).",
+      "ChainReport.amendments's public shape ({pending,approved,rejected}) and countAmendments()'s return type are unchanged.",
+      "The race-case fallback never throws."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "computeNextAction's review-amendment names a real pending AMD artifact's id and path, selects the FIRST when several are pending, is never entered when none are pending, and never throws in the race-case fallback"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

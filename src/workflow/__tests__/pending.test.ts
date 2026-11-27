@@ -27,7 +27,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { deriveMdPath, listPendingArtifacts, handleWorkflowPending, resolveOpenableArtifacts } from '../pending.js';
+import { deriveMdPath, listPendingArtifacts, handleWorkflowPending, resolveOpenableArtifacts, handleWorkflowOpenable } from '../pending.js';
 import { ARTIFACTS_DIR } from '../storage.js';
 import { approvedMeta, draftMeta, lifecycleMeta, rejectedMeta, reviewedMeta } from './lifecycle-fixtures.js';
 
@@ -502,4 +502,36 @@ test('resolveOpenableArtifacts skips a malformed JSON file without dropping the 
 	try {
 		assert.deepEqual(resolveOpenableArtifacts(repo).map(a => a.artifactId), ['LLD-238917216d8fd532-s1']);
 	} finally { cleanup(repo); }
+});
+
+// ---------------------------------------------------------------------------
+// t2 — handleWorkflowOpenable (repo resolution + error mapping, mirrors
+// handleWorkflowPending exactly)
+// ---------------------------------------------------------------------------
+
+test('handleWorkflowOpenable: fixture repo with artifacts -> { artifacts } via resolveOpenableArtifacts', () => {
+	const repo = fixtureRepo({
+		'LLD-238917216d8fd532-s1.json': { meta: { epicHash: HASH, epicCreatedAt: CREATED, storyId: 's1', ...approvedMeta() }, body: { title: 's1' } },
+	});
+	try {
+		const res = handleWorkflowOpenable({ repo }, undefined);
+		assert.ok('artifacts' in res);
+		assert.deepEqual(res.artifacts.map(a => a.artifactId), ['LLD-238917216d8fd532-s1'], 'includes an approved artifact, unlike handleWorkflowPending');
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('handleWorkflowOpenable: repo-unresolved (no param, no env) -> { error }, NOT { artifacts: [] }', () => {
+	const res = handleWorkflowOpenable(undefined, undefined);
+	assert.ok('error' in res, 'unresolved repo returns an error');
+	assert.ok(!('artifacts' in res), 'never a silent empty list');
+
+	const repo = fixtureRepo({ 'DEF-238917216d8fd532.json': { meta: {}, body: {} } });
+	try {
+		const viaEnv = handleWorkflowOpenable(undefined, repo);
+		assert.ok('artifacts' in viaEnv);
+	} finally {
+		cleanup(repo);
+	}
 });

@@ -288,6 +288,7 @@ export const RPC_AUDIT: Readonly<Record<string, AuditEntry>> = {
 	'workflow.artifactContent': { kind: 'read-only', evidence: 'artifact-content.ts pure read under docs/ (handler-runtime.ts:515)' },
 	'workflow.delivery': { kind: 'read-only', evidence: 'delivery/handlers.ts one snapshot read, never writes (handler-runtime.ts:527)' },
 	'workflow.deliveryEvidence': { kind: 'read-only', evidence: 'delivery/handlers.ts one record read (handler-runtime.ts:536)' },
+	'workflow.openable': { kind: 'read-only', evidence: 'pending.ts resolveOpenableArtifacts, one bounded readdir of .insrc/artifacts, read-only (handler-runtime.ts:609)' },
 	'workflow.pending': { kind: 'read-only', evidence: 'pending.ts one bounded readdir of .insrc/artifacts, read-only (handler-runtime.ts:503)' },
 	'workflow.resolveComment': { kind: 'modifying', repoParam: 'repo', pathParams: [], evidence: 'resolve-comment.ts:134-165 records resolutions in the artifact JSON found by artifactJsonPath(repoPath, artifactId); repo falls back to INSRC_REPO' },
 	'workflow.resolveFinding': { kind: 'read-only', evidence: 'Unavailable review boundary throws before repository lookup or any review work' },

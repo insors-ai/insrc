@@ -162,7 +162,17 @@ export function listPendingArtifacts(repoPath: string): readonly PendingArtifact
  *  in chat is a display concern, not an approval-readiness one. listPendingArtifacts
  *  itself is unchanged -- it still backs the IDE plugins' "awaiting a decision"
  *  panel, which must keep its narrower pending-only semantics. */
-export function resolveOpenableArtifacts(repoPath: string): readonly { readonly artifactId: string; readonly mdPath: string }[] {
+export interface OpenableArtifact {
+	readonly artifactId: string;
+	readonly mdPath:     string;
+}
+
+export interface WorkflowOpenableResult { readonly artifacts: readonly OpenableArtifact[] }
+
+/** A structured failure the daemon relays verbatim, mirroring WorkflowPendingError. */
+export interface WorkflowOpenableError { readonly error: string }
+
+export function resolveOpenableArtifacts(repoPath: string): readonly OpenableArtifact[] {
 	const dir = join(repoPath, ARTIFACTS_DIR);
 	if (!existsSync(dir)) return [];
 
@@ -186,6 +196,27 @@ export function resolveOpenableArtifacts(repoPath: string): readonly { readonly 
 		out.push({ artifactId, mdPath });
 	}
 	return out;
+}
+
+/**
+ * The `workflow.openable` IPC core (ISSUE-9c95950064e4b916): mirrors
+ * handleWorkflowPending's repo-resolution + error-mapping contract exactly,
+ * wrapping resolveOpenableArtifacts instead of listPendingArtifacts.
+ */
+export function handleWorkflowOpenable(
+	params: { repo?: string } | undefined,
+	repoEnv: string | undefined,
+): WorkflowOpenableResult | WorkflowOpenableError {
+	const p = params ?? {};
+	const repoPath = (p.repo !== undefined && p.repo.length > 0 ? p.repo : repoEnv) ?? '';
+	if (repoPath.length === 0) {
+		return { error: 'workflow.openable: `repo` is required' };
+	}
+	try {
+		return { artifacts: resolveOpenableArtifacts(repoPath) };
+	} catch (err) {
+		return { error: `workflow.openable: ${(err as Error).message}` };
+	}
 }
 
 function toDescriptor(repoPath: string, file: string, kind: PendingKind, art: ArtifactShape): PendingArtifact {

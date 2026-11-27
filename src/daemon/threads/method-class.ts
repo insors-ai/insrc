@@ -253,6 +253,7 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['workflow.artifactContent', 'session', false],
 	['workflow.delivery', 'session', false],
 	['workflow.deliveryEvidence', 'session', false],
+	['workflow.openable', 'session', false],
 	['workflow.pending', 'session', false],
 	['workflow.resolveComment', 'session', false],
 	['workflow.reviewDecision', 'session', false],

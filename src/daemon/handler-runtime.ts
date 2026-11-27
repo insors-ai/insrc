@@ -606,6 +606,16 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return handleWorkflowPending(params as { repo?: string } | undefined, process.env['INSRC_REPO']);
 		},
 
+		// ISSUE-9c95950064e4b916: every PENDING_KINDS artifact file on disk,
+		// regardless of lifecycle status or the BUILD/CR-sibling precondition
+		// workflow.pending applies — insrc_present's document-opening concern is
+		// distinct from approval-readiness. Read-only; delegates like
+		// workflow.pending.
+		'workflow.openable': async (params) => {
+			const { handleWorkflowOpenable } = await import('../workflow/pending.js');
+			return handleWorkflowOpenable(params as { repo?: string } | undefined, process.env['INSRC_REPO']);
+		},
+
 		// sc2 (ide-artifact-review-panel S002): the review view for one pending
 		// artifact — its own rendered .md content (verbatim, k5/lc1), open
 		// questions, and whether a review block-verdict withholds approval. A

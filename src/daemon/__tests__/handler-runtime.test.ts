@@ -83,6 +83,7 @@ const ADDED_RPC = [
 	'designReview.result', 'designReview.start',
 	'progress.attach', 'progress.control', 'progress.detach', 'progress.origin.bind',
 	'progress.origin.open', 'progress.origin.revoke', 'progress.read',
+	'workflow.openable',
 ];
 const ADDED_STREAM = ['approval.subscribe', 'progress.subscribe', 'tools.call'];
 

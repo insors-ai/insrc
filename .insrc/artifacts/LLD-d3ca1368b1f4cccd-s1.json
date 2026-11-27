@@ -1,0 +1,413 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795774541118-7vt27v",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T10:20:25.802Z",
+    "epicCreatedAt": "2026-11-27T06:27:19.170Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "unknown",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 277362,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d3ca1368b1f4cccd",
+    "epicSlug": "chat-run-config-provider-model-popup",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1795774541118-7vt27v",
+    "hldEffectiveHash": "1fb0f2d53407063b395364470cfe36cf67370eb1984960e29625edaf10a722b9",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "vscode-plugin/src/chat/chat-panel.ts inline webview script (updatePickers/renderProvPane/renderModelPane/rlabel/pickModel/rb.onclick/gb.onclick) + its host-side call sites in the same file; tests in vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e6df8c561e99d5f232939b09475a0118860b1f349bb8db86e420a62b5c1eb520",
+        "at": "2026-11-27T10:20:28.598Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T10:23:17.895Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "159637be1703f0868bd39aacd2feedcd690d0338"
+  },
+  "body": {
+    "summary": {
+      "prose": "Stop the insrc VS Code chat panel's run-config provider/model popup from flickering while open. Webview-side change-gating in chat-panel.ts: an open popup is rebuilt only when the provider/model/effort or catalog data it shows actually changed; opening the popup no longer forces a catalog refresh when the catalog is already ready; picking a different provider (which starts a new chat) closes the popup instead of leaving it open to be rebuilt by the host echo. Regression tests in chat-panel.test.ts prove each gate.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone small bugfix (ISSUE-d3ca1368b1f4cccd); no HLD shared contracts — the fix is confined to the chat panel webview module.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "vscode-plugin/src/chat/chat-panel.ts inline webview script (updatePickers/renderProvPane/renderModelPane/rlabel/pickModel/rb.onclick/gb.onclick) + its host-side call sites in the same file; tests in vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "single-step bugfix",
+      "nonFunctional": {
+        "security": "No trust-boundary change: message shapes unchanged; the gate only skips redundant DOM writes."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "updatePickers",
+          "signature": "function updatePickers(): void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "Re-renders open run/effort popups only if shown data changed since last render"
+          },
+          "errors": [],
+          "preconditions": [
+            "#insrc-runpop exists"
+          ],
+          "postconditions": [
+            "open panes rebuilt iff lastRunKey/lastCatalogKey differ; otherwise DOM untouched"
+          ]
+        },
+        {
+          "name": "rlabel",
+          "signature": "function rlabel(): void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "Rewrites status-bar run button label only when provider/model changed"
+          },
+          "errors": [],
+          "preconditions": [
+            "#insrc-runbtn exists"
+          ],
+          "postconditions": [
+            "label rewritten iff run key changed"
+          ]
+        },
+        {
+          "name": "renderProvPane",
+          "signature": "function renderProvPane(hover?: string): void",
+          "parameters": [
+            {
+              "name": "hover",
+              "type": "string | undefined",
+              "purpose": "provider id whose model pane to show",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Builds provider + model panes"
+          },
+          "errors": [],
+          "preconditions": [
+            "catalog state known"
+          ],
+          "postconditions": [
+            "panes reflect catalog + selection; called on open and on real changes only"
+          ]
+        },
+        {
+          "name": "pickModel",
+          "signature": "function pickModel(f, id): void",
+          "parameters": [
+            {
+              "name": "f",
+              "type": "RunProviderView",
+              "purpose": "chosen provider"
+            },
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "model id (empty = CLI default)"
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Posts new-chat (different provider) or set-run-config (same provider)"
+          },
+          "errors": [],
+          "preconditions": [
+            "popup open"
+          ],
+          "postconditions": [
+            "both branches call closePops()"
+          ]
+        },
+        {
+          "name": "rb.onclick",
+          "signature": "function (e: Event): void",
+          "parameters": [
+            {
+              "name": "e",
+              "type": "Event",
+              "purpose": "click"
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Toggles the run popup open/closed"
+          },
+          "errors": [],
+          "preconditions": [
+            "rb exists"
+          ],
+          "postconditions": [
+            "on open: renderProvPane + open class; requestCatalog() only when catalogStatus is not ready"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "lastRunKey (webview client state)",
+        "change": "new",
+        "details": "`${provider}|${model}|${effort}` of the last applied run-config echo; gates updatePickers/rlabel DOM writes.",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts"
+        ]
+      },
+      {
+        "entity": "lastCatalogKey (webview client state)",
+        "change": "new",
+        "details": "`${revision}|${status}` of the last applied run-catalog message; gates catalog label/pane updates.",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts"
+        ]
+      },
+      {
+        "entity": "catalogStatus gate in rb.onclick/gb.onclick",
+        "change": "field-modify",
+        "details": "requestCatalog() skipped when catalogStatus === ready; recovery and manual refresh paths unchanged.",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "run-config echo with identical values while popup open",
+          "detection": "lastRunKey equals current echo key",
+          "response": "skip pane rebuild and label rewrite; DOM untouched",
+          "userImpact": "none — the flicker is gone",
+          "recoverable": true
+        },
+        {
+          "scenario": "run-catalog with same revision/status while popup open",
+          "detection": "lastCatalogKey equals current message key",
+          "response": "skip label/pane updates",
+          "userImpact": "none",
+          "recoverable": true
+        },
+        {
+          "scenario": "popup opened while catalog already ready",
+          "detection": "catalogStatus === ready in rb.onclick",
+          "response": "skip requestCatalog(); render once",
+          "userImpact": "no loading->ready double render",
+          "recoverable": true
+        },
+        {
+          "scenario": "popup opened while catalog loading/unavailable",
+          "detection": "catalogStatus !== ready",
+          "response": "requestCatalog() still fires; recovery loop unchanged",
+          "userImpact": "refresh/retry preserved",
+          "recoverable": true
+        },
+        {
+          "scenario": "different-provider pick starts a new chat",
+          "detection": "pickModel/provider onclick with f.id !== current provider",
+          "response": "post new-chat AND closePops(); host echo finds no open popup",
+          "userImpact": "popup closes as expected on new chat",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "catalog transitions ready -> loading -> ready across two opens",
+          "expected": "re-render once on the revision change, never on identical echoes"
+        },
+        {
+          "input": "provider switch attempted mid-popup on a started chat",
+          "expected": "provider row is disabled (started), unchanged; on a draft, pick closes popup and posts new-chat"
+        },
+        {
+          "input": "effort echo with identical effort while effort popup open",
+          "expected": "updatePickers skips renderEffortPop rebuild"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Message shapes (run-config, run-catalog, new-chat, set-run-config, open-run-picker) and host post sites (postRunConfig, publishCatalog, refreshRunCatalog) are unchanged.",
+          "source": "c1"
+        },
+        {
+          "text": "Popup open/close/hover/selection semantics unchanged except closing on a new-chat provider pick.",
+          "source": "c1"
+        },
+        {
+          "text": "Status-bar button still reflects the session provider/model/effort after every genuine change (restore, new-chat, set-run-config, catalog-ready reconcile).",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove each gate via the existing fake-DOM/channel harness in chat-panel.test.ts: identical echoes do not rebuild open panes; open-with-ready skips requestCatalog; different-provider pick closes popup; genuine changes render exactly once.",
+          "subjects": [
+            "chat-panel.ts updatePickers/renderProvPane/rlabel/pickModel/rb.onclick"
+          ],
+          "fixturesNeeded": [
+            "existing fake webview DOM + message pump in vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "identical run-config echo while popup open leaves pane DOM untouched"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "opening popup with ready catalog posts no open-run-picker and renders panes once"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "different-provider pick posts new-chat and calls closePops"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "genuine value changes update label and rebuild panes exactly once"
+          ]
+        }
+      ],
+      "testFramework": "node:test via npx tsx --test, vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+    },
+    "migration": {
+      "stateBefore": "popup rebuilt on every echo; refresh on every open; new-chat pick leaves popup open",
+      "stateAfter": "same external behavior, rebuilt only on real data change",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "No migration: in-memory webview keys only, nothing persisted",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Message shapes and host post sites unchanged",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Change-gated re-render in the webview (minimal)",
+        "oneLineSummary": "Remember the last-rendered run-config (provider/model/effort) and catalog (revision+status); skip pane rebuilds and label rewrites when an echo carries identical values; skip requestCatalog() on open when the catalog is ready; closePops() on a different-provider pick.",
+        "approach": "Add two small pieces of client state in the chat-panel.ts inline script (lastRunKey, lastCatalogKey). updatePickers()/rlabel() compare before touching the DOM; rb.onclick/gb.onclick only call requestCatalog() when catalogStatus is not ready; pickModel and the provider item onclick call closePops() in the different-provider branch exactly like the same-provider branch. Host side (postRunConfig/publishCatalog/refreshRunCatalog) unchanged.",
+        "pros": [
+          "Smallest change that fully stops the flicker: no message ever rebuilds an open popup unless the shown data changed",
+          "No host-side behavior change, so no risk to other message consumers",
+          "All edits stay inside the existing inline webview script + existing handlers in chat-panel.ts"
+        ],
+        "cons": [
+          "Host still posts duplicate echoes (harmless — webview ignores them)",
+          "Two extra pieces of client state to keep in sync"
+        ],
+        "costEstimate": "XS"
+      },
+      {
+        "id": "a2",
+        "name": "Host-side echo dedupe",
+        "oneLineSummary": "Make the host omit run-config/run-catalog posts when the values are identical to what was last posted (postRunConfig/publishCatalog compare-and-skip).",
+        "approach": "In chat-panel.ts host side, keep lastPostedRunConfig/lastPostedCatalog and skip post() when unchanged; webview untouched.",
+        "pros": [
+          "Fewer messages on the wire",
+          "Webview code unchanged"
+        ],
+        "cons": [
+          "Does not fix the webview-side fragility: any future message that calls updatePickers still rebuilds an open popup",
+          "Changes host post behavior shared by other flows (postRunConfig is also called from submitTurn/new-chat refusals), wider blast radius than needed",
+          "Does not address the missing closePops() on new-chat provider picks"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Does not fix the webview-side rebuild or the open-popup-after-new-chat-pick case; changes shared host post behavior."
+      },
+      {
+        "id": "a3",
+        "name": "Keyed DOM reconciliation of the popup panes",
+        "oneLineSummary": "Rebuild panes via keyed diffing (reuse/move existing .item nodes) so hover and scroll survive any re-render.",
+        "approach": "Replace the innerHTML rebuilds in renderProvPane/renderModelPane with a small keyed reconciler over catalog entries.",
+        "pros": [
+          "Perfectly preserves hover/scroll even when data changes",
+          "More robust against future re-render triggers"
+        ],
+        "cons": [
+          "Meaningfully more code inside the CSP-bound inline script for a two-pane menu",
+          "Overkill when change-gating (a1) already prevents spurious re-renders entirely",
+          "Higher regression risk in the hand-rolled webview script"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Oversized: change-gating (a1) already eliminates spurious re-renders entirely."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/extension.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+    }
+  ]
+}

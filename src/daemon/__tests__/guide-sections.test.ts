@@ -132,11 +132,19 @@ test('shipped steering-block.md enumerates bugfix without disturbing the existin
 	// bugfix now auto-derives from its marker pair — no enumerator code change.
 	assert.ok(keys.includes('bugfix'), 'bugfix guide key is enumerated');
 	// The existing keys are all still present, in their original document order.
+	// amendment was added as its own guide section, right after design.story.
 	assert.deepEqual(
 		keys.filter(k => k !== 'bugfix'),
-		['triage', 'brainstorm', 'define', 'design.epic', 'design.story', 'plan', 'build', 'review', 'code-review', 'tracker'],
+		['triage', 'brainstorm', 'define', 'design.epic', 'design.story', 'amendment', 'plan', 'build', 'review', 'code-review', 'tracker'],
 		'existing guide keys + order unchanged',
 	);
+});
+
+test('guideGetResult({workflow:"amendment"}) returns the amendment section from the shipped asset', () => {
+	const r = guideGetResult(() => SHIPPED_STEERING, 'amendment') as InsrcGuideOk;
+	assert.equal(r.workflow, 'amendment');
+	assert.match(r.guidance, /AMD-<epicHash>-<seq>/);
+	assert.match(r.guidance, /insrc_workflow_approve/);
 });
 
 test('guideGetResult({workflow:"bugfix"}) returns the bugfix section from the shipped asset', () => {

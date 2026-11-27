@@ -457,8 +457,11 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 				'  - `stub`          — Phase A test workflow (echo/echo/echo)\n\n' +
 				'Chain: define → design.epic → design.story (per Story) → tracker.*.\n' +
 				'Each gate requires human approval via `insrc workflow approve <path>`.\n' +
-				'Amendments to the HLD are typed proposals from downstream steps; ' +
-				'review with `insrc workflow amend <slug> --list`. Use `insrc workflow ' +
+				'Amendments to the HLD are typed proposals emitted automatically by ' +
+				'define\'s extend path or a design.story step\'s own output — never a ' +
+				'direct call; each is written as its own pending AMD artifact and ' +
+				'approved through this same insrc_present + insrc_workflow_approve ' +
+				'gate. See insrc_guide({workflow:\'amendment\'}). Use `insrc workflow ' +
 				'chain <slug>` at any time to see status + the exact next command.\n\n' +
 				'Multi-turn loop:\n\n' +
 				'  1. phase=\'start\' with { workflow, focus, params? }. Server returns\n' +

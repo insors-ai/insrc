@@ -310,6 +310,36 @@ independently, document relationship changes even when simple, and do not
 require an ERD for isolated class edits. Use structured companion definitions only when the visual materially helps.
 <!-- insrc:guide:design.story:end -->
 
+<!-- insrc:guide:amendment:start -->
+## amendment — a mechanical delta to an approved HLD
+
+An amendment is a small, typed, mechanically-appliable delta to an Epic's
+**HLD** — never to an LLD (there is no LLD amendment kind; a Story's LLD is
+corrected by re-running `design.story`, not amended). Ten kinds across four
+families: `sharedContract.fieldAdd` / `fieldRemove` / `rename` / `methodAdd`;
+`storyBoundary.reassignOwnership` / `addConsumer` / `addStory`;
+`nonFunctional.retarget`; `rollout.reorder` / `splitPhase` / `mergePhases`.
+
+**You never construct an amendment directly** — there is no MCP call that
+creates one. It is an emergent side effect of running a workflow you'd already
+be running:
+- `define`'s `scope.assess` step files a `storyBoundary.addStory` amendment
+  automatically when it classifies an ask as "extend" (builds on an existing
+  Epic) rather than "new".
+- A `design.story` step's own structured output may include an `amendment`
+  field (any of the ten kinds); at finalize this is validated against the
+  current effective HLD and, if valid, persisted — an invalid proposal is
+  dropped with a warning rather than failing the LLD. `plan` and `build` never
+  propose amendments.
+
+Each valid proposal is written as its own pending `AMD-<epicHash>-<seq>`
+artifact. **Approval is the SAME generic gate as any other artifact** — no
+separate amendment-approval call: `insrc_present` the AMD path, get the user's
+explicit yes, then `insrc_workflow_approve({ artifactPath })`. Once approved,
+it is folded into the Epic's *effective* HLD that downstream LLD/staleness
+checks read, without a new `design.epic` run.
+<!-- insrc:guide:amendment:end -->
+
 <!-- insrc:guide:plan:start -->
 ## plan — decompose an approved LLD into build tasks (`workflow: 'plan'`)
 

@@ -79,10 +79,11 @@ test('the shipped asset carries guide sections; readSteeringBlock returns it who
 	const whole = readSteeringBlock();
 	const keys = listWorkflowGuides(whole);
 	// The shipped asset's workflow guide sections (bugfix added by the
-	// surface-bugfix-workflow story — auto-derived from its marker pair).
+	// surface-bugfix-workflow story; amendment added as its own guide
+	// section — both auto-derived from their marker pairs).
 	assert.deepEqual(
 		[...keys].sort(),
-		['brainstorm', 'bugfix', 'build', 'code-review', 'define', 'design.epic', 'design.story', 'plan', 'review', 'tracker', 'triage'],
+		['amendment', 'brainstorm', 'bugfix', 'build', 'code-review', 'define', 'design.epic', 'design.story', 'plan', 'review', 'tracker', 'triage'],
 	);
 });
 

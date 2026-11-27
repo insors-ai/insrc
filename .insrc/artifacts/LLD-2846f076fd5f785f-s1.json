@@ -69,6 +69,13 @@
         "choice": "Accept normal VS Code native save/conflict behavior",
         "rationale": "User explicitly accepted normal VS Code behavior in chat. Native and fallback editors delegate subsequent file reads/saves, conflicts, undo and backups to VS Code. Insrc still validates basename/root/regular-file status and refuses symlinks at open; existing store-managed operations retain their guards. Do not claim ongoing O_NOFOLLOW or guarded-publication protection for native saves, or attempt an unenforceable pre-save shim. Propagate this accepted boundary into upstream requirements, LLD and acceptance tests before build. B3 remains unresolved.",
         "resolvedAt": "2026-11-27T17:08:25.137Z"
+      },
+      "q5ee29197": {
+        "question": "BUILD BLOCKER B3 — Preserve direct selected-text Send to chat from the rendered editor through a supported host selection mechanism. No rendered selection API is verified. A manual Copy → explicit Insert clipboard action is a concrete alternative but requires explicit product acceptance; never substitute a stale TextEditor or the whole note.",
+        "status": "resolved",
+        "choice": "Use Milkdown + Crepe in one insrc-owned CustomTextEditorProvider pane",
+        "rationale": "User rejected manual clipboard and separate reader/editor views, asked about embeddable JS Markdown libraries, then checked Milkdown and said it looks good. Selected design direction is Milkdown + Crepe in one normal VS Code custom text-editor pane backed by the existing .md TextDocument. Insrc owns selection popup, explicit Send click and lock controls; selection alone never sends and clicking inserts into composer without submitting. This removes the built-in-editor selection-API dependency by an upstream design change, not by claiming such an API exists. Requires synchronized DEF/HLD/LLD amendments and human artifact approval before plan/build; no implementation approval or completed host/round-trip validation is implied.",
+        "resolvedAt": "2026-11-27T18:05:22.936Z"
       }
     }
   },

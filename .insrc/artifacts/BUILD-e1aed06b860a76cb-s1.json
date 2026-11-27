@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "8ed25dfe9cf080508bf59f6cd3f8dc73da2353bd821b65beaafaeeaff52d3211",
-        "at": "2026-11-27T18:30:14.178Z",
+        "number": 2,
+        "contentHash": "9a6a892b61cc836edd874fee81452825cf209f2670f7427445c4ecc292c8479a",
+        "at": "2026-11-27T19:59:33.886Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,17 +29,79 @@
     "schemaVersion": 1,
     "epicHash": "e1aed06b860a76cb",
     "storyId": "s1",
-    "revision": 1,
+    "revision": 2,
     "standalone": true,
     "sizeClass": "trivial",
     "authoredBy": "controller",
-    "triageRationale": "Approved small bugfix, magnitude small; no LLD/plan required. Exactly two controller test files with stale references to intentionally retired lifecycle implementation.",
-    "epicSlug": "align-controller-tests-retired-lifecycle-removal"
+    "triageRationale": "Approved small bugfix, magnitude small; no LLD/plan required. Trivial standalone admission is the execution route for this no-LLD defect.",
+    "epicSlug": "align-controller-tests-retired-lifecycle-removal",
+    "updatedAt": "2026-11-27T19:59:03.925Z"
   },
   "body": {
     "focus": "Align controller tests with retired lifecycle removal: fix three stale baseline cases in scripts/__tests__/test-harness-commands.test.ts and test-harness-consumers.test.ts using the approved ISSUE-e1aed06b860a76cb scope. Keep production helpers/runtime/budgets unchanged and preserve current refusal, prepared-reader/drift, mutation and positive cleanup checks.",
     "producesLld": false,
-    "commit": "2fca011a6"
+    "commit": "c7932b377",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": false
+      }
+    ],
+    "summary": "Corrected exactly two controller test files to match the accepted current build pipeline and deleted lifecycle code. Commit c7932b377 retains current refusal/control, output immutability, serial mutation and strict owned-group cleanup checks; direct Node22.22.1 focused run passed all16 tests with zero failures/skips/cancellations and independently matched30 command closures. Actual UTM qualification ended before this run. An interrupted stale isolated attempt remains blocked and retained separately, without cleanup or success inferred; current main-checkout focused tests have confirmed closure.",
+    "testRecord": {
+      "md": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-e1aed06b860a76cb.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:59:03.925Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-e1aed06b860a76cb.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:59:03.925Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:59:03.925Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/controller-maintenance.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:59:03.925Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/surrounding-audit.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:59:03.925Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/test-harness-commands.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:59:03.925Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/test-harness-consumers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:59:03.925Z"
+      }
+    ]
   },
   "citations": []
 }

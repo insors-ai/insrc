@@ -77,9 +77,12 @@ test('Specialized stages retain writer ownership and reader closure precedes lat
 
 test('Native refusal and saved-mode controls remain enforced', { timeout: 120000 }, async () => {
 	const selection = parseArgs(ROOT, ['--concurrency=1', '--test-name-pattern=^controller rejects lock replacement and unsafe records or control roots$|owner context is immutable lazy quiet', 'src/installer/__tests__/controller-store.test.ts', 'src/daemon/db/__tests__/driver-log-policy.test.ts']);
-	const result = await runHarness(ROOT, selection, {
+	const base = createRun(ROOT, { selectedFiles: selection.files, budgets: selection.budgets });
+	const run = { ...base, environment: () => ({ ...base.environment(), INSRC_BUILD_CONFIRM_CLOSURE: '1' }) };
+	const result = await withRun(run, scope => runHarness(ROOT, selection, {
+		ownedRun: run, ownedScope: scope,
 		testArgs: (file: string) => ['--import', 'tsx', '--test', '--test-force-exit', '--test-reporter=tap', ...selection.testFlags, file],
-	});
+	}));
 	assert.equal(result.code, 0, JSON.stringify(result));
 	assert.equal(result.results.length, 2);
 	for (const file of result.results) {

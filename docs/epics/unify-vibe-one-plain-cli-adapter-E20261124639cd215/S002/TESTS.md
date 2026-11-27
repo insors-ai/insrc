@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
+**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -131,3 +131,37 @@ Run at 2026-11-27T16:21:47.095Z on commit `b6909db9d`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/vibe-adapter-readonly-field.test.ts` | 0 | 2 | 0.4 s |  |
+
+## t5
+
+Run at 2026-11-27T16:39:53.038Z on commit `3af58216d`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: a qualified dispatch whose own export.json diverges from the cached fingerprint invalidating the entry while still returning its own result**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a qualified dispatch whose own export.json diverges from the cached fingerprint invalidating the entry while still returning its own result | `src/shared/__tests__/vibe-adapter-readonly-dispatch.test.ts` |
+
+**unit: startTurn's mode:'read-only' branch re-checking the cache by stableDescriptorHash at dispatch time**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | startTurn's mode:'read-only' branch re-checking the cache by stableDescriptorHash at dispatch time | `src/shared/__tests__/vibe-adapter-readonly-dispatch.test.ts` |
+
+**integration: a scripted post-dispatch export.json mismatch invalidating the cache for the NEXT call while the current call's result is unaffected**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a scripted post-dispatch export.json mismatch invalidating the cache for the NEXT call while the current call's result is unaffected | `src/shared/__tests__/vibe-adapter-readonly-dispatch.test.ts` |
+
+**integration: the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable | `src/shared/__tests__/vibe-adapter-readonly-dispatch.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/vibe-adapter-readonly-dispatch.test.ts` | 0 | 6 | 0.6 s |  |

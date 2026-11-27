@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 5,
-        "contentHash": "aa715efdc5b258495a455db953db9db64d408c35b0d505d916c5122735d58637",
-        "at": "2026-11-27T16:22:38.291Z",
+        "number": 6,
+        "contentHash": "3a076db51ca337eb97bc288305bfb346c6be63817e14c513862fb008e239ccf3",
+        "at": "2026-11-27T16:41:00.544Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "639cd2159a87aedb",
     "storyId": "s2",
-    "revision": 5,
-    "updatedAt": "2026-11-27T16:21:47.095Z",
+    "revision": 6,
+    "updatedAt": "2026-11-27T16:39:53.038Z",
     "authoredBy": "controller",
     "epicSlug": "unify-vibe-one-plain-cli-adapter"
   },
@@ -51,9 +51,13 @@
       {
         "id": "t4",
         "passed": false
+      },
+      {
+        "id": "t5",
+        "passed": true
       }
     ],
-    "summary": "Epic impact: covers Story s1 -- s1 built and landed sc1/sc2 matching their HLD interfaceSketches exactly, leaving s2's own contract (sc3) as a placeholder. This Task adds the readOnly field to VibeExecutionAdapter, populated by createVibeAdapter synchronously from the qualification cache's current entry for this adapter's own stable descriptor.\n\nScope correction, now with CONCRETE regression proof (not just a hypothesis): I first implemented the Task's acceptance check literally -- createVibeAdapter calling qualifyReadOnlyCapability (fire-and-forget) on every cache miss. I then ran s1's OWN existing, already-approved test file (src/shared/__tests__/vibe-adapter-turn.test.ts) against that code and it FAILED: \"a request whose signal is already aborted before dispatch spawns nothing and rejects with a real AbortError (review finding 5)\" asserts spawnCalls.length===0 for an already-aborted DEFAULT-mode turn -- under the literal self-trigger, that assertion saw 1 instead of 0, because createVibeAdapter runs on EVERY turn's construction (dispatchVibeTurn, cli-provider.ts calls it per turn, not once per provider lifetime) and self-triggering a qualification probe on a cold descriptor calls deps.spawn regardless of whether THIS particular turn is read-only, default, or even already aborted before dispatch. This is a real, reproduced regression against s1's own contract, not a test-isolation nicety. I reverted to: createVibeAdapter's readOnly is a pure, side-effect-free synchronous cache read; triggering a fresh qualification run on a miss is deferred to startTurn's own read-only dispatch path (t5, not yet built), which only runs when a caller actually requests mode:'read-only' -- this is also where the LLD's own edge-case table already says the cache is \"always re-checked... at dispatch time (startTurn)\". Re-ran vibe-adapter-turn.test.ts after reverting: all 19 tests pass, confirming the regression is gone. The full vibe-adapter*.test.ts suite also passes clean (47 pass, 2 pre-existing skips, 0 fail). Check 2's literal mechanism (trigger AT construction) is not satisfied, but its intent (a cache miss eventually gets qualified, without blocking) is -- just at dispatch time instead, which is both correct per the LLD and the only option that doesn't break s1's existing, approved tests.",
+    "summary": "Epic impact: covers Story s1 -- s1 built and landed sc1/sc2 matching their HLD interfaceSketches exactly. This Task replaces startTurn's mode:'read-only' placeholder throw with real dispatch: re-check the qualification cache fresh by stableDescriptorHash at dispatch time (never trusting readOnly's construction-time snapshot, matching the LLD's own edge-case wording that the cache is \"always re-checked... at dispatch time\"), dispatch via runTurn (s1's own real-dispatch path, reused unchanged -- buildArgv's read-only branch from t2 applies automatically since request.mode is 'read-only'), throw VibeReadOnlyUnavailableError with the cached reason before any process spawns when unavailable. The post-dispatch fingerprint check wraps runTurn's own injectable `rm` cleanup seam (reading export.json's fingerprint before the real cleanup deletes it) rather than modifying runTurn or any s1-owned type, since rm runs in runTurn's own finally AFTER resolveResult/rejectResult already settled -- the mismatch invalidates the cache for the NEXT call only, never the current call's own already-returned result. Left out: nothing from this Task's scope; t4's deferred trigger-on-miss (disclosed in t4's own build record) is NOT addressed here either -- it still requires a design decision about who proactively re-qualifies a cold descriptor, which this Task's own scope (dispatch-time recheck of an EXISTING cache entry) does not cover.",
     "testRecord": {
       "md": "docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/S002/TESTS.md"
     },
@@ -63,101 +67,108 @@
           "file": ".insrc/artifacts/TASK-639cd2159a87aedb-s2-t1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T16:21:47.095Z"
+        "timestamp": "2026-11-27T16:39:53.038Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-639cd2159a87aedb-s2-t2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T16:21:47.095Z"
+        "timestamp": "2026-11-27T16:39:53.038Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-639cd2159a87aedb-s2-t3.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T16:21:47.095Z"
+        "timestamp": "2026-11-27T16:39:53.038Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-639cd2159a87aedb-s2-t4.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T16:21:47.095Z"
+        "timestamp": "2026-11-27T16:39:53.038Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-639cd2159a87aedb-s2-t5.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T16:21:47.095Z"
+        "timestamp": "2026-11-27T16:39:53.038Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-639cd2159a87aedb-s2-t6.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T16:21:47.095Z"
+        "timestamp": "2026-11-27T16:39:53.038Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-639cd2159a87aedb-s2-t7.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T16:21:47.095Z"
+        "timestamp": "2026-11-27T16:39:53.038Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-639cd2159a87aedb-s2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T16:21:47.095Z"
+        "timestamp": "2026-11-27T16:39:53.038Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-639cd2159a87aedb-s2.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T16:21:47.095Z"
+        "timestamp": "2026-11-27T16:39:53.038Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/vibe-adapter-readonly-capability.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T16:21:47.095Z"
+        "timestamp": "2026-11-27T16:39:53.038Z"
       },
       {
         "target": {
           "file": "src/shared/vibe-adapter.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T16:21:47.095Z"
+        "timestamp": "2026-11-27T16:39:53.038Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/vibe-adapter-readonly-argv.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T16:21:47.095Z"
+        "timestamp": "2026-11-27T16:39:53.038Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/vibe-adapter-readonly-qualification.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T16:21:47.095Z"
+        "timestamp": "2026-11-27T16:39:53.038Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/vibe-adapter-readonly-field.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T16:21:47.095Z"
+        "timestamp": "2026-11-27T16:39:53.038Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/vibe-adapter-readonly-dispatch.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T16:39:53.038Z"
       }
     ],
-    "commit": "2cfa20ce5"
+    "commit": "3af58216d"
   },
   "citations": []
 }

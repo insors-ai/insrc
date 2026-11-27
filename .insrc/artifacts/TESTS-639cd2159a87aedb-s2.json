@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 5,
-        "contentHash": "58d4e58b003d4a4cfa561aaf6bb77c21424763a6b85f5f20c7d8a28d10cb271b",
-        "at": "2026-11-27T16:21:47.319Z",
+        "number": 6,
+        "contentHash": "ee102770e234d16c2cdcbdfe573d6ccaf24b45b6213eba3557271691c4ab3641",
+        "at": "2026-11-27T16:39:53.271Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "639cd2159a87aedb",
     "storyId": "s2",
     "createdAt": "2026-11-27T15:48:50.509Z",
-    "updatedAt": "2026-11-27T16:21:47.095Z",
+    "updatedAt": "2026-11-27T16:39:53.038Z",
     "epicCreatedAt": "2026-11-24T12:53:27.196Z",
     "epicSlug": "unify-vibe-one-plain-cli-adapter",
-    "revision": 5
+    "revision": 6
   },
   "body": {
     "tasks": [
@@ -361,6 +361,101 @@
               },
               {
                 "title": "the cache-miss-on-descriptor-change path when the binary content or pinned env changes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "3af58216d",
+        "ranAt": "2026-11-27T16:39:53.038Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a qualified dispatch whose own export.json diverges from the cached fingerprint invalidating the entry while still returning its own result",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/vibe-adapter-readonly-dispatch.test.ts",
+                "title": "a qualified dispatch whose own export.json diverges from the cached fingerprint invalidating the entry while still returning its own result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "startTurn's mode:'read-only' branch re-checking the cache by stableDescriptorHash at dispatch time",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/vibe-adapter-readonly-dispatch.test.ts",
+                "title": "startTurn's mode:'read-only' branch re-checking the cache by stableDescriptorHash at dispatch time",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a scripted post-dispatch export.json mismatch invalidating the cache for the NEXT call while the current call's result is unaffected",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/vibe-adapter-readonly-dispatch.test.ts",
+                "title": "a scripted post-dispatch export.json mismatch invalidating the cache for the NEXT call while the current call's result is unaffected",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/vibe-adapter-readonly-dispatch.test.ts",
+                "title": "the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/vibe-adapter-readonly-dispatch.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 572,
+            "titles": [
+              {
+                "title": "a read-only request with a 'qualified' cached capability dispatches via buildArgv's read-only branch and returns the schema-validated result",
+                "result": "pass"
+              },
+              {
+                "title": "a read-only request with an 'unavailable' cached capability throws VibeReadOnlyUnavailableError carrying the cached reason, without spawning a process",
+                "result": "pass"
+              },
+              {
+                "title": "startTurn's mode:'read-only' branch re-checking the cache by stableDescriptorHash at dispatch time",
+                "result": "pass"
+              },
+              {
+                "title": "a qualified dispatch whose own export.json diverges from the cached fingerprint invalidating the entry while still returning its own result",
+                "result": "pass"
+              },
+              {
+                "title": "a scripted post-dispatch export.json mismatch invalidating the cache for the NEXT call while the current call's result is unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable",
                 "result": "pass"
               }
             ],

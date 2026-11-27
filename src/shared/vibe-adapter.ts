@@ -598,12 +598,21 @@ function buildArgv(request: VibeTurnRequest, outputDir: string): readonly string
  *  via startTurn's dispatch); this lets tests observe its real output directly. */
 export function _buildArgvForTests(request: VibeTurnRequest, outputDir: string): readonly string[] { return buildArgv(request, outputDir); }
 
-/** `argv` with its `--output-dir <value>` pair removed -- buildArgv mints a fresh
- *  mkdtemp() path into --output-dir on every call, so a stable cache key must exclude it. */
-function argvExcludingOutputDir(argv: readonly string[]): readonly string[] {
-	const idx = argv.indexOf('--output-dir');
-	if (idx === -1) return argv;
-	return [...argv.slice(0, idx), ...argv.slice(idx + 2)];
+/** `argv` with its `--output-dir <value>` and `--output <mode>` pairs removed. `--output-dir`
+ *  excludes buildArgv's fresh mkdtemp() path, minted on every call. `--output` is excluded
+ *  for the SAME reason the HLD excludes outputDir: it shapes how a caller reads the
+ *  response (text/json/streaming), never which tools a launch profile authorizes -- the
+ *  qualification suite's own probe request and a real caller's request (readOnlySessionOnce
+ *  uses 'json'; the probe uses 'streaming') must hash identically, or the cache could never
+ *  hit across the two. Discovered via s2/t6: without this, qualification and dispatch always
+ *  computed different descriptors and the cache never hit for any real caller. */
+function argvExcludingTurnLocalFlags(argv: readonly string[]): readonly string[] {
+	let result = argv;
+	for (const flag of ['--output-dir', '--output']) {
+		const idx = result.indexOf(flag);
+		if (idx !== -1) result = [...result.slice(0, idx), ...result.slice(idx + 2)];
+	}
+	return result;
 }
 
 /** Resolve a bare command name to its absolute path via `which` (same precedent as
@@ -639,7 +648,7 @@ export function stableDescriptorHash(context: VibeAdapterContext, command: strin
 	} catch { /* unresolvable/unreadable path still participates in the key as-is */ }
 	const payload = JSON.stringify({
 		binaryIdentity,
-		argv: argvExcludingOutputDir(argv),
+		argv: argvExcludingTurnLocalFlags(argv),
 		env: context.env ?? {},
 		cwd: context.cwd,
 	});

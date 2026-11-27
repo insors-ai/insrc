@@ -865,12 +865,25 @@ export class CliProvider implements LLMProvider {
 
 	private async readOnlySessionOnce<T>(prompt: string, schema: StructuredSchema, exec: ExecOverride & { cwd: string; timeoutMs: number; watchStall: boolean; capabilityPolicy: 'write-sandboxed' | 'strict-read-analyze' }): Promise<T> {
 		if (this.kind === 'vibe') {
-			// Read-only: the adapter's own fail-closed state (k1) refuses this mode
-			// synchronously, before any subprocess spawns, until a later Story of
-			// this Epic supplies its live qualification.
-			createVibeAdapter({ cwd: exec.cwd, processGroup: 'adapter-owned' }, { command: this.binPath })
-				.startTurn({ prompt, outputMode: 'json', mode: 'read-only', session: { kind: 'new' } });
-			throw new Error('unreachable: startTurn refuses a read-only request synchronously');
+			// Read-only: the adapter's own fail-closed state (k1) qualifies this mode
+			// live (s2) -- a VibeReadOnlyUnavailableError propagates straight through
+			// to the caller, carrying its reason, exactly like every other read-only
+			// refusal from this method; it is never retried or reshaped here.
+			const turn = createVibeAdapter({ cwd: exec.cwd, processGroup: 'adapter-owned' }, { command: this.binPath })
+				.startTurn({
+					prompt, outputMode: 'json', mode: 'read-only', session: { kind: 'new' },
+					deadlineMs: exec.timeoutMs, ...(exec.signal !== undefined ? { signal: exec.signal } : {}),
+				});
+			const result = await turn.result;
+			let parsed: unknown;
+			try {
+				parsed = JSON.parse(result.text);
+			} catch (err) {
+				throw new Error(`vibe read-only session answer was not parseable JSON: ${(err as Error).message}. text=${result.text.slice(0, 300)}`);
+			}
+			const checked = validateAgainstSchema<T>(schema, parsed);
+			if (!checked.ok) throw new ModelResponseShapeError(`vibe read-only session answer does not satisfy the caller's schema: ${checked.errors.join('; ')}`, checked.errors);
+			return checked.value;
 		}
 		if (this.kind === 'claude') {
 			const { envelope } = await this.runClaude(claudeReadOnlySessionArgs(schema, this.modelArgs(), exec.capabilityPolicy), prompt, exec);

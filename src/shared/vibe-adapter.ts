@@ -447,9 +447,16 @@ function effectiveConfigFingerprintFrom(exportObj: Record<string, unknown>): str
  *  matched by substring against the tool-call's own reported name, since the exact
  *  qualified form (bare / connector-prefixed / MCP-streamed) is not pinned by this probe. */
 function hasConfirmedCompletedCall(events: readonly VibeTurnEvent[], toolId: VibeInsrcAnalysisToolId): boolean {
+	// EXACT match against the known plausible name forms (bare / connector-prefixed /
+	// MCP-streamed) -- never substring: 'insrc_analyze' is a literal prefix of
+	// 'insrc_analyze_step', so a loose .includes() check would let a completed call to
+	// the STEP tool alone also count as confirming the (never-actually-called) plain
+	// tool, pushing qualification toward a false 'qualified' verdict -- the dangerous
+	// direction. Found by self-review before this Story's BUILD was presented.
+	const candidates = new Set([toolId, `connector_insrc_${toolId}`, `mcp_insrc.${toolId}`]);
 	const callNamesById = new Map<string, string>();
 	for (const event of events) if (event.kind === 'tool-call') callNamesById.set(event.toolCallId, event.toolName);
-	return events.some(event => event.kind === 'tool-result' && event.ok && (callNamesById.get(event.toolCallId) ?? '').includes(toolId));
+	return events.some(event => event.kind === 'tool-result' && event.ok && candidates.has(callNamesById.get(event.toolCallId) ?? ''));
 }
 
 const QUALIFICATION_PROBE_PROMPT = 'Call the insrc_analyze tool once, then the insrc_analyze_step tool once, each with a trivial unrelated question. Report back briefly once both calls are done.';

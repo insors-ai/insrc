@@ -170,6 +170,21 @@ test("structural catalog evidence: exclusion/denial of a disallowed tool passes 
 	assert.match(failResult.reason ?? '', /required tool\(s\) excluded/);
 });
 
+test("the allow-side completion check never lets a completed insrc_analyze_step call also count as confirming the plain insrc_analyze tool (no substring false-positive)", async () => {
+	_readOnlyQualificationCacheForTests().clear();
+	const required = ['connector_insrc_insrc_analyze', 'connector_insrc_insrc_analyze_step'];
+	// Catalog check passes (both required tools enabled), but the journal shows a
+	// confirmed completed call for ONLY the _step tool -- 'insrc_analyze' is a literal
+	// string prefix of 'insrc_analyze_step', so a loose substring match would wrongly
+	// treat this as confirming BOTH tools. Bounded retries all see the same journal, so
+	// this must exhaust and report unavailable, never a false 'qualified'.
+	const onlyStepCompletedJournal = JSON.stringify({ type: 'effect', toolCallId: 'c1', detail: { toolName: 'connector_insrc_insrc_analyze_step', input: {} }, state: { status: 'completed', outputText: 'ok' } }) + '\n';
+	const deps = multiAttemptDeps('vibe-no-prefix-false-positive', [{ stdoutLines: onlyStepCompletedJournal, exportJsonText: exportJson(required) }]);
+	const result = await qualifyReadOnlyCapability(baseContext(realDir()), deps, 2);
+	assert.equal(result.status, 'unavailable', 'a completed _step call alone must never satisfy the plain insrc_analyze requirement');
+	assert.equal(deps.spawnCount(), 2, 'both bound attempts run since the plain tool never shows a confirmed call');
+});
+
 test('a genuine bypass-absence failure (a disallowed tool actually completes) failing qualification immediately, never retried', async () => {
 	_readOnlyQualificationCacheForTests().clear();
 	const required = ['connector_insrc_insrc_analyze', 'connector_insrc_insrc_analyze_step'];

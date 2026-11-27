@@ -93,9 +93,10 @@ export async function stageRuntime(owner: RuntimeStageOwner, identityInput: Runt
       }
     }
     owner.assertHeld(); signal.throwIfAborted();
-    const verification = AbortSignal.any([signal, AbortSignal.timeout(RUNTIME_LIMITS.verificationMs)]);
-    await closedRuntimeOperation(extractRuntimeProfile(sources, directory, identity, verification), verification);
-    verification.throwIfAborted();
+    // Durable extraction is acquisition work. The shorter verification budget
+    // belongs to read-only resolution, not thousands of staged file writes.
+    await closedRuntimeOperation(extractRuntimeProfile(sources, directory, identity, signal), signal);
+    signal.throwIfAborted();
     owner.assertHeld(); signal.throwIfAborted();
     Object.freeze(identity.target); Object.freeze(identity);
     const stage = Object.freeze({ workDirectory: work, directory, identity }); stages.set(stage, { owner, dev: info.dev, ino: info.ino }); return stage;

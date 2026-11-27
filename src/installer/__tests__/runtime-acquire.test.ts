@@ -44,10 +44,13 @@ async function officialTransport(): Promise<DownloadTransport> {
     return { status: 200, body, closed: new Promise<void>(resolve => body.once('close', resolve)) };
   };
 }
-test('runtime staging authenticates official assets and leaves only an owned unselected candidate', async () => {
-  const f = fixture();
+test('runtime staging authenticates official assets and leaves only an owned unselected candidate', async t => {
+  const f = fixture(), transport = await officialTransport(), timeout = AbortSignal.timeout;
   try {
-    const stage = await stageRuntime(f.owner, identity(target), { transport: await officialTransport() });
+    // Accelerating the read-only deadline must not cancel durable acquisition.
+    t.mock.method(AbortSignal, 'timeout', (milliseconds: number) =>
+      timeout.call(AbortSignal, milliseconds === RUNTIME_LIMITS.verificationMs ? 1 : milliseconds));
+    const stage = await stageRuntime(f.owner, identity(target), { transport });
     assertRuntimeStage(stage, f.owner); assert.ok(Object.isFrozen(stage)); assert.ok(Object.isFrozen(stage.identity.target));
     const inventory = fs.readFileSync(join(stage.directory, 'inventory.json'));
     assert.equal(verifyRuntimeInventory(inventory, runtimeProfile(target)).length, runtimeProfile(target).entries);
@@ -55,7 +58,7 @@ test('runtime staging authenticates official assets and leaves only an owned uns
     assert.equal(fs.existsSync(join(f.home, 'install', 'controller.json')), false);
     assert.throws(() => assertRuntimeStage({ ...stage }, f.owner), /original ownership proof/);
     await discardRuntimeStage(stage, f.owner); assert.deepEqual(f.stages(), []);
-  } finally { f.clean(); }
+  } finally { t.mock.restoreAll(); f.clean(); }
 });
 test('runtime download rejects HTTP redirects sizes and digest failures before extracting code', async () => {
   const f = fixture();
@@ -106,23 +109,35 @@ test('runtime download deadline expires before extraction and closes input befor
     assert.deepEqual(f.stages(), []); assert.equal(fs.existsSync(join(f.home, 'runtimes')), false);
   } finally { clearInterval(keepAlive); t.mock.restoreAll(); syncBuiltinESMExports(); f.clean(); }
 });
-test('runtime extraction enforces its separate fixed verification deadline after download', async t => {
-  const f = fixture(), timeout = AbortSignal.timeout, transport = await officialTransport();
-  let expired: AbortSignal | undefined, downloaded = false;
-  const keepAlive = setInterval(() => {}, 1_000);
+test('runtime acquisition deadline during extraction closes output before owned cleanup', async t => {
+  const f = fixture(), transport = await officialTransport(), deadline = new AbortController(), open = io.open, rm = io.rm;
+  const reason = new DOMException('Acquisition deadline expired', 'TimeoutError');
+  let downloaded = false, armed = false, closed = false;
   try {
     t.mock.method(AbortSignal, 'timeout', (milliseconds: number) => {
-      if (milliseconds === RUNTIME_LIMITS.networkMs) return timeout.call(AbortSignal, milliseconds);
-      assert.equal(milliseconds, RUNTIME_LIMITS.verificationMs); assert.equal(downloaded, true);
-      expired = timeout.call(AbortSignal, 1); return expired;
+      assert.equal(milliseconds, RUNTIME_LIMITS.networkMs); return deadline.signal;
     });
+    t.mock.method(io, 'open', async (...args: Parameters<typeof open>) => {
+      const file = await open(...args);
+      if (armed || !String(args[0]).includes(`${sep}candidate${sep}distribution${sep}`)) return file;
+      armed = true; assert.equal(downloaded, true);
+      return new Proxy(file, { get(handle, key) {
+        if (key === 'write') return async (...values: unknown[]) => {
+          const result = await Reflect.apply(handle.write, handle, values); deadline.abort(reason); return result;
+        };
+        if (key === 'close') return async () => { await handle.close(); closed = true; };
+        const value = Reflect.get(handle, key); return typeof value === 'function' ? value.bind(handle) : value;
+      } });
+    });
+    t.mock.method(io, 'rm', async (...args: Parameters<typeof rm>) => { assert.equal(closed, true); return rm(...args); });
+    syncBuiltinESMExports();
     await assert.rejects(stageRuntime(f.owner, identity(target), { transport: async (...args) => {
       const response = await transport(...args);
       response.body.once('end', () => { downloaded = true; }); return response;
-    } }), (error: unknown) => { assert.equal(error, expired?.reason); return true; });
-    assert.equal(expired?.aborted, true); assert.deepEqual(f.stages(), []);
+    } }), (error: unknown) => { assert.equal(error, reason); return true; });
+    assert.equal(armed, true); assert.equal(closed, true); assert.deepEqual(f.stages(), []);
     assert.equal(fs.existsSync(join(f.home, 'runtimes')), false);
-  } finally { clearInterval(keepAlive); t.mock.restoreAll(); f.clean(); }
+  } finally { t.mock.restoreAll(); syncBuiltinESMExports(); f.clean(); }
 });
 test('runtime cancellation waits for output closure before owned stage cleanup', async t => {
   const f = fixture(), transport = await officialTransport(), abort = new AbortController(), open = io.open, rm = io.rm;

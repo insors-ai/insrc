@@ -29,6 +29,15 @@ export function requireQualificationHeadroom(remainingMs) {
   return Object.freeze({ remainingMs, requiredMs });
 }
 
+/** Account for observed setup once, then measure preflight monotonically. */
+export function qualificationAdmission(jobStartedAt) {
+  const elapsedSetupMs = Date.now() - jobStartedAt, admittedAt = performance.now();
+  if (!positive(jobStartedAt) || !Number.isSafeInteger(elapsedSetupMs) || elapsedSetupMs < 0) {
+    throw failure('qualification-containment-invalid', 'Expected an observed job start timestamp');
+  }
+  return () => requireQualificationHeadroom(Math.floor(QUALIFICATION_CONTAINMENT.jobMs - elapsedSetupMs - (performance.now() - admittedAt)));
+}
+
 /** One work clock also aborts in-process/independently owned preparation.
  * finishWork stops this clock BEFORE withRun's separately budgeted final drain.
  * The optional exact short clock is for internal surrounding tests, never IPC/env.
@@ -98,10 +107,8 @@ export async function qualificationPreflight(root) {
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   try {
     const [started, parent, baseline] = process.argv.slice(2), jobStartedAt = Number(started);
-    assert.ok(positive(jobStartedAt) && jobStartedAt <= Date.now() && parent && baseline, 'Expected JOB_STARTED_AT_MS PARENT BASELINE');
-    // First bounded CI step records the anchor. Keep another five minutes for
-    // runner overhead outside that observation rather than lending it to work.
-    const admission = () => requireQualificationHeadroom(Math.floor(QUALIFICATION_CONTAINMENT.jobMs - (Date.now() - jobStartedAt) - QUALIFICATION_CONTAINMENT.setupAndDrainMs));
+    assert.ok(parent && baseline, 'Expected JOB_STARTED_AT_MS PARENT BASELINE');
+    const admission = qualificationAdmission(jobStartedAt);
     admission();
     const run = await qualificationPreflight(realpathSync(fileURLToPath(new URL('../', import.meta.url))));
     const headroom = admission();

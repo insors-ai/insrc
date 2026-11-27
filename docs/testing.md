@@ -70,7 +70,8 @@ minutes. SDK setup is bounded to four minutes; headers, npm ci, the canonical
 build and selected tests share one owned 40-minute preflight and at most 30
 seconds cleanup. Before native admission, the shared containment check reserves
 the full selected work allowance, manager/outer cleanup and eight minutes for
-diagnostics, plus a conservative five-minute runner-overhead allowance. It
+diagnostics. The measured setup time is counted once; subsequent elapsed time
+uses a monotonic clock. It
 refuses insufficient remaining time instead of shortening native work. The
 Windows job remains gated by its separate process-ownership prerequisite; a
 longer budget is not authorization to dispatch or enable that platform.

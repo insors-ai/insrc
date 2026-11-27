@@ -6,7 +6,7 @@ import { once } from 'node:events';
 import { randomUUID } from 'node:crypto';
 import { syncBuiltinESMExports } from 'node:module';
 import { QUALIFICATION_TIME_BUDGETS as policy } from '../../src/installer/qualification-time-budgets.mjs';
-import { QUALIFICATION_CONTAINMENT as limits, requireQualificationHeadroom, withQualificationDeadline } from '../qualification-containment.mjs';
+import { QUALIFICATION_CONTAINMENT as limits, qualificationAdmission, requireQualificationHeadroom, withQualificationDeadline } from '../qualification-containment.mjs';
 import { createRun } from '../test-harness/context.mjs';
 import { withRun } from '../test-harness/process.mjs';
 
@@ -24,6 +24,22 @@ if (mode === 'headroom') {
     assert.equal(limits.supervisorMs, 315 * 60000);
     assert.throws(() => requireQualificationHeadroom(120 * 60000), { code: 'qualification-containment-insufficient' });
   }
+  const date = Date.now, descriptor = Object.getOwnPropertyDescriptor(performance, 'now'); let monotonic = 0, wall = 2_000_000_000_000;
+  Date.now = () => wall;
+  Object.defineProperty(performance, 'now', { configurable: true, value: () => monotonic });
+  try {
+    const setupMs = 4 * 60000, admission = qualificationAdmission(wall - setupMs);
+    monotonic = 40 * 60000 + policy.coordinator.cleanupMs;
+    assert.equal(admission().remainingMs, limits.jobMs - setupMs - monotonic, 'production clock counts setup exactly once');
+    if (policy.profile === 'slow-vm') assert.equal(admission().remainingMs, 315.5 * 60000);
+    wall -= 2 * 3600000; // A later wall-clock correction cannot lend more work time.
+    assert.equal(admission().remainingMs, limits.jobMs - setupMs - monotonic);
+    monotonic = limits.jobMs - setupMs - limits.supervisorMs;
+    assert.equal(admission().remainingMs, limits.supervisorMs, 'exact containing boundary is admitted');
+    monotonic++;
+    assert.throws(admission, { code: 'qualification-containment-insufficient' });
+    for (const stamp of [0, -1, NaN, Infinity, wall + 1]) assert.throws(() => qualificationAdmission(stamp), { code: 'qualification-containment-invalid' });
+  } finally { Date.now = date; if (descriptor) Object.defineProperty(performance, 'now', descriptor); else delete performance.now; }
 } else {
   const counts = ['SIGINT', 'SIGTERM'].map(name => process.listenerCount(name));
   const timeout = globalThis.setTimeout, clear = globalThis.clearTimeout, timers = new Set();

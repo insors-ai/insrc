@@ -289,25 +289,24 @@ add-tag-filtering-todos with target={ kind: "hld" }.
 
 During LLD authoring, the LLM may discover the HLD needs a small
 change — a shared contract needs one more field, a Story needs
-reassigned ownership. The `contract.detail` and `error.paths`
-steps can emit an amendment proposal alongside their output. The
-framework validates the proposal against the applier and persists
-it as pending under `.insrc/artifacts/AMD-<h16>-<n>.json`.
+reassigned ownership. `design.story`'s steps `s4`/`s5` (or
+`define`'s `scope.assess` extend path) can emit an amendment
+proposal alongside their output. The framework validates the
+proposal against the applier and persists it as pending under
+`.insrc/artifacts/AMD-<h16>-<n>.json`.
 
-Review pending amendments:
+There is no CLI/MCP call that creates or lists an amendment directly —
+it is an emergent side effect of running the workflow that proposed it.
+`insrc workflow chain <h16>` (CLI/TUI only — there is no MCP equivalent)
+shows a pending amendment's id and path under its `review-amendment`
+next action.
+
+Approve or reject it through the same generic artifact gate as any
+other artifact — no separate amendment-approval call:
 
 ```
-insrc workflow amend <h16> --list
-insrc workflow amend <h16> --show AMD-<h16>-1
-```
-
-Approve or reject:
-
-```
-insrc workflow amend <h16> --approve AMD-<h16>-1
-
-insrc workflow amend <h16> --reject AMD-<h16>-2 \
-  --notes "not needed; existing contract is fine"
+insrc workflow approve <path-to-AMD-file>
+insrc workflow reject <path-to-AMD-file> <reason>
 ```
 
 Approved amendments are folded into the **effective HLD** —
@@ -443,12 +442,10 @@ insrc workflow ack-stale <lld-path> --reason <text>
 
 ### Amendments
 
-```
-insrc workflow amend <h16> --list
-insrc workflow amend <h16> --show <amendmentId>
-insrc workflow amend <h16> --approve <amendmentId>
-insrc workflow amend <h16> --reject <amendmentId> --notes <text>
-```
+There is no `amend` verb: an amendment is proposed only as a side effect of
+`define` or `design.story`, and reviewed/approved through `workflow chain
+<h16>` (to find the pending AMD path) plus the same `approve`/`reject`
+commands as any other artifact — see "HLD amendments" above.
 
 ### GitHub tracker
 

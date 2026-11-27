@@ -1,0 +1,94 @@
+{
+  "result": {
+    "schemaVersion": 1,
+    "kind": "native-runtime-foundation",
+    "target": {
+      "os": "linux",
+      "arch": "arm64",
+      "baseline": "ubuntu22.04-glibc2.35-orbstack-arm64"
+    },
+    "platformRelease": "7.2.12-orbstack-00394-gbecdd6130068",
+    "orchestrator": {
+      "executable": "/home/insrctest/.insrc-s3/runtimes/node-v22.22.1-linux-arm64/bin/node",
+      "version": "v22.22.1"
+    },
+    "root": "/home/insrctest/iq-HHm6VP",
+    "home": "/home/insrctest/iq-HHm6VP/h",
+    "runId": "a7e93453-05f3-44bc-b623-7355ff4dedfa",
+    "startedAt": "2026-11-27T00:01:08.795Z",
+    "releaseEnablement": false,
+    "status": "pass",
+    "sourceCommit": "41954c71d41173b67a62662e978115d34fde4023",
+    "runtime": {
+      "identity": {
+        "version": "22.22.1",
+        "target": {
+          "os": "linux",
+          "arch": "arm64",
+          "baseline": "ubuntu22.04-glibc2.35-orbstack-arm64"
+        },
+        "sha256": "1d1690e9aba47e887a275abc6d8f7317e571a0700deaef493f768377e99155f5",
+        "relativeExecutable": "bin/node"
+      },
+      "directory": "/home/insrctest/iq-HHm6VP/h/runtimes/22.22.1/linux-arm64-ubuntu22.04-glibc2.35-orbstack-arm64/1d1690e9aba47e887a275abc6d8f7317e571a0700deaef493f768377e99155f5/distribution",
+      "executable": "/home/insrctest/iq-HHm6VP/h/runtimes/22.22.1/linux-arm64-ubuntu22.04-glibc2.35-orbstack-arm64/1d1690e9aba47e887a275abc6d8f7317e571a0700deaef493f768377e99155f5/distribution/bin/node",
+      "inventorySha256": "d3189509e38e1436f269b1a781568e9e37eca85acb2203e01728f747f4c097af",
+      "liveFirstAcquisition": true,
+      "offlineNetworkRequests": 0,
+      "sameExecutableInode": true,
+      "bindingProbeLog": "/home/insrctest/iq-HHm6VP/.insrc/tmp/test-harness/runs/a7e93453-05f3-44bc-b623-7355ff4dedfa/child-cb62dbf2-5648-4dce-8633-a40adbc9a421.log",
+      "npmVersion": "10.9.4",
+      "publicationOutsideRunningNodeAndLoadedControl": true
+    },
+    "application": {
+      "releaseId": "dev-1a7b56fcc5ecee730910c6379c21a7a230ff64d29b636ae6",
+      "sourceCommit": "41954c71d41173b67a62662e978115d34fde4023",
+      "files": 55201,
+      "payloadBytes": 2226516982,
+      "receiptVersion": 2,
+      "privateBuildPolicy": {
+        "cuda": "skip",
+        "nodeVersion": "22.22.1",
+        "npmVersion": "10.9.4",
+        "schemaVersion": 1
+      },
+      "nativeProbeLog": "/home/insrctest/iq-HHm6VP/.insrc/tmp/test-harness/runs/a7e93453-05f3-44bc-b623-7355ff4dedfa/child-dde9816a-1535-4f58-b12a-a7a0a13f7791.log",
+      "freshManagerLog": "/home/insrctest/iq-HHm6VP/.insrc/tmp/test-harness/runs/a7e93453-05f3-44bc-b623-7355ff4dedfa/child-19cfb087-d201-49ea-9385-0d3a1aa4dab8.log",
+      "controllerPhase": "preparing",
+      "daemonActivationTested": false,
+      "ollamaInstalledOrStarted": false
+    },
+    "confirmedClosed": true,
+    "finishedAt": "2026-11-27T00:07:18.499Z"
+  },
+  "closure": [
+    {
+      "runId": "a7e93453-05f3-44bc-b623-7355ff4dedfa",
+      "groups": 9,
+      "allCommandsSucceeded": true,
+      "cleanup": {
+        "confirmedClosed": true,
+        "interrupted": false,
+        "cancellationErrors": [],
+        "evidenceErrors": [],
+        "childCloseJournal": "child-results.jsonl",
+        "closureMode": "owned-groups"
+      }
+    },
+    {
+      "runId": "86efdf08-59b8-42f5-a5eb-a09abaae748d",
+      "groups": 25,
+      "allCommandsSucceeded": true,
+      "cleanup": {
+        "confirmedClosed": true,
+        "interrupted": false,
+        "cancellationErrors": [],
+        "evidenceErrors": [],
+        "childCloseJournal": "child-results.jsonl",
+        "closureMode": "owned-groups"
+      }
+    }
+  ],
+  "actorsEmpty": true,
+  "leasesAbsent": true
+}

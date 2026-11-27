@@ -14,11 +14,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
-import { mkdtempSync } from 'node:fs';
+import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
-import { _readOnlyQualificationCacheForTests, createVibeAdapter, qualifyReadOnlyCapability } from '../vibe-adapter.js';
+import { _buildArgvForTests, _readOnlyQualificationCacheForTests, createVibeAdapter, qualifyReadOnlyCapability, stableDescriptorHash } from '../vibe-adapter.js';
 import type { VibeAdapterContext, VibeAdapterDeps, VibeChildProcess } from '../vibe-adapter.js';
 
 function fakeChild(pid: number | undefined = 4242): { child: VibeChildProcess; stdout: PassThrough; stderr: PassThrough; stdin: PassThrough; emitter: EventEmitter } {
@@ -59,6 +59,8 @@ function baseContext(cwd: string): VibeAdapterContext { return { cwd, processGro
 function scriptedDeps(command: string, stdoutLines: string, exportJsonText: string | undefined): VibeAdapterDeps {
 	return {
 		command,
+		resolveCommandPath: (cmd) => cmd,
+		identityStatSync: () => ({ size: 1, mtimeMs: 1 }),
 		spawn: () => {
 			const { child, stdout, emitter } = fakeChild();
 			queueMicrotask(() => {
@@ -80,6 +82,8 @@ function multiAttemptDeps(command: string, attempts: readonly { readonly stdoutL
 	let count = 0;
 	const deps: VibeAdapterDeps = {
 		command,
+		resolveCommandPath: (cmd) => cmd,
+		identityStatSync: () => ({ size: 1, mtimeMs: 1 }),
 		spawn: () => {
 			const attempt = attempts[Math.min(count, attempts.length - 1)] as { readonly stdoutLines: string; readonly exportJsonText: string | undefined };
 			count += 1;
@@ -210,4 +214,110 @@ test('the VibeReadOnlyUnavailableError path when probes exhaust the retry bound 
 	// which already throws VibeReadOnlyUnavailableError regardless of qualification.
 	const adapter = createVibeAdapter({ cwd: realDir(), processGroup: 'adapter-owned' });
 	assert.throws(() => adapter.startTurn({ prompt: 'x', outputMode: 'json', session: { kind: 'new' }, mode: 'read-only' }), /no qualified capability yet/);
+});
+
+// -- Review response: code-review of e8105ad49, 5 findings ----------------------------------
+
+test('a disallowed tool completing in the journal fails qualification even when the config-reported enabled_tools catalog under-reports it (review finding 2)', async () => {
+	_readOnlyQualificationCacheForTests().clear();
+	const required = ['connector_insrc_insrc_analyze', 'connector_insrc_insrc_analyze_step'];
+	// The catalog claims ONLY the two required tools (the config-based bypass check above
+	// would pass this cleanly) -- but the journal itself shows a THIRD tool's call actually
+	// completing. A trustworthy catalog alone is not enough: the suite must also reject what
+	// it can observe actually ran.
+	const journalWithExtraCompletedCall = [
+		TOOL_CALL_LINE('c1', 'connector_insrc_insrc_analyze'),
+		TOOL_CALL_LINE('c2', 'connector_insrc_insrc_analyze_step'),
+		TOOL_CALL_LINE('c3', 'file_system.write_file'),
+	].join('\n') + '\n';
+	const deps = multiAttemptDeps('vibe-journal-bypass', [{ stdoutLines: journalWithExtraCompletedCall, exportJsonText: exportJson(required) }]);
+	const result = await qualifyReadOnlyCapability(baseContext(realDir()), deps, 5);
+	assert.equal(result.status, 'unavailable');
+	assert.match(result.reason ?? '', /bypass-absence failure: an out-of-allowlist tool call completed: file_system\.write_file/);
+	assert.equal(deps.spawnCount(), 1, 'a journal-observed bypass is never retried either, exactly like a config-reported one');
+});
+
+test('an unresolvable executable fails qualification closed rather than hashing under a reusable-but-ambiguous identity (review finding 3a)', async () => {
+	_readOnlyQualificationCacheForTests().clear();
+	const context: VibeAdapterContext = { cwd: realDir(), env: { PATH: '/nonexistent-insrc-test-path-xyz' }, processGroup: 'adapter-owned' };
+	const result = await qualifyReadOnlyCapability(context, { command: 'definitely-not-a-real-vibe-binary-xyz' }, 1);
+	assert.equal(result.status, 'unavailable');
+	assert.match(result.reason ?? '', /stable descriptor computation failed/);
+});
+
+test("resolution and the actual probe dispatch agree on the SAME binary found under this context's own env.PATH, not the inherited process env (review finding 3b)", async () => {
+	_readOnlyQualificationCacheForTests().clear();
+	const dir = realDir();
+	const scriptName = `insrc-identity-probe-${Date.now()}`;
+	const scriptPath = join(dir, scriptName);
+	const script = `#!/usr/bin/env node
+const { mkdirSync, writeFileSync } = require('node:fs');
+const args = process.argv.slice(2);
+const outputDir = args[args.indexOf('--output-dir') + 1];
+mkdirSync(outputDir, { recursive: true });
+writeFileSync(outputDir + '/export.json', JSON.stringify({ vibe_version: '1.0', config: { enabled_tools: ['connector_insrc_insrc_analyze', 'connector_insrc_insrc_analyze_step'] } }));
+process.stdout.write(JSON.stringify({ type: 'effect', toolCallId: 'c1', detail: { toolName: 'connector_insrc_insrc_analyze', input: {} }, state: { status: 'completed', outputText: 'ok' } }) + '\\n');
+process.stdout.write(JSON.stringify({ type: 'effect', toolCallId: 'c2', detail: { toolName: 'connector_insrc_insrc_analyze_step', input: {} }, state: { status: 'completed', outputText: 'ok' } }) + '\\n');
+process.exit(0);
+`;
+	writeFileSync(scriptPath, script);
+	chmodSync(scriptPath, 0o755);
+	// Only this script's own directory is on PATH (plus node's own directory, so the
+	// shebang's `env node` still resolves) -- the SAME, uniquely-named bare command would
+	// never be found by the real system's own ambient PATH. Resolution succeeding, and the
+	// SAME script actually running and reporting a qualified result, together prove
+	// resolveCommandOnPath used THIS context's env.PATH, not something it merely inherited.
+	// `/usr/bin:/bin` is included so the resolver's own `which` call can run at all --
+	// the regression this test actually targets is the SCRIPT's own directory, not that.
+	const nodeDir = dirname(process.execPath);
+	const context: VibeAdapterContext = { cwd: dir, env: { PATH: `${dir}:${nodeDir}:/usr/bin:/bin` }, processGroup: 'adapter-owned' };
+	const result = await qualifyReadOnlyCapability(context, { command: scriptName }, 1);
+	assert.equal(result.status, 'qualified');
+});
+
+test('a hanging offline child is actually killed within the caller-bound deadline, not left running past the probe timeout (review finding 4)', async () => {
+	_readOnlyQualificationCacheForTests().clear();
+	const dir = realDir();
+	const scriptPath = join(dir, 'hanging-vibe');
+	// Never exits on its own; only SIGKILL (via killProcessGroup) ends it.
+	writeFileSync(scriptPath, '#!/usr/bin/env node\nsetInterval(() => undefined, 1000);\n');
+	chmodSync(scriptPath, 0o755);
+	const context: VibeAdapterContext = { cwd: dir, processGroup: 'adapter-owned' };
+	const startedAt = Date.now();
+	const result = await qualifyReadOnlyCapability(context, { command: scriptPath }, 1, { deadlineMs: 500 });
+	const elapsedMs = Date.now() - startedAt;
+	assert.equal(result.status, 'unavailable');
+	assert.ok(elapsedMs < 5_000, `qualification must not wait out the hung child past its bounded deadline (took ${elapsedMs}ms)`);
+});
+
+test('a missing, malformed, or config-less post-dispatch export invalidates the cache (fail-closed), and the invalidation is visible before the result that triggered it resolves (review finding 5)', async () => {
+	_readOnlyQualificationCacheForTests().clear();
+	const context: VibeAdapterContext = { cwd: realDir(), processGroup: 'adapter-owned' };
+	const command = 'vibe-unverifiable-evidence';
+	const argv = _buildArgvForTests({ prompt: 'x', outputMode: 'streaming', session: { kind: 'new' }, mode: 'read-only' }, '/tmp/unused-output-dir');
+	const key = stableDescriptorHash(context, command, argv, { resolveCommandPath: (cmd) => cmd, statSync: () => ({ size: 1, mtimeMs: 1 }) });
+	_readOnlyQualificationCacheForTests().set(key, { status: 'qualified', allowedTools: ['insrc_analyze', 'insrc_analyze_step'], provenAgainst: { stableDescriptorHash: key, effectiveConfigFingerprint: 'fp-cached' } });
+
+	const adapter = createVibeAdapter(context, {
+		command, resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }),
+		spawn: () => {
+			const { child, stdout, emitter } = fakeChild();
+			queueMicrotask(() => {
+				stdout.write(JSON.stringify([{ sessionId: 's', type: 'message', role: 'assistant', content: [{ type: 'text', text: 'ok' }] }]));
+				stdout.end();
+				emitter.emit('exit', 0, null);
+			});
+			return child;
+		},
+		mkdtemp: async () => realDir(),
+		readFile: async () => { throw new Error('ENOENT: export.json never written by this fixture'); },
+		rm: async () => undefined,
+	});
+	const turn = adapter.startTurn({ prompt: 'x', outputMode: 'json', session: { kind: 'new' }, mode: 'read-only' });
+	for await (const _e of turn) { /* drain */ }
+	const result = await turn.result;
+	assert.equal(result.text, 'ok', "the turn's own answer is unaffected by an unreadable export");
+	// No `tick()`/wait here at all -- the invalidation is awaited BEFORE resolveResult
+	// publishes, so it must already be visible the instant `turn.result` settles.
+	assert.equal(_readOnlyQualificationCacheForTests().has(key), false, 'an unreadable/unverifiable export invalidates the cache, never leaves it untouched');
 });

@@ -29,7 +29,7 @@ function realDir(): string { return mkdtempSync(join(tmpdir(), 'insrc-vibe-adapt
 
 function descriptorFor(context: VibeAdapterContext, command: string): string {
 	const argv = _buildArgvForTests({ prompt: 'x', outputMode: 'streaming', session: { kind: 'new' }, mode: 'read-only' }, '/tmp/unused-output-dir');
-	return stableDescriptorHash(context, command, argv);
+	return stableDescriptorHash(context, command, argv, { resolveCommandPath: (cmd) => cmd, statSync: () => ({ size: 1, mtimeMs: 1 }) });
 }
 
 test("VibeExecutionAdapter.readOnly reflects the cached capability for this adapter's stable descriptor", () => {
@@ -43,7 +43,7 @@ test("VibeExecutionAdapter.readOnly reflects the cached capability for this adap
 	};
 	_readOnlyQualificationCacheForTests().set(key, cachedCapability);
 
-	const adapter = createVibeAdapter(context, { command: 'vibe-cached' });
+	const adapter = createVibeAdapter(context, { command: 'vibe-cached', resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }) });
 	assert.deepEqual(adapter.readOnly, cachedCapability);
 });
 
@@ -66,6 +66,8 @@ test("the cache-miss-on-descriptor-change path when the binary content or pinned
 	let spawnInvoked = false;
 	const adapterChangedEnv = createVibeAdapter(changedEnvContext, {
 		command,
+		resolveCommandPath: (cmd) => cmd,
+		identityStatSync: () => ({ size: 1, mtimeMs: 1 }),
 		spawn: () => { spawnInvoked = true; throw new Error('construction must never spawn'); },
 	});
 	assert.notDeepEqual(adapterChangedEnv.readOnly, baseCapability);
@@ -73,6 +75,6 @@ test("the cache-miss-on-descriptor-change path when the binary content or pinned
 	assert.equal(spawnInvoked, false, 'createVibeAdapter must never itself trigger a qualification probe');
 
 	// The base descriptor is unaffected by the miss on the changed one.
-	const adapterBaseAgain = createVibeAdapter(baseContext, { command });
+	const adapterBaseAgain = createVibeAdapter(baseContext, { command, resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }) });
 	assert.deepEqual(adapterBaseAgain.readOnly, baseCapability);
 });

@@ -27,7 +27,7 @@ function realDir(): string { return mkdtempSync(join(tmpdir(), 'insrc-vibe-adapt
 
 function descriptorFor(context: VibeAdapterContext, command: string): string {
 	const argv = _buildArgvForTests(readOnlyRequest(), '/tmp/unused-output-dir');
-	return stableDescriptorHash(context, command, argv);
+	return stableDescriptorHash(context, command, argv, { resolveCommandPath: (cmd) => cmd, statSync: () => ({ size: 1, mtimeMs: 1 }) });
 }
 
 function readOnlyRequest(overrides: Partial<VibeTurnRequest> = {}): VibeTurnRequest {
@@ -60,6 +60,8 @@ function exportJsonWithFingerprint(marker: string): string {
 function dispatchDeps(command: string, exportMarker: string) {
 	return {
 		command,
+		resolveCommandPath: (cmd: string) => cmd,
+		identityStatSync: () => ({ size: 1, mtimeMs: 1 }),
 		spawn: () => {
 			const { child, stdout, emitter } = fakeChild();
 			queueMicrotask(() => { stdout.write(ASSISTANT_LINE); stdout.end(); emitter.emit('exit', 0, null); });
@@ -109,7 +111,7 @@ test('a read-only request with an \'unavailable\' cached capability throws VibeR
 	_readOnlyQualificationCacheForTests().set(key, { status: 'unavailable', allowedTools: [], reason: 'bypass-absence failure: tool(s) outside the allowlist are enabled: file_system.bash', provenAgainst: undefined });
 
 	let spawnInvoked = false;
-	const adapter = createVibeAdapter(context, { command, spawn: () => { spawnInvoked = true; throw new Error('must not spawn'); } });
+	const adapter = createVibeAdapter(context, { command, resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }), spawn: () => { spawnInvoked = true; throw new Error('must not spawn'); } });
 	assert.throws(() => adapter.startTurn(readOnlyRequest()), (error: unknown) => error instanceof VibeReadOnlyUnavailableError && error.message.includes('bypass-absence failure'));
 	assert.equal(spawnInvoked, false);
 });
@@ -176,6 +178,6 @@ test("the VibeReadOnlyUnavailableError path when probes exhaust the retry bound 
 	const key = descriptorFor(context, command);
 	_readOnlyQualificationCacheForTests().set(key, { status: 'unavailable', allowedTools: [], reason: "allow-side probe: insrc_analyze and/or insrc_analyze_step did not show a confirmed completed call (attempt 3/3)", provenAgainst: undefined });
 
-	const adapter = createVibeAdapter(context, { command });
+	const adapter = createVibeAdapter(context, { command, resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }) });
 	assert.throws(() => adapter.startTurn(readOnlyRequest()), (error: unknown) => error instanceof VibeReadOnlyUnavailableError && error.message.includes('did not show a confirmed completed call'));
 });

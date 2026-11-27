@@ -167,7 +167,13 @@ test('withTransientRetry still wraps every vibe path -- a transient error text r
 	}
 });
 
-test("readOnlySessionOnce's request uses the adapter's sc2 allowlist and is refused before any subprocess spawns, with the same ReadOnlyUnavailableError-shaped surfaced reason as today's refusal", async () => {
+test("readOnlySessionOnce's request uses the adapter's sc2 allowlist and is refused once live qualification against a cold cache cannot confirm it, with the same ReadOnlyUnavailableError-shaped surfaced reason as today's refusal", async () => {
+	// Review finding 1: a cold cache must no longer refuse instantly with zero
+	// spawns -- readOnlySessionOnce now runs the live qualification suite first
+	// (qualifyReadOnlyCapability), bounded by this call's own deadline. This
+	// fixture's export.json carries no enabled_tools catalog at all, so every
+	// bounded attempt (3, the suite's default) reports unavailable and retries;
+	// startTurn then refuses on the still-unqualified cache without a 4th spawn.
 	const fixture = makeFakeVibe('json');
 	try {
 		const provider = new CliProvider({ kind: 'vibe', binPath: fixture.bin, timeoutMs: 10_000 });
@@ -175,7 +181,7 @@ test("readOnlySessionOnce's request uses the adapter's sc2 allowlist and is refu
 			provider.runReadOnlySession('hello', { type: 'object', properties: {} }, { cwd: fixture.dir, deadlineMs: 10_000 }),
 			(err: unknown) => err instanceof VibeReadOnlyUnavailableError,
 		);
-		assert.equal(fixture.calls().length, 0, 'no subprocess spawns for a refused read-only request');
+		assert.equal(fixture.calls().length, 3, 'the live qualification suite spends its 3 bounded attempts before startTurn refuses on an unqualified cache, spawning no further process of its own');
 	} finally {
 		rmSync(fixture.dir, { recursive: true, force: true });
 	}

@@ -197,7 +197,13 @@ test('runEditSession() runs headless with --auto-approve inside the repo cwd', a
 	} finally { f.cleanup(); }
 });
 
-test("runReadOnlySession() refuses before any subprocess spawns -- the adapter's fail-closed read-only mode (k1), no qualification exists yet", async () => {
+test("runReadOnlySession() refuses once live qualification against a cold cache cannot confirm it -- the adapter's fail-closed read-only mode (k1)", async () => {
+	// Review finding 1: a cold cache now runs the live qualification suite first
+	// (qualifyReadOnlyCapability) rather than refusing instantly with zero spawns.
+	// This fixture's export.json carries no enabled_tools catalog at all, so every
+	// bounded attempt (3, the suite's default) reports unavailable and retries;
+	// runReadOnlySession's own startTurn call then refuses on the still-unqualified
+	// cache without a 4th spawn of its own.
 	const f = fakeVibe('json', JSON.stringify({ verdict: 'holds' }));
 	try {
 		const p = new CliProvider({ kind: 'vibe', binPath: f.bin, timeoutMs: 10_000 });
@@ -208,7 +214,7 @@ test("runReadOnlySession() refuses before any subprocess spawns -- the adapter's
 				p.runReadOnlySession<{ verdict: string }>('review this', reviewSchema, { cwd: dir, deadlineMs: 30_000 }),
 				(err: unknown) => err instanceof VibeReadOnlyUnavailableError,
 			);
-			assert.equal(f.calls().length, 0, 'no subprocess spawns for a refused read-only request');
+			assert.equal(f.calls().length, 3, 'the live qualification suite spends its 3 bounded attempts before startTurn refuses on an unqualified cache, spawning no further process of its own');
 		} finally { rmSync(dir, { recursive: true, force: true }); }
 	} finally { f.cleanup(); }
 });

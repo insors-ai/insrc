@@ -254,6 +254,14 @@ export interface VibeAdapterDeps {
 	readonly rm?: ((path: string) => Promise<void>) | undefined;
 	/** The `vibe` binary name/path; defaults to 'vibe', the same bare command cli-provider.ts resolves. */
 	readonly command?: string | undefined;
+	/** Test-only: overrides the real `which`-based PATH resolution every stable-descriptor
+	 *  computation this adapter makes (qualification, the construction-time readOnly
+	 *  snapshot, read-only dispatch) uses to turn `command` into the executable identity it
+	 *  hashes and spawns. Production never supplies this. */
+	readonly resolveCommandPath?: ((command: string, env: Readonly<Record<string, string>> | undefined) => string) | undefined;
+	/** Test-only: overrides the binary-identity stat lookup paired with `resolveCommandPath`
+	 *  above (a DIFFERENT shape than the directory-check `statSync` above it). */
+	readonly identityStatSync?: ((path: string) => { readonly size: number; readonly mtimeMs: number }) | undefined;
 }
 
 function record(value: unknown): Record<string, unknown> | undefined {
@@ -371,13 +379,22 @@ async function dispatchQualificationProbe(
 	context: VibeAdapterContext,
 	deps: ResolvedVibeAdapterDeps,
 	request: VibeTurnRequest,
+	timeoutMs: number,
+	signal?: AbortSignal,
 ): Promise<QualificationProbeResult> {
 	const events: VibeTurnEvent[] = [];
 	let tempDir: string | undefined;
 	try {
 		tempDir = await deps.mkdtemp();
 		const argv = buildArgv(request, tempDir);
-		const child = deps.spawn(deps.command, argv, { cwd: context.cwd, env: context.env, detached: false });
+		// adapter-owned (detached: true), exactly like runTurn's own adapter-owned
+		// mode: killProcessGroup's `process.kill(-pid, ...)` only ever targets the
+		// right group when this child IS that group's leader -- detached: false (the
+		// original shape here) put it in the DAEMON's own group, so a timeout's kill
+		// silently missed the hung child entirely (ESRCH on an unrelated group id,
+		// swallowed), and the probe waited out the full offline hang every time
+		// (review finding 4).
+		const child = deps.spawn(deps.command, argv, { cwd: context.cwd, env: context.env, detached: true });
 		child.stdin?.on('error', () => undefined);
 		child.stdin?.end(request.prompt);
 
@@ -396,14 +413,22 @@ async function dispatchQualificationProbe(
 		let stderrText = '';
 		onUtf8Data(child.stderr, chunk => { stderrText += chunk; });
 
-		const timeout = setTimeout(() => {
+		function killNow(): void {
 			if (child.pid !== undefined) deps.killProcessGroup(child.pid); else child.kill('SIGKILL');
-		}, QUALIFICATION_PROBE_TIMEOUT_MS);
+		}
+		const onAbort = (): void => killNow();
+		signal?.addEventListener('abort', onAbort, { once: true });
+		if (signal?.aborted === true) killNow();
+		const timeout = setTimeout(killNow, Math.max(0, timeoutMs));
 		const exitCode = await new Promise<number | null>(resolve => {
 			child.once('error', () => resolve(null));
+			// Sweep the group on the leader's own exit too (not only on timeout): a
+			// descendant that outlives a clean leader exit must not survive this probe.
+			child.on('exit', () => killNow());
 			child.on('close', code => resolve(code));
 		});
 		clearTimeout(timeout);
+		signal?.removeEventListener('abort', onAbort);
 		if (exitCode !== 0) {
 			return { events, exportObj: undefined, error: new Error(stderrText.trim() !== '' ? stderrText.trim() : `qualification probe exited with code ${String(exitCode)}`) };
 		}
@@ -443,42 +468,88 @@ function effectiveConfigFingerprintFrom(exportObj: Record<string, unknown>): str
 	return createHash('sha256').update(JSON.stringify({ vibeVersion, config })).digest('hex');
 }
 
-/** True when some tool-result event for `toolId` shows a confirmed completed call --
- *  matched by substring against the tool-call's own reported name, since the exact
- *  qualified form (bare / connector-prefixed / MCP-streamed) is not pinned by this probe. */
+/** The exact plausible name forms (bare / connector-prefixed / MCP-streamed) a completed
+ *  call to `toolId` may show up as -- never a substring test: 'insrc_analyze' is a literal
+ *  prefix of 'insrc_analyze_step', so a loose `.includes()` check would let a completed call
+ *  to the STEP tool alone also count as confirming the (never-actually-called) plain tool,
+ *  pushing qualification toward a false 'qualified' verdict -- the dangerous direction. */
+function candidateNameForms(toolId: VibeInsrcAnalysisToolId): readonly string[] {
+	return [toolId, `connector_insrc_${toolId}`, `mcp_insrc.${toolId}`];
+}
+
+/** The full set of name forms ANY required tool may legitimately show up as -- used both to
+ *  confirm each required tool's own completed call and to recognize a completed call to
+ *  anything else as disallowed (review finding 2). */
+function allowedCallNameForms(): ReadonlySet<string> {
+	return new Set(VIBE_INSRC_ANALYSIS_TOOL_IDS.flatMap(candidateNameForms));
+}
+
+/** True when some tool-result event for `toolId` shows a confirmed completed call -- exact
+ *  match against its own known plausible name forms. Found by self-review before this
+ *  Story's BUILD was presented (substring matching previously here let a step-tool-only call
+ *  wrongly also confirm the plain tool). */
 function hasConfirmedCompletedCall(events: readonly VibeTurnEvent[], toolId: VibeInsrcAnalysisToolId): boolean {
-	// EXACT match against the known plausible name forms (bare / connector-prefixed /
-	// MCP-streamed) -- never substring: 'insrc_analyze' is a literal prefix of
-	// 'insrc_analyze_step', so a loose .includes() check would let a completed call to
-	// the STEP tool alone also count as confirming the (never-actually-called) plain
-	// tool, pushing qualification toward a false 'qualified' verdict -- the dangerous
-	// direction. Found by self-review before this Story's BUILD was presented.
-	const candidates = new Set([toolId, `connector_insrc_${toolId}`, `mcp_insrc.${toolId}`]);
+	const candidates = new Set(candidateNameForms(toolId));
 	const callNamesById = new Map<string, string>();
 	for (const event of events) if (event.kind === 'tool-call') callNamesById.set(event.toolCallId, event.toolName);
 	return events.some(event => event.kind === 'tool-result' && event.ok && candidates.has(callNamesById.get(event.toolCallId) ?? ''));
 }
 
+/** The name of a completed tool call the journal itself shows that is NOT one of the
+ *  required tools' own known name forms, or undefined when every completed call stays inside
+ *  the allowlist. The config-reported `enabled_tools` catalog (checked separately, in
+ *  `runQualificationSuite`) only proves what the launch profile CLAIMS is enabled; this
+ *  checks what the journal shows ACTUALLY ran, so a catalog that under-reports (or a runtime
+ *  that doesn't honor it) cannot silently let a disallowed tool execute unnoticed (review
+ *  finding 2). */
+function observedDisallowedCompletedCall(events: readonly VibeTurnEvent[], allowed: ReadonlySet<string>): string | undefined {
+	const callNamesById = new Map<string, string>();
+	for (const event of events) if (event.kind === 'tool-call') callNamesById.set(event.toolCallId, event.toolName);
+	for (const event of events) {
+		if (event.kind !== 'tool-result' || !event.ok) continue;
+		const name = callNamesById.get(event.toolCallId);
+		if (name !== undefined && !allowed.has(name)) return name;
+	}
+	return undefined;
+}
+
 const QUALIFICATION_PROBE_PROMPT = 'Call the insrc_analyze tool once, then the insrc_analyze_step tool once, each with a trivial unrelated question. Report back briefly once both calls are done.';
+
+/** Bounds on how long `runQualificationSuite` will keep retrying/probing for a caller that
+ *  passed its own cancellation/deadline (review finding 1): never past the caller's own
+ *  signal/deadline, and never past this suite's own per-probe ceiling either. */
+interface QualificationBudget {
+	readonly signal?: AbortSignal | undefined;
+	readonly deadlineMs?: number | undefined;
+}
 
 /** The live qualification suite itself: bounded-retry allow-side probe (an actual
  *  completed call is required for EACH of the two required tools), immediate-fail
- *  deny/bypass probes using the SAME probe's own structural catalog evidence (no second
- *  call), and export.json fingerprint extraction with fail-closed behavior on a missing
- *  or unparsable export. Never throws -- every failure mode resolves to 'unavailable'
- *  with a reason naming it. */
+ *  deny/bypass probes using the SAME probe's own structural catalog evidence PLUS the
+ *  journal's own observed execution evidence (review finding 2 -- config claims and actual
+ *  completed calls are both checked, never just one), and export.json fingerprint extraction
+ *  with fail-closed behavior on a missing or unparsable export. Never throws -- every failure
+ *  mode resolves to 'unavailable' with a reason naming it. */
 async function runQualificationSuite(
 	context: VibeAdapterContext,
 	deps: ResolvedVibeAdapterDeps,
 	descriptorKey: string,
 	maxAllowRetries: number,
+	budget: QualificationBudget = {},
 ): Promise<ReadOnlyCapability> {
 	const required = VIBE_INSRC_ANALYSIS_TOOL_IDS.map(id => `connector_insrc_${id}`);
+	const allowedNames = allowedCallNameForms();
 	const probeRequest: VibeTurnRequest = { prompt: QUALIFICATION_PROBE_PROMPT, outputMode: 'streaming', session: { kind: 'new' }, mode: 'read-only' };
+	const deadlineAt = budget.deadlineMs !== undefined ? Date.now() + budget.deadlineMs : undefined;
 
 	let lastReason = 'qualification probe never ran';
 	for (let attempt = 1; attempt <= Math.max(1, maxAllowRetries); attempt++) {
-		const probe = await dispatchQualificationProbe(context, deps, probeRequest);
+		if (budget.signal?.aborted === true) { lastReason = 'qualification cancelled by the caller'; break; }
+		if (deadlineAt !== undefined && Date.now() >= deadlineAt) { lastReason = "qualification exceeded the caller's deadline"; break; }
+		const probeTimeoutMs = deadlineAt !== undefined ? Math.min(QUALIFICATION_PROBE_TIMEOUT_MS, deadlineAt - Date.now()) : QUALIFICATION_PROBE_TIMEOUT_MS;
+		if (probeTimeoutMs <= 0) { lastReason = "qualification exceeded the caller's deadline"; break; }
+
+		const probe = await dispatchQualificationProbe(context, deps, probeRequest, probeTimeoutMs, budget.signal);
 		if (probe.error !== undefined) { lastReason = `qualification probe failed to run: ${probe.error.message}`; continue; }
 		if (probe.exportObj === undefined) { lastReason = "qualification probe's export.json is missing or unparsable"; continue; }
 
@@ -487,10 +558,16 @@ async function runQualificationSuite(
 
 		// Bypass-absence check (terminal, never retried): a tool outside the two-tool
 		// allowlist actually reachable under the pinned descriptor is a genuine safety
-		// finding, not ambient flakiness.
+		// finding, not ambient flakiness. Checked two ways -- what the launch profile
+		// CLAIMS is enabled (config), and what the journal shows ACTUALLY completed
+		// (execution evidence) -- either one alone would miss the other's failure mode.
 		const bypassing = enabledTools.filter(t => !required.includes(t));
 		if (bypassing.length > 0) {
 			return { status: 'unavailable', allowedTools: [], reason: `bypass-absence failure: tool(s) outside the allowlist are enabled: ${bypassing.join(', ')}`, provenAgainst: undefined };
+		}
+		const disallowedCall = observedDisallowedCompletedCall(probe.events, allowedNames);
+		if (disallowedCall !== undefined) {
+			return { status: 'unavailable', allowedTools: [], reason: `bypass-absence failure: an out-of-allowlist tool call completed: ${disallowedCall}`, provenAgainst: undefined };
 		}
 		// Required-tool-exclusion check (terminal for THIS descriptor's launch profile,
 		// not ambient flakiness -- the profile itself is not enabling what it claims to):
@@ -521,14 +598,24 @@ const inFlightQualifications = new Map<string, Promise<ReadOnlyCapability>>();
  *  descriptor share one in-flight run rather than each running the probe suite -- callers
  *  that want a non-blocking snapshot read the module cache directly (via the adapter's own
  *  readOnly field) instead of awaiting this. Never throws: a stable-descriptor computation
- *  failure resolves to 'unavailable' with a reason, the same as every other failure mode. */
-export async function qualifyReadOnlyCapability(context: VibeAdapterContext, deps: VibeAdapterDeps = {}, maxAllowRetries = 3): Promise<ReadOnlyCapability> {
+ *  failure resolves to 'unavailable' with a reason, the same as every other failure mode.
+ *  `opts.signal`/`opts.deadlineMs` bound a COLD-cache run to the caller's own budget (review
+ *  finding 1) -- a warm cache still returns immediately regardless, and `opts` is otherwise
+ *  ignored once an identical descriptor's run is already in flight. */
+export async function qualifyReadOnlyCapability(
+	context: VibeAdapterContext,
+	deps: VibeAdapterDeps = {},
+	maxAllowRetries = 3,
+	opts: QualificationBudget = {},
+): Promise<ReadOnlyCapability> {
 	const resolved = resolvedDeps(deps);
 	let descriptorKey: string;
+	let resolvedCommand: string;
 	try {
+		resolvedCommand = resolveExecutable(deps, context, resolved.command);
 		const probeRequest: VibeTurnRequest = { prompt: QUALIFICATION_PROBE_PROMPT, outputMode: 'streaming', session: { kind: 'new' }, mode: 'read-only' };
 		const argv = buildArgv(probeRequest, '');
-		descriptorKey = stableDescriptorHash(context, resolved.command, argv);
+		descriptorKey = stableDescriptorHash(context, resolved.command, argv, hashDepsFor(deps, resolvedCommand));
 	} catch (error) {
 		return { status: 'unavailable', allowedTools: [], reason: `stable descriptor computation failed: ${(error as Error).message}`, provenAgainst: undefined };
 	}
@@ -539,7 +626,10 @@ export async function qualifyReadOnlyCapability(context: VibeAdapterContext, dep
 	const inFlight = inFlightQualifications.get(descriptorKey);
 	if (inFlight !== undefined) return inFlight;
 
-	const run = runQualificationSuite(context, resolved, descriptorKey, maxAllowRetries).finally(() => { inFlightQualifications.delete(descriptorKey); });
+	// The probe dispatches with the SAME resolved path the hash above was computed
+	// against (review finding 3) -- never the bare command, which a concurrent PATH
+	// change could resolve to a different binary by the time of the actual spawn.
+	const run = runQualificationSuite(context, { ...resolved, command: resolvedCommand }, descriptorKey, maxAllowRetries, opts).finally(() => { inFlightQualifications.delete(descriptorKey); });
 	inFlightQualifications.set(descriptorKey, run);
 	const capability = await run;
 	readOnlyQualificationCache.set(descriptorKey, capability);
@@ -622,16 +712,20 @@ function argvExcludingTurnLocalFlags(argv: readonly string[]): readonly string[]
 	return result;
 }
 
-/** Resolve a bare command name to its absolute path via `which` (same precedent as
- *  cli-provider.ts's resolveBin); an already-explicit path, or one `which` can't resolve,
- *  is returned as-is so the descriptor still hashes deterministically. */
-function resolveCommandOnPath(command: string): string {
+/** Resolve a bare command name to its absolute path via `which`, run under the EXACT same
+ *  env the real spawn will use (same precedent as cli-provider.ts's resolveBin) -- `which`
+ *  under the resolving process's OWN inherited env could name a different binary than the
+ *  one `deps.spawn` actually launches under `context.env` if the two environments' PATH
+ *  differ (review finding 3); passing `env` through keeps both resolutions looking at the
+ *  same PATH. `env === undefined` inherits `process.env`, identically to how Node's own
+ *  `spawn` treats an omitted `env` option. Throws when `command` cannot be resolved -- every
+ *  caller already treats a `stableDescriptorHash` failure as fail-closed 'unavailable', so an
+ *  unresolvable executable must never silently cache under a reusable-but-wrong identity. */
+function resolveCommandOnPath(command: string, env: Readonly<Record<string, string>> | undefined): string {
 	if (command.includes('/')) return command;
-	try {
-		const out = execFileSync('which', [command], { encoding: 'utf8' }).trim().split('\n')[0];
-		if (out !== undefined && out.length > 0) return out;
-	} catch { /* not on PATH via `which`; fall back to the bare name */ }
-	return command;
+	const out = execFileSync('which', [command], { encoding: 'utf8', env: env as NodeJS.ProcessEnv | undefined }).trim().split('\n')[0];
+	if (out === undefined || out.length === 0) throw new Error(`could not resolve '${command}' to an executable path on PATH`);
+	return out;
 }
 
 interface StableDescriptorHashDeps {
@@ -639,20 +733,36 @@ interface StableDescriptorHashDeps {
 	readonly statSync?: ((path: string) => { readonly size: number; readonly mtimeMs: number }) | undefined;
 }
 
+/** Resolves `command` to the exact executable this call will go on to spawn, under this
+ *  context's own env (`deps.resolveCommandPath`, test-only, overrides the real `which`-based
+ *  lookup) -- the one place every qualification/dispatch call site (review finding 3) turns
+ *  a bare command into an identity, so the hash and the actual spawn can never disagree. */
+function resolveExecutable(deps: VibeAdapterDeps, context: VibeAdapterContext, command: string): string {
+	return (deps.resolveCommandPath ?? resolveCommandOnPath)(command, context.env);
+}
+
+/** The `StableDescriptorHashDeps` override pinning a hash computation to an
+ *  ALREADY-resolved executable path (so hashing and dispatching never redo potentially
+ *  racy resolution separately) plus this adapter's own identity-stat test seam. */
+function hashDepsFor(deps: VibeAdapterDeps, resolvedCommand: string): StableDescriptorHashDeps {
+	return { resolveCommandPath: () => resolvedCommand, statSync: deps.identityStatSync };
+}
+
 /** A stable authorization-descriptor key (sc3) for the read-only qualification cache:
  *  the resolved binary's own content identity (path + size + mtime -- changes on any
  *  install/upgrade) + `argv` with --output-dir excluded + the adapter's pinned env subset
  *  + cwd. Two calls whose only difference is --output-dir hash identically; a different
- *  binary, env or cwd hashes differently. */
+ *  binary, env or cwd hashes differently. Resolution and stat both run under THIS context's
+ *  own `env`, the same one the real spawn uses, so the key can never describe a different
+ *  executable from the one that will actually run (review finding 3) -- and both are allowed
+ *  to throw: every caller already treats a failure here as fail-closed 'unavailable', so an
+ *  executable whose identity cannot be established must never get a reusable, ambiguous key. */
 export function stableDescriptorHash(context: VibeAdapterContext, command: string, argv: readonly string[], deps: StableDescriptorHashDeps = {}): string {
-	const resolve = deps.resolveCommandPath ?? resolveCommandOnPath;
+	const resolve = deps.resolveCommandPath ?? ((cmd: string) => resolveCommandOnPath(cmd, context.env));
 	const stat = deps.statSync ?? statSync;
 	const resolvedPath = resolve(command);
-	let binaryIdentity = resolvedPath;
-	try {
-		const s = stat(resolvedPath);
-		binaryIdentity = `${resolvedPath}:${s.size}:${s.mtimeMs}`;
-	} catch { /* unresolvable/unreadable path still participates in the key as-is */ }
+	const s = stat(resolvedPath);
+	const binaryIdentity = `${resolvedPath}:${s.size}:${s.mtimeMs}`;
 	const payload = JSON.stringify({
 		binaryIdentity,
 		argv: argvExcludingTurnLocalFlags(argv),
@@ -702,6 +812,12 @@ interface ResolvedVibeAdapterDeps {
 	readonly readFile: (path: string) => Promise<string>;
 	readonly rm: (path: string) => Promise<void>;
 	readonly command: string;
+	/** Read-only dispatch only (sc3): awaited AFTER a successful exit's export/exit-evidence
+	 *  reads but BEFORE `finish()`/`resolveResult()` publish the turn's result, so a caller
+	 *  can never observe success and dispatch another read-only turn before this settles
+	 *  (review finding 5 -- the previous placement, inside runTurn's own `finally`-triggered
+	 *  `rm`, ran strictly AFTER the result had already resolved). Absent for an ordinary turn. */
+	readonly onDispatchSettled?: ((exportPath: string) => Promise<void>) | undefined;
 }
 
 /** A short, bounded wait for 'close' (full stdio drain) after 'exit' -- the same grace
@@ -879,6 +995,13 @@ async function runTurn(
 		// r3-2).
 		if (cancelled) throwAborted();
 		if (deadlineExpired) throw new VibeTurnError(dispatchState, sessionId, new Error(`Vibe turn exceeded its deadline (${request.deadlineMs}ms) during output extraction`), mutating);
+		// Read-only dispatch only: settle the post-dispatch fingerprint check BEFORE
+		// publishing success, not after (review finding 5) -- a caller awaiting
+		// `result` must never be able to start a NEXT read-only turn against a
+		// cache entry this check was about to invalidate. The current turn's own
+		// answer is unaffected either way (resolveResult runs right after,
+		// regardless of what this found).
+		if (deps.onDispatchSettled !== undefined) await deps.onDispatchSettled(join(tempDir, 'export.json'));
 		finish();
 		resolveResult({ text: assistantText, sessionId, resumeHandle, exitEvidence });
 	} catch (error) {
@@ -892,26 +1015,26 @@ async function runTurn(
 	}
 }
 
-/** Wraps `rm` (runTurn's own tempDir-cleanup seam) to read export.json's effective-config
- *  fingerprint BEFORE the real cleanup deletes it, and invalidate the qualification cache
- *  entry on a mismatch -- s2's own post-dispatch check (sc3), without touching runTurn
- *  (s1-owned) or any s1-owned type. runTurn calls `rm` from its own `finally`, AFTER
- *  resolveResult/rejectResult already settled, so this never affects the dispatch's own
- *  already-returned result -- only the cache entry a LATER call would read. A read/parse
- *  failure here is best-effort: it neither blocks nor fails the real cleanup. */
+/** Supplies `onDispatchSettled` (sc3's post-dispatch check) -- reads export.json's
+ *  effective-config fingerprint and invalidates the qualification cache entry on ANY failure
+ *  to re-verify it: a mismatch, OR a missing/malformed/config-less export, OR a read error
+ *  (review finding 5a -- the previous version left the cache entry untouched on anything
+ *  short of a confirmed mismatch, which is the wrong default for a capability that is
+ *  supposed to be continuously re-proven, not just innocent-until-proven-otherwise). Called
+ *  by runTurn BEFORE it publishes the turn's result (review finding 5b), while tempDir still
+ *  exists (runTurn's own `rm` cleanup, in its `finally`, runs later) -- never blocks or fails
+ *  the turn itself; it only ever deletes a cache entry, never rejects. */
 function wrapDepsForPostDispatchFingerprintCheck(resolved: ResolvedVibeAdapterDeps, descriptorKey: string, cachedFingerprint: string): ResolvedVibeAdapterDeps {
 	return {
 		...resolved,
-		rm: async (path: string) => {
+		onDispatchSettled: async (exportPath: string) => {
+			let freshFingerprint: string | undefined;
 			try {
-				const raw = await resolved.readFile(join(path, 'export.json'));
+				const raw = await resolved.readFile(exportPath);
 				const exportObj = record(JSON.parse(raw));
-				if (exportObj !== undefined) {
-					const freshFingerprint = effectiveConfigFingerprintFrom(exportObj);
-					if (freshFingerprint !== undefined && freshFingerprint !== cachedFingerprint) readOnlyQualificationCache.delete(descriptorKey);
-				}
-			} catch { /* best-effort; never blocks or fails the real cleanup below */ }
-			await resolved.rm(path);
+				freshFingerprint = exportObj !== undefined ? effectiveConfigFingerprintFrom(exportObj) : undefined;
+			} catch { freshFingerprint = undefined; }
+			if (freshFingerprint === undefined || freshFingerprint !== cachedFingerprint) readOnlyQualificationCache.delete(descriptorKey);
 		},
 	};
 }
@@ -976,7 +1099,8 @@ export function createVibeAdapter(context: VibeAdapterContext, deps: VibeAdapter
 	let readOnly: ReadOnlyCapability;
 	try {
 		const probeRequest: VibeTurnRequest = { prompt: QUALIFICATION_PROBE_PROMPT, outputMode: 'streaming', session: { kind: 'new' }, mode: 'read-only' };
-		const descriptorKey = stableDescriptorHash(context, resolved.command, buildArgv(probeRequest, ''));
+		const resolvedCommand = resolveExecutable(deps, context, resolved.command);
+		const descriptorKey = stableDescriptorHash(context, resolved.command, buildArgv(probeRequest, ''), hashDepsFor(deps, resolvedCommand));
 		const cached = readOnlyQualificationCache.get(descriptorKey);
 		readOnly = cached ?? { status: 'unavailable', allowedTools: [], reason: 'read-only qualification has not completed yet for this descriptor', provenAgainst: undefined };
 	} catch (error) {
@@ -991,9 +1115,16 @@ export function createVibeAdapter(context: VibeAdapterContext, deps: VibeAdapter
 				// Always re-check the shared module-level cache by THIS call's own stable
 				// descriptor -- never trust readOnly's construction-time snapshot, which may
 				// be stale (a background qualification elsewhere may have since resolved).
+				// Resolve the executable ONCE, under this context's own env, and reuse that
+				// SAME resolved path both for the hash and for the actual dispatch below
+				// (review finding 3) -- resolved.command's own bare name is never spawned
+				// here, so a later PATH change between hashing and dispatch can never make
+				// the two look at different binaries.
 				let descriptorKey: string;
+				let resolvedCommand: string;
 				try {
-					descriptorKey = stableDescriptorHash(context, resolved.command, buildArgv(request, ''));
+					resolvedCommand = resolveExecutable(deps, context, resolved.command);
+					descriptorKey = stableDescriptorHash(context, resolved.command, buildArgv(request, ''), hashDepsFor(deps, resolvedCommand));
 				} catch (error) {
 					throw new VibeReadOnlyUnavailableError(`stable descriptor computation failed: ${(error as Error).message}`);
 				}
@@ -1005,7 +1136,9 @@ export function createVibeAdapter(context: VibeAdapterContext, deps: VibeAdapter
 				let resolveResult!: (value: VibeTurnResult) => void;
 				let rejectResult!: (error: Error) => void;
 				const result = new Promise<VibeTurnResult>((resolve, reject) => { resolveResult = resolve; rejectResult = reject; });
-				const fingerprintCheckedDeps = wrapDepsForPostDispatchFingerprintCheck(resolved, descriptorKey, cached.provenAgainst.effectiveConfigFingerprint);
+				const fingerprintCheckedDeps = wrapDepsForPostDispatchFingerprintCheck(
+					{ ...resolved, command: resolvedCommand }, descriptorKey, cached.provenAgainst.effectiveConfigFingerprint,
+				);
 				void runTurn(context, request, fingerprintCheckedDeps, queue.push, queue.finish, resolveResult, rejectResult);
 				return Object.assign(Object.create(null) as object, queue.iterable, { result }) as AsyncIterable<VibeTurnEvent> & { readonly result: Promise<VibeTurnResult> };
 			}

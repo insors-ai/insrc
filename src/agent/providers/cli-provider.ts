@@ -77,7 +77,7 @@ import { ModelResponseShapeError } from './model-call-error.js';
 import { checkOllamaTarget, OllamaTargetError } from './ollama-target.js';
 import { getModelRegistry } from '../../daemon/model-registry.js';
 import { daemonInstallRoot } from '../../daemon/mcp-register.js';
-import { createVibeAdapter, VibeTurnError, type VibeCatalogModel, type VibeTurnRequest, type VibeTurnResult } from '../../shared/vibe-adapter.js';
+import { createVibeAdapter, qualifyReadOnlyCapability, VibeTurnError, type VibeCatalogModel, type VibeTurnRequest, type VibeTurnResult } from '../../shared/vibe-adapter.js';
 
 const log = getLogger('cli-provider');
 
@@ -869,7 +869,22 @@ export class CliProvider implements LLMProvider {
 			// live (s2) -- a VibeReadOnlyUnavailableError propagates straight through
 			// to the caller, carrying its reason, exactly like every other read-only
 			// refusal from this method; it is never retried or reshaped here.
-			const turn = createVibeAdapter({ cwd: exec.cwd, processGroup: 'adapter-owned' }, { command: this.binPath })
+			//
+			// startTurn's own cache check never triggers qualification itself (by
+			// design -- see createVibeAdapter's readOnly comment); without an explicit
+			// trigger here, a cold cache would refuse forever even on an installation
+			// that would qualify, since nothing else in production ever calls
+			// qualifyReadOnlyCapability (review finding 1). A warm cache resolves this
+			// call almost immediately (a plain Map read, no spawn); a cold one spends
+			// part of this call's own deadline running the live probe suite, bounded by
+			// the same signal/deadline the caller gave this session.
+			const vibeContext = { cwd: exec.cwd, processGroup: 'adapter-owned' as const };
+			const vibeDeps = { command: this.binPath };
+			await qualifyReadOnlyCapability(vibeContext, vibeDeps, 3, {
+				...(exec.signal !== undefined ? { signal: exec.signal } : {}),
+				deadlineMs: exec.timeoutMs,
+			});
+			const turn = createVibeAdapter(vibeContext, vibeDeps)
 				.startTurn({
 					prompt, outputMode: 'json', mode: 'read-only', session: { kind: 'new' },
 					deadlineMs: exec.timeoutMs, ...(exec.signal !== undefined ? { signal: exec.signal } : {}),

@@ -22,6 +22,6 @@ const here = dirname(fileURLToPath(import.meta.url));
 const source = readFileSync(join(here, '..', 'cli-provider.ts'), 'utf8');
 
 test('cli-provider.ts imports VibeCatalogModel/VibeTurnError from the adapter module with no behavior change at this step', () => {
-	assert.match(source, /import \{ createVibeAdapter, VibeTurnError, type VibeCatalogModel, type VibeTurnRequest, type VibeTurnResult \} from '\.\.\/\.\.\/shared\/vibe-adapter\.js';/);
+	assert.match(source, /import \{ createVibeAdapter, qualifyReadOnlyCapability, VibeTurnError, type VibeCatalogModel, type VibeTurnRequest, type VibeTurnResult \} from '\.\.\/\.\.\/shared\/vibe-adapter\.js';/);
 	assert.doesNotMatch(source, /vibe-session\.js/);
 });

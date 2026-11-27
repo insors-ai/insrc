@@ -1,0 +1,514 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795786692021-a3vt50",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T13:47:23.763Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 544364,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "epicHash": "639cd2159a87aedb",
+    "epicSlug": "unify-vibe-one-plain-cli-adapter",
+    "storyId": "s6",
+    "hldBaseRunId": "wf-1795535373279-l4wumn",
+    "hldEffectiveHash": "67d59677de6a7a14a26bdb819949a499c3171f1bd551c1f73af1201b624e872c",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "The Vibe issue ledger reflects reality, with evidence",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "deda0ab82b823f5cc6578e9f6117ad3bb193f55eaefe5fa14cd68adecf42deff",
+        "at": "2026-11-27T13:47:26.476Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T14:17:15.839Z"
+      }
+    },
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story reconciles five open Vibe-integration issue records against the evidence this Epic's other Stories actually produce. It touches no application code: its only artifacts are the ISSUE records themselves, each updated with a specific, evidence-cited outcome -- closed with proof once its owning Story builds, reopened if a live check fails, or explicitly marked as deferred on the review rewrite rather than left as a stale open claim against machinery that no longer exists. This round also formally raises the HLD amendment for sc3's field rename that s2's own LLD proposed but never got tracked as an AMD artifact.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "One shared plain-CLI Vibe execution adapter module owns the whole launch contract — argv construction, model/thinking pinning for new sessions with explicit resumed-session selection semantics (qualify or reject before dispatch, never silent substitution), prompt transport, budget guards, the execution context (cwd, environment, dual process-group policy with defined escalation and cleanup ownership per mode, abort signal, host deadline), the ordinary-session approval input with the existing chat mapping, rich turn events with session identity and tool-result output content, the qualified MCP tool naming split into general identity parsing and the analysis allowlist, and the fail-closed read-only mode whose qualification the ADAPTER owns and validates. The backend provider and the VS Code plugin chat both import and call it directly; the session-based app-server transport is deleted, not demoted. A sibling shared real-TOML config module (smol-toml, parse-for-understanding with surgical, byte-preserving edits) replaces every hand-written Vibe TOML reader. This is alternative a1, revised per the design reviews of 2026-11-24: the only shape that satisfies all seven Epic constraints, with k1/k2/k3 satisfied structurally — the safety gate, its qualification, the approval mapping, the process-group policy and the naming convention live inside the one module both surfaces must call.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "assumptions": [
+            "c6"
+          ],
+          "consumedByStories": [
+            "s6"
+          ],
+          "id": "sc3",
+          "interfaceSketch": "/** Fail-closed read-only authorization — ADAPTER-OWNED. Callers never construct this: the adapter runs the live qualification itself and exposes only the validated result. */\ninterface ReadOnlyCapability {\n\treadonly status: 'qualified' | 'unavailable';\n\treadonly allowedTools: readonly VibeInsrcAnalysisToolId[];\n\treadonly reason?: string | undefined;\n\treadonly provenAgainst: { readonly stableDescriptorHash: string; readonly effectiveConfigFingerprint: string } | undefined;\n}\ninterface VibeExecutionAdapter {\n\treadonly readOnly: ReadOnlyCapability;\n}",
+          "name": "Adapter-owned read-only authorization and its qualification evidence",
+          "ownedByStory": "s2",
+          "purpose": "The fail-closed read-only mode of the adapter: the qualification is ADAPTER-OWNED. provenAgainst's shape here reflects s2's own approved LLD (stableDescriptorHash, effectiveConfigFingerprint), not the HLD document's original, now-superseded shape -- this Story's own contract.detail step formally raises the missing HLD amendment to reconcile that disagreement. The qualification evidence is what s6 cites when closing the read-only issue."
+        }
+      ],
+      "boundary": {
+        "depends": [
+          "sc3"
+        ],
+        "internal": "The reconciliation work itself: verifying the chat prompt-transport fix, the approval parity cases, the tool-result output parity, the resume-selection behavior and the worker cleanup parity live with s3's evidence, checking catalog coverage, closing the implemented issues (read-only authorization via sc3's qualification evidence incl. its provenAgainst record, TOML parsing via sc4's story validation), stamping the review-dependent deferrals with their recorded dependency on the review rewrite, attaching evidence to every closure, and raising the HLD amendment this round's own correction uncovered.",
+        "owns": [],
+        "storyId": "s6"
+      },
+      "adjacentBoundaries": [
+        {
+          "depends": [],
+          "internal": "Everything behind the adapter interface.",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "storyId": "s1"
+        },
+        {
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The narrow-authorization design itself.",
+          "owns": [
+            "sc3"
+          ],
+          "storyId": "s2"
+        },
+        {
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The chat surface migration.",
+          "owns": [],
+          "storyId": "s3"
+        },
+        {
+          "depends": [],
+          "internal": "The reader's internals (TOML config).",
+          "owns": [
+            "sc4"
+          ],
+          "storyId": "s4"
+        },
+        {
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The model-family alignment.",
+          "owns": [],
+          "storyId": "s5"
+        }
+      ],
+      "rolloutPhase": "Phase C — Ledger reconciliation",
+      "nonFunctional": {
+        "durability": "User configuration files are edited surgically with byte-for-byte preservation of unrelated content, and a config that cannot be changed safely is left untouched with the failure reported (k4); the issue ledger records closures only with evidence (k7).",
+        "observability": "Every turn result carries the tool's structured exit evidence and the session identity; per-turn outcomes, qualification results and refusal reasons are logged through the daemon's pino logger; the ledger reconciliation (s6) records its verification evidence on the artifacts it closes or defers.",
+        "performance": "One subprocess per turn, as the claude and codex clients already do.",
+        "security": "k1 is structural: the read-only launch mode is qualified live BY THE ADAPTER against the installed binary. All model access stays through the local CLI binary's own auth (k6) — no direct cloud REST."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": []
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ISSUE-910fce32967bc4ea (Pass Vibe chat prompts correctly in programmatic mode)",
+        "change": "field-modify",
+        "details": "Closed once s3 builds, citing s3's own TESTS record confirming all five live-verification cases (new turn, resumed turn, title generation, multiline prompt, option-like-text prompt) pass against the installed binary with no backend-path regression; reopened with the specific failing case recorded if any does not pass.",
+        "callSites": [
+          "docs/standalone/pass-vibe-chat-prompts-correctly-programmatic-E20261105910fce32/ISSUE.md"
+        ]
+      },
+      {
+        "entity": "ISSUE-d3e72fe73ee775a2 (Vibe's read-only session cannot call the insrc MCP analyze tools headlessly)",
+        "change": "field-modify",
+        "details": "Closed once s2 builds, citing sc3's ReadOnlyCapability.provenAgainst record using s2's CURRENT field shape -- { stableDescriptorHash, effectiveConfigFingerprint } -- not the HLD's original, now-superseded { binaryVersion, effectivePolicy } shape. stableDescriptorHash is the binary identity + launch-profile fingerprint excluding the per-turn outputDir; effectiveConfigFingerprint is extracted from the qualification probe's own export.json self-report. This is the evidence that the --agent approval gate this issue names is now correctly qualified rather than bypassed.",
+        "callSites": [
+          "docs/standalone/vibe-s-read-only-session-cannot-E20261124d3e72fe7/ISSUE.md",
+          "docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/S002/LLD.md"
+        ]
+      },
+      {
+        "entity": "ISSUE-0b3114f87754959b (Read Vibe configs with a real TOML parser)",
+        "change": "field-modify",
+        "details": "Closed once s4 (sc4) builds, citing s4's own validation record confirming the real-TOML parse-for-understanding engine replaces the three named heuristics (toml-mcp-writer.ts, mcp-register.ts, toml-inline-list.ts) and handles the three reproduction cases (quoted/dotted-key sections, inline-list registration, text-inside-a-multiline-string) correctly.",
+        "callSites": [
+          "docs/standalone/read-vibe-configs-real-toml-parser-E202611090b3114f8/ISSUE.md"
+        ]
+      },
+      {
+        "entity": "ISSUE-738d62b848fd173f (Fix Claude on Ollama and Mistral Vibe streaming reviews) -- catalog-coverage sub-point only",
+        "change": "field-modify",
+        "details": "The versioned-model catalog-coverage sub-point ('the installed insrc Vibe catalog does not include the versioned Large 4 model that Mistral documents') is annotated as resolved NOW, citing the catalog's current, already-shipped mistral-large-4 entry and this Epic's own live dispatch evidence (s5's approved LLD) proving --model mistral-large-4 runs successfully with all three declared efforts. This annotation does not wait on s5's own build, since the catalog data closing this sub-point predates and is untouched by s5's own fix.",
+        "callSites": [
+          "docs/standalone/preserve-ollama-routing-claude-streaming-reviews-E20261110738d62b8/ISSUE.md",
+          "src/assets/models/cloud-model-catalog.json:51"
+        ]
+      },
+      {
+        "entity": "ISSUE-738d62b848fd173f (Fix Claude on Ollama and Mistral Vibe streaming reviews) -- Ollama/activity-review sub-point only",
+        "change": "field-modify",
+        "details": "The Ollama activity-mode preflight defect and 'the activity-mode review entry point rejects Vibe' sub-point is annotated as DEFERRED, pending the review rewrite -- the activity-mode review machinery this sub-point depends on does not currently exist in src/, so an open claim against it would describe removed machinery. Annotated in place within the SAME record as the catalog-coverage sub-point above, not split into a separate issue.",
+        "callSites": [
+          "docs/standalone/preserve-ollama-routing-claude-streaming-reviews-E20261110738d62b8/ISSUE.md"
+        ]
+      },
+      {
+        "entity": "ISSUE-30962d0f44df1e76 (Support activity-supervised reviews through Mistral Vibe CLI)",
+        "change": "field-modify",
+        "details": "Annotated as DEFERRED, pending the review rewrite, for the same reason: native Vibe activity-supervised review support is new capability work predicated on the activity-review protocol this Epic does not implement and the review rewrite has not yet re-established.",
+        "callSites": [
+          "docs/standalone/support-activity-supervised-reviews-through-mistral-E2026110430962d0f/ISSUE.md"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "This Story's reconciliation of ISSUE-d3e72fe73ee775a2 cites sc3's provenAgainst field using s2's OWN CURRENT shape -- { stableDescriptorHash, effectiveConfigFingerprint } -- as defined in s2's approved LLD (section 4.1), not the HLD document's original { binaryVersion, effectivePolicy } shape, which s2's LLD superseded without the HLD ever being updated to match. No sc3 field or type is read, interpreted, or amended differently than s2's own LLD already defines it; this Story additionally raises the missing HLD amendment to close that sync gap formally."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "s3's live verification of the prompt-transport fix finds a failing case (e.g. a multiline or option-like-text prompt still reproduces the installed CLI's missing-prompt guard).",
+          "detection": "s3's own TESTS record reports a failed case for one of the five named prompt-transport scenarios.",
+          "response": "ISSUE-910fce32967bc4ea is reopened (not closed) citing the specific failing case and its evidence, per ac1's explicit 'or, if the verification fails, reopened with the failure recorded'.",
+          "userImpact": "A genuinely-unfixed prompt-transport defect is never misreported as closed.",
+          "recoverable": true
+        },
+        {
+          "scenario": "s2's live qualification suite fails to qualify the read-only mode (ReadOnlyCapability.status stays 'unavailable').",
+          "detection": "sc3's own status field, read from s2's build evidence.",
+          "response": "ISSUE-d3e72fe73ee775a2 stays open, citing the specific qualification failure reason sc3's own 'reason' field carries -- never closed on an unqualified capability.",
+          "userImpact": "The read-only MCP-tool defect is never closed while the underlying authorization genuinely remains unavailable.",
+          "recoverable": true
+        },
+        {
+          "scenario": "s4's own validation record shows one of the three TOML reproduction cases (quoted/dotted-key sections, inline-list registration, text-inside-a-multiline-string) still fails against the real parser.",
+          "detection": "s4's validation record reports a failing case.",
+          "response": "ISSUE-0b3114f87754959b stays open, citing the specific failing reproduction case.",
+          "userImpact": "The TOML-parsing defect is never closed while a real reproduction case still fails.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A future change to the shipped catalog removes or renames the mistral-large-4 entry this Story's closure of c9's catalog-coverage sub-point relies on.",
+          "detection": "validateModelCatalog's own existing load-time validation would surface a removed/renamed entry as a schema change, independent of this Story.",
+          "response": "This Story's own closure annotation is a point-in-time record of the evidence available when s6 reconciles; it is not a live assertion that re-checks itself on every future catalog change -- a later regression is a NEW defect against the catalog, not a reopening of c9's already-recorded evidence.",
+          "userImpact": "Reconciliation records a fact as of when it was checked, consistent with how every other closed issue in this ledger already behaves; it does not claim to be a standing guarantee.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A reader of ISSUE-738d62b848fd173f sees only one annotation (either the catalog-coverage closure or the Ollama/activity-review deferral) and assumes it applies to the WHOLE record.",
+          "detection": "This is a documentation-clarity risk, not a runtime detection -- recorded here because the single ISSUE.md record now carries two independent, differently-resolved sub-points.",
+          "response": "Each annotation explicitly names which sub-point it addresses (by quoting the specific reproduction-case text it resolves), so neither annotation can be read as covering the other.",
+          "userImpact": "A reader cannot mistake a partial resolution for the record's full state.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A reader of this Story's own LLD cites sc3's provenAgainst via the HLD.md document instead of s2's LLD, and reproduces the exact stale-citation drift this round's correction fixes, because the HLD amendment this round raises has not yet been applied.",
+          "detection": "The HLD context slice re-bundled into this round's own steps still shows the original, unamended { binaryVersion, effectivePolicy } shape -- confirming the amendment is proposed, not yet applied.",
+          "response": "This Story's own dataModelChanges and interactionWithShared entries cite s2's LLD directly (the authoritative, current source) rather than the HLD context slice, and the amendment proposed in this round is the durable fix once applied; until then, this openQuestion is carried forward explicitly rather than silently relied upon.",
+          "userImpact": "No reader of THIS Story's LLD is misled, even though the HLD document itself remains stale pending the amendment's application.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "c8 and c9's Ollama/activity-review sub-point are both deferred for the SAME underlying reason (the review rewrite).",
+          "expected": "Each record carries its own deferred-dependency annotation independently; a reader checking either record in isolation sees the full, correct reason without needing to cross-reference the other."
+        },
+        {
+          "input": "A Story this reconciliation depends on (s2, s3, s4) is built but its own BUILD record shows a FAILED task unrelated to the specific evidence s6 cites (e.g. a different task in the same Story fails).",
+          "expected": "s6's reconciliation cites only the SPECIFIC task/test evidence relevant to the record being closed, not the Story's overall pass/fail status -- an unrelated task failure in the same Story does not by itself block a closure whose own cited evidence is clean."
+        },
+        {
+          "input": "The catalog-coverage sub-point's closure is checked AFTER s5 also builds its own, unrelated catalog change (the mid-tier id rename).",
+          "expected": "s5's own build does not touch mistral-large-4 at all; the closure's cited evidence (the mistral-large-4 entry and its live dispatch proof) remains valid and unaffected by s5's unrelated change."
+        },
+        {
+          "input": "s2's build eventually lands and someone re-derives the HLD context slice for a future Story before this round's amendment proposal has been approved and applied.",
+          "expected": "That future Story's own context.assemble step would still see the unamended HLD shape and must independently re-derive the current shape from s2's LLD, exactly as this round's s1 step had to -- the amendment's approval, not this LLD alone, is what finally removes that recurring burden."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A record closes only with the specific evidence that actually supports it; no record closes on a verdict broader than, or disconnected from, its own cited proof.",
+          "source": "c1"
+        },
+        {
+          "text": "A catalog-coverage concern already resolved by data present in the repo today must be recorded as fixed on that evidence now, not artificially held open pending an unrelated Story's build.",
+          "source": "c2"
+        },
+        {
+          "text": "A record whose fix intent depends on review machinery the project's own steering confirms does not currently exist must carry an explicit deferred dependency on the review rewrite, never an open claim implying that machinery still exists.",
+          "source": "c3"
+        },
+        {
+          "text": "s6 cannot itself re-verify a fix live; every closure it records must cite the OWNING Story's own build/test evidence, never a claim s6 fabricates or re-runs independently.",
+          "source": "c4"
+        },
+        {
+          "text": "Reconciliation targets the specific evidence cited for each record, not a Story's overall build pass/fail status; an unrelated task failure within the same Story does not itself block a closure whose own cited evidence is clean.",
+          "source": "c5"
+        },
+        {
+          "text": "When a shared contract's HLD-documented shape and its owning Story's approved LLD shape diverge, a downstream consumer cites the owning Story's own artifact, not the stale HLD slice, until the amendment that reconciles them is applied.",
+          "source": "c6"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test",
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Verify each reconciled ISSUE.md's final annotation is backed by exactly the evidence it cites, since this Story produces no application code -- its own build validation is a documentation/evidence-reconciliation check, not a code test.",
+          "subjects": [
+            "ISSUE-910fce32967bc4ea's closure (or reopening) cites s3's actual TESTS record and names the specific case(s) it checked -- the annotation is cross-checked against that record's real content, not asserted independently",
+            "ISSUE-d3e72fe73ee775a2's closure cites sc3's actual ReadOnlyCapability.provenAgainst value from s2's build USING s2's current field names (stableDescriptorHash, effectiveConfigFingerprint), not the stale HLD ones",
+            "ISSUE-0b3114f87754959b's closure cites s4's actual validation record and names which of the three reproduction cases it covers",
+            "ISSUE-738d62b848fd173f's two independent annotations (catalog-coverage closure; Ollama/activity-review deferral) each name exactly the sub-point text they address, with neither annotation omitted or merged",
+            "ISSUE-30962d0f44df1e76's deferral annotation names the review rewrite as the explicit blocking dependency, not a vague 'future work' note"
+          ],
+          "fixturesNeeded": [
+            "Direct comparison of each ISSUE.md's final text against the specific BUILD/TESTS artifact path it cites, performed when s6 itself is validated"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Confirm, at the point s6 is itself validated, that every cited upstream artifact actually exists and is in the state the reconciliation assumes.",
+          "subjects": [
+            "s3's TESTS record exists and reports the five named prompt-transport cases before ISSUE-910fce32967bc4ea is closed on it",
+            "s2's BUILD record exists and sc3's ReadOnlyCapability.status is 'qualified' before ISSUE-d3e72fe73ee775a2 is closed on it",
+            "s4's BUILD/validation record exists before ISSUE-0b3114f87754959b is closed on it",
+            "The catalog's mistral-large-4 entry and this Epic's own live-dispatch evidence are present before ISSUE-738d62b848fd173f's catalog-coverage sub-point is closed",
+            "The HLD amendment proposed in this round for sc3's provenAgainst field rename has either been applied (HLD.md shows the current shape) or remains an openQuestion carried into the next Story that reads it"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "contract: ISSUE-910fce32967bc4ea's closure/reopening cites s3's actual TESTS record content, naming any failing case explicitly if verification fails"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "contract: ISSUE-738d62b848fd173f's catalog-coverage sub-point closes citing the shipped mistral-large-4 entry and this Epic's live dispatch evidence, independent of any unrelated Story's build"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "contract: ISSUE-30962d0f44df1e76 and ISSUE-738d62b848fd173f's Ollama/activity-review sub-point both carry an explicit review-rewrite deferral annotation, never an open claim implying removed machinery still exists"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "contract: ISSUE-d3e72fe73ee775a2 closes citing sc3's actual provenAgainst evidence from s2's build, using s2's current field names",
+            "contract: ISSUE-0b3114f87754959b closes citing s4's actual validation record"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per this round's bundles: five open ISSUE records exist (c5-c9 in the Epic's DEF), each describing a Vibe-integration defect or capability gap. c7's fix intent targets a file s1's own BUILD already changed, but no live verification has been recorded. c5 and c6 describe defects owned by s2 and s4, neither yet built. c9 bundles a catalog-coverage concern already resolved by data in the repo together with a review-machinery-dependent concern that is not. c8 is entirely review-machinery-dependent. None of the five records currently states a review-rewrite dependency or cites the specific evidence that would close or reopen it. Separately, s2's own approved LLD already amends sc3's provenAgainst shape from the HLD's original { binaryVersion, effectivePolicy } to { stableDescriptorHash, effectiveConfigFingerprint }, but no AMD artifact was ever filed, so the HLD.md document and s2's own LLD disagree about sc3's actual shape.",
+      "stateAfter": "Each of the five ISSUE records carries a specific, evidence-grounded annotation using CURRENT (not stale) field names: c7 closes or reopens citing s3's own TESTS record once s3 builds; c5 closes citing sc3's provenAgainst record using s2's current { stableDescriptorHash, effectiveConfigFingerprint } shape once s2 builds; c6 closes citing s4's validation record once s4 builds; c9's catalog-coverage sub-point closes now, citing the catalog's existing mistral-large-4 entry and this Epic's own live dispatch evidence; c9's Ollama/activity-review sub-point and c8 both carry an explicit deferred-dependency annotation naming the review rewrite. Additionally, the HLD amendment for sc3's field rename -- proposed by s2 but never tracked -- is formally raised by this round's contract.detail step, so the gap becomes a tracked proposal rather than a repeatedly-rediscovered citation drift.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Annotate ISSUE-738d62b848fd173f's catalog-coverage sub-point as resolved, citing the shipped mistral-large-4 entry and this Epic's live dispatch evidence.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Annotate ISSUE-738d62b848fd173f's Ollama/activity-review sub-point as deferred, citing the review rewrite as the explicit blocking dependency.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Annotate ISSUE-30962d0f44df1e76 as deferred, citing the review rewrite as the explicit blocking dependency.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Once s3 builds: annotate ISSUE-910fce32967bc4ea as closed, citing s3's own TESTS record's five prompt-transport cases -- or reopened, citing the specific failing case.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Once s2 builds: annotate ISSUE-d3e72fe73ee775a2 as closed, citing sc3's ReadOnlyCapability.provenAgainst record using s2's current field names.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Once s4 builds: annotate ISSUE-0b3114f87754959b as closed, citing s4's own validation record.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "File the HLD amendment (proposed in this round's contract.detail step) renaming sc3's provenAgainst fields to match s2's own approved LLD shape, so the HLD document and s2's LLD no longer disagree.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "This Story changes no application code, exported API, or shared contract directly -- only the prose content of five existing ISSUE.md records, plus proposing (not itself applying) one HLD amendment that formalizes a shape change s2's own LLD already made. Nothing consumes the ISSUE records as a machine-readable contract outside the insrc workflow's own ledger tooling. The HLD amendment itself is breaking (sc3's provenAgainst field names change), but it only formalizes a change s2's approved LLD already carries -- no shipped BUILD ever used the old shape, so there is no runtime backward-compat break to manage.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Evidence-cited annotation in place, with a formal amendment raised for the sc3 field-rename gap",
+        "oneLineSummary": "Annotate each existing ISSUE.md in place with evidence-specific close/reopen/defer outcomes, citing s2's current (amended) sc3 field names, and raise the missing HLD amendment for that rename via this Story's own contract.detail step.",
+        "approach": "No new tracked record is created. Each of the five existing standalone ISSUE.md files gets a targeted prose annotation naming the specific upstream evidence (Story build/test record or shipped catalog data) that closes, reopens, or defers it. For the read-only-session issue, the annotation cites sc3's ReadOnlyCapability.provenAgainst using s2's own current field names (stableDescriptorHash, effectiveConfigFingerprint) rather than the stale HLD/DEF ones, since s2's approved LLD already superseded those. Because no AMD artifact exists for that rename despite s2's migration step claiming one would be filed, this round's contract.detail step raises it formally via hld.amendmentProposal, so the gap becomes a tracked proposal instead of an undocumented prose aside repeated across Stories.",
+        "pros": [
+          "Reuses the existing issue ledger exactly as designed -- no restructuring",
+          "Closes the amendment-tracking gap at its root rather than just avoiding the stale citation",
+          "Minimal footprint: touches only prose + one amendment proposal, no code"
+        ],
+        "cons": [
+          "Does not itself resolve the two OTHER ungoverned export asks (s3's buildArgv/readExitEvidence, s5's buildApprovalArgs) -- those remain openQuestions for the user to action separately, since s6 doesn't own that surface"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "File a new tracked issue for the amendment gap instead of amending in place",
+        "oneLineSummary": "Open a new standalone ISSUE for 'HLD amendments proposed but never filed' rather than raising the sc3 amendment directly from this Story.",
+        "approach": "Rather than this Story proposing the HLD amendment itself, file a new ISSUE.md describing the general defect that amendment proposals from s2/s3/s5 were never tracked as AMD artifacts, and let a future triage cycle size and route the actual fix.",
+        "pros": [
+          "Keeps s6's own boundary narrower -- it only reports, never proposes"
+        ],
+        "cons": [
+          "Adds a tracker-restructuring action this Story's boundary does not mandate (reconciling existing records, not creating new ones)",
+          "Delays the actual fix by a full triage cycle when s6 is already positioned, mid-design, to raise the one amendment its own acceptance criteria depend on (ac4)"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Adds a tracker-restructuring action (a new issue + a future triage cycle) this Story's boundary does not mandate, and delays ac4's long-term evidentiary footing when s6 is already positioned to raise the amendment directly."
+      },
+      {
+        "id": "a3",
+        "name": "Defer the catalog-coverage concern onto the review-rewrite dependency",
+        "oneLineSummary": "Fold the versioned-model catalog-coverage sub-point into the same review-rewrite deferral as the Ollama/activity-review sub-point, rather than closing it now.",
+        "approach": "Treat ISSUE-738d62b8...'s two sub-points as a single unit and defer both on the review-machinery dependency, skipping the independent catalog-coverage closure this round's evidence already supports.",
+        "pros": [
+          "Simpler: one deferral reason instead of two differently-resolved sub-points in the same record"
+        ],
+        "cons": [
+          "Fails ac2 directly: the catalog-coverage concern is already resolved by data present in the repo today (the shipped mistral-large-4 entry) and this Epic's own live dispatch evidence -- deferring it on an unrelated dependency discards real, already-available evidence"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Fails ac2 directly: the catalog-coverage concern is folded into a review-dependency defer that discards the live evidence already produced for it."
+      },
+      {
+        "id": "a4",
+        "name": "Close the review-dependent records wholesale instead of deferring them",
+        "oneLineSummary": "Mark ISSUE-30962d0f... and the Ollama/activity-review sub-point of ISSUE-738d62b8... as closed, treating this Epic's adapter work as sufficient.",
+        "approach": "Declare the two review-machinery-dependent records resolved on the strength of this Epic's adapter and TOML work, without naming the review-rewrite dependency explicitly.",
+        "pros": [
+          "Fewer open records in the ledger"
+        ],
+        "cons": [
+          "Fails ac3 directly: neither record's actual fix intent (native activity-supervised review support; the Ollama activity-mode preflight) is implemented by anything this Epic ships, and the project's own steering confirms the review machinery they depend on was removed pending a rewrite -- closing them would describe resolved machinery that does not exist"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Fails ac3 directly: closing c9 wholesale would describe the Ollama activity-mode preflight defect and the Vibe activity-review rejection as resolved when neither is implemented by anything this Epic ships."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "The HLD amendment proposed in this round's contract.detail step (renaming sc3's provenAgainst fields to match s2's own approved LLD) has been raised but its application (updating HLD.md itself) has not been confirmed -- until applied, a future Story's own context.assemble step will still see the stale shape and must independently re-derive the current one from s2's LLD.",
+      "Two other ungoverned pending export asks exist elsewhere in this Epic (s3's dependency on vibe-adapter.ts exporting buildArgv/readExitEvidence; s5's dependency on it exporting buildApprovalArgs) -- neither is owned by s6 or touched by this Story's boundary, but neither has a tracked AMD artifact either, and the user should action them separately."
+    ],
+    "epicImpact": {
+      "applies": true,
+      "reason": "s6 is the Epic's closing reconciliation Story; this round's correction is itself driven by an Epic-wide cross-review finding about s2's as-designed (not-yet-built) sc3 shape diverging from the HLD document.",
+      "storiesCovered": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5"
+      ],
+      "findings": "Unchanged from the prior round's epicImpact except for one addition: s2's LLD (still only approved, not yet built) amends sc3's provenAgainst shape to { stableDescriptorHash, effectiveConfigFingerprint }, but the HLD.md document was never updated to match, and no AMD artifact was ever filed despite s2's own migration step claiming one would be. This round's dataModelChanges entry for ISSUE-d3e72fe7... (closed via s2's evidence) must cite s2's actual, current field names, not the HLD's stale ones -- otherwise s6 would misdescribe the very evidence it depends on. s1's BUILD still shows t7 FAILED and 25 changed files, unchanged from the prior round's own review; s3/s4/s5 remain unbuilt, unchanged.",
+      "sources": [
+        ".insrc/artifacts/BUILD-639cd2159a87aedb-s1.json",
+        "docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/S002/LLD.md",
+        "docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/HLD.md"
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/pass-vibe-chat-prompts-correctly-programmatic-E20261105910fce32/ISSUE.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/assets/models/cloud-model-catalog.json:51"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/remove-design-code-review-implementations-while-E20261116dae67bfc/S001/BUILD.md"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/BUILD-639cd2159a87aedb-s1.json"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/LLD-639cd2159a87aedb-s5.json"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/S002/LLD.md"
+    }
+  ]
+}

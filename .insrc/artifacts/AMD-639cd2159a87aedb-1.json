@@ -1,0 +1,65 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-7b698668-9a7b-4f2e-a586-d3eef93b610b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T17:01:29.700Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "07da68f64faa36c2c6897faa39cc20084c3c4a6a5a71cca8190e58d7a5cfa529",
+        "at": "2026-11-27T17:01:29.701Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-639cd2159a87aedb-1",
+    "epicSlug": "unify-vibe-one-plain-cli-adapter",
+    "hldBaseRunId": "wf-1795535373279-l4wumn",
+    "amendment": {
+      "type": "sharedContract.fieldRemove",
+      "contractId": "sc3",
+      "fieldName": "provenAgainst",
+      "breaking": true,
+      "migrationCue": "Replaced by provenAgainst: { stableDescriptorHash: string; effectiveConfigFingerprint: string } | undefined, as defined and already implemented in s2's approved LLD (docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/S002/LLD.md section 4.1) and relied on by s2's own built code once s2 ships. The old itemized shape { binaryVersion: string; effectivePolicy: string } never shipped in any BUILD, so this is a design-time correction, not a runtime migration."
+    },
+    "rationale": "s2's own approved LLD (section 4.1, 2026-11-24 revision) already amends sc3's provenAgainst shape away from the HLD's original itemized fields to a two-identity shape (stableDescriptorHash excludes the per-turn outputDir that made an earlier round's full-argv hash unusable across turns; effectiveConfigFingerprint binds to the qualification probe's own export.json self-report). Round 2 of this Story (s6) attempted to raise this as a 'sharedContract.rename' amendment, but that type renames a shared CONTRACT's own display name (checked against its 'name' property), not a field inside its interfaceSketch -- entirely wrong semantics for this change, and it was silently dropped by the applier's dry-run (confirmed this round by direct re-read of src/workflow/amendments/applier.ts and orchestrator.ts). This round files the correct type, sharedContract.fieldRemove, verified against applyFieldRemove's own implementation: it requires breaking:true and a non-empty migrationCue, confirms 'provenAgainst' is present in sc3's current interfaceSketch, and appends a documented removal marker. Without this, the HLD document and s2's own approved LLD permanently disagree about sc3's actual shape, and any future Story reading the HLD context slice (rather than s2's LLD directly) reproduces the exact stale-citation drift this Story's own round 2 and round 3 corrections both had to fix by hand.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1795798519800-peqwfl",
+      "storyId": "s6",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-11-27T17:01:29.698Z"
+  },
+  "citations": [
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/S002/LLD.md"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/amendments/applier.ts:113-130"
+    }
+  ]
+}

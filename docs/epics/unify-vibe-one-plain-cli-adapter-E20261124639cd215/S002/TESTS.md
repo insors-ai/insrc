@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
+**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -165,3 +165,37 @@ Run at 2026-11-27T16:39:53.038Z on commit `3af58216d`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/vibe-adapter-readonly-dispatch.test.ts` | 0 | 6 | 0.6 s |  |
+
+## t6
+
+Run at 2026-11-27T16:46:56.919Z on commit `195638509`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: readOnlySessionOnce's vibe branch returning the schema-validated answer on a qualified capability**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | readOnlySessionOnce's vibe branch returning the schema-validated answer on a qualified capability | `src/agent/providers/__tests__/cli-provider-readonly-vibe.test.ts` |
+
+**integration: the recorded argv matching buildArgv's own values exactly except outputDir**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the recorded argv matching buildArgv's own values exactly except outputDir | `src/agent/providers/__tests__/cli-provider-readonly-vibe.test.ts` |
+
+**integration: the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable | `src/agent/providers/__tests__/cli-provider-readonly-vibe.test.ts` |
+
+**integration: the capabilityPolicy precondition refused before readOnlySessionOnce is reached**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the capabilityPolicy precondition refused before readOnlySessionOnce is reached | `src/agent/providers/__tests__/cli-provider-readonly-vibe.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/agent/providers/__tests__/cli-provider-readonly-vibe.test.ts` | 0 | 4 | 0.6 s |  |

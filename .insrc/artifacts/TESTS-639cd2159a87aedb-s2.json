@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 6,
-        "contentHash": "ee102770e234d16c2cdcbdfe573d6ccaf24b45b6213eba3557271691c4ab3641",
-        "at": "2026-11-27T16:39:53.271Z",
+        "number": 7,
+        "contentHash": "1a85c6ebebf98fd4868305ce0ec35a1012985dd7bb1e0a2b78c5e8dfc55812ad",
+        "at": "2026-11-27T16:46:57.152Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "639cd2159a87aedb",
     "storyId": "s2",
     "createdAt": "2026-11-27T15:48:50.509Z",
-    "updatedAt": "2026-11-27T16:39:53.038Z",
+    "updatedAt": "2026-11-27T16:46:56.919Z",
     "epicCreatedAt": "2026-11-24T12:53:27.196Z",
     "epicSlug": "unify-vibe-one-plain-cli-adapter",
-    "revision": 6
+    "revision": 7
   },
   "body": {
     "tasks": [
@@ -456,6 +456,93 @@
               },
               {
                 "title": "the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "195638509",
+        "ranAt": "2026-11-27T16:46:56.919Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "readOnlySessionOnce's vibe branch returning the schema-validated answer on a qualified capability",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-provider-readonly-vibe.test.ts",
+                "title": "readOnlySessionOnce's vibe branch returning the schema-validated answer on a qualified capability",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the recorded argv matching buildArgv's own values exactly except outputDir",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-provider-readonly-vibe.test.ts",
+                "title": "the recorded argv matching buildArgv's own values exactly except outputDir",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-provider-readonly-vibe.test.ts",
+                "title": "the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the capabilityPolicy precondition refused before readOnlySessionOnce is reached",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-provider-readonly-vibe.test.ts",
+                "title": "the capabilityPolicy precondition refused before readOnlySessionOnce is reached",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-provider-readonly-vibe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 640,
+            "titles": [
+              {
+                "title": "readOnlySessionOnce's vibe branch returning the schema-validated answer on a qualified capability",
+                "result": "pass"
+              },
+              {
+                "title": "the recorded argv matching buildArgv's own values exactly except outputDir",
+                "result": "pass"
+              },
+              {
+                "title": "the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable",
+                "result": "pass"
+              },
+              {
+                "title": "the capabilityPolicy precondition refused before readOnlySessionOnce is reached",
                 "result": "pass"
               }
             ],

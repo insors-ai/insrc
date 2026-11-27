@@ -190,10 +190,11 @@ test('sync-manifest-catalog.test.ts: duplicate per-role sections consolidate los
     rmSync(a.dir, { recursive: true, force: true });
   }
 
-  // Collision refusal.
+  // Collision refusal — three same-titled sections: the FIRST does not declare the
+  // key, the next introduces it and the last conflicts; the diagnostic must name
+  // the two sections that actually declare it, not the first of the title.
   const b = tempCopy((stale) => {
-    const perRole = section(stale, PER_ROLE_TITLE);
-    perRole.properties['insrc.chat.collide'] = { type: 'boolean', default: true, scope: 'machine' };
+    stale.contributes.configuration.push({ title: PER_ROLE_TITLE, properties: { 'insrc.chat.collide': { type: 'boolean', default: true, scope: 'machine' } } });
     stale.contributes.configuration.push({ title: PER_ROLE_TITLE, properties: { 'insrc.chat.collide': { type: 'string', default: 'x', scope: 'machine' } } });
   });
   try {
@@ -201,6 +202,8 @@ test('sync-manifest-catalog.test.ts: duplicate per-role sections consolidate los
     assert.notEqual(r.status, 0, 'a conflicting duplicate schema is refused');
     assert.match(r.out, /sync-duplicate-conflict/, 'the diagnostic names the refusal');
     assert.match(r.out, /insrc\.chat\.collide/, 'the diagnostic names the key');
+    const n = (JSON.parse(b.text) as Manifest).contributes.configuration.length;
+    assert.match(r.out, new RegExp(`#${n - 1} and #${n}\\b`), 'the diagnostic names the two declaring sections (the last two), not the first of the title');
     assert.equal(readFileSync(b.copy, 'utf8'), b.text, 'a refused conflict writes nothing');
   } finally {
     rmSync(b.dir, { recursive: true, force: true });

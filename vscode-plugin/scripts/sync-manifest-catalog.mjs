@@ -81,26 +81,30 @@ function stableStringify(value) {
  */
 function consolidateSections(sections) {
 	const out = [];
-	const firstByTitle = new Map(); // title -> { slot, index } of the first section with it
+	const firstByTitle = new Map(); // title -> { slot, index, keySource: Map<key, index> }
 	for (let index = 0; index < sections.length; index++) {
 		const section = sections[index];
 		const title = section.title;
 		if (title === undefined || !firstByTitle.has(title)) {
-			firstByTitle.set(title, { slot: out.length, index });
+			const keySource = new Map();
+			for (const key of Object.keys(section.properties ?? {})) keySource.set(key, index);
+			firstByTitle.set(title, { slot: out.length, index, keySource });
 			out.push(section);
 			continue;
 		}
 		const first = out[firstByTitle.get(title).slot];
-		const firstIndex = firstByTitle.get(title).index;
+		const keySource = firstByTitle.get(title).keySource;
 		const firstProps = (first.properties ??= {});
 		for (const [key, schema] of Object.entries(section.properties ?? {})) {
 			if (key in firstProps) {
 				if (stableStringify(firstProps[key]) !== stableStringify(schema)) {
-					throw new Error(`sync-manifest-catalog: sync-duplicate-conflict: '${key}' is declared with conflicting schemas in the duplicate sections titled '${title}' (#${firstIndex + 1} and #${index + 1}); resolve the conflict by hand`);
+					const source = keySource.get(key) ?? firstByTitle.get(title).index;
+					throw new Error(`sync-manifest-catalog: sync-duplicate-conflict: '${key}' is declared with conflicting schemas in the duplicate sections titled '${title}' (#${source + 1} and #${index + 1}); resolve the conflict by hand`);
 				}
 				continue; // first wins
 			}
 			firstProps[key] = schema;
+			keySource.set(key, index);
 		}
 	}
 	return out;

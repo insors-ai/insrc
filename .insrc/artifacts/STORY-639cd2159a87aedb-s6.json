@@ -29,6 +29,17 @@
           "revision": 2,
           "at": "2026-11-27T14:18:54.567Z",
           "externalId": "7220625917"
+        },
+        {
+          "target": {
+            "entityId": "LLD-639cd2159a87aedb-s6",
+            "type": "LLD",
+            "relation": "documents",
+            "fragment": "docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/S006/LLD.md"
+          },
+          "revision": 3,
+          "at": "2026-11-27T17:05:15.965Z",
+          "externalId": "7224010957"
         }
       ],
       "binding": {

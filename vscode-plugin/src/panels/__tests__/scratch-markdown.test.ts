@@ -35,6 +35,11 @@ test('scratch Markdown refuses structural or raw syntax loss and keeps both sour
   assert.equal(checkScratchMarkdown('# Throws\n', { ...identity, parse: () => { throw new Error('unsupported'); } }).allowed, false);
   assert.equal(checkScratchMarkdown('x'.repeat(SCRATCH_NOTE_BYTES + 1), identity).allowed, false);
   assert.equal(inspectScratchSyntax('```txt\n[[literal code]]\n```\n').unsupported.length, 0, 'literal code is not mistaken for custom Markdown');
+  assert.ok(inspectScratchSyntax('---\ntitle: keep\n---\n').fingerprints.some(span => span.startsWith('front-matter:')));
+  assert.ok(inspectScratchSyntax('%%unfamiliar extension literal%%').fingerprints.includes('text:%%unfamiliar extension literal%%'));
+  const aliasCodec = { ...identity, equivalent: (a: string, b: string) => a.replace(/~~~|```/g, '') === b.replace(/~~~|```/g, '') };
+  const aliased = '~~~mermaid\ngraph TD\nA --> B\n~~~\n';
+  assert.equal(checkScratchMarkdownEdit(code, aliased, aliasCodec, code).allowed, false, 'raw-only unrelated change is refused even when structure is equal and each draft round trip is stable');
 });
 
 test('scratch Markdown host grammar independently admits supported edits and refuses unsupported base laundering', () => {
@@ -65,7 +70,9 @@ test('scratch Markdown corpus uses real Milkdown in Chrome and preserves source 
     const decoded = match[1]!.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
     const data = JSON.parse(decoded);
     for (const row of [...data.supported, ...data.unsupported]) {
-      for (const event of [row.opening, row.idle, row.lock]) assert.deepEqual(event, { kind: 'unchanged', source: row.source }, 'no proposed edit or normalization on opening/selection/lock');
+      assert.deepEqual(row.openingEvents, [], 'actual initialization transactions produced no draft');
+      assert.deepEqual(row.quietEvents, [], 'actual lock/DOM and editor selections produced no draft');
+      assert.equal(row.retainedSource, row.source, 'canonical source is retained verbatim');
       assert.equal(row.intentionalCodeEdit.allowed, true, 'real intended code transaction is admitted');
       assert.equal(row.lostCode.allowed, false, 'unrelated Mermaid loss is refused');
       assert.equal(row.lostLink.allowed, false, 'unrelated custom-link loss is refused');
@@ -73,6 +80,7 @@ test('scratch Markdown corpus uses real Milkdown in Chrome and preserves source 
     for (const row of data.supported) {
       assert.equal(row.result.allowed, true, JSON.stringify(row));
       assert.equal(row.result.source, row.source);
+      assert.ok(row.userEvents.some((event: { kind: string }) => event.kind === 'proposal'), JSON.stringify(row));
       assert.equal(row.edit.allowed, true, JSON.stringify(row));
       assert.equal(row.edit.source, row.source);
       assert.match(row.edit.draft, /Added text\./);

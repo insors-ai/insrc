@@ -35,13 +35,20 @@ export interface ScratchSyntaxInventory {
   readonly unsupported: readonly string[];
   /** Exact source spans, not hashes of the already-lossy rendered document. */
   readonly fingerprints: readonly string[];
+  readonly protectedSpans: readonly { readonly semantic: string; readonly raw: string }[];
 }
 
 export function inspectScratchSyntax(markdown: string): ScratchSyntaxInventory {
   const unsupported = new Set<string>();
   const fingerprints: string[] = [];
+  const protectedSpans: { semantic: string; raw: string }[] = [];
   // Neither the configured commonmark nor GFM codec has an opaque metadata node.
-  if (/^\uFEFF?(?:---|\+\+\+)\r?\n/.test(markdown)) unsupported.add('front matter');
+  const metadata = markdown.match(/^\uFEFF?(---|\+\+\+)\r?\n[\s\S]*?(?:\r?\n\1(?:\r?\n|$)|$)/);
+  if (metadata) {
+    unsupported.add('front matter');
+    fingerprints.push(`front-matter:${metadata[0]}`);
+    protectedSpans.push({ semantic: 'front-matter', raw: metadata[0] });
+  }
   const pending: SyntaxNode[] = [grammar.parse(markdown) as SyntaxNode];
   while (pending.length) {
     const node = pending.pop()!;
@@ -51,15 +58,21 @@ export function inspectScratchSyntax(markdown: string): ScratchSyntaxInventory {
     }
     const customLink = (node.type === 'link' || node.type === 'image') &&
       /^[a-z][a-z0-9+.-]*:/i.test(node.url ?? '') && !/^(?:https?|mailto):/i.test(node.url ?? '');
-    if (node.type === 'code' || node.type === 'html' || node.type === 'definition' || customLink) {
+    // Every literal leaf is checked, including unfamiliar syntax parsed as
+    // plain text. A regex catalog alone cannot enumerate future extensions.
+    if (node.type === 'text' || node.type === 'inlineCode' || node.type === 'code' || node.type === 'html' || node.type === 'definition' || customLink) {
       const start = node.position?.start.offset;
       const end = node.position?.end.offset;
       if (start === undefined || end === undefined) unsupported.add('unpositioned opaque syntax');
-      else fingerprints.push(`${node.type}:${markdown.slice(start, end)}`);
+      else {
+        const raw = markdown.slice(start, end);
+        fingerprints.push(`${node.type}:${raw}`);
+        protectedSpans.push({ semantic: JSON.stringify(node, (key, value: unknown) => key === 'position' ? undefined : value), raw });
+      }
     }
     if (node.children) for (let i = node.children.length - 1; i >= 0; i--) pending.push(node.children[i]!);
   }
-  return { unsupported: [...unsupported], fingerprints };
+  return { unsupported: [...unsupported], fingerprints, protectedSpans };
 }
 
 export type ScratchMarkdownAdmission =
@@ -102,6 +115,20 @@ export function checkScratchMarkdownEdit<Document>(source: string, draft: string
     // it from draft would hide exactly the serializer loss being checked.
     if (!codec.equivalent(expectedDocument, codec.parse(draft))) {
       return { allowed: false, source, draft, reason: 'The draft does not preserve the intended editor document.' };
+    }
+    const original = inspectScratchSyntax(source).protectedSpans;
+    const proposed = inspectScratchSyntax(draft).protectedSpans;
+    const rawBySemantic = new Map<string, Set<string>>();
+    for (const span of proposed) {
+      let raw = rawBySemantic.get(span.semantic);
+      if (!raw) { raw = new Set(); rawBySemantic.set(span.semantic, raw); }
+      raw.add(span.raw);
+    }
+    for (const span of original) {
+      const matching = rawBySemantic.get(span.semantic);
+      if (matching && (matching.size !== 1 || !matching.has(span.raw))) {
+        return { allowed: false, source, draft, reason: 'Unchanged content has an unrelated raw source change.' };
+      }
     }
   } catch { return { allowed: false, source, draft, reason: 'The intended editor document could not be verified.' }; }
   return { allowed: true, source, draft };

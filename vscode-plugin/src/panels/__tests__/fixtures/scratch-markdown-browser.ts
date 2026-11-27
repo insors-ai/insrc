@@ -1,28 +1,36 @@
 import { createScratchCrepe } from '../../scratch-editor-webview.js';
-import { checkScratchMarkdown, checkScratchMarkdownEdit, prepareScratchMarkdownTransaction } from '../../scratch-markdown.js';
-import { scratchMilkdownCodec } from '../../scratch-markdown-milkdown.js';
+import { checkScratchMarkdown, checkScratchMarkdownEdit } from '../../scratch-markdown.js';
+import { observeScratchMarkdown, scratchMilkdownCodec, type ScratchObservedDraft } from '../../scratch-markdown-milkdown.js';
 import { editorViewCtx } from '@milkdown/kit/core';
 import { Fragment } from '@milkdown/kit/prose/model';
-import { EditorState } from '@milkdown/kit/prose/state';
+import { EditorState, Selection } from '@milkdown/kit/prose/state';
 import { supportedScratchMarkdown, unsupportedScratchMarkdown } from './scratch-markdown-corpus.js';
 
 async function examine(source: string): Promise<unknown> {
   const root = document.createElement('div'); document.body.appendChild(root);
   const editor = createScratchCrepe({ root, defaultValue: source });
+  const observed: ScratchObservedDraft[] = [];
+  const observer = await observeScratchMarkdown(editor.editor, () => source, draft => observed.push(draft));
   await editor.create();
   try {
-    const opening = editor.editor.action(ctx => prepareScratchMarkdownTransaction(source, scratchMilkdownCodec(ctx), {
-      origin: 'initialization', docChanged: true, document: ctx.get(editorViewCtx).state.doc,
-    }));
+    const openingEvents = [...observed];
+    observer.activate();
     editor.setReadonly(true); editor.setReadonly(false); editor.setReadonly(true);
     const selection = window.getSelection(); selection?.selectAllChildren(root); selection?.removeAllRanges();
+    editor.editor.action(ctx => { const view = ctx.get(editorViewCtx); view.dispatch(view.state.tr.setSelection(Selection.atStart(view.state.doc))); });
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const quietEvents = [...observed];
+    editor.setReadonly(false);
+    editor.editor.action(ctx => {
+      const view = ctx.get(editorViewCtx);
+      const paragraph = view.state.schema.node('paragraph', null, view.state.schema.text('Added text.'));
+      view.dispatch(view.state.tr.insert(view.state.doc.content.size, paragraph));
+    });
     return editor.editor.action(ctx => {
       const codec = scratchMilkdownCodec(ctx);
       const document = codec.parse(source);
       const expected = document.copy(document.content.append(Fragment.from(document.type.schema.node('paragraph', null, document.type.schema.text('Added text.')))));
       const draft = codec.serialize(expected);
-      const idle = prepareScratchMarkdownTransaction(source, codec, { origin: 'user', docChanged: false, document: ctx.get(editorViewCtx).state.doc });
-      const lock = prepareScratchMarkdownTransaction(source, codec, { origin: 'host', docChanged: true, document: ctx.get(editorViewCtx).state.doc });
       const codeSource = '```ts\nconst value = 1;\n```\n';
       const codeDocument = codec.parse(codeSource);
       const position = codeDocument.textContent.indexOf('1') + 1;
@@ -31,7 +39,7 @@ async function examine(source: string): Promise<unknown> {
       const protectedDocument = codec.parse(protectedSource);
       const intended = protectedDocument.copy(protectedDocument.content.append(Fragment.from(protectedDocument.type.schema.node('paragraph', null, protectedDocument.type.schema.text('Added text.')))));
       return {
-        source, opening, idle, lock,
+        source, openingEvents, quietEvents, userEvents: [...observed], retainedSource: source,
         result: checkScratchMarkdown(source, codec),
         edit: checkScratchMarkdownEdit(source, draft, codec, expected),
         intentionalCodeEdit: checkScratchMarkdownEdit(codeSource, codec.serialize(codeEdit.doc), codec, codeEdit.doc),
@@ -39,7 +47,7 @@ async function examine(source: string): Promise<unknown> {
         lostLink: checkScratchMarkdownEdit(protectedSource, 'Before\n\n```mermaid\ngraph TD\nA --> B\n```\n\nAdded text.\n', codec, intended),
       };
     });
-  } finally { await editor.destroy(); root.remove(); }
+  } finally { observer.deactivate(); await editor.destroy(); root.remove(); }
 }
 
 async function run(): Promise<unknown> {

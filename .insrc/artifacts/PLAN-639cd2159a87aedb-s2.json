@@ -1,0 +1,483 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795793280776-6u5y7i",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T15:33:41.412Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 332501,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "epicSlug": "unify-vibe-one-plain-cli-adapter",
+    "storyId": "s2",
+    "lldRunId": "wf-1795755966936-1ybaxj",
+    "lldEffectiveHash": "67d59677de6a7a14a26bdb819949a499c3171f1bd551c1f73af1201b624e872c",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "88b98b2858ed0920fc13c43fd0748ac7b7e838a4457c93e99a0367706213cbef",
+        "at": "2026-11-27T15:33:43.586Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T15:37:24.405Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "7a9246efd581ef4bfff15ee154d6c25fb37977f8"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story turns src/shared/vibe-adapter.ts's placeholder read-only refusal into a live, qualified, and live-enforced authorization. Most of the work is one file: a new capability type and cache, a read-only argv branch with a stable cache key that survives the per-turn temp-dir churn, a standalone live-qualification probe suite with bounded retry and structural (never mutating) evidence, and the wiring that makes startTurn and readOnlySessionOnce actually use it. A failed live proof against the real binary is an accepted terminal outcome, not a blocking defect. One task is pure process: filing the HLD amendment this Story's own LLD already proposed but that was never tracked as a standalone artifact.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add ReadOnlyCapability type and the stableDescriptorHash-keyed qualification cache",
+        "summary": "Add the ReadOnlyCapability interface (status, allowedTools, reason?, provenAgainst: { stableDescriptorHash, effectiveConfigFingerprint } | undefined) to src/shared/vibe-adapter.ts, plus a module-level cache keyed by stableDescriptorHash. No behavior wiring yet -- this is the type/data-structure foundation the rest of the Story builds on.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "ReadOnlyCapability type matches sc3's amended interfaceSketch (stableDescriptorHash, effectiveConfigFingerprint) exactly, not the HLD's stale field names",
+          "The cache is a module-level Map (or equivalent) keyed by stableDescriptorHash, empty at module load"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "stableDescriptorHash computation excluding outputDir and its hit/miss decision -- two calls differing only in outputDir still hit the cache"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add buildArgv's read-only branch and the stable-descriptor computation",
+        "summary": "Add a request.mode==='read-only' branch inside buildArgv (src/shared/vibe-adapter.ts:365) that emits exactly the two connector_insrc_* allow flags and no approval flag, plus a stableDescriptorHash function that hashes buildArgv's own output with --output-dir excluded, the binary's resolved content identity, the adapter's pinned env subset, and cwd.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "buildArgv's read-only branch emits exactly the two connector_insrc_* flags and no approval flag, for any approval value (read-only requests with an approval setting are already rejected upstream by startTurn)",
+          "stableDescriptorHash is identical across two calls differing only in --output-dir (confirmed: buildArgv mints a fresh mkdtemp() path into --output-dir on every call per vibe-adapter.ts:365-375,470,481-482)",
+          "stableDescriptorHash changes when the binary content identity, pinned env subset, or cwd changes"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "stableDescriptorHash computation excluding outputDir and its hit/miss decision -- two calls differing only in outputDir still hit the cache"
+          },
+          {
+            "level": "unit",
+            "name": "buildArgv's read-only branch emits exactly the two connector_insrc_* flags and no approval flag"
+          },
+          {
+            "level": "integration",
+            "name": "the recorded argv matching buildArgv's own values exactly except outputDir"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Implement the live qualification suite",
+        "summary": "Implement a standalone function that runs the bounded-retry allow-side probe (insrc_analyze / insrc_analyze_step reachable and completing), the immediate-fail deny/bypass probes using structural catalog evidence with the reconciled pass/fail polarity (a REQUIRED tool's exclusion/denial fails qualification; a DISALLOWED tool's exclusion/denial passes it; an actual bypass-absence failure -- a disallowed tool completing -- fails immediately, never retried), and export.json fingerprint extraction (readExitEvidence, reused in-module) with fail-closed behavior on a missing/unparsable export. Concurrent qualification requests for the same stable descriptor are coalesced into one in-flight probe run.",
+        "size": "L",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "The allow-side probe retries a bounded number of times on simulated connector-not-registered failures, then reports 'unavailable' with the reason if still unresolved",
+          "A structural catalog exclusion/denial of a disallowed tool PASSES qualification; exclusion/denial of a REQUIRED tool FAILS it",
+          "A genuine bypass-absence failure (a disallowed tool actually completes) fails qualification immediately with no retry",
+          "A missing or unparsable export.json fails qualification closed, never silently treated as passing",
+          "effectiveConfigFingerprint is extracted from a successful qualification probe's own export.json",
+          "Two concurrent calls that miss the cache for the identical stable descriptor share one in-flight qualification promise rather than running the probe suite twice"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "effectiveConfigFingerprint extraction from a fake export.json at qualification time; a missing/unparsable export.json fails qualification closed"
+          },
+          {
+            "level": "unit",
+            "name": "concurrent cache misses for the identical stable descriptor coalescing into one in-flight qualification promise"
+          },
+          {
+            "level": "unit",
+            "name": "the allow-side probe's bounded retry tolerating simulated connector-not-registered attempts"
+          },
+          {
+            "level": "unit",
+            "name": "structural catalog evidence: exclusion/denial of a disallowed tool passes qualification; exclusion/denial of a REQUIRED tool fails it -- the reconciled polarity"
+          },
+          {
+            "level": "unit",
+            "name": "a genuine bypass-absence failure (a disallowed tool actually completes) failing qualification immediately, never retried"
+          },
+          {
+            "level": "integration",
+            "name": "the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable"
+          },
+          {
+            "level": "live",
+            "name": "the allowed-tool execution proof: a confirmed completed-call effect row for insrc_analyze and insrc_analyze_step under --enabled-tools connector_insrc_insrc_analyze/connector_insrc_insrc_analyze_step, tolerating connector flakiness via bounded retry -- an unresolved result here is accepted as 'stays unavailable', per review r3 finding 4, not a test failure"
+          },
+          {
+            "level": "live",
+            "name": "the blocked-tool proof via structural catalog enumeration (no actual write attempted)"
+          },
+          {
+            "level": "live",
+            "name": "the blanket-bypass absence proof via catalog enumeration"
+          },
+          {
+            "level": "live",
+            "name": "the ac4 no-mutation proof via structural catalog evidence that write/bash tools are absent or denied, never via an actual write under the production profile"
+          },
+          {
+            "level": "live",
+            "name": "the export.json effective-config fingerprint actually present and parsable on a real run"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Wire createVibeAdapter to populate the readOnly field from the cache",
+        "summary": "Add the readOnly field to the object createVibeAdapter (src/shared/vibe-adapter.ts:639) returns, populated synchronously from the qualification cache by stableDescriptorHash computed for this context.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "VibeExecutionAdapter.readOnly reflects the cached capability for this adapter's stable descriptor",
+          "A cache miss on first construction triggers qualification (via t3's suite) before readOnly is populated"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the cache-miss-on-descriptor-change path when the binary content or pinned env changes"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Wire startTurn's read-only dispatch and post-dispatch fingerprint invalidation",
+        "summary": "Replace startTurn's mode:'read-only' placeholder throw (src/shared/vibe-adapter.ts:653-656) with: re-check the cache by stableDescriptorHash at dispatch time, dispatch via buildArgv's read-only branch (t2) when 'qualified', throw VibeReadOnlyUnavailableError with the recorded reason when 'unavailable'; after a qualified dispatch completes, compare its own export.json against the cached effectiveConfigFingerprint and invalidate the cache entry on a mismatch (the completed turn's own result is unaffected by the mismatch).",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "A read-only request with a 'qualified' cached capability dispatches via buildArgv's read-only branch and returns the schema-validated result",
+          "A read-only request with an 'unavailable' cached capability throws VibeReadOnlyUnavailableError carrying the cached reason, without spawning a process",
+          "A qualified dispatch whose own export.json diverges from the cached effectiveConfigFingerprint invalidates the cache entry for the NEXT call, while the current call's own result is returned unaffected"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a qualified dispatch whose own export.json diverges from the cached fingerprint invalidating the entry while still returning its own result"
+          },
+          {
+            "level": "unit",
+            "name": "startTurn's mode:'read-only' branch re-checking the cache by stableDescriptorHash at dispatch time"
+          },
+          {
+            "level": "integration",
+            "name": "a scripted post-dispatch export.json mismatch invalidating the cache for the NEXT call while the current call's result is unaffected"
+          },
+          {
+            "level": "integration",
+            "name": "the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Wire readOnlySessionOnce's vibe branch to await the dispatched turn",
+        "summary": "In src/agent/providers/cli-provider.ts's readOnlySessionOnce, replace the vibe branch's current 'unreachable' throw with: call startTurn with mode:'read-only', await its result with the absolute deadline already computed at call entry, and parse the result against the caller's schema.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "readOnlySessionOnce's vibe branch returns the schema-validated answer on a qualified capability, end to end",
+          "readOnlySessionOnce's vibe branch surfaces VibeReadOnlyUnavailableError (with its reason) when the capability is unavailable, rather than throwing 'unreachable'",
+          "The absolute deadline computed once at call entry is honored even while waiting on a shared/in-flight qualification"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "readOnlySessionOnce's vibe branch returning the schema-validated answer on a qualified capability"
+          },
+          {
+            "level": "integration",
+            "name": "the recorded argv matching buildArgv's own values exactly except outputDir"
+          },
+          {
+            "level": "integration",
+            "name": "the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable"
+          },
+          {
+            "level": "integration",
+            "name": "the capabilityPolicy precondition refused before readOnlySessionOnce is reached"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "File the HLD amendment for sc3's provenAgainst field shape",
+        "summary": "File the HLD-amendment proposal (sharedContract.rename on sc3, breaking: true, replacing { binaryVersion, effectivePolicy } with { stableDescriptorHash, effectiveConfigFingerprint }) as a tracked artifact, reconciling the HLD document with this Story's own LLD shape. Non-code: a process/documentation action, not gated by t1-t6's implementation.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The HLD amendment proposal for sc3's provenAgainst field rename is filed as a tracked artifact (previously raised by this Story's own LLD and again by s6's reconciliation Story, but never tracked as a standalone AMD-* artifact per this session's direct verification)",
+          "The filed amendment's rationale cites both this Story's LLD section 4.1-4.2 and s6's already-approved reconciliation LLD"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "the filed amendment exists as a tracked AMD-* artifact for sc3's provenAgainst rename and is readable via the workflow's own amendment listing"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "stableDescriptorHash computation excluding outputDir and its hit/miss decision -- two calls differing only in outputDir still hit the cache",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "effectiveConfigFingerprint extraction from a fake export.json at qualification time; a missing/unparsable export.json fails qualification closed",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a qualified dispatch whose own export.json diverges from the cached fingerprint invalidating the entry while still returning its own result",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "concurrent cache misses for the identical stable descriptor coalescing into one in-flight qualification promise",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the allow-side probe's bounded retry tolerating simulated connector-not-registered attempts",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "structural catalog evidence: exclusion/denial of a disallowed tool passes qualification; exclusion/denial of a REQUIRED tool fails it -- the reconciled polarity",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a genuine bypass-absence failure (a disallowed tool actually completes) failing qualification immediately, never retried",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "startTurn's mode:'read-only' branch re-checking the cache by stableDescriptorHash at dispatch time",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildArgv's read-only branch emits exactly the two connector_insrc_* flags and no approval flag",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "readOnlySessionOnce's vibe branch returning the schema-validated answer on a qualified capability",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the recorded argv matching buildArgv's own values exactly except outputDir",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the VibeReadOnlyUnavailableError path when probes exhaust the retry bound or export.json is unusable",
+        "coveredByTaskIds": [
+          "t3",
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the cache-miss-on-descriptor-change path when the binary content or pinned env changes",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a scripted post-dispatch export.json mismatch invalidating the cache for the NEXT call while the current call's result is unaffected",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the capabilityPolicy precondition refused before readOnlySessionOnce is reached",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the allowed-tool execution proof: a confirmed completed-call effect row for insrc_analyze and insrc_analyze_step under --enabled-tools connector_insrc_insrc_analyze/connector_insrc_insrc_analyze_step, tolerating connector flakiness via bounded retry -- an unresolved result here is accepted as 'stays unavailable', per review r3 finding 4, not a test failure",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the blocked-tool proof via structural catalog enumeration (no actual write attempted)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the blanket-bypass absence proof via catalog enumeration",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the ac4 no-mutation proof via structural catalog evidence that write/bash tools are absent or denied, never via an actual write under the production profile",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the export.json effective-config fingerprint actually present and parsable on a real run",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ],
+    "epicImpact": {
+      "applies": true,
+      "storiesCovered": [
+        "s1"
+      ],
+      "findings": "s1 built and landed sc1/sc2, matching their HLD interfaceSketches exactly, and left s2's own contract (sc3) as a pure placeholder refusal with no read-only buildArgv branch and no signal/deadline forwarding in readOnlySessionOnce. s2's work is genuinely greenfield within its own boundary (confirmed this round by direct re-read of the current file, not just the LLD's own claim); s1's BUILD was approved with a disclosed full-sweep gap (t7) and an unrelated documentation-only discrepancy, neither touching sc3. readExitEvidence (confirmed read this round) is the exact existing internal helper s2's qualification suite and post-dispatch fingerprint check reuse directly, in-module.",
+      "sources": [
+        "src/shared/vibe-adapter.ts:639-665",
+        "src/shared/vibe-adapter.ts:302-318",
+        "src/shared/vibe-adapter.ts:365-375",
+        "src/agent/providers/cli-provider.ts:866-941",
+        ".insrc/artifacts/BUILD-639cd2159a87aedb-s1.json",
+        "docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/S001/BUILD.md"
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 migrationSteps order 1 (ReadOnlyCapability type + stableDescriptorHash-keyed cache)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 migrationSteps order 2 (buildArgv read-only branch + stable-descriptor computation)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 migrationSteps order 3 (live qualification suite)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 migrationSteps order 4 (createVibeAdapter readOnly field wiring)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 migrationSteps order 5 (startTurn read-only dispatch + fingerprint invalidation)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 migrationSteps order 6 (readOnlySessionOnce vibe-branch wiring)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 migrationSteps order 7 (HLD amendment filing for sc3's provenAgainst rename)"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+363	{"artifactId":"PLAN-639cd2159a87aedb-s2","entry":{"id":"707d9f3dcd254878a75be6f317e41daf","actor":{"id":"insrc:approval","kind":"system","properties":{}},"timestamp":"2026-11-27T15:37:24.405Z","operation":"approve","revision":{"number":1,"contentHash":"88b98b2858ed0920fc13c43fd0748ac7b7e838a4457c93e99a0367706213cbef"},"status":{"from":"draft","to":"approved"}}}

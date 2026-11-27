@@ -24,6 +24,7 @@ import { link, lstat, mkdir, open, readdir, unlink, writeFile } from 'node:fs/pr
 import { randomBytes } from 'node:crypto';
 import { join, relative, resolve, sep } from 'node:path';
 import { errCode } from './async-util.js';
+import { HOME_SCRATCHPAD_SCOPE, type ScratchpadRef } from './scratch-identity.js';
 
 /** One scratchpad's metadata; `id` is the file basename. */
 export interface ScratchEntry {
@@ -140,6 +141,9 @@ export interface ScratchStoreDeps {
 }
 
 export interface ScratchStore {
+  /** Validate an existing note without reading its contents or creating anything.
+   * Native editor I/O after resolution follows VS Code's normal file semantics. */
+  resolveScratch(id: string): Promise<{ ref: ScratchpadRef; filePath: string }>;
   listScratches(limit?: number | undefined): Promise<ScratchEntry[]>;
   createScratch(title: string, body?: string | undefined): Promise<ScratchEntry>;
   readScratch(id: string): Promise<{ entry: ScratchEntry; content: string }>;
@@ -585,5 +589,28 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
     }
   };
 
-  return { listScratches, createScratch, readScratch, deleteScratch, updateScratch };
+  const resolveScratch: ScratchStore['resolveScratch'] = async (id) => {
+    const filePath = resolveInside(id);
+    try {
+      const rootStat = await fs.lstat(resolve(root));
+      if (rootStat.isSymbolicLink || rootStat.isFile) throw new ScratchRefused('scratchpad root is not a directory');
+      const named = await fs.lstat(filePath);
+      if (!named.isFile || named.isSymbolicLink) throw new ScratchRefused(`'${id}' is not a regular file`);
+      const handle = await fs.open(filePath); // production: O_NOFOLLOW
+      try {
+        const opened = await handle.stat();
+        if (!opened.isFile || opened.ino !== named.ino) throw new ScratchRefused(`'${id}' changed during resolution`);
+      } finally {
+        await handle.close();
+      }
+    } catch (e) {
+      if (e instanceof ScratchRefused) throw e;
+      if (errCode(e) === 'ENOENT') throw new ScratchNotFound(`'${id}' does not exist`);
+      if (errCode(e) === 'ELOOP' || errCode(e) === 'EISDIR') throw new ScratchRefused(`'${id}' is not a regular file`);
+      throw storeError(e);
+    }
+    return { ref: { repo: HOME_SCRATCHPAD_SCOPE, stableId: id }, filePath };
+  };
+
+  return { listScratches, createScratch, readScratch, deleteScratch, updateScratch, resolveScratch };
 }

@@ -15,6 +15,7 @@ import {
   nodeScratchFs,
 } from '../scratch-store.js';
 import { eacces, eexist, fakeScratchFs } from './fake-scratch-fs.js';
+import { HOME_SCRATCHPAD_SCOPE } from '../scratch-identity.js';
 
 const ROOT = '/root/scratches';
 
@@ -45,6 +46,55 @@ const seed = (fake: ReturnType<typeof fakeScratchFs>, name: string, content: str
   // A fresh inode per seeded entry: a swap-in afterwards reports a different ino.
   if (fake.inos.get(path) === undefined) fake.inos.set(path, 9_000 + fake.files.size);
 };
+
+test('scratch resolver returns stable home/basename identity without reading content or writing', async () => {
+  const { fake, store } = setup();
+  fake.dirs.add(ROOT);
+  seed(fake, 'note.md', '# Existing\n', 100);
+  const expected = { ref: { repo: HOME_SCRATCHPAD_SCOPE, stableId: 'note.md' }, filePath: `${ROOT}/note.md` };
+  const before = new Map(fake.files);
+  assert.deepEqual(await store.resolveScratch('note.md'), expected);
+  assert.deepEqual(await createScratchStore({ root: ROOT, fs: fake.fs }).resolveScratch('note.md'), expected);
+  assert.deepEqual(fake.files, before);
+  assert.equal(fake.ops('read').length, 0);
+  assert.equal(fake.ops('writeFile').length, 0);
+  assert.equal(fake.ops('mkdir').length, 0);
+});
+
+test('scratch resolver refuses escaping ids, missing files, symlinks, directories and swapped inodes', async () => {
+  const { fake, store } = setup();
+  fake.dirs.add(ROOT);
+  seed(fake, 'note.md', '# Existing\n', 100);
+  for (const id of ['../note.md', '/tmp/note.md', 'note.txt', 'a/b.md', 'a\\b.md', '']) {
+    await assert.rejects(store.resolveScratch(id), ScratchRefused);
+  }
+  await assert.rejects(store.resolveScratch('missing.md'), ScratchNotFound);
+  fake.kinds.set(`${ROOT}/link.md`, 'symlink');
+  await assert.rejects(store.resolveScratch('link.md'), ScratchRefused);
+  fake.dirs.add(`${ROOT}/directory.md`);
+  await assert.rejects(store.resolveScratch('directory.md'), ScratchRefused);
+  const originalOpen = fake.fs.open;
+  const swapped = createScratchStore({ root: ROOT, fs: { ...fake.fs, open: async path => {
+    const h = await originalOpen(path);
+    return { ...h, stat: async () => ({ ...await h.stat(), ino: 999_999 }) };
+  } } });
+  await assert.rejects(swapped.resolveScratch('note.md'), ScratchRefused);
+  fake.dirs.delete(ROOT);
+  fake.kinds.set(ROOT, 'symlink');
+  await assert.rejects(store.resolveScratch('note.md'), ScratchRefused);
+});
+
+test('scratch resolver uses no-follow on real files and preserves existing contents', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'insrc-ref-'));
+  try {
+    await writeFile(join(dir, 'note.md'), 'original\r\n');
+    await symlink(join(dir, 'note.md'), join(dir, 'link.md'));
+    const store = createScratchStore({ root: dir });
+    assert.deepEqual(await store.resolveScratch('note.md'), { ref: { repo: HOME_SCRATCHPAD_SCOPE, stableId: 'note.md' }, filePath: join(dir, 'note.md') });
+    await assert.rejects(store.resolveScratch('link.md'), ScratchRefused);
+    assert.equal((await store.readScratch('note.md')).content, 'original\r\n');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
 
 test('scratch-store.test.ts: listScratches returns entries sorted by mtime desc with id/name/mtime/size (ENOENT->[], non-.md skipped, limit cap, ties id asc)', async () => {
   const { fake, store } = setup();

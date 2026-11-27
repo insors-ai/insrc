@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -8,7 +8,6 @@ import { pathToFileURL } from 'node:url';
 import { once } from 'node:events';
 import { build } from 'esbuild';
 import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
-import { requirePreparedBuild } from '../../../scripts/test-harness/build.mjs';
 
 const source = resolve('src/installer/qualification-time-budgets.mjs');
 const moduleUrl = pathToFileURL(source).href;
@@ -75,15 +74,21 @@ test('profile-snapshot-cannot-change-after-module-import', async () => {
 });
 
 test('copied-policy-asset-has-source-bytes-and-loads-from-installed-control', async () => {
-  requirePreparedBuild();
-  const copied = resolve('out/installer/qualification-time-budgets.mjs');
-  const bytes = readFileSync(source), digest = createHash('sha256').update(bytes).digest('hex');
-  assert.deepEqual(readFileSync(copied), bytes);
-  const attestation = JSON.parse(readFileSync('out/assets/connection-management-build.json', 'utf8'));
-  assert.equal(attestation.sourceFiles['installer/qualification-time-budgets.mjs'], digest);
-  assert.equal(attestation.compiledFiles['installer/qualification-time-budgets.mjs'], digest);
   const directory = mkdtempSync(join(tmpdir(), 'insrc-budget-bundle-'));
   try {
+    // Run the actual publisher in an isolated resource-only fixture. No shared
+    // prepared output is read or rebuilt, including under the gate's raw runner.
+    mkdirSync(join(directory, 'src/installer'), { recursive: true });
+    copyFileSync(source, join(directory, 'src/installer/qualification-time-budgets.mjs'));
+    const copier = join(directory, 'copy-assets.mjs');
+    copyFileSync(resolve('copy-assets.mjs'), copier);
+    await probe(`await import(${JSON.stringify(pathToFileURL(copier).href)});`);
+    const copied = join(directory, 'out/installer/qualification-time-budgets.mjs');
+    const bytes = readFileSync(source), digest = createHash('sha256').update(bytes).digest('hex');
+    assert.deepEqual(readFileSync(copied), bytes);
+    const attestation = JSON.parse(readFileSync(join(directory, 'out/assets/connection-management-build.json'), 'utf8'));
+    assert.equal(attestation.sourceFiles['installer/qualification-time-budgets.mjs'], digest);
+    assert.equal(attestation.compiledFiles['installer/qualification-time-budgets.mjs'], digest);
     const bundled = await build({ stdin: { contents: `export {QUALIFICATION_TIME_BUDGETS} from ${JSON.stringify(copied)};`,
       resolveDir: process.cwd() }, bundle: true, write: false, platform: 'node', format: 'esm' });
     const bundle = join(directory, 'control.mjs');

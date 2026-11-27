@@ -28,6 +28,11 @@ export function minimalScratchEdit(before: string, after: string, baseVersion: n
   return { baseVersion, start, end: before.length - suffix, text: after.slice(start, after.length - suffix) };
 }
 
+const sameDraft = (left: ScratchDraftProposal, right: ScratchDraftProposal): boolean =>
+  left.type === right.type && left.paneSessionId === right.paneSessionId && left.draftSeq === right.draftSeq &&
+  left.editId === right.editId && left.baseVersion === right.baseVersion && left.baseDigest === right.baseDigest &&
+  left.parentEditId === right.parentEditId && left.apply === right.apply && left.markdown === right.markdown;
+
 interface Pane {
   readonly id: string;
   readonly post: (message: ScratchHostToEditor) => void;
@@ -36,7 +41,7 @@ interface Pane {
   latest?: ScratchDraftProposal | undefined;
   appliedSeq: number;
   failure?: string | undefined;
-  ack?: { readonly editId: string; readonly baseVersion: number; readonly baseDigest: string; readonly snapshot: ScratchSnapshot } | undefined;
+  ack?: { readonly editId: string; readonly baseVersion: number; readonly baseDigest: string; readonly snapshot: ScratchSnapshot; readonly request: ScratchDraftProposal } | undefined;
 }
 
 export class ScratchDocumentController {
@@ -90,7 +95,8 @@ export class ScratchDocumentController {
     const pane = this.panes.get(id), parsed = parseScratchEditorMessage(value);
     if (!pane?.attached || this.disposed || !parsed || parsed.type !== 'draft' || parsed.paneSessionId !== id) return Promise.reject(new Error('Invalid scratchpad draft/session'));
     const draft = { ...parsed };
-    if (pane.ack?.editId === draft.editId && pane.appliedSeq === draft.draftSeq && pane.ack.snapshot.markdown === draft.markdown) {
+    if (pane.ack?.editId === draft.editId && pane.appliedSeq === draft.draftSeq) {
+      if (!sameDraft(pane.ack.request, draft)) return Promise.reject(new Error('Conflicting duplicate acknowledged draft'));
       this.post(pane, { type: 'apply-ack', paneSessionId: id, draftSeq: draft.draftSeq, editId: draft.editId, ...pane.ack.snapshot });
       return Promise.resolve();
     }
@@ -98,7 +104,7 @@ export class ScratchDocumentController {
     const same = previous && previous.draftSeq === draft.draftSeq;
     if (previous && draft.draftSeq < previous.draftSeq) return Promise.reject(new Error('Stale draft sequence'));
     if (same) {
-      if (JSON.stringify(previous) === JSON.stringify(draft)) return this.receipts;
+      if (sameDraft(previous, draft)) return this.receipts;
       // A reported recovery draft may be promoted only with identical identity,
       // sequence and text, once its older in-flight parent has been acknowledged.
       if (previous.editId !== draft.editId || previous.markdown !== draft.markdown || previous.apply !== false || draft.apply === false) return Promise.reject(new Error('Conflicting duplicate draft'));
@@ -145,7 +151,7 @@ export class ScratchDocumentController {
           throw new Error('Document changed before acknowledgement');
         }
         pane.appliedSeq = draft.draftSeq;
-        pane.ack = { editId: draft.editId, baseVersion: base.version, baseDigest: base.digest, snapshot: applied };
+        pane.ack = { editId: draft.editId, baseVersion: base.version, baseDigest: base.digest, snapshot: applied, request: draft };
         this.post(pane, { type: 'apply-ack', paneSessionId: pane.id, draftSeq: draft.draftSeq, editId: draft.editId, ...applied });
         for (const other of this.panes.values()) if (other !== pane) this.post(other, { type: 'document-state', paneSessionId: other.id, ...applied, locked: other.locked });
       } catch { this.conflict(pane, draft.draftSeq, 'Edit could not be confirmed; source and recovery draft retained.'); }

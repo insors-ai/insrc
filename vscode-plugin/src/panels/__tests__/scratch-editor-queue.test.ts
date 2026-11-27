@@ -84,6 +84,10 @@ test('scratch queue rejects stale, cross-session and conflicting duplicate input
   const h = harness(); h.controller.addPane('a', () => {}, false);
   const original = h.draft(1, '# First\n'); await h.controller.receive('a', original); await h.controller.flush();
   await h.controller.receive('a', original); assert.equal(h.edits.length, 1);
+  await h.controller.receive('a', Object.fromEntries(Object.entries(original).reverse()));
+  for (const patch of [{ baseVersion: 999 }, { baseDigest: 'f'.repeat(64) }, { parentEditId: 'unknown' }, { apply: false }]) {
+    await assert.rejects(h.controller.receive('a', { ...original, ...patch }), /Conflicting duplicate/);
+  }
   await assert.rejects(h.controller.receive('a', { ...original, markdown: '# Changed duplicate\n' }));
   await assert.rejects(h.controller.receive('a', { ...original, paneSessionId: 'other' }));
   await assert.rejects(h.controller.receive('a', { ...original, draftSeq: 2 }));

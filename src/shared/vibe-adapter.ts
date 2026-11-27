@@ -24,7 +24,8 @@
  * Nothing imports this module until the consumers are rewired in later Tasks.
  */
 
-import { spawn as nodeSpawn } from 'node:child_process';
+import { execFileSync, spawn as nodeSpawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { statSync } from 'node:fs';
 import { mkdtemp as mkdtempAsync, readFile as readFileAsync, rm as rmAsync } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -385,13 +386,73 @@ function buildApprovalArgs(approval: VibeApproval | undefined): readonly string[
 function buildArgv(request: VibeTurnRequest, outputDir: string): readonly string[] {
 	const args: string[] = ['-p', '--output', request.outputMode, '--output-dir', outputDir];
 	args.push(...buildSelectionArgs(request.session));
-	args.push(...buildApprovalArgs(request.approval));
+	if (request.mode === 'read-only') {
+		// Fixed read-only launch profile (sc3): the two connector_insrc_* allow flags and
+		// NOTHING else approval-related, regardless of request.approval -- startTurn already
+		// rejects a read-only request carrying an approval setting, but this stays safe on
+		// its own terms too.
+		for (const toolId of VIBE_INSRC_ANALYSIS_TOOL_IDS) args.push('--enabled-tools', `connector_insrc_${toolId}`);
+	} else {
+		args.push(...buildApprovalArgs(request.approval));
+	}
 	if (request.readDirs !== undefined) for (const dir of request.readDirs) args.push('--add-dir', dir);
 	if (request.budget?.maxTurns !== undefined) args.push('--max-turns', String(request.budget.maxTurns));
 	if (request.budget?.timeLimitSeconds !== undefined) args.push('--time-limit', String(request.budget.timeLimitSeconds));
 	if (request.budget?.maxPriceDollars !== undefined) args.push('--max-price', String(request.budget.maxPriceDollars));
 	if (request.budget?.maxTokens !== undefined) args.push('--max-tokens', String(request.budget.maxTokens));
 	return args;
+}
+
+/** Test-only: buildArgv is intentionally unexported in production (callers get argv only
+ *  via startTurn's dispatch); this lets tests observe its real output directly. */
+export function _buildArgvForTests(request: VibeTurnRequest, outputDir: string): readonly string[] { return buildArgv(request, outputDir); }
+
+/** `argv` with its `--output-dir <value>` pair removed -- buildArgv mints a fresh
+ *  mkdtemp() path into --output-dir on every call, so a stable cache key must exclude it. */
+function argvExcludingOutputDir(argv: readonly string[]): readonly string[] {
+	const idx = argv.indexOf('--output-dir');
+	if (idx === -1) return argv;
+	return [...argv.slice(0, idx), ...argv.slice(idx + 2)];
+}
+
+/** Resolve a bare command name to its absolute path via `which` (same precedent as
+ *  cli-provider.ts's resolveBin); an already-explicit path, or one `which` can't resolve,
+ *  is returned as-is so the descriptor still hashes deterministically. */
+function resolveCommandOnPath(command: string): string {
+	if (command.includes('/')) return command;
+	try {
+		const out = execFileSync('which', [command], { encoding: 'utf8' }).trim().split('\n')[0];
+		if (out !== undefined && out.length > 0) return out;
+	} catch { /* not on PATH via `which`; fall back to the bare name */ }
+	return command;
+}
+
+interface StableDescriptorHashDeps {
+	readonly resolveCommandPath?: ((command: string) => string) | undefined;
+	readonly statSync?: ((path: string) => { readonly size: number; readonly mtimeMs: number }) | undefined;
+}
+
+/** A stable authorization-descriptor key (sc3) for the read-only qualification cache:
+ *  the resolved binary's own content identity (path + size + mtime -- changes on any
+ *  install/upgrade) + `argv` with --output-dir excluded + the adapter's pinned env subset
+ *  + cwd. Two calls whose only difference is --output-dir hash identically; a different
+ *  binary, env or cwd hashes differently. */
+export function stableDescriptorHash(context: VibeAdapterContext, command: string, argv: readonly string[], deps: StableDescriptorHashDeps = {}): string {
+	const resolve = deps.resolveCommandPath ?? resolveCommandOnPath;
+	const stat = deps.statSync ?? statSync;
+	const resolvedPath = resolve(command);
+	let binaryIdentity = resolvedPath;
+	try {
+		const s = stat(resolvedPath);
+		binaryIdentity = `${resolvedPath}:${s.size}:${s.mtimeMs}`;
+	} catch { /* unresolvable/unreadable path still participates in the key as-is */ }
+	const payload = JSON.stringify({
+		binaryIdentity,
+		argv: argvExcludingOutputDir(argv),
+		env: context.env ?? {},
+		cwd: context.cwd,
+	});
+	return createHash('sha256').update(payload).digest('hex');
 }
 
 /** A minimal async pull-queue: events pushed as they're parsed are drained by the iterator;

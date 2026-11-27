@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Script } from 'node:vm';
+import { Script, createContext } from 'node:vm';
 import { createChatPanelHost, runCatalogView, type ChatPanelChannel, type ChatEditGovernanceDeps } from '../chat-panel.js';
 import { providerIcon } from '../provider-icons.js';
 import { transcriptPagerWebviewSource } from '../transcript-pager.js';
@@ -8744,4 +8744,242 @@ test('chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is 
   const here = dirname(fileURLToPath(import.meta.url));
   assert.match(readFileSync(join(here, '..', '..', 'panels', '__tests__', 'scratch-panel.test.ts'), 'utf8'), /title/, 'scratch-panel.test.ts pins the icon-only+title contract for the scratch panels');
   void allOf;
+});
+
+// ---- ISSUE-d3ca1368b1f4cccd: run-config popup flicker — behavioral tests over the shell's REAL inline script ----
+
+/**
+ * A minimal DOM element that runs the shell's one inline script in a vm: classList backed by
+ * className, innerHTML parsed into child elements (enough for the mitem/pane markup), writes
+ * recorded, listeners fired by hand. Only what the inline script + its two embedded sub-sources
+ * (render-registry, transcript-pager) touch at init and in the run-config handlers.
+ */
+class MiniEl {
+  tagName: string;
+  id = '';
+  attrs: Record<string, string> = {};
+  children: MiniEl[] = [];
+  parentNode: MiniEl | null = null;
+  listeners: Record<string, Array<(e?: unknown) => void>> = {};
+  writes: Array<{ prop: string; value: unknown }> = [];
+  style: Record<string, string> = {};
+  value = '';
+  hidden = false;
+  disabled = false;
+  scrollTop = 0;
+  scrollHeight = 0;
+  clientHeight = 0;
+  onclick: ((e?: unknown) => void) | null = null;
+  onmouseenter: ((e?: unknown) => void) | null = null;
+  private _class = '';
+  private _text = '';
+  private _html = '';
+  constructor(tag: string) { this.tagName = tag; }
+  get className(): string { return this._class; }
+  set className(v: string) { this._class = v; this.writes.push({ prop: 'className', value: v }); }
+  get classList() {
+    const self = this;
+    const has = (c: string): boolean => (' ' + self._class + ' ').includes(' ' + c + ' ');
+    return {
+      contains: has,
+      add: (c: string): void => { if (!has(c)) self.className = (self._class ? self._class + ' ' : '') + c; },
+      remove: (c: string): void => { self.className = self._class.split(/\s+/).filter((x) => x && x !== c).join(' '); },
+      toggle: (c: string): void => { if (has(c)) this.remove(c); else this.add(c); },
+    };
+  }
+  get textContent(): string { return this._text; }
+  set textContent(v: string) { this._text = String(v); this.children = []; this.writes.push({ prop: 'textContent', value: v }); }
+  get innerHTML(): string { return this._html; }
+  set innerHTML(v: string) {
+    this._html = String(v);
+    this.writes.push({ prop: 'innerHTML', value: v });
+    this.children = [];
+    parseMiniHtml(this._html, this);
+  }
+  get firstChild(): MiniEl | null { return this.children[0] ?? null; }
+  appendChild(c: MiniEl): MiniEl { if (c.parentNode) c.parentNode.children = c.parentNode.children.filter((x) => x !== c); c.parentNode = this; this.children.push(c); return c; }
+  insertBefore(c: MiniEl, ref: MiniEl | null): MiniEl { c.parentNode = this; const i = ref === null ? this.children.length : this.children.indexOf(ref); this.children.splice(i < 0 ? this.children.length : i, 0, c); return c; }
+  removeChild(c: MiniEl): MiniEl { this.children = this.children.filter((x) => x !== c); c.parentNode = null; return c; }
+  setAttribute(k: string, v: unknown): void { this.attrs[k] = String(v); this.writes.push({ prop: `attr:${k}`, value: v }); }
+  getAttribute(k: string): string | null { return Object.prototype.hasOwnProperty.call(this.attrs, k) ? this.attrs[k]! : null; }
+  removeAttribute(k: string): void { delete this.attrs[k]; }
+  addEventListener(t: string, l: (e?: unknown) => void): void { (this.listeners[t] ??= []).push(l); }
+  focus(): void { /* no-op */ }
+  scrollIntoView(): void { /* no-op */ }
+  querySelector(sel: string): MiniEl | null {
+    const walk = (x: MiniEl): MiniEl | null => {
+      for (const c of x.children) {
+        if (sel.startsWith('#') && c.id === sel.slice(1)) return c;
+        if (sel.startsWith('.') && (' ' + c._class + ' ').includes(' ' + sel.slice(1) + ' ')) return c;
+        const found = walk(c);
+        if (found) return found;
+      }
+      return null;
+    };
+    return walk(this);
+  }
+  querySelectorAll(sel: string): MiniEl[] {
+    const out: MiniEl[] = [];
+    const walk = (x: MiniEl): void => { for (const c of x.children) { if (sel.startsWith('.') && (' ' + c._class + ' ').includes(' ' + sel.slice(1) + ' ')) out.push(c); walk(c); } };
+    walk(this);
+    return out;
+  }
+}
+
+/** Parse the simple markup the inline script assigns to innerHTML (`<span class="x">…</span>`), into child elements. */
+function parseMiniHtml(html: string, root: MiniEl): void {
+  const re = /<(\/?)(\w+)((?:\s+[\w-]+(?:="[^"]*")?)*)\s*>|([^<]+)/g;
+  const stack: MiniEl[] = [root];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    if (m[4] !== undefined) {
+      const t = new MiniEl('#text');
+      t.textContent = m[4];
+      stack[stack.length - 1]!.appendChild(t);
+      continue;
+    }
+    if (m[1] === '/') { if (stack.length > 1) stack.pop(); continue; }
+    const el = new MiniEl(m[2]!.toLowerCase());
+    const attrRe = /([\w-]+)(?:="([^"]*)")?/g;
+    let a: RegExpExecArray | null;
+    while ((a = attrRe.exec(m[3] ?? '')) !== null) {
+      if (a[1] === 'class') el.className = a[2] ?? '';
+      else if (a[1] === 'id') el.id = a[2] ?? '';
+      else el.attrs[a[1]!] = a[2] ?? '';
+    }
+    stack[stack.length - 1]!.appendChild(el);
+    if (!/^(br|img|input|hr|meta|link)$/.test(el.tagName)) stack.push(el);
+  }
+}
+
+interface WebviewRun {
+  posted: Array<{ v: number; payload: { type: string; [k: string]: unknown } }>;
+  send: (payload: unknown) => void;
+  click: (id: string) => void;
+  el: (id: string) => MiniEl;
+  htmlWritesOf: (id: string) => number;
+}
+
+/** Render the shell via the real host, run its one inline script in a vm over a MiniEl document, and return drivers. */
+function runChatWebview(opts: { catalog: unknown[]; catalogStatus: string; provider: string; model: string; effort: string }): WebviewRun {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]), codex: scriptedAdapter([]) }, ['claude', 'codex']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  const html = fc.html();
+  const body = html.slice(html.indexOf('>', html.indexOf('<script nonce=')) + 1, html.lastIndexOf('</script>'));
+  const posted: WebviewRun['posted'] = [];
+  const winListeners: Record<string, Array<(e?: unknown) => void>> = {};
+  const els = new Map<string, MiniEl>();
+  const el = (id: string): MiniEl => {
+    let n = els.get(id);
+    if (!n) { n = new MiniEl('div'); n.id = id; els.set(id, n); }
+    return n;
+  };
+  // The server-rendered run-config state, as the shell's markup would carry it.
+  el('insrc-catalog').setAttribute('data-status', opts.catalogStatus);
+  el('insrc-catalog').setAttribute('data-catalog', JSON.stringify(opts.catalog));
+  el('insrc-runbtn').setAttribute('data-provider', opts.provider);
+  el('insrc-runbtn').setAttribute('data-model', opts.model);
+  el('insrc-runbtn').setAttribute('data-effort', opts.effort);
+  const fakeDoc = {
+    getElementById: el,
+    createElement: (t: string) => new MiniEl(t.toLowerCase()),
+    createElementNS: (_ns: string, t: string) => new MiniEl(t.toLowerCase()),
+    createTextNode: (d: string) => { const t = new MiniEl('#text'); t.textContent = d; return t; },
+    addEventListener: (_t: string, _l: unknown) => { /* document-level click/keydown not needed here */ },
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    body: el('__body__'),
+    documentElement: el('__html__'),
+  };
+  const sandbox: Record<string, unknown> = {
+    console,
+    document: fakeDoc,
+    acquireVsCodeApi: () => ({ postMessage: (m: unknown) => { posted.push(m as WebviewRun['posted'][number]); } }),
+    setTimeout: () => 0,
+    clearTimeout: () => {},
+    setInterval: () => 0,
+    clearInterval: () => {},
+    addEventListener: (t: string, l: (e?: unknown) => void) => { (winListeners[t] ??= []).push(l); },
+    location: { search: '' },
+    navigator: { userAgent: 'mini-test' },
+  };
+  sandbox['window'] = sandbox;
+  sandbox['globalThis'] = sandbox;
+  createContext(sandbox);
+  new Script(body).runInContext(sandbox);
+  const send = (payload: unknown): void => { for (const l of winListeners['message'] ?? []) l({ data: { payload } }); };
+  const click = (id: string): void => { const n = el(id); if (n.onclick) n.onclick({ stopPropagation() {} }); for (const l of n.listeners['click'] ?? []) l({ stopPropagation() {} }); };
+  return {
+    posted,
+    send,
+    click,
+    el,
+    htmlWritesOf: (id: string) => el(id).writes.filter((w) => w.prop === 'innerHTML').length,
+  };
+}
+
+const POPUP_CATALOG = [
+  { id: 'claude', label: 'Claude', models: [{ id: 'm1', name: 'Model One', alias: 'one', efforts: ['low', 'high'] }] },
+  { id: 'codex', label: 'Codex', models: [{ id: 'c1', name: 'Codex One', alias: 'cx', efforts: [] }] },
+];
+
+test('ISSUE-d3ca1368b1f4cccd ac2: opening the run popup with an already-ready catalog does not fire a catalog refresh', () => {
+  const w = runChatWebview({ catalog: POPUP_CATALOG, catalogStatus: 'ready', provider: 'claude', model: '', effort: '' });
+  w.click('insrc-runbtn');
+  assert.ok(w.el('insrc-runpop').classList.contains('open'), 'popup opened');
+  assert.equal(w.posted.filter((m) => m.payload.type === 'open-run-picker').length, 0, 'no open-run-picker posted when the catalog is ready');
+});
+
+test('ISSUE-d3ca1368b1f4cccd ac1: duplicate run-config and run-catalog echoes do not rebuild an open popup or the button label', () => {
+  const w = runChatWebview({ catalog: POPUP_CATALOG, catalogStatus: 'ready', provider: 'claude', model: '', effort: '' });
+  w.click('insrc-runbtn');
+  const paneWrites = w.htmlWritesOf('insrc-provpane');
+  const btnWrites = w.htmlWritesOf('insrc-runbtn');
+  w.send({ type: 'run-config', provider: 'claude', model: '', effort: '' });
+  w.send({ type: 'run-config', provider: 'claude', model: '', effort: '' });
+  assert.equal(w.htmlWritesOf('insrc-provpane'), paneWrites, 'identical run-config echo leaves the open pane untouched');
+  assert.equal(w.htmlWritesOf('insrc-runbtn'), btnWrites, 'identical run-config echo leaves the button label untouched');
+  // First catalog arrival is a genuine change (revision -1 -> 0): one rebuild. A duplicate of the
+  // SAME revision must not rebuild again.
+  w.send({ type: 'run-catalog', revision: 0, status: 'ready', providers: POPUP_CATALOG });
+  const afterFirstCatalog = w.htmlWritesOf('insrc-provpane');
+  assert.ok(afterFirstCatalog > paneWrites, 'first catalog arrival re-renders the open pane once');
+  w.send({ type: 'run-catalog', revision: 0, status: 'ready', providers: POPUP_CATALOG });
+  w.send({ type: 'run-catalog', revision: 0, status: 'ready', providers: POPUP_CATALOG });
+  assert.equal(w.htmlWritesOf('insrc-provpane'), afterFirstCatalog, 'duplicate run-catalog (same revision+status) does not rebuild');
+});
+
+test('ISSUE-d3ca1368b1f4cccd ac3: picking a different provider posts new-chat AND closes the popup (no open popup left for the host echo to rebuild)', () => {
+  const w = runChatWebview({ catalog: POPUP_CATALOG, catalogStatus: 'ready', provider: 'claude', model: '', effort: '' });
+  w.click('insrc-runbtn');
+  const pane = w.el('insrc-provpane');
+  const rows = pane.children.filter((c) => (' ' + c.className + ' ').includes(' item '));
+  assert.equal(rows.length, 2, 'two provider rows rendered');
+  const codexRow = rows.find((r) => r.querySelector('.lbl')?.textContent === 'Codex');
+  assert.ok(codexRow, 'codex provider row exists');
+  codexRow!.onclick?.({ stopPropagation() {} });
+  const newChats = w.posted.filter((m) => m.payload.type === 'new-chat');
+  assert.equal(newChats.length, 1, 'one new-chat posted');
+  assert.equal(newChats[0]!.payload['provider'], 'codex');
+  assert.equal(w.el('insrc-runpop').classList.contains('open'), false, 'popup closed on the new-chat provider pick');
+});
+
+test('ISSUE-d3ca1368b1f4cccd ac4: a genuine run-config change re-renders the open popup and the button label exactly once', () => {
+  const w = runChatWebview({ catalog: POPUP_CATALOG, catalogStatus: 'ready', provider: 'claude', model: '', effort: '' });
+  w.click('insrc-runbtn');
+  const paneWrites = w.htmlWritesOf('insrc-provpane');
+  const btnWrites = w.htmlWritesOf('insrc-runbtn');
+  w.send({ type: 'run-config', provider: 'claude', model: 'm1', effort: '' });
+  assert.equal(w.htmlWritesOf('insrc-provpane'), paneWrites + 1, 'changed model re-renders the open pane once');
+  assert.equal(w.htmlWritesOf('insrc-runbtn'), btnWrites + 1, 'changed model rewrites the button label once');
+  w.send({ type: 'run-config', provider: 'claude', model: 'm1', effort: '' });
+  assert.equal(w.htmlWritesOf('insrc-provpane'), paneWrites + 1, 'the echoed confirm of the same value does not rebuild again');
+  assert.equal(w.htmlWritesOf('insrc-runbtn'), btnWrites + 1, 'the echoed confirm of the same value does not rewrite the label again');
 });

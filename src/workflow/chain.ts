@@ -135,7 +135,7 @@ export function buildChainReport(repoPath: string, epicHash: string): ChainRepor
 	};
 }
 
-interface DefineState {
+export interface DefineState {
 	readonly exists:   boolean;
 	readonly approved: boolean;
 	readonly rejected: boolean;
@@ -172,7 +172,7 @@ function readDefineIfPresent(repoPath: string, epicHash: string): DefineState {
 	return { exists: true, approved, rejected, path: mdPath, artifact, definitionKind: 'def' };
 }
 
-interface HldState {
+export interface HldState {
 	readonly exists:   boolean;
 	readonly approved: boolean;
 	readonly rejected: boolean;
@@ -318,7 +318,7 @@ function revisionOnDisk(repoPath: string, artifactId: string): number {
 // Next-action decision tree
 // ---------------------------------------------------------------------------
 
-interface NextActionInput {
+export interface NextActionInput {
 	readonly define:    DefineState;
 	readonly hld:       HldState;
 	readonly stories:   ChainReport['stories'];
@@ -329,7 +329,7 @@ interface NextActionInput {
 	readonly tracker:   ChainReport['tracker'];
 }
 
-function computeNextAction(epicHash: string, s: NextActionInput): NextAction {
+export function computeNextAction(epicHash: string, s: NextActionInput): NextAction {
 	// ISSUE-149283b0d0455a43: an ISSUE head reuses the define-level NextAction
 	// kinds (user decision 2026-11-16: an ISSUE is equivalent to a define), but
 	// its commands name the ISSUE document / rerun the issue stage, and the

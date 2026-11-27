@@ -24,7 +24,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { buildChainReport, formatChainReport } from '../chain.js';
+import { buildChainReport, computeNextAction, formatChainReport } from '../chain.js';
 import { computeHldEffectiveHash } from '../artifacts/lld.js';
 import { proposeAmendment } from '../amendments/store.js';
 import type { AmendmentRecord } from '../amendments/types.js';
@@ -147,6 +147,38 @@ test('chain: pending amendment surfaces before further LLDs', async () => {
 			assert.doesNotMatch(r.nextAction.command, /--list/);
 		}
 	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('chain: two pending amendments → review-amendment names the first in ascending order', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-chain-'));
+	try {
+		approveReviewed(writeDefine(repo, HASH));
+		approveReviewed(writeHld(repo, HASH, 'hld-1').path);
+		await proposeAmendment(repo, pendingAmendment(HASH, `AMD-${HASH}-2`, 'hld-1'));
+		await proposeAmendment(repo, pendingAmendment(HASH, `AMD-${HASH}-1`, 'hld-1'));
+		const r = buildChainReport(repo, HASH);
+		assert.equal(r.nextAction.kind, 'review-amendment');
+		assert.equal(r.amendments.pending, 2);
+		if (r.nextAction.kind === 'review-amendment') {
+			assert.equal(r.nextAction.amendmentId, `AMD-${HASH}-1`);
+		}
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('computeNextAction: review-amendment race fallback never throws when firstPendingAmendment is undefined', () => {
+	const next = computeNextAction(HASH, {
+		define: { exists: true, approved: true, rejected: false },
+		hld: { exists: false, approved: false, rejected: false },
+		stories: [],
+		amendments: { pending: 1, approved: 0, rejected: 0 },
+		firstPendingAmendment: undefined,
+		tracker: { pushed: false },
+	});
+	assert.equal(next.kind, 'review-amendment');
+	if (next.kind === 'review-amendment') {
+		assert.doesNotMatch(next.amendmentId, /^AMD-/);
+		assert.match(next.command, /recompute the chain report/);
+	}
 });
 
 test('chain: all Stories approved, no tracker → push-tracker', () => {

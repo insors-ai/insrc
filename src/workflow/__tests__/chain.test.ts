@@ -26,7 +26,7 @@ import { join } from 'node:path';
 
 import { buildChainReport, computeNextAction, formatChainReport } from '../chain.js';
 import { computeHldEffectiveHash } from '../artifacts/lld.js';
-import { proposeAmendment } from '../amendments/store.js';
+import { amendmentPath, proposeAmendment } from '../amendments/store.js';
 import type { AmendmentRecord } from '../amendments/types.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
@@ -143,7 +143,11 @@ test('chain: pending amendment surfaces before further LLDs', async () => {
 		assert.equal(r.amendments.pending, 1);
 		if (r.nextAction.kind === 'review-amendment') {
 			assert.equal(r.nextAction.amendmentId, `AMD-${HASH}-1`);
-			assert.match(r.nextAction.command, /^insrc_present documents=\["[^"]*AMD-[^"]*"\] then insrc_workflow_approve\(\{ artifactPath: "[^"]*AMD-[^"]*" \}\)$/);
+			const expectedPath = amendmentPath(repo, `AMD-${HASH}-1`);
+			assert.equal(
+				r.nextAction.command,
+				`insrc_present documents=["${expectedPath}"] then insrc_workflow_approve({ artifactPath: "${expectedPath}" })`,
+			);
 			assert.doesNotMatch(r.nextAction.command, /--list/);
 		}
 	} finally { rmSync(repo, { recursive: true, force: true }); }

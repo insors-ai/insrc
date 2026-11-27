@@ -156,6 +156,38 @@ export function listPendingArtifacts(repoPath: string): readonly PendingArtifact
 	return out;
 }
 
+/** The artifact id and rendered .md path of every PENDING_KINDS artifact file on
+ *  disk, regardless of lifecycle status or the BUILD/CR-sibling precondition
+ *  listPendingArtifacts applies (ISSUE-9c95950064e4b916): presenting a document
+ *  in chat is a display concern, not an approval-readiness one. listPendingArtifacts
+ *  itself is unchanged -- it still backs the IDE plugins' "awaiting a decision"
+ *  panel, which must keep its narrower pending-only semantics. */
+export function resolveOpenableArtifacts(repoPath: string): readonly { readonly artifactId: string; readonly mdPath: string }[] {
+	const dir = join(repoPath, ARTIFACTS_DIR);
+	if (!existsSync(dir)) return [];
+
+	const files = readdirSync(dir).filter(f => f.endsWith('.json')).sort();
+	const out: { artifactId: string; mdPath: string }[] = [];
+
+	for (const file of files) {
+		const kind = kindFromFilename(file);
+		if (!PENDING_KIND_SET.has(kind)) continue;   // non-reviewer-approvable kind
+
+		let art: ArtifactShape;
+		try {
+			art = JSON.parse(readFileSync(join(dir, file), 'utf8')) as ArtifactShape;
+		} catch (err) {
+			log.warn({ file, err: (err as Error).message }, 'workflow.pending: skipping malformed artifact file');
+			continue;   // one bad file must not drop the rest
+		}
+
+		const artifactId = file.replace(/\.json$/, '');
+		const mdPath = deriveMdPath(repoPath, kind as ArtifactKind, art.meta ?? {});
+		out.push({ artifactId, mdPath });
+	}
+	return out;
+}
+
 function toDescriptor(repoPath: string, file: string, kind: PendingKind, art: ArtifactShape): PendingArtifact {
 	const artifactId = file.replace(/\.json$/, '');
 	const meta = art.meta ?? {};

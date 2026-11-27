@@ -27,7 +27,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { deriveMdPath, listPendingArtifacts, handleWorkflowPending } from '../pending.js';
+import { deriveMdPath, listPendingArtifacts, handleWorkflowPending, resolveOpenableArtifacts } from '../pending.js';
 import { ARTIFACTS_DIR } from '../storage.js';
 import { approvedMeta, draftMeta, lifecycleMeta, rejectedMeta, reviewedMeta } from './lifecycle-fixtures.js';
 
@@ -436,4 +436,70 @@ test('deriveMdPath resolves a SPEC artifact under docs/standalone/ with no stand
 	} finally {
 		cleanup(repo);
 	}
+});
+
+// ISSUE-9c95950064e4b916 — resolveOpenableArtifacts: insrc_present's openability
+// check must not inherit listPendingArtifacts' pending/CR-sibling business rules.
+
+test('resolveOpenableArtifacts returns a draft (never-decided) artifact', () => {
+	const repo = fixtureRepo({
+		'LLD-238917216d8fd532-s1.json': { meta: { epicHash: HASH, epicCreatedAt: CREATED, storyId: 's1', ...draftMeta() }, body: { title: 's1' } },
+	});
+	try {
+		const list = resolveOpenableArtifacts(repo);
+		assert.deepEqual(list.map(a => a.artifactId), ['LLD-238917216d8fd532-s1']);
+		assert.match(list[0]!.mdPath, /S001[\\/]LLD\.md$/, 'mdPath is derived via deriveMdPath, same as listPendingArtifacts');
+	} finally { cleanup(repo); }
+});
+
+test('resolveOpenableArtifacts returns an approved artifact', () => {
+	const repo = fixtureRepo({
+		'LLD-238917216d8fd532-s1.json': { meta: { epicHash: HASH, epicCreatedAt: CREATED, storyId: 's1', ...approvedMeta() }, body: { title: 's1' } },
+	});
+	try {
+		assert.deepEqual(resolveOpenableArtifacts(repo).map(a => a.artifactId), ['LLD-238917216d8fd532-s1']);
+		assert.deepEqual(listPendingArtifacts(repo).map(a => a.artifactId), [], 'listPendingArtifacts still excludes an approved artifact (unchanged)');
+	} finally { cleanup(repo); }
+});
+
+test('resolveOpenableArtifacts returns a rejected artifact', () => {
+	const repo = fixtureRepo({
+		'LLD-238917216d8fd532-s1.json': { meta: { epicHash: HASH, epicCreatedAt: CREATED, storyId: 's1', ...rejectedMeta() }, body: { title: 's1' } },
+	});
+	try {
+		assert.deepEqual(resolveOpenableArtifacts(repo).map(a => a.artifactId), ['LLD-238917216d8fd532-s1']);
+		assert.deepEqual(listPendingArtifacts(repo).map(a => a.artifactId), [], 'listPendingArtifacts still excludes a rejected artifact (unchanged)');
+	} finally { cleanup(repo); }
+});
+
+test('resolveOpenableArtifacts returns a non-standalone BUILD with no CR sibling', () => {
+	const repo = fixtureRepo({
+		[`${BUILD_ID}.json`]: buildRecord(),
+	});
+	try {
+		assert.ok(resolveOpenableArtifacts(repo).some(a => a.artifactId === BUILD_ID), 'openable with no CR sibling');
+		assert.ok(!listPendingArtifacts(repo).some(a => a.artifactId === BUILD_ID), 'listPendingArtifacts still excludes it with no CR sibling (unchanged)');
+	} finally { cleanup(repo); }
+});
+
+test('resolveOpenableArtifacts excludes a non-PENDING_KINDS file (e.g. an EPIC/STORY/TASK record)', () => {
+	const repo = fixtureRepo({
+		'LLD-238917216d8fd532-s1.json': { meta: { epicHash: HASH, epicCreatedAt: CREATED, storyId: 's1', ...draftMeta() }, body: { title: 's1' } },
+		'EPIC-238917216d8fd532.json': { meta: { epicHash: HASH, epicCreatedAt: CREATED } },
+		'STORY-238917216d8fd532-s1.json': { meta: { epicHash: HASH, epicCreatedAt: CREATED, storyId: 's1' } },
+		'TASK-238917216d8fd532-s1-t1.json': { meta: { epicHash: HASH, epicCreatedAt: CREATED, storyId: 's1', taskId: 't1' } },
+	});
+	try {
+		assert.deepEqual(resolveOpenableArtifacts(repo).map(a => a.artifactId), ['LLD-238917216d8fd532-s1']);
+	} finally { cleanup(repo); }
+});
+
+test('resolveOpenableArtifacts skips a malformed JSON file without dropping the rest of the scan', () => {
+	const repo = fixtureRepo({
+		'LLD-238917216d8fd532-s1.json': { meta: { epicHash: HASH, epicCreatedAt: CREATED, storyId: 's1', ...draftMeta() }, body: { title: 's1' } },
+		'LLD-238917216d8fd532-s2.json': '{ not json',
+	});
+	try {
+		assert.deepEqual(resolveOpenableArtifacts(repo).map(a => a.artifactId), ['LLD-238917216d8fd532-s1']);
+	} finally { cleanup(repo); }
 });

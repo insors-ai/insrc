@@ -100,11 +100,16 @@ function harness(o: {
   const chat: string[] = [];
   const companionReads: string[] = [];
   const warnings: string[] = [];
+  // ISSUE-9c95950064e4b916 (manual review round 2): mirrors the real client's mdPathById
+  // resolution, so noteKnownPath (called by openArtifactFrom's not-found branch) resolves
+  // content()'s bare artifactId back to the real path, exactly as pathOf's hard-coded cases do.
+  const known = new Map<string, string>();
   const client: DocsReviewClient = {
     async pending() { pendingReads += 1; o.onPending?.(); return pending; },
+    noteKnownPath(artifactId, mdPath) { if (mdPath) known.set(artifactId, mdPath); },
     async content(idOrPath) {
       content.push(idOrPath);
-      const path = pathOf(idOrPath);
+      const path = known.get(idOrPath) ?? pathOf(idOrPath);
       return { markdown: `# body of ${path}`, openQuestions: [], blocked: false, docPath: path, companions: COMPANIONS, ...(o.content?.(path) ?? {}) };
     },
     async decide(path, decision, comments) {

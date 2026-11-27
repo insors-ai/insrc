@@ -167,9 +167,14 @@ function fakeClient(over: {
   const defPending: DocsArtifactSummary[] = [
     { id: 'LLD-abc-s7', kind: 'LLD', title: 'Docs review pane', status: 'pending' },
   ];
+  // ISSUE-9c95950064e4b916 (manual review round 2): mirrors the real client's
+  // mdPathById/noDocIds resolution, so noteKnownPath (called by openArtifactFrom's
+  // not-found branch) resolves content()'s bare artifactId back to the real path.
+  const known = new Map<string, string>();
   const client: DocsReviewClient = {
     async pending() { calls.pending++; return (over.pending ?? (() => defPending))(); },
-    async content(id) { calls.content.push(id); return (over.content ?? (() => ({ markdown: '# body', openQuestions: ['q?'], blocked: false, docPath: DOC_PATH })))(id); },
+    noteKnownPath(artifactId, mdPath) { if (mdPath) known.set(artifactId, mdPath); },
+    async content(idOrPath) { const id = known.get(idOrPath) ?? idOrPath; calls.content.push(id); return (over.content ?? (() => ({ markdown: '# body', openQuestions: ['q?'], blocked: false, docPath: DOC_PATH })))(id); },
     async decide(path, decision, comments) {
       const call = { path, decision, comments };
       calls.decide.push(call);

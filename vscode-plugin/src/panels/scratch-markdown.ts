@@ -91,10 +91,35 @@ export function checkScratchMarkdown<Document>(source: string, codec: ScratchMar
 /** Admission never changes either input; callers retain both on failure. An
  * intentional change to supported text/code is allowed; an unsafe base cannot
  * be laundered into a clean draft that silently drops its unsupported content. */
-export function checkScratchMarkdownEdit<Document>(source: string, draft: string, codec: ScratchMarkdownCodec<Document>):
+export function checkScratchMarkdownEdit<Document>(source: string, draft: string, codec: ScratchMarkdownCodec<Document>, expectedDocument: Document):
   ScratchMarkdownAdmission & { readonly draft: string } {
   const base = checkScratchMarkdown(source, codec);
   if (!base.allowed) return { ...base, draft };
   const proposal = checkScratchMarkdown(draft, codec);
-  return proposal.allowed ? { allowed: true, source, draft } : { allowed: false, source, draft, reason: proposal.reason };
+  if (!proposal.allowed) return { allowed: false, source, draft, reason: proposal.reason };
+  try {
+    // Expected document comes from the transaction BEFORE serialization. Deriving
+    // it from draft would hide exactly the serializer loss being checked.
+    if (!codec.equivalent(expectedDocument, codec.parse(draft))) {
+      return { allowed: false, source, draft, reason: 'The draft does not preserve the intended editor document.' };
+    }
+  } catch { return { allowed: false, source, draft, reason: 'The intended editor document could not be verified.' }; }
+  return { allowed: true, source, draft };
+}
+
+/** Only an explicit user document transaction may produce a proposal. Opening,
+ * normalization, host snapshots, locks and selections return no draft at all. */
+export function prepareScratchMarkdownTransaction<Document>(source: string, codec: ScratchMarkdownCodec<Document>, transaction: {
+  readonly origin: 'initialization' | 'host' | 'user';
+  readonly docChanged: boolean;
+  readonly document: Document;
+}): { readonly kind: 'unchanged'; readonly source: string } | {
+  readonly kind: 'proposal' | 'refused'; readonly source: string; readonly draft: string; readonly reason?: string | undefined;
+} {
+  if (transaction.origin !== 'user' || !transaction.docChanged) return { kind: 'unchanged', source };
+  let draft: string;
+  try { draft = codec.serialize(transaction.document); }
+  catch { return { kind: 'refused', source, draft: '', reason: 'Serialization failed; original source and editor document are retained.' }; }
+  const result = checkScratchMarkdownEdit(source, draft, codec, transaction.document);
+  return result.allowed ? { kind: 'proposal', source, draft } : { kind: 'refused', source, draft, reason: result.reason };
 }

@@ -99,6 +99,9 @@ export interface VibeTurnResult {
 }
 
 export interface VibeExecutionAdapter {
+	/** The adapter's own validated read-only capability (sc3), synchronously reflecting
+	 *  the qualification cache's current entry for this adapter's stable descriptor. */
+	readonly readOnly: ReadOnlyCapability;
 	/** Start a turn; a 'session' event opens it, the result carries identity + exit evidence. */
 	startTurn(request: VibeTurnRequest): AsyncIterable<VibeTurnEvent> & { readonly result: Promise<VibeTurnResult> };
 }
@@ -917,7 +920,27 @@ export function createVibeAdapter(context: VibeAdapterContext, deps: VibeAdapter
 	if (!isDirectory) throw new Error(`createVibeAdapter: context.cwd is not a directory: ${context.cwd}`);
 	const resolved = resolvedDeps(deps);
 
+	// readOnly (sc3) is populated SYNCHRONOUSLY from the qualification cache's CURRENT
+	// entry for this adapter's own stable descriptor -- a pure, side-effect-free read.
+	// This function never awaits, and never itself triggers, the live qualification
+	// suite: createVibeAdapter runs on EVERY turn's construction (dispatchVibeTurn,
+	// cli-provider.ts), including ordinary 'default'-mode turns that never touch
+	// read-only at all, so self-triggering here would spawn a qualification probe on
+	// every such turn's first cold descriptor. Triggering a fresh run on a cache miss
+	// belongs to startTurn's own read-only dispatch path instead (a later Task of this
+	// Story), which only runs when a caller actually requests mode:'read-only'.
+	let readOnly: ReadOnlyCapability;
+	try {
+		const probeRequest: VibeTurnRequest = { prompt: QUALIFICATION_PROBE_PROMPT, outputMode: 'streaming', session: { kind: 'new' }, mode: 'read-only' };
+		const descriptorKey = stableDescriptorHash(context, resolved.command, buildArgv(probeRequest, ''));
+		const cached = readOnlyQualificationCache.get(descriptorKey);
+		readOnly = cached ?? { status: 'unavailable', allowedTools: [], reason: 'read-only qualification has not completed yet for this descriptor', provenAgainst: undefined };
+	} catch (error) {
+		readOnly = { status: 'unavailable', allowedTools: [], reason: `stable descriptor computation failed: ${(error as Error).message}`, provenAgainst: undefined };
+	}
+
 	return {
+		readOnly,
 		startTurn(request: VibeTurnRequest) {
 			if (request.mode === 'read-only') {
 				if (request.approval !== undefined) throw new VibeReadOnlyApprovalRejectedError();

@@ -23,7 +23,8 @@ test('scratch pane uses actual Crepe remembered locks and click-only locked sele
     const data = JSON.parse(match[1]!.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&'));
     assert.deepEqual(data.initial, { readonly: true, editable: 'false', messages: [] });
     assert.deepEqual(data.selected, { visible: true, sends: 0, drafts: 0, label: 'Send selection to chat' });
-    assert.equal(data.lockedToolbarDisplay, 'none');
+    assert.equal(data.lockedControls.length, 5);
+    for (const control of data.lockedControls) assert.equal(control.display, 'none', control.selector);
     assert.deepEqual(data.clicked, [{ type: 'send-selection', paneSessionId: 'first', draftSeq: 0, docVersion: 1, selectedText: 'Selectable text.' }]);
     assert.deepEqual(data.remembered, { first: false, second: false, stored: false });
     assert.deepEqual(data.siblings, { first: false, second: true, third: true });

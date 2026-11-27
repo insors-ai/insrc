@@ -28,8 +28,17 @@ async function run(): Promise<unknown> {
     await select(first.root);
     const send = first.root.querySelector<HTMLButtonElement>('.scratch-selection-send')!;
     const selected = { visible: !send.hidden, sends: first.sent.filter(m => m.type === 'send-selection').length, drafts: drafts(first.sent).length, label: send.getAttribute('aria-label') };
-    const fakeMutationToolbar = document.createElement('div'); fakeMutationToolbar.className = 'milkdown-toolbar'; first.root.querySelector('.milkdown')!.append(fakeMutationToolbar);
-    const lockedToolbarDisplay = getComputedStyle(fakeMutationToolbar).display;
+    const lockedControls = ['.milkdown-toolbar', '.milkdown-link-preview', '.milkdown-link-edit', '.milkdown-latex-inline-edit'].map(selector => {
+      const element = first.root.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Actual Crepe control not found: ${selector}`);
+      element.dataset['show'] = 'true';
+      return { selector, display: getComputedStyle(element).display };
+    });
+    const image = await create('image', '![](data:image/png;base64,iVBORw0KGgo=)\n');
+    await tick();
+    const actualResizeHandle = image.root.querySelector<HTMLElement>('.image-resize-handle');
+    if (!actualResizeHandle) throw new Error('Actual Crepe image resize handle not rendered');
+    lockedControls.push({ selector: '.image-resize-handle', display: getComputedStyle(actualResizeHandle).display });
     send.focus(); send.click(); await tick();
     const clicked = first.sent.filter(m => m.type === 'send-selection');
     first.root.querySelector<HTMLButtonElement>('nav button')!.click(); await tick();
@@ -55,7 +64,7 @@ async function run(): Promise<unknown> {
     const oversized = await create('oversized');
     await oversized.pane.receive({ type: 'conflict', paneSessionId: 'oversized', draftSeq: 0, message: 'Document exceeds rich editor transport limits; original source is retained. Use the text editor.' });
     const limit = { readonly: oversized.pane['crepe']!.readonly, alert: oversized.root.querySelector('[role=alert]')?.textContent, drafts: drafts(oversized.sent) };
-    return { initial, selected, clicked, lockedToolbarDisplay, remembered, siblings, lateAck, host, unsupported, fallback, limit };
+    return { initial, selected, clicked, lockedControls, remembered, siblings, lateAck, host, unsupported, fallback, limit };
   } finally { for (const { pane } of all) await pane.dispose(); }
 }
 void run().then(result => { const pre = document.createElement('pre'); pre.id = 'scratch-result'; pre.textContent = JSON.stringify(result); document.body.append(pre); })

@@ -24,4 +24,4 @@ body { margin: 0; background: var(--vscode-editor-background); color: var(--vsco
 .scratch-pane [hidden] { display: none !important; }
 /* Selection Send is independent of Crepe's formatting toolbar, so it remains
  * available when Milkdown is readonly. No mutation popups while locked. */
-.scratch-pane[data-locked='true'] :is(.milkdown-toolbar, .milkdown-block-handle, .milkdown-slash-menu, .milkdown-link-tooltip, .milkdown-image-block .operation, .milkdown-image-block .caption-input) { display: none !important; }
+.scratch-pane[data-locked='true'] :is(.milkdown-toolbar, .milkdown-block-handle, .milkdown-slash-menu, .milkdown-link-preview, .milkdown-link-edit, .milkdown-image-block .operation, .milkdown-image-block .caption-input, .image-resize-handle, .milkdown-image-block .image-edit, .milkdown-image-inline .image-edit, .milkdown-table-block .handle, .milkdown-latex-inline-edit, .milkdown-code-block .tools) { display: none !important; }

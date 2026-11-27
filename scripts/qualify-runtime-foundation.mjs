@@ -10,13 +10,19 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRun } from './test-harness/context.mjs';
 import { withRun } from './test-harness/process.mjs';
 import { bundleControlEntrypoint } from './package-installer.mjs';
+import { QUALIFICATION_TIME_BUDGETS as timeBudgets } from '../src/installer/qualification-time-budgets.mjs';
+import { withQualificationDeadline } from './qualification-containment.mjs';
 
 const source = realpathSync(fileURLToPath(new URL('../', import.meta.url)));
 const load = name => import(pathToFileURL(join(source, 'out/installer', `${name}.js`)).href);
 const read = file => JSON.parse(readFileSync(file, 'utf8'));
 const contained = (parent, child) => { const part = relative(parent, child); return part === '' || (part !== '..' && !part.startsWith('../') && !part.startsWith('..\\') && !isAbsolute(part)); };
 
-export async function qualifyRuntimeFoundation({ parent = realpathSync(tmpdir()), baseline = 'native-foundation' } = {}) {
+export async function qualifyRuntimeFoundation(options = {}) {
+  return withQualificationDeadline(clock => qualify(options, clock));
+}
+
+async function qualify({ parent = realpathSync(tmpdir()), baseline = 'native-foundation' }, clock) {
   assert.match(process.version, /^v22\./, 'Use a Node 22 development orchestrator');
   assert.ok(['darwin', 'linux', 'win32'].includes(process.platform));
   assert.ok(['arm64', 'x64'].includes(process.arch));
@@ -29,6 +35,7 @@ export async function qualifyRuntimeFoundation({ parent = realpathSync(tmpdir())
     load('controller-store'), load('location'), load('native'), load('runtime-policy'), load('dev-git'), load('dev-delivery'),
     load('dev'), load('dev-payload'), load('dev-worker'), load('installed-receipt'),
   ]);
+  clock.check();
   const root = mkdtempSync(join(realpathSync(parent), 'iq-')), home = join(root, 'h');
   const native = controlBinding();
   if (process.platform === 'win32') native.protect(root);
@@ -36,22 +43,24 @@ export async function qualifyRuntimeFoundation({ parent = realpathSync(tmpdir())
   const location = resolveInstallationLocation('native-qualification', { home,
     ...(process.platform === 'win32' ? { userSid: native.userSid() } : {}) });
   const identity = privateRuntimeIdentity(target);
-  const binary = `node_modules/@esbuild/${target.os}-${target.arch}/${target.os === 'win32' ? 'esbuild.exe' : 'bin/esbuild'}`;
-  mkdirSync(dirname(join(root, binary)), { recursive: true }); copyFileSync(join(source, binary), join(root, binary));
-  mkdirSync(join(root, 'native')); copyFileSync(join(source, 'out/installer/native/control.node'), join(root, 'native/control.node'));
-  const base = createRun(root, { mode: 'build', budgets: { buildMs: 3_600_000, fileMs: 3_600_000, runMs: 7_200_000 } });
-  const run = { ...base, environment: () => ({ ...base.environment(), INSRC_BUILD_CONFIRM_CLOSURE: '1',
-    ONNXRUNTIME_NODE_INSTALL_CUDA: process.env.ONNXRUNTIME_NODE_INSTALL_CUDA ?? 'skip' }) };
   const report = { schemaVersion: 1, kind: 'native-runtime-foundation', target, platformRelease: release(),
-    orchestrator: { executable: realpathSync(process.execPath), version: process.version }, root, home, runId: run.runId,
+    orchestrator: { executable: realpathSync(process.execPath), version: process.version }, root, home,
+    profile: timeBudgets.profile, timeBudgets,
     startedAt: new Date().toISOString(), releaseEnablement: false, status: 'running' };
   const resultFile = join(root, 'result.json');
   const save = () => writeFileSync(resultFile, JSON.stringify(report, null, 2) + '\n');
-  const cancellation = new AbortController(), cancel = () => cancellation.abort(new Error('Qualification interrupted'));
-  process.once('SIGINT', cancel); process.once('SIGTERM', cancel);
+  const cancellation = clock;
   process.stdout.write(`Native qualification evidence: ${resultFile}\n`); save();
   try {
+    const binary = `node_modules/@esbuild/${target.os}-${target.arch}/${target.os === 'win32' ? 'esbuild.exe' : 'bin/esbuild'}`;
+    mkdirSync(dirname(join(root, binary)), { recursive: true }); copyFileSync(join(source, binary), join(root, binary));
+    mkdirSync(join(root, 'native')); copyFileSync(join(source, 'out/installer/native/control.node'), join(root, 'native/control.node'));
+    clock.check();
+    const base = createRun(root, { mode: 'build', budgets: timeBudgets.qualification });
+    const run = { ...base, environment: () => ({ ...base.environment(), INSRC_BUILD_CONFIRM_CLOSURE: '1',
+      ONNXRUNTIME_NODE_INSTALL_CUDA: process.env.ONNXRUNTIME_NODE_INSTALL_CUDA ?? 'skip' }) };
     await withRun(run, async scope => {
+      report.runId = run.runId; save(); clock.attach(scope);
       const git = ownedDevGit(run, scope, cancellation.signal);
       const head = (await git(['rev-parse', '--verify', 'HEAD'], source)).text.trim();
       // The source worker builds the actual committed checkout. Dirty compiler
@@ -147,7 +156,7 @@ export async function qualifyRuntimeFoundation({ parent = realpathSync(tmpdir())
         files: inventory.files.length, payloadBytes: inventory.files.reduce((sum, file) => sum + file.bytes, 0),
         receiptVersion: receipt.schemaVersion, privateBuildPolicy: policy, nativeProbeLog: probe.log, freshManagerLog: inspected.log,
         controllerPhase: 'preparing', daemonActivationTested: false, ollamaInstalledOrStarted: false };
-      cancellation.signal.throwIfAborted();
+      clock.finishWork();
     });
     const cleanup = read(join(run.workspace, 'cleanup.json'));
     assert.equal(cleanup.confirmedClosed, true); assert.equal(cleanup.closureMode, 'owned-groups');
@@ -158,7 +167,6 @@ export async function qualifyRuntimeFoundation({ parent = realpathSync(tmpdir())
     report.status = 'fail'; report.error = { message: error.message, code: error.code };
     throw error;
   } finally {
-    process.removeListener('SIGINT', cancel); process.removeListener('SIGTERM', cancel);
     report.finishedAt = new Date().toISOString(); save();
   }
   return resultFile;

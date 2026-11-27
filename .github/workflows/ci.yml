@@ -14,6 +14,11 @@ on:
         type: choice
         options: [backend, runtime-foundation]
         default: backend
+      qualification-profile:
+        description: Timing profile for runtime-foundation validation only
+        type: choice
+        options: [normal, slow-vm]
+        default: normal
 
 # Supersede an in-flight run when a newer manual run starts, so nothing piles up.
 concurrency:
@@ -60,17 +65,38 @@ jobs:
   runtime-foundation-windows:
     if: ${{ inputs.scope == 'runtime-foundation' }}
     runs-on: windows-2025
-    timeout-minutes: 60
+    timeout-minutes: ${{ inputs.qualification-profile == 'slow-vm' && 360 || 240 }}
     permissions:
       contents: read
     env:
       INSRC_BUILD_CONFIRM_CLOSURE: '1'
-      ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+      INSRC_QUALIFICATION_PROFILE: ${{ inputs.qualification-profile }}
     steps:
+      # At most four minutes for SDK setup steps, plus <=30s owned preflight
+      # drain, within the five-minute setup/drain envelope. Do not dispatch
+      # this job before the separate Windows ownership prerequisite is ready.
+      - name: Initialize SDK environment and containment clock
+        timeout-minutes: 1
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:INSRC_QUALIFICATION_PROFILE -notin @('normal', 'slow-vm')) { throw 'Invalid qualification profile' }
+          "INSRC_QUALIFICATION_JOB_STARTED_AT_MS=$([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds())" >> $env:GITHUB_ENV
+          if (-not (Test-Path Env:ONNXRUNTIME_NODE_INSTALL_CUDA)) { 'ONNXRUNTIME_NODE_INSTALL_CUDA=skip' >> $env:GITHUB_ENV }
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($vs)) { throw 'Native MSVC tools unavailable' }
+          & (Join-Path $vs 'Common7\Tools\Launch-VsDevShell.ps1') -Arch amd64 -HostArch amd64 -SkipAutomaticLocation
+          Get-Command cl.exe
+          # Carry only compiler environment fields into later steps.
+          Get-ChildItem Env: | Where-Object { $_.Name -match '^(VSCMD|VSINSTALLDIR|VCINSTALLDIR|VCTools|WindowsSdk|WindowsSDK|WindowsLibPath|UniversalCRTSdkDir|UCRTVersion|ExtensionSdkDir|Framework|__VSCMD_)|^(INCLUDE|LIB|LIBPATH)$' } | ForEach-Object { "$($_.Name)=$($_.Value)" >> $env:GITHUB_ENV }
+          $env:PATH.Split(';') | Where-Object { $_ } | ForEach-Object { $_ >> $env:GITHUB_PATH }
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 1
         with:
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        timeout-minutes: 2
         with:
           node-version: '22.22.1'
           architecture: x64
@@ -79,26 +105,14 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
-          $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($vs)) { throw 'Native MSVC tools unavailable' }
-          & (Join-Path $vs 'Common7\Tools\Launch-VsDevShell.ps1') -Arch amd64 -HostArch amd64 -SkipAutomaticLocation
           Get-Command cl.exe
           node --version
           if ($LASTEXITCODE -ne 0) { throw 'Development Node unavailable' }
-          # Initial checkout compiler headers belong to the development SDK.
-          # The harness independently downloads/verifies the installation runtime.
-          $npmRoot = Join-Path (Split-Path (Get-Command node.exe).Source) 'node_modules\npm'
-          node (Join-Path $npmRoot 'node_modules\node-gyp\bin\node-gyp.js') install --target=22.22.1 --arch=x64
-          if ($LASTEXITCODE -ne 0) { throw 'Development headers unavailable' }
-          npm ci --include=dev --include=optional --no-audit --no-fund
-          if ($LASTEXITCODE -ne 0) { throw 'Checkout dependency installation failed' }
-          npm test -- --concurrency=1 --file-ms=3600000 --run-ms=1800000 src/installer/__tests__/bootstrap.test.ts src/installer/__tests__/runtime-store.test.ts src/installer/__tests__/runtime-install.test.ts src/installer/__tests__/controller-store.test.ts src/installer/__tests__/location.test.ts
-          if ($LASTEXITCODE -ne 0) { throw 'Native bootstrap/runtime/controller tests failed' }
-          node scripts/qualify-runtime-foundation.mjs --parent $env:RUNNER_TEMP --baseline windows2025-msvc
+          node scripts/qualification-containment.mjs $env:INSRC_QUALIFICATION_JOB_STARTED_AT_MS $env:RUNNER_TEMP windows2025-msvc
           if ($LASTEXITCODE -ne 0) { throw 'Native runtime foundation qualification failed' }
       - name: Retain qualification diagnostics
         if: always()
+        timeout-minutes: 8
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: runtime-foundation-windows-${{ github.run_id }}

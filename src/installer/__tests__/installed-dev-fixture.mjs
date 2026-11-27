@@ -5,6 +5,8 @@ import assert from 'node:assert/strict';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { pathToFileURL } from 'node:url';
+import { QUALIFICATION_TIME_BUDGETS as timeBudgets } from '../qualification-time-budgets.mjs';
 import { createRun } from '../../../scripts/test-harness/context.mjs';
 import { withRun } from '../../../scripts/test-harness/process.mjs';
 import { bundleControlEntrypoint } from '../../../scripts/package-installer.mjs';
@@ -29,8 +31,9 @@ mkdirSync(dirname(join(root,binaryRelative)),{recursive:true});copyFileSync(real
 const base=createRun(root,{mode:'build'}),run={...base,environment:()=>({...base.environment(),INSRC_BUILD_CONFIRM_CLOSURE:'1'})};
 await withRun(run,async scope=>{
   const bootstrap=join(root,'bootstrap.mjs'),manager=join(root,'manager.mjs');
-  await bundleControlEntrypoint(run,scope,realpathSync('src/installer/terminal-entry.ts'),bootstrap,target);
-  await bundleControlEntrypoint(run,scope,realpathSync('src/installer/manager-entry.ts'),manager,target);
+  const bootstrapMeta=await bundleControlEntrypoint(run,scope,realpathSync('src/installer/terminal-entry.ts'),bootstrap,target);
+  const managerMeta=await bundleControlEntrypoint(run,scope,realpathSync('src/installer/manager-entry.ts'),manager,target);
+  if(scenario==='profile')for(const meta of [bootstrapMeta,managerMeta])assert.ok(Object.keys(meta.inputs).some(path=>path.replaceAll('\\','/').endsWith('/installer/qualification-time-budgets.mjs')));
   const home=join(root,'h x');mkdirSync(home);const location=resolveInstallationLocation('fixture',{home});
   const rawNative=readFileSync('out/installer/native/control.node');
   const {runtime:canonicalRuntime}=await devRuntimeFixture(home,target);
@@ -41,6 +44,7 @@ await withRun(run,async scope=>{
     for(const name of ['out/daemon/index.js','out/bin/insrc-mcp.js','out/installer/terminal-entry.js','out/installer/manager-entry.js'])add(name,'export {};\n');
     add('out/cli/index.js',`import fs from 'node:fs';fs.writeFileSync(process.env.INSRC_HOME+'/tui-started',JSON.stringify({node:process.execPath,version:process.version,home:process.env.INSRC_HOME,id:process.env.INSRC_INSTALLATION_ID,cwd:process.cwd()}));if(fs.existsSync(process.env.INSRC_HOME+'/fail-tui'))process.exitCode=7;`);
     add('out/assets/runtime.json','controlled app asset');add('package.json','{"type":"module"}');
+    for(const name of ['qualification-time-budgets.mjs','runtime-metadata.js'])add(`out/installer/${name}`,readFileSync(`out/installer/${name}`));
     const inventory={schemaVersion:1,files:inventoryFor(files)},inventoryBytes=canonicalJson(inventory),inventorySha256=digest(inventoryBytes);
     const receipt={schemaVersion:2,mode:'dev',sourceOffer:offer,inventorySha256,checkoutRelativePath:`dev/checkouts/fixture-${commit}`,
       manifest:{schemaVersion:1,releaseId:offer.releaseId,sourceCommit:offer.sourceCommit,target,runtime,payloadSha256:inventorySha256,daemonEntry:'out/daemon/index.js',managerEntry:'manager.mjs',tuiEntry:'out/cli/index.js',protocolVersion:1,compatiblePredecessors:predecessors,migrations:[]}};
@@ -94,7 +98,19 @@ await withRun(run,async scope=>{
     const foreign=await request(inspect,process.execPath);assert.notEqual(foreign.response.code,0);assert.match(foreign.text,/runtime-invalid/);
     const realPeers=productionPeers(target,location,canonicalRuntime);assert.ok(realPeers.dev);assert.ok(realPeers.bundle);assert.equal(typeof realPeers.dependencies.inspect,'function');assert.equal(typeof realPeers.dependencies.decide,'function');assert.equal(realPeers.lifecycle,undefined);assert.equal(realPeers.migrations,undefined);
     const unavailable=await request({...inspect,operationId:'start',action:'start'});assert.notEqual(unavailable.response.code,0);assert.match(unavailable.text,/capability-unavailable/);assert.equal(readFileSync(join(home,'install/controller.json'),'utf8'),before);
-    if(scenario==='inspect') {
+    if(scenario==='inspect'||scenario==='profile') {
+      if(scenario==='profile') {
+        const sourcePolicy=readFileSync('src/installer/qualification-time-budgets.mjs');
+        const installedPolicy=join(first.candidate.directory,'out/installer/qualification-time-budgets.mjs');
+        assert.deepEqual(readFileSync(installedPolicy),sourcePolicy);
+        const inventory=JSON.parse(readFileSync(join(first.candidate.directory,'inventory.json'),'utf8'));
+        assert.equal(inventory.files.find(file=>file.path==='out/installer/qualification-time-budgets.mjs').sha256,digest(sourcePolicy));
+        const program=`import assert from 'node:assert/strict';const {RUNTIME_LIMITS}=await import(${JSON.stringify(pathToFileURL(join(first.candidate.directory,'out/installer/runtime-metadata.js')).href)});
+          const {QUALIFICATION_TIME_BUDGETS:p}=await import(${JSON.stringify(pathToFileURL(installedPolicy).href)});
+          assert.equal(p.profile,${JSON.stringify(timeBudgets.profile)});assert.equal(RUNTIME_LIMITS.networkMs,${timeBudgets.runtime.acquisitionMs});assert.equal(RUNTIME_LIMITS.verificationMs,${timeBudgets.runtime.verificationMs});assert.ok(Object.isFrozen(p.manager));`;
+        const loaded=await scope.start(canonicalRuntime.node,['--input-type=module','-e',program],{env:{...run.environment(),PATH:'',NODE_OPTIONS:'',NODE_PATH:''}});
+        assert.equal(loaded.code,0,readFileSync(loaded.log,'utf8'));
+      }
       const candidate=await realPeers.dev.open(location,first.offer.releaseId);await realPeers.dev.verify(candidate,location);
       const wrongRuntime=await request(inspect,process.execPath);assert.notEqual(wrongRuntime.response.code,0);assert.match(wrongRuntime.text,/runtime-invalid/);
       const record={schemaVersion:1,installationId:'fixture',operationId:'private-worker',sourceOffer:createDevSourceOffer({kind:'dev-source',delivery:{mode:'dev',repository:join(root,'missing-source'),branch:'installer'},sourceCommit:'f'.repeat(40),target,runtime,recipeVersion:'dev-v2-app-only'}),attemptId:'private-attempt',workerNonce:'n'.repeat(32),...devPreparationPaths('private-worker','private-attempt'),coordinatorRunId:randomUUID(),stage:'accepted'};

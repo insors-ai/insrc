@@ -38,6 +38,43 @@ Override positive millisecond budgets with `--build-ms=`, `--file-ms=`,
 with an explicit recorded override. The earlier audit's sixty-second limit
 is not a correctness requirement.
 
+For an explicitly slow USB-backed VM, select the fixed profile **before** Node
+starts. Absent or `normal` keeps the numeric defaults above. Empty, unknown,
+whitespace and numeric selectors fail before admission; explicit short test
+overrides still win exactly.
+
+```sh
+INSRC_QUALIFICATION_PROFILE=slow-vm npm test -- --concurrency=1 'src/installer/__tests__/qualification-*.test.ts'
+INSRC_QUALIFICATION_PROFILE=slow-vm node scripts/qualify-runtime-foundation.mjs --parent /path/to/evidence --baseline utm-macos
+```
+
+The slow profile permits 40 minutes per ordinary build/file, four hours for a
+worker/manager, 30 seconds worker cleanup and 120 seconds manager cleanup.
+Native qualification has two-hour command caps, five hours of work, and a
+separate five-minute final drain. Its work deadline also aborts runtime I/O and
+independently owned preparation. Repeated drains share one cumulative allowance;
+every call still independently checks actual closure.
+
+A local detached VM supervisor must retain the child handle and logs, permit
+at least **five hours fifteen minutes** for slow native work, cascading manager
+and outer cleanup, and diagnostics, and request cooperative cancellation before
+its enclosing ceiling. Use six hours as the containing ceiling; record the
+actual ceiling in retained evidence. Keep the terminal/SSH connection independent
+of that retained supervisor. Do not reuse a two-hour or 90-minute wrapper, infer
+success from process exit, or clear a lease from PID/age. An uncertain retired
+attempt must have qualified closure/reconciliation before a fresh-home retry.
+
+The manual runtime-foundation CI scope accepts the same fixed profile. Its job
+ceiling is 240 minutes normal / 360 minutes slow; the backend job remains 20
+minutes. SDK setup is bounded to four minutes; headers, npm ci, the canonical
+build and selected tests share one owned 40-minute preflight and at most 30
+seconds cleanup. Before native admission, the shared containment check reserves
+the full selected work allowance, manager/outer cleanup and eight minutes for
+diagnostics, plus a conservative five-minute runner-overhead allowance. It
+refuses insufficient remaining time instead of shortening native work. The
+Windows job remains gated by its separate process-ownership prerequisite; a
+longer budget is not authorization to dispatch or enable that platform.
+
 Explicit `INSRC_LIVE_TESTS=1` uses serial file admission to preserve the
 repository's provider-serialization rule. Requested and effective concurrency
 are recorded separately; offline runs retain the configured concurrency.

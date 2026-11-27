@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1795779232241-km973u",
+    "runId": "wf-1795781908208-c3ujab",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-27T11:36:32.534Z",
+    "createdAt": "2026-11-27T12:21:26.787Z",
     "epicCreatedAt": "2026-11-27T10:37:28.792Z",
     "standalone": true,
     "attribution": {
@@ -16,21 +16,21 @@
         }
       ]
     },
-    "elapsedMs": 159924,
+    "elapsedMs": 178225,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "9c95950064e4b916",
     "epicSlug": "insrc-present-cannot-show-tracked-epic",
     "storyId": "s1",
-    "lldRunId": "wf-1795776322035-75xiwb",
-    "lldEffectiveHash": "3a4bff303fb3a66de251642f900d063614dde4bd482a2be039c0782617ca6d2e",
+    "lldRunId": "wf-1795781226716-e61wgy",
+    "lldEffectiveHash": "4aa2b6f12b0f4da86bee34660eebd9bd62794ccae7a68e3beee9de2bd736e28c",
     "authoredBy": "controller",
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "fb04a99f73482d29fc94cc9c365af6319dd243f69ae25f19a4e0a94923cb716f",
-        "at": "2026-11-27T11:36:32.633Z",
+        "number": 2,
+        "contentHash": "4c001669e05ab74c12a4accc22575c8a8ee0ba7df6d8096c29bf7a38b7d87a08",
+        "at": "2026-11-27T12:21:26.888Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -39,33 +39,33 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 1,
+        "revision": 2,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-27T11:38:05.939Z"
+        "at": "2026-11-27T12:48:51.268Z"
       }
     },
-    "revision": 1,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
-    "rangeBase": "ea539292926ed70ea506def87532e62c6c74d975"
+    "revision": 2,
+    "rangeBase": "6aa72704b783e40ce5b3c237aacde0609c5a3a8c"
   },
   "body": {
     "summary": {
-      "prose": "Building this Story is a small, three-step change: add one new function to pending.ts that enumerates the same artifact files listPendingArtifacts already scans but without its pending/CR-sibling business rules, re-point insrc_present's existing handler at that new function instead, then extend the existing test files for both modules to prove the new presentability and the preserved error-path/ambiguity behavior. Nothing outside src/workflow/pending.ts, src/mcp/server.ts and their two existing test files changes.",
+      "prose": "Building this Story is a four-task change: t1 (already built) added the status-independent artifact scanner; t2 registers its daemon-side IPC handler in every completeness table the daemon enforces; t3 adds the client-side forward and re-points insrc_present at it; t4 extends the two affected test files and confirms the daemon's own four completeness suites pass. Nothing outside pending.ts, handler-runtime.ts, repo-call-audit.ts, method-class.ts, daemon-stream.ts, server.ts and their four test files changes.",
       "audience": "technical"
     },
     "tasks": [
       {
         "id": "t1",
         "title": "Add resolveOpenableArtifacts to src/workflow/pending.ts",
-        "summary": "Add the new exported function resolveOpenableArtifacts(repoPath): readonly {artifactId, mdPath}[], copying listPendingArtifacts' file-scan loop but keeping only the kind-filter (PENDING_KINDS) and the malformed-JSON try/catch guards; drop the approvalStateOf/AMD-status pending check and the BUILD/CR-sibling check entirely. Derive mdPath via the existing, already-exported deriveMdPath.",
+        "summary": "Add the new exported function resolveOpenableArtifacts(repoPath): readonly {artifactId, mdPath}[], copying listPendingArtifacts' file-scan loop but keeping only the kind-filter (PENDING_KINDS) and the malformed-JSON try/catch guards; drop the approvalStateOf/AMD-status pending check and the BUILD/CR-sibling check entirely. Derive mdPath via the existing, already-exported deriveMdPath. (Already implemented and validated; unchanged by this revision.)",
         "size": "S",
         "order": 1,
         "dependsOn": [],
@@ -109,12 +109,57 @@
       },
       {
         "id": "t2",
-        "title": "Wire handleInsrcPresent to resolveOpenableArtifacts",
-        "summary": "Change handleInsrcPresent (src/mcp/server.ts) to read its openable set from resolveOpenableArtifacts instead of pending.artifacts (the listPendingArtifacts/pendingWorkflow call); keep namesPending and the ambiguity-filter (names matching more than one document stay notPending) unchanged. Remove the now-unused pendingWorkflow call/import if nothing else in the function needs it.",
-        "size": "S",
+        "title": "Register the daemon-side 'workflow.openable' handler and every completeness registry it requires",
+        "summary": "Add handleWorkflowOpenable (plus WorkflowOpenableResult/WorkflowOpenableError interfaces) to src/workflow/pending.ts, mirroring handleWorkflowPending's repo-resolution rule exactly. Register a new 'workflow.openable' entry in src/daemon/handler-runtime.ts's method table (mirroring 'workflow.pending'). Add the matching entry to src/daemon/repo-call-audit.ts's RPC_AUDIT (kind: 'read-only'), to src/daemon/threads/method-class.ts's TABLE (['workflow.openable', 'session', false]), and to src/daemon/__tests__/handler-runtime.test.ts's ADDED_RPC array. These five edits must land together: the daemon's own completeness tests (repo-call-audit.test.ts, method-class.test.ts, handler-runtime.test.ts) fail if any one is missing.",
+        "size": "M",
         "order": 2,
         "dependsOn": [
           "t1"
+        ],
+        "acceptanceChecks": [
+          "handleWorkflowOpenable returns { artifacts } from a fixture repo via resolveOpenableArtifacts",
+          "handleWorkflowOpenable returns { error } when repo cannot be resolved from params or repoEnv",
+          "repo-call-audit.test.ts passes with 'workflow.openable' present in RPC_AUDIT",
+          "method-class.test.ts's coverage test passes with 'workflow.openable' present in the TABLE",
+          "handler-runtime.test.ts passes with 'workflow.openable' present in ADDED_RPC",
+          "repo-call-table.test.ts passes with no separate edit (workflow.openable's read-only RPC_AUDIT kind satisfies it)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "handleWorkflowOpenable returns { artifacts } from a fixture repo via resolveOpenableArtifacts"
+          },
+          {
+            "level": "unit",
+            "name": "handleWorkflowOpenable returns { error } when repo cannot be resolved from params or repoEnv"
+          },
+          {
+            "level": "integration",
+            "name": "repo-call-audit.test.ts: every method of the handler registry has an audit entry, now including workflow.openable"
+          },
+          {
+            "level": "integration",
+            "name": "method-class.test.ts: the method set equals the keys of the constructed rpcHandlers and streamHandlers, now including workflow.openable"
+          },
+          {
+            "level": "integration",
+            "name": "handler-runtime.test.ts: RECORDED_RPC + ADDED_RPC equals the registered method set, now including workflow.openable in ADDED_RPC"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add openableWorkflow and wire handleInsrcPresent to it",
+        "summary": "Add openableWorkflow to src/mcp/daemon-stream.ts, mirroring pendingWorkflow's unaryRpc forward but naming 'workflow.openable'. Change handleInsrcPresent in src/mcp/server.ts to call openableWorkflow instead of pendingWorkflow; remove the now-unused pendingWorkflow import from server.ts if nothing else there needs it. Keep namesPending and the ambiguity-filter unchanged.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
         ],
         "acceptanceChecks": [
           "handleInsrcPresent presents a tracked-epic BUILD by artifact id with no CR sibling (the reported defect's exact case)",
@@ -122,6 +167,7 @@
           "handleInsrcPresent presents an already-approved or already-rejected artifact by name",
           "handleInsrcPresent still reports notPending for a name matching zero artifacts",
           "handleInsrcPresent still reports notPending for a bare filename matching more than one document",
+          "handleInsrcPresent still answers a daemon error or an unreachable daemon as an explicit error",
           "handleInsrcPresent's external response shape stays { presented: string[], notPending: string[] }"
         ],
         "derivedFrom": [
@@ -153,31 +199,44 @@
           {
             "level": "unit",
             "name": "handleInsrcPresent's external response shape stays { presented: string[], notPending: string[] }"
+          },
+          {
+            "level": "unit",
+            "name": "handleInsrcPresent calls the daemon's 'workflow.openable' method, not 'workflow.pending'"
+          },
+          {
+            "level": "unit",
+            "name": "handleInsrcPresent answers a daemon error or an unreachable daemon as an explicit error, never as presented"
           }
         ]
       },
       {
-        "id": "t3",
-        "title": "Add/extend tests for resolveOpenableArtifacts and handleInsrcPresent per the test strategy",
-        "summary": "Extend src/workflow/__tests__/pending.test.ts with resolveOpenableArtifacts unit tests (draft/approved/rejected artifact, non-standalone BUILD with no CR sibling, non-PENDING_KINDS exclusion, malformed-file skip), following that file's existing temp-repo fixture style, and extend handleInsrcPresent's own test file with the new presentability cases named in the test strategy.",
+        "id": "t4",
+        "title": "Add/extend tests for handleWorkflowOpenable and handleInsrcPresent, and confirm every completeness suite passes",
+        "summary": "Extend src/workflow/__tests__/pending.test.ts with handleWorkflowOpenable unit tests. Update src/mcp/__tests__/present-dispatch.test.ts: every fakeDaemon() assertion of the called method name changes from 'workflow.pending' to 'workflow.openable', and every fixture object is trimmed to the minimal {artifactId, mdPath} shape. Run repo-call-audit.test.ts, method-class.test.ts, handler-runtime.test.ts and repo-call-table.test.ts to confirm their completeness checks pass with no further edits.",
         "size": "M",
-        "order": 3,
+        "order": 4,
         "dependsOn": [
           "t1",
-          "t2"
+          "t2",
+          "t3"
         ],
         "acceptanceChecks": [
           "Every subject named in the LLD's testStrategy.testLevels has a corresponding real test case",
-          "Every criterionId in testStrategy.acceptanceMapping (ac1, ac2, ac3) has its provingTests present and passing",
-          "No existing test in pending.test.ts or the handleInsrcPresent test file needs to change to accommodate the new tests"
+          "Every criterionId in testStrategy.acceptanceMapping (ac1-ac4) has its provingTests present and passing",
+          "No existing test in pending.test.ts, present-dispatch.test.ts or the three completeness-test files needs to change beyond the planned method-name/fixture-shape updates"
         ],
         "derivedFrom": [
           "c3"
         ],
         "tests": [
           {
+            "level": "integration",
+            "name": "repo-call-table.test.ts: every registered method is a table row or on the reviewed read-only list -- workflow.openable satisfies this via its RPC_AUDIT kind:'read-only' entry with no separate edit"
+          },
+          {
             "level": "smoke",
-            "name": "all t1/t2 proving tests exist as real, passing test cases across pending.test.ts and the handleInsrcPresent test file"
+            "name": "all t1/t2/t3 proving tests exist as real, passing test cases across pending.test.ts, present-dispatch.test.ts and the three completeness-test files"
           }
         ]
       }
@@ -187,84 +246,139 @@
         "lldStrategyItem": "resolveOpenableArtifacts returns a draft (never-decided) artifact",
         "coveredByTaskIds": [
           "t1",
-          "t3"
+          "t4"
         ]
       },
       {
         "lldStrategyItem": "resolveOpenableArtifacts returns an approved artifact",
         "coveredByTaskIds": [
           "t1",
-          "t3"
+          "t4"
         ]
       },
       {
         "lldStrategyItem": "resolveOpenableArtifacts returns a rejected artifact",
         "coveredByTaskIds": [
           "t1",
-          "t3"
+          "t4"
         ]
       },
       {
         "lldStrategyItem": "resolveOpenableArtifacts returns a non-standalone BUILD with no CR sibling",
         "coveredByTaskIds": [
           "t1",
-          "t3"
+          "t4"
         ]
       },
       {
         "lldStrategyItem": "resolveOpenableArtifacts excludes a non-PENDING_KINDS file (e.g. an EPIC/STORY/TASK record)",
         "coveredByTaskIds": [
           "t1",
-          "t3"
+          "t4"
         ]
       },
       {
         "lldStrategyItem": "resolveOpenableArtifacts skips a malformed JSON file without dropping the rest of the scan",
         "coveredByTaskIds": [
           "t1",
-          "t3"
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleWorkflowOpenable returns { artifacts } from a fixture repo via resolveOpenableArtifacts",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleWorkflowOpenable returns { error } when repo cannot be resolved from params or repoEnv",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
         ]
       },
       {
         "lldStrategyItem": "handleInsrcPresent presents a tracked-epic BUILD by artifact id with no CR sibling (the reported defect's exact case)",
         "coveredByTaskIds": [
-          "t2",
-          "t3"
+          "t3",
+          "t4"
         ]
       },
       {
         "lldStrategyItem": "handleInsrcPresent presents the same BUILD by its repo-relative doc path",
         "coveredByTaskIds": [
-          "t2",
-          "t3"
+          "t3",
+          "t4"
         ]
       },
       {
         "lldStrategyItem": "handleInsrcPresent presents an already-approved artifact by name",
         "coveredByTaskIds": [
-          "t2",
-          "t3"
+          "t3",
+          "t4"
         ]
       },
       {
         "lldStrategyItem": "handleInsrcPresent reports notPending for a name matching zero artifacts",
         "coveredByTaskIds": [
-          "t2",
-          "t3"
+          "t3",
+          "t4"
         ]
       },
       {
         "lldStrategyItem": "handleInsrcPresent reports notPending for a bare filename matching more than one document (ambiguity preserved)",
         "coveredByTaskIds": [
-          "t2",
-          "t3"
+          "t3",
+          "t4"
         ]
       },
       {
         "lldStrategyItem": "handleInsrcPresent's external response shape stays { presented: string[], notPending: string[] }",
         "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleInsrcPresent calls the daemon's 'workflow.openable' method, not 'workflow.pending'",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleInsrcPresent answers a daemon error or an unreachable daemon as an explicit error, never as presented",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "repo-call-audit.test.ts: every method of the handler registry has an audit entry, now including workflow.openable",
+        "coveredByTaskIds": [
           "t2",
-          "t3"
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "method-class.test.ts: the method set equals the keys of the constructed rpcHandlers and streamHandlers, now including workflow.openable",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "handler-runtime.test.ts: RECORDED_RPC + ADDED_RPC equals the registered method set, now including workflow.openable in ADDED_RPC",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "repo-call-table.test.ts: every registered method is a table row or on the reviewed read-only list -- workflow.openable satisfies this via its RPC_AUDIT kind:'read-only' entry with no separate edit",
+        "coveredByTaskIds": [
+          "t4"
         ]
       }
     ],

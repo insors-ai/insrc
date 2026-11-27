@@ -1,14 +1,14 @@
 <!-- insrc:artifact LLD-ba80a780f4408613-s1 -->
 
-# LLD: STORY-ba80a780f4408613-s1 — test fixtures and assertions inside the two named test files plus the probe helper edit
+# LLD: STORY-ba80a780f4408613-s1 — test fixtures and assertions inside the named test files plus the probe helper edit
 
 ## Summary
 
 **Epic:** `two-untracked-vs-code-plugin-test`
-**HLD base run:** `wf-1795785940717-8xzpqh`
-**HLD effective hash:** `c54175a13113...`
+**HLD base run:** `wf-1795793421317-sm4v1l`
+**HLD effective hash:** `7e05709c463b...`
 
-Revision 2 addressing design-review feedback. Test-side-only fix of two vscode-plugin test defects, no product code changes. (1) docs-review-panel t3 compile probe: the recorded failing diagnostics are exclusively node_modules .d.ts declaration-file errors (TS2416/TS2503/TS2304/TS2552/TS1203), so the single correct compiler option is skipLibCheck — explicit "types" would not suppress them. compileProbe (scripts/test-harness/probe.mjs:8-25) gains a narrow per-probe skipLibCheck?: boolean option, default off (all other callers unchanged; timeout/compiler-error/interrupted/cleanup behavior untouched), and the panel call site typecheckAgainstPanel (docs-review-panel.test.ts:2497) passes skipLibCheck: true. Distinct controls preserved: the valid real-module fixture must pass (control.ok===true), invalid fixtures must assert the specific diagnostics (/Property .* does not exist on type/ per absent-state member; /not assignable to type .never./ for the unhandled-kind witness) — not merely ok===false — and the shipped-source witness check stays; because shared probe.mjs changes, its own tests (scripts/__tests__/test-harness.test.ts) also run. (2) commands.test.ts:132-143: update ONLY the install tuple of the full-sequence argv assertion to ["/bin/bash", installer, "-y", "--target", root], preserving the start/stop/restart/update tuples (controller.ts:68-76). Runnable selectors: npm test -- --suite=vscode src/chat/__tests__/docs-review-panel.test.ts src/daemon/__tests__/commands.test.ts.
+Revision 4 per review feedback (design unchanged since rev 2). Test-side-only fix of two vscode-plugin test defects, no product code changes. (1) docs-review-panel t3 compile probe: recorded failing diagnostics are exclusively node_modules .d.ts declaration-file errors, so the single correct compiler option is skipLibCheck. compileProbe (scripts/test-harness/probe.mjs:8-25) gains a narrow per-probe skipLibCheck?: boolean (default off; wiring pinned by the unit test in scripts/__tests__/test-harness.test.ts:124, commit b23dd0e7e), and the panel call site passes skipLibCheck: true (commit 7a47d0e28). (2) commands.test.ts: full captured-sequence assertion matches the current controller contract: install [-y --target <root>], start/restart [--skip-sync --skip-install --skip-build], stop, update via installer [--migrate-runtime --no-start]. Acceptance mapping: ac1/ac2 are carried by the real-panel probe behavior test (scripts/__tests__/test-harness-probes.test.ts:13, which runs the two t3 tests under a nested harness and asserts 2 pass / 0 fail), with the stub test as wiring evidence; ac3 by the commands test. Harness evidence for the t3 tests on fix commit 7a47d0e28: .insrc/tmp/test-harness/runs/a76220f7-26a1-4d77-aa31-d08fc1886bcc and aa15f6e1-091d-4712-bce3-47ca8f728627 logs show 237 ok / 0 not ok individually (pre-fix run 4bde4114: not ok 78); the file-level pending-promise termination is tracked separately as ISSUE-4b33600426ce1112 and is not an individual test outcome.
 
 ## Contents
 
@@ -24,7 +24,7 @@ Revision 2 addressing design-review feedback. Test-side-only fix of two vscode-p
 
 ## 1. Epic impact analysis
 
-**Does not apply**: Standalone small bugfix (ISSUE-ba80a780f4408613); no epic-level contract change.
+**Does not apply**: Standalone small bugfix; no epic-level contract change.
 
 ## 2. HLD context
 
@@ -47,7 +47,7 @@ compileProbe({ root, target, snippet, compiler, budgetMs, skipLibCheck? }): Prom
 - `snippet: (specifier: string) => string` — Fixture source generator
 - `compiler: string` _(optional)_ — tsc binary path
 - `budgetMs: number` _(optional)_ — Child-process time budget (child-timeout on exceed)
-- `skipLibCheck: boolean` _(optional)_ — When true, append --skipLibCheck to the owned tsc argv so declaration-file (.d.ts) checking is skipped while TS source and fixture diagnostics stay active; default false preserves all existing callers
+- `skipLibCheck: boolean` _(optional)_ — When true, append --skipLibCheck so declaration-file (.d.ts) checking is skipped while TS source and fixture diagnostics stay active; default false preserves all existing callers
 
 **Returns:** `Promise<{ ok: boolean; out: string }>` — ok = tsc exit code 0; out = full diagnostic text
 
@@ -93,7 +93,7 @@ typecheckAgainstPanel(_t: Skipper, snippet: (moduleSpecifier: string) => string)
 
 ### 4.1 `compileProbe options object` — field-add
 
-Add optional skipLibCheck?: boolean (default false). When true the owned tsc argv [compiler, --noEmit, --strict, --exactOptionalPropertyTypes, --module nodenext, --moduleResolution nodenext, --target es2022, file] gains --skipLibCheck; all other args, timeout, compiler-error and cleanup handling unchanged.
+Add optional skipLibCheck?: boolean (default false). When true the owned tsc argv gains --skipLibCheck; all other args, timeout, compiler-error and cleanup handling unchanged. Wiring pinned by the unit test in scripts/__tests__/test-harness.test.ts:124 (commit b23dd0e7e).
 
 ```
 skipLibCheck?: boolean // default false
@@ -102,72 +102,67 @@ skipLibCheck?: boolean // default false
 **Call sites:**
 - `scripts/test-harness/probe.mjs:8-25`
 - `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:2497`
+- `scripts/__tests__/test-harness.test.ts:124`
 
 ## 5. Error paths
 
 **Error cases**
 
-- **Probe compile polluted by dependency declaration-file diagnostics (node_modules .d.ts TS2416/TS2503/TS2304/TS2552/TS1203) so the positive control fails on valid code** (recoverable)
+- **Probe compile polluted by dependency declaration-file diagnostics (node_modules .d.ts) so the positive control fails on valid code** (recoverable)
   - Detection: compileProbe returns ok=false with out containing only node_modules/*.d.ts errors (witness: harness run 4bde4114 not-ok-78)
-  - Response: Panel probe call site passes skipLibCheck: true, appending --skipLibCheck to the owned tsc argv; declaration-file checking is skipped, TS source and fixture diagnostics stay active
-  - User impact: t3 absent-state positive control (control.ok===true) passes on valid code; invalid fixtures still fail on their own diagnostics
-- **Probe child process exceeds its budget** (terminal)
-  - Detection: processScope result.timedOut -> harnessError child-timeout
-  - Response: Unchanged: probe throws child-timeout; test surfaces it as a failure, not a skip
-  - User impact: Slow machine still bounded; no hang
-- **Compiler missing or produces no type-check result** (terminal)
-  - Detection: launchError, or exit!=0 without /error TS\d+:/ in output -> harnessError compiler-unavailable
-  - Response: Unchanged: setup error propagates
-  - User impact: Test fails loudly rather than silently passing
-- **Probe workspace cannot be cleaned** (recoverable)
-  - Detection: scope.drain() returns falsy -> harnessError cleanup-unconfirmed, workspace retained
-  - Response: Unchanged: retained probe workspace for diagnosis
-  - User impact: No silent leftover deletion
-- **commands.test.ts install tuple stale vs controller --target contract** (recoverable)
-  - Detection: assert.deepEqual(captured, ...) mismatches on the install argv
-  - Response: Update only the install tuple to ["/bin/bash", installer, "-y", "--target", root]; start/stop/restart/update tuples preserved
-  - User impact: Test asserts the full owned-runtime sequence the controller actually runs (controller.ts:68-76)
+  - Response: Panel probe call site passes skipLibCheck: true; declaration-file checking is skipped, TS source and fixture diagnostics stay active
+  - User impact: t3 positive control passes on valid code; invalid fixtures still fail on their own diagnostics
+- **Probe run outside an admitted harness run (e.g. the build gate bare tsx runner)** (terminal)
+  - Detection: participantContext throws harness-context-invalid
+  - Response: Unchanged by design: probes require the supported harness; gate-runnable behavior coverage comes from test-harness-probes.test.ts which spawns its own nested harness run
+  - User impact: Probe-dependent behavior is verified by the nested-harness test, not by the gate directly
+- **Probe child exceeds budget / compiler missing / workspace cannot be cleaned / interrupted** (terminal)
+  - Detection: timedOut, launchError or no TS diagnostics, drain falsy, SIGINT/SIGTERM
+  - Response: Unchanged: child-timeout / compiler-unavailable / cleanup-unconfirmed / interrupted — covered by test-harness-probes.test.ts:23
+  - User impact: Failures stay loud; no silent pass
+- **commands.test.ts sequence stale vs controller contract** (recoverable)
+  - Detection: assert.deepEqual(captured, ...) mismatches
+  - Response: Full sequence asserted: install [-y --target <root>], start/restart [--skip-sync --skip-install --skip-build], stop, update via installer [--migrate-runtime --no-start]
+  - User impact: Test asserts the real owned-runtime sequence (controller.ts:68-95)
 
 **Edge cases**
 
 | Input | Expected |
 | :--- | :--- |
-| skipLibCheck omitted (all existing probe callers) | argv unchanged — no --skipLibCheck; behavior identical to today |
-| skipLibCheck: true with a fixture that has a REAL type error in fixture or panel source | ok=false and out still matches the expected diagnostic (Property ... does not exist / not assignable to type never) — scoping does not weaken source checking |
-| probe run from repo root vs vscode-plugin cwd | same result — root passed explicitly (REPO_ROOT) and target must realpath inside the checkout |
-| install with migrate=true | argv gains --migrate-runtime --no-start after --target <root>; sequence assertion covers only the ordinary install path |
+| skipLibCheck omitted (all existing probe callers) | argv unchanged — no --skipLibCheck (pinned by test-harness.test.ts:124) |
+| skipLibCheck: true with a REAL type error in fixture or panel source | ok=false and out still matches the expected diagnostic — scoping does not weaken source checking (asserted by the real-panel probe test) |
+| install with migrate=true (update) | installer argv gains --migrate-runtime --no-start after --target <root> |
 
 **Invariants to preserve**
 
-- The unhandled-companion-kind test must still fail compilation on a genuinely unhandled kind, asserting /not assignable to type .never./ — not merely ok===false — and the shipped-source witness check on docs-review-panel.ts stays [[c1]]
-- The absent-state test must assert /Property .* does not exist on type/ per member AND keep the valid real-module positive control control.ok===true [[c1]]
-- The owned-runtime --target install contract is intentional (77c317a88); the full captured-sequence assertion (install+start+stop+restart+update) is preserved with only the install tuple updated [[c2]]
-- No product code changes; harness timeout, compiler-error, interrupted and cleanup behavior of compileProbe unchanged [[c3]]
+- The unhandled-companion-kind test still fails compilation on a genuinely unhandled kind asserting /not assignable to type .never./, and the shipped-source witness check stays (docs-review-panel.test.ts:2550-2579) [[c1]]
+- The absent-state test asserts /Property .* does not exist on type/ per member AND keeps the valid positive control control.ok===true (docs-review-panel.test.ts:2500-2528) [[c1]]
+- No product code changes; harness timeout/compiler-error/interrupted/cleanup behavior unchanged; default-off option keeps other callers identical (pinned by test-harness.test.ts:124) [[c3]]
+- The owned-runtime --target install contract (77c317a88) and the full captured-sequence assertion are preserved [[c2]]
 
 ## 6. Test strategy
 
-**Test framework:** `node:test via the repo test harness (Node 22.22.1): npm test -- --suite=vscode src/chat/__tests__/docs-review-panel.test.ts src/daemon/__tests__/commands.test.ts (src/ selectors are relative to vscode-plugin/ per docs/testing.md:14-22); plus npm test -- scripts/__tests__/test-harness.test.ts because shared scripts/test-harness/probe.mjs changes`
+**Test framework:** `node:test. All subjects are gate-runnable (the build gate runs each mapped file via npx tsx --test-force-exit from the repo root) and also pass under the supported harness (npm test -- <file>, Node 22.22.1): scripts/__tests__/test-harness-probes.test.ts, scripts/__tests__/test-harness.test.ts, and npm test -- --suite=vscode src/daemon/__tests__/commands.test.ts. Harness evidence for the t3 tests on fix commit 7a47d0e28: .insrc/tmp/test-harness/runs/a76220f7-26a1-4d77-aa31-d08fc1886bcc and aa15f6e1-091d-4712-bce3-47ca8f728627 (0-vscode-plugin_src_chat___tests___docs-review-panel.test.ts.log) show 237 ok / 0 not ok individually; pre-fix run 4bde4114 showed not ok 78. The file-level pending-promise termination of that file under the harness is tracked separately as ISSUE-4b33600426ce1112 and is not an individual test outcome.`
 
 **Test levels**
 
-- **unit** — Both fixed assertions pass under the supported harness; the probe change keeps distinct positive/negative/witness controls honest; the harness probe's own tests stay green after the shared probe.mjs edit.
-  - Subjects: `t3: the 'absent' state carries NO member other than state — enforced by the TYPE, not just at runtime`, `t3: an unhandled companion kind is a COMPILE error, not an unlabelled slot`, `VS Code daemon commands delegate install and lifecycle through fixed shell and surface owned-runtime failures`
-  - Fixtures: `existing harness compile probe (scripts/test-harness/probe.mjs) + controller fixture tree (mkdtemp root with ctlScript/daemonEntry/bundledInstaller)`
+- **unit** — All three subjects are gate-runnable. The real-panel probe test (test-harness-probes.test.ts:13) runs the two t3 docs-review-panel tests under a nested harness (name pattern) and asserts 2 pass / 0 fail — carries ac1/ac2 with real positive and intended-negative diagnostics. The stub test (test-harness.test.ts:124) pins the skipLibCheck argv wiring (default off, appended only when set). The commands test pins the full owned-runtime argv sequence (ac3).
+  - Subjects: `Real panel type probes preserve positive and intended-negative diagnostics`, `compileProbe appends --skipLibCheck only when the per-probe skipLibCheck option is set and otherwise leaves its argv unchanged`, `VS Code daemon commands delegate install and lifecycle through fixed shell and surface owned-runtime failures`
+  - Fixtures: `nested harness run over vscode-plugin (real-panel test); stub compiler + createRun temp root (wiring test); controller fixture tree (commands test)`
 
 **Acceptance mapping**
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `t3: the 'absent' state carries NO member other than state — enforced by the TYPE, not just at runtime` |
-| `ac2` | `t3: an unhandled companion kind is a COMPILE error, not an unlabelled slot`, `t3: the 'absent' state carries NO member other than state — enforced by the TYPE, not just at runtime` |
+| `ac1` | `Real panel type probes preserve positive and intended-negative diagnostics`, `compileProbe appends --skipLibCheck only when the per-probe skipLibCheck option is set and otherwise leaves its argv unchanged` |
+| `ac2` | `Real panel type probes preserve positive and intended-negative diagnostics` |
 | `ac3` | `VS Code daemon commands delegate install and lifecycle through fixed shell and surface owned-runtime failures` |
-| `ac4` | `scripts/__tests__/test-harness.test.ts probe coverage (npm test -- scripts/__tests__/test-harness.test.ts)` |
 
 ## 7. Migration
 
-**State before:** probe not isolated from dependency .d.ts noise (no skipLibCheck option); commands.test.ts install tuple lacks --target <root>
+**State before:** probe not isolated from dependency .d.ts noise; commands.test.ts sequence stale vs controller contract
 
-**State after:** compileProbe accepts per-probe skipLibCheck (default off) and the panel probe opts in; commands.test.ts install tuple matches the controller contract
+**State after:** compileProbe accepts per-probe skipLibCheck (default off, wiring unit-tested) and the panel probe opts in; commands.test.ts asserts the current full argv sequence
 
 **Zero downtime:** yes — **Data rewrite:** no
 
@@ -175,32 +170,28 @@ skipLibCheck?: boolean // default false
 
 1. No migration — test-only change; nothing to backfill or roll out — ↩ rollbackable
 
-**Backward compat:** Test-only change; no runtime or public surface changes. Default-off option keeps every existing compileProbe caller behavior-identical.
+**Backward compat:** Test-only change; no runtime or public surface changes. Default-off option keeps every existing compileProbe caller behavior-identical (pinned by test-harness.test.ts:124).
 
 ## 8. Alternatives considered
 
-### 8.1 a1: Per-probe skipLibCheck option on shared compileProbe — **CHOSEN**
+### 8.1 a1: Subjects = real-panel probe test + skipLibCheck wiring unit test + commands test; ac1/ac2 mapped to the real-panel probe test — **CHOSEN**
 
-Add skipLibCheck?: boolean (default false) to compileProbe; pass --skipLibCheck only when set; enable it at the docs-review-panel call site only.
+Gate-runnable subjects that check actual behavior, with the acceptance mapping pointing at behavior checks, not the stub.
 
-Extend compileProbe({root,target,snippet,compiler,budgetMs,skipLibCheck}) in scripts/test-harness/probe.mjs:8-25 so the tsc argv gains --skipLibCheck only when the option is true; typecheckAgainstPanel (docs-review-panel.test.ts:2497) passes skipLibCheck: true; all other callers unchanged (default off). Timeout, compiler-error, interrupted and cleanup-unconfirmed behavior untouched. Separately update commands.test.ts:132-143 install tuple only.
+test-harness-probes.test.ts:13 runs the two t3 tests under a nested harness (name pattern) and asserts 2 pass / 0 fail — that carries ac1/ac2; the stub test pins the option wiring; the commands test carries ac3.
 
-### 8.2 a2: Per-probe explicit types option
+### 8.2 a2: Keep rev 3 mapping (ac1/ac2 on the stub argv test)
 
-Add types?: string[] to compileProbe and pass --types when set.
+Acceptance mapping points at the stub compiler argv test.
 
-Pass --types to tsc to restrict ambient @types inclusion.
-
-### 8.3 a3: Post-filter probe output to project paths
-
-Keep tsc broad; classify diagnostics and fail only on errors in fixture/panel sources.
-
-Parse compileProbe output and ignore errors whose path is under node_modules.
+As rev 3.
 
 ## 9. References
 
 - **[[c1]]** `code` `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:2496-2579`
-- **[[c2]]** `code` `vscode-plugin/src/daemon/__tests__/commands.test.ts:128-143`
+- **[[c2]]** `code` `vscode-plugin/src/daemon/__tests__/commands.test.ts:128-146`
 - **[[c3]]** `code` `scripts/test-harness/probe.mjs:8-25`
-- **[[c4]]** `code` `vscode-plugin/src/daemon/controller.ts:68-76`
-- **[[c5]]** `doc` `docs/testing.md:14-22`
+- **[[c4]]** `code` `vscode-plugin/src/daemon/controller.ts:68-95`
+- **[[c5]]** `code` `scripts/__tests__/test-harness.test.ts:124-155`
+- **[[c6]]** `code` `scripts/__tests__/test-harness-probes.test.ts:13-36`
+- **[[c7]]** `doc` `docs/testing.md:14-22`

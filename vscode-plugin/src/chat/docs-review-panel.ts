@@ -1470,10 +1470,21 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     if (disposed) return;
     // MR2: the open is serialized on THIS panel's own queue, and openDoc posts to this panel's
     // channel directly, so a queued open on another panel can never race or supersede it.
-    const run = (): Promise<void> =>
-      summary !== undefined
-        ? openDoc(ctx, target.artifactId, { kind: summary.kind, reveal: true })
-        : openDoc(ctx, target.artifactId, { path: target.mdPath, readOnly: true, reveal: true });
+    // ISSUE-9c95950064e4b916 (manual review round 2): a document-backed target absent from
+    // pending() (e.g. a CR-less tracked BUILD with a real BUILD.md) already worked -- its
+    // real path never triggers the `??` bug, so it is passed straight through, unchanged.
+    // Only a DOCUMENT-LESS target (mdPath === '', e.g. an approved AMD) is broken: '' survives
+    // `opts.path ?? artifactId` in openDoc, so content('') is called instead of falling back
+    // to the id. Seed noDocIds from the already-correct target and open with no path option
+    // so the fallback fires and content() takes the evidence-read branch.
+    const run = (): Promise<void> => {
+      if (summary !== undefined) return openDoc(ctx, target.artifactId, { kind: summary.kind, reveal: true });
+      if (target.mdPath === '') {
+        deps.client.noteKnownPath(target.artifactId, '');
+        return openDoc(ctx, target.artifactId, { readOnly: true, reveal: true });
+      }
+      return openDoc(ctx, target.artifactId, { path: target.mdPath, readOnly: true, reveal: true });
+    };
     ctx.openQueue = ctx.openQueue.then(run);
     await ctx.openQueue;
   }

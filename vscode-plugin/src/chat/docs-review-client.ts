@@ -81,6 +81,15 @@ export interface DocsReviewClient {
    */
   openableDocuments(): Promise<Array<{ readonly id: string; readonly mdPath: string }>>;
   /**
+   * ISSUE-9c95950064e4b916 (manual review round 2): seed content()'s id->mdPath resolution
+   * for ONE artifact directly, without a pending()/openableDocuments() round trip -- for a
+   * target already known from elsewhere (e.g. the review presenter's openableDocuments()
+   * target), so content() resolves it correctly on the very next call. `mdPath` follows
+   * pendingDocuments()/openableDocuments()' own convention: '' for a document-less record
+   * (content() then takes the evidence read), a real path otherwise.
+   */
+  noteKnownPath(artifactId: string, mdPath: string): void;
+  /**
    * One artifact's verbatim rendered body + open questions + block state. The arg is the
    * artifact's id (the sc3 summary drops mdPath, so the client resolves the .md path the
    * daemon needs from the id->mdPath map pending() retained; a raw path is accepted too).
@@ -176,6 +185,11 @@ export function createDocsReviewClient(client: IpcClient, opts: DocsReviewClient
       );
       if (isError(res)) throw new Error(res.error);
       return res.artifacts.map((a) => ({ id: a.artifactId, mdPath: a.mdPath }));
+    },
+
+    noteKnownPath(artifactId: string, mdPath: string): void {
+      if (mdPath) mdPathById.set(artifactId, mdPath);
+      else noDocIds.add(artifactId);
     },
 
     async content(idOrPath: string): Promise<DocsContent> {

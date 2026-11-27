@@ -93,6 +93,36 @@ test('openableDocuments() throws on the daemon { error } arm, never a silent emp
   await assert.rejects(() => c.openableDocuments(), /repo.*required/);
 });
 
+// ISSUE-9c95950064e4b916 (manual review round 2): noteKnownPath seeds content()'s id->mdPath
+// resolution for one artifact WITHOUT a prior pending()/openableDocuments() round trip, closing
+// the gap where an id surfaced only via openableDocuments() was invisible to content()'s cache.
+
+test("noteKnownPath('', ...) seeds noDocIds for an empty mdPath, so content(id) takes the evidence-read branch without a prior pending() call", async () => {
+  const ev = { artifactId: 'AMD-abc-1', kind: 'AMD', meta: {}, body: {}, renderedMarkdown: '# Amendment\n' };
+  const { client, calls } = fakeIpc((m) => {
+    if (m === 'workflow.deliveryEvidence') return ev;
+    return { error: 'artifactContent must not be called for a document-less id' };
+  });
+  const c = createDocsReviewClient(client, { repo: () => '/repo' });
+  c.noteKnownPath('AMD-abc-1', '');
+  const out = await c.content('AMD-abc-1');
+  assert.equal(out.markdown, '# Amendment\n');
+  assert.deepEqual(calls, [{ method: 'workflow.deliveryEvidence', params: { repo: '/repo', artifactId: 'AMD-abc-1' } }]);
+});
+
+test('noteKnownPath seeds mdPathById for a real mdPath, so content(id) takes the markdown-read branch with that exact path without a prior pending() call', async () => {
+  const view = { renderedMarkdown: '# build\n', openQuestions: [], approvable: true };
+  const { client, calls } = fakeIpc((m) => {
+    if (m === 'workflow.artifactContent') return view;
+    return { error: 'deliveryEvidence must not be called for a document-backed id' };
+  });
+  const c = createDocsReviewClient(client, { repo: () => '/repo' });
+  c.noteKnownPath('BUILD-abc-s1', 'docs/epics/x/S001/BUILD.md');
+  const out = await c.content('BUILD-abc-s1');
+  assert.equal(out.markdown, '# build\n');
+  assert.deepEqual(calls, [{ method: 'workflow.artifactContent', params: { repo: '/repo', mdPath: 'docs/epics/x/S001/BUILD.md' } }]);
+});
+
 test('pending() maps PendingArtifact -> DocsArtifactSummary (id/kind/title/status, and the open-question count)', async () => {
   const { client } = fakeIpc((m) => (m === 'workflow.pending' ? PENDING : { error: 'x' }));
   const c = createDocsReviewClient(client);

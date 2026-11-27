@@ -148,3 +148,35 @@ test('scratch queue reports an oversized external document without sending an ov
   assert.equal(h.edits.length, 0);
   assert.equal(h.messages.get('a')!.filter(msg => msg.type === 'document-state').length, 1);
 });
+
+test('scratch queue promotions preserve the reported parent and require its acknowledged base', async () => {
+  const h = harness(); h.controller.addPane('a', () => {}, false); const gate = h.block();
+  await h.controller.receive('a', h.draft(1, '# First\n')); await until(() => h.edits.length === 1);
+  const pending = { ...h.draft(2, '# Pending\n', 'edit_1'), apply: false };
+  await h.controller.receive('a', pending);
+  await assert.rejects(h.controller.receive('a', { ...pending, apply: true }), /Conflicting pending-draft promotion/);
+  gate.resolve(); await h.controller.flush();
+  const valid = { ...pending, apply: true, baseVersion: h.controller.snapshot.version, baseDigest: h.controller.snapshot.digest };
+  await assert.rejects(h.controller.receive('a', { ...valid, apply: undefined }), /Conflicting duplicate/);
+  for (const patch of [{ parentEditId: undefined }, { parentEditId: 'unknown' }, { baseVersion: 999 }, { baseDigest: 'f'.repeat(64) }]) {
+    await assert.rejects(h.controller.receive('a', { ...valid, ...patch }), /Conflicting pending-draft promotion/);
+  }
+  assert.equal(h.edits.length, 1); assert.equal(h.recovery.get('a')?.apply, false);
+  await h.controller.receive('a', valid); await h.controller.flush();
+  assert.equal(h.document.markdown, '# Pending\n'); assert.equal(h.edits.length, 2);
+
+  const bad = harness(); bad.controller.addPane('a', () => {}, false);
+  await bad.controller.receive('a', bad.draft(1, '# First\n')); await bad.controller.flush();
+  const unacknowledged = { ...bad.draft(2, '# Unknown parent\n', 'unknown'), apply: false };
+  await bad.controller.receive('a', unacknowledged);
+  const { parentEditId: _omitted, ...withoutParent } = unacknowledged;
+  await assert.rejects(bad.controller.receive('a', { ...withoutParent, apply: true, baseVersion: bad.controller.snapshot.version, baseDigest: bad.controller.snapshot.digest }), /Conflicting pending-draft promotion/);
+  assert.equal(bad.document.markdown, '# First\n'); assert.equal(bad.edits.length, 1);
+  assert.equal(bad.recovery.get('a')?.parentEditId, 'unknown');
+  const forged = harness(); forged.controller.addPane('a', () => {}, false);
+  await forged.controller.receive('a', forged.draft(1, '# First\n')); await forged.controller.flush();
+  const badBase = { ...forged.draft(2, '# Bad reported base\n', 'edit_1'), apply: false, baseVersion: 999 };
+  await forged.controller.receive('a', badBase);
+  await assert.rejects(forged.controller.receive('a', { ...badBase, apply: true, baseVersion: forged.controller.snapshot.version, baseDigest: forged.controller.snapshot.digest }), /Conflicting pending-draft promotion/);
+  assert.equal(forged.edits.length, 1); assert.equal(forged.recovery.get('a')?.baseVersion, 999);
+});

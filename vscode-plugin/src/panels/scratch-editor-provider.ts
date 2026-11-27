@@ -107,7 +107,18 @@ export class ScratchDocumentController {
       if (sameDraft(previous, draft)) return this.receipts;
       // A reported recovery draft may be promoted only with identical identity,
       // sequence and text, once its older in-flight parent has been acknowledged.
-      if (previous.editId !== draft.editId || previous.markdown !== draft.markdown || previous.apply !== false || draft.apply === false) return Promise.reject(new Error('Conflicting duplicate draft'));
+      if (previous.editId !== draft.editId || previous.markdown !== draft.markdown || previous.apply !== false || draft.apply !== true) return Promise.reject(new Error('Conflicting duplicate draft'));
+      const parent = pane.ack;
+      const originalBase = parent && (
+        previous.baseVersion === parent.request.baseVersion && previous.baseDigest === parent.request.baseDigest ||
+        previous.baseVersion === parent.baseVersion && previous.baseDigest === parent.baseDigest
+      );
+      const current = this.read();
+      if (!parent || !originalBase || previous.parentEditId === undefined || draft.parentEditId !== previous.parentEditId ||
+        parent.editId !== previous.parentEditId || draft.baseVersion !== parent.snapshot.version || draft.baseDigest !== parent.snapshot.digest ||
+        current.version !== parent.snapshot.version || current.digest !== parent.snapshot.digest) {
+        return Promise.reject(new Error('Conflicting pending-draft promotion'));
+      }
     } else if (previous?.editId === draft.editId) return Promise.reject(new Error('Reused edit identity'));
     pane.latest = draft;
     const receipt = this.receipts.then(async () => {

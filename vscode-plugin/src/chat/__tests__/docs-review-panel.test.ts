@@ -2494,7 +2494,7 @@ test('t2 (contract): protocol.ts indexes all three off DocsContent rather than r
  * compiler is required; launch failure is a setup error rather than a skip.
  */
 async function typecheckAgainstPanel(_t: Skipper, snippet: (moduleSpecifier: string) => string): Promise<{ ok: boolean; out: string }> {
-  return compileProbe({ root: REPO_ROOT, target: fileURLToPath(new URL('../docs-review-panel.ts', import.meta.url)), compiler: TSC, snippet });
+  return compileProbe({ root: REPO_ROOT, target: fileURLToPath(new URL('../docs-review-panel.ts', import.meta.url)), compiler: TSC, snippet, skipLibCheck: true });
 }
 
 test("t3: the 'absent' state carries NO member other than state — enforced by the TYPE, not just at runtime", async (t) => {

@@ -4,8 +4,8 @@ import { childEnvironment, harnessError, participantContext } from './context.mj
 import { ROOT } from './build.mjs';
 import { processScope } from './process.mjs';
 
-/** Real-module type probes live outside normal source includes, under one run. */
-export async function compileProbe({ root = ROOT, target, snippet, compiler = join(root, 'node_modules/typescript/bin/tsc'), budgetMs }) {
+/** Real-module type probes live outside normal source includes, under one run. `skipLibCheck` (default false) skips declaration-file (.d.ts) checking — for probes whose assertions target fixture/source diagnostics, not dependency libs. */
+export async function compileProbe({ root = ROOT, target, snippet, compiler = join(root, 'node_modules/typescript/bin/tsc'), budgetMs, skipLibCheck = false }) {
 	const context = participantContext(root);
 	if (context.phase !== 'reading') throw harnessError('context-invalid', 'Compiler probes require an admitted reader.');
 	if (!existsSync(compiler)) throw harnessError('compiler-unavailable', 'Install the repository TypeScript compiler before running type probes.');
@@ -21,7 +21,7 @@ export async function compileProbe({ root = ROOT, target, snippet, compiler = jo
 	process.on('SIGINT', interrupt); process.on('SIGTERM', interrupt);
 	try {
 		writeFileSync(file, snippet(specifier), { flag: 'wx' });
-		const result = await scope.start(context.runtime.executable, [compiler, '--noEmit', '--strict', '--exactOptionalPropertyTypes', '--module', 'nodenext', '--moduleResolution', 'nodenext', '--target', 'es2022', file], { budgetMs: budgetMs ?? context.budgets.fileMs });
+		const result = await scope.start(context.runtime.executable, [compiler, '--noEmit', '--strict', '--exactOptionalPropertyTypes', ...(skipLibCheck ? ['--skipLibCheck'] : []), '--module', 'nodenext', '--moduleResolution', 'nodenext', '--target', 'es2022', file], { budgetMs: budgetMs ?? context.budgets.fileMs });
 		const out = readFileSync(result.log, 'utf8');
 		if (interrupted || result.interrupted) throw harnessError('interrupted', 'Compiler probe interrupted.');
 		if (result.timedOut) throw harnessError('child-timeout', 'Compiler probe exceeded its budget.');

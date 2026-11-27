@@ -136,7 +136,13 @@ test('VS Code daemon commands delegate install and lifecycle through fixed shell
   const commands=new FakeCommands(),status=new FakeStatus(),consent=fakeConsent('accepted');
   registerDaemonCommands({commands,status,consent,controller});
   for(const action of ['install','start','stop','restart','update']) await commands.runs.get(`insrc.daemon.${action}` as InsrcCommandId)!();
-  assert.deepEqual(captured,[['/bin/bash',paths.bundledInstaller,'-y'],...['start','stop','restart','update'].map(action=>['/bin/bash',paths.ctlScript,action])]);
+  assert.deepEqual(captured,[
+    ['/bin/bash',paths.bundledInstaller,'-y','--target',paths.daemonRoot],
+    ['/bin/bash',paths.ctlScript,'start','--skip-sync','--skip-install','--skip-build'],
+    ['/bin/bash',paths.ctlScript,'stop'],
+    ['/bin/bash',paths.ctlScript,'restart','--skip-sync','--skip-install','--skip-build'],
+    ['/bin/bash',paths.bundledInstaller,'-y','--target',paths.daemonRoot,'--migrate-runtime','--no-start']
+  ]);
   assert.equal(consent.asked.length,1);assert.doesNotMatch(consent.asked[0]!.detail??'',/Node\.js 20\+|global Node.*required|already installed Node/);
   code=2;await commands.runs.get('insrc.daemon.install')!();
   assert.equal(status.current().state,'errored');assert.match(status.current().detail??'',/verified local runtime/);

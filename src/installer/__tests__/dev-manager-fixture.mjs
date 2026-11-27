@@ -38,7 +38,7 @@ if (mode === '--dev-preparation-worker') {
   const result = await f.manager().execute({ protocolVersion: 1, installationId: 'fixture', operationId: 'readonly-start', action: 'start' });
   assert.equal(result.state.phase, 'ready'); assert.equal(f.state.activations.length, 0); assert.equal(f.state.migrations.length, 0);
 } else {
-  const [parent, runtimeDirectory, scenario] = process.argv.slice(2), root = join(parent, scenario === 'pinned' ? 'n' : scenario[0]); mkdirSync(root);
+  const [parent, runtimeDirectory, scenario] = process.argv.slice(2), root = join(parent, scenario === 'pinned' ? 'n' : scenario === 'profile' ? 'q' : scenario[0]); mkdirSync(root);
   const base = createRun(root, { mode: 'build' }), run = { ...base, environment: () => ({ ...base.environment(), INSRC_BUILD_CONFIRM_CLOSURE: '1' }) };
   const target = { os: process.platform, arch: process.arch, baseline: 'fixture' }, runtime = { version: '22.22.1', target, sha256: runtimeArchive(target).sha256, relativeExecutable: process.platform === 'win32' ? 'node.exe' : 'bin/node' };
   await withRun(run, async scope => {
@@ -65,7 +65,15 @@ if (mode === '--dev-preparation-worker') {
       const candidateRecord = JSON.parse(readFileSync(join(home,'install/operations/initial/candidate.json'),'utf8'));
       assert.equal(candidateRecord.descriptorSha256,selected.descriptorSha256);
       async function advance(text) { writeFileSync(join(repository,'src/main.ts'),`export const source = ${text};\n`);await git(['commit','--quiet','-am',`source ${text}`],repository); }
-      if (scenario === 'publish') {
+      if (scenario === 'profile') {
+        assert.equal(process.env.INSRC_QUALIFICATION_PROFILE,'slow-vm');
+        assert.equal(run.budgets.runMs,14400000);
+        const observation=JSON.parse(readFileSync(join(home,checkpoint.checkoutRelativePath,'.insrc/tmp/dev-preparation/profile-observation.json'),'utf8'));
+        assert.equal(observation.profile,'slow-vm');assert.equal(observation.budgets.runMs,14400000);
+        assert.ok(observation.node.startsWith(join(home,'runtimes')));
+        assert.match(observation.npm,/npm[\\/]bin[\\/]npm-cli\.js$/);
+        assert.equal(existsSync(join(home,checkpoint.checkoutRelativePath,'.insrc/tmp/test-harness/active')),false);
+      } else if (scenario === 'publish') {
         // Reuse fully verified same-source bytes with a fresh adapter, without
         // another worker, checkpoint or publication under the immutable ID.
         const store=ControllerStore.acquire(f.location), prior=store.inspect().snapshot;

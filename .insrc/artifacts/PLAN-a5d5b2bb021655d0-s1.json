@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1795789379685-7odxws",
+    "runId": "wf-1795795791327-3gopeh",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-27T14:23:06.011Z",
+    "createdAt": "2026-11-27T16:11:13.365Z",
     "epicCreatedAt": "2026-11-27T13:29:55.493Z",
     "standalone": true,
     "attribution": {
@@ -16,21 +16,21 @@
         }
       ]
     },
-    "elapsedMs": 5950,
+    "elapsedMs": 81681,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "a5d5b2bb021655d0",
     "epicSlug": "propagate-longer-time-budgets-through-installer",
     "storyId": "s1",
-    "lldRunId": "wf-1795787623125-0c9h3u",
-    "lldEffectiveHash": "4d00a48b868b1fed99675a3c30f0abd14b9123b3063bc0908966aa86de5ba839",
+    "lldRunId": "wf-1795794931997-t48h29",
+    "lldEffectiveHash": "a362bcdf44e8f894c99a6dea0194376666bcefa6e3922a57df8445d34ba2f3e2",
     "authoredBy": "controller",
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 2,
-        "contentHash": "5d44ed899ee21177e05ee2c469fbadb90a346d05f4aec2e7201355354f7deae4",
-        "at": "2026-11-27T14:23:06.145Z",
+        "number": 3,
+        "contentHash": "c9a9a76f78a1192a1c36e715bd59a78f736c3452690cfa5c8ea703552b648387",
+        "at": "2026-11-27T16:11:13.469Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -39,22 +39,22 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 2,
+        "revision": 3,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-27T14:30:00.089Z"
+        "at": "2026-11-27T16:16:19.073Z"
       }
     },
-    "revision": 2,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
-    "rangeBase": "8a21e07afa65cf56413493e33010fd40478551df"
+    "revision": 3,
+    "rangeBase": "4673715f7b4088da9b86c3a1a58724839180b592"
   },
   "body": {
     "summary": {
@@ -173,7 +173,7 @@
       {
         "id": "t4",
         "title": "Bound worker launch by remaining parent time and cleanup reserve",
-        "summary": "Update src/installer/dev-delivery.ts ownedScope and src/installer/dev-worker.ts to use manager/worker roles and canonical inherited profile. Capture monotonic parent expiry at admission and pass the LLD local-only deadline option. Immediately after runtime verification, before scope.start, cap selected/explicit worker allowance by parent remaining minus reserve; fail before spawn when exhausted. Preserve existing cancel frames, DevWorkerLaunch JSON and finalization proof. Verify private toolchain env in src/installer/dev-toolchain.ts without unrelated refactoring.",
+        "summary": "Update src/installer/dev-delivery.ts ownedScope and src/installer/dev-worker.ts to use manager/worker roles and canonical inherited profile. Capture monotonic parent expiry at admission and pass the LLD local-only deadline option. Immediately after runtime verification, before scope.start, cap selected/explicit worker allowance by parent remaining minus reserve; fail before spawn when exhausted. Preserve existing cancel frames, DevWorkerLaunch JSON and finalization proof. Verify private toolchain env in src/installer/dev-toolchain.ts without unrelated refactoring. Explicitly include scripts/test-harness/process.mjs in this task: capture one monotonic soft/hard cleanup deadline at the first drain of each retained scope and reuse only its remaining allowance across nested/repeated/final drains. Independently reobserve actual closure on every call; never cache a successful proof or alter ownership/disposal/journal/lease semantics. Extend the existing parent reserve fixture for repeated-drain exhaustion and run surrounding scripts/__tests__/test-harness.test.ts and scripts/__tests__/test-harness-coordinator.test.ts checks.",
         "size": "M",
         "order": 4,
         "dependsOn": [
@@ -184,12 +184,14 @@
           "Barrier-controlled runtime setup consumes parent allowance; child clock is computed after setup and never resets parent time.",
           "No positive remaining allowance yields source-build-failed before spawn; short explicit budgetMs remains a cap.",
           "Worker/manager use selected role values and manager120s reserve contains worker30s drain/final evidence; early cancellation remains immediate.",
-          "Actual result, worker lease closure and parent command disposal remain required; wire/controller/receipt schemas unchanged; missing proof stays preparation-uncertain."
+          "Actual result, worker lease closure and parent command disposal remain required; wire/controller/receipt schemas unchanged; missing proof stays preparation-uncertain.",
+          "Each retained processScope has one cumulative cleanupMs ceiling across nested launch/build and final owner drains, under both profiles. Repeated uncertain drains cannot schedule a new allowance; every call independently checks current actual closure and errors. Numeric normal defaults, cooperative cancellation, ownership/disposal journals and uncertainty/lease retention remain unchanged; surrounding coordinator/process regressions pass."
         ],
         "derivedFrom": [
           "c1",
           "c3",
-          "c5"
+          "c5",
+          "c9"
         ],
         "tests": [
           {
@@ -474,6 +476,12 @@
       "kind": "prior-artifact",
       "ref": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/LLD.md#8-migration",
       "quotedText": "establish the retired attempt's worker closure/reconciliation through existing qualified ownership proof"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/LLD.md#47-retained-command-scope-cleanup-ceiling--invariant-change",
+      "quotedText": "One scope may be drained zero or more times by nested worker/build consumers and by withRun finally; every call independently checks current children, markers, positive disposal journals and evidence/cancellation errors, but cannot restart the wait allowance or cache successful proof."
     }
   ]
 }

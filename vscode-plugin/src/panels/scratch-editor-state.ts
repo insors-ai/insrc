@@ -1,7 +1,7 @@
 /** Browser-safe state: exactly one apply authorization in flight; every local
  * draft is still reported immediately for recovery. Older acks never replace
  * newer typing. DOM rendering/selection belongs to the webview adapter (t6). */
-import { parseScratchEditorMessage, parseScratchHostMessage, type ScratchDraftProposal } from './scratch-editor-protocol.js';
+import { parseScratchEditorMessage, parseScratchHostMessage, scratchEditId, type ScratchDraftProposal } from './scratch-editor-protocol.js';
 
 export interface ScratchSnapshot { readonly version: number; readonly digest: string; readonly markdown: string }
 
@@ -29,7 +29,7 @@ export class ScratchRendererState {
     if (markdown === this.value) return;
     this.value = markdown; this.sequence++;
     const draft: ScratchDraftProposal = { type: 'draft', paneSessionId: this.paneSessionId, draftSeq: this.sequence,
-      editId: `edit_${this.sequence}`, baseVersion: this.canonical.version, baseDigest: this.canonical.digest,
+      editId: scratchEditId(this.sequence), baseVersion: this.canonical.version, baseDigest: this.canonical.digest,
       markdown, apply: this.inFlight === undefined, ...(this.inFlight ? { parentEditId: this.inFlight.editId } : {}) };
     if (!parseScratchEditorMessage(draft)) { this.frozen = true; throw new Error('Draft exceeds editor transport limits; local text is retained.'); }
     this.latest = draft;

@@ -6,6 +6,8 @@ export const SCRATCH_MESSAGE_BYTES = 2_097_152;
 export const SCRATCH_IMAGE_BYTES = 10_485_760;
 // Base64 plus a small, bounded header; image uploads have their own transport bound.
 export const SCRATCH_ASSET_MESSAGE_BYTES = 4 * Math.ceil(SCRATCH_IMAGE_BYTES / 3) + 4_096;
+/** Identity is the pair (paneSessionId, draftSeq), never a reusable free token. */
+export const scratchEditId = (draftSeq: number): string => `edit_${draftSeq}`;
 
 interface Session { readonly paneSessionId: string }
 interface Snapshot {
@@ -16,7 +18,7 @@ interface Snapshot {
 export interface ScratchDraftProposal extends Session {
   readonly type: 'draft';
   readonly draftSeq: number;
-  readonly editId: string;
+  readonly editId: string; // exactly scratchEditId(draftSeq)
   readonly baseVersion: number;
   readonly baseDigest: string;
   readonly parentEditId?: string | undefined;
@@ -88,7 +90,7 @@ export function parseScratchEditorMessage(value: unknown): ScratchEditorToHost |
     case 'editor-ready': valid = sessionKeys(m, []); break;
     case 'draft':
       valid = sessionKeys(m, ['draftSeq', 'editId', 'baseVersion', 'baseDigest', 'markdown'], ['parentEditId', 'apply']) &&
-        count(m.draftSeq) && m.draftSeq > 0 && token(m.editId) && version(m.baseVersion) && digest(m.baseDigest) &&
+        count(m.draftSeq) && m.draftSeq > 0 && m.editId === scratchEditId(m.draftSeq) && version(m.baseVersion) && digest(m.baseDigest) &&
         (m.parentEditId === undefined || token(m.parentEditId)) && (m.apply === undefined || typeof m.apply === 'boolean') && text(m.markdown, SCRATCH_NOTE_BYTES);
       break;
     case 'send-selection':

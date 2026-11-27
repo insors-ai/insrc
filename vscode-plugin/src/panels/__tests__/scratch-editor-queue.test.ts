@@ -180,3 +180,14 @@ test('scratch queue promotions preserve the reported parent and require its ackn
   await assert.rejects(forged.controller.receive('a', { ...badBase, apply: true, baseVersion: forged.controller.snapshot.version, baseDigest: forged.controller.snapshot.digest }), /Conflicting pending-draft promotion/);
   assert.equal(forged.edits.length, 1); assert.equal(forged.recovery.get('a')?.baseVersion, 999);
 });
+
+test('scratch queue cannot reuse a historical edit identity at a new sequence', async () => {
+  const h = harness(); h.controller.addPane('a', () => {}, false);
+  await h.controller.receive('a', h.draft(1, '# First\n')); await h.controller.flush();
+  await h.controller.receive('a', { ...h.draft(2, '# Second\n'), baseVersion: h.controller.snapshot.version, baseDigest: h.controller.snapshot.digest }); await h.controller.flush();
+  const snapshot = h.controller.snapshot;
+  await assert.rejects(h.controller.receive('a', { ...h.draft(3, '# Reused id\n'), editId: 'edit_1', baseVersion: snapshot.version, baseDigest: snapshot.digest }));
+  assert.equal(h.document.markdown, '# Second\n'); assert.equal(h.edits.length, 2);
+  await h.controller.receive('a', { ...h.draft(3, '# Third\n'), baseVersion: snapshot.version, baseDigest: snapshot.digest }); await h.controller.flush();
+  assert.equal(h.document.markdown, '# Third\n'); assert.equal(h.edits.length, 3);
+});

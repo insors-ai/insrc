@@ -36,7 +36,7 @@ async function integrated() {
   let launches = 0, downloads = 0, workerDiagnostic = '';
   const preparation = { transport: async () => { downloads++; return base.transport(); } };
   const compose = (beforeLaunch?: (() => void) | undefined, beforeFiniteClose?: (() => Promise<void>) | undefined) => {
-    f.peers.dependencies = dependencyPort(base.target, base.location, { ...base.options, preparation: { ...preparation, beforeFiniteClose }, service: { workerEntrypoint: driver, readinessMs: 3000,
+    f.peers.dependencies = dependencyPort(base.target, base.location, { ...base.options, preparation: { ...preparation, beforeFiniteClose }, service: { workerEntrypoint: driver,
       launch: async (_frame, record) => {
         beforeLaunch?.(); launches++;
         const child = spawnFixture(base.options.runtime.node, [driver, base.home, record, 'ready'], { stdio: ['ignore', 'ignore', 'pipe'] }); children.push(child);

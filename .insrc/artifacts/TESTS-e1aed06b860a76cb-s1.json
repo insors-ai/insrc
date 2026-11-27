@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "01305e3cea02635cda904e7422a52e1037f95cc86a5eae2d083c9e3ef729396a",
-        "at": "2026-11-27T19:59:03.957Z",
+        "number": 2,
+        "contentHash": "73c382f2962e94b1311dcc9cdc5c87a04b22c61f06c01e302c56f7097afb9aca",
+        "at": "2026-11-27T20:03:13.405Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,19 +23,19 @@
     "epicHash": "e1aed06b860a76cb",
     "storyId": "s1",
     "createdAt": "2026-11-27T19:59:03.925Z",
-    "updatedAt": "2026-11-27T19:59:03.925Z",
+    "updatedAt": "2026-11-27T20:03:13.390Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-27T17:43:12.009Z",
     "epicSlug": "align-controller-tests-retired-lifecycle-removal",
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "tasks": [
       {
         "taskId": "s1",
-        "commit": "c7932b377",
-        "ranAt": "2026-11-27T19:59:03.925Z",
-        "testsPassed": false,
+        "commit": "82190bed1",
+        "ranAt": "2026-11-27T20:03:13.390Z",
+        "testsPassed": true,
         "tests": [
           {
             "name": "scripts/__tests__/test-harness-commands.test.ts",
@@ -57,9 +57,9 @@
         "files": [
           {
             "file": "scripts/__tests__/test-harness-commands.test.ts",
-            "exitCode": 1,
+            "exitCode": 0,
             "timedOut": false,
-            "durationMs": 31829,
+            "durationMs": 30906,
             "titles": [
               {
                 "title": "Root and VSCode command overlap refuses before asset synchronization",
@@ -75,18 +75,16 @@
               },
               {
                 "title": "Native refusal and saved-mode controls remain enforced",
-                "result": "fail"
+                "result": "pass"
               }
             ],
-            "otherFailures": [
-              "Native refusal and saved-mode controls remain enforced"
-            ]
+            "otherFailures": []
           },
           {
             "file": "scripts/__tests__/test-harness-consumers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 55008,
+            "durationMs": 53215,
             "titles": [
               {
                 "title": "Retirement mutation refuses raw invocation without changing prepared output",

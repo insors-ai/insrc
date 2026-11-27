@@ -1,4 +1,4 @@
-# Controller maintenance — implementation prepared, validation pending
+# Controller maintenance — registered validation passed, human approval pending
 
 ISSUE-e1aed06b860a76cb was explicitly approved by the user and accepted by the registered approval endpoint at 2026-11-27T18:29:48.506Z. The bugfix advance succeeded. Registered standalone build admission then succeeded; this is a small bugfix with no LLD or plan.
 
@@ -26,3 +26,7 @@ The UTM native run had completed and its independent audit passed before this ma
 The first registered validation typechecked successfully and passed five of six controller cases, but failed the newly strengthened commands cleanup assertion: it observed legacy mode because its daemon environment did not provide INSRC_BUILD_CONFIRM_CLOSURE. The earlier16-test direct pass had supplied that variable, so it did not establish an environment-independent test. This failure remains recorded in TESTS.md. The commands case now uses the existing createRun/environment-wrapper/withRun pattern already used by coordinator tests, selecting strict owned-group mode in its own cloned child environment. It neither mutates process.env nor weakens cleanup assertions. A targeted run explicitly unsets the ambient variable to check this correction before another registered validation.
 
 The targeted correction passed with INSRC_BUILD_CONFIRM_CLOSURE explicitly absent from the parent: 1pass,0fail,0skip,0cancel, exit0 in31.9s. Run0e24e76d-601c-4aac-9b7b-407c56713be9 recorded confirmed noninterrupted owned-groups cleanup and empty error arrays; its11 command admission/result/disposal identities match, allzero without signal/timeout/launch error, and main active lease is absent. Log: .insrc/tmp/maintenance-e1-explicit-closure.tap. The next registered validate reruns both complete changed files.
+
+## Registered validation passed
+
+The second registered validate passed all contract/scope checks under the supported verified Node22 profile. Typecheck exited0 (10.976s); all four commands cases and both consumer cases passed (84.121s total), without skips or cancellations. The source is82190bed1. TESTS.md records the actual gate-run results and retained TAP paths. Existing coordinator surrounding coverage passed in the earlier16-case run; the full fixed five-controller selection runs again as part of the budget Story final regression. Human BUILD approval remains pending and is not inferred from ISSUE approval. The temporary three-key command profile remains selected for the budget Story's final registered validation and must then be restored from the saved snapshot through the same supported settings service.

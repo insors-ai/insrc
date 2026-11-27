@@ -8,7 +8,7 @@ What the build validation gate ran for each Task of this Story, and what each te
 
 ## s1
 
-Run at 2026-11-27T19:59:03.925Z on commit `c7932b377`. Tests check: **failed**. 0 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-27T20:03:13.390Z on commit `82190bed1`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **scripts/__tests__/test-harness-commands.test.ts**
 
@@ -16,7 +16,7 @@ Run by file: the build commit touched this test file.
 
 | Result | File | Titles |
 | :--- | :--- | :--- |
-| fail | `scripts/__tests__/test-harness-commands.test.ts` | 4 |
+| pass | `scripts/__tests__/test-harness-commands.test.ts` | 4 |
 
 **scripts/__tests__/test-harness-consumers.test.ts**
 
@@ -30,9 +30,5 @@ Run by file: the build commit touched this test file.
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `scripts/__tests__/test-harness-commands.test.ts` | 1 | 4 | 31.8 s |  |
-| `scripts/__tests__/test-harness-consumers.test.ts` | 0 | 2 | 55 s |  |
-
-**Failures outside the named cases**
-
-- `scripts/__tests__/test-harness-commands.test.ts`: Native refusal and saved-mode controls remain enforced
+| `scripts/__tests__/test-harness-commands.test.ts` | 0 | 4 | 30.9 s |  |
+| `scripts/__tests__/test-harness-consumers.test.ts` | 0 | 2 | 53.2 s |  |

@@ -5727,43 +5727,80 @@ function fakeIpc(responder: (method: string, params: unknown) => unknown): { cli
   return { client, calls };
 }
 
-test('ISSUE-9c95950064e4b916: openArtifactFrom opens a document-less, not-pending target (e.g. an approved AMD) by seeding noteKnownPath and omitting path, so content() takes the evidence-read branch instead of failing on an empty path', async () => {
-  const fc = fakeChannel();
-  const { client } = fakeIpc((method) => {
-    if (method === 'workflow.pending') return { artifacts: [] }; // not pending: openArtifactFrom's not-found branch
-    if (method === 'workflow.deliveryEvidence') return { artifactId: 'AMD-abc-1', kind: 'AMD', renderedMarkdown: '# Amendment\n' };
-    return { error: `unexpected call: ${method}` };
-  });
-  const real = createDocsReviewClient(client, { repo: () => '/repo' });
-  const host = createDocsReviewHost({ createPanel: () => fc.channel, client: real });
-  host.openArtifact({ artifactId: 'AMD-abc-1', mdPath: '' });
-  await tick(); await tick();
-  const content = fc.posted.filter((p) => p.payload.type === 'docs-content').at(-1)!;
-  assert.equal(content.payload.artifactId, 'AMD-abc-1');
-  assert.equal(content.payload.markdown, '# Amendment\n', 'the body loaded via the evidence read, not an empty-path failure');
+/** Wraps a real client's noteKnownPath so a test can assert the exact (id, mdPath) call sequence. */
+function spyNoteKnownPath(real: DocsReviewClient): Array<readonly [string, string]> {
+  const seen: Array<readonly [string, string]> = [];
+  const orig = real.noteKnownPath.bind(real);
+  (real as { noteKnownPath: DocsReviewClient['noteKnownPath'] }).noteKnownPath = (artifactId, mdPath) => {
+    seen.push([artifactId, mdPath]);
+    orig(artifactId, mdPath);
+  };
+  return seen;
+}
+
+test('ISSUE-9c95950064e4b916: openArtifactFrom opens a document-less, not-pending target by calling noteKnownPath(id, \'\') then opening by id with no path option, for both an approved AMD and a CR-less BUILD with no BUILD.md', async () => {
+  // Case 1: an approved AMD -- the reviewer's "approved-AMD" case.
+  {
+    const fc = fakeChannel();
+    const { client } = fakeIpc((method) => {
+      if (method === 'workflow.pending') return { artifacts: [] }; // not pending: openArtifactFrom's not-found branch
+      if (method === 'workflow.deliveryEvidence') return { artifactId: 'AMD-abc-1', kind: 'AMD', meta: { approvedAt: '2026-11-20T00:00:00Z' }, renderedMarkdown: '# Amendment\n' };
+      return { error: `unexpected call: ${method}` };
+    });
+    const real = createDocsReviewClient(client, { repo: () => '/repo' });
+    const seen = spyNoteKnownPath(real);
+    const host = createDocsReviewHost({ createPanel: () => fc.channel, client: real });
+    host.openArtifact({ artifactId: 'AMD-abc-1', mdPath: '' });
+    await tick(); await tick();
+    assert.deepEqual(seen, [['AMD-abc-1', '']], 'noteKnownPath is called with the id and the empty mdPath, before content() is read');
+    const content = fc.posted.filter((p) => p.payload.type === 'docs-content').at(-1)!;
+    assert.equal(content.payload.artifactId, 'AMD-abc-1');
+    assert.equal(content.payload.markdown, '# Amendment\n', 'the body loaded via the evidence read, not an empty-path failure');
+    assert.equal((content.payload as { state?: string }).state, 'approved', 'the evidence record\'s approvedAt is reflected as the approved state');
+  }
+  // Case 2: a CR-less tracked BUILD with NO BUILD.md (document-less, not approved).
+  {
+    const fc = fakeChannel();
+    const { client } = fakeIpc((method) => {
+      if (method === 'workflow.pending') return { artifacts: [] };
+      if (method === 'workflow.deliveryEvidence') return { artifactId: 'BUILD-abc-s9', kind: 'BUILD', renderedMarkdown: '# Build (no BUILD.md)\n' };
+      return { error: `unexpected call: ${method}` };
+    });
+    const real = createDocsReviewClient(client, { repo: () => '/repo' });
+    const seen = spyNoteKnownPath(real);
+    const host = createDocsReviewHost({ createPanel: () => fc.channel, client: real });
+    host.openArtifact({ artifactId: 'BUILD-abc-s9', mdPath: '' });
+    await tick(); await tick();
+    assert.deepEqual(seen, [['BUILD-abc-s9', '']]);
+    const content = fc.posted.filter((p) => p.payload.type === 'docs-content').at(-1)!;
+    assert.equal(content.payload.artifactId, 'BUILD-abc-s9');
+    assert.equal(content.payload.markdown, '# Build (no BUILD.md)\n', 'a CR-less BUILD with no BUILD.md loads through the evidence read too');
+  }
 });
 
-test('ISSUE-9c95950064e4b916: openArtifactFrom opens a document-backed, not-pending target (e.g. a CR-less tracked BUILD with a real BUILD.md) by its real path, unchanged', async () => {
+test('ISSUE-9c95950064e4b916: openArtifactFrom opens a document-backed, not-pending target (e.g. a CR-less tracked BUILD with a real BUILD.md) by calling noteKnownPath(id, realPath) then opening by id, resolving to the same real path', async () => {
   const fc = fakeChannel();
   const { client, calls } = fakeIpc((method, params) => {
     if (method === 'workflow.pending') return { artifacts: [] }; // not pending: openArtifactFrom's not-found branch
     if (method === 'workflow.artifactContent') {
-      assert.equal((params as { mdPath?: string }).mdPath, 'docs/e/S007/BUILD.md', 'read by the real path, never an id');
+      assert.equal((params as { mdPath?: string }).mdPath, 'docs/e/S007/BUILD.md', 'read by the real path, resolved from the id via noteKnownPath\'s cache');
       return { renderedMarkdown: '# Build\n', openQuestions: [], approvable: true };
     }
     return { error: `unexpected call: ${method}` };
   });
   const real = createDocsReviewClient(client, { repo: () => '/repo' });
+  const seen = spyNoteKnownPath(real);
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client: real });
   host.openArtifact({ artifactId: 'BUILD-abc-s7', mdPath: 'docs/e/S007/BUILD.md' });
   await tick(); await tick();
+  assert.deepEqual(seen, [['BUILD-abc-s7', 'docs/e/S007/BUILD.md']], 'noteKnownPath is called with the id and the REAL path, not left to the opts.path branch');
   const content = fc.posted.filter((p) => p.payload.type === 'docs-content').at(-1)!;
   assert.equal(content.payload.artifactId, 'BUILD-abc-s7');
   assert.equal(content.payload.markdown, '# Build\n');
   assert.ok(calls.some((c) => c.method === 'workflow.deliveryEvidence') === false, 'never took the evidence branch for a document-backed target');
 });
 
-test('ISSUE-9c95950064e4b916: openArtifactFrom\'s found-in-pending() branch is unchanged -- it opens via the summary kind and never calls noteKnownPath/deliveryEvidence', async () => {
+test('ISSUE-9c95950064e4b916: openArtifactFrom\'s found-in-pending() branch is unchanged -- it opens via the summary kind and never calls noteKnownPath', async () => {
   const fc = fakeChannel();
   const { client, calls } = fakeIpc((method, params) => {
     if (method === 'workflow.pending') return { artifacts: [{ artifactId: 'AMD-abc-1', kind: 'AMD', title: 'amendment', mdPath: '', openQuestionCount: 0, state: 'pending' }] };
@@ -5774,6 +5811,7 @@ test('ISSUE-9c95950064e4b916: openArtifactFrom\'s found-in-pending() branch is u
     return { error: `unexpected call: ${method}` };
   });
   const real = createDocsReviewClient(client, { repo: () => '/repo' });
+  const seen = spyNoteKnownPath(real);
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client: real });
   host.openArtifact({ artifactId: 'AMD-abc-1', mdPath: '' });
   await tick(); await tick();
@@ -5781,6 +5819,8 @@ test('ISSUE-9c95950064e4b916: openArtifactFrom\'s found-in-pending() branch is u
   assert.equal(content.payload.artifactId, 'AMD-abc-1');
   assert.equal(content.payload.markdown, '# Amendment\n', 'the pending control case already worked, through pending() + the evidence read it seeds itself');
   assert.equal('readOnly' in content.payload, false, 'a pending artifact opens with its decision controls, not read-only');
+  assert.deepEqual(seen, [], 'the found-in-pending branch never calls noteKnownPath -- pending() already seeded its own cache');
+  assert.ok(calls.some((c) => c.method === 'workflow.deliveryEvidence'), 'content() still reads this document-less AMD through the evidence call pending() set up');
 });
 
 // ISSUE-3b6bd6b5 — the guards themselves, against directories built for each case.

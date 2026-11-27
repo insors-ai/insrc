@@ -5,8 +5,8 @@
 ## Summary
 
 **Epic:** `propagate-longer-time-budgets-through-installer`
-**HLD base run:** `wf-1795787623125-0c9h3u`
-**HLD effective hash:** `4d00a48b868b...`
+**HLD base run:** `wf-1795794931997-t48h29`
+**HLD effective hash:** `a362bcdf44e8...`
 
 Add an explicit qualification profile for slow USB-backed VMs, with larger finite allowances reaching every nested preparation and runtime I/O scope. Normal operation keeps its existing numeric defaults. The design preserves exact integrity, durable writes, cancellation and ownership proof, while exposing the selected budgets in native evidence. [[c3]]
 
@@ -25,7 +25,7 @@ Add an explicit qualification profile for slow USB-backed VMs, with larger finit
 
 ## 1. Epic impact analysis
 
-**Does not apply**: Standalone budget prerequisite; no prior approved BUILD in this work item.
+**Does not apply**.
 
 ## 2. HLD context
 
@@ -83,6 +83,7 @@ createRun(root: string, options?: { mode?: 'test' | 'build'; selectedFiles?: str
 - Every child environment carries the canonical fixed profile name, including private npm aliases and worker launch; no process.env mutation is used to switch a live process. [[c1]] [[c2]] [[c3]]
 - Normal role caps match existing explicit defaults/overrides; slow-vm roles are all at least their normal role values. [[c1]] [[c2]] [[c3]]
 - Actual budgets remain present in existing run.json records for independent audit. [[c1]] [[c2]] [[c3]]
+- The selected cleanupMs is one cumulative ceiling for each retained processScope, including nested and final drains. Repeated drains independently reobserve positive closure without resetting that ceiling or caching a successful proof. The shared process.mjs timing correction belongs to task4. [[c10]]
 
 ### 3.3 `launchDevWorker`
 
@@ -195,7 +196,7 @@ All durations below are milliseconds in code and are finite safe integers. Norma
 
 ### 4.3 `Runtime limits and helper coverage` — invariant-change
 
-RUNTIME_LIMITS retains its existing object shape, profile/size/count limits and normal timing values; only its time fields come from the selected fixed policy. Update every existing acquisition, read-only store/publication/bootstrap and downloader timeout consumer, plus runtime abort-drain and ZIP memory-entry closure. downloadBoundedAsset continues consuming its owning operation's signal rather than creating a shorter nested timer. Generic downloadJson/downloadVerifiedAsset use the selected download allowance. owned-file close functions have no existing standalone timer to increase; retain actual close semantics and rely on the selected enclosing operation/drain. Do not invent successful closure or silently treat an unbounded await as proof. Shared test-harness process drain already uses run.budgets.cleanupMs; the correct role value must reach it. No change to exact hashes, safe archive rules, file size/count limits, durable writes or foreign-target admission. [[c1]] [[c2]] [[c3]]
+RUNTIME_LIMITS retains its existing object shape, profile/size/count limits and normal timing values; only its time fields come from the selected fixed policy. Update every existing acquisition, read-only store/publication/bootstrap and downloader timeout consumer, plus runtime abort-drain and ZIP memory-entry closure. downloadBoundedAsset continues consuming its owning operation's signal rather than creating a shorter nested timer. Generic downloadJson/downloadVerifiedAsset use the selected download allowance. owned-file close functions have no existing standalone timer to increase; retain actual close semantics and rely on the selected enclosing operation/drain. Do not invent successful closure or silently treat an unbounded await as proof. Shared test-harness process drain receives the selected role value. Its cumulative timing correction is explicitly owned by this Story/task4: scripts/test-harness/process.mjs captures one monotonic soft/hard cleanup deadline on the first drain of each retained scope, and all nested/repeated drains use only the remaining allowance while independently reobserving actual closure. This is an authorized change to shared timing, not an instruction to leave that machinery untouched. Normal numeric cleanupMs remains unchanged. [[c10]] No change to exact hashes, safe archive rules, file size/count limits, durable writes or foreign-target admission. [[c1]] [[c2]] [[c3]]
 
 **Call sites:**
 - `src/installer/runtime-metadata.ts`
@@ -237,6 +238,18 @@ Add the selected profile and resolved time-budget table only to the diagnostic n
 - `src/installer/dev-worker.ts`
 - `src/installer/runtime-policy.ts`
 - `src/installer/runtime-metadata.ts`
+
+### 4.7 `Retained command scope cleanup ceiling` — invariant-change
+
+Each processScope instance owns exactly one process-local first-drain soft/hard deadline pair derived from its existing cleanupMs. One scope may be drained zero or more times by nested worker/build consumers and by withRun finally; every call independently checks current children, markers, positive disposal journals and evidence/cancellation errors, but cannot restart the wait allowance or cache successful proof. Expired uncertainty remains false; only later actual closure may permit release. No run lease, command/result/disposal journal, worker JSON or public API gains fields. Keep existing cooperative cancellation, signal order and ownership/disposal mechanisms. Task4 explicitly includes scripts/test-harness/process.mjs and its surrounding coordinator regression checks. [[c10]]
+
+**Call sites:**
+- `scripts/test-harness/process.mjs`
+- `src/installer/dev-worker.ts`
+- `scripts/test-harness/build.mjs`
+- `scripts/__tests__/test-harness-coordinator.test.ts`
+- `scripts/__tests__/test-harness.test.ts`
+- `src/installer/__tests__/qualification-worker-fixture.mjs`
 
 ## 5. Diagrams
 
@@ -286,6 +299,7 @@ Add the selected profile and resolved time-budget table only to the diagnostic n
 | SIGINT, SIGTERM, terminal EOF or explicit cancellation arrives early | The existing signal/owner-channel cancellation starts immediately; larger budgets only change maximum allowances and grace windows. [[c1]] [[c2]] [[c3]] |
 | Previously failed native worker retains an unfinished lease | Profile selection neither adopts it nor clears it. Actual qualified closure/reconciliation must precede any fresh native attempt. [[c1]] [[c2]] [[c3]] |
 | Normal and slow-vm profiles inspect the same immutable runtime | Identity, independently pinned inventory, exact bytes, headers/npm and receipt formats agree; time profile is not part of runtime identity or release selection. [[c1]] [[c2]] [[c3]] |
+| The same retained scope is drained by a nested launcher/build and again by its final owner | Only the original monotonic cleanup ceiling applies. Repeated calls independently reobserve current closure and errors; expired uncertainty remains false and schedules no new allowance. A later real close may be observed but cannot erase earlier failure evidence or produce publication by timeout. [[c10]] |
 
 **Invariants to preserve**
 
@@ -294,6 +308,7 @@ Add the selected profile and resolved time-budget table only to the diagnostic n
 - Actual file/network/decoder/process closure is required; an expired timer cannot become successful closure or authorize stage deletion. [[c2]]
 - The selector is a fixed process-local timing policy; it is not new IPC authority, a skip-validation flag or an unbounded duration supplied by a request. [[c2]]
 - Graph/retrieval completeness is qualified; direct source/call-site and actual native evidence supplement it. [[c1]]
+- Cumulative cleanup timing explicitly belongs to this Story/task4's shared process.mjs scope. Never cache successful closure or redesign process ownership/disposal to implement the timer boundary. [[c10]]
 
 ## 7. Test strategy
 
@@ -306,7 +321,7 @@ Add the selected profile and resolved time-budget table only to the diagnostic n
   - Fixtures: `Fresh Node22 process imports of the actual source/built MJS policy; existing canonical coordinator and node:test fixtures. No duration-multiplier environment or verifier bypass.`
 - **integration** — Prove propagation and remaining-time/cleanup ordering through actual retained parent and child processes using accelerated explicit scope clocks. [[c3]]
   - Subjects: `qualification-profile-reaches-manager-worker-private-npm-and-runtime-helpers`, `child-budget-is-parent-remaining-minus-reserve-after-runtime-setup`, `parent-cooperative-reserve-covers-worker-drain-and-final-evidence`, `outer-deadline-cancels-independent-in-process-preparation`, `omitted-child-profile-is-canonicalized-and-conflicting-profile-rejected`, `slow-vm-runtime-download-verification-and-decoder-drain-have-no-hidden-normal-cap`
-  - Fixtures: `Existing dev-worker/dev-toolchain/coordinator owned-process fixtures and official runtime byte fixtures.`, `Barrier-controlled setup and real existing cancel frames, unique admission/close/disposal journals, fake clocks or explicit millisecond scope overrides; no unmanaged child or application DB.`
+  - Fixtures: `Existing dev-worker/dev-toolchain/coordinator owned-process fixtures and official runtime byte fixtures.`, `Barrier-controlled setup and real existing cancel frames, unique admission/close/disposal journals, fake clocks or explicit millisecond scope overrides; no unmanaged child or application DB.`, `Extend parent-cooperative-reserve-covers-worker-drain-and-final-evidence with repeated/nested drains of the same retained scope: exhaust a short explicit allowance with controlled unknown evidence, require no new wait on repeat, then explicitly remove only the controlled marker and independently observe actual closure. Surrounding scripts/__tests__/test-harness.test.ts and scripts/__tests__/test-harness-coordinator.test.ts cover existing ownership, nested drains and signal behavior. Existing stale consumer tests remain unsatisfied until tracked reconciliation; no waiver. [[c10]]`
 - **contract** — Protect publication/import, integrity, compatibility and containing deadline boundaries. [[c3]]
   - Subjects: `copied-policy-asset-has-source-bytes-and-loads-from-installed-control`, `normal-runtime-identity-inventory-worker-wire-and-controller-schema-remain-unchanged`, `profile-never-waives-positive-resource-or-process-closure`, `ci-and-operator-containment-admit-only-sufficient-native-work-and-cleanup-headroom`
   - Fixtures: `Existing publisher/bootstrap/source-provenance fixtures; actual copied MJS under out and bundled control.`, `CI configuration inspection plus the same containment-admission function exercised with sufficient/insufficient remaining allowances; keep backend CI behavior unchanged.`
@@ -330,9 +345,9 @@ Add the selected profile and resolved time-budget table only to the diagnostic n
 
 ## 8. Migration
 
-**State before:** The two s1 analyzer passes and direct source reads show independent normal coordinator defaults (10min build/file,90min run,5s cleanup), a1h/2h qualification override, separate600s/120s runtime timers and5s resource guards, and no matching qualification-profile selector. Runtime/receipt/worker JSON formats are already in use. The retained f5 macOS attempt has incomplete worker-finalization proof and must remain isolated. [[c1]] [[c2]]
+**State before:** The two s1 analyzer passes and direct source reads show independent normal coordinator defaults (10min build/file,90min run,5s cleanup), a1h/2h qualification override, separate600s/120s runtime timers and5s resource guards, and no matching qualification-profile selector. Runtime/receipt/worker JSON formats are already in use. The retained f5 macOS attempt has incomplete worker-finalization proof and must remain isolated. [[c1]] [[c2]] Task4 efea25b04 now has passing behavior/tests/typecheck but is not accepted because shared timing was outside the previously explicit task boundary; baseline c6f32cb83 restarted cleanup on every drain. This revision records that additional timing surface before work continues. [[c10]]
 
-**State after:** New Node22 processes can explicitly select one fixed slow-vm policy before importing installer/build helpers; no selector retains the same normal role durations. Manager/worker, runtime I/O, cleanup and outer/containing deadlines agree, with larger parent reserves and actual remaining-time checks. Native evidence records the selection; installation data, identity, receipts, controller and private worker frames are unchanged. [[c3]]
+**State after:** New Node22 processes can explicitly select one fixed slow-vm policy before importing installer/build helpers; no selector retains the same normal role durations. Manager/worker, runtime I/O, cleanup and outer/containing deadlines agree, with larger parent reserves and actual remaining-time checks. Native evidence records the selection; installation data, identity, receipts, controller and private worker frames are unchanged. [[c3]] Each newly created retained command scope uses one cumulative cleanup ceiling even when nested/final owners call drain repeatedly. [[c10]]
 
 **Zero downtime:** yes — **Data rewrite:** no
 
@@ -344,23 +359,23 @@ Add the selected profile and resolved time-budget table only to the diagnostic n
 4. Use a fresh isolated home and committed built source for the real UTM test. Record official live acquisition, offline reuse, private source build/payload/native probes and independent parent/worker closure with the selected profile. Keep missing native evidence unsatisfied. [[c3]] — ↩ rollbackable
 5. After all implementation and native feedback corrections, run one current-source scoped installer regression and independent post-run audit, then submit build validation and final human approval. Do not hand off foundationS4 or dispatch Windows qualification while their separate gates remain unmet. [[c3]] — ↩ rollbackable
 
-**Backward compat:** No public API or persisted data rewrite. DevWorkerLaunch, manifest, runtime identity and installed/controller formats retain their exact shapes. Normal numeric defaults remain unchanged. A new local-only monotonic deadline option is optional and never serialized. To roll back the opt-in behavior, launch future processes without the selector or with the previous code; never edit a running process's policy or discard an uncertain attempt. [[c1]] [[c2]] [[c3]]
+**Backward compat:** No public API or persisted data rewrite. DevWorkerLaunch, manifest, runtime identity and installed/controller formats retain their exact shapes. Normal numeric defaults remain unchanged. A new local-only monotonic deadline option is optional and never serialized. To roll back the opt-in behavior, launch future processes without the selector or with the previous code; never edit a running process's policy or discard an uncertain attempt. [[c1]] [[c2]] [[c3]] Shared processScope timing is intentionally corrected for both profiles: repeated drains no longer obtain another cleanupMs allowance. Selected numeric normal defaults and actual closure requirements remain unchanged. [[c10]]
 
 ## 9. Alternatives considered
 
-### 9.1 a1: Named policy inherited by qualification processes — **CHOSEN**
+### 9.1 a1: One retained-scope cleanup deadline — **CHOSEN**
 
-One fixed opt-in policy selects immutable role budgets through the existing private environment.
+Retain the approved named policy and explicitly bound cumulative shared cleanup timing.
 
-Use a single side-effect-free policy surface readable by Node build scripts and installed installer code. A named normal/slow-vm selector travels through the already controlled local process environment; each operation snapshots its role budget and existing createRun/checkedBudgets perform scope ownership. Public manager/worker JSON and persisted installation formats remain unchanged. Explicit test overrides remain explicit; only the selected qualification job receives larger defaults. [[c1]] [[c2]] [[c3]]
+Keep all existing policy, launch and resource contracts. Change only processScope's existing drain timing: first drain captures monotonic soft/hard deadlines from cleanupMs, repeats wait only remaining time and independently reobserve ownership/actual closure. Preserve stop/cancel behavior, journals, active lease, unknown closure and all wire/data formats. Extend existing parent reserve regression; no new public API.
 
-### 9.2 a2: Explicit private policy parameters
+### 9.2 a2: Installer-specific cleanup wrapper
 
-Pass a frozen policy object explicitly through every internal acquisition and preparation call.
+Keep shared drains and add an installer-local cumulative deadline adapter.
 
-Resolve a policy at the qualification boundary and thread that process-local value through manager, worker launch, runtime acquisition/resolution, downloader and closure options. The worker receives only the selected fixed policy name through private launch composition and validates it locally; no arbitrary numeric budget is accepted on public IPC. Existing checkedBudgets/createRun still own actual scope timing. [[c1]] [[c2]] [[c3]]
+Retain the named policy but introduce a separate manager-local adapter coordinating nested drains, final cleanup and deadline accounting while preserving actual shared scope ownership. It must prevent withRun's own final drain resetting the budget and cannot merely cache a prior success or hide unknown actors.
 
-**Rejected because:** Also satisfies propagation, compatibility and proof constraints, but introduces policy parameters across more APIs/callers to achieve the same bounded qualification behavior. The extra plumbing is unnecessary for the approved process-local opt-in use.
+**Rejected because:** An installer-local wrapper duplicates retained owner timing and cannot constrain withRun's independent final drain without new shared options. The existing scope owner is the smallest complete boundary. Original named-policy architecture remains unchanged.
 
 ## 10. References
 
@@ -373,3 +388,4 @@ Resolve a policy at the qualification boundary and thread that process-local val
 - **[[c7]]** `code` `src/installer/download.ts:44` — "function deadline(signal?: AbortSignal): AbortSignal"
 - **[[c8]]** `code` `copy-assets.mjs:29-44` — "const DIRS = ['prompts', 'assets'];"
 - **[[c9]]** `doc` `docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t10.md#follow-up-failure-explanation-deadline-timing-and-payload-metadata` — "43697 files/1329984102 bytes staged; failure89m56.111s after worker identity; exact parent exit result not retained."
+- **[[c10]]** `analyze-bundle` `Completed retained command scope cleanup analysis 2026-11-27` — "processScope/drain/withRun located; usage graph ambiguous with36 ignored and503 unattempted relationships. Literal baseline c6f32cb83 and current source confirm nested/repeated drains and fresh waits "

@@ -78,6 +78,13 @@
         "choice": "Mandatory complete syntax/lifecycle qualification during implementation validation; explicit safe refusal in the LLD",
         "rationale": "Approved HLD requires qualification before shipping and says no live qualification is yet performed; it does not require an implementation to exist before designing it. The LLD will define zero writes on open, no unknown-content loss, supported-syntax admission/refusal, a bounded size budget and exhaustive real-corpus plus adversarial round-trip/host tests. No best-effort silent degradation or qualification waiver. Failed qualification blocks build validation/approval.",
         "resolvedAt": "2026-11-27T18:34:10.738Z"
+      },
+      "qb4c00c97": {
+        "question": "Shared sc1/sc2/sc3 and all story dependencies remain unchanged. S007 owns persisted repo association and rename/move/archive identity; S008 owns cited attachments. No need for an ERD because this revision adds no new persistent entity relationship; component, sequence and illustrative one-pane UX definitions document the changed boundary.",
+        "status": "resolved",
+        "choice": "Component + sequence + illustrative one-pane UX; no unnecessary ERD",
+        "rationale": "This exact artifact set and unchanged sc1/sc2/sc3/sibling boundaries were presented in HLD revision 5 and approved. The new LLD will carry relevant definitions aligned to its concrete contracts; rendering is evidence of the mock/diagram only, not a live editor proof.",
+        "resolvedAt": "2026-11-27T18:34:31.080Z"
       }
     }
   },

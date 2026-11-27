@@ -85,32 +85,37 @@ margin:0;box-sizing:border-box;min-height:100vh;padding-top:56px;background:var(
 <table class="ref">
 <tr><th>Work item</th><td>STORY-2846f076fd5f785f-s1</td></tr>
 <tr><th>Source doc</th><td><a href="./LLD.md">LLD-2846f076fd5f785f-s1</a></td></tr>
-<tr><th>Date</th><td>2026-11-27 21:44</td></tr>
+<tr><th>Date</th><td>2026-11-28 00:12</td></tr>
 <tr><th>User</th><td>Subho Ghosh</td></tr>
 </table>
 </header>
-<section class="blk narr"><h2>Narrative</h2><p class="context">Story S001 of Epic linked-scratchpads-vs-code · Native Markdown Editor pad surface — Pads feel native: rendered Markdown in place, inline editing with a lock/pencil toggle, and real rich-authoring affordances (links, images) instead of the current custom read-only webview.</p><p>The common chat/browse delete path must finish targeted clean-tab closure and revalidation before unlink. Dirty documents, close cancellation or changed state cancel without deletion; arrows show only the successful clean path.</p></section>
+<section class="blk narr"><h2>Narrative</h2><p class="context">Story S001 of Epic linked-scratchpads-vs-code · Single-pane Milkdown Markdown editor — Pads provide rendered Markdown and rich inline editing in one editor tab, with lock/pencil controls and a Send icon on text selection; only clicking Send inserts into the chat composer.</p><p>One document queue serializes versioned drafts; receipt is recoverability, acknowledgement is canonical application, and neither alone means saved. Selection only reveals Send; explicit click captures and drains the exact source before insertion.</p></section>
 <section class="blk"><h2>View</h2><div class="vp-wrap">
 <div class="iv-bar"><span>Drag to pan · scroll to zoom · double-click to zoom in</span><span class="sp"></span><button id="zout" title="Zoom out" aria-label="zoom out">−</button><span class="zl" id="zl">100%</span><button id="zin" title="Zoom in" aria-label="zoom in">+</button><button id="zfit" title="Fit to view (overview)" aria-label="fit to view">Fit</button><button id="z100" title="Actual size" aria-label="actual size">1:1</button><button id="iv-export" title="Export SVG" aria-label="export svg">⇩</button><button id="iv-srcbtn" title="Show diagram source" aria-label="show diagram source">src</button></div>
 <div class="iv-err" id="iv-err" role="alert"></div>
 <div class="vp iv-vp" id="vp"><div class="stage iv-stage insrc-viewer-diagram" id="stage"><pre class="mermaid">sequenceDiagram
   autonumber
-  participant entry as Chat or browse action
-  participant controller as ScratchPanels
-  participant store as ScratchStore
-  participant host as Injected native host
-  entry-&gt;&gt;controller: await deleteDocument(id)
-  controller-&gt;&gt;store: resolveScratch(id)
-  store--&gt;&gt;controller: validated reference and path
-  controller-&gt;&gt;host: inspect and await close of matching clean tabs
-  host--&gt;&gt;controller: close result#59; recheck dirty/tab state
-  controller-&gt;&gt;store: revalidate and await deleteScratch(id)
-  controller--&gt;&gt;entry: deleted#59; refresh existing browse and menu</pre></div></div>
+  participant user as User
+  participant view as Milkdown pane
+  participant host as Document controller
+  participant doc as TextDocument
+  participant chat as Chat composer
+  user-&gt;&gt;view: Edit unlocked note
+  view-&gt;&gt;host: Draft: session, sequence, base version/digest
+  host-&gt;&gt;host: Persist latest recovery draft#59; validate base and fidelity
+  host--&gt;&gt;view: Receipt (recoverable#59; not saved)
+  host-&gt;&gt;doc: Await minimal WorkspaceEdit
+  doc--&gt;&gt;host: Change event and apply result
+  host--&gt;&gt;view: Ack sequence/version/digest/snapshot#59; broadcast without echo
+  user-&gt;&gt;view: Select passage#59; then click Send
+  view-&gt;&gt;host: Immutable selected text + session/sequence/version
+  host-&gt;&gt;doc: Drain captured sequence#59; verify compatible source
+  host-&gt;&gt;chat: Cap UTF-8#59; reveal, await ready, insert once</pre></div></div>
 
 <pre class="iv-src" id="iv-src"></pre>
 </div></section>
-<section class="blk desc"><h2>Description</h2><h3>Participants</h3><p class="lead">4 participants, 7 messages, in call order.</p><table class="dt"><thead><tr><th>Participant</th><th>Id</th><th>Description</th></tr></thead><tbody><tr><td>Chat or browse action</td><td>entry</td><td>Both user entry points share one asynchronous operation and catch failures.</td></tr><tr><td>ScratchPanels</td><td>controller</td><td>Owns per-ID ordering and cancellation result.</td></tr><tr><td>ScratchStore</td><td>store</td><td>Validates identity/path and performs guarded deletion.</td></tr><tr><td>Injected native host</td><td>host</td><td>Enumerates URI-matching tabs and dirty state; closes only exact clean targets.</td></tr></tbody></table><h3>Messages</h3><table class="dt"><thead><tr><th>Step</th><th>From → To</th><th>Message</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td>1</td><td>Chat or browse action → ScratchPanels</td><td>await deleteDocument(id)</td><td><span class="tag call">call</span></td><td>Enter the local per-ID serialized operation.</td></tr><tr><td>2</td><td>ScratchPanels → ScratchStore</td><td>resolveScratch(id)</td><td><span class="tag call">call</span></td><td>Resolve canonical file and reference; invalid input stops.</td></tr><tr><td>3</td><td>ScratchStore → ScratchPanels</td><td>validated reference and path</td><td><span class="tag ret">return</span></td><td>A path resolution is not a future I/O guarantee.</td></tr><tr><td>4</td><td>ScratchPanels → Injected native host</td><td>inspect and await close of matching clean tabs</td><td><span class="tag call">call</span></td><td>All groups inspected, unrelated tabs untouched.</td></tr><tr><td>5</td><td>Injected native host → ScratchPanels</td><td>close result; recheck dirty/tab state</td><td><span class="tag ret">return</span></td><td>If state changed cancel; no forced discard.</td></tr><tr><td>6</td><td>ScratchPanels → ScratchStore</td><td>revalidate and await deleteScratch(id)</td><td><span class="tag call">call</span></td><td>Only after successful close and recheck; failure invokes recovery.</td></tr><tr><td>7</td><td>ScratchPanels → Chat or browse action</td><td>deleted; refresh existing browse and menu</td><td><span class="tag ret">return</span></td><td>Refresh failures are caught independently; no closed UI is opened.</td></tr></tbody></table></section>
-<footer class="ft"><span>Generated by insrc · companion of LLD-2846f076fd5f785f-s1</span><span>2026-11-27 21:44</span></footer>
+<section class="blk desc"><h2>Description</h2><h3>Participants</h3><p class="lead">5 participants, 11 messages, in call order.</p><table class="dt"><thead><tr><th>Participant</th><th>Id</th><th>Description</th></tr></thead><tbody><tr><td>User</td><td>user</td><td>Edits or selects and explicitly activates Send.</td></tr><tr><td>Milkdown pane</td><td>view</td><td>Transient draft and captured selection; no independent undo authority.</td></tr><tr><td>Document controller</td><td>host</td><td>Per-document queue, validation and bounded durable recovery.</td></tr><tr><td>TextDocument</td><td>doc</td><td>Canonical buffer and native save/undo lifecycle.</td></tr><tr><td>Chat composer</td><td>chat</td><td>Existing reveal/ready/insert route; no submission.</td></tr></tbody></table><h3>Messages</h3><table class="dt"><thead><tr><th>Step</th><th>From → To</th><th>Message</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td>1</td><td>User → Milkdown pane</td><td>Edit unlocked note</td><td><span class="tag call">call</span></td><td class="missing">—</td></tr><tr><td>2</td><td>Milkdown pane → Document controller</td><td>Draft: session, sequence, base version/digest</td><td><span class="tag call">call</span></td><td class="missing">—</td></tr><tr><td>3</td><td>Document controller → Document controller</td><td>Persist latest recovery draft; validate base and fidelity</td><td><span class="tag call">call</span></td><td class="missing">—</td></tr><tr><td>4</td><td>Document controller → Milkdown pane</td><td>Receipt (recoverable; not saved)</td><td><span class="tag ret">return</span></td><td class="missing">—</td></tr><tr><td>5</td><td>Document controller → TextDocument</td><td>Await minimal WorkspaceEdit</td><td><span class="tag call">call</span></td><td class="missing">—</td></tr><tr><td>6</td><td>TextDocument → Document controller</td><td>Change event and apply result</td><td><span class="tag ret">return</span></td><td class="missing">—</td></tr><tr><td>7</td><td>Document controller → Milkdown pane</td><td>Ack sequence/version/digest/snapshot; broadcast without echo</td><td><span class="tag ret">return</span></td><td>Stale/unmatched change freezes mutations and retains draft. Older ack never replaces newer local typing.</td></tr><tr><td>8</td><td>User → Milkdown pane</td><td>Select passage; then click Send</td><td><span class="tag call">call</span></td><td>Selection alone performs no chat action; Send also works locked.</td></tr><tr><td>9</td><td>Milkdown pane → Document controller</td><td>Immutable selected text + session/sequence/version</td><td><span class="tag call">call</span></td><td class="missing">—</td></tr><tr><td>10</td><td>Document controller → TextDocument</td><td>Drain captured sequence; verify compatible source</td><td><span class="tag call">call</span></td><td class="missing">—</td></tr><tr><td>11</td><td>Document controller → Chat composer</td><td>Cap UTF-8; reveal, await ready, insert once</td><td><span class="tag call">call</span></td><td>Reject stale source visibly; retain captured text. Never submit.</td></tr></tbody></table></section>
+<footer class="ft"><span>Generated by insrc · companion of LLD-2846f076fd5f785f-s1</span><span>2026-11-28 00:12</span></footer>
 </div>
 <script>(function(JM,Ag){typeof exports=="object"&&typeof module<"u"?module.exports=Ag():typeof define=="function"&&define.amd?define(Ag):(JM=typeof globalThis<"u"?globalThis:JM||self,JM.mermaid=Ag())})(this,function(){var FWe,RWe;"use strict";function JM(i){for(var s=[],u=1;u<arguments.length;u++)s[u-1]=arguments[u];var d=Array.from(typeof i=="string"?[i]:i);d[d.length-1]=d[d.length-1].replace(/\r?\n([\t ]*)$/,"");var p=d.reduce(function(y,T){var _=T.match(/\n([\t ]+|(?!\s).)/g);return _?y.concat(_.map(function(A){var P,R;return(R=(P=A.match(/[\t ]/g))===null||P===void 0?void 0:P.length)!==null&&R!==void 0?R:0})):y},[]);if(p.length){var v=new RegExp(`
 [	 ]{`+Math.min.apply(Math,p)+"}","g");d=d.map(function(y){return y.replace(v,`

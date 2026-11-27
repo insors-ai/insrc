@@ -1,7 +1,7 @@
 import { register } from 'tsx/esm/api';
 register();
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { Readable } from 'node:stream';
@@ -88,6 +88,47 @@ if (mode === 'timers') {
     await assert.rejects(closedRuntimeOperation(new Promise(() => {}), signal.signal), { code: 'resource-close-uncertain' });
     assert.deepEqual(drains, [timing.resourceDrainMs]);
     assert.equal(await closedRuntimeOperation(Promise.resolve('actual closed result'), signal.signal), 'actual closed result');
+
+    // Drive the real acquisition -> publication owner. The controlled transport
+    // withholds acknowledgement but owns no actual network handle.
+    const { ControllerStore } = await import('../controller-store.ts');
+    const { resolveInstallationLocation } = await import('../location.ts');
+    const { controlBinding } = await import('../native.ts');
+    const { runtimeStorePaths } = await import('../runtime-policy.ts');
+    if (process.platform === 'win32') controlBinding().protect(root);
+    const location = resolveInstallationLocation('clock-proof', { home: root,
+      ...(process.platform === 'win32' ? { userSid: controlBinding().userSid() } : {}) });
+    const target = { os: process.platform, arch: process.arch, baseline: 'fixture' };
+    const identity = { version: '22.22.1', target, sha256: runtimeArchive(target).sha256,
+      relativeExecutable: target.os === 'win32' ? 'node.exe' : 'bin/node' };
+    const store = ControllerStore.acquire(location), abort = new AbortController();
+    let entered, releaseTransport, publications = 0;
+    const reached = new Promise(resolve => { entered = resolve; });
+    const originalPublish = store.publishRuntime.bind(store);
+    store.publishRuntime = async (...args) => { publications++; return originalPublish(...args); };
+    try {
+      const operation = store.ensureRuntime(identity, { signal: abort.signal,
+        transport: async () => { entered(); return new Promise(resolve => { releaseTransport = resolve; }); } });
+      const rejected = assert.rejects(operation, { code: 'resource-close-uncertain' });
+      await reached;
+      const stages = readdirSync(join(root, 'install')).filter(name => name.startsWith('runtime-stage-'));
+      assert.equal(stages.length, 1);
+      const retained = join(root, 'install', stages[0]), before = lstatSync(retained);
+      abort.abort(Error('controlled acquisition cancellation')); await rejected;
+      const after = lstatSync(retained); assert.equal(after.dev, before.dev); assert.equal(after.ino, before.ino);
+      assert.equal(publications, 0); assert.equal(existsSync(runtimeStorePaths(root, identity).root), false);
+      store.assertHeld();
+      // A path alone cannot turn the uncertain result into a publication proof.
+      await assert.rejects(originalPublish({ workDirectory: retained, directory: join(retained, 'candidate'), identity }),
+        { code: 'runtime-invalid' });
+      assert.equal(existsSync(runtimeStorePaths(root, identity).root), false);
+      // Release the controlled actor and observe real close before fixture cleanup.
+      const body = new Readable({ read() { this.push(null); } }), closed = once(body, 'close');
+      releaseTransport({ status: 500, body }); await closed;
+      await new Promise(resolve => setImmediate(resolve));
+      assert.equal(lstatSync(retained).ino, before.ino, 'late acknowledgement must not silently discard an uncertain stage');
+      assert.equal(publications, 0);
+    } finally { store.close(); }
   } finally { globalThis.setTimeout = timer; }
 } else if (mode === 'compatibility') {
   const { installerSchemas } = await import('../schemas.ts');

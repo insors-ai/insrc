@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1795699880376-fw42b8",
+    "runId": "wf-1795843111102-vv7q28",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-26T13:34:22.477Z",
+    "createdAt": "2026-11-28T05:21:12.984Z",
     "epicCreatedAt": "2026-11-26T06:29:10.586Z",
     "standalone": true,
     "attribution": {
@@ -16,50 +16,38 @@
         }
       ]
     },
-    "elapsedMs": 181806,
+    "elapsedMs": 161485,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "446ae69566d352dd",
     "epicSlug": "complete-shared-external-node-runtime-foundation",
     "storyId": "s1",
-    "lldRunId": "wf-1795698455782-c8hya3",
-    "lldEffectiveHash": "d909d44a83e92c7d305e01b4df1b15a313c7d927ebce102b0cf60ff35cd9a9a0",
+    "lldRunId": "wf-1795842093934-khcxyv",
+    "lldEffectiveHash": "651db0de5fcfd5f95299763656d6893dfd90f8b686e7f106008ac48b24eff5ef",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "413c5f7a026aade1685300e63d2275cbf9c1662264a18066318ac142e62bec6b",
-        "at": "2026-11-26T13:34:22.573Z",
+        "number": 3,
+        "contentHash": "bc431d58c2101d54ad1403ae2615b842a048c5c539e62099d975b901a7eceb58",
+        "at": "2026-11-28T05:21:13.103Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
           "properties": {}
         }
       },
-      "signoffs": [],
-      "approval": {
-        "revision": 2,
-        "by": {
-          "id": "insrc:approval",
-          "kind": "system",
-          "properties": {}
-        },
-        "at": "2026-11-26T14:15:39.042Z"
-      }
+      "signoffs": []
     },
     "envelope": {
-      "description": "",
-      "references": [],
       "attachments": []
     },
-    "revision": 2,
-    "rangeBase": "ea9612c4f670d37c7354c9209364cef6e9934d21"
+    "revision": 3
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Build the shared external Node foundation, then adapt bootstrap, application-only bundle/dev payloads and existing installed consumers. Retain ten ordered tasks,25 LLD subjects, surrounding tests per task and the final scoped installer regression; this revision aligns T8 with LLD revision4 and leaves future Windows bridge process/runtime execution with S7. Record native evidence separately in isolated UTM macOS, OrbStack Linux and genuine Windows environments; unavailable evidence stays unsatisfied and unqualified targets remain disabled. S4 resumes only after the corrective build passes its required gates and human approval, with the installed host daemon untouched."
+      "prose": "Retain the implemented shared external Node foundation, bootstrap handoff and application-only bundle/dev consumers, with the existing ten-task ordering and accepted T1–T9 work unchanged. The final evidence task now requires actual macOS/Linux native qualification, current scoped regression evidence and unqualified-target exclusion before foundation BUILD approval and S4 handoff. The original Windows native subject is deferred and remains required before future Windows enablement; it is never credited from POSIX results or metadata. Retained evidence keeps exact source pins and is reused only with recorded relevant source and closure equivalence."
     },
     "tasks": [
       {
@@ -434,15 +422,15 @@
       {
         "id": "t10",
         "title": "Record native runtime qualification and S4 handoff evidence",
-        "summary": "Run the completed runtime/installed-consumer qualification harness in isolated UTM macOS and OrbStack Linux homes, and a genuine Windows runner when available. Record exact platform/runtime/asset/actor evidence and unsupported routes; hand the actual resolver contract back to S4 after the corrective BUILD passes all required gates.",
+        "summary": "Record actual macOS/Linux runtime and installed-consumer qualification, current scoped regression and exact source/actor evidence. Reuse retained UTM macOS proof only with recorded production-source equivalence; retain fresh current-source OrbStack Linux evidence. Windows native qualification remains deferred and unqualified. Hand the resolver foundation back to S4 only after current validation and human BUILD approval.",
         "size": "M",
         "order": 10,
         "dependsOn": [
           "t9"
         ],
         "acceptanceChecks": [
-          "Actual UTM macOS and OrbStack Linux runtime-first-acquisition/native-build/offline-reuse/installed-consumer checks are distinguished from fixtures and host emulation; host v2/Ollama remain untouched.",
-          "Windows qualification requires actual native ACL/path/header/library/loaded-DLL-safe-publication evidence, not Linux/macOS execution or metadata extraction. Missing infrastructure remains explicitly unavailable and the target cannot be enabled/published. An unavailable native subject remains unsatisfied; recording an availability diagnostic is not a passing native test or a waiver of required BUILD acceptance.",
+          "Actual UTM macOS and OrbStack Linux runtime-first-acquisition/native-build/offline-reuse/installed-consumer checks are distinguished from fixtures and host emulation; host v2/Ollama remain untouched. Retained native evidence is reusable only with exact relevant source/build-policy equivalence, pinned runtime/platform identity and verified actor closure; retain its original execution source pin.",
+          "Current foundation completion covers macOS/Linux. The original native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication subject is deferred, not passed and not a current T10 gate. Windows requires genuine native ACL/path/header/library/loaded-DLL-safe-publication evidence before future enablement; POSIX execution, cross-archive metadata or an availability diagnostic cannot qualify it. ISSUE-cab5701fbefab736 remains its separate process-ownership prerequisite; Windows target publication/enablement stays disabled.",
           "Qualification is for the runtime foundation and existing installed-consumer boundaries; no end-to-end S4/S5 daemon activation proof is fabricated or introduced as a cyclic prerequisite.",
           "No source changes are made during this evidence-only task. Any required correction returns to its owning task and reruns appropriate tests/regression; user BUILD approval is requested only after all required validation/task accounting/tracker gates are satisfied."
         ],
@@ -459,10 +447,6 @@
           {
             "level": "live",
             "name": "OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke"
-          },
-          {
-            "level": "live",
-            "name": "native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication"
           },
           {
             "level": "live",
@@ -628,12 +612,6 @@
         ]
       },
       {
-        "lldStrategyItem": "native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication",
-        "coveredByTaskIds": [
-          "t10"
-        ]
-      },
-      {
         "lldStrategyItem": "unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests",
         "coveredByTaskIds": [
           "t10"
@@ -642,9 +620,9 @@
     ],
     "epicImpact": {
       "applies": false,
-      "reason": "Standalone corrective story; no sibling ownership changes.",
+      "reason": "Standalone foundation prerequisite, no sibling Story build in this unit.",
       "storiesCovered": [],
-      "findings": "External main-epic S7 keeps bridge implementation/testing; this plan consumes the approved shared foundation boundary.",
+      "findings": "Preserve completed budget/controller prerequisites and the foundation's accepted implementation. Main epic lifecycle and later integration remain outside this acceptance revision.",
       "sources": []
     }
   },
@@ -653,7 +631,7 @@
       "id": "c1",
       "kind": "prior-artifact",
       "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes",
-      "quotedText": "Approved revision4 §4.1–4.2: independently pinned official distribution profiles, metadata/types, canonical runtime store and fixed finite bounds; public runtime/manifest contracts unchanged."
+      "quotedText": "Approved revision5 retains revision4 §4.1–4.2: independently pinned official distribution profiles, metadata/types, canonical runtime store and fixed finite bounds; public runtime/manifest contracts unchanged."
     },
     {
       "id": "c2",
@@ -695,7 +673,7 @@
       "id": "c8",
       "kind": "prior-artifact",
       "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#7-test-strategy",
-      "quotedText": "All25 LLD subjects and ac1–ac6; surrounding tests per task, full scoped regression after implementation, real isolated UTM macOS/OrbStack Linux/Windows evidence kept separate from fixtures."
+      "quotedText": "Approved revision5 §7:21 unchanged non-live subjects plus actual UTM macOS, OrbStack Linux and unqualified-target exclusion (24 current subjects), mapped to ac1–ac6. The original Windows native subject is explicitly deferred and remains required before future Windows enablement. Source-pinned evidence reuse requires relevant production/build-policy equivalence and closure proof."
     },
     {
       "id": "c9",

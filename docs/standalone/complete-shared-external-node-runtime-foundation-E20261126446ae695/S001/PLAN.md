@@ -5,10 +5,10 @@
 ## Summary
 
 **Epic:** `complete-shared-external-node-runtime-foundation`
-**LLD run:** `wf-1795698455782-c8hya3`
-**LLD effective hash:** `d909d44a83e9...`
+**LLD run:** `wf-1795842093934-khcxyv`
+**LLD effective hash:** `651db0de5fcf...`
 
-Build the shared external Node foundation, then adapt bootstrap, application-only bundle/dev payloads and existing installed consumers. Retain ten ordered tasks,25 LLD subjects, surrounding tests per task and the final scoped installer regression; this revision aligns T8 with LLD revision4 and leaves future Windows bridge process/runtime execution with S7. Record native evidence separately in isolated UTM macOS, OrbStack Linux and genuine Windows environments; unavailable evidence stays unsatisfied and unqualified targets remain disabled. S4 resumes only after the corrective build passes its required gates and human approval, with the installed host daemon untouched.
+Retain the implemented shared external Node foundation, bootstrap handoff and application-only bundle/dev consumers, with the existing ten-task ordering and accepted T1–T9 work unchanged. The final evidence task now requires actual macOS/Linux native qualification, current scoped regression evidence and unqualified-target exclusion before foundation BUILD approval and S4 handoff. The original Windows native subject is deferred and remains required before future Windows enablement; it is never credited from POSIX results or metadata. Retained evidence keeps exact source pins and is reused only with recorded relevant source and closure equivalence.
 
 ## Contents
 
@@ -19,7 +19,7 @@ Build the shared external Node foundation, then adapt bootstrap, application-onl
 
 ## 1. Epic impact analysis
 
-**Does not apply**: Standalone corrective story; no sibling ownership changes.
+**Does not apply**: Standalone foundation prerequisite, no sibling Story build in this unit.
 
 ## 2. Tasks
 
@@ -32,9 +32,9 @@ Build the shared external Node foundation, then adapt bootstrap, application-onl
 | 5 | **`t5`** Unify terminal bootstrap verification and runtime handoff | M | approved r1 | `t1`, `t2`, `t3`, `t4` | integration: bootstrap-no-host-node-verifies-archive-and-executable-before-execution; integration: bootstrap-native-operation-lock-exclusive-publication-exact-helper-exit-then-fresh-manager-lock; integration: bootstrap-publication-stage-distinct-from-running-node-and-loaded-native-library; integration: runtime-stage-cancellation-conflict-and-uncertain-closure-retain-safe-state; integration: bootstrap-verified-cached-runtime-control-offline-with-host-node-trap-and-quoted-paths | [[c4]] [[c7]] [[c9]] [[c10]] |
 | 6 | **`t6`** Publish and validate application-only bundle format | M | approved r1 | `t1`, `t2`, `t4`, `t5` | integration: bundle-descriptor2-application-only-public-manifest1-and-legacy-descriptor-diagnostic; integration: publisher-app-and-IDE-inventory-exclude-Node-Ollama-distributions-and-archives-including-renamed-contributions; integration: bundle-publisher-probes-use-shared-external-runtime-without-tools-node-copy | [[c2]] [[c5]] [[c7]] [[c9]] |
 | 7 | **`t7`** Prepare dev candidates with the shared external runtime | M | approved r1 | `t1`, `t2`, `t3`, `t4`, `t6` | integration: private-dev-node-npm-headers-native-env-and-worker-source-closure-preserved; integration: dev-receipt2-recipe-offer-compatibility-and-application-only-payload; integration: dev-candidate-open-has-no-implicit-runtime-acquisition-or-foreign-directory-trust | [[c2]] [[c3]] [[c6]] [[c9]] |
-| 8 | **`t8`** Bind installed consumers to the verified external runtime | M | approved r1 | `t2`, `t4`, `t5`, `t6`, `t7` | integration: bundle-dev-manager-terminal-TUI-Retry-and-publisher-probes-use-shared-resolver; integration: status-readiness-and-control-checks-do-not-scan-full-app-Ollama-payload; integration: installed-consumer-process-executable-and-manifest-identity-bound-to-real-resolver | [[c2]] [[c3]] [[c5]] [[c6]] [[c7]] [[c9]] [[c10]] |
+| 8 | **`t8`** Bind installed consumers to the verified external runtime | M | draft r2 | `t2`, `t4`, `t5`, `t6`, `t7` | integration: bundle-dev-manager-terminal-TUI-Retry-and-publisher-probes-use-shared-resolver; integration: status-readiness-and-control-checks-do-not-scan-full-app-Ollama-payload; integration: installed-consumer-process-executable-and-manifest-identity-bound-to-real-resolver | [[c2]] [[c3]] [[c5]] [[c6]] [[c7]] [[c9]] [[c10]] |
 | 9 | **`t9`** Complete integrated coverage and run the scoped regression | M | approved r1 | `t1`, `t2`, `t3`, `t4`, `t5`, `t6`, `t7`, `t8` | smoke: descriptor2-and-dev-receipt2-application-only-with-public-manifest1-unchanged; smoke: legacy-embedded-runtime-formats-rejected-without-adoption; smoke: verified-runtime-and-control-reuse-offline-across-bundle-and-dev; smoke: S3-Ollama-consent-retention-agent-recommendations-and-install-only-Retry-preserved; smoke: terminal-install-success-ready-lock-release-same-terminal-TUI-and-failure-no-TUI-preserved; smoke: final-scoped-installer-publisher-bootstrap-dev-dependencies-terminal-regression | [[c8]] [[c9]] [[c10]] |
-| 10 | **`t10`** Record native runtime qualification and S4 handoff evidence | M | approved r1 | `t9` | live: UTM-macOS-fresh-live-acquisition-offline-reuse-and-isolated-installed-consumer-smoke; live: OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke; live: native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication; live: unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests | [[c8]] [[c9]] [[c10]] |
+| 10 | **`t10`** Record native runtime qualification and S4 handoff evidence | M | approved r1 | `t9` | live: UTM-macOS-fresh-live-acquisition-offline-reuse-and-isolated-installed-consumer-smoke; live: OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke; live: unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests | [[c8]] [[c9]] [[c10]] |
 
 ### 2.1 TASK-446ae69566d352dd-s1-t1 — Pin deterministic runtime profiles and integrity metadata
 
@@ -126,11 +126,11 @@ Finish cross-mode/consumer/regression fixtures and validation-only native harnes
 
 ### 2.10 TASK-446ae69566d352dd-s1-t10 — Record native runtime qualification and S4 handoff evidence
 
-Run the completed runtime/installed-consumer qualification harness in isolated UTM macOS and OrbStack Linux homes, and a genuine Windows runner when available. Record exact platform/runtime/asset/actor evidence and unsupported routes; hand the actual resolver contract back to S4 after the corrective BUILD passes all required gates.
+Record actual macOS/Linux runtime and installed-consumer qualification, current scoped regression and exact source/actor evidence. Reuse retained UTM macOS proof only with recorded production-source equivalence; retain fresh current-source OrbStack Linux evidence. Windows native qualification remains deferred and unqualified. Hand the resolver foundation back to S4 only after current validation and human BUILD approval.
 
 **Acceptance checks:**
-- Actual UTM macOS and OrbStack Linux runtime-first-acquisition/native-build/offline-reuse/installed-consumer checks are distinguished from fixtures and host emulation; host v2/Ollama remain untouched.
-- Windows qualification requires actual native ACL/path/header/library/loaded-DLL-safe-publication evidence, not Linux/macOS execution or metadata extraction. Missing infrastructure remains explicitly unavailable and the target cannot be enabled/published. An unavailable native subject remains unsatisfied; recording an availability diagnostic is not a passing native test or a waiver of required BUILD acceptance.
+- Actual UTM macOS and OrbStack Linux runtime-first-acquisition/native-build/offline-reuse/installed-consumer checks are distinguished from fixtures and host emulation; host v2/Ollama remain untouched. Retained native evidence is reusable only with exact relevant source/build-policy equivalence, pinned runtime/platform identity and verified actor closure; retain its original execution source pin.
+- Current foundation completion covers macOS/Linux. The original native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication subject is deferred, not passed and not a current T10 gate. Windows requires genuine native ACL/path/header/library/loaded-DLL-safe-publication evidence before future enablement; POSIX execution, cross-archive metadata or an availability diagnostic cannot qualify it. ISSUE-cab5701fbefab736 remains its separate process-ownership prerequisite; Windows target publication/enablement stays disabled.
 - Qualification is for the runtime foundation and existing installed-consumer boundaries; no end-to-end S4/S5 daemon activation proof is fabricated or introduced as a cyclic prerequisite.
 - No source changes are made during this evidence-only task. Any required correction returns to its owning task and reruns appropriate tests/regression; user BUILD approval is requested only after all required validation/task accounting/tracker gates are satisfied.
 
@@ -161,18 +161,17 @@ Run the completed runtime/installed-consumer qualification harness in isolated U
 | final-scoped-installer-publisher-bootstrap-dev-dependencies-terminal-regression | `t9` |
 | UTM-macOS-fresh-live-acquisition-offline-reuse-and-isolated-installed-consumer-smoke | `t10` |
 | OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke | `t10` |
-| native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication | `t10` |
 | unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests | `t10` |
 
 ## 4. References
 
-- **[[c1]]** `prior-artifact` `docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes` — "Approved revision4 §4.1–4.2: independently pinned official distribution profiles, metadata/types, canonical runtime store and fixed finite bounds; public runtime/manifest contracts unchanged."
+- **[[c1]]** `prior-artifact` `docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes` — "Approved revision5 retains revision4 §4.1–4.2: independently pinned official distribution profiles, metadata/types, canonical runtime store and fixed finite bounds; public runtime/manifest contracts u"
 - **[[c2]]** `prior-artifact` `docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#3-contract-details` — "§3.2–3.3: privateRuntimePaths is the verified async read-only resolver; exact runtime integrity and explicit home, no allocation/acquisition/application imports or arbitrary runtimeDirectory trust."
 - **[[c3]]** `prior-artifact` `docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes` — "§4.3: live official bounded download/safe stage; controller-owned immutable publication, exact verified reuse and closed actors, using original native operation.lock ownership."
 - **[[c4]]** `prior-artifact` `docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#3-contract-details` — "§3.4/§4.3: shared POSIX/PowerShell bootstrap verifies Node/control bytes before execution, publishes a nonexecuting stage, observes exact helper exit before fresh manager admission, including Windows "
 - **[[c5]]** `prior-artifact` `docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes` — "§4.4: private descriptor2/application-only inventory and publisher/probe adaptation; reject embedded formats and runtime byte contributions while preserving public manifest1 and native closure/qualifi"
 - **[[c6]]** `prior-artifact` `docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes` — "§4.4–4.5: dev receipt2/new recipe and canonical offers/readers with shared external Node/npm/header/library; retain accepted source, worker closure and owned native build environment."
 - **[[c7]]** `prior-artifact` `docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes` — "§4.5: existing manager/terminal/TUI/Retry/bootstrap/dependency readiness and delivery/publisher consumers use the real shared foundation; future S7 bridge process/runtime execution remains with S7. No"
-- **[[c8]]** `prior-artifact` `docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#7-test-strategy` — "All25 LLD subjects and ac1–ac6; surrounding tests per task, full scoped regression after implementation, real isolated UTM macOS/OrbStack Linux/Windows evidence kept separate from fixtures."
+- **[[c8]]** `prior-artifact` `docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#7-test-strategy` — "Approved revision5 §7:21 unchanged non-live subjects plus actual UTM macOS, OrbStack Linux and unqualified-target exclusion (24 current subjects), mapped to ac1–ac6. The original Windows native subjec"
 - **[[c9]]** `prior-artifact` `docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#6-error-paths` — "§6/§8: fail closed on corrupt runtime/legacy format/ownership/closure; preserve consent/install-only Retry, same-terminal TUI, current host daemon and immutable entries; unavailable native evidence is"
 - **[[c10]]** `prior-artifact` `docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes` — "§4.6 and diagrams: standalone ISSUE correction with external epic compatibility references only; S4 boot/control/lease/wrapper, S5 hooks and action-specific peer gating stay with their existing owners"

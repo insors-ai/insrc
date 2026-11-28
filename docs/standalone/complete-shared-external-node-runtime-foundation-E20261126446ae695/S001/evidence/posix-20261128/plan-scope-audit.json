@@ -1,0 +1,28 @@
+{
+  "lldApprovedRevision": 5,
+  "lldApprovedAt": "2026-11-28T05:17:24.622Z",
+  "planRevision": 3,
+  "planApprovalPending": true,
+  "taskCount": 10,
+  "T1toT9IdenticalToPlan2": true,
+  "acceptedBuildTasksPreserved": [
+    "t1",
+    "t2",
+    "t3",
+    "t4",
+    "t5",
+    "t6",
+    "t7",
+    "t8",
+    "t9"
+  ],
+  "activeSubjectCount": 24,
+  "T10NativeTestNames": [
+    "UTM-macOS-fresh-live-acquisition-offline-reuse-and-isolated-installed-consumer-smoke",
+    "OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke",
+    "unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests"
+  ],
+  "windowsDeferredNotPassed": true,
+  "rawLinuxRecordsReverified": 29,
+  "productionTreeUnchangedSinceNativeSource": "0938af2dcbc631960d64946fa3cd6a446b3aafef"
+}

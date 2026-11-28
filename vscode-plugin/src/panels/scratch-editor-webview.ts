@@ -11,6 +11,8 @@ export function createScratchCrepe(config: CrepeConfig): Crepe {
 }
 
 import { editorViewCtx } from '@milkdown/kit/core';
+import { Fragment, Slice } from '@milkdown/kit/prose/model';
+import { TextSelection } from '@milkdown/kit/prose/state';
 import type { Node as ProseNode } from '@milkdown/kit/prose/model';
 import { imageBlockSchema } from '@milkdown/kit/component/image-block';
 import { uploadConfig } from '@milkdown/kit/plugin/upload';
@@ -102,6 +104,8 @@ export class ScratchEditorPane {
     document.addEventListener('selectionchange', this.selectionChanged);
     root.addEventListener('keydown', this.keydown, true);
     root.addEventListener('scroll', this.hideSend, true);
+    root.addEventListener('paste', this.pasteFiles, true);
+    root.addEventListener('drop', this.dropFiles, true);
     root.addEventListener('paste', this.pasteUrl, true);
     this.toggle.disabled = true;
   }
@@ -211,7 +215,7 @@ export class ScratchEditorPane {
       }));
       // Override Crepe's parallel/default uploader: every image goes through the
       // same bounded host-backed callbacks, with no blob/base64 source fallback.
-      this.crepe.editor.config(ctx => ctx.update(uploadConfig.key, previous => ({ ...previous, uploader: async (files, schema) => {
+      this.crepe.editor.config(ctx => ctx.update(uploadConfig.key, previous => ({ ...previous, enableHtmlFileUploader: true, uploader: async (files, schema) => {
         const nodes = [], type = schema.nodes['image-block'] ?? schema.nodes['image'];
         if (!type || this.locked || this.failed) return [];
         try { for (const file of Array.from(files)) { if (!file.type.startsWith('image/')) continue; const src = await this.uploadImage(file); const node = type.createAndFill({ src }); if (node) nodes.push(node); } return nodes; }
@@ -295,6 +299,31 @@ export class ScratchEditorPane {
       view.dispatch(tr.replaceSelectionWith(view.state.schema.text(label, [link.create({ href: result.href })]), false).scrollIntoView());
     }
   }
+  private async insertImageFiles(files: FileList, coordinates?: { left: number; top: number }): Promise<void> {
+    if (!this.crepe || this.locked || this.failed || this.disposed) return;
+    const view = this.crepe.editor.action(ctx => ctx.get(editorViewCtx)), doc = view.state.doc;
+    const position = coordinates ? view.posAtCoords(coordinates)?.pos : undefined;
+    const selection = position === undefined ? view.state.selection : TextSelection.near(doc.resolve(position));
+    const type = view.state.schema.nodes['image-block'] ?? view.state.schema.nodes['image'];
+    if (!type) throw new Error('Image authoring is unavailable.');
+    const nodes = [];
+    for (const file of Array.from(files)) nodes.push(type.create({ src: await this.uploadImage(file) }));
+    if (this.disposed || this.locked || this.failed || view.state.doc !== doc) throw new Error('Scratchpad changed while uploading; retry inserting the image.');
+    view.dispatch(view.state.tr.setSelection(selection).replaceSelection(new Slice(Fragment.fromArray(nodes), 0, 0)).scrollIntoView());
+  }
+  // The clipboard plugin precedes the upload plugin and consumes HTML. Capture
+  // files before either plugin so mixed HTML/file clipboard input cannot bypass
+  // the host boundary. Drop shares exactly the same captured insertion path.
+  private readonly pasteFiles = (event: ClipboardEvent): void => {
+    const files = event.clipboardData?.files; if (!files?.length) return;
+    event.preventDefault(); event.stopPropagation();
+    void this.insertImageFiles(files).catch(error => this.assetError(error));
+  };
+  private readonly dropFiles = (event: DragEvent): void => {
+    const files = event.dataTransfer?.files; if (!files?.length) return;
+    event.preventDefault(); event.stopPropagation();
+    void this.insertImageFiles(files, { left: event.clientX, top: event.clientY }).catch(error => this.assetError(error));
+  };
   private readonly pasteUrl = (event: ClipboardEvent): void => {
     if (!this.crepe || this.locked || this.failed || event.clipboardData?.files.length) return;
     const text = event.clipboardData?.getData('text/plain') ?? '';
@@ -371,6 +400,8 @@ export class ScratchEditorPane {
   async dispose(): Promise<void> {
     this.disposed = true; clearTimeout(this.selectionTimer); document.removeEventListener('selectionchange', this.selectionChanged);
     for (const pending of this.assetRequests.values()) { clearTimeout(pending.timer); pending.reject(new Error('Scratchpad pane closed.')); } this.assetRequests.clear();
+    this.root.removeEventListener('paste', this.pasteFiles, true);
+    this.root.removeEventListener('drop', this.dropFiles, true);
     this.root.removeEventListener('paste', this.pasteUrl, true);
     this.root.removeEventListener('keydown', this.keydown, true); this.root.removeEventListener('scroll', this.hideSend, true);
     await this.initialization; this.observer?.deactivate(); if (this.crepe) await this.crepe.destroy();

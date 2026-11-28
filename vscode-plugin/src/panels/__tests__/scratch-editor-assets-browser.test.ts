@@ -23,6 +23,7 @@ test('scratch actual Crepe upload display picker and URL paste callbacks preserv
     assert.match(d.pickedImage, /assets\/image_4.png/); assert.match(d.pickedLink, /\.\.\/workspace\/space%20name.md/);
     assert.ok(d.linkHrefs.includes('https://example.test/page'));
     assert.match(d.pickedImage, /!\[Existing\]\(assets\/existing.png\)/); assert.equal(d.pastePrevented, true);
+    assert.equal(d.mixedPrevented, true); assert.match(d.mixedSource, /assets\/image_5.png/); assert.doesNotMatch(d.mixedSource, /blob:/); assert.equal(d.dropPrevented, true); assert.match(d.droppedSource, /assets\/image_6.png/); assert.equal(d.failedMixedSource, d.droppedSource);
     for (const draft of d.drafts) assert.doesNotMatch(draft.markdown, /blob:|vscode-webview:|data:image/);
     assert.ok(d.drafts.length > 0);
   } finally { rmSync(dir, { recursive: true, force: true }); }

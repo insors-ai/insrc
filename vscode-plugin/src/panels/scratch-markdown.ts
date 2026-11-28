@@ -53,6 +53,7 @@ export function inspectScratchSyntax(markdown: string): ScratchSyntaxInventory {
   while (pending.length) {
     const node = pending.pop()!;
     if (!supported.has(node.type)) unsupported.add(node.type);
+    if (node.type === 'image' && /^(?:blob:|vscode-webview:|vscode-resource:|https:\/\/[^/]*\.vscode-cdn\.net(?:\/|$))/i.test(node.url ?? '')) unsupported.add('transient image URL');
     if (node.type === 'text' && /\[\[[\s\S]*?\]\]|\[\^[^\]]+\]|\{\{[\s\S]*?\}\}|(?:^|\n)\s*:::/.test(node.value ?? '')) {
       unsupported.add('custom literal syntax');
     }

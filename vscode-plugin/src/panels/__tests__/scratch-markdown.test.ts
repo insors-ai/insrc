@@ -102,3 +102,14 @@ test('scratch Markdown independently rejects a self-consistent codec that erases
   assert.equal(result.allowed, false); assert.equal(result.source, source);
   if (!result.allowed) assert.match(result.reason, /semantics/);
 });
+
+
+test('scratch Markdown refuses transient image URLs from any authoring route without laundering the source', () => {
+  for (const url of ['blob:generated', 'vscode-webview://session/image.png', 'vscode-resource:/temporary.png', 'https://file.vscode-resource.vscode-cdn.net/temporary.png']) {
+    const draft = `![alt](${url})\n`;
+    assert.equal(checkScratchMarkdown(draft, scratchSourceCodec).allowed, false);
+    const result = checkScratchMarkdownEdit('# Stable\n', draft, scratchSourceCodec, scratchSourceCodec.parse(draft));
+    assert.equal(result.allowed, false); assert.equal(result.draft, draft); assert.equal(result.source, '# Stable\n');
+    assert.equal(checkScratchMarkdownEdit(draft, '# Laundered\n', scratchSourceCodec, scratchSourceCodec.parse('# Laundered\n')).allowed, false);
+  }
+});

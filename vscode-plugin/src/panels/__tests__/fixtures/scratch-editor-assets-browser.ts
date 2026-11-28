@@ -41,9 +41,20 @@ async function run() {
     const pickedLink = crepe.getMarkdown();
     const data = new DataTransfer(); data.setData('text/plain', 'https://example.test/page');
     const paste = new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }); root.querySelector('.ProseMirror')!.dispatchEvent(paste);
-    const pastedUrl = crepe.getMarkdown(); const linkHrefs: string[] = [];
+    const pastedUrl = crepe.getMarkdown();
+    const mixed = new DataTransfer(); mixed.items.add(file); mixed.setData('text/html', '<img src="blob:clipboard-bypass">');
+    const mixedPaste = new ClipboardEvent('paste', { clipboardData: mixed, bubbles: true, cancelable: true }); root.querySelector('.ProseMirror')!.dispatchEvent(mixedPaste);
+    for (let turn = 0; turn < 20; turn++) await tick();
+    const mixedSource = crepe.getMarkdown();
+    const drop = new DragEvent('drop', { dataTransfer: mixed, clientX: 20, clientY: 100, bubbles: true, cancelable: true }); root.querySelector('.ProseMirror')!.dispatchEvent(drop);
+    for (let turn = 0; turn < 20; turn++) await tick();
+    const droppedSource = crepe.getMarkdown();
+    fail = true;
+    const failedMixed = new ClipboardEvent('paste', { clipboardData: mixed, bubbles: true, cancelable: true }); root.querySelector('.ProseMirror')!.dispatchEvent(failedMixed);
+    for (let turn = 0; turn < 20; turn++) await tick();
+    const failedMixedSource = crepe.getMarkdown(); fail = false; const linkHrefs: string[] = [];
     crepe.editor.action(ctx => ctx.get(editorViewCtx).state.doc.descendants(node => { for (const mark of node.marks) if (mark.type.name === 'link') linkHrefs.push(mark.attrs['href']); }));
-    return { initial, inline, block, display, uploadedNodes: uploadedNodes.map(node => node.attrs.src), beforeFailure, failure, afterFailure, afterCancel, pickedImage, pickedLink, pastedUrl, linkHrefs, pastePrevented: paste.defaultPrevented, sent: sent.filter(m => m.type !== 'draft'), drafts: sent.filter(m => m.type === 'draft') };
+    return { initial, inline, block, display, uploadedNodes: uploadedNodes.map(node => node.attrs.src), beforeFailure, failure, afterFailure, afterCancel, pickedImage, pickedLink, pastedUrl, mixedSource, droppedSource, dropPrevented: drop.defaultPrevented, failedMixedSource, mixedPrevented: mixedPaste.defaultPrevented, linkHrefs, pastePrevented: paste.defaultPrevented, sent: sent.filter(m => m.type !== 'draft'), drafts: sent.filter(m => m.type === 'draft') };
   } finally { await pane.dispose(); }
 }
 void run().then(result => { const pre = document.createElement('pre'); pre.id = 'scratch-result'; pre.textContent = JSON.stringify(result); document.body.append(pre); }).catch(error => { const pre = document.createElement('pre'); pre.id = 'scratch-error'; pre.textContent = `${error}\n${error?.stack ?? ''}`; document.body.append(pre); });

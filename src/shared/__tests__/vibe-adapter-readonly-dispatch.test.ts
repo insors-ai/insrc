@@ -181,3 +181,34 @@ test("the VibeReadOnlyUnavailableError path when probes exhaust the retry bound 
 	const adapter = createVibeAdapter(context, { command, resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }) });
 	assert.throws(() => adapter.startTurn(readOnlyRequest()), (error: unknown) => error instanceof VibeReadOnlyUnavailableError && error.message.includes('did not show a confirmed completed call'));
 });
+
+test("a FAILED turn (nonzero exit) still invalidates the cache on unverifiable evidence, preserving the original turn error (review r2 finding 4)", async () => {
+	_readOnlyQualificationCacheForTests().clear();
+	const context: VibeAdapterContext = { cwd: realDir(), processGroup: 'adapter-owned' };
+	const command = 'vibe-dispatch-failed-turn';
+	const key = descriptorFor(context, command);
+	_readOnlyQualificationCacheForTests().set(key, qualifiedCapability(key, fingerprintFor('cached-marker')));
+
+	const adapter = createVibeAdapter(context, {
+		command, resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }),
+		spawn: () => {
+			const { child, emitter } = fakeChild();
+			queueMicrotask(() => { (child.stderr as PassThrough).write('boom'); emitter.emit('exit', 1, null); });
+			return child;
+		},
+		mkdtemp: async () => realDir(),
+		// A failed launch's own export.json was never meaningfully written -- unreadable,
+		// exactly the "cannot provide verification evidence" case the fix targets.
+		readFile: async () => { throw new Error('ENOENT: no export.json from this failed launch'); },
+		rm: async () => undefined,
+	});
+	// Only `.result` is awaited, matching the one real production caller
+	// (readOnlySessionOnce, cli-provider.ts), which never iterates the event stream.
+	const turn = adapter.startTurn(readOnlyRequest());
+	await assert.rejects(
+		turn.result,
+		(error: unknown) => error instanceof Error && /boom/.test(error.message),
+		"the original turn failure must still be what the caller sees",
+	);
+	assert.equal(_readOnlyQualificationCacheForTests().has(key), false, 'a failed turn with unverifiable evidence invalidates the cache exactly like a successful-but-drifted one');
+});

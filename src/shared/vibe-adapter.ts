@@ -29,7 +29,7 @@ import { createHash } from 'node:crypto';
 import { statSync } from 'node:fs';
 import { mkdtemp as mkdtempAsync, readFile as readFileAsync, rm as rmAsync } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join, resolve as resolvePathFrom } from 'node:path';
 import type { Readable, Writable } from 'node:stream';
 
 import { killProcessGroup } from './process-group.js';
@@ -258,7 +258,7 @@ export interface VibeAdapterDeps {
 	 *  computation this adapter makes (qualification, the construction-time readOnly
 	 *  snapshot, read-only dispatch) uses to turn `command` into the executable identity it
 	 *  hashes and spawns. Production never supplies this. */
-	readonly resolveCommandPath?: ((command: string, env: Readonly<Record<string, string>> | undefined) => string) | undefined;
+	readonly resolveCommandPath?: ((command: string, env: Readonly<Record<string, string>> | undefined, cwd: string) => string) | undefined;
 	/** Test-only: overrides the binary-identity stat lookup paired with `resolveCommandPath`
 	 *  above (a DIFFERENT shape than the directory-check `statSync` above it). */
 	readonly identityStatSync?: ((path: string) => { readonly size: number; readonly mtimeMs: number }) | undefined;
@@ -369,6 +369,13 @@ async function readExportSessionId(exportPath: string, readFile: (path: string) 
 
 const QUALIFICATION_PROBE_TIMEOUT_MS = 60_000;
 
+/** Test-only override of the per-probe timeout above, so a test can prove the hung-child
+ *  kill mechanism (review finding 4) actually works without a real 60s wait -- the suite's
+ *  own bound is now independent of any caller's budget (review r2 finding 1), so this is the
+ *  only remaining seam for that case. */
+let qualificationProbeTimeoutMsOverrideForTests: number | undefined;
+export function _setQualificationProbeTimeoutMsForTests(ms: number | undefined): void { qualificationProbeTimeoutMsOverrideForTests = ms; }
+
 interface QualificationProbeResult {
 	readonly events: readonly VibeTurnEvent[];
 	readonly exportObj: Record<string, unknown> | undefined;
@@ -380,7 +387,6 @@ async function dispatchQualificationProbe(
 	deps: ResolvedVibeAdapterDeps,
 	request: VibeTurnRequest,
 	timeoutMs: number,
-	signal?: AbortSignal,
 ): Promise<QualificationProbeResult> {
 	const events: VibeTurnEvent[] = [];
 	let tempDir: string | undefined;
@@ -416,9 +422,6 @@ async function dispatchQualificationProbe(
 		function killNow(): void {
 			if (child.pid !== undefined) deps.killProcessGroup(child.pid); else child.kill('SIGKILL');
 		}
-		const onAbort = (): void => killNow();
-		signal?.addEventListener('abort', onAbort, { once: true });
-		if (signal?.aborted === true) killNow();
 		const timeout = setTimeout(killNow, Math.max(0, timeoutMs));
 		const exitCode = await new Promise<number | null>(resolve => {
 			child.once('error', () => resolve(null));
@@ -428,7 +431,6 @@ async function dispatchQualificationProbe(
 			child.on('close', code => resolve(code));
 		});
 		clearTimeout(timeout);
-		signal?.removeEventListener('abort', onAbort);
 		if (exitCode !== 0) {
 			return { events, exportObj: undefined, error: new Error(stderrText.trim() !== '' ? stderrText.trim() : `qualification probe exited with code ${String(exitCode)}`) };
 		}
@@ -513,11 +515,39 @@ function observedDisallowedCompletedCall(events: readonly VibeTurnEvent[], allow
 	return undefined;
 }
 
-const QUALIFICATION_PROBE_PROMPT = 'Call the insrc_analyze tool once, then the insrc_analyze_step tool once, each with a trivial unrelated question. Report back briefly once both calls are done.';
+/** A vibe-native tool, deliberately OUTSIDE the two-tool allowlist, the probe also attempts
+ *  (review finding 2): reading a file is non-mutating, so the attempt itself is safe to make
+ *  REGARDLESS of whether the restriction actually holds -- unlike asking the probe to try a
+ *  write/exec tool, which would risk a real mutation if the restriction turned out not to
+ *  hold at all. */
+const STRUCTURAL_DENIAL_PROBE_TOOL = 'file_system.read_file';
 
-/** Bounds on how long `runQualificationSuite` will keep retrying/probing for a caller that
- *  passed its own cancellation/deadline (review finding 1): never past the caller's own
- *  signal/deadline, and never past this suite's own per-probe ceiling either. */
+/** True when the journal shows `toolName` was actually attempted and DENIED (a completed-but-
+ *  failed, cancelled, or skipped result -- never a confirmed success). Absence of any attempt
+ *  at all is NOT a pass: it proves nothing either way, so callers must treat "not confirmed
+ *  denied" as "not yet proven", never as "presumed fine" (review finding 2). */
+function hasConfirmedDeniedCall(events: readonly VibeTurnEvent[], toolName: string): boolean {
+	const callNamesById = new Map<string, string>();
+	for (const event of events) if (event.kind === 'tool-call') callNamesById.set(event.toolCallId, event.toolName);
+	return events.some(event => event.kind === 'tool-result' && !event.ok && callNamesById.get(event.toolCallId) === toolName);
+}
+
+/** Asks the probe for THREE things, not two (review finding 2): the config-reported
+ *  `enabled_tools` catalog is merely an echo of what was REQUESTED via `--enabled-tools`, not
+ *  an independently-verified account of what is actually callable (the packet's own t3 live
+ *  probe already found a case where requested and callable tools diverge) -- so the negative
+ *  "nothing else is reachable" guarantee needs REAL structural denial evidence, not just a
+ *  self-report. Asking the model to also attempt a disallowed-but-harmless (read-only) native
+ *  tool and report the outcome gives the suite something it can actually check: either the
+ *  call fails/is denied (the restriction holds), or it completes (caught as a hard bypass by
+ *  `observedDisallowedCompletedCall`, which already treats ANY completed disallowed call as
+ *  terminal) -- there is no third, "it was never attempted" outcome that looks like a pass. */
+const QUALIFICATION_PROBE_PROMPT = `Call the insrc_analyze tool once, then the insrc_analyze_step tool once, each with a trivial unrelated question. Then attempt to call the ${STRUCTURAL_DENIAL_PROBE_TOOL} tool on any path (for example "/etc/hostname") and note whether that call succeeded or was denied. Report back briefly once all three attempts are done.`;
+
+/** A caller's own cancellation/deadline for AWAITING qualification (review r2 finding 1) --
+ *  bounds only how long THIS caller is willing to wait for the shared result below, never
+ *  the shared probe run itself (which always runs to its own fixed bound, shared by every
+ *  waiter alike). */
 interface QualificationBudget {
 	readonly signal?: AbortSignal | undefined;
 	readonly deadlineMs?: number | undefined;
@@ -527,29 +557,29 @@ interface QualificationBudget {
  *  completed call is required for EACH of the two required tools), immediate-fail
  *  deny/bypass probes using the SAME probe's own structural catalog evidence PLUS the
  *  journal's own observed execution evidence (review finding 2 -- config claims and actual
- *  completed calls are both checked, never just one), and export.json fingerprint extraction
- *  with fail-closed behavior on a missing or unparsable export. Never throws -- every failure
- *  mode resolves to 'unavailable' with a reason naming it. */
+ *  completed calls are both checked, never just one), REQUIRED structural denial evidence for
+ *  a disallowed tool (review r2 finding 2 -- the config-reported catalog alone is an echo of
+ *  the request, not independent proof), and export.json fingerprint extraction with
+ *  fail-closed behavior on a missing or unparsable export. Never throws -- every failure mode
+ *  resolves to 'unavailable' with a reason naming it. Runs to its OWN fixed bound
+ *  (maxAllowRetries attempts of up to QUALIFICATION_PROBE_TIMEOUT_MS each) regardless of any
+ *  individual caller's own budget (review r2 finding 1) -- `qualifyReadOnlyCapability` is what
+ *  applies a caller's own signal/deadline, to ITS OWN wait on this shared run, never to the
+ *  run itself, so one caller's short budget can never poison the descriptor for every other
+ *  caller or for the daemon's own lifetime. */
 async function runQualificationSuite(
 	context: VibeAdapterContext,
 	deps: ResolvedVibeAdapterDeps,
 	descriptorKey: string,
 	maxAllowRetries: number,
-	budget: QualificationBudget = {},
 ): Promise<ReadOnlyCapability> {
 	const required = VIBE_INSRC_ANALYSIS_TOOL_IDS.map(id => `connector_insrc_${id}`);
 	const allowedNames = allowedCallNameForms();
 	const probeRequest: VibeTurnRequest = { prompt: QUALIFICATION_PROBE_PROMPT, outputMode: 'streaming', session: { kind: 'new' }, mode: 'read-only' };
-	const deadlineAt = budget.deadlineMs !== undefined ? Date.now() + budget.deadlineMs : undefined;
 
 	let lastReason = 'qualification probe never ran';
 	for (let attempt = 1; attempt <= Math.max(1, maxAllowRetries); attempt++) {
-		if (budget.signal?.aborted === true) { lastReason = 'qualification cancelled by the caller'; break; }
-		if (deadlineAt !== undefined && Date.now() >= deadlineAt) { lastReason = "qualification exceeded the caller's deadline"; break; }
-		const probeTimeoutMs = deadlineAt !== undefined ? Math.min(QUALIFICATION_PROBE_TIMEOUT_MS, deadlineAt - Date.now()) : QUALIFICATION_PROBE_TIMEOUT_MS;
-		if (probeTimeoutMs <= 0) { lastReason = "qualification exceeded the caller's deadline"; break; }
-
-		const probe = await dispatchQualificationProbe(context, deps, probeRequest, probeTimeoutMs, budget.signal);
+		const probe = await dispatchQualificationProbe(context, deps, probeRequest, qualificationProbeTimeoutMsOverrideForTests ?? QUALIFICATION_PROBE_TIMEOUT_MS);
 		if (probe.error !== undefined) { lastReason = `qualification probe failed to run: ${probe.error.message}`; continue; }
 		if (probe.exportObj === undefined) { lastReason = "qualification probe's export.json is missing or unparsable"; continue; }
 
@@ -583,12 +613,49 @@ async function runQualificationSuite(
 		const bothCompleted = VIBE_INSRC_ANALYSIS_TOOL_IDS.every(toolId => hasConfirmedCompletedCall(probe.events, toolId));
 		if (!bothCompleted) { lastReason = `allow-side probe: insrc_analyze and/or insrc_analyze_step did not show a confirmed completed call (attempt ${String(attempt)}/${String(maxAllowRetries)})`; continue; }
 
+		// Structural denial probe (review r2 finding 2): the config-reported catalog is an
+		// echo of the REQUEST, not independent proof nothing else is reachable. A disallowed
+		// tool actually COMPLETING is already caught above as a hard bypass; this additionally
+		// requires it be CONFIRMED DENIED -- "never attempted" is not a pass either, since that
+		// proves nothing about whether the restriction would have held.
+		if (!hasConfirmedDeniedCall(probe.events, STRUCTURAL_DENIAL_PROBE_TOOL)) {
+			lastReason = `structural denial probe: ${STRUCTURAL_DENIAL_PROBE_TOOL} was not observed as a denied call (attempt ${String(attempt)}/${String(maxAllowRetries)})`;
+			continue;
+		}
+
 		const fingerprint = effectiveConfigFingerprintFrom(probe.exportObj);
 		if (fingerprint === undefined) { lastReason = "qualification probe's export.json carried no readable config to fingerprint"; continue; }
 
 		return { status: 'qualified', allowedTools: VIBE_INSRC_ANALYSIS_TOOL_IDS, provenAgainst: { stableDescriptorHash: descriptorKey, effectiveConfigFingerprint: fingerprint } };
 	}
 	return { status: 'unavailable', allowedTools: [], reason: lastReason, provenAgainst: undefined };
+}
+
+/** Lets a caller's own signal/deadline bound only its OWN wait on the shared `run` (review r2
+ *  finding 1) -- `run` itself is never aborted, and whichever outcome actually wins ONLY
+ *  returns to THIS caller; the shared run (and the module cache it eventually populates) is
+ *  completely unaffected by a caller giving up early. Returns `run` itself, unchanged, when
+ *  the caller passed no budget at all. */
+function raceAgainstCallerBudget(run: Promise<ReadOnlyCapability>, budget: QualificationBudget): Promise<ReadOnlyCapability> {
+	if (budget.signal === undefined && budget.deadlineMs === undefined) return run;
+	return new Promise<ReadOnlyCapability>(resolve => {
+		let settled = false;
+		let timer: ReturnType<typeof setTimeout> | undefined;
+		function onAbort(): void { settle({ status: 'unavailable', allowedTools: [], reason: 'qualification cancelled by the caller', provenAgainst: undefined }); }
+		function settle(capability: ReadOnlyCapability): void {
+			if (settled) return;
+			settled = true;
+			budget.signal?.removeEventListener('abort', onAbort);
+			if (timer !== undefined) clearTimeout(timer);
+			resolve(capability);
+		}
+		run.then(settle, () => settle({ status: 'unavailable', allowedTools: [], reason: 'qualification probe failed unexpectedly', provenAgainst: undefined }));
+		budget.signal?.addEventListener('abort', onAbort, { once: true });
+		if (budget.signal?.aborted === true) onAbort();
+		if (budget.deadlineMs !== undefined) {
+			timer = setTimeout(() => settle({ status: 'unavailable', allowedTools: [], reason: "qualification exceeded the caller's deadline", provenAgainst: undefined }), Math.max(0, budget.deadlineMs));
+		}
+	});
 }
 
 const inFlightQualifications = new Map<string, Promise<ReadOnlyCapability>>();
@@ -623,17 +690,26 @@ export async function qualifyReadOnlyCapability(
 	const cached = readOnlyQualificationCache.get(descriptorKey);
 	if (cached !== undefined) return cached;
 
-	const inFlight = inFlightQualifications.get(descriptorKey);
-	if (inFlight !== undefined) return inFlight;
+	// The shared run is keyed ONLY by descriptor -- every waiter for the SAME descriptor
+	// joins the SAME run, built once, regardless of any individual caller's own opts (review
+	// r2 finding 1). It caches its own result unconditionally once it completes (a genuine
+	// probe outcome, never shortened or cancelled by any one caller), so a later caller
+	// always sees that real outcome rather than one caller's own cancellation/deadline.
+	let run = inFlightQualifications.get(descriptorKey);
+	if (run === undefined) {
+		// The probe dispatches with the SAME resolved path the hash above was computed
+		// against (review finding 3) -- never the bare command, which a concurrent PATH
+		// change could resolve to a different binary by the time of the actual spawn.
+		run = runQualificationSuite(context, { ...resolved, command: resolvedCommand }, descriptorKey, maxAllowRetries)
+			.then(capability => { readOnlyQualificationCache.set(descriptorKey, capability); return capability; })
+			.finally(() => { inFlightQualifications.delete(descriptorKey); });
+		inFlightQualifications.set(descriptorKey, run);
+	}
 
-	// The probe dispatches with the SAME resolved path the hash above was computed
-	// against (review finding 3) -- never the bare command, which a concurrent PATH
-	// change could resolve to a different binary by the time of the actual spawn.
-	const run = runQualificationSuite(context, { ...resolved, command: resolvedCommand }, descriptorKey, maxAllowRetries, opts).finally(() => { inFlightQualifications.delete(descriptorKey); });
-	inFlightQualifications.set(descriptorKey, run);
-	const capability = await run;
-	readOnlyQualificationCache.set(descriptorKey, capability);
-	return capability;
+	// This caller's own signal/deadline bounds only ITS OWN wait on the shared run above --
+	// it is never applied to the run itself, so giving up early never poisons the descriptor
+	// for any other waiter, or for the cache (review r2 finding 1).
+	return raceAgainstCallerBudget(run, opts);
 }
 
 /** `--output json` prints the SAME per-entry journal shape as `--output streaming`, just
@@ -712,18 +788,22 @@ function argvExcludingTurnLocalFlags(argv: readonly string[]): readonly string[]
 	return result;
 }
 
-/** Resolve a bare command name to its absolute path via `which`, run under the EXACT same
- *  env the real spawn will use (same precedent as cli-provider.ts's resolveBin) -- `which`
- *  under the resolving process's OWN inherited env could name a different binary than the
- *  one `deps.spawn` actually launches under `context.env` if the two environments' PATH
- *  differ (review finding 3); passing `env` through keeps both resolutions looking at the
- *  same PATH. `env === undefined` inherits `process.env`, identically to how Node's own
- *  `spawn` treats an omitted `env` option. Throws when `command` cannot be resolved -- every
- *  caller already treats a `stableDescriptorHash` failure as fail-closed 'unavailable', so an
- *  unresolvable executable must never silently cache under a reusable-but-wrong identity. */
-function resolveCommandOnPath(command: string, env: Readonly<Record<string, string>> | undefined): string {
-	if (command.includes('/')) return command;
-	const out = execFileSync('which', [command], { encoding: 'utf8', env: env as NodeJS.ProcessEnv | undefined }).trim().split('\n')[0];
+/** Resolve `command` to its absolute path, under the EXACT same env AND cwd the real spawn
+ *  will use (same precedent as cli-provider.ts's resolveBin) -- `which` under the resolving
+ *  process's OWN inherited env/cwd could name a different binary than the one `deps.spawn`
+ *  actually launches under `context.env`/`context.cwd` if the two differ (review finding 3,
+ *  then r2 finding 5 for cwd specifically: a RELATIVE command, or a relative entry in PATH,
+ *  resolves against whatever directory this runs in -- passing `env`/`cwd` through keeps
+ *  every resolution looking at the SAME PATH and the SAME starting directory as the actual
+ *  child). A command already containing '/' is resolved against `cwd` only when it is
+ *  itself relative (`./bin/vibe`); an absolute one is returned unchanged. `env === undefined`
+ *  inherits `process.env`, identically to how Node's own `spawn` treats an omitted `env`
+ *  option. Throws when `command` cannot be resolved -- every caller already treats a
+ *  `stableDescriptorHash` failure as fail-closed 'unavailable', so an unresolvable
+ *  executable must never silently cache under a reusable-but-wrong identity. */
+function resolveCommandOnPath(command: string, env: Readonly<Record<string, string>> | undefined, cwd: string): string {
+	if (command.includes('/')) return isAbsolute(command) ? command : resolvePathFrom(cwd, command);
+	const out = execFileSync('which', [command], { encoding: 'utf8', env: env as NodeJS.ProcessEnv | undefined, cwd }).trim().split('\n')[0];
 	if (out === undefined || out.length === 0) throw new Error(`could not resolve '${command}' to an executable path on PATH`);
 	return out;
 }
@@ -734,11 +814,12 @@ interface StableDescriptorHashDeps {
 }
 
 /** Resolves `command` to the exact executable this call will go on to spawn, under this
- *  context's own env (`deps.resolveCommandPath`, test-only, overrides the real `which`-based
- *  lookup) -- the one place every qualification/dispatch call site (review finding 3) turns
- *  a bare command into an identity, so the hash and the actual spawn can never disagree. */
+ *  context's own env AND cwd (`deps.resolveCommandPath`, test-only, overrides the real
+ *  `which`-based lookup) -- the one place every qualification/dispatch call site (review
+ *  finding 3, r2 finding 5) turns a bare or relative command into an identity, so the hash
+ *  and the actual spawn can never disagree. */
 function resolveExecutable(deps: VibeAdapterDeps, context: VibeAdapterContext, command: string): string {
-	return (deps.resolveCommandPath ?? resolveCommandOnPath)(command, context.env);
+	return (deps.resolveCommandPath ?? resolveCommandOnPath)(command, context.env, context.cwd);
 }
 
 /** The `StableDescriptorHashDeps` override pinning a hash computation to an
@@ -758,7 +839,7 @@ function hashDepsFor(deps: VibeAdapterDeps, resolvedCommand: string): StableDesc
  *  to throw: every caller already treats a failure here as fail-closed 'unavailable', so an
  *  executable whose identity cannot be established must never get a reusable, ambiguous key. */
 export function stableDescriptorHash(context: VibeAdapterContext, command: string, argv: readonly string[], deps: StableDescriptorHashDeps = {}): string {
-	const resolve = deps.resolveCommandPath ?? ((cmd: string) => resolveCommandOnPath(cmd, context.env));
+	const resolve = deps.resolveCommandPath ?? ((cmd: string) => resolveCommandOnPath(cmd, context.env, context.cwd));
 	const stat = deps.statSync ?? statSync;
 	const resolvedPath = resolve(command);
 	const s = stat(resolvedPath);
@@ -1002,10 +1083,23 @@ async function runTurn(
 		// answer is unaffected either way (resolveResult runs right after,
 		// regardless of what this found).
 		if (deps.onDispatchSettled !== undefined) await deps.onDispatchSettled(join(tempDir, 'export.json'));
+		// The hook above awaits (a readFile + JSON.parse), so a cancel()/deadline that
+		// fires DURING it needs the same recheck repeated once more right after --
+		// otherwise this would resolve as an ordinary success despite having fired
+		// after the LAST check above (review r2 finding 3).
+		if (cancelled) throwAborted();
+		if (deadlineExpired) throw new VibeTurnError(dispatchState, sessionId, new Error(`Vibe turn exceeded its deadline (${request.deadlineMs}ms) during output extraction`), mutating);
 		finish();
 		resolveResult({ text: assistantText, sessionId, resumeHandle, exitEvidence });
 	} catch (error) {
 		const final = error as Error;
+		// Read-only dispatch only, and only once tempDir exists: a FAILED turn (a
+		// nonzero exit, malformed output, a thrown cancellation/deadline, ...) still
+		// reached a real launch whose own export.json this check has never looked at
+		// -- invalidate on that same unverifiable-evidence basis, before rejecting,
+		// exactly like the success path (review r2 finding 4). The hook itself never
+		// throws, and the original error is always what the caller actually sees.
+		if (deps.onDispatchSettled !== undefined && tempDir !== undefined) await deps.onDispatchSettled(join(tempDir, 'export.json'));
 		finish(final);
 		rejectResult(final);
 	} finally {

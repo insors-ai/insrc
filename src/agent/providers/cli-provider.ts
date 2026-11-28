@@ -876,18 +876,27 @@ export class CliProvider implements LLMProvider {
 			// that would qualify, since nothing else in production ever calls
 			// qualifyReadOnlyCapability (review finding 1). A warm cache resolves this
 			// call almost immediately (a plain Map read, no spawn); a cold one spends
-			// part of this call's own deadline running the live probe suite, bounded by
-			// the same signal/deadline the caller gave this session.
+			// part of this call's own deadline waiting on the shared live probe suite
+			// (bounded, for THIS caller, by its own signal/deadline -- the suite itself
+			// runs to its own fixed bound regardless, review r2 finding 1).
+			//
+			// ONE overall deadline for this call, not two full ones (review r2 finding
+			// 3): the turn below gets only what's LEFT after qualification, never
+			// another full `exec.timeoutMs` on top of whatever qualification already
+			// spent.
+			const deadlineAt = Date.now() + exec.timeoutMs;
 			const vibeContext = { cwd: exec.cwd, processGroup: 'adapter-owned' as const };
 			const vibeDeps = { command: this.binPath };
 			await qualifyReadOnlyCapability(vibeContext, vibeDeps, 3, {
 				...(exec.signal !== undefined ? { signal: exec.signal } : {}),
 				deadlineMs: exec.timeoutMs,
 			});
+			const remainingMs = deadlineAt - Date.now();
+			if (remainingMs <= 0) throw new ReadOnlySessionTimeoutError(exec.timeoutMs);
 			const turn = createVibeAdapter(vibeContext, vibeDeps)
 				.startTurn({
 					prompt, outputMode: 'json', mode: 'read-only', session: { kind: 'new' },
-					deadlineMs: exec.timeoutMs, ...(exec.signal !== undefined ? { signal: exec.signal } : {}),
+					deadlineMs: remainingMs, ...(exec.signal !== undefined ? { signal: exec.signal } : {}),
 				});
 			const result = await turn.result;
 			let parsed: unknown;

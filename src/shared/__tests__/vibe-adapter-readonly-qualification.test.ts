@@ -18,7 +18,7 @@ import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { _buildArgvForTests, _readOnlyQualificationCacheForTests, createVibeAdapter, qualifyReadOnlyCapability, stableDescriptorHash } from '../vibe-adapter.js';
+import { _buildArgvForTests, _readOnlyQualificationCacheForTests, _setQualificationProbeTimeoutMsForTests, createVibeAdapter, qualifyReadOnlyCapability, stableDescriptorHash } from '../vibe-adapter.js';
 import type { VibeAdapterContext, VibeAdapterDeps, VibeChildProcess } from '../vibe-adapter.js';
 
 function fakeChild(pid: number | undefined = 4242): { child: VibeChildProcess; stdout: PassThrough; stderr: PassThrough; stdin: PassThrough; emitter: EventEmitter } {
@@ -41,10 +41,16 @@ function realDir(): string { return mkdtempSync(join(tmpdir(), 'insrc-vibe-adapt
 const TOOL_CALL_LINE = (toolCallId: string, toolName: string): string =>
 	JSON.stringify({ type: 'effect', toolCallId, detail: { toolName, input: {} }, state: { status: 'completed', outputText: 'ok' } });
 
+const DENIED_TOOL_CALL_LINE = (toolCallId: string, toolName: string): string =>
+	JSON.stringify({ type: 'effect', toolCallId, detail: { toolName, input: {} }, state: { status: 'failed', outputText: 'denied: tool not enabled' } });
+
+// Satisfies both the allow-side proof (the two required tools) AND the structural denial
+// proof (review r2 finding 2): `file_system.read_file`, outside the allowlist, denied.
 function bothToolsCompletedJournal(): string {
 	return [
 		TOOL_CALL_LINE('c1', 'connector_insrc_insrc_analyze'),
 		TOOL_CALL_LINE('c2', 'connector_insrc_insrc_analyze_step'),
+		DENIED_TOOL_CALL_LINE('c3', 'file_system.read_file'),
 	].join('\n') + '\n';
 }
 
@@ -237,6 +243,26 @@ test('a disallowed tool completing in the journal fails qualification even when 
 	assert.equal(deps.spawnCount(), 1, 'a journal-observed bypass is never retried either, exactly like a config-reported one');
 });
 
+test('a run that only performs the two allowed calls, with no structural-denial attempt observed at all, does NOT qualify on the config catalog alone (review r2 finding 2)', async () => {
+	_readOnlyQualificationCacheForTests().clear();
+	const required = ['connector_insrc_insrc_analyze', 'connector_insrc_insrc_analyze_step'];
+	// The config echoes back exactly the two requested tools (the OLD, insufficient
+	// proof), and the allow-side journal evidence for both required tools is present --
+	// but the structural denial probe (file_system.read_file) was never attempted at
+	// all. "Never attempted" proves nothing about whether the restriction would have
+	// held, so this must exhaust and report unavailable, never a false 'qualified'
+	// based on the config catalog's own unverified echo.
+	const noDenialProbeJournal = [
+		TOOL_CALL_LINE('c1', 'connector_insrc_insrc_analyze'),
+		TOOL_CALL_LINE('c2', 'connector_insrc_insrc_analyze_step'),
+	].join('\n') + '\n';
+	const deps = multiAttemptDeps('vibe-no-denial-probe', [{ stdoutLines: noDenialProbeJournal, exportJsonText: exportJson(required) }]);
+	const result = await qualifyReadOnlyCapability(baseContext(realDir()), deps, 2);
+	assert.equal(result.status, 'unavailable');
+	assert.match(result.reason ?? '', /structural denial probe: file_system\.read_file was not observed as a denied call/);
+	assert.equal(deps.spawnCount(), 2, 'a missing structural-denial attempt is ambient-flakiness-retried, not a terminal bypass');
+});
+
 test('an unresolvable executable fails qualification closed rather than hashing under a reusable-but-ambiguous identity (review finding 3a)', async () => {
 	_readOnlyQualificationCacheForTests().clear();
 	const context: VibeAdapterContext = { cwd: realDir(), env: { PATH: '/nonexistent-insrc-test-path-xyz' }, processGroup: 'adapter-owned' };
@@ -258,6 +284,7 @@ mkdirSync(outputDir, { recursive: true });
 writeFileSync(outputDir + '/export.json', JSON.stringify({ vibe_version: '1.0', config: { enabled_tools: ['connector_insrc_insrc_analyze', 'connector_insrc_insrc_analyze_step'] } }));
 process.stdout.write(JSON.stringify({ type: 'effect', toolCallId: 'c1', detail: { toolName: 'connector_insrc_insrc_analyze', input: {} }, state: { status: 'completed', outputText: 'ok' } }) + '\\n');
 process.stdout.write(JSON.stringify({ type: 'effect', toolCallId: 'c2', detail: { toolName: 'connector_insrc_insrc_analyze_step', input: {} }, state: { status: 'completed', outputText: 'ok' } }) + '\\n');
+process.stdout.write(JSON.stringify({ type: 'effect', toolCallId: 'c3', detail: { toolName: 'file_system.read_file', input: {} }, state: { status: 'failed', outputText: 'denied: tool not enabled' } }) + '\\n');
 process.exit(0);
 `;
 	writeFileSync(scriptPath, script);
@@ -275,7 +302,39 @@ process.exit(0);
 	assert.equal(result.status, 'qualified');
 });
 
-test('a hanging offline child is actually killed within the caller-bound deadline, not left running past the probe timeout (review finding 4)', async () => {
+test("a RELATIVE command resolves against the launch context's own cwd, not wherever this process happens to be running (review r2 finding 5)", async () => {
+	_readOnlyQualificationCacheForTests().clear();
+	const dir = realDir();
+	const scriptName = 'insrc-relative-identity-probe';
+	const scriptPath = join(dir, scriptName);
+	const script = `#!/usr/bin/env node
+const { mkdirSync, writeFileSync } = require('node:fs');
+const args = process.argv.slice(2);
+const outputDir = args[args.indexOf('--output-dir') + 1];
+mkdirSync(outputDir, { recursive: true });
+writeFileSync(outputDir + '/export.json', JSON.stringify({ vibe_version: '1.0', config: { enabled_tools: ['connector_insrc_insrc_analyze', 'connector_insrc_insrc_analyze_step'] } }));
+process.stdout.write(JSON.stringify({ type: 'effect', toolCallId: 'c1', detail: { toolName: 'connector_insrc_insrc_analyze', input: {} }, state: { status: 'completed', outputText: 'ok' } }) + '\\n');
+process.stdout.write(JSON.stringify({ type: 'effect', toolCallId: 'c2', detail: { toolName: 'connector_insrc_insrc_analyze_step', input: {} }, state: { status: 'completed', outputText: 'ok' } }) + '\\n');
+process.stdout.write(JSON.stringify({ type: 'effect', toolCallId: 'c3', detail: { toolName: 'file_system.read_file', input: {} }, state: { status: 'failed', outputText: 'denied: tool not enabled' } }) + '\\n');
+process.exit(0);
+`;
+	writeFileSync(scriptPath, script);
+	chmodSync(scriptPath, 0o755);
+	// `process.cwd()` here is the repo root (wherever the test runner started), NOT
+	// `dir` -- a relative command resolved against THAT (the old bug) would never find
+	// this script. `context.cwd` is `dir`, so `./insrc-relative-identity-probe` must
+	// resolve (and spawn) relative to `dir` for this to qualify at all.
+	assert.notEqual(process.cwd(), dir);
+	const context: VibeAdapterContext = { cwd: dir, processGroup: 'adapter-owned' };
+	const result = await qualifyReadOnlyCapability(context, { command: `./${scriptName}` }, 1);
+	assert.equal(result.status, 'qualified');
+});
+
+test("a hanging offline child is actually killed by the suite's own bounded per-probe timeout, not left running indefinitely (review finding 4)", async () => {
+	// No caller `opts` at all here (review r2 finding 1 decoupled the suite's own bound
+	// from any individual caller's budget) -- `_setQualificationProbeTimeoutMsForTests`
+	// is the only remaining seam, so this proves the KILL mechanism itself, not merely
+	// that some caller gave up waiting while the hung process kept running unseen.
 	_readOnlyQualificationCacheForTests().clear();
 	const dir = realDir();
 	const scriptPath = join(dir, 'hanging-vibe');
@@ -283,11 +342,54 @@ test('a hanging offline child is actually killed within the caller-bound deadlin
 	writeFileSync(scriptPath, '#!/usr/bin/env node\nsetInterval(() => undefined, 1000);\n');
 	chmodSync(scriptPath, 0o755);
 	const context: VibeAdapterContext = { cwd: dir, processGroup: 'adapter-owned' };
-	const startedAt = Date.now();
-	const result = await qualifyReadOnlyCapability(context, { command: scriptPath }, 1, { deadlineMs: 500 });
-	const elapsedMs = Date.now() - startedAt;
-	assert.equal(result.status, 'unavailable');
-	assert.ok(elapsedMs < 5_000, `qualification must not wait out the hung child past its bounded deadline (took ${elapsedMs}ms)`);
+	_setQualificationProbeTimeoutMsForTests(300);
+	try {
+		const startedAt = Date.now();
+		const result = await qualifyReadOnlyCapability(context, { command: scriptPath }, 1);
+		const elapsedMs = Date.now() - startedAt;
+		assert.equal(result.status, 'unavailable');
+		assert.ok(elapsedMs < 5_000, `the suite's own bounded per-probe timeout must actually kill the hung child, not wait indefinitely (took ${elapsedMs}ms)`);
+	} finally {
+		_setQualificationProbeTimeoutMsForTests(undefined);
+	}
+});
+
+test("a caller's own short deadline never poisons the shared result for a differently-budgeted caller, or the cache (review r2 finding 1)", async () => {
+	_readOnlyQualificationCacheForTests().clear();
+	const required = ['connector_insrc_insrc_analyze', 'connector_insrc_insrc_analyze_step'];
+	let spawnCount = 0;
+	const deps: VibeAdapterDeps = {
+		command: 'vibe-shared-race',
+		resolveCommandPath: (cmd) => cmd,
+		identityStatSync: () => ({ size: 1, mtimeMs: 1 }),
+		spawn: () => {
+			spawnCount += 1;
+			const { child, stdout, emitter } = fakeChild();
+			// Slower than the short-budget caller's own deadline below, so that caller's
+			// own race loses before the shared probe itself ever finishes.
+			setTimeout(() => { stdout.write(bothToolsCompletedJournal()); stdout.end(); emitter.emit('exit', 0, null); }, 80);
+			return child;
+		},
+		mkdtemp: async () => realDir(),
+		readFile: async () => exportJson(required),
+		rm: async () => undefined,
+	};
+	const context = baseContext(realDir());
+
+	const [shortBudgetResult, fullBudgetResult] = await Promise.all([
+		qualifyReadOnlyCapability(context, deps, 1, { deadlineMs: 10 }),
+		qualifyReadOnlyCapability(context, deps, 1),
+	]);
+	assert.equal(shortBudgetResult.status, 'unavailable');
+	assert.match(shortBudgetResult.reason ?? '', /exceeded the caller's deadline/);
+	assert.equal(fullBudgetResult.status, 'qualified', "a differently-budgeted caller must see the suite's own real outcome, not the short-budget caller's own timeout");
+
+	// The cache itself holds the real, genuine outcome -- never poisoned by the
+	// short-budget caller's own early give-up -- and a later caller (even a short-
+	// budget one) now hits it warm, with no further spawn.
+	const warmResult = await qualifyReadOnlyCapability(context, deps, 1, { deadlineMs: 10 });
+	assert.equal(warmResult.status, 'qualified');
+	assert.equal(spawnCount, 1, 'only ONE real probe ran -- both callers shared it, and the warm cache hit spawned nothing further');
 });
 
 test('a missing, malformed, or config-less post-dispatch export invalidates the cache (fail-closed), and the invalidation is visible before the result that triggered it resolves (review finding 5)', async () => {

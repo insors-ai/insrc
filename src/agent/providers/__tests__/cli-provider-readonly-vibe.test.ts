@@ -136,3 +136,20 @@ test('the capabilityPolicy precondition refused before readOnlySessionOnce is re
 		assert.equal(f.calls().length, 0, 'vibe is not qualified for strict-read-analyze (capability-qualification.ts); readOnlySessionOnce is never reached');
 	} finally { rmSync(f.dir, { recursive: true, force: true }); }
 });
+
+test("a cold cache that spends this call's own deadline on qualification leaves the real turn no fresh budget of its own (review r2 finding 3)", async () => {
+	// No qualify() seeding here -- a genuinely cold cache. With a deadline this tight,
+	// qualifyReadOnlyCapability's own caller-side race (review r2 finding 1) resolves
+	// 'unavailable' at (or before) the deadline; readOnlySessionOnce must then see its
+	// own overall budget already exhausted and refuse, rather than handing the turn a
+	// FRESH full timeoutMs on top of what qualification already spent.
+	_readOnlyQualificationCacheForTests().clear();
+	const f = makeFakeVibe('{"ok":true}');
+	try {
+		const provider = new CliProvider({ kind: 'vibe', binPath: f.bin, timeoutMs: 50 });
+		await assert.rejects(
+			provider.runReadOnlySession<{ ok: boolean }>('analyze this', SCHEMA, { cwd: f.dir, deadlineMs: 50 }),
+			(e: unknown) => e instanceof Error && e.name === 'ReadOnlySessionTimeoutError',
+		);
+	} finally { rmSync(f.dir, { recursive: true, force: true }); }
+});

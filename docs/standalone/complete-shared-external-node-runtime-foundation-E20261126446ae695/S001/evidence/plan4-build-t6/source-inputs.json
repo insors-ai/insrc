@@ -22,5 +22,13 @@
   "cases": 26,
   "allPassed": true,
   "fullPayload": "unvalidated; deferred to final T9 regression",
-  "finalStoryBuildApproved": false
+  "finalStoryBuildApproved": false,
+  "closureFixtureCorrection": {
+    "files": {
+      "src/installer/__tests__/publisher.test.ts": "5efeeec57b4393dcc430a046d76b65f3d722fc4c20f948e32fbd015117a367e2",
+      "src/installer/__tests__/foundation-payload-fixture.mjs": "0bdcc20cb2691ec9321f88c0785c16267a07cd09ee647112f175ade56a5a7029"
+    },
+    "focusedResult": "publisher 11/11 passed without inherited coordinator flags",
+    "productionChanged": false
+  }
 }

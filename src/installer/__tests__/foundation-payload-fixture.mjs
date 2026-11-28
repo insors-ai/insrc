@@ -17,6 +17,8 @@ const esbuild = `node_modules/@esbuild/${process.platform}-${process.arch}/${pro
 mkdirSync(dirname(join(root, esbuild)), { recursive: true }); copyFileSync(join(source, esbuild), join(root, esbuild));
 const target = { os: process.platform, arch: process.arch, baseline: 'foundation-fixture' };
 const run = createRun(root, { mode: 'build' });
+const environment = run.environment;
+run.environment = () => ({ ...environment(), INSRC_BUILD_CONFIRM_CLOSURE: '1' });
 await withRun(run, async scope => {
   validateEntrypoints(source, ['out/daemon/index.js', 'out/cli/index.js', 'out/installer/manager-entry.js', 'out/installer/terminal-entry.js']);
   const bootstrap = join(root, 'bootstrap.mjs'), manager = join(root, 'manager.mjs');

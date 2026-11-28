@@ -12,6 +12,12 @@ fresh verification; failures/cancellation invalidate the operation. Bounded
 installed-control opening remains separate. T7/T8 must consume the compatible
 context in their own stages; manager-wide reuse is not claimed here.
 
+| Relationship | Direction, cardinality and ownership | Compatibility |
+| --- | --- | --- |
+| Live operation to prepared candidates | One operation owns zero or more candidate-reference proofs in its private WeakMap; each proof belongs to that operation and original candidate object. | Failure/cancellation invalidates reuse; a new operation or cloned candidate needs a fresh full check. |
+| Verified inventory to verification scope | Each original inventory object has one current private verification record, binding its scope, canonical content, root inode and check signal. | Native publication may move that same inode; serialized inventory data carries no authority. |
+| Preparation/verification caller to live operation | Each call may pass one optional in-process operation reference through PreparationContext or DeliveryPort.verify. | No public request/receipt field is added; absent or untrusted context performs fresh verification. |
+
 Publisher reads now capture and recheck every regular file, including
 single-link files, through no-follow descriptors. Provenance remains limited to
 allowed roots, generated files, excluded inputs, blocked paths and pinned
@@ -70,3 +76,7 @@ the internal disk; the heavy full-payload case remains unvalidated and is
 deferred to the final T9 regression pass with resource headroom checked first.
 
 Post-reboot surrounding run4db2dc1b-6603-4aef-a691-646f16ed5d8d passed all26 cases across the four complete mapped files under Node22.22.1, serial concurrency1. The coordinator typecheck/build passed, all owned groups confirmed closed, no evidence/cancellation errors occurred, and the checkout lease was released. Bundle8/8 included the corrected independent-read counter and close-uncertainty failure retention; publisher11/11 included the actual protected external runtime/native probe; source-links4/4 and application-policy3/3 passed. Free space remained about39 GiB. Registered task validation remains the next gate; full-payload and VM evidence are still pending T9/T10.
+
+The first registered gate atd78db412a completed as BUILD30/TESTS30 with25/26 cases passing. The publisher probe itself ran, but its fixture inherited legacy closure mode when invoked directly by the gate, causing the strict owned-group cleanup check to fail and retain its captured root. The surrounding coordinator had supplied that flag. Both publisher-probe and complete-payload fixture runs now select owned-group closure on their own run environment, independently of the caller. The first failed gate/TAP and restored settings are retained; no passing T6 gate is claimed yet.
+
+The focused publisher rerun removed INSRC_BUILD_CONFIRM_CLOSURE, INSRC_TEST_RUN_ID and INSRC_TEST_ROOT from the invoking environment. All11 publisher cases passed, including the actual external runtime/native probe and its qualified owned-group cleanup, in45.57s. The production files remain identical to the first task commit; only the two fixture run environments changed. The heavy fixture is still deferred to T9, and T6 requires a fresh registered gate.

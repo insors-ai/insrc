@@ -210,6 +210,8 @@ test('publisher native probe executes the shared protected runtime outside the a
     const { createRun } = await import('../../../scripts/test-harness/context.mjs');
     const { withRun } = await import('../../../scripts/test-harness/process.mjs');
     const run = createRun(root, { mode: 'build' });
+    const environment = run.environment;
+    run.environment = () => ({ ...environment(), INSRC_BUILD_CONFIRM_CLOSURE: '1' });
     cleanupPath = join(run.workspace, 'cleanup.json');
     await withRun(run, async scope => {
       const home = root, probe = join(root, 'app');

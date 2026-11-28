@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: hostile ZIP corpus cannot escape staging or exceed bounded extraction
+ok 1 - hostile ZIP corpus cannot escape staging or exceed bounded extraction
+  ---
+  duration_ms: 73058.59225
+  type: 'test'
+  ...
+# Subtest: download digest target runtime cancellation and retry preserve incumbent
+ok 2 - download digest target runtime cancellation and retry preserve incumbent
+  ---
+  duration_ms: 52688.135667
+  type: 'test'
+  ...
+# Subtest: release discovery rejects insecure redirects and never falls back to dev
+ok 3 - release discovery rejects insecure redirects and never falls back to dev
+  ---
+  duration_ms: 0.999958
+  type: 'test'
+  ...
+# Subtest: inventory bound reserves the archive inventory entry
+ok 4 - inventory bound reserves the archive inventory entry
+  ---
+  duration_ms: 69.105291
+  type: 'test'
+  ...
+# Subtest: bundle descriptor2 and installed receipts preserve public manifest1 and reject embedded format1
+ok 5 - bundle descriptor2 and installed receipts preserve public manifest1 and reject embedded format1
+  ---
+  duration_ms: 3.334958
+  type: 'test'
+  ...
+# Subtest: application full integrity is bound to its operation candidate and closed producer inventory
+ok 6 - application full integrity is bound to its operation candidate and closed producer inventory
+  ---
+  duration_ms: 61460.542834
+  type: 'test'
+  ...
+# Subtest: new recovery rejects truncated non-control modules and native addons and cancellation cannot reuse proof
+ok 7 - new recovery rejects truncated non-control modules and native addons and cancellation cannot reuse proof
+  ---
+  duration_ms: 59960.898625
+  type: 'test'
+  ...
+# Subtest: bundle fixture transports refuse unknown URLs without a real HTTPS fallback
+ok 8 - bundle fixture transports refuse unknown URLs without a real HTTPS fallback
+  ---
+  duration_ms: 0.309
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 247488.557416

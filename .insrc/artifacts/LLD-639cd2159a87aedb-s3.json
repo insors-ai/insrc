@@ -54,6 +54,15 @@
       "description": "",
       "references": [],
       "attachments": []
+    },
+    "questionResolutions": {
+      "q3377461d": {
+        "question": "testFramework='vitest' is carried from round 3's inference (repo convention), not re-verified by an explicit convention.detect bundle this round.",
+        "status": "resolved",
+        "choice": "Verify before planning",
+        "rationale": "Ran an explicit convention-detect check: grep across the repo found 1643 backend files and 144 vscode-plugin files importing from 'node:test', zero importing from 'vitest', no vitest.config.* anywhere, and both package.json test scripts (`node scripts/test-harness/run.mjs`, plugin's `--suite=vscode` variant) drive node:test's own harness. testFramework is 'node:test', not 'vitest' -- round 3's carried inference was wrong.",
+        "resolvedAt": "2026-11-28T05:16:58.948Z"
+      }
     }
   },
   "body": {

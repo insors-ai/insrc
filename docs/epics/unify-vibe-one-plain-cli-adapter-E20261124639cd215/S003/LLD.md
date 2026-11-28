@@ -398,6 +398,11 @@ File an hld.amendmentProposal (sharedContract.methodAdd) asking sc1's owning Sto
 - Widening session-output.ts's TurnExit/Marker/parseMarker touches generic chat infrastructure that no HLD sharedContract or adjacentBoundary explicitly owns -- flagged for reviewer confirmation that this is acceptable scope for this Story rather than requiring a separate story or HLD back-flow.
 - The approval-flag effective-equivalence live verification is still unperformed; it now explicitly gates the migration's cutover (step 12) rather than being an open-ended check with no stated consequence.
 
+## Resolved questions
+
+- `q3377461d` — testFramework='vitest' is carried from round 3's inference (repo convention), not re-verified by an explicit convention.detect bundle this round.
+  - **resolved**: Verify before planning — Ran an explicit convention-detect check: grep across the repo found 1643 backend files and 144 vscode-plugin files importing from 'node:test', zero importing from 'vitest', no vitest.config.* anywhere, and both package.json test scripts (`node scripts/test-harness/run.mjs`, plugin's `--suite=vscode` variant) drive node:test's own harness. testFramework is 'node:test', not 'vitest' -- round 3's carried inference was wrong. _(2026-11-28T05:16:58.948Z)_
+
 ## Citations
 
 - **[[c1]]** `code` `src/shared/vibe-adapter.ts:436-490`

@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 18,
+        "contentHash": "aefce9a1bec03c28759073f7a467d21958caa6a820bb280a9b757d0b36e7f3b2",
+        "at": "2026-11-28T12:38:49.197Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 18,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T14:22:56.517Z",
+        "override": {
+          "reason": "Automated design/code review endpoints are unavailable (being rewritten); approving on explicit human approval with build-gate evidence: rev 18, tasks t1-t4 all passed (judge scopeRespected:true, tests 8 pass/0 fail + 1 smoke reported, typecheck clean), harness runs of both touched test files passed on c510fb07c."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-fb4e191c-ff68-4681-9756-6b0fc063e1b3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T09:32:39.162Z",
+    "epicCreatedAt": "2026-10-08T17:29:20.823Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4b33600426ce4112",
+    "storyId": "s1",
+    "revision": 18,
+    "updatedAt": "2026-11-28T12:37:24.878Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "bug-test-sweep-hangs-intermittently-npx"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ],
+    "summary": "t3 smoke, like-for-like v2 after review feedback (evidence /tmp/smoke-sweep-comparison2.txt + per-run TAP /tmp/smoke2-{baseline-1,baseline-2,postfix-1,postfix-2}.tap): identical explicit selection (all 439 src/workflow+src/mcp *.test.ts files) both sides, common outer deadline 300s (>120s per-test timeout, >~150s normal completion). BASELINE bare node tsx --test (no --test-timeout): 2/2 rc=124 killed at 300s/301s with NO TAP summary — node emits the summary only after every file child exits, so files never reported. POST-FIX test:sweep command (--test-timeout=120000): 2/2 terminated on their own at 135s/144s with complete TAP summaries (# tests 2714/2720, pass 2629, fail 79, cancelled 3/9); 3 and 9 tests show \"test timed out after 120000ms\" — stragglers bounded by the per-test timeout and reported as failures. Remaining fails are pre-existing bare-run harness-context refusals, same class as pre-fix. Cancellations distinguished from failures in the per-run TAP.",
+    "testRecord": {
+      "md": "docs/standalone/bug-test-sweep-hangs-intermittently-npx-E202610084b336004/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/__tests__/helpers/exec-stand-in.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T12:37:24.878Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/helpers/exec-stand-in.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T12:37:24.878Z"
+      },
+      {
+        "target": {
+          "file": "docs/testing.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T12:37:24.878Z"
+      },
+      {
+        "target": {
+          "file": "package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T12:37:24.878Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/test-sweep.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T12:37:24.878Z"
+      }
+    ],
+    "commit": "c510fb07c"
+  },
+  "citations": []
+}

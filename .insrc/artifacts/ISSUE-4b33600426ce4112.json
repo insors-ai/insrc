@@ -24,12 +24,12 @@
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-08T17:29:20.823Z",
     "envelope": {
+      "description": "",
       "references": [],
-      "attachments": [],
-      "description": ""
+      "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 0,
         "contentHash": "4e114caaaba4b7b33625fc0fa8f21c91fc98183cd02d730e47217c8ba5faa3d3",
@@ -62,7 +62,26 @@
           "fragment": "migrated-ISSUE-4b33600426ce4112-review"
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T09:01:00.972Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "4b33600426ce4112",
+      "slug": "EPIC-4b33600426ce4112"
+    },
+    "tracker": {
+      "adapter": "github",
+      "epicStatus": "closed",
+      "storyStatus": {},
+      "lastSyncedAt": "2026-11-28T14:24:02.501Z"
     }
   },
   "body": {

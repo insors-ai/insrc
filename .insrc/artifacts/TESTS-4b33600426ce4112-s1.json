@@ -1,0 +1,220 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 18,
+        "contentHash": "162c866d38fe1b2f5b30ad369e0893c371de46a29f0b5a49dd5dd48c5746ac15",
+        "at": "2026-11-28T12:37:25.123Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "4b33600426ce4112",
+    "storyId": "s1",
+    "createdAt": "2026-11-28T09:32:39.162Z",
+    "updatedAt": "2026-11-28T12:37:24.878Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-08T17:29:20.823Z",
+    "epicSlug": "bug-test-sweep-hangs-intermittently-npx",
+    "revision": 18
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "e906a32fe",
+        "ranAt": "2026-11-28T09:32:39.162Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "exec-stand-in keeps its server ref'd while installed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/helpers/exec-stand-in.test.ts",
+                "title": "exec-stand-in keeps its server ref'd while installed, an awaited gh call resolves, and remove() tears it down",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/helpers/exec-stand-in.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 465,
+            "titles": [
+              {
+                "title": "exec-stand-in keeps its server ref'd while installed, an awaited gh call resolves, and remove() tears it down",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "016f92780",
+        "ranAt": "2026-11-28T12:02:40.762Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "bare sweep with the default timeout terminates and reports every file",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/test-sweep.test.ts",
+                "title": "package.json test:sweep runs the node test runner with a finite --test-timeout",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/test-sweep.test.ts",
+                "title": "npm run test:sweep terminates and reports every requested file",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/test-sweep.test.ts",
+                "title": "a stuck file is failed at the per-test timeout and cannot block the sweep",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/test-sweep.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3994,
+            "titles": [
+              {
+                "title": "package.json test:sweep runs the node test runner with a finite --test-timeout",
+                "result": "pass"
+              },
+              {
+                "title": "npm run test:sweep terminates and reports every requested file",
+                "result": "pass"
+              },
+              {
+                "title": "a stuck file is failed at the per-test timeout and cannot block the sweep",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "64065828d",
+        "ranAt": "2026-11-28T12:37:24.878Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "repro sweep finishes within the bound on every attempt",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/smoke-sweep-comparison2.txt protocol note + per-run TAP files /tmp/smoke2-*.tap: baseline 2/2 killed at 300s no summary (hang); postfix 2/2 self-terminated 135s/144s full TAP, timeout-fired stragglers 3 and 9 reported at 120000ms, all under a common 300s outer deadline with identical 439-file selection."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      },
+      {
+        "taskId": "t4",
+        "commit": "9cc97b3f6",
+        "ranAt": "2026-11-28T12:17:33.775Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "harness run of the touched helper file passes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/helpers/exec-stand-in.test.ts",
+                "title": "exec-stand-in keeps its server ref'd while installed, an awaited gh call resolves, and remove() tears it down",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/test-sweep.test.ts",
+                "title": "package.json test:sweep runs the node test runner with a finite --test-timeout",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/test-sweep.test.ts",
+                "title": "npm run test:sweep terminates and reports every requested file",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/test-sweep.test.ts",
+                "title": "a stuck file is failed at the per-test timeout and cannot block the sweep",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/test-sweep.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3958,
+            "titles": [
+              {
+                "title": "package.json test:sweep runs the node test runner with a finite --test-timeout",
+                "result": "pass"
+              },
+              {
+                "title": "npm run test:sweep terminates and reports every requested file",
+                "result": "pass"
+              },
+              {
+                "title": "a stuck file is failed at the per-test timeout and cannot block the sweep",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/helpers/exec-stand-in.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 511,
+            "titles": [
+              {
+                "title": "exec-stand-in keeps its server ref'd while installed, an awaited gh call resolves, and remove() tears it down",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

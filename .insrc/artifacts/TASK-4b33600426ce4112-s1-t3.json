@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fdc97fab-8453-448c-a482-6036fa276a86",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T09:29:09.295Z",
+    "epicCreatedAt": "2026-10-08T17:29:20.823Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4b33600426ce4112",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Smoke-verify the repro sweep terminates on every run",
+      "parent": {
+        "entityId": "STORY-4b33600426ce4112-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4b33600426ce4112-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-4b33600426ce4112-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-4b33600426ce4112-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "07d0ae39ba906fc920aab07f4df9e81f4f0a772b1b86d4f244332d58f48e239e",
+        "at": "2026-11-28T09:29:09.295Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T09:29:09.296Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Smoke-verify the repro sweep terminates on every run",
+    "summary": "Run the bare workflow+mcp sweep repeatedly on Node 22.22.1 with the new default: every attempt finishes within the bound and every file reports a result (previously 6/6 hangs at 100s without a timeout).",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "N consecutive bare sweeps finish without an external kill and report all files"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "repro sweep finishes within the bound on every attempt"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

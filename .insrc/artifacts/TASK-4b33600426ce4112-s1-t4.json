@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-30f2f4b0-3acf-45d4-b19a-d9421a191aec",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T09:29:09.298Z",
+    "epicCreatedAt": "2026-10-08T17:29:20.823Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4b33600426ce4112",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Regression: harness gate path unchanged",
+      "parent": {
+        "entityId": "STORY-4b33600426ce4112-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4b33600426ce4112-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-4b33600426ce4112-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "0cd95a599f2eca3f8c0314f759238e597d08552af607657232a6c5358824d78a",
+        "at": "2026-11-28T09:29:09.298Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T09:29:09.302Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Regression: harness gate path unchanged",
+    "summary": "Run npm test -- on the touched helper's test file and the gate-pinned single-file runs to prove the harness path (bounded child, --test-force-exit) is unaffected; root typecheck clean.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "npm test -- <exec-stand-in usage file> passes under the pinned Node 22.22.1 command",
+      "typecheck clean (root npx tsc --noEmit)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "harness run of the touched helper file passes"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

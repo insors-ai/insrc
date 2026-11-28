@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9973bde9-bfe9-474a-a5e0-96c1bf16e535",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T09:29:09.293Z",
+    "epicCreatedAt": "2026-10-08T17:29:20.823Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4b33600426ce4112",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Give the bare sweep a finite default per-test timeout",
+      "parent": {
+        "entityId": "STORY-4b33600426ce4112-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4b33600426ce4112-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "041f0f1702a7935f1031d7b5330a3282c54ac896bd51865e8a6d31a055345c65",
+        "at": "2026-11-28T09:29:09.293Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T09:29:09.294Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Give the bare sweep a finite default per-test timeout",
+    "summary": "Add an npm script (e.g. \"test:sweep\") that runs tsx --test with a finite --test-timeout so bare parallel globs always bound each file, and document it in docs/testing.md: bare globs should use the bounded invocation; the harness remains the owned gate path.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "package.json has the sweep script with a finite --test-timeout",
+      "docs/testing.md documents the bounded bare invocation"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "bare sweep with the default timeout terminates and reports every file"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

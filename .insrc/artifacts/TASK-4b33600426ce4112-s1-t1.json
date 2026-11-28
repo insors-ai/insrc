@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-96636dc9-0ccb-47c5-8d38-d969cd08eabc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T09:29:09.291Z",
+    "epicCreatedAt": "2026-10-08T17:29:20.823Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4b33600426ce4112",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Drop server.unref() in the exec-stand-in test helper",
+      "parent": {
+        "entityId": "STORY-4b33600426ce4112-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4b33600426ce4112-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "36721d4b74f85e1927642d06713c73c11af9f5c76b2cf6dffb4bb684e842e4d8",
+        "at": "2026-11-28T09:29:09.291Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T09:29:09.292Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Drop server.unref() in the exec-stand-in test helper",
+    "summary": "src/workflow/__tests__/helpers/exec-stand-in.ts: keep the gh/git stand-in Unix-socket server ref'd while installed (remove server.unref()), so an awaited execFile response keeps the event loop alive; remove() still closes the server and restores PATH. Add a unit assertion that the server handle is ref'd while installed.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "installExecStandIn leaves the stand-in server ref'd until remove()",
+      "an awaited gh/git call through the stand-in resolves",
+      "remove() closes the server and restores PATH"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "exec-stand-in keeps its server ref'd while installed"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

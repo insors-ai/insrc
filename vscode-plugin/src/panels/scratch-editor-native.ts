@@ -41,7 +41,7 @@ interface Pane {
   readonly listeners: VSCode.Disposable[];
   lockSequence: number;
   lastLock?: { readonly request: LockRequest; readonly result: LockResult } | undefined;
-  lock?: { readonly requestId: string; readonly request: LockRequest; readonly abort: AbortController } | undefined;
+  lock?: { readonly requestId: string; readonly request: LockRequest; readonly abort: AbortController; committed: boolean } | undefined;
   flush?: { readonly requestId: string; readonly promise: Promise<boolean>; readonly settle: (confirmed: boolean) => void } | undefined;
   deletion?: { readonly requestId: string; readonly settle: (ready: boolean) => void };
   selection?: { readonly request: ScratchSelectionSend; readonly promise: Promise<void>; pending: boolean };
@@ -185,7 +185,17 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
         message.draftSeq === entry.controller.latestSequence(pane.id) && message.draftSeq <= entry.controller.appliedSequence(pane.id) && message.docVersion === entry.controller.snapshot.version);
       return;
     }
-    if (message.type === 'lock-cancel') { if (pane.lock?.requestId === message.requestId) pane.lock.abort.abort(); return; }
+    if (message.type === 'lock-cancel') {
+      // Tombstone even a request not yet received: a delayed original cannot
+      // execute after we have confirmed cancellation to the renderer.
+      pane.lockSequence = Math.max(pane.lockSequence,Number(message.requestId.slice(5)));
+      const operation = pane.lock?.requestId === message.requestId ? pane.lock : undefined;
+      if (operation && !operation.committed) operation.abort.abort();
+      if (operation) pane.lock = undefined;
+      const committed = operation?.committed || pane.lastLock?.request.requestId === message.requestId && pane.lastLock.result.success;
+      if (!await delivered(pane,{type:'lock-state',paneSessionId:pane.id,requestId:message.requestId,locked:pane.locked,success:!!committed,message:committed?'Lock state synchronized.':'Lock cancelled; actual pane state confirmed.'})) warn('Lock cancellation state was not delivered; reopen the pane to synchronize.');
+      return;
+    }
     if (message.type === 'lock') {
       const sameRequest = (request: LockRequest): boolean => request.locked === message.locked && request.draftSeq === message.draftSeq && request.docVersion === message.docVersion;
       if (pane.lock?.requestId === message.requestId && sameRequest(pane.lock.request)) return;
@@ -193,7 +203,7 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
       if (pane.lock || Number(message.requestId.slice(5)) <= pane.lockSequence) {
         if (pane.lock?.requestId === message.requestId) pane.lock.abort.abort();
         await delivered(pane,{type:'lock-state',paneSessionId:pane.id,requestId:message.requestId,locked:pane.locked,success:false,message:'Stale, conflicting or concurrent lock request refused.'}); return; }
-      const abort = new AbortController(); pane.lockSequence = Number(message.requestId.slice(5)); pane.lock = {requestId:message.requestId,request:{...message},abort};
+      const abort = new AbortController(); pane.lockSequence = Number(message.requestId.slice(5)); const operation = {requestId:message.requestId,request:{...message},abort,committed:false}; pane.lock = operation;
       let success = false, notice = '';
       try {
         const initial = entry.controller.snapshot;
@@ -202,13 +212,15 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
         await validate(entry.document.uri);
         const current = (): boolean => !abort.signal.aborted && !pane.disposed && !stopped && !entry.controller.conflicted && entry.controller.latestSequence(pane.id) === message.draftSeq && entry.controller.snapshot.version === confirmed.version && entry.controller.snapshot.digest === confirmed.digest;
         if (!current()) throw new Error('Source changed while locking; text retained.');
-        await preference.remember(message.locked);
-        if (!current()) throw new Error('Lock was cancelled or source changed; previous pane state retained.');
-        pane.locked = message.locked; entry.controller.setLocked(pane.id,message.locked); success = true;
+        await preference.transition(message.locked,current,() => {
+          pane.locked = message.locked; entry.controller.setLocked(pane.id,message.locked); operation.committed = true;
+        });
+        success = true;
       } catch (failure) { notice = failure instanceof Error ? failure.message : 'Lock change failed; previous pane state retained.'; warn(notice); }
       finally { if (pane.lock?.requestId === message.requestId) pane.lock = undefined; }
       const result: LockResult = {type:'lock-state',paneSessionId:pane.id,requestId:message.requestId,locked:pane.locked,success,message:notice};
-      pane.lastLock = {request:{...message},result}; await delivered(pane,result); return;
+      if (Number(message.requestId.slice(5)) === pane.lockSequence) pane.lastLock = {request:{...message},result};
+      if (!await delivered(pane,result)) warn('Lock state confirmation was not delivered; the pane must synchronize before editing.'); return;
     }
     if (message.type === 'open-text') {
       await validate(entry.document.uri);

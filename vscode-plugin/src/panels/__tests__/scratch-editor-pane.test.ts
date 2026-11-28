@@ -66,3 +66,12 @@ test('scratch refused draft stays recovery-only after the older edit acknowledge
   state.receive({ type: 'apply-ack', paneSessionId: 'pane', draftSeq: old.draftSeq, editId: old.editId, version: 2, digest: 'b'.repeat(64), markdown: old.markdown });
   assert.equal(sent.length, 3); assert.equal(sent[2]?.apply, false); assert.equal(state.markdown, '# Refused but preserved\n'); assert.equal(state.conflicted, true);
 });
+
+test('scratch lock preference preserves its committed default when persistence and restoration fail',async()=>{
+  let value:unknown=false,attempt=0;
+  const preference=new ScratchLockPreference({get:<T>()=>value as T,update:async(_key,next)=>{attempt++;value=next;if(attempt<=2)throw new Error('storage unavailable');}});
+  await assert.rejects(preference.remember(true),/could not be restored/);
+  value=true; // Persistence is uncertain after rejected writes; do not trust it.
+  assert.equal(preference.initial(),false,'This window retains its known committed default');
+  await preference.remember(true);assert.equal(preference.initial(),true);assert.equal(value,true);
+});

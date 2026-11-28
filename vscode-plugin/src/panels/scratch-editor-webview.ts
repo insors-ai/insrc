@@ -53,7 +53,7 @@ export class ScratchEditorPane {
     sequence => this.observer?.expedite(sequence) ?? false);
   private actionFailure = false;
   private lockSequence = 0;
-  private lockTransition: { readonly requestId: string; readonly target: boolean; readonly timer: ReturnType<typeof setTimeout> } | undefined;
+  private lockTransition: { readonly requestId: string; readonly target: boolean; cancelled?: boolean | undefined; readonly timer: ReturnType<typeof setTimeout> } | undefined;
   private locked = true;
   private failed = false;
   private deleting: string | undefined;
@@ -134,10 +134,13 @@ export class ScratchEditorPane {
   private clearActionFailure(): void { this.actionFailure = false; this.status.textContent = ''; this.status.setAttribute('role','status'); }
   private actionError(message: string): void { this.actionFailure = true; this.status.textContent = message; this.status.setAttribute('role','alert'); }
   private cancelLock(message: string): void {
-    const pending = this.lockTransition; if (!pending) return;
-    clearTimeout(pending.timer); this.lockTransition = undefined;
+    const pending = this.lockTransition; if (!pending || pending.cancelled) return;
+    clearTimeout(pending.timer); pending.cancelled = true;
+    // A timeout does not prove the host failed to commit. Stay read-only until
+    // an authoritative reply confirms its actual mode, even after cancellation.
+    this.flusher.cancel(message); this.setLocked(this.locked); this.fallback.hidden = false;
+    this.actionError(`${message} Lock state is unconfirmed; editing is paused until synchronization or reopening.`);
     this.post({type:'lock-cancel',paneSessionId:this.options.paneSessionId,requestId:pending.requestId});
-    this.setLocked(this.locked); this.actionError(message);
   }
   private async changeLock(): Promise<void> {
     if (this.failed || this.disposed || this.deleting !== undefined || !this.state || this.lockTransition) return;
@@ -506,6 +509,7 @@ export class ScratchEditorPane {
     }).catch(error => { if (!this.disposed) this.actionError(error instanceof Error ? error.message : 'Action could not confirm the captured draft; text retained.'); });
   };
   async dispose(): Promise<void> {
+    if (this.lockTransition && !this.lockTransition.cancelled) { this.lockTransition.cancelled = true; this.post({type:'lock-cancel',paneSessionId:this.options.paneSessionId,requestId:this.lockTransition.requestId}); }
     this.flusher.dispose(); clearTimeout(this.lockTransition?.timer); this.lockTransition = undefined;
     this.disposed = true; this.observer?.deactivate(); this.validator?.dispose(); clearTimeout(this.selectionTimer); document.removeEventListener('selectionchange', this.selectionChanged);
     for (const pending of this.assetRequests.values()) { clearTimeout(pending.timer); pending.reject(new Error('Scratchpad pane closed.')); } this.assetRequests.clear();

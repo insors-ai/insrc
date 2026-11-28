@@ -74,16 +74,17 @@ async function harness() {
       applyEdit: async (edit: Edit) => { applies++; const pending = gate; gate = undefined; if (pending) await pending.promise; const change = edit.edits[0]!; assert.equal(change.uri, uri); doc.text = doc.text.slice(0, change.range.start.character) + change.text + doc.text.slice(change.range.end.character); doc.version++; doc.isDirty = true; changed.fire({ document: doc }); return true; } },
   } as unknown as typeof VSCode;
   let sendSelection: (text: string, assertCurrent: () => void) => Promise<void> = async () => { throw new Error('Chat unavailable'); };
-  const preferenceWrites: boolean[] = [];
+  const preferenceWrites: boolean[] = []; let persistedPreference = false, preferenceGate: ReturnType<typeof deferred> | undefined;
   const recovery = new ScratchRecoveryStore(join(dir, 'recovery'));
   await mkdir(join(dir, 'out', 'scratch-editor'), { recursive: true });
   await writeFile(join(dir, 'out', 'scratch-editor', 'validator.js'), '/* trusted fixture asset */');
   await writeFile(join(dir, 'out', 'scratch-validation-host-worker.js'), await scratchHostWorkerBytes());
-  const host = registerScratchEditor({ richEditor: () => richEditor, refresh: async () => { refreshed++; if (failRefresh) throw new Error('refresh unavailable'); }, api, store, extensionPath: dir, recovery, sendSelection: (text, assertCurrent) => sendSelection(text, assertCurrent), preference: new ScratchLockPreference({ get: <T>() => false as T, update: async (_key, value) => { preferenceWrites.push(value as boolean); } }), warn: m => warnings.push(m) });
+  const preference = new ScratchLockPreference({get:<T>()=>persistedPreference as T,update:async(_key,value)=>{preferenceWrites.push(value as boolean);persistedPreference=value as boolean;const pending=preferenceGate;preferenceGate=undefined;if(pending)await pending.promise;}});
+  const host = registerScratchEditor({ richEditor: () => richEditor, refresh: async () => { refreshed++; if (failRefresh) throw new Error('refresh unavailable'); }, api, store, extensionPath: dir, recovery, sendSelection: (text, assertCurrent) => sendSelection(text, assertCurrent), preference, warn: m => warnings.push(m) });
   const open = async () => { await provider.resolveCustomTextEditor(doc as unknown as VSCode.TextDocument, panel as unknown as VSCode.WebviewPanel, { isCancellationRequested: false }); paneAttached = true; const id = panel.webview.html.match(/data-pane-session="([^"]+)"/)![1]!; incoming.fire({ type: 'editor-ready', paneSessionId: id }); await until(() => messages.some(m => m.type === 'document-state')); return id; };
   return { dir, host, doc, panel, provider: () => provider, api, changed, willSave, closed, incoming, disposed, messages, warnings, commands, recovery, uri, entry, resolved, open,
     send: (id: string, m: object) => { const draft = m as {type?:string;draftSeq?:number}; if (draft.type === 'draft') rendererSequence = Math.max(rendererSequence,draft.draftSeq ?? 0); incoming.fire({ ...m, paneSessionId: id }); },
-    preferenceWrites, flushRequests, setFlushMode: (mode: typeof flushMode) => { flushMode = mode; }, answerFlush,
+    preference, get persistedPreference(){return persistedPreference;}, blockPreference:()=>{preferenceGate=deferred();return preferenceGate;}, preferenceWrites, flushRequests, setFlushMode: (mode: typeof flushMode) => { flushMode = mode; }, answerFlush,
     block: () => { gate = deferred(); return gate; },
     blockValidation: () => { validateGate = deferred(); return validateGate; }, get validating() { return validating; },
     closedTabs, groups, store,
@@ -446,3 +447,39 @@ test('scratch lock requests are idempotent while pending and stale replay never 
   assert.equal(replay.type,'lock-state');if(replay.type!=='lock-state')throw new Error('Missing replay refusal');
   assert.equal(replay.success,false);assert.equal(replay.locked,false);assert.deepEqual(h.preferenceWrites,[true,false]);
 }));
+
+test('scratch lock cancellation restores provisional preference before a later request commits',async()=>fixture(async h=>{
+  const id=await h.open(),gate=h.blockPreference();
+  h.send(id,{type:'lock',requestId:'lock_1',locked:true,draftSeq:0,docVersion:1});await until(()=>h.preferenceWrites.length===1);
+  assert.equal(h.persistedPreference,true,'Storage write is deliberately paused after changing its value');
+  assert.equal(h.preference.initial(),false,'New panes still see the committed default during persistence');
+  h.send(id,{type:'lock-cancel',requestId:'lock_1'});await until(()=>h.messages.some(m=>m.type==='lock-state'&&m.requestId==='lock_1'));
+  const cancelled=h.messages.find(m=>m.type==='lock-state'&&m.requestId==='lock_1')!;assert.equal(cancelled.type,'lock-state');if(cancelled.type==='lock-state'){assert.equal(cancelled.success,false);assert.equal(cancelled.locked,false);}
+  h.send(id,{type:'lock',requestId:'lock_2',locked:true,draftSeq:0,docVersion:1});
+  gate.resolve();await until(()=>h.messages.some(m=>m.type==='lock-state'&&m.requestId==='lock_2'&&m.success));
+  assert.deepEqual(h.preferenceWrites,[true,false,true],'Restoration occupies the same preference queue before the later commit');
+  assert.equal(h.persistedPreference,true);assert.equal(h.preference.initial(),true);
+  assert.equal(h.messages.some(m=>m.type==='lock-state'&&m.requestId==='lock_1'&&m.success),false);
+  h.send(id,{type:'lock',requestId:'lock_2',locked:true,draftSeq:0,docVersion:1});await until(()=>h.messages.filter(m=>m.type==='lock-state'&&m.requestId==='lock_2').length===2);assert.deepEqual(h.preferenceWrites,[true,false,true],'Late old completion cannot overwrite the newer idempotency record');
+}));
+
+test('scratch lost lock confirmation resynchronizes the actual committed mode and delayed original cannot execute after cancellation',async()=>fixture(async h=>{
+  const id=await h.open();h.setDropped('lock-state');h.send(id,{type:'lock',requestId:'lock_1',locked:true,draftSeq:0,docVersion:1});
+  await until(()=>h.warnings.some(m=>m.includes('confirmation was not delivered')));assert.equal(h.preference.initial(),true);assert.equal(h.persistedPreference,true);
+  h.setDropped('none');h.send(id,{type:'lock-cancel',requestId:'lock_1'});await until(()=>h.messages.some(m=>m.type==='lock-state'&&m.requestId==='lock_1'));
+  const actual=h.messages.find(m=>m.type==='lock-state'&&m.requestId==='lock_1')!;assert.equal(actual.type,'lock-state');if(actual.type==='lock-state'){assert.equal(actual.locked,true);assert.equal(actual.success,true);}
+  h.send(id,{type:'lock-cancel',requestId:'lock_2'});await until(()=>h.messages.some(m=>m.type==='lock-state'&&m.requestId==='lock_2'));
+  h.send(id,{type:'lock',requestId:'lock_2',locked:false,draftSeq:0,docVersion:1});await until(()=>h.messages.filter(m=>m.type==='lock-state'&&m.requestId==='lock_2').length===2);
+  assert.deepEqual(h.preferenceWrites,[true]);assert.equal(h.preference.initial(),true,'Late original request was tombstoned, not executed');
+}));
+
+test('scratch lock preference rollback also covers source changes and close during persistence',async()=>{
+  for(const outcome of ['external','close'])await fixture(async h=>{
+    const id=await h.open(),gate=h.blockPreference();
+    h.send(id,{type:'lock',requestId:'lock_1',locked:true,draftSeq:0,docVersion:1});await until(()=>h.preferenceWrites.length===1);
+    if(outcome==='external')h.external('# External during preference write\n');else await h.host.dispose();
+    gate.resolve();await until(()=>h.preferenceWrites.length===2);
+    assert.deepEqual(h.preferenceWrites,[true,false]);assert.equal(h.preference.initial(),false);assert.equal(h.persistedPreference,false);
+    if(outcome==='external'){await until(()=>h.messages.some(m=>m.type==='lock-state'));assert.equal(h.doc.text,'# External during preference write\n');assert.equal(h.messages.some(m=>m.type==='lock-state'&&m.success),false);}
+  });
+});

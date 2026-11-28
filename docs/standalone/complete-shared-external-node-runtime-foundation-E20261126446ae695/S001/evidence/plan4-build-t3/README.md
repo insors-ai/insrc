@@ -45,7 +45,7 @@ T4 work and is not claimed green by this task.
   owned-group closure without cancellation/evidence errors, and released their
   checkout leases. File allowance was explicitly1200s; production runtime limits
   and T1's trusted qualification policy remain unchanged.
-- Registered T3 validation is pending at this implementation checkpoint.
+- Registered T3 validation passed at commit30ad3cc68: all6 acceptance checks, typecheck and all19 mapped cases passed. BUILD26/TESTS26 record the current result. Raw gate TAP and full response are retained alongside verified restoration of the prior three repository test settings.
 
 `source-inputs.json` binds the three edited inputs. The unresponsive transport is
 a controlled promise with no network handle; its small retained root is named

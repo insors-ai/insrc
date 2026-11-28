@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: ordinary installer imports and action deadlines ignore every ambient qualification selector
+ok 1 - ordinary installer imports and action deadlines ignore every ambient qualification selector
+  ---
+  duration_ms: 1358.308167
+  type: 'test'
+  ...
+# Subtest: explicit trusted qualification admission preserves bounded runtime and manager deadlines
+ok 2 - explicit trusted qualification admission preserves bounded runtime and manager deadlines
+  ---
+  duration_ms: 532.614166
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2045.609083

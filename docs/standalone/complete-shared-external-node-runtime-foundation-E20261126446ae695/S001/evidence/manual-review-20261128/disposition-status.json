@@ -3,7 +3,25 @@
   "verdict": "changes-requested",
   "allFindingsResolved": false,
   "existingStory": "446ae69566d352dd/s1",
-  "reworkAdmission": "LLD8 and PLAN4 approved. T1 passed at0fa2f8c20; T2 passed at e6c98e204 after closing its exact-diagnostic assertion gap. T3-T10 current implementation/revalidation and final Story BUILD approval remain outstanding.",
+  "reworkAdmission": {
+    "approvedPlanRevision": 4,
+    "currentRegisteredTaskGatesPassed": [
+      "t1",
+      "t2",
+      "t3"
+    ],
+    "currentTasksPending": [
+      "t4",
+      "t5",
+      "t6",
+      "t7",
+      "t8",
+      "t9",
+      "t10"
+    ],
+    "finalStoryBuildApproved": false,
+    "note": "Earlier BUILD rows for later tasks are historical; current plan4 acceptance remains pending."
+  },
   "nativeEvidence": "Prior macOS/Linux source equivalence becomes historical after production edits; affected regression/native qualification required before final BUILD approval",
   "findings": [
     {

@@ -1,0 +1,95 @@
+TAP version 13
+# Subtest: runtime staging authenticates official assets and leaves only an owned unselected candidate
+ok 1 - runtime staging authenticates official assets and leaves only an owned unselected candidate
+  ---
+  duration_ms: 25936.649625
+  type: 'test'
+  ...
+# Subtest: runtime download rejects HTTP redirects sizes and digest failures before extracting code
+ok 2 - runtime download rejects HTTP redirects sizes and digest failures before extracting code
+  ---
+  duration_ms: 64.505041
+  type: 'test'
+  ...
+# Subtest: runtime download deadline expires before extraction and closes input before cleanup
+ok 3 - runtime download deadline expires before extraction and closes input before cleanup
+  ---
+  duration_ms: 1011.988083
+  type: 'test'
+  ...
+# Subtest: runtime acquisition deadline during extraction closes output before owned cleanup
+ok 4 - runtime acquisition deadline during extraction closes output before owned cleanup
+  ---
+  duration_ms: 841.924458
+  type: 'test'
+  ...
+# Subtest: runtime cancellation waits for output closure before owned stage cleanup
+ok 5 - runtime cancellation waits for output closure before owned stage cleanup
+  ---
+  duration_ms: 783.146625
+  type: 'test'
+  ...
+# Subtest: runtime download cancellation waits for the actual input stream close before cleanup
+ok 6 - runtime download cancellation waits for the actual input stream close before cleanup
+  ---
+  duration_ms: 201.349334
+  type: 'test'
+  ...
+# Subtest: unresponsive runtime transport returns bounded uncertainty and retains its stage
+ok 7 - unresponsive runtime transport returns bounded uncertainty and retains its stage
+  ---
+  duration_ms: 5008.357166
+  type: 'test'
+  ...
+# Retained unconfirmed transport fixture: /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ira-WST4L3
+# Subtest: runtime close uncertainty retains the stage even when cancellation also occurs
+ok 8 - runtime close uncertainty retains the stage even when cancellation also occurs
+  ---
+  duration_ms: 821.840542
+  type: 'test'
+  ...
+# Subtest: Windows archive profiles require exact separate headers and architecture libraries
+ok 9 - Windows archive profiles require exact separate headers and architecture libraries
+  ---
+  duration_ms: 49665.747667
+  type: 'test'
+  ...
+# Subtest: runtime gzip and ZIP parsers reject unsafe collisions links special entries and incomplete profiles
+ok 10 - runtime gzip and ZIP parsers reject unsafe collisions links special entries and incomplete profiles
+  ---
+  duration_ms: 60.38175
+  type: 'test'
+  ...
+# Subtest: runtime discard restores protected directories only under its original closed stage capability
+ok 11 - runtime discard restores protected directories only under its original closed stage capability
+  ---
+  duration_ms: 26553.118041
+  type: 'test'
+  ...
+# Subtest: runtime discard retains a linked stage without chmodding an external runtime
+ok 12 - runtime discard retains a linked stage without chmodding an external runtime
+  ---
+  duration_ms: 25334.8965
+  type: 'test'
+  ...
+# Subtest: runtime discard retains protected data if the original owner is lost after admission
+ok 13 - runtime discard retains protected data if the original owner is lost after admission
+  ---
+  duration_ms: 28203.745791
+  type: 'test'
+  ...
+# Subtest: runtime discard retains a stage marked uncertain after cleanup admission
+ok 14 - runtime discard retains a stage marked uncertain after cleanup admission
+  ---
+  duration_ms: 24142.394
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 188923.723042

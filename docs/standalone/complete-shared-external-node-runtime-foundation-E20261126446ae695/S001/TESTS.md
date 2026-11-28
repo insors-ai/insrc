@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 112 pass, 0 fail, 0 skipped, 0 not found; 8 reported by the builder and not run by the gate.
+**Totals:** 122 pass, 0 fail, 0 skipped, 0 not found; 8 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -132,7 +132,7 @@ Run at 2026-11-28T10:48:53.443Z on commit `e6c98e204`. Tests check: **passed**. 
 
 ## t3
 
-Run at 2026-11-27T10:41:47.118Z on commit `f5e9f2afe`. Tests check: **passed**. 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-28T11:16:33.816Z on commit `30ad3cc68`. Tests check: **passed**. 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: runtime-acquisition-checks-official-HTTPS-byte-hash-deadline-before-safe-extraction**
 
@@ -140,31 +140,43 @@ Run at 2026-11-27T10:41:47.118Z on commit `f5e9f2afe`. Tests check: **passed**. 
 | :--- | :--- | :--- |
 | pass | runtime staging authenticates official assets and leaves only an owned unselected candidate | `src/installer/__tests__/runtime-acquire.test.ts` |
 | pass | runtime download rejects HTTP redirects sizes and digest failures before extracting code | `src/installer/__tests__/runtime-acquire.test.ts` |
-| pass | Windows archive profiles require exact separate headers and architecture libraries | `src/installer/__tests__/runtime-acquire.test.ts` |
 | pass | runtime download deadline expires before extraction and closes input before cleanup | `src/installer/__tests__/runtime-acquire.test.ts` |
-| pass | runtime acquisition deadline during extraction closes output before owned cleanup | `src/installer/__tests__/runtime-acquire.test.ts` |
+| pass | ordinary installer imports and action deadlines ignore every ambient qualification selector | `src/installer/__tests__/production-deadlines.test.ts` |
+| pass | explicit trusted qualification admission preserves bounded runtime and manager deadlines | `src/installer/__tests__/production-deadlines.test.ts` |
+| pass | slow-vm-runtime-download-verification-and-decoder-drain-have-no-hidden-normal-cap | `src/installer/__tests__/qualification-runtime.test.ts` |
+| pass | normal-runtime-identity-inventory-worker-wire-and-controller-schema-remain-unchanged | `src/installer/__tests__/qualification-runtime.test.ts` |
 
 **integration: runtime-stage-cancellation-closes-owned-network-parser-actors-before-cleanup**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
+| pass | runtime staging authenticates official assets and leaves only an owned unselected candidate | `src/installer/__tests__/runtime-acquire.test.ts` |
+| pass | runtime acquisition deadline during extraction closes output before owned cleanup | `src/installer/__tests__/runtime-acquire.test.ts` |
 | pass | runtime cancellation waits for output closure before owned stage cleanup | `src/installer/__tests__/runtime-acquire.test.ts` |
 | pass | runtime download cancellation waits for the actual input stream close before cleanup | `src/installer/__tests__/runtime-acquire.test.ts` |
 | pass | unresponsive runtime transport returns bounded uncertainty and retains its stage | `src/installer/__tests__/runtime-acquire.test.ts` |
 | pass | runtime close uncertainty retains the stage even when cancellation also occurs | `src/installer/__tests__/runtime-acquire.test.ts` |
+| pass | runtime discard restores protected directories only under its original closed stage capability | `src/installer/__tests__/runtime-acquire.test.ts` |
+| pass | runtime discard retains a linked stage without chmodding an external runtime | `src/installer/__tests__/runtime-acquire.test.ts` |
+| pass | runtime discard retains protected data if the original owner is lost after admission | `src/installer/__tests__/runtime-acquire.test.ts` |
+| pass | runtime discard retains a stage marked uncertain after cleanup admission | `src/installer/__tests__/runtime-acquire.test.ts` |
+| pass | profile-never-waives-positive-resource-or-process-closure | `src/installer/__tests__/qualification-runtime.test.ts` |
 
 **integration: runtime-profile-rejects-unsafe-archive-collisions-links-and-missing-header-library-inputs**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
-| pass | runtime gzip and ZIP parsers reject unsafe collisions links special entries and incomplete profiles | `src/installer/__tests__/runtime-acquire.test.ts` |
 | pass | Windows archive profiles require exact separate headers and architecture libraries | `src/installer/__tests__/runtime-acquire.test.ts` |
+| pass | runtime gzip and ZIP parsers reject unsafe collisions links special entries and incomplete profiles | `src/installer/__tests__/runtime-acquire.test.ts` |
+| pass | runtime staging authenticates official assets and leaves only an owned unselected candidate | `src/installer/__tests__/runtime-acquire.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/installer/__tests__/runtime-acquire.test.ts` | 0 | 10 | 76.3 s |  |
+| `src/installer/__tests__/production-deadlines.test.ts` | 0 | 2 | 2.1 s |  |
+| `src/installer/__tests__/qualification-runtime.test.ts` | 0 | 3 | 1.7 s |  |
+| `src/installer/__tests__/runtime-acquire.test.ts` | 0 | 14 | 189 s |  |
 
 ## t4
 

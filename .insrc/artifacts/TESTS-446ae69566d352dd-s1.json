@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 25,
-        "contentHash": "5b0d572295e80e38f50d1acbe4e4e5a0b604536e8e868fe4c35cf66462f00585",
-        "at": "2026-11-28T10:48:53.471Z",
+        "number": 26,
+        "contentHash": "5e81885b4f271275b2d814bf0df467f4eea5c7633b4a3f9b3eae896409349d49",
+        "at": "2026-11-28T11:16:33.852Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "446ae69566d352dd",
     "storyId": "s1",
     "createdAt": "2026-11-26T07:40:02.075Z",
-    "updatedAt": "2026-11-28T10:48:53.443Z",
+    "updatedAt": "2026-11-28T11:16:33.816Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-26T06:29:10.586Z",
     "epicSlug": "complete-shared-external-node-runtime-foundation",
-    "revision": 25
+    "revision": 26
   },
   "body": {
     "tasks": [
@@ -506,8 +506,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "f5e9f2afe",
-        "ranAt": "2026-11-27T10:41:47.118Z",
+        "commit": "30ad3cc68",
+        "ranAt": "2026-11-28T11:16:33.816Z",
         "testsPassed": true,
         "tests": [
           {
@@ -527,17 +527,27 @@
               },
               {
                 "file": "src/installer/__tests__/runtime-acquire.test.ts",
-                "title": "Windows archive profiles require exact separate headers and architecture libraries",
-                "result": "pass"
-              },
-              {
-                "file": "src/installer/__tests__/runtime-acquire.test.ts",
                 "title": "runtime download deadline expires before extraction and closes input before cleanup",
                 "result": "pass"
               },
               {
-                "file": "src/installer/__tests__/runtime-acquire.test.ts",
-                "title": "runtime acquisition deadline during extraction closes output before owned cleanup",
+                "file": "src/installer/__tests__/production-deadlines.test.ts",
+                "title": "ordinary installer imports and action deadlines ignore every ambient qualification selector",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/production-deadlines.test.ts",
+                "title": "explicit trusted qualification admission preserves bounded runtime and manager deadlines",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-runtime.test.ts",
+                "title": "slow-vm-runtime-download-verification-and-decoder-drain-have-no-hidden-normal-cap",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-runtime.test.ts",
+                "title": "normal-runtime-identity-inventory-worker-wire-and-controller-schema-remain-unchanged",
                 "result": "pass"
               }
             ],
@@ -548,6 +558,16 @@
             "level": "integration",
             "source": "mapping",
             "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-acquire.test.ts",
+                "title": "runtime staging authenticates official assets and leaves only an owned unselected candidate",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-acquire.test.ts",
+                "title": "runtime acquisition deadline during extraction closes output before owned cleanup",
+                "result": "pass"
+              },
               {
                 "file": "src/installer/__tests__/runtime-acquire.test.ts",
                 "title": "runtime cancellation waits for output closure before owned stage cleanup",
@@ -567,6 +587,31 @@
                 "file": "src/installer/__tests__/runtime-acquire.test.ts",
                 "title": "runtime close uncertainty retains the stage even when cancellation also occurs",
                 "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-acquire.test.ts",
+                "title": "runtime discard restores protected directories only under its original closed stage capability",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-acquire.test.ts",
+                "title": "runtime discard retains a linked stage without chmodding an external runtime",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-acquire.test.ts",
+                "title": "runtime discard retains protected data if the original owner is lost after admission",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-acquire.test.ts",
+                "title": "runtime discard retains a stage marked uncertain after cleanup admission",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-runtime.test.ts",
+                "title": "profile-never-waives-positive-resource-or-process-closure",
+                "result": "pass"
               }
             ],
             "files": []
@@ -578,12 +623,17 @@
             "cases": [
               {
                 "file": "src/installer/__tests__/runtime-acquire.test.ts",
+                "title": "Windows archive profiles require exact separate headers and architecture libraries",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-acquire.test.ts",
                 "title": "runtime gzip and ZIP parsers reject unsafe collisions links special entries and incomplete profiles",
                 "result": "pass"
               },
               {
                 "file": "src/installer/__tests__/runtime-acquire.test.ts",
-                "title": "Windows archive profiles require exact separate headers and architecture libraries",
+                "title": "runtime staging authenticates official assets and leaves only an owned unselected candidate",
                 "result": "pass"
               }
             ],
@@ -592,10 +642,48 @@
         ],
         "files": [
           {
+            "file": "src/installer/__tests__/production-deadlines.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2093,
+            "titles": [
+              {
+                "title": "ordinary installer imports and action deadlines ignore every ambient qualification selector",
+                "result": "pass"
+              },
+              {
+                "title": "explicit trusted qualification admission preserves bounded runtime and manager deadlines",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/qualification-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1685,
+            "titles": [
+              {
+                "title": "slow-vm-runtime-download-verification-and-decoder-drain-have-no-hidden-normal-cap",
+                "result": "pass"
+              },
+              {
+                "title": "profile-never-waives-positive-resource-or-process-closure",
+                "result": "pass"
+              },
+              {
+                "title": "normal-runtime-identity-inventory-worker-wire-and-controller-schema-remain-unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/installer/__tests__/runtime-acquire.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 76251,
+            "durationMs": 188979,
             "titles": [
               {
                 "title": "runtime staging authenticates official assets and leaves only an owned unselected candidate",
@@ -635,6 +723,22 @@
               },
               {
                 "title": "runtime gzip and ZIP parsers reject unsafe collisions links special entries and incomplete profiles",
+                "result": "pass"
+              },
+              {
+                "title": "runtime discard restores protected directories only under its original closed stage capability",
+                "result": "pass"
+              },
+              {
+                "title": "runtime discard retains a linked stage without chmodding an external runtime",
+                "result": "pass"
+              },
+              {
+                "title": "runtime discard retains protected data if the original owner is lost after admission",
+                "result": "pass"
+              },
+              {
+                "title": "runtime discard retains a stage marked uncertain after cleanup admission",
                 "result": "pass"
               }
             ],

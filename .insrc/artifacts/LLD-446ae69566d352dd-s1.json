@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1795842093934-khcxyv",
+    "runId": "wf-1795846871452-0hgegq",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-28T05:07:32.825Z",
+    "createdAt": "2026-11-28T06:36:59.579Z",
     "epicCreatedAt": "2026-11-26T06:29:10.586Z",
     "attribution": {
       "outputs": [
@@ -15,48 +15,37 @@
         }
       ]
     },
-    "elapsedMs": 358534,
+    "elapsedMs": 947745,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "446ae69566d352dd",
     "epicSlug": "complete-shared-external-node-runtime-foundation",
     "storyId": "s1",
-    "hldBaseRunId": "wf-1795842093934-khcxyv",
-    "hldEffectiveHash": "651db0de5fcfd5f95299763656d6893dfd90f8b686e7f106008ac48b24eff5ef",
+    "hldBaseRunId": "wf-1795846871452-0hgegq",
+    "hldEffectiveHash": "8995e3d84777133fc4a5fceab7e0b3d0a4c526d4dd2db72e9f24780c439cc47d",
     "hldAmendmentsApplied": [],
-    "storyTitle": "Revise only the acceptance scope of standalone runtime foundation ISSUE-446ae69566d352dd / LLD-446ae69566d352dd-s1 for the user's explicit direction: keep Windows aside for now and focus on macOS/Linux. Preserve implementation contracts, ten-task ownership, existing accepted work and actual evidence. POSIX foundation completion/S4 handoff must require genuine macOS and Linux proofs; Windows native qualification remains deferred under ISSUE-cab5701fbefab736, disabled/unqualified, never marked passed and never enabled by POSIX results. Keep all fail-closed integrity/ownership and per-target gates. This is a bounded revision of this existing approved bugfix design, not a new feature. Existing approved macOS UTM budget proof and scoped regression may be reused only with exact production source equivalence; Linux proof is being refreshed.",
+    "storyTitle": "Complete the shared external Node runtime foundation",
     "standalone": true,
+    "sizeClass": "bugfix",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 5,
-        "contentHash": "95ee67b33e5421be44d44d9d763307217ef48203d7f5fbabf2ce704e9169e91b",
-        "at": "2026-11-28T05:07:32.989Z",
+        "number": 6,
+        "contentHash": "ecee0ab1b3acaa4e2a7140fec755107b441a4e7aafa9ae8aea4c4d0c64b36d0c",
+        "at": "2026-11-28T06:36:59.771Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
           "properties": {}
         }
       },
-      "signoffs": [],
-      "approval": {
-        "revision": 5,
-        "by": {
-          "id": "insrc:approval",
-          "kind": "system",
-          "properties": {}
-        },
-        "at": "2026-11-28T05:17:24.622Z"
-      }
+      "signoffs": []
     },
     "envelope": {
-      "description": "",
-      "references": [],
       "attachments": []
     },
-    "revision": 5,
-    "rangeBase": "dee5816b5648cdc1088b092390e0623621526b59"
+    "revision": 6
   },
   "body": {
     "hldContextSlice": {
@@ -67,7 +56,7 @@
         "storyId": "s1",
         "owns": [],
         "depends": [],
-        "internal": "Revise only the acceptance scope of standalone runtime foundation ISSUE-446ae69566d352dd / LLD-446ae69566d352dd-s1 for the user's explicit direction: keep Windows aside for now and focus on macOS/Linux. Preserve implementation contracts, ten-task ownership, existing accepted work and actual evidence. POSIX foundation completion/S4 handoff must require genuine macOS and Linux proofs; Windows native qualification remains deferred under ISSUE-cab5701fbefab736, disabled/unqualified, never marked passed and never enabled by POSIX results. Keep all fail-closed integrity/ownership and per-target gates. This is a bounded revision of this existing approved bugfix design, not a new feature. Existing approved macOS UTM budget proof and scoped regression may be reused only with exact production source equivalence; Linux proof is being refreshed."
+        "internal": "Complete the shared external Node runtime foundation"
       },
       "adjacentBoundaries": [],
       "rolloutPhase": "standalone",
@@ -75,7 +64,7 @@
     },
     "summary": {
       "audience": "technical",
-      "prose": "Bundle and dev installations will share one verified Node distribution stored independently of application releases. A read-only resolver binds every installed launch to the manifest runtime identity; bootstrap and preparation acquire missing runtimes through the existing controller lock. Application and IDE payloads contain no Node or Ollama distributions or archives. This correction supplies S4's runtime prerequisite without implementing daemon lifecycle or migration behavior. Current acceptance and S4 handoff cover macOS/Linux only, following the user's explicit Windows deferral. Windows technical contracts stay documented, but its native qualification, ownership prerequisite and target enablement remain deferred and cannot be credited from POSIX evidence."
+      "prose": "Bundle and dev installations will share one verified Node distribution stored independently of application releases. A read-only resolver binds every installed launch to the manifest runtime identity; bootstrap and preparation acquire missing runtimes through the existing controller lock. Application and IDE payloads contain no Node or Ollama distributions or archives. This correction supplies S4's runtime prerequisite without implementing daemon lifecycle or migration behavior. Current acceptance and S4 handoff cover macOS/Linux only, following the user's explicit Windows deferral. Windows technical contracts stay documented, but its native qualification, ownership prerequisite and target enablement remain deferred and cannot be credited from POSIX evidence. Manual-review rework restores one full application integrity proof per install/upgrade/recovery operation, isolates writable build tools, and explicitly states the same-user runtime and publisher trust boundaries. Ordinary production deadlines are fixed; qualification chooses slow budgets only through an explicit trusted context."
     },
     "contractDetails": {
       "surfaceLevel": "internal-shared",
@@ -155,7 +144,8 @@
           "postconditions": [
             "Absolute node/npm/header paths are contained in the exact verified distribution; no PATH, tools/node, legacy layout or process.execPath fallback.",
             "Verify bounded receipt/inventory against release-owned pinned distribution inventory digest; verify each selected file's digest/size/mode and exact tree membership once per resolution. No application/Ollama payload traversal. Consumer may pass this result within the same launch operation, never persist a JS capability as a wire flag.",
-            "The change has no known production callers of the former helper; add real consumers in this correction, with S4 consuming it later."
+            "The change has no known production callers of the former helper; add real consumers in this correction, with S4 consuming it later.",
+            "Process-local verified results may be reused only for the same explicit location/full identity within one operation. No global cache or persisted trust flag; each new worker/process independently verifies its runtime before admission."
           ]
         },
         {
@@ -224,13 +214,15 @@
           "preconditions": [
             "Before using any Node executable, script hashes it against the release-owned nodeSha256 for the pinned distribution profile. Fresh archive digest is verified before extraction/execution.",
             "Cached canonical runtime reuse first verifies that exact node executable with OS hashing, then runs only trusted embedded verifier/control bytes after their digest checks; no receipt-supplied code is executed.",
-            "Grounding and proposed correction are traced by c1,c2,c7; public/behavioral constraints by c4,c6,c8."
+            "Grounding and proposed correction are traced by c1,c2,c7; public/behavioral constraints by c4,c6,c8.",
+            "The target including baseline is required; no implicit baseline. Normalize repeated/trailing home separators before creating stages. Immediately before final handoff, OS-hash canonical Node, bootstrap and native control assets again."
           ],
           "postconditions": [
             "No host Node needed. Valid matching runtime/control may be reused offline; missing runtime requires live official download, and missing uncached control assets fail offline.",
             "Fresh bootstrap runtime publication helper holds the same native operation.lock used by managers and exits before final canonical-node manager acquires a fresh lock; the shell/PowerShell waits for that exact child, not PID/kill/file age.",
             "Final manager revalidates controller state and ordinary admission; bootstrap does not transfer an OS handle, manager session or selection authority.",
-            "Windows publication never renames/moves the currently executing staged node.exe or loaded native DLL: helper executes from one owned stage and publishes a separate verified copy with native directory publication. Retain the execution stage until exact helper exit."
+            "Windows publication never renames/moves the currently executing staged node.exe or loaded native DLL: helper executes from one owned stage and publishes a separate verified copy with native directory publication. Retain the execution stage until exact helper exit.",
+            "INT/TERM/HUP during foreground publication are recorded; after observing the exact child's exit, clear active-child state, clean only owned closed stages and return the signal exit status. If exact exit cannot be confirmed retain evidence. A residual same-user race between path hashing and path execution, including ancestor replacement, is accepted; no claim of fd-bound execution."
           ]
         }
       ]
@@ -251,7 +243,7 @@
       {
         "entity": "RuntimeStoreEntry and RuntimeCompletion",
         "change": "new",
-        "details": "Canonical root is <home>/runtimes/22.22.1/<os>-<arch>-<validated-baseline>/<archiveSha256>/; distribution/ contains the exact profiled runtime, inventory.json lists path/bytes/mode/sha256, completion.json is a bounded schemaVersion1 canonical private record naming full RuntimeIdentity, profileVersion, policy-bound inventorySha256 and npm/header versions. Inventory hash must equal the release-owned policy value, not merely a receipt-supplied hash. Completion plus inventory do not self-authenticate arbitrary bytes. One home has 0..N runtime entries, each entry owns exactly one distribution, inventory and completion; each application release refers to exactly one RuntimeIdentity; 0..N bundle/dev releases may share it. Entries are immutable after publication, never selected by free-form path and never removed by application cleanup. Do not add per-release pointer files. Use private current-user ownership/ACL, local filesystem, no symlink/reparse/hardlink/special-file acceptance; no writes from the resolver. Metadata/path/file/tree counts, sizes and runtime I/O have explicit fixed finite bounds in implementation tests. Fixed runtime limits: completion 64 KiB, inventory 16 MiB, 32768 entries, 128 MiB per file, 1 GiB expanded and 256 MiB per compressed asset; reject excess before allocation/publication. Network operation deadline 600 s and read-only verification deadline 120 s are finite, cancellable runtime-only budgets and are qualified on enabled targets; no 20 s full-payload assumption. These caps do not broaden application bundle limits. (c1,c2,c7)",
+        "details": "Canonical root is <home>/runtimes/22.22.1/<os>-<arch>-<validated-baseline>/<archiveSha256>/; distribution/ contains the exact profiled runtime, inventory.json lists path/bytes/mode/sha256, completion.json is a bounded schemaVersion1 canonical private record naming full RuntimeIdentity, profileVersion, policy-bound inventorySha256 and npm/header versions. Inventory hash must equal the release-owned policy value, not merely a receipt-supplied hash. Completion plus inventory do not self-authenticate arbitrary bytes. One home has 0..N runtime entries, each entry owns exactly one distribution, inventory and completion; each application release refers to exactly one RuntimeIdentity; 0..N bundle/dev releases may share it. Installer code never mutates published entries; they are never selected by free-form path or removed by application cleanup. This is logical immutability, not an OS security guarantee against the same user: current pinned modes remain0644/0755 files and0700 directories, and any same-user process can change them. Independent exact-tree verification detects corruption at the next trust boundary and fails closed. Do not claim read-only protection or automatic repair. Do not add per-release pointer files. Use private current-user ownership/ACL, local filesystem, no symlink/reparse/hardlink/special-file acceptance; no writes from the resolver. Metadata/path/file/tree counts, sizes and runtime I/O have explicit fixed finite bounds in implementation tests. Fixed runtime limits: completion 64 KiB, inventory 16 MiB, 32768 entries, 128 MiB per file, 1 GiB expanded and 256 MiB per compressed asset; reject excess before allocation/publication. Ordinary production network deadline600s and read-only verification120s are fixed finite cancellable runtime-only budgets independent of INSRC_QUALIFICATION_PROFILE, including invalid values. Only a trusted qualifier entrypoint may select existing bounded slow-vm budgets and inject an internal process-local deadline policy; caller input, requests, installed receipts and ordinary env cannot select it. Child qualifier workers need a documented explicit launch-only context installed before importing runtime modules; ambient environment alone is insufficient. No20s full-payload assumption. These caps do not broaden application bundle limits. (c1,c2,c7)",
         "callSites": [
           "src/installer/runtime-policy.ts",
           "src/installer/installed-receipt.ts",
@@ -262,7 +254,7 @@
       {
         "entity": "Runtime acquisition and bootstrap handoff",
         "change": "new",
-        "details": "Proposed internal src/installer/runtime-acquire.ts provides controller-owned acquisition using the existing ControllerStore/PreparationLease lock capability; it is not an added public manager action. It accepts validated identity and location plus live owner checks, never wire trust flags or arbitrary runtimeDirectory. Reuse verified matching entry before network. Missing entry: live official HTTPS download under fixed per-asset caps/deadline, pinned archive digest, bounded safe extraction of exact deterministic profile, private stage, Node/npm/header/library/version/target inventory checks, durable receipt/inventory, native exclusive directory publication under operation.lock. Conflicting/incomplete immutable destination is an error and is retained; never overwrite or infer actor death. Bootstrap uses the same policy/profile/receipt validation compiled into a minimal digest-bound control helper: all Node/control bytes verified before execution; helper acquires operation.lock, checks real owner/root, publishes from nonexecuting stage and exits. It does not enroll/select a release or pretend an admitted install finished. Outer script observes exact child exit and starts final manager under canonical verified Node, obtaining ordinary fresh ownership. If installed manager already holds the controller lock, acquisition reuses that original capability and never creates a second controller. Keep staged downloads/network handles closed before cleanup; no new supervisor, PID/kill control or privileged dependency. (c1,c2,c7)",
+        "details": "Proposed internal src/installer/runtime-acquire.ts provides controller-owned acquisition using the existing ControllerStore/PreparationLease lock capability; it is not an added public manager action. It accepts validated identity and location plus live owner checks, never wire trust flags or arbitrary runtimeDirectory. Reuse verified matching entry before network. Missing entry: live official HTTPS download under fixed per-asset caps/deadline, pinned archive digest, bounded safe extraction of exact deterministic profile, private stage, Node/npm/header/library/version/target inventory checks, durable receipt/inventory, native exclusive directory publication under operation.lock. Conflicting/incomplete immutable destination is an error and is retained; never overwrite or infer actor death. Bootstrap uses the same policy/profile/receipt validation compiled into a minimal digest-bound control helper: all Node/control bytes verified before execution; helper acquires operation.lock, checks real owner/root, publishes from nonexecuting stage and exits. It does not enroll/select a release or pretend an admitted install finished. Outer script observes exact child exit and starts final manager under canonical verified Node, obtaining ordinary fresh ownership. If installed manager already holds the controller lock, acquisition reuses that original capability and never creates a second controller. Keep staged downloads/network handles closed before cleanup; no new supervisor, PID/kill control or privileged dependency. (c1,c2,c7) Corrupt/incomplete canonical entries are retained and acquisition reports runtime-invalid with recovery guidance. Recovery is explicitly operator-only: stop all consumers of that home/runtime through their supported shutdown and retained process-exit acknowledgements; close every installer/build worker; if any actor is uncertain, stop without changing the entry. With no consumers/writers, use the authenticated terminal bootstrap from outside the corrupt runtime, acquire the existing operation.lock, and have an explicit operator move preserve the entire exact corrupt identity directory outside the canonical namespace. Keep its bytes/diagnostics; rerun the ordinary installer to reacquire and independently verify the missing official runtime. The product does not automate this move, add a manager action, infer closure from lock absence/PID/age, or use install Retry to repair UPDATE. Operator procedure must be documented/tested in isolated homes, with uncertain-closure refusal. Host v2 remains untouched.",
         "callSites": [
           "scripts/render-installer-bootstrap.mjs",
           "scripts/bootstrap-publish.cjs",
@@ -275,7 +267,7 @@
       {
         "entity": "Application-only bundle descriptor and dev receipt",
         "change": "field-modify",
-        "details": "Private ReleaseDescriptor schemaVersion2 removes runtimeArchive entirely; manifest.runtime retains exact official identity. PayloadInventory schemaVersion1 is now application-only for descriptor2. Private DevReleaseReceipt advances to schemaVersion2 and its recipeVersion advances for application-only inventory; old receipts/offers remain distinguishable and incompatible, not silently rewritten. All canonical hashing/offer persistence/readers are updated together. App inventory includes runtime native dependencies (e.g. .node modules), bootstrap/manager/TUI and production closure, but no Node/Ollama executable/distribution/archive contributions. Publisher collects app allowlisted sources independently from the official runtime used for build/probes; provenance/inventory checks catch renamed dependency archive/distribution inclusion, rather than claiming filename matching can identify arbitrary compressed bytes. Runtime archives may be transient publisher/download/test inputs outside app/IDE payloads. Native qualification, inventory limits, exact source/target/offer hashes and unsafe archive checks remain. Reject old embedded-runtime formats diagnostically; no automatic adoption, migration, uninstall or modification of host v2. (c1,c2,c7)",
+        "details": "Private ReleaseDescriptor schemaVersion2 removes runtimeArchive entirely; manifest.runtime retains exact official identity. PayloadInventory schemaVersion1 is now application-only for descriptor2. Private DevReleaseReceipt advances to schemaVersion2 and its recipeVersion advances for application-only inventory; old receipts/offers remain distinguishable and incompatible, not silently rewritten. All canonical hashing/offer persistence/readers are updated together. App inventory includes runtime native dependencies (e.g. .node modules), bootstrap/manager/TUI and production closure, but no Node/Ollama executable/distribution/archive contributions. Publisher collects the out tree and resolved production dependency closure independently from runtime build/probe inputs. Its actual guarantee is source containment in allowed roots (or exact generated files), rejection of explicit excluded runtime/download roots even after destination renaming, blocked runtime/Ollama paths/basenames, and rejection of known independently pinned archive/executable/header-archive/node.lib digests. It is not a positive executable/package allowlist or proof of the origin of arbitrary bytes. Unknown-version binaries, recompressed archives, copied unpinned npm/header/Ollama library files can evade known-content checks; trusted release source/dependency review remains required. Do not blindly deny per-file common license/vendor JS hashes, which can legitimately occur in application dependencies. Collector opens every regular file through captured traversal identity with no-follow/identity recheck, including single-link files; no late path-only read. Runtime archives may be transient publisher/download/test inputs outside app/IDE payloads. Native qualification, inventory limits, exact source/target/offer hashes and unsafe archive checks remain. Reject old embedded-runtime formats diagnostically; no automatic adoption, migration, uninstall or modification of host v2. (c1,c2,c7)",
         "callSites": [
           "src/installer/release-descriptor.ts",
           "src/installer/bundle.ts",
@@ -289,7 +281,7 @@
       {
         "entity": "Installed launch and preparation binding",
         "change": "invariant-change",
-        "details": "manager-entry and terminal-entry resolve explicit location plus receipt/policy identity and compare realpath process.execPath to resolved node before control work. Installed manager, daemon launch selection, TUI, Retry, bootstrap and publisher probes all consume the same foundation; no release tools/node selection remains. productionPeers receives the verified result for dependency/toolchain use; S3 runtime readiness uses verified external paths rather than a directory guess. Both bundle and dev preparation resolve/acquire the candidate manifest identity under original manager ownership before destructive lifecycle work and use absolute verified npm/header/node paths; dev payload/publisher omit runtime bytes. No source checkout/npm/compiler is used for installed start/status or receipt resolution. Existing S2 closed-worker/source proof, S3 consent/Retry/retained Ollama and same-terminal TUI behavior remain. This batch does not supply fake lifecycle/migration peers or change manager action gates; S4 T3/T11 consume the runtime resolver after this batch passes. (c1,c2,c7) Current-build execution coverage applies to existing owned bundle/dev, manager/terminal, TUI/Retry, bootstrap and publisher consumers. Main-epic S7 owns the future Windows bridge transport process and its runtime-selection/execution tests; this foundation exposes the resolver for that owner and does not implement or claim to test an absent bridge process. (c13,c14,c15)",
+        "details": "manager-entry and terminal-entry resolve explicit location plus receipt/policy identity and compare realpath process.execPath to resolved node before control work. Installed manager, daemon launch selection, TUI, Retry, bootstrap and publisher probes all consume the same foundation; no release tools/node selection remains. productionPeers receives the verified result for dependency/toolchain use; S3 runtime readiness uses verified external paths rather than a directory guess. Both bundle and dev preparation resolve/acquire the candidate manifest identity under original manager ownership before destructive lifecycle work and use absolute verified npm/header/node paths; dev payload/publisher omit runtime bytes. No source checkout/npm/compiler is used for installed start/status or receipt resolution. Existing S2 closed-worker/source proof, S3 consent/Retry/retained Ollama and same-terminal TUI behavior remain. This batch does not supply fake lifecycle/migration peers or change manager action gates; S4 T3/T11 consume the runtime resolver after this batch passes. (c1,c2,c7) Current-build execution coverage applies to existing owned bundle/dev, manager/terminal, TUI/Retry, bootstrap and publisher consumers. Main-epic S7 owns the future Windows bridge transport process and its runtime-selection/execution tests; this foundation exposes the resolver for that owner and does not implement or claim to test an absent bridge process. (c13,c14,c15) Full application integrity is a distinct activation/recovery boundary: fresh preparation verifies/extracts every inventory member and yields an operation-local identity-bound proof; manager repeated verify calls reuse that proof only within the same operation. Recovered/newly reopened candidates require one full inventory file hash/exact-tree verification before quiesce, migrations or activation, then reuse it for subsequent checks in that operation. Start/status/readiness/TUI control opening stays bounded and never traverses full application/Ollama payloads. Proofs are neither serialized nor accepted from wire flags or receipts; failed/cancelled or new operations cannot inherit them. Dev and bundle paths follow the same rule; tests truncate non-control modules/addons after preparation then simulate a new recovery operation. Within-process runtime results are likewise passed through when identity/home matches, avoiding redundant resolution; Ollama runtime resolution/binding happens before admission/frame creation/readiness deadline, and a new worker verifies before control work.",
         "callSites": [
           "src/installer/installed-launcher.ts",
           "src/installer/manager-entry.ts",
@@ -304,7 +296,7 @@
       {
         "entity": "External installer epic compatibility constraints",
         "change": "invariant-change",
-        "details": "This ISSUE is standalone and has no formal parent shared-contract entries. External epic c3d71313f34bce71 HLD7 sc1–sc7 are compatibility references only: preserve its public runtime/manifest/manager/dependency/IPC/terminal shapes, keep S4 daemon lifecycle and S5 hook execution owned by their existing stories, and leave action-specific manager gating outside this batch. No shared contract is re-owned or redefined. Local acceptance ac1–ac6 are derived from this approved issue, not new epic FRs. See cited prior ISSUE/HLD/S004 PLAN (c4,c6,c8). (c1,c2,c7) S7 also retains its Windows bridge process implementation and runtime-selection/execution coverage. Its existing approved ownership is not moved into this standalone correction. (c13,c14)",
+        "details": "This ISSUE is standalone and has no formal parent shared-contract entries. External epic c3d71313f34bce71 HLD7 sc1–sc7 are compatibility references only: preserve its public runtime/manifest/manager/dependency/IPC/terminal shapes, keep S4 daemon lifecycle and S5 hook execution owned by their existing stories, and leave action-specific manager gating outside this batch. No shared contract is re-owned or redefined. Local acceptance ac1–ac6 are derived from this approved issue, not new epic FRs. See cited prior ISSUE/HLD/S004 PLAN (c4,c6,c8). (c1,c2,c7) S7 also retains its Windows bridge process implementation and runtime-selection/execution coverage. Its existing approved ownership is not moved into this standalone correction. (c13,c14) Release-owned target execution/publication gating explicitly excludes Windows while deferred, independently of self-declared NativeQualification input. Policy metadata extraction may still inspect foreign archives without execution; qualified-target enabling needs a separate reviewed release-owned change. CI Windows qualification is absent or explicit opt-in default-false; never run it in this macOS/Linux scope.",
         "callSites": [
           "src/installer/contracts.ts"
         ]
@@ -316,7 +308,7 @@
         {
           "scenario": "Missing or corrupt external runtime",
           "detection": "Resolver requires exact policy/full identity, canonical completion and inventory; pinned expected inventory digest plus exact file set/digests/modes/npm/header checks detect absent or changed bytes, including rewritten self-consistent local metadata.",
-          "response": "Read-only consumer fails runtime-invalid without download, PATH/tools-node fallback or application import. Acquisition handles only missing entries under controller ownership; conflicting canonical entries are retained for explicit recovery.",
+          "response": "Read-only consumers and acquisition fail runtime-invalid on an existing corrupt entry with explicit recovery guidance; no download-overwrite, automatic quarantine, PATH fallback or application import. Preserve the entry. Operator-only offline recovery requires positive consumer/worker shutdown and original operation.lock ownership using authenticated external control, then explicit preservation/move outside the canonical namespace and ordinary reacquisition; uncertain closure forbids the move.",
           "userImpact": "Launch/preparation stops before daemon disruption or store access with actionable runtime diagnosis.",
           "recoverable": true
         },
@@ -363,10 +355,38 @@
           "recoverable": true
         },
         {
-          "scenario": "Runtime/application payload provenance contamination",
-          "detection": "Publisher separates runtime acquisition inputs from application collection and validates an allowlisted production closure/inventory; tests deliberately attempt ordinary and renamed runtime/archive contributions. Bundle/dev validators enforce format2 application semantics.",
-          "response": "Reject publication or candidate; do not silently strip unknown files or declare that filename filters detect all arbitrary binary content.",
-          "userImpact": "No Node/Ollama distributions or archives shipped in app/IDE artifacts.",
+          "scenario": "Known runtime contribution contaminates application payload",
+          "detection": "Allowed real source roots/exact generated files, explicitly excluded runtime/download inputs, blocked inventory paths and known independently pinned digests. These checks catch exact known contributions even when destination keys are renamed. They cannot infer arbitrary byte provenance.",
+          "response": "Reject the known or source-excluded contribution. Do not claim unknown-version/recompressed/copied unpinned SDK content is detected or silently stripped; dependency/source review is still required.",
+          "userImpact": "Release assembly enforces its documented known-content/source boundary, not universal distribution identification.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Non-control application member corrupted before recovery/activation",
+          "detection": "New/recovered install/upgrade operation lacks fresh process-local preparation proof, so verify complete inventory/tree and every member before destructive lifecycle steps. Truncated modules/addons must fail.",
+          "response": "Stop before quiesce/migration/activation. Retain candidate/evidence under existing recovery semantics. Reuse successful fresh proof only within the same operation; no serialized trust marker and no repeated full scans on status/readiness.",
+          "userImpact": "Corruption cannot be activated simply because bounded control files still pass.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Runtime publication succeeds but parent directory flush fails",
+          "detection": "Distinguish publication completion from later durability/close steps; wrap unexpected canonical-entry lstat errors in InstallerError.",
+          "response": "Use resource-close-uncertain for postpublication durability/closure uncertainty, retain canonical entry and owned evidence, never overwrite/retry by inference. Classify inaccessible entry as permissions-invalid or runtime-invalid with cause.",
+          "userImpact": "Actionable coded failure identifies uncertain publication and retained evidence.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Previous launcher release cannot resolve",
+          "detection": "Distinguish changed/unowned launcher bytes from recognized owner whose predecessor is legacy, missing or corrupt.",
+          "response": "Return a specific legacy-runtime-format or launcher-predecessor-unresolvable diagnostic with recovery guidance; do not falsely classify known owned launcher as unrelated, overwrite unknown bytes or claim TUI handoff succeeded.",
+          "userImpact": "Post-install failure explains the actual predecessor condition instead of repeating generic ownership conflict.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Ordinary process inherits invalid qualification selector",
+          "detection": "Production runtime/download modules use fixed constants; they do not import env-selected qualification budgets.",
+          "response": "Ignore INSRC_QUALIFICATION_PROFILE in ordinary control. Only trusted qualifier entrypoint validates/installs explicit bounded context before module import, with typed qualifier error there.",
+          "userImpact": "Stray normal/slow-vm/invalid values cannot change ordinary deadlines or break module loading.",
           "recoverable": true
         }
       ],
@@ -398,6 +418,14 @@
         {
           "input": "The user explicitly defers Windows and asks to continue macOS/Linux acceptance.",
           "expected": "Require actual macOS/Linux foundation proofs and current scoped regression for this handoff. Keep the Windows native subject deferred under ISSUE-cab5701fbefab736, never pass it from an availability diagnostic or POSIX result, and leave Windows enablement disabled."
+        },
+        {
+          "input": "Same-user process changes a runtime or swaps an ancestor between hash and exec",
+          "expected": "Current-user ownership is the boundary, not protection against that same user. Verification catches subsequent corruption but cannot eliminate path hash-to-exec races; final canonical checks narrow them. Preserve and document this accepted limitation."
+        },
+        {
+          "input": "Ordinary npm/native build writes next to tooling or headers",
+          "expected": "Writable npm/node-gyp/header/library inputs are isolated copies under the positively owned build workspace and cleaned only after actor closure. Executing Node remains canonical; copies are checked against the verified source at setup and not treated as a new persistent runtime."
         }
       ],
       "invariantsToPreserve": [
@@ -424,6 +452,10 @@
         {
           "text": "S4 owns daemon boot/admission/data lease/shutdown/wrapper; S5 hooks and action-specific manager gating are outside this correction.",
           "source": "c6"
+        },
+        {
+          "text": "Fresh full application preparation proof may be reused only within its operation; new/recovered operation revalidates once, while launch/status remains bounded. No same-user OS immutability or universal publisher provenance claim.",
+          "source": "c17"
         }
       ]
     },
@@ -450,15 +482,18 @@
             "resolver-rejects-missing-corrupt-extra-files-wrong-mode-target-digest-npm-headers-inventory-receipt",
             "rewritten-self-consistent-local-runtime-metadata-cannot-replace-policy-inventory-digest",
             "resolver-does-no-mkdir-download-lock-selection-db-or-provider-work",
-            "runtime-caps-and-cancellation-are-finite-and-do-not-trigger-app-or-Ollama-hashing"
+            "runtime-caps-and-cancellation-are-finite-and-do-not-trigger-app-or-Ollama-hashing",
+            "runtime-rejection-matrix-proves-positive-baseline-and-exact-diagnostic-for-each-mutation",
+            "ordinary-runtime-deadlines-ignore-qualification-env-and-trusted-qualifier-remains-bounded"
           ],
           "fixturesNeeded": [
-            "Protected isolated runtime stores, independent pinned profile expectations and FS/network/DB traps."
+            "Protected isolated runtime stores, independent pinned profile expectations and FS/network/DB traps.",
+            "Fresh or positively restored runtime fixture before every negative case, exact code/message matchers, positive resolution after restoration; ordinary module import with unset/normal/slow-vm/invalid selector; explicit trusted qualifier-context propagation."
           ]
         },
         {
           "level": "integration",
-          "purpose": "Prove actual bootstrap/publication ordering, reuse and existing owned installed consumer paths; the unbuilt S7 bridge process and its execution coverage remain with S7.",
+          "purpose": "Prove actual bootstrap/publication ordering, reuse and existing owned installed consumer paths; the unbuilt S7 bridge process and its execution coverage remain with S7. Manual-review cases include actual production publication branch, real INT/TERM/HUP group signals after deterministic readiness, path aliases and cached/final canonical asset tampering. Verify worker runtime before admission; reuse process-local resolved runtime and place Ollama readiness window after resolution. Reject Windows execution/publication despite self-declared evidence; CI is opt-in or absent. Check exact postpublication/legacy/predecessor diagnostics. Collector must identity-check all file opens; excluded-source fixture lives inside a collected tree. All fixture transports refuse unknown URLs.",
           "subjects": [
             "bootstrap-no-host-node-verifies-archive-and-executable-before-execution",
             "verified-runtime-and-control-reuse-offline-across-bundle-and-dev",
@@ -467,10 +502,13 @@
             "runtime-stage-cancellation-conflict-and-uncertain-closure-retain-safe-state",
             "bundle-dev-manager-terminal-TUI-Retry-and-publisher-probes-use-shared-resolver",
             "private-dev-node-npm-headers-native-env-and-worker-source-closure-preserved",
-            "publisher-app-and-IDE-inventory-exclude-Node-Ollama-distributions-and-archives-including-renamed-contributions"
+            "publisher-app-and-IDE-inventory-exclude-Node-Ollama-distributions-and-archives-including-renamed-contributions",
+            "application-integrity-once-per-operation-and-full-recovery-before-activation",
+            "writable-dev-SDK-isolated-from-shared-runtime-and-explicit-offline-recovery"
           ],
           "fixturesNeeded": [
-            "Trap host node/npm binaries; actual helper/controller subprocesses and native lock; closed actor evidence; isolated homes with spaces/Unicode; bounded deterministic HTTPS transport fixture."
+            "Trap host node/npm binaries; actual helper/controller subprocesses and native lock; closed actor evidence; isolated homes with spaces/Unicode; bounded deterministic HTTPS transport fixture.",
+            "Fresh preparation proof reused through repeated checks; recovery in a new operation after truncating a non-control module/addon must fail before destructive peers. Counter/trap confirms only one full payload scan per operation. Isolated writable SDK gets lifecycle writes while canonical runtime remains exact; corrupt store fails with documented operator guidance and uncertain closure prevents any operator move. Qualifier compares publication path with actual helper staged executable, not orchestrator."
           ]
         },
         {
@@ -506,7 +544,9 @@
             "runtime-policy-exact-identity-target-baseline-profile-and-pinned-inventory",
             "resolver-returns-canonical-node-npm-headers-and-win-library-from-exact-identity",
             "resolver-rejects-missing-corrupt-extra-files-wrong-mode-target-digest-npm-headers-inventory-receipt",
-            "rewritten-self-consistent-local-runtime-metadata-cannot-replace-policy-inventory-digest"
+            "rewritten-self-consistent-local-runtime-metadata-cannot-replace-policy-inventory-digest",
+            "runtime-rejection-matrix-proves-positive-baseline-and-exact-diagnostic-for-each-mutation",
+            "ordinary-runtime-deadlines-ignore-qualification-env-and-trusted-qualifier-remains-bounded"
           ]
         },
         {
@@ -522,7 +562,8 @@
           "provingTests": [
             "bundle-dev-manager-terminal-TUI-Retry-and-publisher-probes-use-shared-resolver",
             "resolver-import-boundary-excludes-application-paths-storage-provider-and-source-build",
-            "private-dev-node-npm-headers-native-env-and-worker-source-closure-preserved"
+            "private-dev-node-npm-headers-native-env-and-worker-source-closure-preserved",
+            "writable-dev-SDK-isolated-from-shared-runtime-and-explicit-offline-recovery"
           ]
         },
         {
@@ -532,7 +573,8 @@
             "bootstrap-native-operation-lock-exclusive-publication-exact-helper-exit-then-fresh-manager-lock",
             "bootstrap-publication-stage-distinct-from-running-node-and-loaded-native-library",
             "runtime-stage-cancellation-conflict-and-uncertain-closure-retain-safe-state",
-            "resolver-does-no-mkdir-download-lock-selection-db-or-provider-work"
+            "resolver-does-no-mkdir-download-lock-selection-db-or-provider-work",
+            "application-integrity-once-per-operation-and-full-recovery-before-activation"
           ]
         },
         {
@@ -554,11 +596,11 @@
           ]
         }
       ],
-      "testFramework": "Existing node:test TypeScript suites run by the repository's canonical npm test coordinator under Node22.22.1 with tsx; extend src/installer/__tests__/bootstrap.test.ts, src/installer/__tests__/bundle.test.ts, src/installer/__tests__/publisher.test.ts and the named dev/terminal surrounding suites. Per user instruction run only surrounding tests per task, then the full scoped installer regression after every task is built. Native qualifications are recorded separately with exact platform/runtime/actor cleanup evidence; do not claim unavailable Windows/VM evidence. Local ac1–ac6 respectively name the approved issue's runtime-integrity, external-delivery, consumer-binding, safe-publication/reuse, preserved-behavior and native-evidence groups (the issue-* ids scored in s3). The current consumer integration subject covers existing owned consumers only. Execute the actual publisher probe and real Retry entry, including truthful missing-production-peer failures; do not fabricate successful lifecycle or bridge evidence. Main-epic S7 owns the future Windows bridge process and its runtime-selection/execution tests, as already defined by S001 LLD section3.9 and S007 LLD section3.4. Its eventual implementation must consume the same shared resolver; the Windows native subject is retained as deferred work and is required before future Windows enablement, outside the current macOS/Linux foundation completion gate. User direction on 2026-11-28 limits current ac6 and T10 completion to macOS/Linux live subjects plus unavailable-target exclusion. The original subject native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication is deferred under ISSUE-cab5701fbefab736, not passed or deleted from future Windows qualification. Preserve the prior 21 non-live subjects and existing accepted T1–T9 implementation; active subjects total24 plus one deferred Windows subject. Reuse retained native/regression proof only when exact relevant production/build-input equivalence and closure/source pins are established; otherwise rerun affected qualification. Controller-only review changes require their affected checks and accurate historical source labelling."
+      "testFramework": "Existing node:test TypeScript suites run by the repository's canonical npm test coordinator under Node22.22.1 with tsx; extend src/installer/__tests__/bootstrap.test.ts, src/installer/__tests__/bundle.test.ts, src/installer/__tests__/publisher.test.ts and the named dev/terminal surrounding suites. Per user instruction run only surrounding tests per task, then the full scoped installer regression after every task is built. Native qualifications are recorded separately with exact platform/runtime/actor cleanup evidence; do not claim unavailable Windows/VM evidence. Local ac1–ac6 respectively name the approved issue's runtime-integrity, external-delivery, consumer-binding, safe-publication/reuse, preserved-behavior and native-evidence groups (the issue-* ids scored in s3). The current consumer integration subject covers existing owned consumers only. Execute the actual publisher probe and real Retry entry, including truthful missing-production-peer failures; do not fabricate successful lifecycle or bridge evidence. Main-epic S7 owns the future Windows bridge process and its runtime-selection/execution tests, as already defined by S001 LLD section3.9 and S007 LLD section3.4. Its eventual implementation must consume the same shared resolver; the Windows native subject is retained as deferred work and is required before future Windows enablement, outside the current macOS/Linux foundation completion gate. User direction on 2026-11-28 limits current ac6 and T10 completion to macOS/Linux live subjects plus unavailable-target exclusion. The original subject native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication is deferred under ISSUE-cab5701fbefab736, not passed or deleted from future Windows qualification. Retain the prior24 subjects and add4 review-specific subjects (28 current plus1 deferred Windows subject). Existing T1–T9 ownership/work is retained, but affected findings return to their owners for rework and current validation. Reuse retained native/regression proof only when exact relevant production/build-input equivalence and closure/source pins are established; otherwise rerun affected qualification. Controller-only review changes require their affected checks and accurate historical source labelling. Review findings1–17 andT1–T6 must each carry an explicit disposition/evidence entry; no broad negative assertion, fixture-only production-branch claim or unknown-URL network fallback. Existing ten task IDs/dependencies remain; revised PLAN maps added/strengthened subjects to their existing owners. Do not ask for per-task human approval; final Story BUILD approval follows all task validation, scoped regression and current affected macOS/Linux native evidence."
     },
     "migration": {
-      "stateBefore": "Completed bounded s1 context bundles (c1,c2,c5) show bundle/dev validation, installed launchers and publisher retaining tools/node plus runtime archive payloads, while runtime-policy has only a path constructor. Existing completed epic S1/S2 artifacts are preserved. Host v2 is outside this transition. This bounded revision changes acceptance timing only; the existing revision4 format-migration design is retained, with no new data migration executed.",
-      "stateAfter": "New application-only descriptor2/dev receipt2 and independent verified runtime store are used together by new rewrite installations. Public manifest/identity/IPC stay unchanged; old embedded-runtime private formats are identified and rejected, never automatically converted. Current completion qualifies macOS/Linux; Windows qualification remains deferred and its target disabled.",
+      "stateBefore": "Review at4ec83d006f7b against approved LLD5/PLAN3: analyzer anchors existing verified runtime acquisition/resolution and payload verifier; direct source review confirms bounded open/verify replaces the former full recovery check, owner-writable pinned runtime profile and ambient qualification-module coupling. Existing macOS/Linux native proofs retain original execution pins and do not cover this rework. Original format transition described below remains, host v2 untouched.",
+      "stateAfter": "New application-only descriptor2/dev receipt2 and independent verified runtime store are used together by new rewrite installations. Public manifest/identity/IPC stay unchanged; old embedded-runtime private formats are identified and rejected, never automatically converted. Current completion qualifies macOS/Linux; Windows qualification remains deferred and its target disabled. Review rework changes internal proof reuse, writable build inputs and honest trust/error boundaries only; it does not introduce persistent trust tokens, a new runtime profile format, automatic runtime replacement, new lifecycle actions or legacy data migration.",
       "migrationSteps": [
         {
           "order": 1,
@@ -579,6 +621,11 @@
           "order": 4,
           "action": "After corrective build validation and human approval, S4 resumes consumption of the verified runtime foundation. Any real legacy installation or application-data migration remains a separately approved S5 hook concern; no host migration or release selection is performed by this correction.",
           "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Re-admit existing owning tasks after revised LLD/PLAN human approval; implement review corrections and retain exact prior native execution pins as historical. Rerun each task's surrounding checks, final scoped regression and affected macOS/Linux qualification. Recover corrupt runtime only by explicit documented operator action after every consumer/worker is positively stopped and operation.lock held; uncertain closure blocks changes. No automation or host action in this build.",
+          "rollbackable": true
         }
       ],
       "backwardCompat": "Public RuntimeIdentity, ReleaseManifest schemaVersion1, manager/IPC and terminal contracts remain. The formerly unused privateRuntimePaths helper gains an asynchronous verified-resolver signature and all new consumers are updated together. Private bundle descriptor1/dev receipt1 and old dev recipe are deliberately incompatible and diagnosed; they are not public release formats to reinterpret. No automatic legacy fallback/adoption or completed-artifact rewrite. Old host v2 remains running as instructed.",
@@ -588,33 +635,37 @@
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Preserve runtime contracts and stage platform acceptance",
-        "oneLineSummary": "Complete genuine macOS/Linux foundation qualification now; defer Windows native execution and enablement.",
-        "approach": "Retain the existing revision4 runtime/data/ownership design and all target-specific proof requirements. Limit the current completion gate and S4 handoff to the macOS/Linux native subjects plus explicit unqualified-target guards. Keep Windows native subjects documented as deferred under the existing Windows ownership prerequisite, with no passing result or target enablement inferred. Reuse the current qualifier; introduce no new contract or helper.",
+        "name": "Bounded rework with explicit trust boundaries",
+        "oneLineSummary": "Reuse existing verifiers and ownership, add operation-local integrity reuse and isolated writable SDK inputs, and state protection/recovery/provenance limits precisely.",
+        "approach": "Preserve public API and runtime profile bytes. Full application verification at preparation/recovery before destructive steps, process-local proof bound to candidate identity/operation; no duplicate verification in that operation. Launch/status remain bounded. Canonical runtime remains current-user protected and verified, with writable npm/header inputs copied to owner workspace; no security guarantee against arbitrary same-user writes. Corrupt canonical entries fail closed and require explicit offline operator recovery after positively stopping all consumers; uncertain closure blocks recovery. Publisher checks exact allowed source roots, explicit excluded input roots, blocked paths and known pinned content, without claiming universal provenance. Ordinary production budgets are constants; only explicit trusted qualifier context can choose slow budgets. Windows release execution gate remains closed.",
         "pros": [
-          "Matches the user's explicit priority.",
-          "Preserves accepted implementation and per-target integrity checks.",
-          "Uses the existing native qualifier and evidence records."
+          "Addresses review while retaining existing controller/action/profile contracts.",
+          "Does not introduce runtime replacement or consumer-lifetime protocol.",
+          "Avoids redundant multi-gigabyte hashing and isolates normal SDK writes."
         ],
         "cons": [
-          "Windows remains an incomplete supported-platform goal of the wider epic."
+          "Corrupt-entry recovery remains a manual operator procedure.",
+          "Unknown or transformed distribution content cannot be universally classified.",
+          "Same-user code can change writable owned bytes; verification fails subsequent operations."
         ],
-        "costEstimate": "XS"
+        "costEstimate": "M"
       },
       {
         "id": "a2",
-        "name": "Separate per-platform foundation work items",
-        "oneLineSummary": "Split remaining acceptance into separate platform-specific tracked foundation stories.",
-        "approach": "Retain identical runtime contracts but create separate macOS, Linux and Windows foundation acceptance stories with independent review/approval accounting. Preserve all existing evidence and leave Windows execution deferred. This changes tracking structure without adding runtime capability.",
+        "name": "OS-mode profile change and automated runtime replacement",
+        "oneLineSummary": "Regenerate all read-only profiles and add runtime consumer coordination/quarantine/reacquisition.",
+        "approach": "Change pinned inventory modes for published runtime distributions, add active-consumer lifetime management, controller-coordinated quarantine and reacquisition plus compatibility handling for every current entry. Add stronger per-file distribution classification while keeping full operation-local payload proof and fixed production budgets.",
         "pros": [
-          "Explicit independent platform acceptance ledgers."
+          "Reduces accidental writes to canonical files.",
+          "Could automate recovery when all consumers are proven stopped."
         ],
         "cons": [
-          "Adds tracking and document duplication to an otherwise bounded acceptance-scope decision.",
-          "Unnecessary to implement the user's requested macOS/Linux focus."
+          "Adds new lifecycle and compatibility protocol across shared consumers.",
+          "Owner can chmod/write regardless, so not a same-user security boundary.",
+          "Windows deferred and source-installed existing profile compatibility would need extra design/qualification."
         ],
-        "costEstimate": "M",
-        "reasonRejected": "Technically valid but adds tracking churn without required capability."
+        "costEstimate": "L",
+        "reasonRejected": "Adds a new consumer-lifetime/recovery and profile-compatibility protocol while owner modes cannot prevent same-user mutation; broader than this bounded correction."
       }
     ],
     "chosenAlternative": "a1",
@@ -640,7 +691,7 @@
           }
         },
         "RuntimeEntry": {
-          "description": "One immutable runtime identity under an explicit installation home; owned by the runtime foundation, not a release.",
+          "description": "One shared identity under an explicit installation home; logically immutable to installer code, verified but owner-writable against the same user. Releases do not own deletion.",
           "attributes": {
             "identity": {
               "description": "Exact version/full target/archive digest/profile key validated against pinned policy.",
@@ -712,7 +763,7 @@
         {
           "id": "store",
           "label": "External runtime store",
-          "description": "Canonical immutable distribution plus policy-bound inventory/completion, outside application payloads."
+          "description": "Canonical runtime entry never mutated by installer code; current-user protected and independently verified, but owner-writable against the same user. Outside application payloads."
         },
         {
           "id": "manager",
@@ -764,13 +815,13 @@
           "to": "terminal",
           "label": "Actual helper exit observed by its parent",
           "kind": "return",
-          "description": "Process exit releases helper lock ownership; close(void), record age and PID checks are not substitutes."
+          "description": "Process exit releases helper lock ownership; close(void), record age and PID checks are not substitutes. INT/TERM/HUP are recorded while child active; after exact exit, clear active state and clean only its owned stage, then return signal status."
         },
         {
           "from": "terminal",
           "to": "store",
-          "label": "Resolve canonical verified private runtime",
-          "description": "Fresh publication and cached reuse both bind to the same identity-derived store. Reuse need not download if required runtime/control assets are cached verified."
+          "label": "OS-hash canonical Node/bootstrap/native immediately before handoff",
+          "description": "Fresh and cached paths use independent release-owned digests. A residual same-user path/ancestor swap between hash and exec remains an accepted boundary."
         },
         {
           "from": "terminal",
@@ -816,9 +867,9 @@
         },
         {
           "id": "acquisition",
-          "label": "Controller-owned acquisition (proposed)",
+          "label": "Controller-owned acquisition",
           "path": "src/installer/runtime-acquire.ts",
-          "description": "New runtime acquisition implementation, not yet existing code; no additional public manager action."
+          "description": "Existing bounded acquisition/publication under the original controller capability; no automatic replacement or additional public action."
         },
         {
           "id": "bootstrap",
@@ -828,14 +879,20 @@
         },
         {
           "id": "store",
-          "label": "External immutable runtime entry",
-          "description": "Owns distribution/inventory/completion, independently of release lifetime."
+          "label": "External verified runtime entry",
+          "description": "Logically immutable to installer code, current-user protected but owner-writable. Shared independently of release lifetime; no automatic repair."
         },
         {
           "id": "app",
           "label": "Bundle/dev application receipt",
           "path": "src/installer/installed-receipt.ts",
           "description": "Reads application-only format2 receipts with unchanged public RuntimeIdentity metadata."
+        },
+        {
+          "id": "sdk",
+          "label": "Owned writable build SDK",
+          "path": "src/installer/dev-toolchain.ts",
+          "description": "One ephemeral npm/node-gyp/header/library copy per owned dev build workspace, derived from verified runtime. Node execution remains canonical; cleanup requires positive actor closure."
         }
       ],
       "dependencies": [
@@ -873,23 +930,27 @@
           "from": "app",
           "to": "store",
           "label": "Many releases reference one runtime identity, with no runtime payload ownership"
+        },
+        {
+          "from": "sdk",
+          "to": "resolver",
+          "label": "Copy verified tooling inputs once at build setup"
+        },
+        {
+          "from": "sdk",
+          "to": "store",
+          "label": "Read source; never write canonical npm/header files"
         }
-      ]
-    },
-    "adherence": {
-      "dimensions": [
-        "diagram-er",
-        "diagram-sequence",
-        "diagram-component",
-        "functional-coverage"
       ]
     },
     "epicImpact": {
       "applies": false,
-      "reason": "Standalone prerequisite; retain main epic boundary without claiming lifecycle completion.",
+      "reason": "Standalone foundation prerequisite, no sibling built Story in this unit.",
       "storiesCovered": [],
-      "findings": "No implementation changes proposed. Existing completed budget and controller prerequisites supply reusable evidence; S4 remains separately owned.",
-      "sources": []
+      "findings": "Preserve external installer epicS4 lifecycle/S5 hooks/S7 bridge ownership and approved budget/controller prerequisites.",
+      "sources": [
+        "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md"
+      ]
     },
     "companions": [
       {
@@ -1005,6 +1066,18 @@
       "kind": "stakeholder",
       "ref": "User instruction in chat, 2026-11-28",
       "quotedText": "keep widnows aside for now, focus on macos/linux. continue"
+    },
+    {
+      "id": "c17",
+      "kind": "doc",
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/REVIEW-FEEDBACK.md",
+      "quotedText": "Findings4–6 need either a fix or an explicit design decision recorded in the LLD; the review also requests production/qualification separation, reliable fixtures and documentation of the same-user path execution race."
+    },
+    {
+      "id": "c18",
+      "kind": "analyze-bundle",
+      "ref": "In-session insrc_analyze_step completed foundation integrity pass, 2026-11-28; source pin4ec83d006f7b plus T5 rework",
+      "quotedText": "Six function anchors and one inferred prepareBundle caller,24 qualification selector hits. No retrieved rule text; usage graph incomplete36ignoredrelationships. Supplementary direct source reads/rg used without a formal graph compliance verdict."
     }
   ]
 }

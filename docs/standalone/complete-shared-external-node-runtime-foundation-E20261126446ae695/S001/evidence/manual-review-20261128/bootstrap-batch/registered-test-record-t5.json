@@ -1,0 +1,293 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 22,
+        "contentHash": "a78bf30035ff2d9ce09d43e4ac786914a57b3079ee52aedc7a533219521d53a6",
+        "at": "2026-11-28T06:35:35.249Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "446ae69566d352dd",
+    "storyId": "s1",
+    "createdAt": "2026-11-26T07:40:02.075Z",
+    "updatedAt": "2026-11-28T06:35:35.180Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-26T06:29:10.586Z",
+    "epicSlug": "complete-shared-external-node-runtime-foundation",
+    "revision": 22
+  },
+  "task": {
+    "taskId": "t5",
+    "commit": "2f6bcaea7",
+    "ranAt": "2026-11-28T06:35:35.180Z",
+    "testsPassed": true,
+    "tests": [
+      {
+        "name": "bootstrap-no-host-node-verifies-archive-and-executable-before-execution",
+        "level": "integration",
+        "source": "mapping",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "title": "bootstrap authenticates archive executable and control bytes before running code and diagnoses prerequisites",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "title": "bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "title": "private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "title": "bootstrap authenticates all canonical executable and control assets after publication",
+            "result": "pass"
+          }
+        ],
+        "files": []
+      },
+      {
+        "name": "bootstrap-native-operation-lock-exclusive-publication-exact-helper-exit-then-fresh-manager-lock",
+        "level": "integration",
+        "source": "mapping",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "title": "bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "title": "concurrent terminal bootstraps keep one native owner and publish one immutable foundation",
+            "result": "pass"
+          }
+        ],
+        "files": []
+      },
+      {
+        "name": "bootstrap-publication-stage-distinct-from-running-node-and-loaded-native-library",
+        "level": "integration",
+        "source": "mapping",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "title": "bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "title": "private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime publication stage is distinct from running Node and the loaded native library",
+            "result": "pass"
+          }
+        ],
+        "files": []
+      },
+      {
+        "name": "runtime-stage-cancellation-conflict-and-uncertain-closure-retain-safe-state",
+        "level": "integration",
+        "source": "mapping",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "title": "bootstrap preserves incomplete immutable entries and lock conflicts without installation",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "title": "bootstrap cancellation closes its publication child before cleanup and never launches the manager",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "title": "concurrent terminal bootstraps keep one native owner and publish one immutable foundation",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/bootstrap-control.test.ts",
+            "title": "bootstrap control close uncertainty is bounded and retains the only owned publication stage",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/bootstrap-control.test.ts",
+            "title": "bootstrap control late cancellation during positive close cannot report successful reuse",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime publication retains verifier close uncertainty and refuses later discard",
+            "result": "pass"
+          }
+        ],
+        "files": []
+      },
+      {
+        "name": "bootstrap-verified-cached-runtime-control-offline-with-host-node-trap-and-quoted-paths",
+        "level": "integration",
+        "source": "mapping",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "title": "bootstrap reuses verified cached runtime and control offline with quoted Unicode paths",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "title": "POSIX terminal I O and fixture TUI use the canonical runtime after helper exit",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "title": "private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "title": "bootstrap canonicalizes trailing and repeated separators before publication and cached reuse",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "title": "bootstrap refuses tampered cached bootstrap and native control offline before helper execution",
+            "result": "pass"
+          }
+        ],
+        "files": []
+      }
+    ],
+    "files": [
+      {
+        "file": "src/installer/__tests__/bootstrap-control.test.ts",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 5452,
+        "titles": [
+          {
+            "title": "bootstrap control publication copies exact bytes and reuses only a verified immutable directory",
+            "result": "pass"
+          },
+          {
+            "title": "bootstrap control verification rejects extra members and unsafe private ancestors",
+            "result": "pass"
+          },
+          {
+            "title": "bootstrap control close uncertainty is bounded and retains the only owned publication stage",
+            "result": "pass"
+          },
+          {
+            "title": "bootstrap control late cancellation during positive close cannot report successful reuse",
+            "result": "pass"
+          }
+        ],
+        "otherFailures": []
+      },
+      {
+        "file": "src/installer/__tests__/bootstrap.test.ts",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 359246,
+        "titles": [
+          {
+            "title": "bootstrap authenticates archive executable and control bytes before running code and diagnoses prerequisites",
+            "result": "pass"
+          },
+          {
+            "title": "bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node",
+            "result": "pass"
+          },
+          {
+            "title": "bootstrap reuses verified cached runtime and control offline with quoted Unicode paths",
+            "result": "pass"
+          },
+          {
+            "title": "bootstrap preserves incomplete immutable entries and lock conflicts without installation",
+            "result": "pass"
+          },
+          {
+            "title": "bootstrap cancellation closes its publication child before cleanup and never launches the manager",
+            "result": "pass"
+          },
+          {
+            "title": "bootstrap canonicalizes trailing and repeated separators before publication and cached reuse",
+            "result": "pass"
+          },
+          {
+            "title": "bootstrap authenticates all canonical executable and control assets after publication",
+            "result": "pass"
+          },
+          {
+            "title": "bootstrap refuses tampered cached bootstrap and native control offline before helper execution",
+            "result": "pass"
+          },
+          {
+            "title": "concurrent terminal bootstraps keep one native owner and publish one immutable foundation",
+            "result": "pass"
+          },
+          {
+            "title": "POSIX terminal I O and fixture TUI use the canonical runtime after helper exit",
+            "result": "pass"
+          },
+          {
+            "title": "private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission",
+            "result": "pass"
+          }
+        ],
+        "otherFailures": []
+      },
+      {
+        "file": "src/installer/__tests__/runtime-install.test.ts",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 135045,
+        "titles": [
+          {
+            "title": "runtime publication uses the native exclusive lock durable namespace and verified offline reuse",
+            "result": "pass"
+          },
+          {
+            "title": "runtime publication never overwrites an incomplete destination and retains its stage",
+            "result": "pass"
+          },
+          {
+            "title": "runtime publication rejects stale original owners and forged or tampered stages",
+            "result": "pass"
+          },
+          {
+            "title": "runtime publication verifies staged bytes and cannot publish a modified executable",
+            "result": "pass"
+          },
+          {
+            "title": "runtime publication stage is distinct from running Node and the loaded native library",
+            "result": "pass"
+          },
+          {
+            "title": "runtime publication retains verifier close uncertainty and refuses later discard",
+            "result": "pass"
+          }
+        ],
+        "otherFailures": []
+      }
+    ]
+  }
+}

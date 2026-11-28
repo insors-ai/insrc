@@ -1,0 +1,34 @@
+{
+  "lldRevision": 6,
+  "status": "draft",
+  "subjects": 28,
+  "companions": [
+    {
+      "path": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/er-model.html",
+      "exists": true,
+      "bytes": 3436641,
+      "hasHtml": true,
+      "hasSvg": true,
+      "hasMermaid": true,
+      "rendering": "source-only; pixel rendering not performed"
+    },
+    {
+      "path": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/sequence-diagram.html",
+      "exists": true,
+      "bytes": 3439920,
+      "hasHtml": true,
+      "hasSvg": true,
+      "hasMermaid": true,
+      "rendering": "source-only; pixel rendering not performed"
+    },
+    {
+      "path": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/component-dependency.html",
+      "exists": true,
+      "bytes": 3436779,
+      "hasHtml": true,
+      "hasSvg": true,
+      "hasMermaid": true,
+      "rendering": "source-only; pixel rendering not performed"
+    }
+  ]
+}

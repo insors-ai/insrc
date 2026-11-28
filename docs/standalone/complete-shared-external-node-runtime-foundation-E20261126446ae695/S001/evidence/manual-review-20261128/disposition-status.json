@@ -3,41 +3,44 @@
   "verdict": "changes-requested",
   "allFindingsResolved": false,
   "existingStory": "446ae69566d352dd/s1",
-  "reworkAdmission": "registered s1/t5 admitted; focused bootstrap checks passed, registered validation pending",
+  "reworkAdmission": "Registered T5 rework passed at2f6bcaea7, BUILD22/TESTS22; LLD6 pending human approval before remaining design rework/PLAN revision",
   "nativeEvidence": "Prior macOS/Linux source equivalence becomes historical after production edits; affected regression/native qualification required before final BUILD approval",
   "findings": [
     {
       "id": "1",
-      "status": "implemented-focused-tests-pass",
+      "status": "resolved",
       "scope": "bootstrap",
       "evidence": "bootstrap-batch/README.md"
     },
     {
       "id": "2",
-      "status": "implemented-focused-tests-pass",
+      "status": "resolved",
       "scope": "bootstrap",
       "evidence": "bootstrap-batch/README.md"
     },
     {
       "id": "3",
-      "status": "implemented-focused-tests-pass",
+      "status": "resolved",
       "scope": "bootstrap",
       "evidence": "bootstrap-batch/README.md"
     },
     {
       "id": "4",
-      "status": "pending",
-      "scope": "design/integrity"
+      "status": "design-revision6-pending-human-approval",
+      "scope": "design/integrity",
+      "evidence": "../../LLD.md"
     },
     {
       "id": "5",
-      "status": "pending",
-      "scope": "design/integrity"
+      "status": "design-revision6-pending-human-approval",
+      "scope": "design/integrity",
+      "evidence": "../../LLD.md"
     },
     {
       "id": "6",
-      "status": "pending",
-      "scope": "design/integrity"
+      "status": "design-revision6-pending-human-approval",
+      "scope": "design/integrity",
+      "evidence": "../../LLD.md"
     },
     {
       "id": "7",
@@ -46,8 +49,9 @@
     },
     {
       "id": "8",
-      "status": "pending",
-      "scope": "runtime/consumer"
+      "status": "design-revision6-pending-human-approval",
+      "scope": "runtime/consumer",
+      "evidence": "../../LLD.md"
     },
     {
       "id": "9",
@@ -76,7 +80,7 @@
     },
     {
       "id": "14",
-      "status": "implemented-focused-tests-pass",
+      "status": "resolved",
       "scope": "bootstrap",
       "evidence": "bootstrap-batch/README.md"
     },
@@ -92,8 +96,9 @@
     },
     {
       "id": "17",
-      "status": "pending",
-      "scope": "bootstrap"
+      "status": "design-revision6-pending-human-approval",
+      "scope": "bootstrap",
+      "evidence": "../../LLD.md"
     },
     {
       "id": "T1",
@@ -102,7 +107,7 @@
     },
     {
       "id": "T2",
-      "status": "implemented-focused-tests-pass",
+      "status": "resolved",
       "scope": "tests",
       "evidence": "bootstrap-batch/README.md"
     },
@@ -119,7 +124,7 @@
     },
     {
       "id": "T5",
-      "status": "implemented-focused-tests-pass",
+      "status": "resolved",
       "scope": "tests",
       "evidence": "bootstrap-batch/README.md"
     },

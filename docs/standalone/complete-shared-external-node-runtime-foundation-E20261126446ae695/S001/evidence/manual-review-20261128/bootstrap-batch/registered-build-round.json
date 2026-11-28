@@ -1,0 +1,73 @@
+{
+  "registeredCall": "MCP response timed out after300s; original daemon validation continued without duplicate retry. Result recovered read-only from authoritative BUILD/TESTS ledger.",
+  "buildMeta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 22,
+        "contentHash": "eed0f394e3c56ad6b096fff2745a52144b6b2f27fea0c57609e2dd8f5f5129e6",
+        "at": "2026-11-28T06:36:33.492Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-96a85771-f5cf-4505-b799-c3d1b578822b",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-26T07:40:02.075Z",
+    "epicCreatedAt": "2026-11-26T06:29:10.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "446ae69566d352dd",
+    "storyId": "s1",
+    "revision": 22,
+    "updatedAt": "2026-11-28T06:35:35.180Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "complete-shared-external-node-runtime-foundation"
+  },
+  "commit": "2f6bcaea7",
+  "task": {
+    "id": "t5",
+    "passed": true
+  },
+  "buildLedgerLine": "413\t{\"artifactId\":\"BUILD-446ae69566d352dd-s1\",\"entry\":{\"id\":\"58a4cb9535814ec5aa8d374ff0b7e09f\",\"actor\":{\"id\":\"insrc:build\",\"kind\":\"system\",\"properties\":{}},\"timestamp\":\"2026-11-28T06:36:33.492Z\",\"operation\":\"update\",\"revision\":{\"number\":22,\"contentHash\":\"eed0f394e3c56ad6b096fff2745a52144b6b2f27fea0c57609e2dd8f5f5129e6\"},\"outcome\":{\"result\":\"passed\",\"summary\":\"BUILD round: 10 of 10 Task(s) passed\"},\"addresses\":[]}}",
+  "rawTapProvenance": [
+    {
+      "file": "src/installer/__tests__/bootstrap-control.test.ts",
+      "source": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_installer___tests___bootstrap-control.test.ts.1795847240720.95620.tap",
+      "copy": "registered-1.tap",
+      "sha256": "07c6ba94ed9dc9d115654aada25835b184c326acd564ec85c1a151621c8f78b5",
+      "mtime": 1795847240.7247312
+    },
+    {
+      "file": "src/installer/__tests__/bootstrap.test.ts",
+      "source": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_installer___tests___bootstrap.test.ts.1795847599979.95620.tap",
+      "copy": "registered-2.tap",
+      "sha256": "2e844a018545c3d3cf13bb718b2053e98c6cd7fc53fae6e56bcdaebbff348754",
+      "mtime": 1795847599.9909816
+    },
+    {
+      "file": "src/installer/__tests__/runtime-install.test.ts",
+      "source": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_installer___tests___runtime-install.test.ts.1795847735040.95620.tap",
+      "copy": "registered-3.tap",
+      "sha256": "8f386460086b97887bd2b97401644d3dc58c2fa6a520f299b9bd59d138dff9e1",
+      "mtime": 1795847735.0466785
+    }
+  ],
+  "registeredTestsPassed": true,
+  "registeredAcceptancePassed": true,
+  "typecheck": "Required by successful registered build gate; raw transport response unavailable, no duration claimed.",
+  "wholeStoryReady": false,
+  "remainingReviewFindingsOpen": true
+}

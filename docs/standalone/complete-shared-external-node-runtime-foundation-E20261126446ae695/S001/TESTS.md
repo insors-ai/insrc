@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 84 pass, 0 fail, 0 skipped, 0 not found; 8 reported by the builder and not run by the gate.
+**Totals:** 87 pass, 0 fail, 0 skipped, 0 not found; 8 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -148,7 +148,7 @@ Run at 2026-11-26T08:51:02.449Z on commit `a58c68c40`. Tests check: **passed**. 
 
 ## t5
 
-Run at 2026-11-26T09:31:04.839Z on commit `d2e7ec94b`. Tests check: **passed**. 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-28T06:35:35.180Z on commit `2f6bcaea7`. Tests check: **passed**. 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: bootstrap-no-host-node-verifies-archive-and-executable-before-execution**
 
@@ -157,6 +157,7 @@ Run at 2026-11-26T09:31:04.839Z on commit `d2e7ec94b`. Tests check: **passed**. 
 | pass | bootstrap authenticates archive executable and control bytes before running code and diagnoses prerequisites | `src/installer/__tests__/bootstrap.test.ts` |
 | pass | bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node | `src/installer/__tests__/bootstrap.test.ts` |
 | pass | private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission | `src/installer/__tests__/bootstrap.test.ts` |
+| pass | bootstrap authenticates all canonical executable and control assets after publication | `src/installer/__tests__/bootstrap.test.ts` |
 
 **integration: bootstrap-native-operation-lock-exclusive-publication-exact-helper-exit-then-fresh-manager-lock**
 
@@ -191,14 +192,16 @@ Run at 2026-11-26T09:31:04.839Z on commit `d2e7ec94b`. Tests check: **passed**. 
 | pass | bootstrap reuses verified cached runtime and control offline with quoted Unicode paths | `src/installer/__tests__/bootstrap.test.ts` |
 | pass | POSIX terminal I O and fixture TUI use the canonical runtime after helper exit | `src/installer/__tests__/bootstrap.test.ts` |
 | pass | private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission | `src/installer/__tests__/bootstrap.test.ts` |
+| pass | bootstrap canonicalizes trailing and repeated separators before publication and cached reuse | `src/installer/__tests__/bootstrap.test.ts` |
+| pass | bootstrap refuses tampered cached bootstrap and native control offline before helper execution | `src/installer/__tests__/bootstrap.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/installer/__tests__/bootstrap-control.test.ts` | 0 | 4 | 5.6 s |  |
-| `src/installer/__tests__/bootstrap.test.ts` | 0 | 8 | 183 s |  |
-| `src/installer/__tests__/runtime-install.test.ts` | 0 | 6 | 152.1 s |  |
+| `src/installer/__tests__/bootstrap-control.test.ts` | 0 | 4 | 5.5 s |  |
+| `src/installer/__tests__/bootstrap.test.ts` | 0 | 11 | 359.2 s |  |
+| `src/installer/__tests__/runtime-install.test.ts` | 0 | 6 | 135 s |  |
 
 ## t6
 

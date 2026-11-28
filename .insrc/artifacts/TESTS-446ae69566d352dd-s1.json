@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 21,
-        "contentHash": "3416bf89f07e5722f8925f58de155afa5ba5731fb772be459aef027ffb85130d",
-        "at": "2026-11-28T05:30:09.088Z",
+        "number": 22,
+        "contentHash": "a78bf30035ff2d9ce09d43e4ac786914a57b3079ee52aedc7a533219521d53a6",
+        "at": "2026-11-28T06:35:35.249Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "446ae69566d352dd",
     "storyId": "s1",
     "createdAt": "2026-11-26T07:40:02.075Z",
-    "updatedAt": "2026-11-28T05:30:09.056Z",
+    "updatedAt": "2026-11-28T06:35:35.180Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-26T06:29:10.586Z",
     "epicSlug": "complete-shared-external-node-runtime-foundation",
-    "revision": 21
+    "revision": 22
   },
   "body": {
     "tasks": [
@@ -507,8 +507,8 @@
       },
       {
         "taskId": "t5",
-        "commit": "d2e7ec94b",
-        "ranAt": "2026-11-26T09:31:04.839Z",
+        "commit": "2f6bcaea7",
+        "ranAt": "2026-11-28T06:35:35.180Z",
         "testsPassed": true,
         "tests": [
           {
@@ -529,6 +529,11 @@
               {
                 "file": "src/installer/__tests__/bootstrap.test.ts",
                 "title": "private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "bootstrap authenticates all canonical executable and control assets after publication",
                 "result": "pass"
               }
             ],
@@ -632,6 +637,16 @@
                 "file": "src/installer/__tests__/bootstrap.test.ts",
                 "title": "private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission",
                 "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "bootstrap canonicalizes trailing and repeated separators before publication and cached reuse",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "bootstrap refuses tampered cached bootstrap and native control offline before helper execution",
+                "result": "pass"
               }
             ],
             "files": []
@@ -642,7 +657,7 @@
             "file": "src/installer/__tests__/bootstrap-control.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 5643,
+            "durationMs": 5452,
             "titles": [
               {
                 "title": "bootstrap control publication copies exact bytes and reuses only a verified immutable directory",
@@ -667,7 +682,7 @@
             "file": "src/installer/__tests__/bootstrap.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 183025,
+            "durationMs": 359246,
             "titles": [
               {
                 "title": "bootstrap authenticates archive executable and control bytes before running code and diagnoses prerequisites",
@@ -690,6 +705,18 @@
                 "result": "pass"
               },
               {
+                "title": "bootstrap canonicalizes trailing and repeated separators before publication and cached reuse",
+                "result": "pass"
+              },
+              {
+                "title": "bootstrap authenticates all canonical executable and control assets after publication",
+                "result": "pass"
+              },
+              {
+                "title": "bootstrap refuses tampered cached bootstrap and native control offline before helper execution",
+                "result": "pass"
+              },
+              {
                 "title": "concurrent terminal bootstraps keep one native owner and publish one immutable foundation",
                 "result": "pass"
               },
@@ -708,7 +735,7 @@
             "file": "src/installer/__tests__/runtime-install.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 152117,
+            "durationMs": 135045,
             "titles": [
               {
                 "title": "runtime publication uses the native exclusive lock durable namespace and verified offline reuse",

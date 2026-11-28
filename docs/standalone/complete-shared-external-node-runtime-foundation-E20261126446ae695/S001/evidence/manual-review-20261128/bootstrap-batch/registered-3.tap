@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: runtime publication uses the native exclusive lock durable namespace and verified offline reuse
+ok 1 - runtime publication uses the native exclusive lock durable namespace and verified offline reuse
+  ---
+  duration_ms: 24348.608167
+  type: 'test'
+  ...
+# Subtest: runtime publication never overwrites an incomplete destination and retains its stage
+ok 2 - runtime publication never overwrites an incomplete destination and retains its stage
+  ---
+  duration_ms: 24051.392458
+  type: 'test'
+  ...
+# Subtest: runtime publication rejects stale original owners and forged or tampered stages
+ok 3 - runtime publication rejects stale original owners and forged or tampered stages
+  ---
+  duration_ms: 20221.275709
+  type: 'test'
+  ...
+# Subtest: runtime publication verifies staged bytes and cannot publish a modified executable
+ok 4 - runtime publication verifies staged bytes and cannot publish a modified executable
+  ---
+  duration_ms: 20799.773209
+  type: 'test'
+  ...
+# Subtest: runtime publication stage is distinct from running Node and the loaded native library
+ok 5 - runtime publication stage is distinct from running Node and the loaded native library
+  ---
+  duration_ms: 20823.016708
+  type: 'test'
+  ...
+# Subtest: runtime publication retains verifier close uncertainty and refuses later discard
+ok 6 - runtime publication retains verifier close uncertainty and refuses later discard
+  ---
+  duration_ms: 24452.194541
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 134994.962042

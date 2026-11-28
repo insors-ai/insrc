@@ -11,7 +11,7 @@
     "epicHash": "446ae69566d352dd",
     "storyId": "s1",
     "envelope": {
-      "description": "Publish and validate application-only bundle format",
+      "description": "Restore bundle activation integrity and precise publisher boundaries",
       "parent": {
         "entityId": "STORY-446ae69566d352dd-s1",
         "type": "STORY",
@@ -22,7 +22,7 @@
           "entityId": "PLAN-446ae69566d352dd-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 3"
+          "fragment": "revision 4"
         },
         {
           "entityId": "TASK-446ae69566d352dd-s1-t1",
@@ -48,11 +48,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "acb468d9cbda4d5037639df8ad06c29aa002bee5c21ded121a04c314cb2ed51d",
-        "at": "2026-11-26T07:28:17.847Z",
+        "number": 2,
+        "contentHash": "d7454e67297f16f8ee12e426fafe2352721e48371e6d0a7aeface1f0d058e3f8",
+        "at": "2026-11-28T09:45:59.852Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -70,18 +70,26 @@
         "at": "2026-11-26T07:28:17.848Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
-    "title": "Publish and validate application-only bundle format",
-    "summary": "Advance private ReleaseDescriptor to format2 without runtimeArchive and adapt bundle inventory, ZIP validation and publisher assembly/probes together. Preserve public manifest1, exact source/target/digests and native qualification while separating runtime acquisition inputs from all app/IDE payload collection.",
-    "size": "M",
+    "title": "Restore bundle activation integrity and precise publisher boundaries",
+    "summary": "Retain application-only descriptor2/public manifest1 and external runtime probes. Produce operation-scoped full bundle integrity evidence from fresh preparation or one recovered verification, strengthen source/collector diagnostics and target publication guards, and make transport fixtures fail closed.",
+    "size": "L",
     "order": 6,
     "acceptanceChecks": [
       "New bundle/publisher receipts and accepted descriptor hashing consistently use private format2; old embedded descriptor1 is rejected diagnostically without reinterpretation or adoption.",
       "Bundle validation no longer requires tools/node or a runtime archive and still validates the exact production app/native closure and archive safety.",
       "Provenance/allowlisted collection rejects ordinary or renamed Node/Ollama distribution/archive contributions; native .node application dependencies remain legitimate.",
-      "Publisher runtime probes and candidate preparation obtain the shared verified external runtime; no release-local/PATH fallback or full app/Ollama reconciliation is added."
+      "Publisher runtime probes and candidate preparation obtain the shared verified external runtime; no release-local/PATH fallback or full app/Ollama reconciliation is added.",
+      "Bundle preparation/recovery performs one full independent application inventory/content/tree check before activation use; expose only process-local candidate/operation-bound evidence for T8 consumption, with cancellation/failure/new-operation invalidation. No serialized trusted flag or repeated full scan from bounded launch/status paths.",
+      "Test truncated non-control modules/native addons after preparation followed by a new recovery operation, and count full scans for repeated verification within one operation. New/reopened operation cannot inherit an old preparation proof.",
+      "Keep publisher guarantees exactly scoped to allowed real roots/exact generated files, excluded inputs, blocked paths and known pinned byte hashes; reject renamed excluded sources inside a tree actually collected. Do not add broad per-file license/vendor-JS hash denial or claim universal provenance.",
+      "Read every collected file through captured traversal/open identity with no-follow recheck, including single-link files. Fix stale collectProductionPayload call signature and meaningful renamed-input fixture placement.",
+      "Enforce an explicit release-owned Windows execution/publication exclusion independent of self-declared NativeQualification, while preserving foreign archive metadata computation. Remove or default-false explicitly gate the deferred manual Windows CI job; do not run it.",
+      "Keep existing manifest-invalid/source-incompatible format contracts and make legacy-runtime-format diagnosis precise/actionable in exact messages and tests; do not silently reinterpret legacy receipts or introduce a contradictory code guarantee.",
+      "All bundle fixture transports reject unknown URLs instead of reaching real HTTPS; seed/route only explicit known runtime inputs. Adopt/await the common owned-home cleanup and retain native/source qualification boundaries.",
+      "Define the compatible private producer/operation-context evidence plumbing in this task so T7/T8 can consume it in dependency order. Missing/untrusted context performs fresh verification or refuses reuse; deep-cloned/serialized candidate data cannot grant proof reuse. Do not require unbuilt lifecycle peers for producer tests."
     ],
     "tests": [
       {
@@ -95,6 +103,22 @@
       {
         "level": "integration",
         "name": "bundle-publisher-probes-use-shared-external-runtime-without-tools-node-copy"
+      },
+      {
+        "level": "integration",
+        "name": "application-integrity-once-per-operation-and-full-recovery-before-activation"
+      },
+      {
+        "level": "integration",
+        "name": "publisher-single-link-collection-rechecks-captured-identity-and-renamed-exclusion-is-visited"
+      },
+      {
+        "level": "integration",
+        "name": "release-owned-target-exclusion-and-default-off-Windows-CI-cannot-self-qualify"
+      },
+      {
+        "level": "integration",
+        "name": "bundle-fixture-unknown-URL-is-refused-without-real-network"
       }
     ],
     "planTaskId": "t6"

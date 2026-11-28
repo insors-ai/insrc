@@ -11,7 +11,7 @@
     "epicHash": "446ae69566d352dd",
     "storyId": "s1",
     "envelope": {
-      "description": "Record native runtime qualification and S4 handoff evidence",
+      "description": "Requalify current macOS/Linux foundation and record S4 handoff",
       "parent": {
         "entityId": "STORY-446ae69566d352dd-s1",
         "type": "STORY",
@@ -22,7 +22,7 @@
           "entityId": "PLAN-446ae69566d352dd-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 3"
+          "fragment": "revision 4"
         },
         {
           "entityId": "TASK-446ae69566d352dd-s1-t9",
@@ -35,9 +35,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "9e94514831f70ebb7af2f3cc6fb0688d4056e7e019ae482d03a5810f78eb3652",
-        "at": "2026-11-28T05:24:48.127Z",
+        "number": 3,
+        "contentHash": "1c67e7d5515c6c9c4b5e74c7ecc9463fbb7341693fbaa19588c63028ae9c5289",
+        "at": "2026-11-28T09:45:59.939Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -55,18 +55,23 @@
         "at": "2026-11-26T07:28:17.867Z"
       }
     },
-    "revision": 2
+    "revision": 3
   },
   "body": {
-    "title": "Record native runtime qualification and S4 handoff evidence",
-    "summary": "Record actual macOS/Linux runtime and installed-consumer qualification, current scoped regression and exact source/actor evidence. Reuse retained UTM macOS proof only with recorded production-source equivalence; retain fresh current-source OrbStack Linux evidence. Windows native qualification remains deferred and unqualified. Hand the resolver foundation back to S4 only after current validation and human BUILD approval.",
+    "title": "Requalify current macOS/Linux foundation and record S4 handoff",
+    "summary": "Keep evidence-only T10 ownership, but require current-source actual UTMmacOS and OrbStackLinux qualification after all corrections, including protected publication/reuse/cleanup and Linuxdash cancellation. Preserve historical source pins and Windows deferral; hand off only the runtime foundation after final human BUILD approval.",
     "size": "M",
     "order": 10,
     "acceptanceChecks": [
       "Actual UTM macOS and OrbStack Linux runtime-first-acquisition/native-build/offline-reuse/installed-consumer checks are distinguished from fixtures and host emulation; host v2/Ollama remain untouched. Retained native evidence is reusable only with exact relevant source/build-policy equivalence, pinned runtime/platform identity and verified actor closure; retain its original execution source pin.",
       "Current foundation completion covers macOS/Linux. The original native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication subject is deferred, not passed and not a current T10 gate. Windows requires genuine native ACL/path/header/library/loaded-DLL-safe-publication evidence before future enablement; POSIX execution, cross-archive metadata or an availability diagnostic cannot qualify it. ISSUE-cab5701fbefab736 remains its separate process-ownership prerequisite; Windows target publication/enablement stays disabled.",
       "Qualification is for the runtime foundation and existing installed-consumer boundaries; no end-to-end S4/S5 daemon activation proof is fabricated or introduced as a cyclic prerequisite.",
-      "No source changes are made during this evidence-only task. Any required correction returns to its owning task and reruns appropriate tests/regression; user BUILD approval is requested only after all required validation/task accounting/tracker gates are satisfied."
+      "No source changes are made during this evidence-only task. Any required correction returns to its owning task and reruns appropriate tests/regression; user BUILD approval is requested only after all required validation/task accounting/tracker gates are satisfied.",
+      "Use ordinary-user isolated UTMmacOS/OrbStackLinux homes and the explicitly selected trusted slow-VM profile. Prove live official runtime acquisition, exact Node22.22.1/npm10.9.4/header/native toolchain, actual root0700native publication/root0500finalization, protected direct-write denial, same-inode zero-request offline reuse, isolated writable SDK/native build and installed consumer binding with positive actor/resource closure.",
+      "Run real foreground-group SIGINT/SIGTERM/SIGHUP bootstrap cleanup under Linux/bin/sh=dash at the current source; the old macOS bash-in-POSIX-mode run is not a substitute. Retain shell-only/pre-fork cancellation-latency limits and source-only PowerShell evidence.",
+      "Fresh proofs keep exact execution source/build policy/runtime/platform and original timestamps, raw report/digest/export/probe/disposal records. Reuse evidence only with recorded relevant source/policy equivalence and positive closure; prior native/bootstrap/full regression results retain their historical source pins, not current qualification labels.",
+      "Keep current hostv2/Ollama and all blocked/uncertain real isolates untouched; do not activate the daemon, install Ollama or enable/publish a release as part of foundation qualification. Windows/x64/bridge/lifecycle/migration gates remain deferred/separately owned, never passed from metadata or POSIX availability checks.",
+      "No production, test or qualifier source edits in T10: any correction returns to its owning task for validation and appropriate regression before native rerun. Request human BUILD approval only after current required evidence and all task/integrity/upstream/team gates pass."
     ],
     "tests": [
       {

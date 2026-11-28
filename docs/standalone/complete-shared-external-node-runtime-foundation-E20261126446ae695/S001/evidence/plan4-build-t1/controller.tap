@@ -1,0 +1,142 @@
+TAP version 13
+# Subtest: Root and VSCode command overlap refuses before asset synchronization
+ok 1 - Root and VSCode command overlap refuses before asset synchronization
+  ---
+  duration_ms: 2105.510833
+  type: 'test'
+  ...
+# Subtest: Build stages and specialized launcher gate policies survive wrapper integration
+ok 2 - Build stages and specialized launcher gate policies survive wrapper integration
+  ---
+  duration_ms: 15.534542
+  type: 'test'
+  ...
+# Subtest: Specialized stages retain writer ownership and reader closure precedes later mutation
+ok 3 - Specialized stages retain writer ownership and reader closure precedes later mutation
+  ---
+  duration_ms: 233.267959
+  type: 'test'
+  ...
+# src/daemon/db/__tests__/driver-log-policy.test.ts: passed (.insrc/tmp/test-harness/runs/7ab7e6b4-35b8-47b9-a850-093908b70a69/0-src_daemon_db___tests___driver-log-policy.test.ts.log)
+# src/installer/__tests__/controller-store.test.ts: passed (.insrc/tmp/test-harness/runs/7ab7e6b4-35b8-47b9-a850-093908b70a69/1-src_installer___tests___controller-store.test.ts.log)
+# Subtest: Native refusal and saved-mode controls remain enforced
+ok 4 - Native refusal and saved-mode controls remain enforced
+  ---
+  duration_ms: 36703.035125
+  type: 'test'
+  ...
+# Subtest: Prepared build excludes simultaneous writers and readers, validates helpers and rejects fingerprint drift
+ok 5 - Prepared build excludes simultaneous writers and readers, validates helpers and rejects fingerprint drift
+  ---
+  duration_ms: 265.96025
+  type: 'test'
+  ...
+# src/daemon/__tests__/review-retirement-package.test.ts: passed (.insrc/tmp/test-harness/runs/5d137e73-bf09-47bb-9e6c-917e8f3d7b4e/0-src_daemon___tests___review-retirement-package.test.ts.log)
+# src/__tests__/a.test.ts: passed (.insrc/tmp/test-harness/runs/5d137e73-bf09-47bb-9e6c-917e8f3d7b4e/1-src___tests___a.test.ts.log)
+# src/daemon/__tests__/review-retirement-package.test.ts: passed (.insrc/tmp/test-harness/runs/3bb71175-26c9-4ede-9594-f97285929129/0-src_daemon___tests___review-retirement-package.test.ts.log)
+# src/__tests__/a.test.ts: passed (.insrc/tmp/test-harness/runs/f08b1839-bfdc-4241-9365-e2baba678796/0-src___tests___a.test.ts.log)
+# Subtest: Output mutation lane precedes ordinary prepared readers and source drift never passes
+ok 6 - Output mutation lane precedes ordinary prepared readers and source drift never passes
+  ---
+  duration_ms: 292.427375
+  type: 'test'
+  ...
+# src/__tests__/a.test.ts: failed/incomplete (.insrc/tmp/test-harness/runs/35e6ccb8-9671-4dd6-b376-85d7b2210d71/0-src___tests___a.test.ts.log)
+# src/__tests__/a.test.ts: failed/incomplete (.insrc/tmp/test-harness/runs/a0b78997-d7e1-43ab-b8d1-fa5a831f5b7f/0-src___tests___a.test.ts.log)
+# Subtest: SIGINT/SIGTERM and deadline drain registered actors or retain blocked incomplete outcome
+ok 7 - SIGINT/SIGTERM and deadline drain registered actors or retain blocked incomplete outcome
+  ---
+  duration_ms: 5924.650167
+  type: 'test'
+  ...
+# src/__tests__/a.test.ts: failed/incomplete (.insrc/tmp/test-harness/runs/af145370-6b84-4ac1-bd45-93ca78837080/0-src___tests___a.test.ts.log)
+# Subtest: Missing TAP destinations and failed build stages retain logs, actual closure and unavailable coverage
+ok 8 - Missing TAP destinations and failed build stages retain logs, actual closure and unavailable coverage
+  ---
+  duration_ms: 119.21225
+  type: 'test'
+  ...
+# Subtest: Selector deduplication, explicit budgets and bounded concurrency reject invalid admission
+ok 9 - Selector deduplication, explicit budgets and bounded concurrency reject invalid admission
+  ---
+  duration_ms: 7.823458
+  type: 'test'
+  ...
+# Subtest: A timed-out writer retains its reservation until its child closes
+ok 10 - A timed-out writer retains its reservation until its child closes
+  ---
+  duration_ms: 624.077
+  type: 'test'
+  ...
+# Subtest: Default prepared output requires the host native installer control binding
+ok 11 - Default prepared output requires the host native installer control binding
+  ---
+  duration_ms: 11.47175
+  type: 'test'
+  ...
+# src/__tests__/a.test.ts: passed (.insrc/tmp/test-harness/runs/774e4274-1c50-4a2d-b1bc-53d303ec9c95/0-src___tests___a.test.ts.log)
+# src/__tests__/b.test.ts: passed (.insrc/tmp/test-harness/runs/774e4274-1c50-4a2d-b1bc-53d303ec9c95/1-src___tests___b.test.ts.log)
+# Subtest: Explicit live opt-in admits files serially without enabling services in the control
+ok 12 - Explicit live opt-in admits files serially without enabling services in the control
+  ---
+  duration_ms: 529.501958
+  type: 'test'
+  ...
+# Subtest: Retained owned group drains after leader exit, including inherited output pipes
+ok 13 - Retained owned group drains after leader exit, including inherited output pipes
+  ---
+  duration_ms: 185.581958
+  type: 'test'
+  ...
+# Subtest: Whole preparation budget spans commands and deadline cancellation uses owner channel
+ok 14 - Whole preparation budget spans commands and deadline cancellation uses owner channel
+  ---
+  duration_ms: 1366.236917
+  type: 'test'
+  ...
+# vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts: passed (.insrc/tmp/test-harness/runs/32b3bd3b-76a9-4dfc-bf00-7a15680795ce/0-vscode-plugin_src_chat___tests___docs-review-panel.test.ts.log)
+# Subtest: Real panel type probes preserve positive and intended-negative diagnostics
+ok 15 - Real panel type probes preserve positive and intended-negative diagnostics
+  ---
+  duration_ms: 69079.6325
+  type: 'test'
+  ...
+# Subtest: Compiler launch failure and interruption cannot pass a negative probe or pollute source includes
+ok 16 - Compiler launch failure and interruption cannot pass a negative probe or pollute source includes
+  ---
+  duration_ms: 6278.491709
+  type: 'test'
+  ...
+# Subtest: Canonical-path contenders refuse overlap and preserve foreign/replaced/symlinked ownership
+ok 17 - Canonical-path contenders refuse overlap and preserve foreign/replaced/symlinked ownership
+  ---
+  duration_ms: 41.926
+  type: 'test'
+  ...
+# Subtest: Unsupported Node refuses before mutation and child environment resolves selected runtime
+ok 18 - Unsupported Node refuses before mutation and child environment resolves selected runtime
+  ---
+  duration_ms: 72.982042
+  type: 'test'
+  ...
+# Subtest: Abandoned ownership cannot be stolen by age or PID absence
+ok 19 - Abandoned ownership cannot be stolen by age or PID absence
+  ---
+  duration_ms: 44.978834
+  type: 'test'
+  ...
+# Subtest: Malformed lease records and parent symlinks refuse without removal
+ok 20 - Malformed lease records and parent symlinks refuse without removal
+  ---
+  duration_ms: 4.908625
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 125077.537958

@@ -11,7 +11,7 @@
     "epicHash": "446ae69566d352dd",
     "storyId": "s1",
     "envelope": {
-      "description": "Publish and reuse runtime entries under controller ownership",
+      "description": "Publish protected runtimes and finalize only root-write crash states",
       "parent": {
         "entityId": "STORY-446ae69566d352dd-s1",
         "type": "STORY",
@@ -22,7 +22,7 @@
           "entityId": "PLAN-446ae69566d352dd-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 3"
+          "fragment": "revision 4"
         },
         {
           "entityId": "TASK-446ae69566d352dd-s1-t2",
@@ -38,11 +38,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "3ead01f664cb8b9a8bf75f637ec32e06e92e8d3da0bb9057a0e46bb2425fa7c9",
-        "at": "2026-11-26T07:28:17.839Z",
+        "number": 2,
+        "contentHash": "07cf8f35532180cb303fe7e7b480380c845e772effac1af3f503fb979924e5a2",
+        "at": "2026-11-28T09:45:59.820Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -60,18 +60,24 @@
         "at": "2026-11-26T07:28:17.841Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
-    "title": "Publish and reuse runtime entries under controller ownership",
-    "summary": "Add immutable durable runtime publication and verified reuse through the existing native operation.lock and original controller capability. Keep executing helper/runtime/DLL paths outside the publication tree and preserve conflicting entries for explicit recovery.",
+    "title": "Publish protected runtimes and finalize only root-write crash states",
+    "summary": "Correct existing controller publication under the original native lock: validate mutable source, protect descendants while root remains0700, native no-replace cross-parent publish, then root0500/fsync/strict verification before success. Add exact root-only crash finalization and typed uncertainty without conversion of old development homes.",
     "size": "M",
     "order": 4,
     "acceptanceChecks": [
       "Fresh publication is exclusive and durable under the original live controller lock, with canonical completion/inventory; matching verified entries are reused before network.",
-      "Concurrent/stale/lost owners cannot publish; incompatible/incomplete immutable destinations are never overwritten or silently repaired.",
+      "Concurrent/stale/lost owners cannot publish; conflicting/corrupt/unsupported incomplete destinations are never overwritten or byte-repaired. Only the approved exact root-only permission-finalization state can be completed under current original-owner/closure requirements.",
       "Execution and publication stages are distinct, including Windows node.exe/loaded DLL constraints; final-runtime or application cleanup never deletes retained shared runtimes.",
-      "No new manager action, lock transfer, PID/kill controller, S4 lifecycle peer or S5 migration implementation is introduced."
+      "No new manager action, lock transfer, PID/kill controller, S4 lifecycle peer or S5 migration implementation is introduced.",
+      "Immediately before the actual native publishDirectory call, the verified candidate root is0700 and every descendant/file/metadata is protected. Keep the same live controller capability; publish the same inode across install/ and runtimes/ parents without replacing an existing destination.",
+      "After publication and before returning any launch result, chmod only published root0500, fsync root and required source/destination namespace parents, then strict-verify exact protected content/modes and positive resource closure under that same lock.",
+      "A later controller may finalize only the exact canonical root0700/otherwise-protected, independently hash-verified state. No network, byte rewrite, descendant-mode repair or entry replacement; old unsealed/mixed development layouts are rejected for isolated rebuild, corruption remains untouched.",
+      "Use real native official-profile publication fixtures on enabled POSIX targets, with prepublication root assertion, same-inode/protected-descendant proof and injection after rename/after rootchmod-before-durability. Launch refuses unfinished states and no success precedes final fsync/verification.",
+      "Classify failures after possible publication/durability/closure as resource-close-uncertain with retained evidence; wrap non-ENOENT canonical lstat errors in actionable InstallerError codes. Never clean canonical or uncertain paths by inference.",
+      "Adopt/await T2 cleanup helper throughout runtime-install/publication fixtures; test both closed protected-stage discard and uncertain-stage retention. The retained small macOS primitive probe is supporting evidence, not this task's full-runtime/native acceptance."
     ],
     "tests": [
       {
@@ -85,6 +91,18 @@
       {
         "level": "integration",
         "name": "runtime-publication-stage-is-not-running-node-or-loaded-native-library"
+      },
+      {
+        "level": "integration",
+        "name": "posix-runtime-root-only-interrupted-publication-recovery-and-closed-stage-discard"
+      },
+      {
+        "level": "integration",
+        "name": "native-runtime-publication-keeps-root-writable-until-rename-and-finishes-root-seal"
+      },
+      {
+        "level": "integration",
+        "name": "runtime-postpublication-uncertainty-and-canonical-stat-errors-are-coded-and-retained"
       }
     ],
     "planTaskId": "t4"

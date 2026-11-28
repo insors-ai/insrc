@@ -11,7 +11,7 @@
     "epicHash": "446ae69566d352dd",
     "storyId": "s1",
     "envelope": {
-      "description": "Complete integrated coverage and run the scoped regression",
+      "description": "Reconcile all review coverage and run the full scoped regression",
       "parent": {
         "entityId": "STORY-446ae69566d352dd-s1",
         "type": "STORY",
@@ -22,7 +22,7 @@
           "entityId": "PLAN-446ae69566d352dd-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 3"
+          "fragment": "revision 4"
         },
         {
           "entityId": "TASK-446ae69566d352dd-s1-t1",
@@ -68,11 +68,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "c138e65e3c427c812047f67a5d369c4ab911571baca8ca55cf0e2f068b633abe",
-        "at": "2026-11-26T07:28:17.859Z",
+        "number": 2,
+        "contentHash": "177f3b948b7632dc8f8ac2e8eda42799ad0c427b23e21ebc0f9710a6b3fb3ccb",
+        "at": "2026-11-28T09:45:59.920Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -90,18 +90,25 @@
         "at": "2026-11-26T07:28:17.861Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
-    "title": "Complete integrated coverage and run the scoped regression",
-    "summary": "Finish cross-mode/consumer/regression fixtures and validation-only native harness setup, maintain structured design companions if relationships change, and run the complete scoped installer regression after all source tasks are built. Preserve final human BUILD approval after validation rather than per-task approvals.",
-    "size": "M",
+    "title": "Reconcile all review coverage and run the full scoped regression",
+    "summary": "Complete cross-consumer/fixture/qualifier integration after T1–T8 corrections. Reconcile every review item and all32LLDsubjects, run the current full scoped installer/publisher/bootstrap/dev/dependency/terminal regression, and prepare current-source native qualification scripts without treating old evidence as new.",
+    "size": "L",
     "order": 9,
     "acceptanceChecks": [
       "All25 LLD subjects and ac1–ac6 have explicit owner mapping. All non-native surrounding/integrated regression evidence passes with canonical Node22 coordinator and confirmed actor cleanup after the last implementation task is built. Actual native evidence belongs to t10 and is neither required prematurely nor claimed by t9.",
       "Surrounding S2/S3/terminal/bridge/public-contract tests preserve source closure, consent/Retry/TUI and no full app/Ollama status/readiness rehash; no test fixture certifies a real unavailable lifecycle/migration peer.",
       "Generated ER retains one runtime ->0..N releases, sequence retains exact helper-exit/fresh-manager ownership ordering, and component/import boundaries match implementation. Source and render checks distinguish unavailable evidence.",
-      "Final regression/source checks pass before completion; tracker/build admission failures are reported rather than bypassed with fabricated Define/issue bindings or raw workflow edits."
+      "Final regression/source checks pass before completion; tracker/build admission failures are reported rather than bypassed with fabricated Define/issue bindings or raw workflow edits.",
+      "Verify adoption and awaited cleanup across every runtime-publishing/copying fixture and allocation-error/after/finally/wrapper path, including native qualifier homes. Inventory actual creation/copy/publication call sites; no raw force-rm escape for sealed owned roots, no global/shared/blocked-root mutation.",
+      "Complete qualifier/probe source changes here before evidence-onlyT10: actual helper staged executable comparison, current source pin/digests, protected publication/cleanup and real Linux dash signal checks. Preserve trusted slow-VM budgets for USB/VM operations and ordinary production constants.",
+      "Run the full scoped foundation regression only after T1–T8 corrections pass their surrounding checks; use the canonical owned coordinator and appropriate direct controller selections, record exact current source/platform/runtime/TAP/actor disposal. Do not relabel prior306cases/old native reports or the small primitive probe as this execution.",
+      "Reconcile all32 current LLD subjects, owner choices, round1/T1–T6/round2/R3 findings and code-vs-design dispositions; each closed item has meaningful exact evidence. Manual recovery follow-up is tracked for pre-general-release consideration, not a new implemented action or an extra per-finding issue.",
+      "All tasks require registered validation and commit/source attribution. A300sMCP response timeout never triggers a duplicate while the original daemon validation may run; inspect its exact source-bound ledger/closure result first. No task/actor completion is inferred from age/PID. Preserve blocked isolate d7a67629 unchanged.",
+      "No per-task human approval is requested. Final Story BUILD approval follows all task checks, current full regression, T10 qualification and applicable upstream/accounting/signoff gates; no automatic review endpoint or fabricated tracker binding.",
+      "Large retained tasks are executed as bounded owner-local code/test batches, preserving task IDs and dependencies; do not split by finding or rewrite unrelated completed prerequisites. The canonical fixture inventory includes indirect copy/prepare/publication wrappers and all async cleanup awaits, with explicit retained uncertainty rather than silent temporary-root leaks."
     ],
     "tests": [
       {
@@ -127,6 +134,14 @@
       {
         "level": "smoke",
         "name": "final-scoped-installer-publisher-bootstrap-dev-dependencies-terminal-regression"
+      },
+      {
+        "level": "integration",
+        "name": "shared-runtime-fixture-cleanup-restores-owned-directory-write-after-positive-closure"
+      },
+      {
+        "level": "smoke",
+        "name": "review-dispositions-and-current-evidence-reconcile-all32LLDsubjects-without-historical-rerun-claims"
       }
     ],
     "planTaskId": "t9"

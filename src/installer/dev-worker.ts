@@ -20,7 +20,7 @@ import { canonicalJson, digest, parseApplicationInventory } from './release-desc
 import { controlBinding } from './native.js';
 import { verifyPayloadInventory } from './safe-zip.js';
 import { flushDirectory, flushFile, flushParents } from './durability.js';
-import { QUALIFICATION_TIME_BUDGETS } from './qualification-time-budgets.mjs';
+import { operationTimeBudgets, qualificationNodeArguments } from './operation-time-budgets.mjs';
 
 export interface DevPreparationResult {
   schemaVersion: 1; installationId: string; operationId: string; attemptId: string; workerNonce: string;
@@ -313,12 +313,12 @@ export async function launchDevWorker(scope: CommandScope, location: Installatio
   // Setup consumed real parent time. Keep this calculation immediately before
   // admission; the deadline stays local and never enters the worker wire frame.
   const remaining = options.deadline ? options.deadline.expiresAt - performance.now() - options.deadline.reserveMs : Infinity;
-  const budgetMs = Math.floor(Math.min(QUALIFICATION_TIME_BUDGETS.coordinator.runMs, options.budgetMs ?? Infinity, remaining));
+  const budgetMs = Math.floor(Math.min(operationTimeBudgets().coordinator.runMs, options.budgetMs ?? Infinity, remaining));
   if (!Number.isSafeInteger(budgetMs) || budgetMs <= 0
     || (options.deadline && (!Number.isFinite(options.deadline.expiresAt) || !Number.isSafeInteger(options.deadline.reserveMs) || options.deadline.reserveMs <= 0))) {
     throw new InstallerError('source-build-failed', 'Parent allowance exhausted before worker admission');
   }
-  const result = await scope.start(runtime.node, [options.entrypoint, '--dev-preparation-worker', location.home], {
+  const result = await scope.start(runtime.node, qualificationNodeArguments([options.entrypoint, '--dev-preparation-worker', location.home]), {
     env: options.environment,
     budgetMs,
     ownerChannel: { initial: canonicalJson({ schemaVersion: 1, kind: 'prepare', checkpoint: record }) + '\n', cancel: cancelFrame, connect(channel) {

@@ -11,7 +11,7 @@
     "epicHash": "446ae69566d352dd",
     "storyId": "s1",
     "envelope": {
-      "description": "Acquire and safely stage the official runtime",
+      "description": "Preserve mutable source acquisition and closed-stage cleanup",
       "parent": {
         "entityId": "STORY-446ae69566d352dd-s1",
         "type": "STORY",
@@ -22,7 +22,7 @@
           "entityId": "PLAN-446ae69566d352dd-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 3"
+          "fragment": "revision 4"
         },
         {
           "entityId": "TASK-446ae69566d352dd-s1-t1",
@@ -38,11 +38,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "2c8078023e5d2dc5489d2d4b74b936a560ca0e4b528c65622e7266f833ba11b4",
-        "at": "2026-11-26T07:28:17.836Z",
+        "number": 2,
+        "contentHash": "407bd3bfe2a269e3f073d3ab27a09e94bad5edd1c9b94a933367ec5d0ab1b259",
+        "at": "2026-11-28T09:45:59.804Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -60,17 +60,20 @@
         "at": "2026-11-26T07:28:17.838Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
-    "title": "Acquire and safely stage the official runtime",
-    "summary": "Implement bounded live official runtime/header/library download, digest verification and safe deterministic extraction in the proposed acquisition module. Produce only owned validated stages; close actors before cleanup and reuse the read-only verifier/profile rules without application payload access.",
+    "title": "Preserve mutable source acquisition and closed-stage cleanup",
+    "summary": "Keep bounded official acquisition/extraction as mutable source stages with the approved source-mode checks. Integrate deadline policy and cleanup of positively closed owned stages, including permission restoration only for protected staging directories when discard is authorized. No publication/selection or arbitrary canonical repair belongs here.",
     "size": "M",
     "order": 3,
     "acceptanceChecks": [
       "Official assets are HTTPS/status/redirect/size/hash/deadline checked before extraction or target-code execution; POSIX and Windows profile extraction rejects unsafe/colliding/special entries and missing exact npm/header/library inputs.",
       "Cancellation and download/extraction failure close network/parser resources before removing only the owned stage; uncertain closure retains evidence and fails.",
-      "Stage verification covers the fixed runtime limits and exact independent inventory digest; no runtime/release publication, selection or daemon lifecycle occurs in this staging task."
+      "Stage verification covers the fixed runtime limits and exact independent inventory digest; no runtime/release publication, selection or daemon lifecycle occurs in this staging task.",
+      "Extracted source stages retain original pinned file modes,0700directories/0600metadata and exact independent inventory. Explicitly use source-stage verification rather than weakening canonical resolution.",
+      "Use T1's approved runtime/qualifier policy at the existing acquisition/decoder/resource-drain boundaries; invalid ambient profile does not affect normal acquisition, and trusted slow-VM qualification stays bounded.",
+      "Adopt/await the T2 test cleanup helper in acquisition/publishing fixture roots and failure hooks. Production discard may restore directory ownerwrite only in its positively closed original stage capability; uncertain actors/stages or canonical entries remain retained."
     ],
     "tests": [
       {

@@ -6,9 +6,11 @@ import {
 import { randomUUID } from 'node:crypto';
 import { delimiter, dirname, isAbsolute, join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
-import { QUALIFICATION_TIME_BUDGETS } from '../../src/installer/qualification-time-budgets.mjs';
+import { operationTimeBudgets, qualificationAdmitted } from '../../src/installer/operation-time-budgets.mjs';
 
-export const DEFAULT_BUDGETS = QUALIFICATION_TIME_BUDGETS.coordinator;
+// Live alias is unnecessary for ordinary fixed defaults; the effective default
+// is read per admission so the explicit standalone build CLI can admit first.
+export const DEFAULT_BUDGETS = operationTimeBudgets().coordinator;
 const PHASES = ['preparing', 'mutating', 'reading', 'draining', 'blocked'];
 const DIAGNOSTICS = ['NODE_OPTIONS', 'DEBUG', 'NODE_DEBUG', 'OLLAMA_DEBUG', 'GRPC_TRACE', 'GRPC_VERBOSITY', 'DPI_DEBUG_LEVEL', 'NODE_ORACLEDB_TRACE_LEVEL', 'NODE_ORACLEDB_DEBUG_PACKETS', 'ORA_DEBUG_JDWP'];
 
@@ -34,12 +36,12 @@ export function qualificationEnvironment(inherited) {
 	const env = { ...inherited };
 	for (const key of Object.keys(env)) {
 		if (key.toUpperCase() !== 'INSRC_QUALIFICATION_PROFILE') continue;
-		if (env[key] !== undefined && env[key] !== QUALIFICATION_TIME_BUDGETS.profile) {
+		if (qualificationAdmitted() && env[key] !== undefined && env[key] !== operationTimeBudgets().profile) {
 			throw Object.assign(new Error('Child qualification profile conflicts with the admitted process policy'), { code: 'qualification-profile-invalid' });
 		}
 		delete env[key];
 	}
-	env.INSRC_QUALIFICATION_PROFILE = QUALIFICATION_TIME_BUDGETS.profile;
+	env.INSRC_QUALIFICATION_PROFILE = operationTimeBudgets().profile;
 	return env;
 }
 
@@ -55,7 +57,7 @@ export function childEnvironment(runtime, inherited = process.env) {
 
 export function checkedBudgets(overrides = {}) {
 	if (Object.keys(overrides).some(key => !Object.hasOwn(DEFAULT_BUDGETS, key))) throw harnessError('context-invalid', 'Unknown harness budget.');
-	const budgets = { ...DEFAULT_BUDGETS, ...overrides };
+	const budgets = { ...operationTimeBudgets().coordinator, ...overrides };
 	if (Object.values(budgets).some(value => !Number.isSafeInteger(value) || value <= 0)) throw harnessError('context-invalid', 'Harness budgets must be positive integer milliseconds.');
 	return budgets;
 }

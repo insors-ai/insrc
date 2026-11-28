@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: dev-private-node-and-explicit-npm-cli-work-with-no-host-npm-wrapper
+ok 1 - dev-private-node-and-explicit-npm-cli-work-with-no-host-npm-wrapper
+  ---
+  duration_ms: 34071.407333
+  type: 'test'
+  ...
+# Subtest: qualification-profile-reaches-manager-worker-private-npm-and-runtime-helpers
+ok 2 - qualification-profile-reaches-manager-worker-private-npm-and-runtime-helpers
+  ---
+  duration_ms: 31466.385583
+  type: 'test'
+  ...
+# Subtest: dev-build-children-ignore-host-node-npm-and-preserve-explicit-cuda-setting
+ok 3 - dev-build-children-ignore-host-node-npm-and-preserve-explicit-cuda-setting
+  ---
+  duration_ms: 34660.097
+  type: 'test'
+  ...
+# Subtest: native Python imports leave the private Node npm distribution unchanged
+ok 4 - native Python imports leave the private Node npm distribution unchanged
+  ---
+  duration_ms: 30662.152083
+  type: 'test'
+  ...
+# Subtest: missing-or-mismatched-private-toolchain-headers-and-prerequisites-refuse-without-elevation
+ok 5 - missing-or-mismatched-private-toolchain-headers-and-prerequisites-refuse-without-elevation
+  ---
+  duration_ms: 108682.204041
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 239903.28675

@@ -8,6 +8,7 @@ import { once } from 'node:events';
 import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
 import { node22Fixture } from './_runtime-fixture.js';
 
+const sourcePreload = resolve('src/installer/qualification-time-budgets.mjs');
 const url = (path: string) => JSON.stringify(pathToFileURL(resolve(path)).href);
 const preamble = `import assert from 'node:assert/strict';import fs from 'node:fs';import {join} from 'node:path';
   import {createRun,checkedBudgets,qualificationEnvironment} from ${url('scripts/test-harness/context.mjs')};
@@ -18,7 +19,7 @@ const preamble = `import assert from 'node:assert/strict';import fs from 'node:f
 async function isolated(profile: 'normal' | 'slow-vm', program: string): Promise<void> {
   const runtime = await node22Fixture();
   const root = mkdtempSync(join(tmpdir(), 'insrc-budget-scopes-'));
-  const child = spawnFixture(runtime.executable, ['--input-type=module', '-e', preamble + program, root],
+  const child = spawnFixture(runtime.executable, ['--import', sourcePreload, '--input-type=module', '-e', preamble + program, root],
     { env: { ...process.env, INSRC_QUALIFICATION_PROFILE: profile, INSRC_BUILD_CONFIRM_CLOSURE: '1' }, stdio: ['ignore', 'pipe', 'pipe'] });
   const children = [child], closed = once(child, 'close');
   let output = '';

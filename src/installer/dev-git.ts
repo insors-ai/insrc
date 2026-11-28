@@ -17,7 +17,7 @@ import type { DevPreparationRecord, DevReleaseReceipt, DevSourceOffer } from './
 import { readVerifiedDevSourceResult } from './dev-worker.js';
 import { normalizeHome } from './location.js';
 import { readBoundedFile } from './safe-zip.js';
-import { QUALIFICATION_TIME_BUDGETS } from './qualification-time-budgets.mjs';
+import { operationTimeBudgets } from './operation-time-budgets.mjs';
 
 const OUTPUT_LIMIT = 4 * 1024 * 1024;
 export interface DevGit {
@@ -56,7 +56,7 @@ export async function resolveDevSource(deliveryInput: Delivery, target: Target, 
   const delivery = parseDevDelivery(deliveryInput), root = mkdtempSync(join(tmpdir(), 'insrc-dev-source-check-'));
   let run: BuildRun | undefined;
   try {
-    const base = createRun(root, { mode: 'build', budgets: QUALIFICATION_TIME_BUDGETS.git });
+    const base = createRun(root, { mode: 'build', budgets: operationTimeBudgets().git });
     run = { ...base, environment: () => ({ ...environment, INSRC_TEST_RUN_ID: base.runId, INSRC_TEST_ROOT: base.root, INSRC_BUILD_CONFIRM_CLOSURE: '1' }) };
     return await withRun(run, async scope => {
       const git = ownedDevGit(run!, scope, options.signal), ref = `refs/heads/${delivery.branch}`;

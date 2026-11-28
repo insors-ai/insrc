@@ -13,14 +13,14 @@ import { runtimeArchive, runtimePolicy, runtimeProfile, runtimeStorePaths } from
 import { RUNTIME_LIMITS } from './runtime-metadata.js';
 import { extractRuntimeProfile } from './runtime-archive.js';
 import type { RuntimeArchiveSources } from './runtime-archive.js';
-import { QUALIFICATION_TIME_BUDGETS } from './qualification-time-budgets.mjs';
+import { operationTimeBudgets } from './operation-time-budgets.mjs';
 
 export interface RuntimeStageOwner { readonly location: InstallationLocation; assertHeld(): void }
 export interface StagedRuntime {
   readonly workDirectory: string; readonly directory: string; readonly identity: RuntimeIdentity;
 }
 const stages = new WeakMap<StagedRuntime, { owner: RuntimeStageOwner; dev: number; ino: number; uncertain?: boolean }>();
-const DRAIN_MS = QUALIFICATION_TIME_BUDGETS.runtime.resourceDrainMs;
+const DRAIN_MS = operationTimeBudgets().runtime.resourceDrainMs;
 
 /** On abort, wait for positive operation closure. Unknown actors retain their stage. */
 export async function closedRuntimeOperation<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {

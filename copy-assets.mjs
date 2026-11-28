@@ -28,7 +28,7 @@ const outRoot = resolve(here, 'out');
 
 const DIRS = ['prompts', 'assets'];
 // tsc does not emit MJS resources; installed consumers import this adjacent copy.
-const RUNTIME_FILES = ['installer/qualification-time-budgets.mjs'];
+const RUNTIME_FILES = ['installer/qualification-time-budgets.mjs', 'installer/operation-time-budgets.mjs'];
 
 let copied = 0;
 for (const dir of DIRS) {

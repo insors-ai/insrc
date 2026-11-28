@@ -17,7 +17,7 @@ import { controlBinding } from './native.js';
 import { TarBytes, tarField, tarNumeric, tarMemberName, tarPax } from './tar-primitives.js';
 import { runtimeArchive, runtimePolicy, runtimeProfile } from './runtime-policy.js';
 import { RUNTIME_LIMITS, RUNTIME_PROFILE_VERSION, runtimeCompletionJson, runtimeInventoryJson } from './runtime-metadata.js';
-import { QUALIFICATION_TIME_BUDGETS } from './qualification-time-budgets.mjs';
+import { operationTimeBudgets } from './operation-time-budgets.mjs';
 import type { RuntimeAsset, RuntimeInventoryFile } from './runtime-metadata.js';
 import { verifyRuntimeInventory } from './runtime-store.js';
 
@@ -168,7 +168,7 @@ async function closeMemoryEntry(stream: Readable): Promise<void> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   stream.on('error', () => {});
   const closed = new Promise<void>(resolve => stream.once('close', resolve)); stream.destroy();
-  try { await Promise.race([closed, new Promise<never>((_resolve, reject) => { timer = setTimeout(() => reject(new InstallerError('resource-close-uncertain', 'Runtime ZIP entry decoder closure is uncertain')), QUALIFICATION_TIME_BUDGETS.runtime.resourceDrainMs); })]); }
+  try { await Promise.race([closed, new Promise<never>((_resolve, reject) => { timer = setTimeout(() => reject(new InstallerError('resource-close-uncertain', 'Runtime ZIP entry decoder closure is uncertain')), operationTimeBudgets().runtime.resourceDrainMs); })]); }
   finally { if (timer) clearTimeout(timer); }
 }
 async function metadata(path: string, bytes: string): Promise<void> {

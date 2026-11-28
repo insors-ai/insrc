@@ -1,0 +1,24 @@
+[
+  {
+    "runId": "32b3bd3b-76a9-4dfc-bf00-7a15680795ce",
+    "cleanup": {
+      "confirmedClosed": true,
+      "interrupted": false,
+      "cancellationErrors": [],
+      "evidenceErrors": [],
+      "childCloseJournal": "child-results.jsonl",
+      "closureMode": "owned-groups"
+    }
+  },
+  {
+    "runId": "7ab7e6b4-35b8-47b9-a850-093908b70a69",
+    "cleanup": {
+      "confirmedClosed": true,
+      "interrupted": false,
+      "cancellationErrors": [],
+      "evidenceErrors": [],
+      "childCloseJournal": "child-results.jsonl",
+      "closureMode": "owned-groups"
+    }
+  }
+]

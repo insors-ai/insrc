@@ -119,5 +119,5 @@ export async function mainBuild(root = ROOT) {
 // CLI may start a build; importing these helpers in a manager must stay inert.
 if (/[\\/]scripts[\\/]test-harness[\\/]build\.mjs$/i.test(fileURLToPath(import.meta.url))
   && process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
-	try { await mainBuild(); } catch (error) { process.stderr.write(`${error.code ?? 'harness-build-failed'}: ${error.message}\n`); process.exitCode = 1; }
+	try { await import('../../src/installer/qualification-time-budgets.mjs'); await mainBuild(); } catch (error) { process.stderr.write(`${error.code ?? 'harness-build-failed'}: ${error.message}\n`); process.exitCode = 1; }
 }

@@ -1,0 +1,29 @@
+{
+  "baseCommit": "6fdae9bb9c1ff2f336aa37e42f3f1ab49c7926d8",
+  "sha256": {
+    "copy-assets.mjs": "ce133d2026e4e3cc20987b20baf684f516899b1178bec96963c4214808de7876",
+    "scripts/qualification-containment.mjs": "3c3c092b210bad05b20014bc4175b8b943098fb1f376989754d8d04bbaf673bb",
+    "scripts/qualify-runtime-foundation.mjs": "552771e2a8042fc10987b7f0466d448634fc5c3cd4b1c2bbb7759d93f9175e3c",
+    "scripts/test-harness/build.mjs": "736fac7fd1f0ee410456b5f90c0b07c7be5fd4dca03e1c04fc410f7ebe406e11",
+    "scripts/test-harness/context.mjs": "c2bc4e83593dd0c4e933545e66c50fdf52a4de6489c3b404312a58d1ae29960e",
+    "scripts/test-harness/process.mjs": "0c8694c4b6054ec44bfa33379b570f6689d1bbfeb6c7c65e58f1950619432195",
+    "scripts/test-harness/run.mjs": "097676429055f0b117ade578d3ea45e3a3c95266fc0a791ddda6216942ffede1",
+    "src/installer/__tests__/dev-source-fixture.mjs": "30989adbd90c64e111fb6144406aeb28ab6a4a41d69bf62746dd08cfbf6e189b",
+    "src/installer/__tests__/dev-toolchain.test.ts": "f459dae4f5f8c4d789e10319095faff932b4c5a4fe6bab1ffb056cb0592bbfb1",
+    "src/installer/__tests__/installed-dev-fixture.mjs": "76f442d7d36aa93eab7c58c54015c991fe59bfb7a78bd55e44b62f186ccaae8f",
+    "src/installer/__tests__/production-deadlines.test.ts": "a418811653bc9beb652fcca20822efb7ff5ecb5d8765c3feb5b281afc115f78a",
+    "src/installer/__tests__/qualification-manager.test.ts": "e32f642bb79dfd806daec2ecd92f8cea024d889f20e5856417902e1989e8fdb9",
+    "src/installer/__tests__/qualification-scopes.test.ts": "0aef9627b048e788dfbb616e9388486b0d4e59b11f0ca7970a835405d6647d22",
+    "src/installer/__tests__/qualification-time-budgets.test.ts": "98c7919bf82a9258ef2f543b41766136ba00ff2c0bf53c87c643008803d7104d",
+    "src/installer/dev-delivery.ts": "10b7244363a47414e3732a7dc63bb833a0bdc525e42d3ad951255a67d805edb4",
+    "src/installer/dev-git.ts": "79fd982aaf671025e4208739574d90abda438a39fa66d0d3099c7e80c089fb22",
+    "src/installer/dev-worker.ts": "72ad452f0c6bc939bc4ec04733dc83898574a9a2a280a08e86291e00583fb7c4",
+    "src/installer/download.ts": "637b4c44eeedc7844b8628a9271780611ec75f9200c3d5e66d286a611cefd919",
+    "src/installer/operation-time-budgets.d.mts": "45a7dc7331227abb6e9a42475399d88ce73c8756ba343f49f210ad18ffbec4d2",
+    "src/installer/operation-time-budgets.mjs": "0df889bf24f1a664a6139ef9474b0c564d6a8c41bb1e714b6fb64ccff4597e5c",
+    "src/installer/qualification-time-budgets.mjs": "73e42bc66dd7c0668ad28106bd97c3b55487412f7007424c37ea90585f6c4f71",
+    "src/installer/runtime-acquire.ts": "7c8aa8198231b47f631426bd3740991ca924b029b717dca3d30156d06948fecd",
+    "src/installer/runtime-archive.ts": "e1231b091ca2ae26bed00a87701086f557bd9a05d28ed344958496bbcd5dfc2b",
+    "src/installer/runtime-metadata.ts": "2db51bc022b6db27b8c8657b23edbbeb37a429c83c94d8fae1fc198748fab74f"
+  }
+}

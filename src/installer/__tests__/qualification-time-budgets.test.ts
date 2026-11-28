@@ -80,6 +80,7 @@ test('copied-policy-asset-has-source-bytes-and-loads-from-installed-control', as
     // prepared output is read or rebuilt, including under the gate's raw runner.
     mkdirSync(join(directory, 'src/installer'), { recursive: true });
     copyFileSync(source, join(directory, 'src/installer/qualification-time-budgets.mjs'));
+    copyFileSync(resolve('src/installer/operation-time-budgets.mjs'), join(directory, 'src/installer/operation-time-budgets.mjs'));
     const copier = join(directory, 'copy-assets.mjs');
     copyFileSync(resolve('copy-assets.mjs'), copier);
     await probe(`await import(${JSON.stringify(pathToFileURL(copier).href)});`);

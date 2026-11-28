@@ -11,7 +11,7 @@
     "epicHash": "446ae69566d352dd",
     "storyId": "s1",
     "envelope": {
-      "description": "Implement the read-only verified runtime resolver",
+      "description": "Enforce strict runtime modes and introduce owned fixture cleanup",
       "parent": {
         "entityId": "STORY-446ae69566d352dd-s1",
         "type": "STORY",
@@ -22,7 +22,7 @@
           "entityId": "PLAN-446ae69566d352dd-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 3"
+          "fragment": "revision 4"
         },
         {
           "entityId": "TASK-446ae69566d352dd-s1-t1",
@@ -33,11 +33,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "9b3c9b3892d4c6aa271a4fa7c211f1d3ccab5ec89c029193aa095ecc238ba1c9",
-        "at": "2026-11-26T07:28:17.834Z",
+        "number": 2,
+        "contentHash": "b33fa5d3cd9231ac8833774661136ac6a67a49a5a81baf8636bf7314a5596250",
+        "at": "2026-11-28T09:45:59.786Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -55,18 +55,23 @@
         "at": "2026-11-26T07:28:17.835Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
-    "title": "Implement the read-only verified runtime resolver",
-    "summary": "Replace the unused privateRuntimePaths constructor with the approved async resolver, implemented through the proposed runtime-store module. Verify explicit home/full identity, protected canonical root, independent policy-bound inventory and exact Node/npm/header file set, with no allocation or application imports.",
+    "title": "Enforce strict runtime modes and introduce owned fixture cleanup",
+    "summary": "Extend the existing read-only resolver/content verifier with the approved three lanes and exact manual/unfinished/unsupported diagnostics. Strengthen independent negative fixtures. Introduce the single test-owned asynchronous cleanup helper now, with resolver-fixture adoption, so later publication tasks can safely dispose sealed homes without a circular test dependency.",
     "size": "M",
     "order": 2,
     "acceptanceChecks": [
       "Direct calls return frozen canonical absolute runtime paths only for the exact verified identity; tampered files/metadata, extra files, bad target/baseline, links and unsafe roots fail closed.",
       "A self-consistent rewritten receipt/inventory cannot replace the independently pinned expected inventory hash.",
       "Resolver imports no application paths/DB/provider/source builder and performs no network, mkdir, controller lock, selection or application/Ollama traversal.",
-      "Task-local fixtures prove this API; production consumer wiring is assessed in t8, not required prematurely for t2 validation."
+      "Task-local fixtures prove this API; production consumer wiring is assessed in t8, not required prematurely for t2 validation.",
+      "Default canonical resolution accepts only exact published root/directories0500, metadata0400, files pinnedmode&~0222 with zero write bits and exact execute intent. Source-stage checks original modes; permission-transition accepts only root0700/0500 with every descendant protected. No arbitrary mixed subtree or old-home adoption, allocation or launch paths from a weak verifier flag.",
+      "Use the exact LLD8 §4.3 runtime-invalid manual recovery, root-only unfinished and unsupported-development-layout messages. Manual text advises safely quoted root-only chmod, preservation/move and delete nothing, and explicitly disclaims product locking/all-consumer proof. Test spaces/Unicode/apostrophes and preservation; do not implement an operator move/recovery command.",
+      "For every rejection mutation, establish a positive baseline beforehand, assert its precise expected code/message and prove restoration succeeds; no bare rejects or shared broken fixture false positives. Protected-fixture mutation helpers may deliberately alter only their captured isolated homes.",
+      "Implement the proposed shared _owned-runtime-home.ts test helper using captured mkdtemp dev/inode/UID, retained child/resource closure and bounded nofollow checks. Restore directory ownerwrite only within that root after positive closure; never follow a link to chmod its target, mutate SDK/global/blocked roots or erase uncertain evidence. All adopting callers await cleanup, including allocation failure/after/finally. Prove cleanup/retention/refusal cases independently.",
+      "Introduce the owned-home helper without turning raw/shared mutable SDK caches into cleanup targets. Resolver fixtures can seed the strict protected form independently before T4 is implemented; fixture APIs with asynchronous disposal are awaited by every changed caller."
     ],
     "tests": [
       {
@@ -92,6 +97,22 @@
       {
         "level": "unit",
         "name": "runtime-caps-and-cancellation-are-finite-and-do-not-trigger-app-or-Ollama-hashing"
+      },
+      {
+        "level": "unit",
+        "name": "runtime-rejection-matrix-proves-positive-baseline-and-exact-diagnostic-for-each-mutation"
+      },
+      {
+        "level": "unit",
+        "name": "posix-runtime-protection-preserves-pinned-inventory-and-rejects-write-bits-or-execute-drift"
+      },
+      {
+        "level": "unit",
+        "name": "runtime-manual-unfinished-and-development-layout-diagnostics-preserve-entries-with-safe-path-guidance"
+      },
+      {
+        "level": "integration",
+        "name": "shared-runtime-fixture-cleanup-restores-owned-directory-write-after-positive-closure"
       }
     ],
     "planTaskId": "t2"

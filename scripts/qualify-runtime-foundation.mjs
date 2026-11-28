@@ -1,3 +1,4 @@
+import '../src/installer/qualification-time-budgets.mjs';
 /** Explicit native foundation qualification, never a release-enablement receipt.
  * Runs against a fresh isolated home; no daemon, Ollama or fixture peers. Build
  * the checkout with the canonical coordinator before invoking with Node 22.

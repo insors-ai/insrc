@@ -11,7 +11,7 @@
     "epicHash": "446ae69566d352dd",
     "storyId": "s1",
     "envelope": {
-      "description": "Pin deterministic runtime profiles and integrity metadata",
+      "description": "Retain pinned profiles and separate production deadline policy",
       "parent": {
         "entityId": "STORY-446ae69566d352dd-s1",
         "type": "STORY",
@@ -22,17 +22,17 @@
           "entityId": "PLAN-446ae69566d352dd-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 3"
+          "fragment": "revision 4"
         }
       ],
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "bb02b6622ae77fcbc2cc8d8eb50ebb1dcd72e69142e550d739b2b652f4979aec",
-        "at": "2026-11-26T07:28:17.831Z",
+        "number": 2,
+        "contentHash": "6666b8d3c74fb2eea651109a4515f8cbf0435c0962f9e33e034f1357c842fb39",
+        "at": "2026-11-28T09:45:59.764Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -50,17 +50,21 @@
         "at": "2026-11-26T07:28:17.832Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
-    "title": "Pin deterministic runtime profiles and integrity metadata",
-    "summary": "Extend the existing private policy with deterministic distribution profiles, official archive byte counts and independently derived Node/inventory hashes. Include pinned official Windows header/library inputs when needed, without executing foreign binaries or enabling unqualified targets. Define bounded runtime receipt/inventory/result types and canonical layout without changing public contracts.",
+    "title": "Retain pinned profiles and separate production deadline policy",
+    "summary": "Retain independently pinned official Node/npm/header profiles and public identities. Correct installer production budget imports/context so ordinary manager/terminal/resolver/delivery work uses fixed deadlines regardless of the ambient qualification selector, while trusted qualification retains its approved bounded slow-VM policy. Define the approved internal source/published/root-only verification lane types without changing official inventory bytes or enabling targets.",
     "size": "M",
     "order": 1,
     "acceptanceChecks": [
       "All six declared os/arch policy identities retain Node22.22.1/npm10.9.4/header22.22.1 consistency; profile metadata is derived from verified official archive/assets and reproducible, not copied from an installed receipt.",
       "Completion64KiB, inventory16MiB,32768 entries,128MiB/file,1GiB expanded,256MiB/compressed asset,600s network and120s verification bounds are explicit and tested.",
-      "RuntimeIdentity/ReleaseManifest/IPC fields remain unchanged; metadata computation alone neither executes target code nor enables a native target."
+      "RuntimeIdentity/ReleaseManifest/IPC fields remain unchanged; metadata computation alone neither executes target code nor enables a native target.",
+      "Keep original archive/profile/inventory/completion bytes, hashes and public fields unchanged; POSIX mode protection is a verifier/publication rule, not regenerated official content or a new runtime identity/layout.",
+      "Ordinary production entrypoint import and runtime/download deadline behavior are unchanged for unset, normal, slow-vm and invalid INSRC_QUALIFICATION_PROFILE; remove indirect production import-time selector failure as well as direct runtime-metadata/download coupling.",
+      "Only explicit trusted qualification invocation installs bounded process-local context before relevant modules load; preserve approved normal/slow-VM harness propagation without exposing a wire/receipt/ambient-env override or changing unrelated completed harness contracts.",
+      "Exercise normal manager/terminal/resolver import and relevant action paths with every selector case, including transitive budget imports; qualification-only invalid selectors retain their typed diagnostic. Actual native execution/publication eligibility is release-owned and separate from six-target profile metadata; deferred Windows and unqualified arch/baseline combinations cannot self-enable."
     ],
     "tests": [
       {
@@ -70,6 +74,10 @@
       {
         "level": "unit",
         "name": "runtime-profile-metadata-is-reproducible-from-pinned-official-assets-without-target-execution"
+      },
+      {
+        "level": "unit",
+        "name": "ordinary-runtime-deadlines-ignore-qualification-env-and-trusted-qualifier-remains-bounded"
       }
     ],
     "planTaskId": "t1"

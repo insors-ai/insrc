@@ -1,3 +1,4 @@
+import '../../src/installer/qualification-time-budgets.mjs';
 import { globSync, openSync, closeSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';

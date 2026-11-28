@@ -11,7 +11,7 @@ test('slow-profile-reaches-real-manager-worker-and-private-npm', async () => {
   const runtime = await completeNode22Fixture();
   const root = mkdtempSync(join(realpathSync(tmpdir()), 'insrc-profile-manager-'));
   const child = spawnFixture(runtime.executable,
-    [realpathSync('src/installer/__tests__/dev-manager-fixture.mjs'), root, runtime.directory, 'profile'],
+    ['--import', realpathSync('src/installer/qualification-time-budgets.mjs'), realpathSync('src/installer/__tests__/dev-manager-fixture.mjs'), root, runtime.directory, 'profile'],
     { env: { ...process.env, NODE_OPTIONS: '', NODE_PATH: '', INSRC_QUALIFICATION_PROFILE: 'slow-vm' }, stdio: ['ignore', 'pipe', 'pipe'] });
   const children = [child], closed = once(child, 'close');
   let output = '';

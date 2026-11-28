@@ -1,0 +1,228 @@
+TAP version 13
+# Subtest: dev-private-node-and-explicit-npm-cli-work-with-no-host-npm-wrapper
+not ok 1 - dev-private-node-and-explicit-npm-cli-work-with-no-host-npm-wrapper
+  ---
+  duration_ms: 33017.851458
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/dev-toolchain.test.ts:1:4785'
+  failureType: 'testCodeFailure'
+  error: |-
+    
+    node:internal/modules/run_main:123
+        triggerUncaughtException(
+        ^
+    Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dev-toolchain-8suElU/checkout-normal/src/installer/operation-time-budgets.mjs' imported from /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dev-toolchain-8suElU/checkout-normal/scripts/test-harness/context.mjs
+        at finalizeResolution (node:internal/modules/esm/resolve:275:11)
+        at moduleResolve (node:internal/modules/esm/resolve:861:10)
+        at defaultResolve (node:internal/modules/esm/resolve:985:11)
+        at nextResolve (node:internal/modules/esm/hooks:748:28)
+        at resolveBase (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:8498)
+        at resolveDirectory (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:9584)
+        at resolveTsPaths (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:11114)
+        at resolve (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:12294)
+        at nextResolve (node:internal/modules/esm/hooks:748:28)
+        at Hooks.resolve (node:internal/modules/esm/hooks:240:30) {
+      code: 'ERR_MODULE_NOT_FOUND',
+      url: 'file:///private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dev-toolchain-8suElU/checkout-normal/src/installer/operation-time-budgets.mjs'
+    }
+    
+    Node.js v22.22.1
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    finalizeResolution (node:internal/modules/esm/resolve:275:11)
+    moduleResolve (node:internal/modules/esm/resolve:861:10)
+    defaultResolve (node:internal/modules/esm/resolve:985:11)
+    nextResolve (node:internal/modules/esm/hooks:748:28)
+    resolveBase (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:8498)
+    resolveDirectory (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:9584)
+    resolveTsPaths (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:11114)
+    resolve (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:12294)
+    nextResolve (node:internal/modules/esm/hooks:748:28)
+    Hooks.resolve (node:internal/modules/esm/hooks:240:30) {
+    fixture (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/dev-toolchain.test.ts:42:19)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/dev-toolchain.test.ts:48:91)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: qualification-profile-reaches-manager-worker-private-npm-and-runtime-helpers
+not ok 2 - qualification-profile-reaches-manager-worker-private-npm-and-runtime-helpers
+  ---
+  duration_ms: 33371.335167
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/dev-toolchain.test.ts:1:4898'
+  failureType: 'testCodeFailure'
+  error: |-
+    
+    node:internal/modules/run_main:123
+        triggerUncaughtException(
+        ^
+    Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dev-toolchain-gHGYXu/checkout-slow-profile/src/installer/operation-time-budgets.mjs' imported from /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dev-toolchain-gHGYXu/checkout-slow-profile/scripts/test-harness/context.mjs
+        at finalizeResolution (node:internal/modules/esm/resolve:275:11)
+        at moduleResolve (node:internal/modules/esm/resolve:861:10)
+        at defaultResolve (node:internal/modules/esm/resolve:985:11)
+        at nextResolve (node:internal/modules/esm/hooks:748:28)
+        at resolveBase (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:8498)
+        at resolveDirectory (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:9584)
+        at resolveTsPaths (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:11114)
+        at resolve (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:12294)
+        at nextResolve (node:internal/modules/esm/hooks:748:28)
+        at Hooks.resolve (node:internal/modules/esm/hooks:240:30) {
+      code: 'ERR_MODULE_NOT_FOUND',
+      url: 'file:///private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dev-toolchain-gHGYXu/checkout-slow-profile/src/installer/operation-time-budgets.mjs'
+    }
+    
+    Node.js v22.22.1
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    finalizeResolution (node:internal/modules/esm/resolve:275:11)
+    moduleResolve (node:internal/modules/esm/resolve:861:10)
+    defaultResolve (node:internal/modules/esm/resolve:985:11)
+    nextResolve (node:internal/modules/esm/hooks:748:28)
+    resolveBase (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:8498)
+    resolveDirectory (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:9584)
+    resolveTsPaths (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:11114)
+    resolve (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:12294)
+    nextResolve (node:internal/modules/esm/hooks:748:28)
+    Hooks.resolve (node:internal/modules/esm/hooks:240:30) {
+    fixture (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/dev-toolchain.test.ts:42:19)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/dev-toolchain.test.ts:49:100)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: dev-build-children-ignore-host-node-npm-and-preserve-explicit-cuda-setting
+not ok 3 - dev-build-children-ignore-host-node-npm-and-preserve-explicit-cuda-setting
+  ---
+  duration_ms: 30590.043166
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/dev-toolchain.test.ts:1:5026'
+  failureType: 'testCodeFailure'
+  error: |-
+    
+    node:internal/modules/run_main:123
+        triggerUncaughtException(
+        ^
+    Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dev-toolchain-Cs3dhM/checkout-cuda-empty/src/installer/operation-time-budgets.mjs' imported from /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dev-toolchain-Cs3dhM/checkout-cuda-empty/scripts/test-harness/context.mjs
+        at finalizeResolution (node:internal/modules/esm/resolve:275:11)
+        at moduleResolve (node:internal/modules/esm/resolve:861:10)
+        at defaultResolve (node:internal/modules/esm/resolve:985:11)
+        at nextResolve (node:internal/modules/esm/hooks:748:28)
+        at resolveBase (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:8498)
+        at resolveDirectory (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:9584)
+        at resolveTsPaths (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:11114)
+        at resolve (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:12294)
+        at nextResolve (node:internal/modules/esm/hooks:748:28)
+        at Hooks.resolve (node:internal/modules/esm/hooks:240:30) {
+      code: 'ERR_MODULE_NOT_FOUND',
+      url: 'file:///private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dev-toolchain-Cs3dhM/checkout-cuda-empty/src/installer/operation-time-budgets.mjs'
+    }
+    
+    Node.js v22.22.1
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    finalizeResolution (node:internal/modules/esm/resolve:275:11)
+    moduleResolve (node:internal/modules/esm/resolve:861:10)
+    defaultResolve (node:internal/modules/esm/resolve:985:11)
+    nextResolve (node:internal/modules/esm/hooks:748:28)
+    resolveBase (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:8498)
+    resolveDirectory (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:9584)
+    resolveTsPaths (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:11114)
+    resolve (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:12294)
+    nextResolve (node:internal/modules/esm/hooks:748:28)
+    Hooks.resolve (node:internal/modules/esm/hooks:240:30) {
+    fixture (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/dev-toolchain.test.ts:42:19)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/dev-toolchain.test.ts:50:98)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: native Python imports leave the private Node npm distribution unchanged
+not ok 4 - native Python imports leave the private Node npm distribution unchanged
+  ---
+  duration_ms: 28975.715875
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/dev-toolchain.test.ts:1:5164'
+  failureType: 'testCodeFailure'
+  error: |-
+    
+    node:internal/modules/run_main:123
+        triggerUncaughtException(
+        ^
+    Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dev-toolchain-lALxle/checkout-python/src/installer/operation-time-budgets.mjs' imported from /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dev-toolchain-lALxle/checkout-python/scripts/test-harness/context.mjs
+        at finalizeResolution (node:internal/modules/esm/resolve:275:11)
+        at moduleResolve (node:internal/modules/esm/resolve:861:10)
+        at defaultResolve (node:internal/modules/esm/resolve:985:11)
+        at nextResolve (node:internal/modules/esm/hooks:748:28)
+        at resolveBase (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:8498)
+        at resolveDirectory (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:9584)
+        at resolveTsPaths (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:11114)
+        at resolve (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:12294)
+        at nextResolve (node:internal/modules/esm/hooks:748:28)
+        at Hooks.resolve (node:internal/modules/esm/hooks:240:30) {
+      code: 'ERR_MODULE_NOT_FOUND',
+      url: 'file:///private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dev-toolchain-lALxle/checkout-python/src/installer/operation-time-budgets.mjs'
+    }
+    
+    Node.js v22.22.1
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    finalizeResolution (node:internal/modules/esm/resolve:275:11)
+    moduleResolve (node:internal/modules/esm/resolve:861:10)
+    defaultResolve (node:internal/modules/esm/resolve:985:11)
+    nextResolve (node:internal/modules/esm/hooks:748:28)
+    resolveBase (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:8498)
+    resolveDirectory (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:9584)
+    resolveTsPaths (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:11114)
+    resolve (file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/register-zZ7SWseA.mjs:2:12294)
+    nextResolve (node:internal/modules/esm/hooks:748:28)
+    Hooks.resolve (node:internal/modules/esm/hooks:240:30) {
+    fixture (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/dev-toolchain.test.ts:42:19)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/dev-toolchain.test.ts:51:95)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: missing-or-mismatched-private-toolchain-headers-and-prerequisites-refuse-without-elevation
+ok 5 - missing-or-mismatched-private-toolchain-headers-and-prerequisites-refuse-without-elevation
+  ---
+  duration_ms: 114848.202666
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 1
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 241154.163584

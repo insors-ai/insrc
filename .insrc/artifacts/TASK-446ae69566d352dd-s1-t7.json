@@ -11,7 +11,7 @@
     "epicHash": "446ae69566d352dd",
     "storyId": "s1",
     "envelope": {
-      "description": "Prepare dev candidates with the shared external runtime",
+      "description": "Isolate writable dev SDK inputs and scope dev integrity proof",
       "parent": {
         "entityId": "STORY-446ae69566d352dd-s1",
         "type": "STORY",
@@ -22,7 +22,7 @@
           "entityId": "PLAN-446ae69566d352dd-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 3"
+          "fragment": "revision 4"
         },
         {
           "entityId": "TASK-446ae69566d352dd-s1-t1",
@@ -53,11 +53,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "5783b82da5d55259e7cd073ae67e1a19c1a8c3658b3f8a1dc0df33fb83e8defc",
-        "at": "2026-11-26T07:28:17.850Z",
+        "number": 2,
+        "contentHash": "de795136e39ec681d82c5595dedd23232298e36ce0973eb679b2e5d301a866b1",
+        "at": "2026-11-28T09:45:59.874Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -75,18 +75,24 @@
         "at": "2026-11-26T07:28:17.852Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
-    "title": "Prepare dev candidates with the shared external runtime",
-    "summary": "Advance private dev receipts/recipe to application-only semantics and adapt source offers, toolchain, worker staging, verification and immutable publication. Consume the same resolved Node/npm/header/library distribution instead of copying tools/node into dev releases.",
-    "size": "M",
+    "title": "Isolate writable dev SDK inputs and scope dev integrity proof",
+    "summary": "Keep canonical executing Node and approved closed source-worker/build proof while copying writable npm/node-gyp/header/library inputs into the owned build workspace. Apply operation-local dev payload verification and protected-runtime reuse, then tighten dev diagnostic fixtures.",
+    "size": "L",
     "order": 7,
     "acceptanceChecks": [
       "Dev receipt2/new recipe, durable offers, canonical hashes and all readers agree; old embedded receipts/offers fail with an explicit compatibility diagnostic.",
       "Dev payloads omit Node/Ollama distributions/archives and preserve exact accepted source, native output closure, closed-worker proof and no duplicate writer.",
       "Dev build commands/owned npm aliases use resolved absolute private Node/npm/header/library paths; existing CUDA skip-if-unset and hostile environment isolation remain.",
-      "Prepared candidate open/verify does not acquire/build a runtime implicitly or adopt an arbitrary runtimeDirectory; cross-mode runtime reuse is proven at the shared foundation boundary."
+      "Prepared candidate open/verify does not acquire/build a runtime implicitly or adopt an arbitrary runtimeDirectory; cross-mode runtime reuse is proven at the shared foundation boundary.",
+      "Create one verified writable SDK copy per positively owned build workspace, preserving pinned source provenance and execute intent. npm/npx/node-gyp/nodedir/headers/library aliases point to that copy; Node execution stays the exact canonical protected Node. No global store/config mutation or arbitrary runtimeDirectory trust.",
+      "Lifecycle writes adjacent to npm/headers succeed only in the isolated copy; canonical bytes/tree remain exact and ordinary direct canonical writes fail. Preserve CUDA skip only if unset, including empty/custom values; keep registry/auth delegation and source input/worker closure contracts.",
+      "Use fresh runtime proof only within the same process/home/full identity/operation. Each new worker verifies/binds independently; reuse existing resolved objects within that worker instead of repeated full-tree checks. SDK cleanup waits for actors/resources to close.",
+      "Dev preparation yields operation-scoped full app integrity evidence; recovered/new operation fully verifies once before destructive use, with the same invalidation rules as bundle. No app/Ollama scan added to bounded receipt/control launch.",
+      "Tighten corrupt-toolchain assertions to exact diagnostics with positive baselines, preserve recipe2/offer identity and precise legacy diagnosis, and adopt/await common cleanup in dev/source/worker fixture homes.",
+      "Form the manager/parent's process-local preparation evidence only after existing qualified worker/source/build/positive-close checks; never serialize a JS proof or trust a worker flag. Keep necessary inventory generation distinct from independent full verification and count the latter explicitly, with no repeated full verification for one operation."
     ],
     "tests": [
       {
@@ -100,6 +106,18 @@
       {
         "level": "integration",
         "name": "dev-candidate-open-has-no-implicit-runtime-acquisition-or-foreign-directory-trust"
+      },
+      {
+        "level": "integration",
+        "name": "application-integrity-once-per-operation-and-full-recovery-before-activation"
+      },
+      {
+        "level": "integration",
+        "name": "writable-dev-SDK-isolation-and-manual-runtime-recovery-guidance"
+      },
+      {
+        "level": "integration",
+        "name": "dev-toolchain-corruption-checks-have-positive-baselines-and-exact-diagnostics"
       }
     ],
     "planTaskId": "t7"

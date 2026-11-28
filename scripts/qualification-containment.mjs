@@ -1,3 +1,4 @@
+import '../src/installer/qualification-time-budgets.mjs';
 /** Finite qualification timing, composed with the existing retained coordinator. */
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';

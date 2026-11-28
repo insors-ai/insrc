@@ -1,3 +1,4 @@
+import { qualificationNodeArguments } from '../../src/installer/operation-time-budgets.mjs';
 import { spawn } from 'node:child_process';
 import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readdirSync, unlinkSync, writeFileSync, writeSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
@@ -81,7 +82,7 @@ export function processScope(run, { includeForeignActors = true } = {}) {
 		const childId = randomUUID();
 		const log = logPath ?? join(run.workspace, `child-${childId}.log`);
 		const fd = stdout === undefined && stderr === undefined ? openSync(log, 'wx', 0o600) : undefined;
-		const child = spawn(command, args, { cwd, env, detached: process.platform !== 'win32', stdio: [ownerChannel ? 'pipe' : 'ignore', outputLimitBytes ? 'pipe' : stdout ?? fd, outputLimitBytes ? 'pipe' : stderr ?? fd] });
+		const child = spawn(command, command === run.runtime.executable ? qualificationNodeArguments(args) : args, { cwd, env, detached: process.platform !== 'win32', stdio: [ownerChannel ? 'pipe' : 'ignore', outputLimitBytes ? 'pipe' : stdout ?? fd, outputLimitBytes ? 'pipe' : stderr ?? fd] });
 		registerChild(child, run);
 		ownedMarkers.add(markers.get(child));
 		const entry = { child, childId, ended: undefined, closed: false, disposed: false };

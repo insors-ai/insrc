@@ -11,7 +11,7 @@
     "epicHash": "446ae69566d352dd",
     "storyId": "s1",
     "envelope": {
-      "description": "Unify terminal bootstrap verification and runtime handoff",
+      "description": "Preserve accepted bootstrap fixes and finish path/test corrections",
       "parent": {
         "entityId": "STORY-446ae69566d352dd-s1",
         "type": "STORY",
@@ -22,7 +22,7 @@
           "entityId": "PLAN-446ae69566d352dd-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 3"
+          "fragment": "revision 4"
         },
         {
           "entityId": "TASK-446ae69566d352dd-s1-t1",
@@ -48,11 +48,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "2f8156ee4257705e2625b1d6b7e604b03af2ec925b78d2eda5cdcd66a30d7b06",
-        "at": "2026-11-26T07:28:17.843Z",
+        "number": 2,
+        "contentHash": "b73d0f14633fc066ac608ab8ca3cf5d2dc6bbfbc2e2f24df9977bc7d955e25ac",
+        "at": "2026-11-28T09:45:59.836Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -70,18 +70,22 @@
         "at": "2026-11-26T07:28:17.845Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
-    "title": "Unify terminal bootstrap verification and runtime handoff",
-    "summary": "Adapt both shared terminal templates, renderer and publication helper to the same verified external store. Authenticate cached/fresh Node and control bytes before execution, publish under the existing lock, wait for exact helper exit, then invoke the canonical runtime manager with fresh ordinary admission.",
+    "title": "Preserve accepted bootstrap fixes and finish path/test corrections",
+    "summary": "Retain all six manually accepted bootstrap fixes and the real production publication/signal handler. Apply R2-4 honest foreign-size case naming and R2-5 one normalized work value, then adapt bootstrap fixtures/consumers to protected publication and common owned-home cleanup.",
     "size": "M",
     "order": 5,
     "acceptanceChecks": [
       "Manual and IDE-generated POSIX/PowerShell scripts use fixed independent Node/control digests and need no host Node; matching verified cached runtime/control can work offline while missing prerequisites fail clearly.",
       "The exact publication-helper child exits before the final manager starts/acquires a fresh lock; no inherited lock/session/source flag, PID heuristic or successful install claim substitutes for admission.",
       "Paths with spaces/Unicode/apostrophes, interruption, concurrent bootstrap and Windows nonmoving execution-stage behavior are covered by surrounding fixtures.",
-      "Terminal owns prompts/I/O and existing same-terminal TUI semantics; no IDE adapter redesign or current host daemon operation is performed."
+      "Terminal owns prompts/I/O and existing same-terminal TUI semantics; no IDE adapter redesign or current host daemon operation is performed.",
+      "Preserve home separator normalization, deferred real INT/TERM/HUP/exact child exit, immediate canonical Node/bootstrap/native hashes, required target/baseline and cached-control tamper cases at2f6bcaea7. Do not revert the production terminalMain delegation or claim fixture manager/TUI as lifecycle proof.",
+      "Normalize the bootstrap work path once before containment/leaf extraction; use that canonical value in every later path/transport operation. Label the foreign archive row as pinned-size rejection, with target identity/digest coverage credited to its actual tests.",
+      "Rendered bootstrap operates with T4 protected publication/root-only finalization; exact helper exit still precedes fresh manager ownership. No kill/forwarding redesign; document/test group-delivery behavior and retain the shell-PID/pre-fork latency limitation.",
+      "Adopt/await common cleanup in bootstrap/control-source fixture failure/after/finally paths. Preserve uncertain resources and read-only stage/canonical boundary. PowerShell parity remains source-only while Windows native execution is deferred."
     ],
     "tests": [
       {
@@ -103,6 +107,10 @@
       {
         "level": "integration",
         "name": "bootstrap-verified-cached-runtime-control-offline-with-host-node-trap-and-quoted-paths"
+      },
+      {
+        "level": "integration",
+        "name": "bootstrap-work-normalized-once-and-foreign-archive-case-is-pinned-size-only"
       }
     ],
     "planTaskId": "t5"

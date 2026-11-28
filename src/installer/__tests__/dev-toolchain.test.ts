@@ -31,11 +31,11 @@ async function fixture(scenarios: string[], corrupt?: 'headers' | 'npm' | 'missi
       for (const name of ['build.mjs', 'context.mjs', 'process.mjs']) copyFileSync(`scripts/test-harness/${name}`, join(checkout, 'scripts/test-harness', name === 'build.mjs' ? 'owner.mjs' : name));
       copyFileSync('scripts/build-installer-control.mjs', join(checkout, 'scripts/build-installer-control.mjs'));
       mkdirSync(join(checkout, 'src/installer/native'), { recursive: true });
-      copyFileSync('src/installer/qualification-time-budgets.mjs', join(checkout, 'src/installer/qualification-time-budgets.mjs'));
+      for (const name of ['qualification-time-budgets.mjs', 'operation-time-budgets.mjs']) copyFileSync(`src/installer/${name}`, join(checkout, 'src/installer', name));
       copyFileSync('src/installer/native/control.c', join(checkout, 'src/installer/native/control.c'));
       writeFileSync(join(checkout, 'scripts/test-harness/build.mjs'), "export {withWriter,prepareBuild} from './owner.mjs'; export const buildStages=(run,{npmCli})=>[['accepted-checkout-helper',npmCli]];");
       const tsx = realpathSync('node_modules/tsx/dist/loader.mjs'), file = realpathSync('src/installer/__tests__/dev-toolchain-fixture.mjs');
-      const child = spawnFixture(node, ['--import', tsx, file, checkout, runtime, scenario], { env: { ...process.env, NODE_OPTIONS: '', NODE_PATH: '', ...(scenario === 'slow-profile' ? { INSRC_QUALIFICATION_PROFILE: 'slow-vm' } : {}) }, stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child);
+      const child = spawnFixture(node, ['--import', realpathSync('src/installer/qualification-time-budgets.mjs'), '--import', tsx, file, checkout, runtime, scenario], { env: { ...process.env, NODE_OPTIONS: '', NODE_PATH: '', ...(scenario === 'slow-profile' ? { INSRC_QUALIFICATION_PROFILE: 'slow-vm' } : {}) }, stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child);
       let output = ''; child.stdout!.on('data', data => { output += String(data); }); child.stderr!.on('data', data => { output += String(data); });
       const code = (await once(child, 'close'))[0];
       if (corrupt) { assert.notEqual(code, 0, output); assert.match(output, /runtime-invalid|source-prerequisite-missing|Private npm version|native headers|Missing regular private toolchain/); }

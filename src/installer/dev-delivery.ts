@@ -4,7 +4,7 @@ import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createRun, qualificationEnvironment } from '../../scripts/test-harness/context.mjs';
-import { QUALIFICATION_TIME_BUDGETS } from './qualification-time-budgets.mjs';
+import { operationTimeBudgets } from './operation-time-budgets.mjs';
 import type { BuildRun } from '../../scripts/test-harness/context.mjs';
 import { withRun } from '../../scripts/test-harness/process.mjs';
 import type { CommandScope } from '../../scripts/test-harness/process.mjs';
@@ -36,7 +36,7 @@ async function ownedScope<T>(environment: NodeJS.ProcessEnv, work: (run: BuildRu
   const inherited = qualificationEnvironment(environment);
   const root = mkdtempSync(join(realpathSync(tmpdir()), 'insrc-dev-manager-'));
   let base: BuildRun;
-  try { base = createRun(root, { mode: 'build', budgets: QUALIFICATION_TIME_BUDGETS.manager }); }
+  try { base = createRun(root, { mode: 'build', budgets: operationTimeBudgets().manager }); }
   catch (cause) { rmSync(root, { recursive: true }); throw cause; }
   const run: BuildRun = { ...base, environment: () => ({ ...inherited, INSRC_TEST_RUN_ID: base.runId, INSRC_TEST_ROOT: base.root, INSRC_BUILD_CONFIRM_CLOSURE: '1' }) };
   const deadline = Object.freeze({ expiresAt: performance.now() + run.budgets.runMs, reserveMs: run.budgets.cleanupMs });

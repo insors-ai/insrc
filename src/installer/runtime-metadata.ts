@@ -1,6 +1,6 @@
 /** Runtime-only formats. No application boot, storage, acquisition or IO. */
 import type { RuntimeIdentity } from './contracts.js';
-import { QUALIFICATION_TIME_BUDGETS } from './qualification-time-budgets.mjs';
+import { operationTimeBudgets } from './operation-time-budgets.mjs';
 
 export const RUNTIME_PROFILE_VERSION = 'node22-minimal-v1' as const;
 export const RUNTIME_LIMITS = Object.freeze({
@@ -10,9 +10,12 @@ export const RUNTIME_LIMITS = Object.freeze({
   entryBytes: 128 * 1024 ** 2,
   expandedBytes: 1024 ** 3,
   compressedBytes: 256 * 1024 ** 2,
-  networkMs: QUALIFICATION_TIME_BUDGETS.runtime.acquisitionMs,
-  verificationMs: QUALIFICATION_TIME_BUDGETS.runtime.verificationMs,
+  networkMs: operationTimeBudgets().runtime.acquisitionMs,
+  verificationMs: operationTimeBudgets().runtime.verificationMs,
 });
+
+/** Internal pure-verifier lane; never accepted from IPC or a receipt. */
+export type RuntimeProtection = 'published' | 'source-stage' | 'permission-transition';
 
 export interface RuntimeAsset { readonly url: string; readonly bytes: number; readonly sha256: string }
 export interface RuntimeProfile {

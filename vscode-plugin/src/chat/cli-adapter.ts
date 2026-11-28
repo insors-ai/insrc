@@ -48,7 +48,7 @@ import { DEFAULT_GRACE_MS, defaultKillGroup, observeProcess, processDeparted, si
 import { parseMarker, SegmentGone, type SegmentCursor, type SessionOutput } from './session-output.js';
 
 import type { VibeChatJob } from './vibe-session-process.js';
-import type { VibeCatalogModel, VibeSessionRequest, VibeTurnRequest } from '../../../src/shared/vibe-adapter.js';
+import type { VibeCatalogModel, VibeDispatchState, VibeSessionRequest, VibeTurnRequest } from '../../../src/shared/vibe-adapter.js';
 import { buildArgv, vibeMcpNaming } from '../../../src/shared/vibe-adapter.js';
 
 export type ProviderId = 'claude' | 'codex' | 'vibe';
@@ -199,6 +199,12 @@ export interface RunOptions {
    * kept in that session's file. Pass it only while holding the session's lease.
    */
   readonly sessionId?: string | undefined;
+  /**
+   * s3/t5: observes the vibe direct-spawn route's local dispatchState at each of its three
+   * transition points (mirroring vibe-adapter.ts's own VibeDispatchState model). Never called
+   * for claude/codex or the vibeCatalog job route.
+   */
+  readonly onDispatchState?: ((state: VibeDispatchState) => void) | undefined;
 }
 
 export interface StreamAdapter {
@@ -1292,9 +1298,15 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     // precondition) -- a fresh one every turn, allocated here (after the abort recheck above,
     // so an aborted turn never allocates one) and threaded into buildArgs's outputDir. Removing
     // it on exit is a later Task in this Story (t7), once readExitEvidence needs to read it first.
-    const vibeOutputDir = mapper.id === 'vibe' && vibeCatalog === undefined
-      ? mkdtempSync(join(tmpdir(), 'insrc-vibe-turn-'))
-      : undefined;
+    const isVibeDirectSpawn = mapper.id === 'vibe' && vibeCatalog === undefined;
+    const vibeOutputDir = isVibeDirectSpawn ? mkdtempSync(join(tmpdir(), 'insrc-vibe-turn-')) : undefined;
+    // s3/t5: mirrors vibe-adapter.ts's own VibeDispatchState model exactly, at the same three
+    // transition points -- 'not-sent' (here, before spawn) -> 'possibly-sent' (immediately after
+    // spawn succeeds, before the stdin write) -> 'accepted' (once a session-identity row is
+    // decoded). A spawn failure leaves it at 'not-sent': deterministic pre-dispatch-safe, since
+    // no child ever existed. A later stdin write/end failure never reverts it (t6 classifies by
+    // whatever it already reached, not a fresh guess).
+    let vibeDispatchState: VibeDispatchState = 'not-sent';
     let proc: SpawnedProcess;
     try {
       proc = vibeCatalog !== undefined
@@ -1309,6 +1321,10 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
             ? { env: ollamaClaudeEnv(process.env, ollama.host) }
             : mapper.envFor !== undefined ? (() => { const env = mapper.envFor!(effectiveReq); return env !== undefined ? { env } : {}; })() : {}),
         });
+      if (isVibeDirectSpawn) {
+        vibeDispatchState = 'possibly-sent';
+        opts?.onDispatchState?.(vibeDispatchState);
+      }
     } catch (err) {
       if (segment !== undefined && sessionOutput !== undefined && sessionId !== undefined) {
         void sessionOutput.endTurn(sessionId, turnId, { code: null, signal: null }).catch(() => {});
@@ -1363,10 +1379,9 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       // immediately (vibe's bare -p reads stdin to EOF as the whole prompt; it cannot
       // start before that, unlike claude/codex's formatInput path, which stays open
       // until the turn's terminal event for a possible later decision write). Classifying
-      // a write/end failure by dispatchState is a later Task in this Story (t5/t6); a
+      // a write/end failure by dispatchState is a later Task in this Story (t6); a
       // failure here falls through to the same generic 'CLI stdin is closed' handling
-      // claude/codex already use.
-      const isVibeDirectSpawn = mapper.id === 'vibe' && vibeCatalog === undefined;
+      // claude/codex already use -- and never reverts vibeDispatchState (s3/t5).
       if (vibeCatalog !== undefined || (mapper.formatInput !== undefined && requestUuid !== undefined) || isVibeDirectSpawn) {
         if (proc.write === undefined) throw new Error('CLI stdin unavailable for correlated input');
         const job: VibeChatJob | undefined = vibeCatalog === undefined ? undefined : {
@@ -1408,6 +1423,13 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         } catch {
           log.warn(`[chat:${mapper.id}] skipped unparseable stream line`);
           continue; // non-fatal: skip malformed line, never yield a malformed event
+        }
+        // s3/t5: a decoded session-identity row is the 'accepted' transition point --
+        // the shared adapter's own model reaches it at the identical moment (a row
+        // carrying sessionId), via the same state.sessionId capture mapLine performs.
+        if (isVibeDirectSpawn && vibeDispatchState !== 'accepted' && state.sessionId !== undefined) {
+          vibeDispatchState = 'accepted';
+          opts?.onDispatchState?.(vibeDispatchState);
         }
         for (const ev of events) {
           // S004: register a surfaced permission request so decide() can later answer it.

@@ -1036,6 +1036,47 @@ test('vibe: s3/t4 — integration: export-directory lifecycle across success/sig
   for (const dir of createdDirs) rmSync(dir, { recursive: true, force: true });
 });
 
+test("vibe: s3/t5 — unit: dispatchState transitions: 'not-sent' before spawn, 'possibly-sent' immediately after spawn succeeds, 'accepted' once a session-identity row is decoded; a subsequent stdin write/end failure does not revert it", async () => {
+  // Success path: exactly the two observable transitions, in order, nothing before spawn
+  // (the implicit 'not-sent' default) and nothing after 'accepted'.
+  {
+    const states: string[] = [];
+    const { deps } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
+    await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' }), { onDispatchState: (s) => states.push(s) }));
+    assert.deepEqual(states, ['possibly-sent', 'accepted']);
+  }
+  // A stdin write failure, triggered the instant 'possibly-sent' is observed (i.e. strictly
+  // before the write itself, which the real code attempts right after that transition) --
+  // the recorded sequence stops at 'possibly-sent' and is never reverted to 'not-sent' or
+  // anything else.
+  {
+    const states: string[] = [];
+    const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN, hangUntilKilled: true }, ['vibe']);
+    const events = await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' }), {
+      onDispatchState: (s) => { states.push(s); if (s === 'possibly-sent') spawner.procs[0]!.failWrites(true); },
+    }));
+    assert.equal(events.at(-1)!.kind, 'error', 'the write failure surfaces as a turn error');
+    assert.deepEqual(states, ['possibly-sent'], 'never advances to accepted, and is never reverted');
+  }
+});
+
+test('vibe: s3/t5 — integration: a spawn failure before any child exists is deterministic pre-dispatch-safe', async () => {
+  // deps.spawn() itself throwing SYNCHRONOUSLY (matching "error path 1") is the only case
+  // where no child process handle of any kind is ever created -- distinct from an async
+  // post-spawn failure (e.g. a fake-spawner ENOENT via proc.spawnError, or a real ChildProcess's
+  // later 'error' event), where a handle DOES exist and dispatchState legitimately already
+  // reached 'possibly-sent', exactly as vibe-adapter.ts's own model does for that same case.
+  const states: string[] = [];
+  const deps: AdapterDeps = {
+    spawn: () => { throw new Error('EACCES'); },
+    isInstalled: () => true,
+    logger: { warn: () => {}, error: () => {} },
+  };
+  const events = await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' }), { onDispatchState: (s) => states.push(s) }));
+  assert.equal(events.at(-1)!.kind, 'error');
+  assert.deepEqual(states, [], 'no child ever existed, so dispatchState never left its not-sent default -- deterministically pre-dispatch-safe');
+});
+
 test('ProviderRegistry.available lists vibe alongside claude/codex when installed', () => {
   const { deps } = depsFor({ lines: [] }, ['claude', 'codex', 'vibe']);
   const reg = createProviderRegistry(deps);

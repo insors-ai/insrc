@@ -40,13 +40,17 @@ test('scratch editor emits local browser JS/CSS alongside CJS and includes them 
     assert.match(css, /\.milkdown/);
     assert.doesNotMatch(css, /@import\s|url\(\s*["']?https?:/);
     assert.equal(JSON.parse(readFileSync(join(out, 'package.json'), 'utf8')).type, 'commonjs');
-    for (const name of ['extension.js', 'uninstall.js', 'vibe-session-worker.js', 'scratch-validation-host-worker.js']) assert.ok(existsSync(join(out, name)));
+    // The approved plain-CLI adapter story retires the separate Vibe worker.
+    // Keep the active host entries and both scratch validators mandatory.
+    for (const name of ['extension.js', 'uninstall.js', 'scratch-validation-host-worker.js']) assert.ok(existsSync(join(out, name)));
     assert.ok(existsSync(join(out, 'scratch-editor/validator.js')));
     const analysis = await mod.bundleScratchEditor(join(dir, 'inspect'));
     for (const [name, output] of Object.entries(analysis.metafile.outputs) as [string, { imports: { path: string; external?: boolean }[] }][]) {
       assert.equal(output.imports.filter(i => i.external).length, 0, name);
     }
     assert.ok(!Object.keys(analysis.metafile.inputs).some(path => path.includes('/llm-providers/')), 'no library cloud providers bundled');
+    // This second analysis build is test instrumentation, not package content.
+    rmSync(join(dir, 'inspect'), { recursive: true, force: true });
     // Snapshot the actual production package and its selected runtime files.
     // Omit only prepublish so packaging cannot mutate the canonical checkout;
     // emitted binaries above, contribution metadata and uninstall stay real.

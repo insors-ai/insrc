@@ -319,11 +319,29 @@ export const VIBE_TOOL_TURN: readonly string[] = [
     type: 'message', role: 'assistant', sessionId: 'sess-vibe-2',
     content: [
       { type: 'tool_call', id: 'call-1', name: 'bash', arguments_json: JSON.stringify({ command: 'npm test' }) },
-      { type: 'tool_call', id: 'call-2', name: 'mcp_insrc_insrc_present', arguments_json: JSON.stringify({ documents: ['LLD-x-S001'] }) },
+      // mcp_<server>.<tool> is the live-confirmed vibe 3.1.4 naming (see VibeMcpNaming.fromStreamedName).
+      { type: 'tool_call', id: 'call-2', name: 'mcp_insrc.insrc_present', arguments_json: JSON.stringify({ documents: ['LLD-x-S001'] }) },
     ],
   }),
   JSON.stringify({
     type: 'message', role: 'user', sessionId: 'sess-vibe-2',
     content: [{ type: 'tool_result', tool_call_id: 'call-1', content: 'all green', is_error: false }],
+  }),
+];
+
+// S003/t2: the direct-spawn path's RAW native rows (no worker bridge) -- a top-level
+// 'effect' row carries toolCallId/detail.toolName/detail.input directly, with the
+// completed state inline, rather than riding as a message content block.
+export const VIBE_NATIVE_EFFECT_TURN: readonly string[] = [
+  JSON.stringify({ type: 'message', role: 'user', sessionId: 'sess-vibe-3', content: [{ type: 'text', text: 'do it' }] }),
+  JSON.stringify({
+    type: 'effect', sessionId: 'sess-vibe-3', toolCallId: 'eff-1',
+    detail: { toolName: 'bash', input: { command: 'npm test' } },
+    state: { status: 'completed', outputText: 'all green' },
+  }),
+  JSON.stringify({
+    type: 'effect', sessionId: 'sess-vibe-3', toolCallId: 'eff-2',
+    detail: { toolName: 'mcp_insrc.insrc_present', input: { documents: ['LLD-x-S001'] } },
+    state: { status: 'failed', reason: 'denied' },
   }),
 ];

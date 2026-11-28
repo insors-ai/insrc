@@ -18,7 +18,7 @@ import { dirname, join } from 'node:path';
 import { createSessionOutput, parseMarker } from '../session-output.js';
 import { defaultProcessStartTime } from '../session-lock.js';
 import { fileURLToPath } from 'node:url';
-import { createProviderRegistry, classifyPermissionDenial, deriveChatTitle, nodeSpawner, writeReachedStdin } from '../cli-adapter.js';
+import { createProviderRegistry, classifyPermissionDenial, deriveChatTitle, nodeSpawner, parseVibeMcpTool, writeReachedStdin } from '../cli-adapter.js';
 import type { AdapterDeps, ProviderId, ProviderRegistry, StreamAdapter, TurnProcess, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import {
@@ -34,6 +34,7 @@ import {
   CODEX_PERMISSION_TURN,
   VIBE_TEXT_TURN,
   VIBE_TOOL_TURN,
+  VIBE_NATIVE_EFFECT_TURN,
   type FakeProcScript,
 } from './fixtures.js';
 
@@ -807,7 +808,7 @@ test('vibe: streaming text turn maps to assistant-deltas + a synthesized done(ok
   const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
   const reg = createProviderRegistry(deps);
   const events = await collect(reg.get('vibe').run(REQ({ provider: 'vibe' })));
-  assert.deepEqual(events.map((e) => e.kind), ['assistant-delta', 'assistant-delta', 'done']);
+  assert.deepEqual(events.map((e) => e.kind), ['status', 'assistant-delta', 'assistant-delta', 'done'], "s3/t2: a native 'reasoning' row now surfaces as a thinking status, not dropped as noise");
   assert.deepEqual(events.filter((e) => e.kind === 'assistant-delta').map((e) => (e as { text: string }).text), ['Hello ', 'world']);
   const done = events.at(-1) as { ok: boolean; sessionId?: string };
   assert.equal(done.ok, true, 'vibe streams no terminal line; the adapter synthesizes done on exit 0');
@@ -825,13 +826,38 @@ test('vibe: tool_call (arguments_json string) maps to tool-call with command + m
   assert.equal(tools[0]!.tool, 'bash');
   assert.equal(tools[0]!.command, 'npm test', 'command parsed out of the arguments_json string');
   assert.equal(tools[0]!.callId, 'call-1');
-  assert.equal(tools[1]!.tool, 'mcp_insrc_insrc_present');
-  assert.deepEqual(tools[1]!.mcp, { server: 'insrc', name: 'insrc_present' });
+  assert.equal(tools[1]!.tool, 'mcp_insrc.insrc_present');
+  assert.deepEqual(tools[1]!.mcp, { server: 'insrc', name: 'insrc_present' }, 's3/t2: parseVibeMcpTool now delegates to VibeMcpNaming.fromStreamedName');
   assert.deepEqual(tools[1]!.present, ['LLD-x-S001']);
   const res = events.find((e) => e.kind === 'tool-result') as { output: string; command?: string; callId?: string };
   assert.equal(res.output, 'all green');
   assert.equal(res.command, 'npm test', 'the tool_result correlates the command via tool_call_id');
   assert.equal(res.callId, 'call-1');
+});
+
+test('vibe: s3/t2 — a native top-level "effect" row (direct-spawn, no worker bridge) decodes to tool-call + tool-result, same as the worker-bridged message/tool_call shape', async () => {
+  const { deps } = depsFor({ lines: VIBE_NATIVE_EFFECT_TURN }, ['vibe']);
+  const events = await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' })));
+  const tools = events.filter((e) => e.kind === 'tool-call') as Array<{ tool: string; command?: string; callId?: string; mcp?: { server: string; name: string }; present?: readonly string[] }>;
+  assert.equal(tools.length, 2);
+  assert.equal(tools[0]!.tool, 'bash');
+  assert.equal(tools[0]!.command, 'npm test');
+  assert.equal(tools[0]!.callId, 'eff-1');
+  assert.deepEqual(tools[1]!.mcp, { server: 'insrc', name: 'insrc_present' });
+  assert.deepEqual(tools[1]!.present, ['LLD-x-S001']);
+  const results = events.filter((e) => e.kind === 'tool-result') as Array<{ output: string; callId?: string; command?: string; isError?: boolean }>;
+  assert.equal(results.length, 2);
+  assert.equal(results[0]!.output, 'all green');
+  assert.equal(results[0]!.callId, 'eff-1');
+  assert.equal(results[0]!.isError, undefined, 'a completed effect is not an error');
+  assert.equal(results[1]!.output, 'denied', 'the state.reason precedence fallback when outputText/output are absent');
+  assert.equal(results[1]!.isError, true, 'a failed effect status surfaces as isError');
+});
+
+test('vibe: s3/t2 — parseVibeMcpTool delegates to VibeMcpNaming.fromStreamedName (ac4)', () => {
+  assert.deepEqual(parseVibeMcpTool('mcp_insrc.insrc_analyze_step'), { server: 'insrc', name: 'insrc_analyze_step' });
+  assert.equal(parseVibeMcpTool('bash'), undefined, 'a non-mcp tool name is not an mcp identity');
+  assert.equal(parseVibeMcpTool('mcp_other.some_tool'), undefined, 'a non-insrc MCP server is not this tool\'s identity, matching fromStreamedName\'s own restriction');
 });
 
 test('vibe: argv — resume, --add-dir, and the permission-mode flags', async () => {

@@ -47,6 +47,7 @@ import { parseMarker, SegmentGone, type SegmentCursor, type SessionOutput } from
 
 import type { VibeChatJob } from './vibe-session-process.js';
 import type { VibeCatalogModel } from '../../../src/shared/vibe-adapter.js';
+import { vibeMcpNaming } from '../../../src/shared/vibe-adapter.js';
 
 export type ProviderId = 'claude' | 'codex' | 'vibe';
 
@@ -1000,14 +1001,28 @@ const codexMapper: ProviderMapper = {
   },
 };
 
-/** vibe MCP tool-use names look like `mcp_<server>_<tool>` (single underscores,
- *  non-alphanumerics folded to `_` — e.g. `mcp_insrc_insrc_analyze_step`). */
-function parseVibeMcpTool(tool: string): { server: string; name: string } | undefined {
-  if (!tool.startsWith('mcp_')) return undefined;
-  const rest = tool.slice('mcp_'.length);
-  const sep = rest.indexOf('_');
-  if (sep <= 0 || sep === rest.length - 1) return undefined;
-  return { server: rest.slice(0, sep), name: rest.slice(sep + 1) };
+/** s3/t2: delegates to VibeMcpNaming.fromStreamedName (sc2) — the single live-confirmed
+ *  `mcp_<server>.<tool>` parser — rather than an independent parser of its own (ac4). */
+export function parseVibeMcpTool(tool: string): { server: string; name: string } | undefined {
+  const identity = vibeMcpNaming.fromStreamedName(tool);
+  return identity === undefined ? undefined : { server: identity.server, name: identity.tool };
+}
+
+/** Same output precedence as vibe-session-process.ts's emitEffectResult (the legacy
+ *  worker-bridge's own synthesis of this same native row) -- outputText, else output,
+ *  else the error message, else reason, else empty; never a fabricated payload. */
+function effectResultOutput(state: Record<string, unknown> | undefined): string {
+  if (state === undefined) return '';
+  const outputText = state['outputText'];
+  if (typeof outputText === 'string' && outputText !== '') return outputText;
+  const output = state['output'];
+  if (typeof output === 'string' && output !== '') return output;
+  const error = isRecord(state['error']) ? state['error'] : undefined;
+  const errorMessage = error?.['message'];
+  if (typeof errorMessage === 'string' && errorMessage !== '') return errorMessage;
+  const reason = state['reason'];
+  if (typeof reason === 'string' && reason !== '') return reason;
+  return '';
 }
 
 const vibeMapper: ProviderMapper = {
@@ -1059,7 +1074,44 @@ const vibeMapper: ProviderMapper = {
       const message = typeof obj['message'] === 'string' ? (obj['message'] as string) : 'vibe turn failed';
       return [{ kind: 'error', turnId, message }];
     }
-    if (type !== 'message') return []; // reasoning / effect / anything else: noise
+    // Native top-level rows (direct-spawn path, no worker bridge). Carried alongside the
+    // legacy 'insrc-vibe-thinking'/synthetic-message branches above (lc2): a session file
+    // written by either path decodes exactly the same way.
+    if (type === 'reasoning') return [{ kind: 'status', turnId, phase: 'thinking' }];
+    if (type === 'effect') {
+      const toolCallId = obj['toolCallId'];
+      const detail = isRecord(obj['detail']) ? obj['detail'] : undefined;
+      const toolName = detail?.['toolName'];
+      if (typeof toolCallId !== 'string' || toolCallId === '' || typeof toolName !== 'string') return [];
+      const input = isRecord(detail?.['input']) ? (detail['input'] as Record<string, unknown>) : {};
+      const command = typeof input['command'] === 'string' ? (input['command'] as string) : undefined;
+      if (command !== undefined) (state.toolCommands ??= {})[toolCallId] = command;
+      const mcp = parseVibeMcpTool(toolName);
+      const present = mcp !== undefined && /(?:^|_)insrc_present$/.test(mcp.name) ? declaredDocuments(input['documents']) : undefined;
+      const out: TurnEvent[] = [{
+        kind: 'tool-call',
+        turnId,
+        tool: toolName,
+        ...(mcp ? { mcp } : {}),
+        ...(present !== undefined ? { present } : {}),
+        ...(command !== undefined ? { command } : {}),
+        callId: toolCallId,
+      }];
+      const effectState = isRecord(obj['state']) ? (obj['state'] as Record<string, unknown>) : undefined;
+      const status = effectState?.['status'];
+      if (status === 'completed' || status === 'failed' || status === 'cancelled' || status === 'skipped') {
+        out.push({
+          kind: 'tool-result',
+          turnId,
+          output: effectResultOutput(effectState),
+          ...(command !== undefined ? { command } : {}),
+          callId: toolCallId,
+          ...(status !== 'completed' ? { isError: true } : {}),
+        });
+      }
+      return out;
+    }
+    if (type !== 'message') return []; // anything else: noise
     const role = obj['role'];
     const content = Array.isArray(obj['content']) ? (obj['content'] as Array<Record<string, unknown>>) : [];
     if (role === 'assistant') {

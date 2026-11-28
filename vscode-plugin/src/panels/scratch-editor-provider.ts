@@ -2,6 +2,7 @@
  * native document operations (t7), and t5 supplies durable recovery operations. */
 import { createHash } from 'node:crypto';
 import { parseScratchEditorMessage, parseScratchHostMessage, sameScratchDraft, type ScratchDraftProposal, type ScratchHostToEditor } from './scratch-editor-protocol.js';
+import type { ScratchValidationClient, ScratchValidationIdentity, ScratchValidationResult } from './scratch-validation-client.js';
 import type { ScratchSnapshot } from './scratch-editor-state.js';
 
 export interface ScratchTextEdit { readonly baseVersion: number; readonly start: number; readonly end: number; readonly text: string }
@@ -12,7 +13,8 @@ export interface ScratchDocumentControllerDeps {
   retainDraft(draft: ScratchDraftProposal): Promise<void>;
   /** Clear only this exact applied draft, never a newer recovery record. */
   draftApplied(draft: ScratchDraftProposal): Promise<void>;
-  admit(source: string, draft: string, base: ScratchSnapshot): { readonly allowed: boolean; readonly reason?: string | undefined } | Promise<{ readonly allowed: boolean; readonly reason?: string | undefined }>;
+  admit(source: string, draft: string, base: ScratchSnapshot, identity: ScratchValidationIdentity): ScratchValidationResult | Promise<ScratchValidationResult>;
+  validation?: Pick<ScratchValidationClient, 'acceptCandidate' | 'confirmCandidate' | 'discardCandidate' | 'invalidateBase'> | undefined;
   warn(message: string): void;
 }
 export const scratchDigest = (text: string): string => createHash('sha256').update(text, 'utf8').digest('hex');
@@ -69,6 +71,7 @@ export class ScratchDocumentController {
   }
   private notify(): void { for (const check of this.waiters) check(); }
   private conflict(pane: Pane, seq: number, message: string): void {
+    this.deps.validation?.invalidateBase();
     pane.failure = message;
     this.post(pane, { type: 'conflict', paneSessionId: pane.id, draftSeq: seq, message });
   }
@@ -129,7 +132,7 @@ export class ScratchDocumentController {
         return Promise.reject(new Error('Conflicting pending-draft promotion'));
       }
     } else if (previous?.editId === draft.editId) return Promise.reject(new Error('Reused edit identity'));
-    if (!same) pane.reportedBaseVersion = draft.baseVersion;
+    if (!same) { pane.reportedBaseVersion = draft.baseVersion; this.deps.validation?.discardCandidate(); }
     pane.latest = draft;
     const pendingReceipt = this.pendingReceipts.get(pane);
     if (pendingReceipt && draft.parentEditId !== pendingReceipt.draft.editId) {
@@ -175,7 +178,7 @@ export class ScratchDocumentController {
         if (!direct) { this.conflict(pane, draft.draftSeq, 'Stale source version; draft retained.'); continue; }
         if (draft.parentEditId && ack?.editId !== draft.parentEditId && !(pane.cancelledParent?.editId === draft.parentEditId && pane.cancelledParent.baseVersion === base.version && pane.cancelledParent.baseDigest === base.digest)) { this.conflict(pane, draft.draftSeq, 'Unacknowledged edit parent; draft retained.'); continue; }
         let admission: Awaited<ReturnType<ScratchDocumentControllerDeps['admit']>>;
-        try { admission = await this.deps.admit(base.markdown, draft.markdown, base); }
+        try { admission = await this.deps.admit(base.markdown, draft.markdown, base, { paneSessionId: pane.id, draftSeq: draft.draftSeq, editId: draft.editId, baseVersion: base.version, baseDigest: base.digest }); }
         catch (error) {
           // An obsolete failure cannot freeze newer typing. A dead executor
           // will reject the new generation visibly when it is submitted.
@@ -185,6 +188,7 @@ export class ScratchDocumentController {
         const current = this.read();
         if (this.frozen || current.version !== base.version || current.digest !== base.digest) { this.conflict(pane, draft.draftSeq, 'Source changed during validation; draft retained.'); continue; }
         if (pane.latest?.draftSeq !== draft.draftSeq) {
+          this.deps.validation?.discardCandidate(true);
           pane.cancelledParent = { editId: draft.editId, baseVersion: base.version, baseDigest: base.digest };
           if (!await this.post(pane, { type: 'admission-superseded', paneSessionId: pane.id, draftSeq: draft.draftSeq, editId: draft.editId, baseVersion: base.version, baseDigest: base.digest }) && pane.attached) this.conflict(pane, draft.draftSeq, 'Validation cancellation could not be confirmed; draft retained.');
           continue;
@@ -193,6 +197,7 @@ export class ScratchDocumentController {
         if (!admission.allowed) { this.conflict(pane, draft.draftSeq, admission.reason ?? 'Unsafe Markdown; source and draft retained.'); continue; }
         // No await between the exact source check above and entering the
         // native apply lane. Accepted native application may finish afterward.
+        this.deps.validation?.acceptCandidate(admission.ticket);
         this.inFlight = { pane, draft, base };
         if (base.markdown !== draft.markdown && !await this.deps.applyEdit(minimalScratchEdit(base.markdown, draft.markdown, base.version))) throw new Error('Native edit refused');
         const applied = this.read();
@@ -203,6 +208,7 @@ export class ScratchDocumentController {
           await this.deps.retainDraft(pane.latest ?? draft);
           throw new Error('Document changed before acknowledgement');
         }
+        if (this.deps.validation && !this.deps.validation.confirmCandidate(admission.ticket, { paneSessionId: pane.id, draftSeq: draft.draftSeq, editId: draft.editId, ...confirmed })) this.deps.validation.invalidateBase();
         pane.appliedSeq = draft.draftSeq; pane.cancelledParent = undefined;
         pane.ack = { editId: draft.editId, baseVersion: base.version, baseDigest: base.digest, snapshot: applied, request: draft };
         const delivered = await this.post(pane, { type: 'apply-ack', paneSessionId: pane.id, draftSeq: draft.draftSeq, editId: draft.editId, ...applied });
@@ -238,6 +244,7 @@ export class ScratchDocumentController {
     const own = this.inFlight && next.version === this.inFlight.base.version + 1 && next.markdown === this.inFlight.draft.markdown;
     this.known = next;
     if (own) return;
+    this.deps.validation?.invalidateBase();
     if (this.hasPending) {
       this.frozen = true;
       for (const pane of this.panes.values()) {

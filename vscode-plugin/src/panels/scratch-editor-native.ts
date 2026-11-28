@@ -103,7 +103,8 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
       },
       retainDraft: draft => recovery.retain(key, draft),
       draftApplied: async draft => { await recovery.clearApplied(key, draft); },
-      admit: (source, draft, base) => validator.client.run({ source, draft, baseKey: `${base.version}:${base.digest}` }),
+      admit: (source, draft, base, identity) => validator.client.run({ source, draft, baseKey: `${base.version}:${base.digest}`, identity }),
+      validation: validator.client,
       warn,
     });
     void validator.client.ready.catch(() => controller.validationUnavailable());
@@ -480,7 +481,7 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
   };
   const listeners = [
     api.window.registerCustomEditorProvider(SCRATCH_EDITOR_VIEW_TYPE, provider, { supportsMultipleEditorsPerDocument: true, webviewOptions: { retainContextWhenHidden: true } }),
-    api.workspace.onDidChangeTextDocument(event => { const entry = documents.get(event.document.uri.toString()); if (entry?.document === event.document) { entry.validator.client.invalidateBase(); entry.controller.documentChanged(); } }),
+    api.workspace.onDidChangeTextDocument(event => { const entry = documents.get(event.document.uri.toString()); if (entry?.document === event.document) { entry.controller.documentChanged(); } }),
     api.workspace.onWillSaveTextDocument(event => {
       const entry = documents.get(event.document.uri.toString());
       if (entry?.skipSaveFlush) { entry.skipSaveFlush = false; return; }

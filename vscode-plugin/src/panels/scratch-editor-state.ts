@@ -11,6 +11,8 @@ export class ScratchRendererState {
   private sequence = 0;
   private acknowledged = 0;
   private inFlight: ScratchDraftProposal | undefined;
+  private inFlightDigest: string | undefined;
+  private provisional: { readonly version: number; readonly digest: string } | undefined;
   private latest: ScratchDraftProposal | undefined;
   private frozen = false;
   private value: string;
@@ -47,11 +49,12 @@ export class ScratchRendererState {
     this.admission = 'validating'; return true;
   }
   /** The caller has freshly validated this exact generation against this base. */
-  authorize(sequence: number, baseVersion: number, baseDigest: string): boolean {
+  authorize(sequence: number, baseVersion: number, baseDigest: string, candidateDigest?: string): boolean {
     const latest = this.latest;
     if (this.frozen || sequence <= this.acknowledged || !latest || sequence !== latest.draftSeq || this.inFlight || baseVersion !== this.canonical.version || baseDigest !== this.canonical.digest) return false;
     const authorized: ScratchDraftProposal = { ...latest, apply: true, baseVersion, baseDigest };
     if (!parseScratchEditorMessage(authorized)) return false;
+    this.inFlightDigest = candidateDigest; this.provisional = undefined;
     this.latest = authorized; this.inFlight = authorized; this.admission = 'authorized'; this.post(authorized); return true;
   }
   refuse(sequence: number, _reason: string): void {
@@ -71,6 +74,14 @@ export class ScratchRendererState {
       if (msg.version < this.canonical.version) return {};
       if (msg.version === this.canonical.version && msg.digest === this.canonical.digest) return {};
       if (msg.version === this.canonical.version) { this.frozen = true; this.admission = 'conflict'; return { conflict: 'Conflicting document version; local text retained.' }; }
+      if (this.hasPending && this.inFlight && !this.frozen && msg.markdown === this.inFlight.markdown &&
+        msg.version === this.inFlight.baseVersion + (this.inFlight.markdown === this.canonical.markdown ? 0 : 1) &&
+        (this.inFlightDigest === undefined || msg.digest === this.inFlightDigest) &&
+        (!this.provisional || this.provisional.version === msg.version && this.provisional.digest === msg.digest)) {
+        // A matching change notification is provisional, never an acknowledgement
+        // or proof adoption. Only the exact own apply-ack advances the base.
+        this.provisional = { version: msg.version, digest: msg.digest }; return {};
+      }
       if (this.hasPending) { this.frozen = true; this.admission = 'conflict'; return { conflict: 'Source changed; local draft retained.' }; }
       this.canonical = msg; this.value = msg.markdown; this.admission = 'applied';
       return { replace: msg.markdown };
@@ -79,16 +90,18 @@ export class ScratchRendererState {
       if (!this.inFlight || this.sequence <= msg.draftSeq || msg.draftSeq !== this.inFlight.draftSeq || msg.editId !== this.inFlight.editId ||
         msg.baseVersion !== this.canonical.version || msg.baseDigest !== this.canonical.digest ||
         msg.baseVersion !== this.inFlight.baseVersion || msg.baseDigest !== this.inFlight.baseDigest) return {};
-      this.inFlight = undefined; // no native edit or acknowledgement is claimed
+      this.inFlight = undefined; this.inFlightDigest = undefined; this.provisional = undefined; // no native edit or acknowledgement is claimed
       if (this.frozen) return {};
       this.admission = 'waiting-idle'; return { revalidate: true };
     }
     if (msg.type !== 'apply-ack' || msg.draftSeq <= this.acknowledged) return {};
     if (!this.inFlight || msg.editId !== this.inFlight.editId || msg.draftSeq !== this.inFlight.draftSeq ||
-      msg.markdown !== this.inFlight.markdown || msg.version < this.canonical.version) {
+      msg.markdown !== this.inFlight.markdown || msg.version < this.canonical.version ||
+      this.inFlightDigest !== undefined && (msg.digest !== this.inFlightDigest || msg.version !== this.inFlight.baseVersion + (this.inFlight.markdown === this.canonical.markdown ? 0 : 1)) ||
+      this.provisional && (this.provisional.version !== msg.version || this.provisional.digest !== msg.digest)) {
       this.frozen = true; this.admission = 'conflict'; return { conflict: 'Unexpected acknowledgement; local draft retained.' };
     }
-    this.canonical = msg; this.acknowledged = msg.draftSeq; this.inFlight = undefined;
+    this.canonical = msg; this.acknowledged = msg.draftSeq; this.inFlight = undefined; this.inFlightDigest = undefined; this.provisional = undefined;
     if (this.sequence === msg.draftSeq) { this.value = msg.markdown; this.admission = this.frozen ? 'conflict' : 'applied'; return {}; }
     // A newer draft was checked against the old base (or is still unchecked).
     // Neither an ack nor a receipt grants admission against the new source.

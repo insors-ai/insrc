@@ -1,3 +1,4 @@
+import { scratchBrowserDigest } from './scratch-browser-digest.js';
 import { ScratchEditorPane } from '../../scratch-editor-webview.js';
 import type { ScratchDraftProposal, ScratchEditorToHost, ScratchHostToEditor } from '../../scratch-editor-protocol.js';
 import { editorViewCtx } from '@milkdown/kit/core';
@@ -20,11 +21,11 @@ async function make(id:string, workerSuffix='', holdConfirmation=false) {
   async function finishLock():Promise<void>{const request=lockRequest;if(!request||applied<request.draftSeq)return;lockRequest=undefined;const success=latest===request.draftSeq;locked=success?request.locked:locked;events.push(`lock-committed:${success}`);lastLock={type:'lock-state',paneSessionId:id,requestId:request.requestId,locked,success,message:success?'':'Capture changed; lock refused.'};if(!holdConfirmation)await pane.receive(lastLock);}
   const script=document.head.querySelector('#scratch-validator-source')!, trusted=script.textContent!;
   if(workerSuffix)script.textContent=JSON.stringify((JSON.parse(trusted) as string)+workerSuffix);
-  try{await pane.receive({type:'document-state',paneSessionId:id,version:1,digest:'a'.repeat(64),markdown:source,locked:false});}finally{script.textContent=trusted;}
+  try{await pane.receive({type:'document-state',paneSessionId:id,version:1,digest:await scratchBrowserDigest(source),markdown:source,locked:false});}finally{script.textContent=trusted;}
   const authorizations=()=>frames.filter((message):message is ScratchDraftProposal=>message.type==='draft'&&message.apply===true);
   const edit=(text:string)=>pane['crepe']!.editor.action(ctx=>{const view=ctx.get(editorViewCtx);view.dispatch(view.state.tr.insertText(text,view.state.doc.content.size-1));});
   const key=(key:string)=>root.querySelector('.ProseMirror')!.dispatchEvent(new KeyboardEvent('keydown',{key,ctrlKey:true,bubbles:true,cancelable:true}));
-  const ack=async(sequence:number)=>{const draft=authorizations().find(d=>d.draftSeq===sequence);if(!draft)throw new Error('Missing admitted generation');if(canonical!==draft.markdown)version++;canonical=draft.markdown;applied=sequence;events.push(`ack:${sequence}`);await pane.receive({type:'apply-ack',paneSessionId:id,draftSeq:sequence,editId:draft.editId,version,digest:String(version%10).repeat(64),markdown:canonical});await finishLock();};
+  const ack=async(sequence:number)=>{const draft=authorizations().find(d=>d.draftSeq===sequence);if(!draft)throw new Error('Missing admitted generation');if(canonical!==draft.markdown)version++;canonical=draft.markdown;applied=sequence;events.push(`ack:${sequence}`);await pane.receive({type:'apply-ack',paneSessionId:id,draftSeq:sequence,editId:draft.editId,version,digest:await scratchBrowserDigest(canonical),markdown:canonical});await finishLock();};
   const select=()=>{const paragraph=root.querySelector('.ProseMirror p')!,range=document.createRange();range.selectNodeContents(paragraph);const selection=window.getSelection()!;selection.removeAllRanges();selection.addRange(range);document.dispatchEvent(new Event('selectionchange'));return paragraph.textContent!;};
   return{pane,root,frames,events,edit,key,ack,select,authorizations,async releaseLock(original:boolean){const result=original?lastLock:cancelledLock;if(!result)throw new Error('No held lock reply');await pane.receive(result);},get locked(){return locked;},async dispose(){await pane.dispose();root.remove();}};
 }

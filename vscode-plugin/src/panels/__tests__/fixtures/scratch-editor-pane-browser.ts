@@ -1,3 +1,4 @@
+import { scratchBrowserDigest } from './scratch-browser-digest.js';
 import { ScratchEditorPane } from '../../scratch-editor-webview.js';
 import { ScratchLockPreference } from '../../scratch-editor-lock.js';
 import type { ScratchEditorToHost, ScratchDraftProposal } from '../../scratch-editor-protocol.js';
@@ -12,7 +13,7 @@ async function run(): Promise<unknown> {
     const root = document.createElement('main'); document.body.append(root); const sent: ScratchEditorToHost[] = [];
     const pane = new ScratchEditorPane(root, { paneSessionId: id, post: m => { sent.push(m); if (m.type === 'lock') void preference.remember(m.locked).then(() => pane.receive({type:'lock-state',paneSessionId:id,requestId:m.requestId,locked:m.locked,success:true,message:''})); } });
     all.push({ pane, root, sent });
-    await pane.receive({ type: 'document-state', paneSessionId: id, version: 1, digest: 'a'.repeat(64), markdown: source, locked: preference.initial() });
+    await pane.receive({ type: 'document-state', paneSessionId: id, version: 1, digest: await scratchBrowserDigest(source), markdown: source, locked: preference.initial() });
     return { pane, root, sent };
   };
   const select = async (root: HTMLElement) => {
@@ -53,7 +54,7 @@ async function run(): Promise<unknown> {
     first.pane['crepe']!.editor.action(ctx => { const view = ctx.get(editorViewCtx); view.dispatch(view.state.tr.insertText(' newer', 12)); });
     const before = first.pane['crepe']!.getMarkdown(), proposed = drafts(first.sent), old = proposed[0]!;
     if (!old) throw new Error(`No accepted proposal: ${first.root.textContent}`);
-    await first.pane.receive({ type: 'apply-ack', paneSessionId: 'first', draftSeq: old.draftSeq, editId: old.editId, version: 2, digest: 'b'.repeat(64), markdown: old.markdown });
+    await first.pane.receive({ type: 'apply-ack', paneSessionId: 'first', draftSeq: old.draftSeq, editId: old.editId, version: 2, digest: await scratchBrowserDigest(old.markdown), markdown: old.markdown });
     for (let i = 0; drafts(first.sent).filter(d => d.apply).length < 2 && i < 1000; i++) await new Promise(resolve => setTimeout(resolve, 10));
     const lateAck = { before, after: first.pane['crepe']!.getMarkdown(), drafts: drafts(first.sent) };
     await third.pane.receive({ type: 'document-state', paneSessionId: 'third', version: 2, digest: 'c'.repeat(64), markdown: '# Host change\n', locked: true });

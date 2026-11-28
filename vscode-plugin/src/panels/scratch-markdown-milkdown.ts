@@ -11,7 +11,8 @@ import { trailing } from '@milkdown/kit/plugin/trailing';
 import { scratchConfiguredCodec, scratchIntentDigest } from './scratch-markdown-codec.js';
 import type { ScratchSnapshot } from './scratch-editor-state.js';
 import { ScratchIdleValidation } from './scratch-idle-validation.js';
-import type { ScratchValidationClient } from './scratch-validation-client.js';
+import { scratchEditId } from './scratch-editor-protocol.js';
+import type { ScratchValidationClient, ScratchValidationTicket } from './scratch-validation-client.js';
 
 export const SCRATCH_HOST_TRANSACTION = 'insrcScratchHostSnapshot';
 function hostTransaction(transaction: Transaction): boolean {
@@ -23,11 +24,12 @@ function hostTransaction(transaction: Transaction): boolean {
 }
 export interface ScratchObservedDraft {
   readonly kind: 'proposal' | 'refused'; readonly draft: string; readonly draftSeq: number;
-  readonly baseVersion: number; readonly baseDigest: string; readonly reason?: string | undefined;
+  readonly baseVersion: number; readonly baseDigest: string; readonly reason?: string | undefined; readonly ticket?: ScratchValidationTicket | undefined;
 }
 interface Candidate { readonly draft: string; readonly draftSeq: number; readonly document: ProseNode; readonly schema: Schema }
 export interface ScratchObservationOptions {
   readonly source: () => ScratchSnapshot;
+  readonly paneSessionId?: string | undefined;
   readonly stage: (draft: string) => number;
   readonly eligible: (sequence: number, base: ScratchSnapshot) => boolean;
   readonly validator: ScratchValidationClient;
@@ -51,12 +53,12 @@ export async function observeScratchMarkdown(editor: Editor, options: ScratchObs
       if (!current()) throw new Error('Validation superseded by newer typing.');
       start = performance.now();
       const result = await options.validator.run({ source: base.markdown, draft: candidate.draft,
-        baseKey: `${base.version}:${base.digest}`, expectedIntent });
+        baseKey: `${base.version}:${base.digest}`, expectedIntent, ...(options.paneSessionId ? { identity: { paneSessionId: options.paneSessionId, draftSeq: candidate.draftSeq, editId: scratchEditId(candidate.draftSeq), baseVersion: base.version, baseDigest: base.digest } } : {}) });
       options.timing?.('validation', performance.now() - start);
       return result;
     },
     complete: (candidate, base, result) => onDraft({ kind: result.allowed ? 'proposal' : 'refused', draft: candidate.draft,
-      draftSeq: candidate.draftSeq, baseVersion: base.version, baseDigest: base.digest, reason: result.reason }),
+      draftSeq: candidate.draftSeq, baseVersion: base.version, baseDigest: base.digest, reason: result.reason, ticket: result.ticket }),
     failed: (_candidate, error) => options.failed(error instanceof Error ? error.message : 'Background validation failed; draft retained.'),
     dispose: () => options.validator.dispose(),
   });

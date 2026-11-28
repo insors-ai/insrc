@@ -26,7 +26,7 @@ import { parseScratchEditorMessage, parseScratchHostMessage, type ScratchEditorT
 import { ScratchRendererState } from './scratch-editor-state.js';
 import { checkScratchMarkdown } from './scratch-markdown.js';
 import { observeScratchMarkdown, scratchMilkdownCodec, SCRATCH_HOST_TRANSACTION } from './scratch-markdown-milkdown.js';
-import { createScratchBrowserValidator, type ScratchValidationClient } from './scratch-validation-client.js';
+import { createScratchBrowserValidator, type ScratchValidationClient, type ScratchValidationTicket } from './scratch-validation-client.js';
 import { ScratchActionFlush } from './scratch-action-flush.js';
 import { configureScratchSchema } from './scratch-markdown-codec.js';
 
@@ -48,6 +48,7 @@ export class ScratchEditorPane {
   private state: ScratchRendererState | undefined;
   private observer: Awaited<ReturnType<typeof observeScratchMarkdown>> | undefined;
   private validator: ScratchValidationClient | undefined;
+  private candidateProof: ScratchValidationTicket | undefined;
   private readonly flusher = new ScratchActionFlush(
     () => ({ sequence: this.state?.draftSeq ?? 0, pending: this.state?.hasPending ?? false, unavailable: !this.state || this.failed || this.disposed || !!this.deleting || !!this.state.conflicted }),
     sequence => this.observer?.expedite(sequence) ?? false);
@@ -226,7 +227,13 @@ export class ScratchEditorPane {
     }
     const oldBase = this.state.snapshot;
     const result = this.state.receive(msg);
-    if (oldBase.version !== this.state.snapshot.version || oldBase.digest !== this.state.snapshot.digest) this.validator?.invalidateBase();
+    let adopted = false;
+    if (msg.type === 'apply-ack' && this.candidateProof && msg.draftSeq === this.candidateProof.identity.draftSeq && msg.editId === this.candidateProof.identity.editId && !result.conflict &&
+      this.state.snapshot.version === msg.version && this.state.snapshot.digest === msg.digest && this.state.snapshot.markdown === msg.markdown) {
+      adopted = this.validator?.confirmCandidate(this.candidateProof, msg) ?? false; this.candidateProof = undefined;
+    }
+    if (msg.type === 'admission-superseded' && result.revalidate) { this.validator?.discardCandidate(true); this.candidateProof = undefined; }
+    if (result.conflict || !adopted && (oldBase.version !== this.state.snapshot.version || oldBase.digest !== this.state.snapshot.digest)) this.validator?.invalidateBase();
     this.flusher.changed();
     if (result.conflict) { this.fail(result.conflict); return; }
     if (result.revalidate) this.observer?.refresh();
@@ -318,10 +325,11 @@ export class ScratchEditorPane {
       this.validator = createScratchBrowserValidator(trusted);
       this.observer = await observeScratchMarkdown(this.crepe.editor, {
         source: () => this.state!.snapshot,
+        paneSessionId: this.options.paneSessionId,
         validator: this.validator,
         stage: draft => {
           this.hideSend();
-          const sequence = this.state!.stage(draft); this.flusher.changed();
+          const sequence = this.state!.stage(draft); this.validator?.discardCandidate(); this.flusher.changed();
           if (!this.actionFailure) this.status.textContent = 'Waiting for a typing gap…';
           return sequence;
         },
@@ -331,7 +339,9 @@ export class ScratchEditorPane {
       }, result => {
         if (this.disposed || this.failed) return;
         if (result.kind === 'proposal') {
-          if (this.state!.authorize(result.draftSeq, result.baseVersion, result.baseDigest) && !this.actionFailure) this.status.textContent = 'Updating document…';
+          this.candidateProof = result.ticket; this.validator?.acceptCandidate(result.ticket);
+          if (this.state!.authorize(result.draftSeq, result.baseVersion, result.baseDigest, result.ticket?.digest)) { if (!this.actionFailure) this.status.textContent = 'Updating document…'; }
+          else { this.candidateProof = undefined; this.validator?.discardCandidate(true); }
         } else {
           this.state!.refuse(result.draftSeq, result.reason ?? 'Unsafe draft');
           this.fail(result.reason ?? 'Draft cannot be safely applied. Local editor text is retained.');

@@ -146,7 +146,9 @@ class ScratchMarkdownValidationJob<Document> {
       return { allowed: true, source };
     } catch { return refuse('The rich editor cannot safely parse this note. Original content is retained.'); }
   }
+  private acceptedEdit: { readonly source: string; readonly draft: string } | undefined;
   edit(source: string, draft: string, expectedDocument: Document): ScratchMarkdownAdmission & { readonly draft: string } {
+    this.acceptedEdit = undefined;
     const base = this.base?.source === source ? { allowed: true as const, source } : this.check(source);
     if (!base.allowed) return { ...base, draft };
     const proposal = this.check(draft);
@@ -166,7 +168,11 @@ class ScratchMarkdownValidationJob<Document> {
         if (matching && (matching.size !== 1 || !matching.has(span.raw))) return { allowed: false, source, draft, reason: 'Unchanged content has an unrelated raw source change.' };
       }
     } catch { return { allowed: false, source, draft, reason: 'The intended editor document could not be verified.' }; }
+    this.acceptedEdit = { source, draft };
     return { allowed: true, source, draft };
+  }
+  verifiedCandidate(source: string, draft: string): VerifiedScratchBase | undefined {
+    return this.acceptedEdit?.source === source && this.acceptedEdit.draft === draft ? this.verified(draft) : undefined;
   }
   /** Only a fully checked source yields a cache record. No parser tree or
    * mutable codec document escapes into the cache. */
@@ -183,17 +189,38 @@ interface VerifiedScratchBase { readonly source: string; readonly inventory: Scr
  * too. Epoch replacement creates a new verifier, never transfers its cache. */
 export class ScratchMarkdownVerifier<Document> {
   private base: { readonly key: string; readonly value: VerifiedScratchBase } | undefined;
+  private candidate: { readonly token: number; readonly value: VerifiedScratchBase; accepted: boolean } | undefined;
   private revision = 0;
+  private candidateRevision = 0;
   constructor(private readonly codec: ScratchMarkdownCodec<Document>) {}
-  invalidate(): void { this.revision++; this.base = undefined; }
-  job(source: string, key: string): { readonly validation: ScratchMarkdownValidationJob<Document>; retainBase(): void } {
+  invalidate(): void { this.revision++; this.candidateRevision++; this.base = undefined; this.candidate = undefined; }
+  /** New typing can revoke an unaccepted result, but an already accepted apply
+   * keeps its one handoff until exact canonical confirmation or invalidation. */
+  discardCandidate(revokeAccepted = false): void { this.candidateRevision++; if (revokeAccepted || !this.candidate?.accepted) this.candidate = undefined; }
+  acceptCandidate(token: number): boolean {
+    if (this.candidate?.token !== token) return false;
+    this.candidate.accepted = true; return true;
+  }
+  confirmCandidate(token: number, source: string, key: string): boolean {
+    const candidate = this.candidate;
+    if (!candidate?.accepted || candidate.token !== token || candidate.value.source !== source) { this.invalidate(); return false; }
+    this.base = { key, value: candidate.value }; this.candidate = undefined;
+    this.revision++; this.candidateRevision++; return true;
+  }
+  job(source: string, key: string): { readonly validation: ScratchMarkdownValidationJob<Document>; retainBase(): void; retainCandidate(draft: string, token: number): boolean } {
     if (this.base && (this.base.key !== key || this.base.value.source !== source)) this.invalidate();
-    const revision = this.revision;
+    this.discardCandidate();
+    const revision = this.revision, candidateRevision = this.candidateRevision;
     const validation = new ScratchMarkdownValidationJob(this.codec, this.base?.value);
     return { validation, retainBase: () => {
       if (revision !== this.revision || this.base) return;
       const value = validation.verified(source);
       if (value) this.base = { key, value };
+    }, retainCandidate: (draft, token) => {
+      if (revision !== this.revision || candidateRevision !== this.candidateRevision || this.candidate?.accepted) return false;
+      const value = validation.verifiedCandidate(source, draft);
+      if (!value) return false;
+      this.candidate = { token, value, accepted: false }; return true;
     } };
   }
 }

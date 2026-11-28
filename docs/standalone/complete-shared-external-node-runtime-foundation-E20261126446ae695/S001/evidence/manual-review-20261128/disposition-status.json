@@ -9,10 +9,10 @@
       "t1",
       "t2",
       "t3",
-      "t4"
+      "t4",
+      "t5"
     ],
     "currentTasksPending": [
-      "t5",
       "t6",
       "t7",
       "t8",
@@ -20,7 +20,7 @@
       "t10"
     ],
     "finalStoryBuildApproved": false,
-    "note": "Current T4 passed at50245f18a. Earlier BUILD rows for later tasks are historical, not current PLAN4 completion."
+    "note": "Current T5 passed atf34f13bcd. Earlier BUILD rows for later tasks remain historical."
   },
   "nativeEvidence": "Prior macOS/Linux source equivalence becomes historical after production edits; affected regression/native qualification required before final BUILD approval",
   "findings": [
@@ -28,7 +28,7 @@
       "id": "1",
       "status": "resolved",
       "scope": "bootstrap",
-      "evidence": "bootstrap-batch/README.md",
+      "evidence": "../plan4-build-t5/README.md",
       "plan4Owners": [
         "t5"
       ]
@@ -37,7 +37,7 @@
       "id": "2",
       "status": "resolved",
       "scope": "bootstrap",
-      "evidence": "bootstrap-batch/README.md",
+      "evidence": "../plan4-build-t5/README.md",
       "plan4Owners": [
         "t5"
       ]
@@ -46,7 +46,7 @@
       "id": "3",
       "status": "resolved",
       "scope": "bootstrap",
-      "evidence": "bootstrap-batch/README.md",
+      "evidence": "../plan4-build-t5/README.md",
       "plan4Owners": [
         "t5"
       ]
@@ -151,7 +151,7 @@
       "id": "14",
       "status": "resolved",
       "scope": "bootstrap",
-      "evidence": "bootstrap-batch/README.md",
+      "evidence": "../plan4-build-t5/README.md",
       "plan4Owners": [
         "t5"
       ]
@@ -174,9 +174,9 @@
     },
     {
       "id": "17",
-      "status": "approved-design-awaiting-implementation",
+      "status": "resolved",
       "scope": "bootstrap",
-      "evidence": "../../LLD.md",
+      "evidence": "../plan4-build-t5/README.md",
       "plan4Owners": [
         "t5"
       ]
@@ -194,7 +194,7 @@
       "id": "T2",
       "status": "resolved",
       "scope": "tests",
-      "evidence": "bootstrap-batch/README.md",
+      "evidence": "../plan4-build-t5/README.md",
       "plan4Owners": [
         "t5"
       ]
@@ -223,7 +223,7 @@
       "id": "T5",
       "status": "resolved",
       "scope": "tests",
-      "evidence": "bootstrap-batch/README.md",
+      "evidence": "../plan4-build-t5/README.md",
       "plan4Owners": [
         "t5"
       ]
@@ -279,21 +279,23 @@
       "id": "R2-4",
       "severity": "LOW",
       "kind": "test",
-      "status": "pending-existing-t5-plan-realignment",
+      "status": "resolved",
       "scope": "Rename foreign-archive pinned-size case honestly; no code change yet",
       "plan4Owners": [
         "t5"
-      ]
+      ],
+      "evidence": "../plan4-build-t5/README.md"
     },
     {
       "id": "R2-5",
       "severity": "LOW",
       "kind": "nit",
-      "status": "pending-existing-t5-plan-realignment",
+      "status": "resolved",
       "scope": "Normalize work once and use canonical value downstream; no code change yet",
       "plan4Owners": [
         "t5"
-      ]
+      ],
+      "evidence": "../plan4-build-t5/README.md"
     },
     {
       "id": "R3-1",

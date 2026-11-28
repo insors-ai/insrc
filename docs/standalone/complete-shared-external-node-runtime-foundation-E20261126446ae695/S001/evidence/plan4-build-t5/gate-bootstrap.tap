@@ -1,0 +1,89 @@
+TAP version 13
+# Subtest: terminal bootstrap with protected runtimes
+    # Subtest: bootstrap authenticates archive executable and control bytes before running code and diagnoses prerequisites
+    ok 1 - bootstrap authenticates archive executable and control bytes before running code and diagnoses prerequisites
+      ---
+      duration_ms: 5285.471
+      type: 'test'
+      ...
+    # Subtest: bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node
+    ok 2 - bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node
+      ---
+      duration_ms: 149468.294291
+      type: 'test'
+      ...
+    # Subtest: bootstrap reuses verified cached runtime and control offline with quoted Unicode paths
+    ok 3 - bootstrap reuses verified cached runtime and control offline with quoted Unicode paths
+      ---
+      duration_ms: 83548.365667
+      type: 'test'
+      ...
+    # Subtest: bootstrap preserves incomplete immutable entries and lock conflicts without installation
+    ok 4 - bootstrap preserves incomplete immutable entries and lock conflicts without installation
+      ---
+      duration_ms: 78328.217875
+      type: 'test'
+      ...
+    # Subtest: bootstrap cancellation closes its publication child before cleanup and never launches the manager
+    ok 5 - bootstrap cancellation closes its publication child before cleanup and never launches the manager
+      ---
+      duration_ms: 7922.138709
+      type: 'test'
+      ...
+    # Subtest: bootstrap canonicalizes trailing and repeated separators before publication and cached reuse
+    ok 6 - bootstrap canonicalizes trailing and repeated separators before publication and cached reuse
+      ---
+      duration_ms: 71928.601
+      type: 'test'
+      ...
+    # Subtest: bootstrap publication normalizes aliased work before containment and asset transport
+    ok 7 - bootstrap publication normalizes aliased work before containment and asset transport
+      ---
+      duration_ms: 62316.570667
+      type: 'test'
+      ...
+    # Subtest: bootstrap authenticates all canonical executable and control assets after publication
+    ok 8 - bootstrap authenticates all canonical executable and control assets after publication
+      ---
+      duration_ms: 203566.614875
+      type: 'test'
+      ...
+    # Subtest: bootstrap refuses tampered cached bootstrap and native control offline before helper execution
+    ok 9 - bootstrap refuses tampered cached bootstrap and native control offline before helper execution
+      ---
+      duration_ms: 138030.84025
+      type: 'test'
+      ...
+    # Subtest: concurrent terminal bootstraps keep one native owner and publish one immutable foundation
+    ok 10 - concurrent terminal bootstraps keep one native owner and publish one immutable foundation
+      ---
+      duration_ms: 74544.955
+      type: 'test'
+      ...
+    # Subtest: POSIX terminal I O and fixture TUI use the canonical runtime after helper exit
+    ok 11 - POSIX terminal I O and fixture TUI use the canonical runtime after helper exit
+      ---
+      duration_ms: 66439.119709
+      type: 'test'
+      ...
+    # Subtest: private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission
+    ok 12 - private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission
+      ---
+      duration_ms: 2.586417
+      type: 'test'
+      ...
+    1..12
+ok 1 - terminal bootstrap with protected runtimes
+  ---
+  duration_ms: 499328.102709
+  type: 'suite'
+  ...
+1..1
+# tests 12
+# suites 1
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 499958.91425

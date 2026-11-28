@@ -49,3 +49,10 @@ current Linux dash execution is T10. PowerShell assertions are source-only;
 Windows native qualification/enablement remains deferred. Fixture manager/TUI
 evidence is not daemon lifecycle qualification. T6–T10 and final human Story
 BUILD approval remain pending; the host v2 daemon and Ollama remain untouched.
+
+Registered validation completed successfully atf34f13bcd: BUILD29/TESTS29
+record T5 passed, all16 cases passed with no skips, file failures or timeouts.
+Bootstrap took500.41s and control5.61s within the existing shared600s budget.
+The client300s timeout did not stop the original run, whose canonical persisted
+verdict/raw TAP are retained. Prior settings were restored and verified. T5 is
+complete under PLAN4; T6–T10 and final human Story BUILD approval remain pending.

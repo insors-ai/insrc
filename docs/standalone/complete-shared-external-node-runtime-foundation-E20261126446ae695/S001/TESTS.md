@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 132 pass, 0 fail, 0 skipped, 0 not found; 8 reported by the builder and not run by the gate.
+**Totals:** 135 pass, 0 fail, 0 skipped, 0 not found; 8 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -238,7 +238,7 @@ Run at 2026-11-28T11:55:19.408Z on commit `50245f18a`. Tests check: **passed**. 
 
 ## t5
 
-Run at 2026-11-28T06:35:35.180Z on commit `2f6bcaea7`. Tests check: **passed**. 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-28T12:24:08.956Z on commit `f34f13bcd`. Tests check: **passed**. 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: bootstrap-no-host-node-verifies-archive-and-executable-before-execution**
 
@@ -246,8 +246,10 @@ Run at 2026-11-28T06:35:35.180Z on commit `2f6bcaea7`. Tests check: **passed**. 
 | :--- | :--- | :--- |
 | pass | bootstrap authenticates archive executable and control bytes before running code and diagnoses prerequisites | `src/installer/__tests__/bootstrap.test.ts` |
 | pass | bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node | `src/installer/__tests__/bootstrap.test.ts` |
-| pass | private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission | `src/installer/__tests__/bootstrap.test.ts` |
 | pass | bootstrap authenticates all canonical executable and control assets after publication | `src/installer/__tests__/bootstrap.test.ts` |
+| pass | bootstrap refuses tampered cached bootstrap and native control offline before helper execution | `src/installer/__tests__/bootstrap.test.ts` |
+| pass | private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission | `src/installer/__tests__/bootstrap.test.ts` |
+| pass | bootstrap control verification rejects extra members and unsafe private ancestors | `src/installer/__tests__/bootstrap-control.test.ts` |
 
 **integration: bootstrap-native-operation-lock-exclusive-publication-exact-helper-exit-then-fresh-manager-lock**
 
@@ -255,6 +257,7 @@ Run at 2026-11-28T06:35:35.180Z on commit `2f6bcaea7`. Tests check: **passed**. 
 | :--- | :--- | :--- |
 | pass | bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node | `src/installer/__tests__/bootstrap.test.ts` |
 | pass | concurrent terminal bootstraps keep one native owner and publish one immutable foundation | `src/installer/__tests__/bootstrap.test.ts` |
+| pass | bootstrap control publication copies exact bytes and reuses only a verified immutable directory | `src/installer/__tests__/bootstrap-control.test.ts` |
 
 **integration: bootstrap-publication-stage-distinct-from-running-node-and-loaded-native-library**
 
@@ -262,7 +265,6 @@ Run at 2026-11-28T06:35:35.180Z on commit `2f6bcaea7`. Tests check: **passed**. 
 | :--- | :--- | :--- |
 | pass | bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node | `src/installer/__tests__/bootstrap.test.ts` |
 | pass | private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission | `src/installer/__tests__/bootstrap.test.ts` |
-| pass | runtime publication stage is distinct from running Node and the loaded native library | `src/installer/__tests__/runtime-install.test.ts` |
 
 **integration: runtime-stage-cancellation-conflict-and-uncertain-closure-retain-safe-state**
 
@@ -273,25 +275,30 @@ Run at 2026-11-28T06:35:35.180Z on commit `2f6bcaea7`. Tests check: **passed**. 
 | pass | concurrent terminal bootstraps keep one native owner and publish one immutable foundation | `src/installer/__tests__/bootstrap.test.ts` |
 | pass | bootstrap control close uncertainty is bounded and retains the only owned publication stage | `src/installer/__tests__/bootstrap-control.test.ts` |
 | pass | bootstrap control late cancellation during positive close cannot report successful reuse | `src/installer/__tests__/bootstrap-control.test.ts` |
-| pass | runtime publication retains verifier close uncertainty and refuses later discard | `src/installer/__tests__/runtime-install.test.ts` |
 
 **integration: bootstrap-verified-cached-runtime-control-offline-with-host-node-trap-and-quoted-paths**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | bootstrap reuses verified cached runtime and control offline with quoted Unicode paths | `src/installer/__tests__/bootstrap.test.ts` |
-| pass | POSIX terminal I O and fixture TUI use the canonical runtime after helper exit | `src/installer/__tests__/bootstrap.test.ts` |
-| pass | private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission | `src/installer/__tests__/bootstrap.test.ts` |
 | pass | bootstrap canonicalizes trailing and repeated separators before publication and cached reuse | `src/installer/__tests__/bootstrap.test.ts` |
 | pass | bootstrap refuses tampered cached bootstrap and native control offline before helper execution | `src/installer/__tests__/bootstrap.test.ts` |
+| pass | POSIX terminal I O and fixture TUI use the canonical runtime after helper exit | `src/installer/__tests__/bootstrap.test.ts` |
+| pass | private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission | `src/installer/__tests__/bootstrap.test.ts` |
+
+**integration: bootstrap-work-normalized-once-and-foreign-archive-case-is-pinned-size-only**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | bootstrap authenticates archive executable and control bytes before running code and diagnoses prerequisites | `src/installer/__tests__/bootstrap.test.ts` |
+| pass | bootstrap publication normalizes aliased work before containment and asset transport | `src/installer/__tests__/bootstrap.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/installer/__tests__/bootstrap-control.test.ts` | 0 | 4 | 5.5 s |  |
-| `src/installer/__tests__/bootstrap.test.ts` | 0 | 11 | 359.2 s |  |
-| `src/installer/__tests__/runtime-install.test.ts` | 0 | 6 | 135 s |  |
+| `src/installer/__tests__/bootstrap-control.test.ts` | 0 | 4 | 5.6 s |  |
+| `src/installer/__tests__/bootstrap.test.ts` | 0 | 13 | 500.4 s |  |
 
 ## t6
 

@@ -14,10 +14,16 @@ import { installExecStandIn, _standInServerForTests } from './exec-stand-in.js';
 
 const execFileAsync = promisify(execFile);
 
-test("exec-stand-in keeps its server ref'd while installed, an awaited gh call resolves, and remove() tears it down", async () => {
+test("exec-stand-in keeps its server ref'd while installed, an awaited gh call resolves, and remove() tears it down", async (t) => {
+	const pathBefore = process.env['PATH'];
 	installExecStandIn((program, args) => {
 		assert.equal(program, 'gh');
 		return 'ok:' + args.join(',');
+	});
+	// Teardown is registered before the first assertion: an assertion failure or a
+	// rejected exec must not leave the ref'd stand-in server listening and PATH modified.
+	t.after(() => {
+		if (_standInServerForTests() !== undefined) installExecStandIn();
 	});
 	const server = _standInServerForTests();
 	assert.ok(server, 'the stand-in server exists while installed');
@@ -27,4 +33,5 @@ test("exec-stand-in keeps its server ref'd while installed, an awaited gh call r
 	assert.equal(stdout.trim(), 'ok:issue,list', 'an awaited call through the stand-in resolves');
 	installExecStandIn();
 	assert.equal(_standInServerForTests(), undefined, 'remove() tears the stand-in down');
+	assert.equal(process.env['PATH'], pathBefore, 'remove() restores PATH exactly');
 });

@@ -77,19 +77,26 @@ test('a stuck file is failed at the per-test timeout and cannot block the sweep'
 		writeFileSync(hang, "import { test } from 'node:test';\ntest('never settles', async () => { setInterval(() => {}, 1000); await new Promise(() => {}); });\n");
 		const argv = [...sweepScriptArgv(), '--test-timeout=3000', hang];
 		let stdout = '';
-		let code = 0;
+		let code: number | string | undefined;
+		let killed = false;
+		let signal: string | null = null;
 		try {
 			const out = await execFileAsync(argv[0]!, argv.slice(1), { cwd: ROOT, timeout: 60_000, maxBuffer: 16 * 1024 * 1024, env: SPAWN_ENV });
 			stdout = out.stdout;
+			code = 0;
 		} catch (err) {
-			const e = err as { code?: number; stdout?: string };
-			code = e.code ?? 1;
+			const e = err as { code?: number | string; stdout?: string; killed?: boolean; signal?: string | null };
+			code = e.code;
 			stdout = e.stdout ?? '';
+			killed = e.killed ?? false;
+			signal = e.signal ?? null;
 		}
 		assert.match(stdout, /^# tests 1$/m, 'the sweep still terminated and printed the summary');
 		assert.match(stdout, /^not ok 1 - /m, 'the stuck file is reported at file level, not dropped');
 		assert.match(stdout, /test timed out after 3000ms/, 'the stuck test (loop held alive) was stopped by the per-test timeout itself');
-		assert.notEqual(code, 0, 'the stuck file is a reported failure, not a silent pass');
+		assert.ok(typeof code === 'number' && code !== 0, 'the runner itself exited with a numeric nonzero code (not an outer kill or a silent pass)');
+		assert.equal(killed, false, 'the outer exec timeout did not fire — the runner terminated on its own');
+		assert.equal(signal, null, 'no signal terminated the runner');
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
 	}

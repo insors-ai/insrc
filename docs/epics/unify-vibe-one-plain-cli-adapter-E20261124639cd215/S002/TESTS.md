@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
+**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 6 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -199,3 +199,13 @@ Run at 2026-11-27T16:46:56.919Z on commit `195638509`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/agent/providers/__tests__/cli-provider-readonly-vibe.test.ts` | 0 | 4 | 0.6 s |  |
+
+## t7
+
+Run at 2026-11-27T17:07:57.666Z on commit `5ab9b4709`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: the filed amendment exists as a tracked AMD-* artifact for sc3's provenAgainst rename and is readable via the workflow's own amendment listing**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: Direct shell verification: `ls .insrc/artifacts/AMD-639cd2159a87aedb-*` lists AMD-639cd2159a87aedb-1.json and its .log.jsonl sidecar. Read back with python3 json.load: body.amendment.type === 'sharedContract.fieldRemove', body.amendment.contractId === 'sc3', body.amendment.fieldName === 'provenAgainst', body.amendment.breaking === true, body.amendment.migrationCue names the replacement shape and cites s2's LLD. meta.lifecycle.status is 'draft' (filed, pending its own decision) -- committed and pushed in commit 5ab9b4709.

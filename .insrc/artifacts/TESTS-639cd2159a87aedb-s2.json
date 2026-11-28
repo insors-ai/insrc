@@ -6,11 +6,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "completed",
       "revision": {
-        "number": 7,
-        "contentHash": "1a85c6ebebf98fd4868305ce0ec35a1012985dd7bb1e0a2b78c5e8dfc55812ad",
-        "at": "2026-11-27T16:46:57.152Z",
+        "number": 8,
+        "contentHash": "c9775cdf17e2b2faf791fde2372873d2d1893952d34f661dc6daf883d7d6b3c4",
+        "at": "2026-11-27T17:07:57.890Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "639cd2159a87aedb",
     "storyId": "s2",
     "createdAt": "2026-11-27T15:48:50.509Z",
-    "updatedAt": "2026-11-27T16:46:56.919Z",
+    "updatedAt": "2026-11-27T17:07:57.666Z",
     "epicCreatedAt": "2026-11-24T12:53:27.196Z",
     "epicSlug": "unify-vibe-one-plain-cli-adapter",
-    "revision": 7
+    "revision": 8
   },
   "body": {
     "tasks": [
@@ -549,6 +549,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "5ab9b4709",
+        "ranAt": "2026-11-27T17:07:57.666Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the filed amendment exists as a tracked AMD-* artifact for sc3's provenAgainst rename and is readable via the workflow's own amendment listing",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Direct shell verification: `ls .insrc/artifacts/AMD-639cd2159a87aedb-*` lists AMD-639cd2159a87aedb-1.json and its .log.jsonl sidecar. Read back with python3 json.load: body.amendment.type === 'sharedContract.fieldRemove', body.amendment.contractId === 'sc3', body.amendment.fieldName === 'provenAgainst', body.amendment.breaking === true, body.amendment.migrationCue names the replacement shape and cites s2's LLD. meta.lifecycle.status is 'draft' (filed, pending its own decision) -- committed and pushed in commit 5ab9b4709."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   },

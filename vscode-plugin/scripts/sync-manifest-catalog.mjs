@@ -16,13 +16,14 @@
  *    per-role section is regenerated from buildPerRoleKeyMap() (created if
  *    missing; existing key order kept, new roles appended in taxonomy order).
  *  - Duplicate-titled sections consolidate losslessly: the FIRST keeps its title;
- *    section-level metadata merges losslessly too (fields the first lacks are
- *    preserved from the duplicate; a field both declare with conflicting values
- *    is refused); properties merge first-wins in section order, so distinct
+ *    section-level metadata merges losslessly for compatible fields (a field the
+ *    first lacks is preserved; on conflict the first's value wins, as with
+ *    properties); properties merge first-wins in section order, so distinct
  *    local keys of later duplicates survive. The SAME property key with
  *    CONFLICTING schemas in duplicate sections (compared key-order-
  *    insensitively) is refused with a `sync-duplicate-conflict` diagnostic
- *    naming the key and the two sections that actually declare it.
+ *    naming the key and the two sections that actually declare it — the only
+ *    refusal besides a malformed configuration.
  *  - A catalog-backed key is owned by the section titled with its group: a copy
  *    in any other (differently titled) section is removed, so every catalog key
  *    is declared exactly once, manifest-wide.
@@ -80,11 +81,11 @@ function stableStringify(value) {
 
 /**
  * Merge duplicate-titled sections into the first of each title, losslessly: the
- * first keeps its title; section-level metadata merges losslessly (fields the
- * first lacks are preserved, conflicting values are refused); properties merge
- * first-wins in section order, so distinct local keys of later duplicates
- * survive. The SAME key with CONFLICTING schemas in duplicate sections is
- * refused — it cannot be repaired safely. Returns the consolidated section list.
+ * first keeps its title; section-level metadata preserves fields the first
+ * lacks (on conflict the first's value wins); properties merge first-wins in
+ * section order, so distinct local keys of later duplicates survive. The SAME
+ * property key with CONFLICTING schemas in duplicate sections is refused — it
+ * cannot be repaired safely. Returns the consolidated section list.
  */
 function consolidateSections(sections) {
 	const out = [];
@@ -101,15 +102,13 @@ function consolidateSections(sections) {
 		}
 		const first = out[firstByTitle.get(title).slot];
 		const keySource = firstByTitle.get(title).keySource;
-		// Section-level metadata merges losslessly: a field the first lacks is
-		// preserved from the duplicate; a field both declare with conflicting
-		// values is refused (ambiguous — cannot be repaired safely).
+		// Section-level metadata merges losslessly for compatible fields: a field
+		// the first lacks is preserved from the duplicate; on a conflicting value
+		// the FIRST section's value wins (deterministic, like first-wins properties
+		// — only conflicting PROPERTY schemas refuse, per the LLD error contract).
 		for (const [field, value] of Object.entries(section)) {
 			if (field === 'title' || field === 'properties') continue;
-			if (!(field in first)) { first[field] = value; continue; }
-			if (stableStringify(first[field]) !== stableStringify(value)) {
-				throw new Error(`sync-manifest-catalog: sync-duplicate-conflict: section metadata '${field}' of the duplicate sections titled '${title}' conflicts (#${firstByTitle.get(title).index + 1} and #${index + 1}); resolve the conflict by hand`);
-			}
+			if (!(field in first)) first[field] = value;
 		}
 		const firstProps = (first.properties ??= {});
 		for (const [key, schema] of Object.entries(section.properties ?? {})) {

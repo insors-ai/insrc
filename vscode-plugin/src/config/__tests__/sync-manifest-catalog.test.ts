@@ -219,8 +219,9 @@ test('sync-manifest-catalog.test.ts: duplicate per-role sections consolidate los
     rmSync(b.dir, { recursive: true, force: true });
   }
 
-  // Section-METADATA conflict refusal: both duplicate sections declare the same
-  // metadata field with different values — ambiguous, refused without writing.
+  // Section-METADATA conflict: both duplicates declare markdownDescription with
+  // different values — the LLD error contract refuses only conflicting PROPERTY
+  // schemas, so metadata resolves deterministically to the FIRST section's value.
   const c = tempCopy((stale) => {
     const perRole = section(stale, PER_ROLE_TITLE);
     perRole['markdownDescription'] = 'first note';
@@ -228,10 +229,11 @@ test('sync-manifest-catalog.test.ts: duplicate per-role sections consolidate los
   });
   try {
     const r = sync(c.copy);
-    assert.notEqual(r.status, 0, 'conflicting section metadata is refused');
-    assert.match(r.out, /sync-duplicate-conflict/, 'the diagnostic names the refusal');
-    assert.match(r.out, /markdownDescription/, 'the diagnostic names the conflicting metadata field');
-    assert.equal(readFileSync(c.copy, 'utf8'), c.text, 'a refused metadata conflict writes nothing');
+    assert.equal(r.status, 0, 'conflicting section metadata consolidates (first wins; no extra error path)');
+    const repaired = JSON.parse(readFileSync(c.copy, 'utf8')) as Manifest;
+    const withTitle = repaired.contributes.configuration.filter((s) => s.title === PER_ROLE_TITLE);
+    assert.equal(withTitle.length, 1);
+    assert.equal(withTitle[0]!['markdownDescription'], 'first note', 'the FIRST section\'s metadata value wins');
   } finally {
     rmSync(c.dir, { recursive: true, force: true });
   }

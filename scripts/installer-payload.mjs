@@ -32,16 +32,15 @@ export function collectTree(root, directory, prefix, { skipNodeModules = false, 
     } else {
       if (!stat.isFile()) throw new Error('Payload special file is forbidden');
       validPath(target);
-      let identity;
+      const identity = lstatSync(actual, { bigint: true });
+      if (!identity.isFile() || ['dev', 'ino', 'uid', 'gid', 'nlink', 'size', 'mode'].some(key => identity[key] !== BigInt(stat[key]))) throw new Error('Payload source changed during traversal');
       if (stat.nlink !== 1) {
-        identity = lstatSync(actual, { bigint: true });
-        if (!identity.isFile() || identity.nlink !== BigInt(stat.nlink) || identity.size !== BigInt(stat.size) || identity.mode !== BigInt(stat.mode)) throw new Error('Hardlinked payload source changed during collection');
         const key = `${identity.dev}:${identity.ino}`, group = linked.get(key);
         if (group && !unchanged(group.identity, identity)) throw new Error('Hardlinked payload source changed during collection');
         if (group) group.paths.add(actual);
         else linked.set(key, { identity, paths: new Set([actual]) });
       }
-      entries.push({ actual, target, stat, identity });
+      entries.push({ source, actual, target, stat, identity });
     }
   }
   visit(directory, prefix);
@@ -50,17 +49,20 @@ export function collectTree(root, directory, prefix, { skipNodeModules = false, 
   // symlink visits never account for another physical alias; an uncollected
   // alias (including one outside the source root) remains forbidden.
   for (const group of linked.values()) if (group.identity.nlink !== BigInt(group.paths.size)) throw new Error('Payload hardlink has unaccounted source aliases');
-  for (const { actual, target, stat, identity } of entries) {
+  for (const { source, actual, target, stat, identity } of entries) {
     admitFile?.(actual, target, stat);
+    if (assertContained(root, source) !== actual || assertContained(root, actual) !== actual) throw new Error('Payload source path changed before reading');
     let bytes;
-    if (identity) {
-      const fd = openSync(actual, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
-      try {
-        if (!unchanged(identity, fstatSync(fd, { bigint: true }))) throw new Error('Hardlinked payload source changed before reading');
-        bytes = readFileSync(fd);
-        if (!unchanged(identity, fstatSync(fd, { bigint: true })) || !unchanged(identity, lstatSync(actual, { bigint: true }))) throw new Error('Hardlinked payload source changed during reading');
-      } finally { closeSync(fd); }
-    } else bytes = readFileSync(actual);
+    const fd = openSync(actual, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+    try {
+      if (!unchanged(identity, fstatSync(fd, { bigint: true }))) throw new Error('Payload source changed before reading');
+      bytes = readFileSync(fd);
+      if (!unchanged(identity, fstatSync(fd, { bigint: true })) || !unchanged(identity, lstatSync(actual, { bigint: true }))
+        || assertContained(root, source) !== actual || assertContained(root, actual) !== actual) throw new Error('Payload source changed during reading');
+    } finally {
+      try { closeSync(fd); }
+      catch (cause) { throw Object.assign(new Error('Publisher source descriptor closure is unconfirmed', { cause }), { code: 'resource-close-uncertain' }); }
+    }
     files.set(target, { bytes, mode: (stat.mode & 0o111) ? 0o755 : 0o644, source: actual });
   }
   for (const group of linked.values()) for (const actual of group.paths) {
@@ -104,8 +106,7 @@ export function productionClosure(root, { admitFile } = {}) {
         if (!workspacePaths.includes(actual)) throw new Error('Dependency link is not a declared in-root workspace');
         const manifest = JSON.parse(readFileSync(join(actual, 'package.json'), 'utf8'));
         if (!Array.isArray(manifest.files)) throw new Error('Workspace must declare production files');
-        admitFile?.(join(actual, 'package.json'), `${destination}/package.json`, lstatSync(join(actual, 'package.json')));
-        packageFiles = new Map([[`${destination}/package.json`, { bytes: readFileSync(join(actual, 'package.json')), mode: 0o644, source: join(actual, 'package.json') }]]);
+        packageFiles = collectTree(root, join(actual, 'package.json'), `${destination}/package.json`, { admitFile });
         for (const file of manifest.files) {
           validPath(file);
           for (const [name, value] of collectTree(root, join(actual, file), `${destination}/${file}`, { skipNodeModules: true, admitFile })) packageFiles.set(name, value);

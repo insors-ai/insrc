@@ -1,0 +1,118 @@
+TAP version 13
+# Subtest: hostile ZIP corpus cannot escape staging or exceed bounded extraction
+not ok 1 - hostile ZIP corpus cannot escape staging or exceed bounded extraction
+  ---
+  duration_ms: 11843.325042
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/bundle.test.ts:1:5083'
+  failureType: 'testCodeFailure'
+  error: "ENOSPC: no space left on device, mkdir '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-prep-hvpsdW/install/runtime-stage-LBa3gQ/candidate/distribution/lib/node_modules/npm/node_modules/sigstore/node_modules/@sigstore/core/dist/x509'"
+  code: 'ENOSPC'
+  stack: |-
+    async mkdir (node:internal/fs/promises:855:10)
+    async ProfileWriter.file (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-archive.ts:70:42)
+    async tarProfile (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-archive.ts:124:35)
+    async extractRuntimeArchiveBytes (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-archive.ts:193:8)
+    async extractRuntimeProfile (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-archive.ts:211:24)
+    async closedRuntimeOperation (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-acquire.ts:36:16)
+    async stageRuntime (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-acquire.ts:144:5)
+    async Module.ensurePrivateRuntime (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-install.ts:44:17)
+    async setup (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/bundle.test.ts:55:25)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/bundle.test.ts:81:13)
+  ...
+# Subtest: download digest target runtime cancellation and retry preserve incumbent
+not ok 2 - download digest target runtime cancellation and retry preserve incumbent
+  ---
+  duration_ms: 7660.250375
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/bundle.test.ts:1:8718'
+  failureType: 'testCodeFailure'
+  error: "ENOSPC: no space left on device, open '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-prep-mrEw87/install/runtime-stage-yeyGBy/candidate/distribution/lib/node_modules/npm/node_modules/sigstore/node_modules/@sigstore/sign/dist/signer/fulcio/ca.js'"
+  code: 'ENOSPC'
+  stack: |-
+    async open (node:internal/fs/promises:636:25)
+    async ProfileWriter.file (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-archive.ts:75:16)
+    async tarProfile (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-archive.ts:124:35)
+    async extractRuntimeArchiveBytes (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-archive.ts:193:8)
+    async extractRuntimeProfile (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-archive.ts:211:24)
+    async closedRuntimeOperation (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-acquire.ts:36:16)
+    async stageRuntime (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-acquire.ts:144:5)
+    async Module.ensurePrivateRuntime (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-install.ts:44:17)
+    async setup (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/bundle.test.ts:55:25)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/bundle.test.ts:121:13)
+  ...
+# Subtest: release discovery rejects insecure redirects and never falls back to dev
+ok 3 - release discovery rejects insecure redirects and never falls back to dev
+  ---
+  duration_ms: 2.417667
+  type: 'test'
+  ...
+# Subtest: inventory bound reserves the archive inventory entry
+ok 4 - inventory bound reserves the archive inventory entry
+  ---
+  duration_ms: 83.021166
+  type: 'test'
+  ...
+# Subtest: bundle descriptor2 and installed receipts preserve public manifest1 and reject embedded format1
+ok 5 - bundle descriptor2 and installed receipts preserve public manifest1 and reject embedded format1
+  ---
+  duration_ms: 15.697042
+  type: 'test'
+  ...
+# Subtest: application full integrity is bound to its operation candidate and closed producer inventory
+not ok 6 - application full integrity is bound to its operation candidate and closed producer inventory
+  ---
+  duration_ms: 21873.832958
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/bundle.test.ts:1:14428'
+  failureType: 'testCodeFailure'
+  error: 'ENOSPC: no space left on device, write'
+  code: 'ENOSPC'
+  stack: |-
+    async write (node:internal/fs/promises:741:8)
+    async fsCall (node:internal/fs/promises:463:12)
+    async ProfileWriter.file (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-archive.ts:79:86)
+    async tarProfile (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-archive.ts:124:35)
+    async extractRuntimeArchiveBytes (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-archive.ts:193:8)
+    async extractRuntimeProfile (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-archive.ts:211:24)
+    async closedRuntimeOperation (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-acquire.ts:36:16)
+    async stageRuntime (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-acquire.ts:144:5)
+    async Module.ensurePrivateRuntime (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-install.ts:44:17)
+    async setup (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/bundle.test.ts:55:25)
+  ...
+# Subtest: new recovery rejects truncated non-control modules and native addons and cancellation cannot reuse proof
+not ok 7 - new recovery rejects truncated non-control modules and native addons and cancellation cannot reuse proof
+  ---
+  duration_ms: 19868.649291
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/bundle.test.ts:1:18464'
+  failureType: 'testCodeFailure'
+  error: 'ENOSPC: no space left on device, write'
+  code: 'ENOSPC'
+  stack: |-
+    async write (node:internal/fs/promises:741:8)
+    async fsCall (node:internal/fs/promises:463:12)
+    async ProfileWriter.file (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-archive.ts:79:86)
+    async tarProfile (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-archive.ts:124:35)
+    async extractRuntimeArchiveBytes (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-archive.ts:193:8)
+    async extractRuntimeProfile (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-archive.ts:211:24)
+    async closedRuntimeOperation (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-acquire.ts:36:16)
+    async stageRuntime (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-acquire.ts:144:5)
+    async Module.ensurePrivateRuntime (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-install.ts:44:17)
+    async setup (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/bundle.test.ts:55:25)
+  ...
+# Subtest: bundle fixture transports refuse unknown URLs without a real HTTPS fallback
+ok 8 - bundle fixture transports refuse unknown URLs without a real HTTPS fallback
+  ---
+  duration_ms: 2.398416
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 4
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 61838.7905

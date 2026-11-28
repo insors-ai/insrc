@@ -1,0 +1,80 @@
+TAP version 13
+# Subtest: assemble actual complete foundation payload only after all entrypoints exist
+not ok 1 - assemble actual complete foundation payload only after all entrypoints exist
+  ---
+  duration_ms: 12116.103417
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/foundation-payload.test.ts:1:379'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"stage":"starting","elapsedMs":0}
+    {"stage":"control-bundles-complete","elapsedMs":732}
+    node:internal/fs/promises:636
+      return new FileHandle(await PromisePrototypeThen(
+                            ^
+    
+    Error: ENOSPC: no space left on device, open '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ipf-zwuAHy/install/runtime-stage-ZsuAjE/candidate/distribution/lib/node_modules/npm/node_modules/sigstore/node_modules/@sigstore/core/dist/stream.js'
+        at async open (node:internal/fs/promises:636:25)
+        at async ProfileWriter.file (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-archive.js:106:22)
+        at async tarProfile (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-archive.js:210:17)
+        at async extractRuntimeArchiveBytes (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-archive.js:332:9)
+        at async extractRuntimeProfile (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-archive.js:359:23)
+        at async closedRuntimeOperation (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-acquire.js:29:16)
+        at async stageRuntime (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-acquire.js:183:9)
+        at async Module.ensurePrivateRuntime (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-install.js:55:19)
+        at async preparePublisherRuntime (file:///Users/subhagho/work/projects/insors/insrc/scripts/package-installer.mjs:139:5)
+        at async file:///Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/foundation-payload-fixture.mjs:26:19 {
+      errno: -28,
+      code: 'ENOSPC',
+      syscall: 'open',
+      path: '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ipf-zwuAHy/install/runtime-stage-ZsuAjE/candidate/distribution/lib/node_modules/npm/node_modules/sigstore/node_modules/@sigstore/core/dist/stream.js'
+    }
+    
+    Node.js v22.22.1
+    
+    + actual - expected
+    
+      [
+    +   1,
+    -   0,
+        null
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 0
+    1: ~
+  actual:
+    0: 1
+    1: ~
+  operator: 'deepStrictEqual'
+  stack: |-
+    async open (node:internal/fs/promises:636:25)
+    async ProfileWriter.file (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-archive.js:106:22)
+    async tarProfile (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-archive.js:210:17)
+    async extractRuntimeArchiveBytes (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-archive.js:332:9)
+    async extractRuntimeProfile (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-archive.js:359:23)
+    async closedRuntimeOperation (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-acquire.js:29:16)
+    async stageRuntime (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-acquire.js:183:9)
+    async Module.ensurePrivateRuntime (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-install.js:55:19)
+    async preparePublisherRuntime (file:///Users/subhagho/work/projects/insors/insrc/scripts/package-installer.mjs:139:5)
+    async file:///Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/foundation-payload-fixture.mjs:26:19 {
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/foundation-payload.test.ts:25:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Payload fixture evidence: /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-foundation-payload-kROQ6I
+# {"stage":"starting","elapsedMs":0}\\n{"stage":"control-bundles-complete","elapsedMs":732}\\nnode:internal/fs/promises:636\\n  return new FileHandle(await PromisePrototypeThen(\\n                        ^\\n\\nError: ENOSPC: no space left on device, open '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ipf-zwuAHy/install/runtime-stage-ZsuAjE/candidate/distribution/lib/node_modules/npm/node_modules/sigstore/node_modules/@sigstore/core/dist/stream.js'\\n    at async open (node:internal/fs/promises:636:25)\\n    at async ProfileWriter.file (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-archive.js:106:22)\\n    at async tarProfile (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-archive.js:210:17)\\n    at async extractRuntimeArchiveBytes (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-archive.js:332:9)\\n    at async extractRuntimeProfile (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-archive.js:359:23)\\n    at async closedRuntimeOperation (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-acquire.js:29:16)\\n    at async stageRuntime (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-acquire.js:183:9)\\n    at async Module.ensurePrivateRuntime (file:///Users/subhagho/work/projects/insors/insrc/out/installer/runtime-install.js:55:19)\\n    at async preparePublisherRuntime (file:///Users/subhagho/work/projects/insors/insrc/scripts/package-installer.mjs:139:5)\\n    at async file:///Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/foundation-payload-fixture.mjs:26:19 {\\n  errno: -28,\\n  code: 'ENOSPC',\\n  syscall: 'open',\\n  path: '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ipf-zwuAHy/install/runtime-stage-ZsuAjE/candidate/distribution/lib/node_modules/npm/node_modules/sigstore/node_modules/@sigstore/core/dist/stream.js'\\n}\\n\\nNode.js v22.22.1\\n
+# InstallerError: Owned fixture cleanup is uncertain; retained /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-foundation-payload-kROQ6I
+# InstallerError: Owned fixture cleanup is uncertain; retained /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ipf-zwuAHy
+# Failed payload fixture retained at /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-foundation-payload-kROQ6I; runtime home at /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ipf-zwuAHy; runtime executable at /Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 12363.148917

@@ -1,0 +1,60 @@
+{
+  "runId": "75a26623-80fb-41a4-9954-9b9aa3e5b497",
+  "runtime": {
+    "executable": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node",
+    "version": "v22.22.1"
+  },
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 1800000,
+    "runMs": 5400000,
+    "cleanupMs": 5000
+  },
+  "selectedFiles": [
+    "src/installer/__tests__/bundle.test.ts",
+    "src/installer/__tests__/foundation-payload.test.ts",
+    "src/installer/__tests__/publisher.test.ts"
+  ],
+  "requestedConcurrency": 2,
+  "effectiveConcurrency": 2,
+  "diagnosticFlags": [
+    "DEBUG"
+  ],
+  "liveTests": "unset",
+  "results": [
+    {
+      "file": "src/installer/__tests__/bundle.test.ts",
+      "childId": "1cdc3c3d-d3d4-49e2-87cb-4f2328a922c5",
+      "log": ".insrc/tmp/test-harness/runs/75a26623-80fb-41a4-9954-9b9aa3e5b497/0-src_installer___tests___bundle.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/75a26623-80fb-41a4-9954-9b9aa3e5b497/child-results.jsonl",
+      "code": null,
+      "signal": null,
+      "interrupted": true,
+      "coverageIncomplete": true,
+      "coverage": {
+        "status": "unavailable",
+        "counts": {}
+      }
+    },
+    {
+      "file": "src/installer/__tests__/foundation-payload.test.ts",
+      "childId": "42021360-1670-43b6-90f4-1c365be31666",
+      "log": ".insrc/tmp/test-harness/runs/75a26623-80fb-41a4-9954-9b9aa3e5b497/0-src_installer___tests___foundation-payload.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/75a26623-80fb-41a4-9954-9b9aa3e5b497/child-results.jsonl",
+      "code": null,
+      "signal": null,
+      "interrupted": true,
+      "coverageIncomplete": true,
+      "coverage": {
+        "status": "unavailable",
+        "counts": {}
+      }
+    }
+  ],
+  "cleanupPath": ".insrc/tmp/test-harness/runs/75a26623-80fb-41a4-9954-9b9aa3e5b497/cleanup.json",
+  "incomplete": true,
+  "error": {
+    "code": "harness-cleanup-unconfirmed",
+    "message": "Owned actor closure is unconfirmed; checkout remains blocked."
+  }
+}

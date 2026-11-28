@@ -2,25 +2,29 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { Readable } from 'node:stream';
-import { mkdirSync, mkdtempSync, realpathSync, readFileSync, readdirSync, rmSync, writeFileSync, lstatSync, symlinkSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import io from 'node:fs/promises';
+import type { FileHandle } from 'node:fs/promises';
+import { syncBuiltinESMExports } from 'node:module';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync, lstatSync } from 'node:fs';
 import { join } from 'node:path';
 import { ZipFile } from 'yazl';
 import { archiveFixture } from './_runtime-fixture.js';
-import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
-import type { ChildProcess } from 'node:child_process';
 import { ControllerStore } from '../controller-store.js';
 import { resolveInstallationLocation } from '../location.js';
-import { prepareBundle, resolveBundleDelivery } from '../bundle.js';
+import { openPreparedBundle, prepareBundle, resolveBundleDelivery } from '../bundle.js';
+import { bundleDelivery } from '../bundle-delivery.js';
+import { createCandidateIntegrityOperation, invalidateCandidateIntegrity, rememberCandidateIntegrity, verifyCandidateIntegrity } from '../candidate-integrity.js';
 import { digest, canonicalJson, parseInventory, parseReleaseDescriptor, BUNDLE_LIMITS } from '../release-descriptor.js';
 import { readInstalledReceipt } from '../installed-receipt.js';
 import { runtimeArchive } from '../runtime-policy.js';
 import { downloadJson } from '../download.js';
 import type { DownloadTransport } from '../download.js';
 import type { ControllerSnapshot, Target } from '../contracts.js';
-import { collectTree } from '../../../scripts/installer-payload.mjs';
+import { InstallerError } from '../contracts.js';
+import { parseDevReleaseReceipt } from '../dev.js';
+import { verifyPublishedPayload } from '../safe-zip.js';
+import { ownedRuntimeHome } from './_owned-runtime-home.js';
 const target: Target = { os: process.platform as Target['os'], arch: process.arch as Target['arch'], baseline: 'fixture-native' };
-const rootName = runtimeArchive(target).root;
 interface File { path: string; bytes: Buffer; mode?: number }
 async function zipBytes(files: File[]): Promise<Buffer> {
   const zip = new ZipFile(), chunks: Buffer[] = [];
@@ -41,22 +45,33 @@ function zipAttribute(zip: Buffer, update: (buffer: Buffer, offset: number, cent
   return output;
 }
 async function setup() {
-  const home = mkdtempSync(join(realpathSync(tmpdir()), 'insrc-prep-')), children: ChildProcess[] = [];
-  const store = ControllerStore.acquire(resolveInstallationLocation('fixture', { home }));
+  const capture = await ownedRuntimeHome('insrc-prep-'), home = capture.root;
+  let store: ControllerStore | undefined;
+  try {
+  store = ControllerStore.acquire(resolveInstallationLocation('fixture', { home }));
   const snapshot: ControllerSnapshot = { schemaVersion: 1, revision: 0, installation: { schemaVersion: 1, installationId: 'fixture', dataHome: home, delivery: { mode: 'bundle', repository: 'insors-ai/insrc', channel: 'stable' }, activeReleaseId: 'old', operationId: 'old-op' }, operation: { operationId: 'old-op', phase: 'ready', candidateId: 'old' } };
   store.commit(snapshot, null); writeFileSync(join(home, 'application-data'), 'retain');
   const archive = await archiveFixture();
   const runtimeResult = await store.ensureRuntime({ version: '22.22.1', target, sha256: runtimeArchive(target).sha256, relativeExecutable: target.os === 'win32' ? 'node.exe' : 'bin/node' }, { transport: async url => {
     const { createReadStream } = await import('node:fs');
     if (url.href !== runtimeArchive(target).url) {
-      const { httpsDownloadTransport } = await import('../download.js'); return httpsDownloadTransport(url, AbortSignal.timeout(60_000));
+      throw new InstallerError('download-invalid', `Unexpected bundle fixture runtime URL: ${url.href}`);
     }
-    const body = createReadStream(archive); return { status: 200, body, closed: new Promise<void>(resolve => body.once('close', resolve)) };
+    const body = createReadStream(archive), closed = new Promise<void>(resolve => body.once('close', resolve));
+    capture.trackResource(closed); return { status: 200, body, closed };
   } });
   const runtime = runtimeResult.directory;
-  return { home, store, snapshot, runtime, archive, async cleanup() { store.close(); await stopOwnedChildren(children); rmSync(home, { recursive: true, force: true }); } };
+  const owner = store;
+  return { home, store: owner, capture, snapshot, runtime, archive, async cleanup() { owner.close(); await capture.cleanup(); } };
+  } catch (cause) {
+    if ((cause as NodeJS.ErrnoException).code === 'resource-close-uncertain') capture.retain(cause);
+    store?.close(); await capture.cleanup(); throw cause;
+  }
 }
-const sendBytes = (bytes: Buffer): DownloadTransport => async () => ({ status: 200, body: Readable.from([bytes]) });
+const sendBytes = (bytes: Buffer): DownloadTransport => async url => {
+  if (url.href !== 'https://fixture.invalid/payload.zip') throw new InstallerError('download-invalid', `Unexpected bundle fixture URL: ${url.href}`);
+  return { status: 200, body: Readable.from([bytes]) };
+};
 function unchanged(f: Awaited<ReturnType<typeof setup>>): void {
   assert.deepEqual(f.store.inspect(), { kind: 'present', snapshot: f.snapshot }); assert.equal(readFileSync(join(f.home, 'application-data'), 'utf8'), 'retain');
   const staging = join(f.home, 'install/staging'); try { assert.deepEqual(readdirSync(staging), []); } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
@@ -94,6 +109,8 @@ async function completeFixture(f: Awaited<ReturnType<typeof setup>>) {
   const files: File[] = [];
   const native = readFileSync('out/installer/native/control.node'), bootstrap = Buffer.from('// controlled terminal bootstrap fixture');
   files.push({ path: 'out/daemon/index.js', bytes: Buffer.from('// controlled daemon fixture') }, { path: 'out/cli/index.js', bytes: Buffer.from('// controlled TUI fixture') }, { path: 'manager.mjs', bytes: Buffer.from('// controlled manager fixture') }, { path: 'bootstrap.mjs', bytes: bootstrap }, { path: 'native/control.node', bytes: native, mode: 0o100755 });
+  files.push({ path: 'out/features/non-control.js', bytes: Buffer.from('// independently verified application module') },
+    { path: 'node_modules/fixture-native/addon.node', bytes: Buffer.from('unexecuted native application fixture'), mode: 0o100755 });
   const inventory = Buffer.from(JSON.stringify({ schemaVersion: 1, files: files.map(file => ({ path: file.path, bytes: file.bytes.length, sha256: digest(file.bytes), mode: (file.mode ?? 0o100644) & 0o111 ? 0o755 : 0o644 })) }));
   const zip = await zipBytes([...files, { path: 'inventory.json', bytes: inventory }]), release = descriptor(zip, inventory);
   release.bootstrap.bytes = bootstrap.length; release.bootstrap.sha256 = digest(bootstrap); release.native.bytes = native.length; release.native.sha256 = digest(native);
@@ -153,14 +170,112 @@ test('bundle descriptor2 and installed receipts preserve public manifest1 and re
   assert.equal(parsed.schemaVersion, 2); assert.equal(parsed.manifest.schemaVersion, 1);
   assert.equal('runtimeArchive' in parsed, false); assert.deepEqual(parsed.manifest.runtime, release.manifest.runtime);
   const legacy = { ...release, schemaVersion: 1, runtimeArchive: { path: 'runtime/node.tar.gz', bytes: 1, sha256: runtimeArchive(target).sha256 } };
-  assert.throws(() => parseReleaseDescriptor(legacy, { target }), /Legacy embedded-runtime.*format1/);
-  const home = mkdtempSync(join(realpathSync(tmpdir()), 'ibl-')), directory = join(home, 'releases', release.manifest.releaseId);
+  const legacyError = { code: 'manifest-invalid', message: 'Legacy embedded-runtime release descriptor format1 is unsupported; use an application-only release' };
+  assert.throws(() => parseReleaseDescriptor(legacy, { target }), legacyError);
+  assert.throws(() => parseDevReleaseReceipt({ schemaVersion: 1, mode: 'dev' }), {
+    code: 'source-incompatible', message: 'Legacy embedded-runtime dev receipt/recipe is unsupported; use application-only receipt2 and dev-v2-app-only',
+  });
+  const capture = await ownedRuntimeHome('ibl-'), home = capture.root, directory = join(home, 'releases', release.manifest.releaseId);
   try {
     mkdirSync(directory, { recursive: true, mode: 0o700 });
     writeFileSync(join(directory, '.release.json'), canonicalJson(release), { mode: 0o600 });
     const receipt = await readInstalledReceipt(directory, target); assert.equal(receipt.mode, 'bundle'); assert.equal(receipt.manifest.schemaVersion, 1);
     writeFileSync(join(directory, '.release.json'), canonicalJson(legacy));
-    await assert.rejects(readInstalledReceipt(directory, target), /Legacy embedded-runtime.*format1/);
+    await assert.rejects(readInstalledReceipt(directory, target), legacyError);
     assert.equal(lstatSync(directory).isDirectory(), true, 'legacy metadata is diagnosed without adoption or deletion');
-  } finally { rmSync(home, { recursive: true, force: true }); }
+  } finally { await capture.cleanup(); }
+});
+
+test('application full integrity is bound to its operation candidate and closed producer inventory', { timeout: 240_000 }, async t => {
+  const f = await setup(), open = io.open;
+  let retained: FileHandle | undefined, closed: (() => void) | undefined;
+  try {
+    const { zip, release } = await completeFixture(f), location = f.store.location;
+    const operation = createCandidateIntegrityOperation(location, 'first-operation', () => f.store.assertHeld());
+    const reads = new Map<string, number>();
+    t.mock.method(io, 'open', async (...args: Parameters<typeof open>) => {
+      const path = String(args[0]);
+      if (typeof args[1] === 'number' && (path.endsWith('/out/features/non-control.js') || path.endsWith('/node_modules/fixture-native/addon.node'))) reads.set(path.endsWith('.js') ? 'module' : 'native', (reads.get(path.endsWith('.js') ? 'module' : 'native') ?? 0) + 1);
+      return open(...args);
+    }); syncBuiltinESMExports();
+    const candidate = await prepareBundle(f.store, release, { target, transport: sendBytes(zip), integrity: operation });
+    const delivery = bundleDelivery(target);
+    assert.deepEqual(Object.fromEntries(reads), { module: 1, native: 1 });
+    await delivery.verify(candidate, location, operation); await delivery.verify(candidate, location, operation);
+    await openPreparedBundle(location, candidate.releaseId, target);
+    assert.deepEqual(Object.fromEntries(reads), { module: 1, native: 1 }, 'same operation reuses original authority; bounded opening does not scan application files');
+    await delivery.verify(structuredClone(candidate), location, operation);
+    assert.deepEqual(Object.fromEntries(reads), { module: 2, native: 2 }, 'cloned candidate data cannot grant proof reuse');
+    const serialized = JSON.parse(JSON.stringify(operation)) as typeof operation;
+    await delivery.verify(candidate, location, serialized); await delivery.verify(candidate, location, serialized);
+    assert.deepEqual(Object.fromEntries(reads), { module: 4, native: 4 }, 'serialized context performs fresh checks and never caches authority');
+    const inventory = await verifyPublishedPayload(candidate.directory, parseReleaseDescriptor(release, { target }), undefined, operation);
+    await assert.rejects(rememberCandidateIntegrity(candidate, location, structuredClone(inventory), operation), /original operation-bound full verification/);
+    await assert.rejects(delivery.verify(candidate, location, operation), /failed/);
+    const reopened = createCandidateIntegrityOperation(location, 'first-operation', () => f.store.assertHeld());
+    await assert.rejects(rememberCandidateIntegrity(candidate, location, inventory, reopened), /original operation-bound full verification/);
+    const recovered = createCandidateIntegrityOperation(location, 'recovery-operation', () => f.store.assertHeld());
+    await delivery.verify(candidate, location, recovered);
+    const before = { ...Object.fromEntries(reads) };
+    await delivery.verify(candidate, location, recovered);
+    assert.deepEqual(Object.fromEntries(reads), before);
+    invalidateCandidateIntegrity(recovered);
+    await assert.rejects(verifyCandidateIntegrity(candidate, location, recovered), /failed/);
+    const cancellation = new AbortController();
+    const uncertain = createCandidateIntegrityOperation(location, 'uncertain-close', () => f.store.assertHeld(), cancellation.signal);
+    t.mock.method(io, 'open', async (...args: Parameters<typeof open>) => {
+      const handle = await open(...args);
+      if (retained || String(args[0]) !== join(candidate.directory, 'out/features/non-control.js')) return handle;
+      retained = handle; f.capture.trackResource(new Promise<void>(resolve => { closed = resolve; }));
+      return new Proxy(handle, { get(file, key) {
+        if (key === 'close') return async () => { cancellation.abort(); return new Promise<void>(() => {}); };
+        const value = Reflect.get(file, key); return typeof value === 'function' ? value.bind(file) : value;
+      } });
+    }); syncBuiltinESMExports();
+    const original = lstatSync(candidate.directory);
+    await assert.rejects(prepareBundle(f.store, release, { target, integrity: uncertain, signal: cancellation.signal, transport: sendBytes(zip) }), { code: 'resource-close-uncertain' });
+    assert.ok(retained); assert.equal((await retained.stat()).isFile(), true);
+    assert.equal(lstatSync(candidate.directory).ino, original.ino);
+    await assert.rejects(verifyCandidateIntegrity(candidate, location, uncertain), /failed/);
+    unchanged(f);
+  } finally {
+    t.mock.restoreAll(); syncBuiltinESMExports();
+    try { await retained?.close(); closed?.(); } catch (cause) { f.capture.retain(cause); throw cause; }
+    finally { await f.cleanup(); }
+  }
+});
+
+test('new recovery rejects truncated non-control modules and native addons and cancellation cannot reuse proof', { timeout: 240_000 }, async () => {
+  const f = await setup();
+  try {
+    const { zip, release } = await completeFixture(f), location = f.store.location, delivery = bundleDelivery(target);
+    const first = createCandidateIntegrityOperation(location, 'prepare-operation', () => f.store.assertHeld());
+    const candidate = await prepareBundle(f.store, release, { target, transport: sendBytes(zip), integrity: first });
+    await delivery.verify(candidate, location, first);
+    for (const [index, relative] of ['out/features/non-control.js', 'node_modules/fixture-native/addon.node'].entries()) {
+      const path = join(candidate.directory, relative), original = readFileSync(path);
+      writeFileSync(path, original.subarray(0, 1));
+      const reopened = await openPreparedBundle(location, candidate.releaseId, target);
+      const recovering = createCandidateIntegrityOperation(location, `recover-${index}`, () => f.store.assertHeld());
+      await assert.rejects(delivery.verify(reopened, location, recovering), /payload membership|payload digest|payload.*identity/i);
+      writeFileSync(path, original);
+      await assert.rejects(delivery.verify(reopened, location, recovering), /failed/);
+      const restored = createCandidateIntegrityOperation(location, `restored-${index}`, () => f.store.assertHeld());
+      await delivery.verify(reopened, location, restored);
+    }
+    const cancellation = new AbortController();
+    const cancellable = createCandidateIntegrityOperation(location, 'cancel-operation', () => f.store.assertHeld());
+    const prepared = await prepareBundle(f.store, release, { target, transport: sendBytes(zip), integrity: cancellable, signal: cancellation.signal });
+    cancellation.abort();
+    await assert.rejects(delivery.verify(prepared, location, cancellable), { name: 'AbortError' });
+    await assert.rejects(delivery.verify(prepared, location, cancellable), /failed/);
+    unchanged(f);
+  } finally { await f.cleanup(); }
+});
+
+test('bundle fixture transports refuse unknown URLs without a real HTTPS fallback', async () => {
+  const transport = sendBytes(Buffer.from('fixture'));
+  await assert.rejects(transport(new URL('https://unexpected.invalid/other'), AbortSignal.timeout(1000)), {
+    code: 'download-invalid', message: 'Unexpected bundle fixture URL: https://unexpected.invalid/other',
+  });
 });

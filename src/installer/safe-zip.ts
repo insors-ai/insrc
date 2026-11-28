@@ -1,6 +1,7 @@
 import yauzl from 'yauzl';
 import type { Entry, ZipFile } from 'yauzl';
 import { createWriteStream, constants } from 'node:fs';
+import type { Stats } from 'node:fs';
 import { mkdir, open, lstat, readFile, readdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
@@ -8,9 +9,12 @@ import { Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { InstallerError } from './contracts.js';
 import { assertRelativeFile } from './location.js';
-import { BUNDLE_LIMITS, digest, parseInventory, parseApplicationInventory } from './release-descriptor.js';
+import { BUNDLE_LIMITS, canonicalJson, digest, parseInventory, parseApplicationInventory } from './release-descriptor.js';
 import type { PayloadInventory, ReleaseDescriptor } from './release-descriptor.js';
 import { closeOwnedFile } from './owned-file.js';
+import type { CandidateIntegrityOperation } from './candidate-integrity.js';
+const verifiedInventories = new WeakMap<PayloadInventory, { root: Stats; canonicalSha256: string; operation: CandidateIntegrityOperation | undefined; signal: AbortSignal | undefined }>();
+const sameInode = (a: Stats, b: Stats): boolean => a.dev === b.dev && a.ino === b.ino && a.uid === b.uid && a.isDirectory() === b.isDirectory() && !b.isSymbolicLink();
 export type ExtractionLimits = typeof BUNDLE_LIMITS extends infer T ? { [K in keyof T]: number } : never;
 const unsafe = (message: string): InstallerError => new InstallerError('archive-unsafe', message);
 export async function readBoundedFile(path: string, limit: number): Promise<Buffer> {
@@ -88,7 +92,7 @@ export async function extractSafeZip(archive: string, destination: string, descr
       const permissions = (mode & 0o111) ? 0o755 : 0o644;
       await pipeline(input, counter, createWriteStream(path, { flags: 'wx', mode: permissions }), { signal });
       if (bytes !== entry.uncompressedSize) throw unsafe('Truncated ZIP entry');
-      const file = await open(path, 'r+'); try { await file.sync(); } finally { await file.close(); }
+      const file = await open(path, 'r+'); try { await file.sync(); } finally { await closeOwnedFile(file); }
       extracted.set(name, { bytes, sha256: hash.digest('hex'), mode: permissions });
     }
     const inventoryBytes = await readBoundedFile(join(destination, 'inventory.json'), limits.inventoryBytes);
@@ -113,17 +117,18 @@ export function validatePayloadEntries(inventory: PayloadInventory, descriptor: 
   for (const [name, asset] of [['bootstrap.mjs', descriptor.bootstrap], ['native/control.node', descriptor.native]] as const) { const file = files.get(name); if (!file || file.sha256 !== asset.sha256 || file.bytes !== asset.bytes) throw unsafe('Control asset identity differs from inventory'); }
 }
 /** Existing release retry is a full revalidation, never trust a success marker. */
-export async function verifyPublishedPayload(directory: string, descriptor: ReleaseDescriptor, signal?: AbortSignal): Promise<PayloadInventory> {
+export async function verifyPublishedPayload(directory: string, descriptor: ReleaseDescriptor, signal?: AbortSignal, operation?: CandidateIntegrityOperation): Promise<PayloadInventory> {
   const root = await lstat(directory); if (!root.isDirectory() || root.isSymbolicLink()) throw unsafe('Unsafe immutable release root');
   const inventoryBytes = await readBoundedFile(join(directory, 'inventory.json'), BUNDLE_LIMITS.inventoryBytes);
   if (inventoryBytes.length > BUNDLE_LIMITS.inventoryBytes || digest(inventoryBytes) !== descriptor.inventorySha256) throw unsafe('Immutable inventory differs');
   const inventory = parseApplicationInventory(JSON.parse(inventoryBytes.toString('utf8')) as unknown);
-  await verifyPayloadInventory(directory, inventory, { receipt: '.release.json', signal });
+  await verifyPayloadInventory(directory, inventory, { receipt: '.release.json', signal, operation });
   validatePayloadEntries(inventory, descriptor); return inventory;
 }
 /** Shared complete tree verification; receipt mode is explicit and never inferred. */
-export async function verifyPayloadInventory(directory: string, input: PayloadInventory, options: { receipt: '.release.json' | '.dev-release.json'; signal?: AbortSignal | undefined }): Promise<void> {
-  const inventory = parseInventory(input), { signal } = options;
+export async function verifyPayloadInventory(directory: string, input: PayloadInventory, options: { receipt: '.release.json' | '.dev-release.json'; signal?: AbortSignal | undefined; operation?: CandidateIntegrityOperation | undefined }): Promise<void> {
+  verifiedInventories.delete(input);
+  const inventory = structuredClone(parseInventory(input)), { signal } = options;
   const root = await lstat(directory); if (!root.isDirectory() || root.isSymbolicLink()) throw unsafe('Unsafe payload root');
   const expected = new Map(inventory.files.map(file => [file.path, file]));
   if (expected.has('.dev-release.json')) throw unsafe('Inventory cannot include a receipt');
@@ -143,11 +148,37 @@ export async function verifyPayloadInventory(directory: string, input: PayloadIn
       if (relative === 'inventory.json' || relative === options.receipt) continue;
       const record = expected.get(relative);
       if (!record || stat.size !== record.bytes || (process.platform !== 'win32' && ((stat.mode & 0o111) ? 0o755 : 0o644) !== record.mode)) throw unsafe('Immutable payload membership differs');
-      const { createReadStream } = await import('node:fs'); const hash = createHash('sha256'); let bytes = 0;
-      for await (const chunk of createReadStream(file)) { signal?.throwIfAborted(); const data = chunk as Buffer; bytes += data.length; if (bytes > record.bytes) throw unsafe('Immutable payload grew'); hash.update(data); }
-      if (bytes !== record.bytes || hash.digest('hex') !== record.sha256) throw unsafe('Immutable payload digest differs');
+      const handle = await open(file, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+      try {
+        const initial = await handle.stat();
+        if (!sameInode(stat, initial) || !initial.isFile() || initial.nlink !== 1 || initial.size !== record.bytes) throw unsafe('Immutable payload changed before reading');
+        const hash = createHash('sha256'), buffer = Buffer.alloc(256 * 1024); let bytes = 0;
+        while (true) {
+          signal?.throwIfAborted(); const result = await handle.read(buffer, 0, buffer.length, null); signal?.throwIfAborted();
+          if (!result.bytesRead) break;
+          bytes += result.bytesRead; if (bytes > record.bytes) throw unsafe('Immutable payload grew'); hash.update(buffer.subarray(0, result.bytesRead));
+        }
+        const after = await handle.stat(), current = await lstat(file);
+        if (bytes !== record.bytes || hash.digest('hex') !== record.sha256 || !sameInode(initial, after) || !sameInode(initial, current)
+          || after.nlink !== 1 || current.nlink !== 1 || after.size !== initial.size || current.size !== initial.size
+          || after.mode !== initial.mode || current.mode !== initial.mode || after.mtimeMs !== initial.mtimeMs || current.mtimeMs !== initial.mtimeMs
+          || after.ctimeMs !== initial.ctimeMs || current.ctimeMs !== initial.ctimeMs) throw unsafe('Immutable payload digest or identity differs');
+      } finally { await closeOwnedFile(handle); }
       expected.delete(relative);
     }
   }
   await visit(directory); if (expected.size) throw unsafe('Immutable payload file missing');
+  signal?.throwIfAborted();
+  if (!sameInode(root, await lstat(directory))) throw unsafe('Immutable payload root changed');
+  verifiedInventories.set(input, { root, canonicalSha256: digest(canonicalJson(inventory)), operation: options.operation, signal });
+}
+
+/** Original full-verification result only; JSON/clone data grants no authority.
+ * A native rename may change its path, but must preserve the captured inode. */
+export async function assertVerifiedPayloadInventory(input: PayloadInventory, directory: string, operation?: CandidateIntegrityOperation): Promise<void> {
+  const proof = verifiedInventories.get(input);
+  if (!proof || proof.operation !== operation || proof.canonicalSha256 !== digest(canonicalJson(input))) throw new InstallerError('candidate-conflict', 'Application inventory lacks its original operation-bound full verification');
+  proof.signal?.throwIfAborted();
+  if (!sameInode(proof.root, await lstat(directory))) throw new InstallerError('candidate-conflict', 'Verified application publication inode differs');
+  proof.signal?.throwIfAborted();
 }

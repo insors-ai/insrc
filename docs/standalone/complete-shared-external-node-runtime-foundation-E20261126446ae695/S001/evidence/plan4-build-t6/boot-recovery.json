@@ -1,0 +1,9 @@
+{
+  "userReportedMachineReboot": true,
+  "kernelBootTimeSeconds": 1795875831,
+  "recoveredExactRunId": "75a26623-80fb-41a4-9954-9b9aa3e5b497",
+  "method": "recoverRun with confirmedActorsEnded=true after machine-wide termination",
+  "evidenceRetained": true,
+  "pidOrAgeInference": false,
+  "postRebootDiskFreeGiB": 43
+}

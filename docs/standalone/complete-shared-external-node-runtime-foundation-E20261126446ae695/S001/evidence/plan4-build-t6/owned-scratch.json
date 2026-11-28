@@ -1,0 +1,9 @@
+{
+  "directory": "/Volumes/VM DISK/insrc-plan4-t1b3dbhl",
+  "image": "/Volumes/VM DISK/insrc-plan4-t1b3dbhl/scratch.sparseimage",
+  "mount": "/Volumes/insrc-plan4",
+  "tmpdir": "/Volumes/insrc-plan4/tmp",
+  "ordinaryUid": 501,
+  "writeDenied": "EACCES",
+  "purpose": "owned installer test scratch; no preexisting data adopted"
+}

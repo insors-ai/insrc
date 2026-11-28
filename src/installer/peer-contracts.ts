@@ -21,7 +21,7 @@ export interface DeliveryPort {
   prepare(store: PreparationLease, offer: PreparedReleaseOffer, context: PreparationContext): Promise<PreparedCandidate>;
   resumePreparation?(store: PreparationLease, context: PreparationContext): Promise<PreparedCandidate>;
   open(location: InstallationLocation, releaseId: string): Promise<PreparedCandidate>;
-  verify(candidate: PreparedCandidate, location: InstallationLocation): Promise<void>;
+  verify(candidate: PreparedCandidate, location: InstallationLocation, integrity?: import('./candidate-integrity.js').CandidateIntegrityOperation): Promise<void>;
 }
 export interface BundleReleaseOffer { kind: 'bundle'; manifest: ReleaseManifest; descriptorSha256: string; descriptor?: ReleaseDescriptor | undefined }
 export type PreparedReleaseOffer = BundleReleaseOffer | DevSourceOffer;

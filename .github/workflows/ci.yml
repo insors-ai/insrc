@@ -63,7 +63,9 @@ jobs:
           NODE_OPTIONS: '--max-old-space-size=4096'
 
   runtime-foundation-windows:
-    if: ${{ inputs.scope == 'runtime-foundation' }}
+    # Deferred under ISSUE-cab5701fbefab736; changing dispatch inputs or receipt
+    # booleans cannot enable this job. Re-enable only with qualified ownership.
+    if: ${{ false }}
     runs-on: windows-2025
     timeout-minutes: ${{ inputs.qualification-profile == 'slow-vm' && 360 || 240 }}
     permissions:

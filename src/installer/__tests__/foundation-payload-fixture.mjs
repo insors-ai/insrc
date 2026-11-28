@@ -5,7 +5,7 @@ import { validateEntrypoints, sha256 } from '../../../scripts/installer-payload.
 import { appendFileSync, copyFileSync, mkdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
-const [source, root, archive] = process.argv.slice(2);
+const [source, root, archive, runtimeHome] = process.argv.slice(2);
 const started = performance.now();
 const progress = stage => {
   const line = JSON.stringify({ stage, elapsedMs: Math.round(performance.now() - started) }) + '\n';
@@ -23,7 +23,7 @@ await withRun(run, async scope => {
   await bundleControlEntrypoint(run, scope, join(source, 'out/installer/terminal-entry.js'), bootstrap, target);
   await bundleControlEntrypoint(run, scope, join(source, 'out/installer/manager-entry.js'), manager, target);
   progress('control-bundles-complete');
-  const context = await preparePublisherRuntime(run, archive, undefined, target);
+  const context = await preparePublisherRuntime(run, archive, runtimeHome, target);
   try {
   progress('publisher-runtime-prepared');
   const files = collectProductionPayload(source, { excludedInputs: [context.location.home, archive] });
@@ -43,3 +43,7 @@ await withRun(run, async scope => {
   writeFileSync(join(root, 'result.json'), JSON.stringify({ publication: descriptor.publication, files: files.size, payloadBytes: descriptor.payload.bytes, consumerExtraction: 'passed', nativeProbe: 'passed', managerAndTerminalBundled: true, runtimeOutsidePayload: !Array.from(files.keys()).some(path => path.startsWith('tools/node/') || path.startsWith('runtime/')), descriptorFormat: descriptor.schemaVersion }));
   } finally { if (!scope.cancellationErrors.length && !scope.evidenceErrors.length) context.cleanup(); }
 });
+const resultPath = join(root, 'result.json');
+const result = JSON.parse(readFileSync(resultPath, 'utf8'));
+result.actorClosure = JSON.parse(readFileSync(join(run.workspace, 'cleanup.json'), 'utf8'));
+writeFileSync(resultPath, JSON.stringify(result));

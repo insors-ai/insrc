@@ -36,6 +36,8 @@ export interface DevPreparationRecord {
 }
 export interface PreparationContext {
   operationId: string; signal?: AbortSignal | undefined;
+  /** In-process authority from the owning manager; never checkpoint/wire data. */
+  integrity?: import('./candidate-integrity.js').CandidateIntegrityOperation | undefined;
   readCheckpoint(): DevPreparationRecord | undefined;
   checkpoint(record: DevPreparationRecord): void;
 }

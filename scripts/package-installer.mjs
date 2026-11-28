@@ -107,42 +107,51 @@ export function collectProductionPayload(root, { excludedInputs = [] } = {}) {
   };
   const files = collectTree(root, join(root, 'out'), 'out', { admitFile });
   for (const [name, value] of productionClosure(root, { admitFile })) files.set(name, value);
-  const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-  files.set('package.json', { bytes: Buffer.from(JSON.stringify({ name: pkg.name, version: pkg.version, type: 'module', dependencies: pkg.dependencies })), mode: 0o644, source: join(root, 'package.json') });
+  const packageInput = collectTree(root, join(root, 'package.json'), 'package.json', { admitFile }).get('package.json');
+  const pkg = JSON.parse(packageInput.bytes.toString('utf8'));
+  files.set('package.json', { bytes: Buffer.from(JSON.stringify({ name: pkg.name, version: pkg.version, type: 'module', dependencies: pkg.dependencies })), mode: 0o644, source: packageInput.source });
   assertApplicationSources(files, { sourceRoot: root, excludedInputs, requireSource: true });
   return files;
 }
 /** Publisher tooling is external to app files, using the same verified store. */
 export async function preparePublisherRuntime(run, archive, home, target) {
   run.assertOwner();
+  const { requireEnabledNativeTarget } = await import('../out/installer/native-qualification.js');
+  requireEnabledNativeTarget(target);
   const { ControllerStore } = await import('../out/installer/controller-store.js');
   const { resolveInstallationLocation } = await import('../out/installer/location.js');
   const { controlBinding } = await import('../out/installer/native.js');
   const { runtimeArchive } = await import('../out/installer/runtime-policy.js');
   const { httpsDownloadTransport } = await import('../out/installer/download.js');
   const official = runtimeArchive(target);
-  const temporary = home === undefined;
-  home = temporary ? mkdtempSync(join(realpathSync(tmpdir()), 'ipr-')) : join(realpathSync(dirname(resolve(home))), basename(home));
-  if (temporary && process.platform === 'win32') controlBinding().protect(home);
+  // Retain this runtime separately from publication staging. A short allocated
+  // home avoids the platform socket-path bound imposed by installation locations.
+  // Record its lifetime in the retained run; candidate cleanup cannot delete it.
+  // Fixtures pass a newly captured home and dispose it only after actor closure.
+  home = home === undefined ? mkdtempSync(join(realpathSync(tmpdir()), 'ipr-')) : join(realpathSync(dirname(resolve(home))), basename(home));
+  run.assertOwner();
+  writeFileSync(join(run.workspace, `publisher-runtime-home-${randomUUID()}.json`), JSON.stringify({ schemaVersion: 1, home, disposition: 'retained-runtime-cache', candidateCleanupOwnsRuntime: false }) + '\n', { flag: 'wx', mode: 0o600 });
   const identity = { version: policy.nodeVersion, target, sha256: official.sha256, relativeExecutable: target.os === 'win32' ? 'node.exe' : 'bin/node' };
   const location = resolveInstallationLocation('publisher-runtime', { home, ...(process.platform === 'win32' ? { userSid: controlBinding().userSid() } : {}) });
   let store;
   try {
     store = ControllerStore.acquire(location);
     await store.ensureRuntime(identity, { transport: async (url, signal) => {
-      if (!archive || url.href !== official.url) return httpsDownloadTransport(url, signal);
+      if (!archive) return httpsDownloadTransport(url, signal);
+      if (url.href !== official.url) throw new Error(`Unexpected publisher fixture runtime URL: ${url.href}`);
       const body = createReadStream(archive);
       return { status: 200, body, closed: new Promise(resolve => body.once('close', resolve)) };
     } });
   } catch (cause) {
     store?.close(); store = undefined;
     if (cause?.code === 'resource-close-uncertain') throw new Error(`Publisher runtime closure is uncertain; retained ${home}`, { cause });
-    if (temporary) rmSync(home, { recursive: true });
     throw cause;
   } finally { store?.close(); }
-  return Object.freeze({ location, identity, cleanup() { if (temporary) rmSync(home, { recursive: true }); } });
+  return Object.freeze({ location, identity, cleanup() { /* Run-owned cache; no candidate deletion ownership. */ } });
 }
 export async function probePayload(run, scope, directory, target, context) {
+  const { requireEnabledNativeTarget } = await import('../out/installer/native-qualification.js');
+  requireEnabledNativeTarget(target);
   if (!context?.location || !context?.identity) throw new Error('External verified runtime context is required for publisher probes');
   const { privateRuntimePaths, privateRuntimeEnvironment } = await import('../out/installer/runtime-policy.js');
   const runtime = await privateRuntimePaths(context.location, context.identity);
@@ -170,9 +179,10 @@ export async function packageInstaller(run, scope, config) {
   const { target, qualification, runtimeArchive, sourceCommit, releaseId, baseUrl, outputDirectory, compatiblePredecessors = [], migrations = [] } = config;
   const archiveKey = `${target.os}-${target.arch}`, archiveSha = policy.archives[archiveKey];
   if (!archiveSha) throw new Error('Runtime target does not match official policy');
+  const { requireNativeQualification, requireEnabledNativeTarget } = await import('../out/installer/native-qualification.js');
+  requireEnabledNativeTarget(target);
   if (target.os !== process.platform || target.arch !== process.arch) throw new Error('Cross-target production publication is unqualified');
   const binding = join(root, 'out/installer/native/control.node'), nativeBytes = readFileSync(binding);
-  const { requireNativeQualification } = await import('../out/installer/native-qualification.js');
   requireNativeQualification(target, sha256(nativeBytes), qualification);
   await assertCommittedSource(run, scope, sourceCommit);
   let parent = resolve(outputDirectory);

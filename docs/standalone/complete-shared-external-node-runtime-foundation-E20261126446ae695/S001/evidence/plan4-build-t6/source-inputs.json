@@ -1,0 +1,26 @@
+{
+  "at": "2026-11-28T14:56:41.243427+00:00",
+  "headBeforeTaskCommit": "d000a9d539536d9ba331886069c78ea4fed505e6",
+  "files": {
+    ".github/workflows/ci.yml": "5d7e92ce558e4264ad48527d9d728938231eee1aec48bbc18f5c31fa1d83401f",
+    "scripts/installer-payload.mjs": "1dd8dd0526d4b39ea8706cd28479e689d83cf1c0bbe72d48ec796c32124a3772",
+    "scripts/package-installer.mjs": "21de6a045620bdeaeb19418863b197a0004a9ada4e69be4e3991d4c649c6b5ba",
+    "src/installer/candidate-integrity.ts": "8b45f7ca14df8a6b5188695147665952d7329c59b20016ca9227d766aebce623",
+    "src/installer/safe-zip.ts": "5186a00af6bcd26555cb45579b7dd538515ef0c9f623571d2d99f47c740b7dd4",
+    "src/installer/bundle.ts": "f3bb2bc98be83b9d18953de2b6a23d4f50ddd3419deb377f5497cddc1409d272",
+    "src/installer/bundle-delivery.ts": "1966f4ae5eb05cc4f386b4fcb3adc6f50a1d45ae358e2a0cf5c5570b175ca437",
+    "src/installer/dev.ts": "0f88edc88811836f6365fde9634c6c38c90299717614b84f97a75c36a6e68889",
+    "src/installer/peer-contracts.ts": "246e17c761520d56f3c6a0e0f0c67583053618e65c207a5cf0eb16ff31bbfdf9",
+    "src/installer/native-qualification.ts": "0964e376ac45a6c983044e96d6cec45b15ad39b745010310454f94cb3660c9c0",
+    "src/installer/__tests__/bundle.test.ts": "2872a52311a362735259f6b20592a78887b357dd45b975b651b5e4f54441b058",
+    "src/installer/__tests__/publisher.test.ts": "7823e3ec09e84cf43b0545148b49f43d8f9f5d22f3e9a40d874fb8b057e7cf1d",
+    "src/installer/__tests__/foundation-payload.test.ts": "ca4c7e9c80c5a53958f634ba94cb332283dbef8c546edcd282d9d3b49c4944a7",
+    "src/installer/__tests__/foundation-payload-fixture.mjs": "7573cf3b43252ae4696c46372d0b1b785570aa337d02e10197cfab041bdd1514"
+  },
+  "surroundingRun": "4db2dc1b-6603-4aef-a691-646f16ed5d8d",
+  "typecheck": "passed by coordinator",
+  "cases": 26,
+  "allPassed": true,
+  "fullPayload": "unvalidated; deferred to final T9 regression",
+  "finalStoryBuildApproved": false
+}

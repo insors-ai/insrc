@@ -1,0 +1,84 @@
+TAP version 13
+# Subtest: hostile ZIP corpus cannot escape staging or exceed bounded extraction
+ok 1 - hostile ZIP corpus cannot escape staging or exceed bounded extraction
+  ---
+  duration_ms: 100919.904709
+  type: 'test'
+  ...
+# Subtest: download digest target runtime cancellation and retry preserve incumbent
+ok 2 - download digest target runtime cancellation and retry preserve incumbent
+  ---
+  duration_ms: 74922.0065
+  type: 'test'
+  ...
+# Subtest: release discovery rejects insecure redirects and never falls back to dev
+ok 3 - release discovery rejects insecure redirects and never falls back to dev
+  ---
+  duration_ms: 2.535042
+  type: 'test'
+  ...
+# Subtest: inventory bound reserves the archive inventory entry
+ok 4 - inventory bound reserves the archive inventory entry
+  ---
+  duration_ms: 81.4915
+  type: 'test'
+  ...
+# Subtest: bundle descriptor2 and installed receipts preserve public manifest1 and reject embedded format1
+ok 5 - bundle descriptor2 and installed receipts preserve public manifest1 and reject embedded format1
+  ---
+  duration_ms: 4.508292
+  type: 'test'
+  ...
+# Subtest: application full integrity is bound to its operation candidate and closed producer inventory
+not ok 6 - application full integrity is bound to its operation candidate and closed producer inventory
+  ---
+  duration_ms: 55719.655708
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/bundle.test.ts:1:14471'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      {
+    +   module: 2,
+    +   native: 2
+    -   module: 1,
+    -   native: 1
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    module: 1
+    native: 1
+  actual:
+    module: 2
+    native: 2
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/bundle.test.ts:208:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: new recovery rejects truncated non-control modules and native addons and cancellation cannot reuse proof
+ok 7 - new recovery rejects truncated non-control modules and native addons and cancellation cannot reuse proof
+  ---
+  duration_ms: 66587.261791
+  type: 'test'
+  ...
+# Subtest: bundle fixture transports refuse unknown URLs without a real HTTPS fallback
+ok 8 - bundle fixture transports refuse unknown URLs without a real HTTPS fallback
+  ---
+  duration_ms: 0.286167
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 7
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 298712.711959

@@ -14,6 +14,11 @@ import { extractSafeZip, readBoundedFile, verifyPublishedPayload } from './safe-
 import type { ExtractionLimits } from './safe-zip.js';
 import { flushDirectoryTree } from './durability.js';
 import { resolveInstalledControl } from './installed-receipt.js';
+import { bindCandidateIntegritySignal, invalidateCandidateIntegrity, rememberCandidateIntegrity } from './candidate-integrity.js';
+import type { CandidateIntegrityOperation } from './candidate-integrity.js';
+import { closedRuntimeOperation } from './runtime-acquire.js';
+import { closeOwnedFile } from './owned-file.js';
+import { operationTimeBudgets } from './operation-time-budgets.mjs';
 export interface PreparedCandidate {
   releaseId: string; directory: string; manifest: ReleaseManifest; descriptorSha256: string; payloadSha256: string; inventorySha256: string;
 }
@@ -21,11 +26,17 @@ export type PreparationLease = Pick<ControllerStore, 'location' | 'assertHeld' |
 export interface PrepareOptions {
   target: Target; predecessorId?: string | undefined; signal?: AbortSignal | undefined;
   transport?: DownloadTransport | undefined; limits?: Partial<ExtractionLimits> | undefined;
+  integrity?: CandidateIntegrityOperation | undefined;
 }
 function local(directory: string): void { assertLocalControlRoot(directory, process.platform === 'win32' ? path => controlBinding().localVolume(path) : undefined); }
 async function exists(path: string): Promise<boolean> { try { await lstat(path); return true; } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false; throw error; } }
 /** No selection/daemon/migration/application-data mutation occurs here. */
 export async function prepareBundle(store: PreparationLease, input: unknown, options: PrepareOptions): Promise<PreparedCandidate> {
+  try { return await prepareOwnedBundle(store, input, options); }
+  catch (cause) { invalidateCandidateIntegrity(options.integrity); throw cause; }
+}
+async function prepareOwnedBundle(store: PreparationLease, input: unknown, options: PrepareOptions): Promise<PreparedCandidate> {
+  bindCandidateIntegritySignal(options.integrity, store.location, options.signal);
   store.assertHeld(); options.signal?.throwIfAborted();
   const current = store.inspect();
   if (current.kind === 'corrupt') throw new InstallerError('controller-corrupt', current.reason);
@@ -41,21 +52,36 @@ export async function prepareBundle(store: PreparationLease, input: unknown, opt
     local(destination);
     const receipt = await readBoundedFile(join(destination, '.release.json'), BUNDLE_LIMITS.descriptorBytes);
     if (receipt.toString('utf8') !== descriptorBytes) throw new InstallerError('candidate-conflict', 'Release identity already names different immutable bytes');
-    await verifyPublishedPayload(destination, descriptor, options.signal); store.assertHeld(); options.signal?.throwIfAborted(); return candidate(destination);
+    const checkDeadline = AbortSignal.timeout(operationTimeBudgets().manager.fileMs);
+    const checkSignal = options.signal ? AbortSignal.any([checkDeadline, options.signal]) : checkDeadline;
+    const inventory = await closedRuntimeOperation(verifyPublishedPayload(destination, descriptor, checkSignal, options.integrity), checkSignal);
+    store.assertHeld(); options.signal?.throwIfAborted();
+    const prepared = candidate(destination);
+    await rememberCandidateIntegrity(prepared, store.location, inventory, options.integrity, checkSignal);
+    store.assertHeld(); options.signal?.throwIfAborted(); return prepared;
   }
   const stagingRoot = join(store.location.home, 'install/staging'); local(stagingRoot);
   await mkdir(stagingRoot, { recursive: true, mode: 0o700 }); controlBinding().protect(stagingRoot);
   const stage = await mkdtemp(join(stagingRoot, `candidate-${randomUUID()}-`));
+  let retain = false;
   try {
     const archive = join(stage, 'payload.zip'), payload = join(stage, 'payload'); await mkdir(payload, { mode: 0o700 });
     await downloadVerifiedAsset(descriptor.payload, archive, { signal: options.signal, transport: options.transport }); store.assertHeld();
     await extractSafeZip(archive, payload, descriptor, { signal: options.signal, limits: options.limits });
     options.signal?.throwIfAborted(); store.assertHeld();
     await writeFile(join(payload, '.release.json'), descriptorBytes, { flag: 'wx', mode: 0o600 });
-    const receipt = await open(join(payload, '.release.json'), 'r+'); try { await receipt.sync(); } finally { await receipt.close(); }
+    const receipt = await open(join(payload, '.release.json'), 'r+'); try { await receipt.sync(); } finally { await closeOwnedFile(receipt); }
     await flushDirectoryTree(payload, options.signal); store.assertHeld(); options.signal?.throwIfAborted();
-    return candidate(store.publishCandidate(payload, releaseId));
-  } finally { await rm(stage, { recursive: true, force: true }); }
+    const checkDeadline = AbortSignal.timeout(operationTimeBudgets().manager.fileMs);
+    const checkSignal = options.signal ? AbortSignal.any([checkDeadline, options.signal]) : checkDeadline;
+    const inventory = await closedRuntimeOperation(verifyPublishedPayload(payload, descriptor, checkSignal, options.integrity), checkSignal);
+    store.assertHeld(); options.signal?.throwIfAborted();
+    const prepared = candidate(store.publishCandidate(payload, releaseId));
+    await rememberCandidateIntegrity(prepared, store.location, inventory, options.integrity, checkSignal);
+    store.assertHeld(); options.signal?.throwIfAborted(); return prepared;
+  } catch (cause) {
+    retain = cause instanceof InstallerError && cause.code === 'resource-close-uncertain'; throw cause;
+  } finally { if (!retain) await rm(stage, { recursive: true, force: true }); }
 }
 /** Public GitHub release discovery only; no implicit source/dev fallback. */
 export async function resolveBundleDelivery(delivery: Delivery, target: Target, options: { signal?: AbortSignal | undefined; transport?: DownloadTransport | undefined } = {}): Promise<unknown> {

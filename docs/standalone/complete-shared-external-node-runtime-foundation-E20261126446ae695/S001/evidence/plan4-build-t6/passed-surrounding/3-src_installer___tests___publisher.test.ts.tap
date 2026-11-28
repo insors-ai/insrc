@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: publisher format2 binds app-only inventory public manifest1 source and exact external runtime identity
+ok 1 - publisher format2 binds app-only inventory public manifest1 source and exact external runtime identity
+  ---
+  duration_ms: 125.726666
+  type: 'test'
+  ...
+# Subtest: publisher rejects a real pinned Node archive even when renamed as an application resource
+ok 2 - publisher rejects a real pinned Node archive even when renamed as an application resource
+  ---
+  duration_ms: 70.607334
+  type: 'test'
+  ...
+# Subtest: publisher source provenance excludes renamed runtime inputs and preserves native dependency contributions
+ok 3 - publisher source provenance excludes renamed runtime inputs and preserves native dependency contributions
+  ---
+  duration_ms: 7.949542
+  type: 'test'
+  ...
+# Subtest: production payload closure rejects missing entrypoints and escaping workspace links
+ok 4 - production payload closure rejects missing entrypoints and escaping workspace links
+  ---
+  duration_ms: 6.339208
+  type: 'test'
+  ...
+# Subtest: bundled manager excludes DB indexer model imports and consumer npm build
+ok 5 - bundled manager excludes DB indexer model imports and consumer npm build
+  ---
+  duration_ms: 0.76875
+  type: 'test'
+  ...
+# Subtest: published manual and both IDE installer script assets have exact byte parity
+ok 6 - published manual and both IDE installer script assets have exact byte parity
+  ---
+  duration_ms: 14.972
+  type: 'test'
+  ...
+# Subtest: real bundler produces one dependency-minimal control fixture under owned build scope
+ok 7 - real bundler produces one dependency-minimal control fixture under owned build scope
+  ---
+  duration_ms: 277.543417
+  type: 'test'
+  ...
+# Subtest: publisher rejects uncommitted compiler inputs despite unchanged source revision
+ok 8 - publisher rejects uncommitted compiler inputs despite unchanged source revision
+  ---
+  duration_ms: 122.848125
+  type: 'test'
+  ...
+# Subtest: publisher single-link reads reject replacement mutation and new symlinks after traversal
+ok 9 - publisher single-link reads reject replacement mutation and new symlinks after traversal
+  ---
+  duration_ms: 4.366291
+  type: 'test'
+  ...
+# Subtest: release-owned Windows exclusion cannot be overridden by qualification flags or manual CI scope
+ok 10 - release-owned Windows exclusion cannot be overridden by qualification flags or manual CI scope
+  ---
+  duration_ms: 2.057459
+  type: 'test'
+  ...
+# Subtest: publisher native probe executes the shared protected runtime outside the application payload
+ok 11 - publisher native probe executes the shared protected runtime outside the application payload
+  ---
+  duration_ms: 49123.4125
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 49926.648834

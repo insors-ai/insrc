@@ -1,0 +1,141 @@
+[
+  {
+    "name": "bundle-descriptor2-application-only-public-manifest1-and-legacy-descriptor-diagnostic",
+    "cases": [
+      {
+        "file": "src/installer/__tests__/bundle.test.ts",
+        "title": "bundle descriptor2 and installed receipts preserve public manifest1 and reject embedded format1"
+      },
+      {
+        "file": "src/installer/__tests__/bundle.test.ts",
+        "title": "hostile ZIP corpus cannot escape staging or exceed bounded extraction"
+      },
+      {
+        "file": "src/installer/__tests__/bundle.test.ts",
+        "title": "download digest target runtime cancellation and retry preserve incumbent"
+      },
+      {
+        "file": "src/installer/__tests__/bundle.test.ts",
+        "title": "release discovery rejects insecure redirects and never falls back to dev"
+      },
+      {
+        "file": "src/installer/__tests__/bundle.test.ts",
+        "title": "inventory bound reserves the archive inventory entry"
+      },
+      {
+        "file": "src/installer/__tests__/publisher.test.ts",
+        "title": "publisher format2 binds app-only inventory public manifest1 source and exact external runtime identity"
+      }
+    ]
+  },
+  {
+    "name": "publisher-app-and-IDE-inventory-exclude-Node-Ollama-distributions-and-archives-including-renamed-contributions",
+    "cases": [
+      {
+        "file": "src/installer/__tests__/application-payload.test.ts",
+        "title": "app-only inventory rejects ordinary and renamed pinned Node Ollama archives executables and build inputs"
+      },
+      {
+        "file": "src/installer/__tests__/application-payload.test.ts",
+        "title": "app-only inventory permits native application dependencies and runtime policy metadata"
+      },
+      {
+        "file": "src/installer/__tests__/application-payload.test.ts",
+        "title": "enabled Ollama policy assets share the application exclusion metadata without changing qualification"
+      },
+      {
+        "file": "src/installer/__tests__/publisher.test.ts",
+        "title": "publisher rejects a real pinned Node archive even when renamed as an application resource"
+      },
+      {
+        "file": "src/installer/__tests__/publisher.test.ts",
+        "title": "publisher source provenance excludes renamed runtime inputs and preserves native dependency contributions"
+      },
+      {
+        "file": "src/installer/__tests__/publisher.test.ts",
+        "title": "published manual and both IDE installer script assets have exact byte parity"
+      }
+    ]
+  },
+  {
+    "name": "bundle-publisher-probes-use-shared-external-runtime-without-tools-node-copy",
+    "cases": [
+      {
+        "file": "src/installer/__tests__/publisher.test.ts",
+        "title": "publisher native probe executes the shared protected runtime outside the application payload"
+      },
+      {
+        "file": "src/installer/__tests__/publisher.test.ts",
+        "title": "real bundler produces one dependency-minimal control fixture under owned build scope"
+      },
+      {
+        "file": "src/installer/__tests__/publisher.test.ts",
+        "title": "bundled manager excludes DB indexer model imports and consumer npm build"
+      },
+      {
+        "file": "src/installer/__tests__/publisher.test.ts",
+        "title": "publisher rejects uncommitted compiler inputs despite unchanged source revision"
+      }
+    ]
+  },
+  {
+    "name": "application-integrity-once-per-operation-and-full-recovery-before-activation",
+    "cases": [
+      {
+        "file": "src/installer/__tests__/bundle.test.ts",
+        "title": "application full integrity is bound to its operation candidate and closed producer inventory"
+      },
+      {
+        "file": "src/installer/__tests__/bundle.test.ts",
+        "title": "new recovery rejects truncated non-control modules and native addons and cancellation cannot reuse proof"
+      }
+    ]
+  },
+  {
+    "name": "publisher-single-link-collection-rechecks-captured-identity-and-renamed-exclusion-is-visited",
+    "cases": [
+      {
+        "file": "src/installer/__tests__/publisher.test.ts",
+        "title": "publisher single-link reads reject replacement mutation and new symlinks after traversal"
+      },
+      {
+        "file": "src/installer/__tests__/publisher.test.ts",
+        "title": "production payload closure rejects missing entrypoints and escaping workspace links"
+      },
+      {
+        "file": "src/installer/__tests__/payload-source-links.test.ts",
+        "title": "payload collector snapshots complete internal native build hardlink pairs without mutating source"
+      },
+      {
+        "file": "src/installer/__tests__/payload-source-links.test.ts",
+        "title": "payload collector rejects unaccounted hardlink aliases inside or outside the source root"
+      },
+      {
+        "file": "src/installer/__tests__/payload-source-links.test.ts",
+        "title": "payload collector does not count repeated directory symlink paths as distinct inode aliases"
+      },
+      {
+        "file": "src/installer/__tests__/payload-source-links.test.ts",
+        "title": "payload collector rejects alias or content changes after collecting the complete hardlink group"
+      }
+    ]
+  },
+  {
+    "name": "release-owned-target-exclusion-and-default-off-Windows-CI-cannot-self-qualify",
+    "cases": [
+      {
+        "file": "src/installer/__tests__/publisher.test.ts",
+        "title": "release-owned Windows exclusion cannot be overridden by qualification flags or manual CI scope"
+      }
+    ]
+  },
+  {
+    "name": "bundle-fixture-unknown-URL-is-refused-without-real-network",
+    "cases": [
+      {
+        "file": "src/installer/__tests__/bundle.test.ts",
+        "title": "bundle fixture transports refuse unknown URLs without a real HTTPS fallback"
+      }
+    ]
+  }
+]

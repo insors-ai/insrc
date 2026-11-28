@@ -1,0 +1,567 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795843730185-b6bol3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T05:34:23.033Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 327376,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "epicSlug": "unify-vibe-one-plain-cli-adapter",
+    "storyId": "s3",
+    "lldRunId": "wf-1795767098909-53x0zo",
+    "lldEffectiveHash": "67d59677de6a7a14a26bdb819949a499c3171f1bd551c1f73af1201b624e872c",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bea6b4ec41ee229df89de01262fac640cea8e98db33f4a474ab157ded3c80d40",
+        "at": "2026-11-28T05:34:24.947Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T05:37:21.549Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "cff96690691c2c89ccb2cf22d427f80688579447"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story means giving the VS Code chat's own direct Vibe launch path the same safety machinery the backend adapter already has: a per-turn export directory it owns, a dispatchState tracker that mirrors the adapter's model exactly, and a real exit classification read from Vibe's own export.json instead of a guess. That classification gets stamped onto the one durable marker both the live writer and a reattaching follower already consult, so a resumed turn is judged exactly as safely as a live one. Once that's proven, the Story deletes the old worker-routed path it replaces and gates the final cutover on a live approval-flag equivalence check.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Export buildArgv and readExitEvidence from vibe-adapter.ts",
+        "summary": "Export buildArgv(request, outputDir) and readExitEvidence from src/shared/vibe-adapter.ts (both currently module-private), mirroring the existing export precedent other adapter primitives already use. No behavior change.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "buildArgv and readExitEvidence are exported from src/shared/vibe-adapter.ts with their existing signatures unchanged",
+          "a new, minimal test imports buildArgv and readExitEvidence directly from '../vibe-adapter.js' (not re-implemented or copy-pasted) and calls each once, proving the export surface is real and importable",
+          "every existing vibe-adapter.ts test still passes with no behavior change"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "buildArgv and readExitEvidence import directly from vibe-adapter.ts and are callable"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Widen mapLine's row branches and delegate MCP tool-name parsing to VibeMcpNaming.fromStreamedName",
+        "summary": "Add the new top-level reasoning/effect row branches to mapLine and replace parseVibeMcpTool's body with a call to VibeMcpNaming.fromStreamedName (sc2), so the chat decodes MCP tool names the same way the shared adapter does.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "mapLine decodes the new reasoning/effect row shapes without breaking any existing native or legacy worker-bridged row decode path",
+          "parseVibeMcpTool resolves an MCP tool name via VibeMcpNaming.fromStreamedName, not a second independent parser"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "parseVibeMcpTool delegates to VibeMcpNaming.fromStreamedName"
+          },
+          {
+            "level": "live",
+            "name": "tool-activity naming parity against the installed vibe binary (carried from round 3)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "vibeMapper.buildArgs accepts an optional outputDir and delegates to buildArgv",
+        "summary": "Change vibeMapper.buildArgs to accept an optional outputDir parameter and delegate to buildArgv(req, outputDir); set inputIsPrompt to false for the vibe mapper so the prompt travels via stdin, matching the shared adapter's own contract.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "vibeMapper.buildArgs(req, outputDir) produces the same argv buildArgv itself would for the same request",
+          "vibeMapper.inputIsPrompt is false"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "vibeMapper.buildArgs threading outputDir through to buildArgv"
+          },
+          {
+            "level": "integration",
+            "name": "prompt transport via stdin, not argv (carried from round 3)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Allocate and own a per-turn export directory in run()'s vibe branch",
+        "summary": "In cli-adapter.ts's run() direct-spawn vibe branch, allocate a fresh per-turn export directory (mkdtemp) before spawn and wire it into buildArgs's outputDir parameter. Split from the original combined Task per s3 critique: this is the export-directory lifecycle half, independently testable from dispatchState tracking.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "the vibe branch allocates its own export directory via mkdtemp before spawn and passes it to buildArgs's outputDir parameter",
+          "a distinct export directory is allocated per turn, never reused across turns"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "export-directory lifecycle across success/signal/spawn-failure/abort paths"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Track dispatchState through its three transition points in run()'s vibe branch",
+        "summary": "Track a local dispatchState mirroring vibe-adapter.ts's own model: 'not-sent' -> 'possibly-sent' immediately after spawn succeeds, before the stdin write -> 'accepted' once a session-identity row is decoded. Split from the original combined Task per s3 critique: this is the dispatchState half, built on t4's export-directory lifecycle.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "the local dispatchState transitions exactly match vibe-adapter.ts's own model at the same three points (pre-spawn, post-spawn-pre-stdin-write, post-session-identity-row)"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c15"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "dispatchState transitions: 'not-sent' before spawn, 'possibly-sent' immediately after spawn succeeds, 'accepted' once a session-identity row is decoded; a subsequent stdin write/end failure does not revert it"
+          },
+          {
+            "level": "integration",
+            "name": "a spawn failure before any child exists is deterministic pre-dispatch-safe"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Extend the stdin-write gate to the vibe mapper, classified by dispatchState",
+        "summary": "Extend the existing stdin-write gate (currently scoped to other mapper ids) to cover mapper.id==='vibe'; classify a write/end failure using whatever dispatchState the turn already holds at that point, instead of treating it as unconditionally pre-dispatch-safe.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "a stdin write/end failure for a vibe turn is classified using the turn's own current dispatchState, never assumed pre-dispatch-safe"
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "a stdin write/end failure AFTER spawn succeeds is classified replay-unsafe"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Compute vibeOutcome from export.json on exit and clean up the export directory",
+        "summary": "On process exit, read export.json via the now-exported readExitEvidence and classify vibeOutcome ('ok' | 'no-evidence' | 'replay-unsafe') from Vibe's real reported stopReason/outcome; remove the per-turn export directory (from t4) in a finally block on every exit path (clean exit, error, cancellation).",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "vibeOutcome is computed from export.json's real stopReason/outcome fields, never inferred from merely having decoded a row",
+          "the export directory is removed on every exit path, including an error or cancelled turn"
+        ],
+        "derivedFrom": [
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "readExitEvidence-driven outcome classification: stopReason undefined -> 'ok'; stopReason present -> 'replay-unsafe'; export.json missing/malformed -> 'no-evidence'"
+          },
+          {
+            "level": "integration",
+            "name": "a fixture binary exiting cleanly with no stopReason yields vibeOutcome 'ok', read identically live and on reattach"
+          },
+          {
+            "level": "integration",
+            "name": "a fixture binary exiting cleanly with a stopReason yields vibeOutcome 'replay-unsafe' despite exit code 0"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Widen TurnExit, Marker's turn-end variant, parseMarker and endTurn's marker construction",
+        "summary": "Add two new OPTIONAL vibe-outcome fields (dispatchState, outcome) to TurnExit and Marker's turn-end variant; widen parseMarker's turn-end case to parse and return them; widen endTurn's appendMarker call to include them (alongside the previously-discarded code/signal fields, which are already written but not yet exposed).",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Marker's turn-end variant and parseMarker's turn-end case both carry the two new optional vibe fields plus the previously-written-but-undeclared code/signal fields",
+          "a turn-end marker line written before this Story's build still parses successfully with the new fields simply absent"
+        ],
+        "derivedFrom": [
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "parseMarker's turn-end case extracting code, signal, unknown, vibeDispatchState and vibeOutcome"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Pass the computed vibeDispatchState/vibeOutcome through to sessionOutput.endTurn for a vibe turn",
+        "summary": "Wire run()'s vibe branch to pass the final dispatchState and the computed vibeOutcome through the existing sessionOutput.endTurn(sessionId, turnId, exit) call site, using TurnExit's two new optional fields from t8.",
+        "size": "S",
+        "order": 9,
+        "dependsOn": [
+          "t7",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "a completed vibe turn's endTurn call carries its real dispatchState and vibeOutcome on the TurnExit object",
+          "a non-vibe turn's endTurn call is unaffected (the new fields stay undefined)"
+        ],
+        "derivedFrom": [
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "endTurn constructing the turn-end marker with the new fields present for vibe and absent for claude/codex"
+          },
+          {
+            "level": "integration",
+            "name": "detach/reattach producing identical classification"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Extend the follower's EOF-without-terminal-row path to read the new marker fields for a vibe turn",
+        "summary": "Extend the follower's existing EOF-without-terminal-row path to read the new dispatchState/outcome marker fields for mapper.id==='vibe' and surface replayUnsafe accordingly, instead of returning a flat, unclassified error; a host-loss synthesized unknown:true marker is always treated as replay-unsafe for a vibe turn.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t8",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "a follower reattaching after a vibe turn's clean completion classifies replay safety from the real written outcome, not a flat unclassified error",
+          "a follower reattaching after host loss (synthesized unknown:true marker) always classifies a vibe turn as replay-unsafe"
+        ],
+        "derivedFrom": [
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the follower's missing-result branch for mapper.id==='vibe'"
+          },
+          {
+            "level": "integration",
+            "name": "detach/reattach producing identical classification"
+          },
+          {
+            "level": "integration",
+            "name": "host-loss simulation read as replayUnsafe"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Delete the vibeCatalog worker route and its now-superseded helpers",
+        "summary": "Delete the vibeCatalog branch in cli-adapter.ts and vibe-session-worker.ts/vibe-session-process.ts's runVibeChatJob/historyLines (the app-server-shaped route the direct-spawn mirroring in t4-t10 now fully supersedes); update esbuild.mjs's bundle entries and packaging.test.ts's assertions accordingly.",
+        "size": "L",
+        "order": 11,
+        "dependsOn": [
+          "t4",
+          "t5",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "a new, durable repo-wide contract test (mirroring Story s1's t7 no-vibe-session-transport.test.ts convention) greps every production .ts file under src/ and vscode-plugin/src/ for vibeCatalog, vibe-session-worker.ts and vibe-session-process.ts's runVibeChatJob/historyLines, and fails if any production file still references them",
+          "esbuild.mjs and packaging.test.ts no longer name the deleted files/bundle entries, and the plugin still packages cleanly"
+        ],
+        "derivedFrom": [
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "no production file under src/ or vscode-plugin/src/ references vibeCatalog, vibe-session-worker.ts, or runVibeChatJob/historyLines"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Live-verify approval-flag effective equivalence and export.json's real field shape; gate cutover",
+        "summary": "GATED (migration step 12, open question q11e93349 resolved as 'gate cutover at step 12'): live-verify that --approval-policy is effectively equivalent to the old --agent route before finalizing t11's route removal, and live-verify export.json's real field shape against what t7/t10 assume. Proceed with --approval-policy only if parity holds; otherwise keep --agent or record an explicit accepted deviation on the ledger before cutover.",
+        "size": "S",
+        "order": 12,
+        "dependsOn": [
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "the approval-flag live-verification result (parity holds, or an explicit accepted deviation) is recorded before this Task is considered complete",
+          "export.json's real field shape is confirmed live against what t7/t10 assume, with any mismatch corrected before cutover is considered final"
+        ],
+        "derivedFrom": [
+          "c14"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "export.json's real field names match readExitEvidence's expectations"
+          },
+          {
+            "level": "live",
+            "name": "approval-flag effective-equivalence comparison, gating the migration's cutover"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "dispatchState transitions: 'not-sent' before spawn, 'possibly-sent' immediately after spawn succeeds, 'accepted' once a session-identity row is decoded; a subsequent stdin write/end failure does not revert it",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "readExitEvidence-driven outcome classification: stopReason undefined -> 'ok'; stopReason present -> 'replay-unsafe'; export.json missing/malformed -> 'no-evidence'",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "parseMarker's turn-end case extracting code, signal, unknown, vibeDispatchState and vibeOutcome",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "endTurn constructing the turn-end marker with the new fields present for vibe and absent for claude/codex",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "The follower's missing-result branch for mapper.id==='vibe'",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "vibeMapper.buildArgs threading outputDir through to buildArgv",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "A fixture binary exiting cleanly with no stopReason -> vibeOutcome 'ok', read identically live and on reattach",
+        "coveredByTaskIds": [
+          "t7",
+          "t9",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "A fixture binary exiting cleanly with a stopReason -> vibeOutcome 'replay-unsafe' despite exit code 0",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "A stdin write/end failure AFTER spawn succeeds -> 'replay-unsafe'",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "A spawn failure before any child exists -> deterministic pre-dispatch-safe",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Detach/reattach producing identical classification",
+        "coveredByTaskIds": [
+          "t9",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "Host-loss simulation read as replayUnsafe",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "Export-directory lifecycle across success/signal/spawn-failure/abort paths",
+        "coveredByTaskIds": [
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Prompt transport (carried from round 3)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "export.json's real field names match readExitEvidence's expectations",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "Tool-activity naming parity (carried from round 3)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Approval-flag effective-equivalence comparison, gating the migration's cutover",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      }
+    ],
+    "epicImpact": {
+      "applies": true,
+      "reason": "Story s3 mirrors contracts (dispatchState model, buildArgv's export-directory parameter) that Story s1 built and Story s2 later extended within the SAME file (src/shared/vibe-adapter.ts); must confirm s2's extension did not change what s3 mirrors.",
+      "storiesCovered": [
+        "s1",
+        "s2"
+      ],
+      "findings": "s1 built the shared adapter (src/shared/vibe-adapter.ts) including the dispatchState model ('not-sent'->'possibly-sent'->'accepted') and buildArgv's 2-argument export-directory contract that Story s3's alternative a1 mirrors inside cli-adapter.ts's direct-spawn vibe branch; s1's own t7 FAILED (disclosed, a repo-wide contract test gap, unrelated to s3's scope). s2 built the read-only qualification suite (ReadOnlyCapability, qualifyReadOnlyCapability, the now-renamed argvExcludingTurnLocalFlags) on top of the SAME vibe-adapter.ts file, but its changed-files list (confirmed via its own BUILD record) touches only src/shared/vibe-adapter.ts and src/agent/providers/cli-provider.ts -- no file under vscode-plugin/src/chat/ -- and none of s2's additions touch buildArgv's ordinary (non-read-only) argv construction or the ordinary dispatchState transitions s3 mirrors; its own disclosed Task failures (t4: non-self-triggering readOnly field; t7: amendment filed via a different Story's workflow) are both scoped to the read-only authorization path. No contradiction or re-work needed: s3 may proceed mirroring s1's original dispatchState/export-directory model exactly as the approved LLD describes, without any HLD back-flow for epic-state reasons.",
+      "sources": [
+        ".insrc/artifacts/BUILD-639cd2159a87aedb-s1.json",
+        ".insrc/artifacts/BUILD-639cd2159a87aedb-s2.json",
+        "src/shared/vibe-adapter.ts",
+        "docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/S002/BUILD.md"
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §8 migration steps 1-2: export buildArgv and readExitEvidence from src/shared/vibe-adapter.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §8 migration step 3: widen mapLine's row branches and delegate to VibeMcpNaming.fromStreamedName"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §8 migration step 4: vibeMapper.buildArgs accepts an optional outputDir and delegates to buildArgv"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §8 migration step 5: allocate a per-turn export directory and track dispatchState in run()'s vibe branch"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §8 migration step 6: extend the stdin-write gate to mapper.id==='vibe'"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §8 migration step 7: compute vibeOutcome from export.json on exit and remove the export directory"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §8 migration step 8: widen TurnExit, Marker's turn-end variant, parseMarker and endTurn's marker construction"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §8 migration step 9: pass vibeDispatchState/vibeOutcome through to sessionOutput.endTurn"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §8 migration step 10: extend the follower's EOF-without-terminal path for mapper.id==='vibe'"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §8 migration step 11: delete the vibeCatalog branch and vibe-session-worker.ts/vibe-session-process.ts's runVibeChatJob/historyLines"
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §8 migration step 12: GATED live-verify approval-flag effective equivalence and export.json's real field shape before cutover"
+    },
+    {
+      "id": "c15",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §9.1 alternative a1 (chosen): mirror dispatchState + own export-directory lifecycle, widen the existing generic turn-end marker"
+    }
+  ]
+}

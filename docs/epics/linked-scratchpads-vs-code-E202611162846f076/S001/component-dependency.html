@@ -85,32 +85,32 @@ margin:0;box-sizing:border-box;min-height:100vh;padding-top:56px;background:var(
 <table class="ref">
 <tr><th>Work item</th><td>STORY-2846f076fd5f785f-s1</td></tr>
 <tr><th>Source doc</th><td><a href="./LLD.md">LLD-2846f076fd5f785f-s1</a></td></tr>
-<tr><th>Date</th><td>2026-11-28 13:38</td></tr>
+<tr><th>Date</th><td>2026-11-28 18:08</td></tr>
 <tr><th>User</th><td>Subho Ghosh</td></tr>
 </table>
 </header>
-<section class="blk narr"><h2>Narrative</h2><p class="context">Story S001 of Epic linked-scratchpads-vs-code · Single-pane Milkdown Markdown editor — Pads provide rendered Markdown and rich inline editing in one editor tab, with lock/pencil controls and a Send icon on text selection; only clicking Send inserts into the chat composer.</p><p>Each pane owns scheduling/codec execution; native service owns independent host admission and per-document queues. Workers have no file/chat/command capability; production configured-codec parity and CSP loading are early gates. [[c61]] [[c62]]</p></section>
+<section class="blk narr"><h2>Narrative</h2><p class="context">Story S001 of Epic linked-scratchpads-vs-code · Single-pane Milkdown Markdown editor — Pads provide rendered Markdown and rich inline editing in one editor tab, with lock/pencil controls and a Send icon on text selection; only clicking Send inserts into the chat composer.</p><p>Existing pane/worker/controller ownership remains. The added validation-intent edge prepares read-only host proof concurrently; the canonical controller still owns all native application. Each executor owns one immutable base and bounded candidate handoff, never another executor&#39;s proof. [[c66]] [[c67]]</p></section>
 <section class="blk"><h2>View</h2><div class="vp-wrap">
 <div class="iv-bar"><span>Drag to pan · scroll to zoom · double-click to zoom in</span><span class="sp"></span><button id="zout" title="Zoom out" aria-label="zoom out">−</button><span class="zl" id="zl">100%</span><button id="zin" title="Zoom in" aria-label="zoom in">+</button><button id="zfit" title="Fit to view (overview)" aria-label="fit to view">Fit</button><button id="z100" title="Actual size" aria-label="actual size">1:1</button><button id="iv-export" title="Export SVG" aria-label="export svg">⇩</button><button id="iv-srcbtn" title="Show diagram source" aria-label="show diagram source">src</button></div>
 <div class="iv-err" id="iv-err" role="alert"></div>
 <div class="vp iv-vp" id="vp"><div class="stage iv-stage insrc-viewer-diagram" id="stage"><pre class="mermaid">flowchart LR
   pane[&quot;Pane/idle observer&lt;br/&gt;&lt;small&gt;scratch-editor-webview.ts&lt;/small&gt;&quot;]
-  codec[&quot;Configured codec worker (proposed)&quot;]
-  shared[&quot;Configured codec extraction (proposed)&lt;br/&gt;&lt;small&gt;scratch-markdown-milkdown.ts&lt;/small&gt;&quot;]
+  codec[&quot;Configured codec worker&lt;br/&gt;&lt;small&gt;scratch-validation-browser-worker.ts&lt;/small&gt;&quot;]
+  shared[&quot;Exact configured codec&lt;br/&gt;&lt;small&gt;scratch-markdown-codec.ts&lt;/small&gt;&quot;]
   native[&quot;Native service&lt;br/&gt;&lt;small&gt;scratch-editor-native.ts&lt;/small&gt;&quot;]
   controller[&quot;Document controller&lt;br/&gt;&lt;small&gt;scratch-editor-provider.ts&lt;/small&gt;&quot;]
-  host[&quot;Host executor (proposed)&quot;]
+  host[&quot;Independent host executor&lt;br/&gt;&lt;small&gt;scratch-validation-host.ts&lt;/small&gt;&quot;]
   pane --&gt;|&quot;owns one; bounded latest job&quot;| codec
   codec --&gt;|&quot;same configured codec&quot;| shared
-  pane --&gt;|&quot;closed staging/authorization bridge&quot;| controller
+  pane --&gt;|&quot;closed recovery / read-only intent / authorization&quot;| controller
   native --&gt;|&quot;owns one per URI&quot;| controller
   native --&gt;|&quot;owns bounded executor&quot;| host
-  controller --&gt;|&quot;independent exact-base admission&quot;| host</pre></div></div>
+  controller --&gt;|&quot;concurrent read-only preparation + exact canonical proof adoption&quot;| host</pre></div></div>
 
 <pre class="iv-src" id="iv-src"></pre>
 </div></section>
-<section class="blk desc"><h2>Description</h2><h3>Components</h3><p class="lead">6 components, 6 dependencies. An arrow points from a component to what it depends on.</p><table class="dt"><thead><tr><th>Component</th><th>Path</th><th>Depends on</th><th>Description</th></tr></thead><tbody><tr><td>Pane/idle observer</td><td>vscode-plugin/src/panels/scratch-editor-webview.ts</td><td>Configured codec worker (proposed), Document controller</td><td>One timer and bounded codec executor per pane; immediate staging.</td></tr><tr><td>Configured codec worker (proposed)</td><td class="missing">—</td><td>Configured codec extraction (proposed)</td><td>New private fixed locally bundled browser worker; document is data only.</td></tr><tr><td>Configured codec extraction (proposed)</td><td>vscode-plugin/src/panels/scratch-markdown-milkdown.ts</td><td class="missing">—</td><td>Factor exact live schema/serializer and comparator-compatible fingerprint.</td></tr><tr><td>Native service</td><td>vscode-plugin/src/panels/scratch-editor-native.ts</td><td>Document controller, Host executor (proposed)</td><td>Owns host executor and URI controllers.</td></tr><tr><td>Document controller</td><td>vscode-plugin/src/panels/scratch-editor-provider.ts</td><td>Host executor (proposed)</td><td>One durable staging/application lane per URI/window.</td></tr><tr><td>Host executor (proposed)</td><td class="missing">—</td><td class="missing">—</td><td>Independent background grammar/fidelity admission; bounded owned lifetime.</td></tr></tbody></table></section>
-<footer class="ft"><span>Generated by insrc · companion of LLD-2846f076fd5f785f-s1</span><span>2026-11-28 13:38</span></footer>
+<section class="blk desc"><h2>Description</h2><h3>Components</h3><p class="lead">6 components, 6 dependencies. An arrow points from a component to what it depends on.</p><table class="dt"><thead><tr><th>Component</th><th>Path</th><th>Depends on</th><th>Description</th></tr></thead><tbody><tr><td>Pane/idle observer</td><td>vscode-plugin/src/panels/scratch-editor-webview.ts</td><td>Configured codec worker, Document controller</td><td>One timer and bounded codec executor per pane; immediate staging.</td></tr><tr><td>Configured codec worker</td><td>vscode-plugin/src/panels/scratch-validation-browser-worker.ts</td><td>Exact configured codec</td><td>Existing fixed packaged worker; independent immutable proof state and one active/latest job.</td></tr><tr><td>Exact configured codec</td><td>vscode-plugin/src/panels/scratch-markdown-codec.ts</td><td class="missing">—</td><td>Same live schema/serializer/intent rules; no relaxed check.</td></tr><tr><td>Native service</td><td>vscode-plugin/src/panels/scratch-editor-native.ts</td><td>Document controller, Independent host executor</td><td>Owns host executor and URI controllers.</td></tr><tr><td>Document controller</td><td>vscode-plugin/src/panels/scratch-editor-provider.ts</td><td>Independent host executor</td><td>Owns durable stages, one bounded prepared-host result and sole canonical apply lane; joins only exact-current authorization/proof.</td></tr><tr><td>Independent host executor</td><td>vscode-plugin/src/panels/scratch-validation-host.ts</td><td class="missing">—</td><td>Existing document-owned Node worker, proposed read-only preparation and exact canonical candidate adoption; no native I/O authority.</td></tr></tbody></table></section>
+<footer class="ft"><span>Generated by insrc · companion of LLD-2846f076fd5f785f-s1</span><span>2026-11-28 18:08</span></footer>
 </div>
 <script>(function(JM,Ag){typeof exports=="object"&&typeof module<"u"?module.exports=Ag():typeof define=="function"&&define.amd?define(Ag):(JM=typeof globalThis<"u"?globalThis:JM||self,JM.mermaid=Ag())})(this,function(){var FWe,RWe;"use strict";function JM(i){for(var s=[],u=1;u<arguments.length;u++)s[u-1]=arguments[u];var d=Array.from(typeof i=="string"?[i]:i);d[d.length-1]=d[d.length-1].replace(/\r?\n([\t ]*)$/,"");var p=d.reduce(function(y,T){var _=T.match(/\n([\t ]+|(?!\s).)/g);return _?y.concat(_.map(function(A){var P,R;return(R=(P=A.match(/[\t ]/g))===null||P===void 0?void 0:P.length)!==null&&R!==void 0?R:0})):y},[]);if(p.length){var v=new RegExp(`
 [	 ]{`+Math.min.apply(Math,p)+"}","g");d=d.map(function(y){return y.replace(v,`

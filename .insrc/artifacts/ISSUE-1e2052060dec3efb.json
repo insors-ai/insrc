@@ -25,7 +25,7 @@
     "kind": "defect",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 1,
         "contentHash": "d2dad9c48dab99d50e299439ed0d7bc41ab21188632fea88aa07a19e06291408",
@@ -36,9 +36,35 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T16:36:04.805Z"
+      }
     },
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "1e2052060dec3efb",
+      "slug": "EPIC-1e2052060dec3efb"
+    },
+    "tracker": {
+      "adapter": "github",
+      "epicStatus": "closed",
+      "storyStatus": {
+        "s1": "closed"
+      },
+      "lastSyncedAt": "2026-11-28T05:12:00Z"
+    }
   },
   "body": {
     "title": "Synchronize model settings and catalog contract tests",

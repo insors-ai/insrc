@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 9,
+        "contentHash": "bf0e3dada06adbb5783cd114c78e59cef81c52c63b9c263c8225ee073d143c63",
+        "at": "2026-11-28T05:06:43.822Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 9,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T05:09:33.644Z",
+        "override": {
+          "reason": "Automated code review is unavailable (review endpoints are being rewritten); review passed per the human review packet /tmp/.insrc/review-packet-1e2052060dec3efb-s1.md and the in-chat approval. Build gate: rev 9 passed:true (9/9 mapped tests, typecheck clean, judge passed) on a HEAD containing d30aa48f0."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-d1e44d2c-c3f8-4b98-a56e-36a1f5a5fdd0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-27T18:34:48.798Z",
+    "epicCreatedAt": "2026-11-20T04:36:30.891Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1e2052060dec3efb",
+    "storyId": "s1",
+    "revision": 9,
+    "updatedAt": "2026-11-28T05:05:18.039Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "epicSlug": "synchronize-model-settings-catalog-contract-tests"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "syncManifest v3 in vscode-plugin/scripts/sync-manifest-catalog.mjs (commits 9c922e953 + 3ca97d5f2 + e8bb15652 + 21f153309 + 3226caad3 + 94e041526 + d30aa48f0): one shared non-local row map drives update+insertion; a catalog-backed key is owned by its group-titled section (cross-title copies removed; a relocated sole declaration keeps its supplemental schema fields, the group section's own declaration wins when both exist) — declared exactly once manifest-wide; missing group sections created (package.json gains \"Models — security\"); only insrc.* keys matching RETIRED_PATHS are removed, every other non-role property survives everywhere; the taxonomy pass owns the entire insrc.models.tasks.* prefix and regenerates the canonical per-role section from buildPerRoleKeyMap (gains insrc.models.tasks.security.review); duplicate-titled sections consolidate losslessly — compatible metadata and distinct local keys preserved, conflicting metadata first-wins (documented), and only a conflicting PROPERTY schema (key-order-insensitive) is refused with a sync-duplicate-conflict diagnostic naming the key and the two declaring sections; stored values never rewritten; idempotent. All 9 gate-mapped tests pass; guards + bundle green; plugin tsc clean.",
+    "testRecord": {
+      "md": "docs/standalone/synchronize-model-settings-catalog-contract-tests-E202611201e205206/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T05:05:18.039Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/scripts/sync-manifest-catalog.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T05:05:18.039Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T05:05:18.039Z"
+      }
+    ],
+    "commit": "d30aa48f0"
+  },
+  "citations": []
+}

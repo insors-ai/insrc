@@ -1,0 +1,260 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 12,
+        "contentHash": "a5cc301ff43725564551e4da7ee8c22b92e6a603bd575fd1dbea7bbf579693ca",
+        "at": "2026-11-28T05:05:18.316Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "1e2052060dec3efb",
+    "storyId": "s1",
+    "createdAt": "2026-11-27T18:34:48.798Z",
+    "updatedAt": "2026-11-28T05:05:18.039Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-20T04:36:30.891Z",
+    "epicSlug": "synchronize-model-settings-catalog-contract-tests",
+    "revision": 12
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "a1bdc2567",
+        "ranAt": "2026-11-28T05:05:18.039Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "declared global insrc.* keys EXACTLY cover the global CONFIG_CATALOG paths (no missing, no extra)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/manifest-catalog.test.ts",
+                "title": "declared global insrc.* keys EXACTLY cover the global CONFIG_CATALOG paths (no missing, no extra)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "each declared key's type/enum/default matches its ConfigOption, and scope is 'machine'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/manifest-catalog.test.ts",
+                "title": "each declared key's type/enum/default matches its ConfigOption, and scope is 'machine'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "declared insrc.models.tasks.* keys EXACTLY cover the role taxonomy (no missing, no extra)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/per-role.test.ts",
+                "title": "declared insrc.models.tasks.* keys EXACTLY cover the role taxonomy (no missing, no extra)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "each per-role key is a machine-scoped enum with default = the role's defaultTier",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/per-role.test.ts",
+                "title": "each per-role key is a machine-scoped enum with default = the role's defaultTier",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "sync-manifest-catalog.test.ts: the committed manifest is in sync, and the script is idempotent on a stale copy",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts",
+                "title": "sync-manifest-catalog.test.ts: the committed manifest is in sync, and the script is idempotent on a stale copy",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "sync-manifest-catalog.test.ts: a stale copy missing the security section and the final role, carrying a retired role and a corrupted role schema, is reported by --check without writing, repaired by one sync, and byte-identical on the next, with explicit surviving and appended key order",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts",
+                "title": "sync-manifest-catalog.test.ts: a stale copy missing the security section and the final role, carrying a retired role and a corrupted role schema, is reported by --check without writing, repaired by one sync, and byte-identical on the next, with explicit surviving and appended key order",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "sync-manifest-catalog.test.ts: a misplaced or duplicated per-role key is removed from its wrong section and regenerated in the canonical section, while unrelated local keys survive",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts",
+                "title": "sync-manifest-catalog.test.ts: a misplaced or duplicated per-role key is removed from its wrong section and regenerated in the canonical section, while unrelated local keys survive",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "sync-manifest-catalog.test.ts: duplicate per-role sections consolidate losslessly (first section metadata kept, distinct local properties merged first-wins) and a colliding local key is refused with a diagnostic",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts",
+                "title": "sync-manifest-catalog.test.ts: duplicate per-role sections consolidate losslessly (first section metadata kept, distinct local properties merged first-wins) and a colliding local key is refused with a diagnostic",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vscode-bundle-catalog.test.ts: the extension type-checks and bundles; its key map, loaded without backend node_modules, maps every settings-catalog row without bundling the catalog or the definitions file",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts",
+                "title": "vscode-bundle-catalog.test.ts: the extension type-checks and bundles; its key map, loaded without backend node_modules, maps every settings-catalog row without bundling the catalog or the definitions file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/config/__tests__/manifest-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 366,
+            "titles": [
+              {
+                "title": "declared global insrc.* keys EXACTLY cover the global CONFIG_CATALOG paths (no missing, no extra)",
+                "result": "pass"
+              },
+              {
+                "title": "each declared key's type/enum/default matches its ConfigOption, and scope is 'machine'",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/per-role.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 370,
+            "titles": [
+              {
+                "title": "buildPerRoleKeyMap returns one entry per taxonomy role with the right shape",
+                "result": "pass"
+              },
+              {
+                "title": "a dotted roleId yields the roleId as a SINGLE literal 3rd segment (not a dot-split)",
+                "result": "pass"
+              },
+              {
+                "title": "the merged (global + per-role) key map resolves both a global and a per-role key by nativeKey without collision",
+                "result": "pass"
+              },
+              {
+                "title": "declared insrc.models.tasks.* keys EXACTLY cover the role taxonomy (no missing, no extra)",
+                "result": "pass"
+              },
+              {
+                "title": "each per-role key is a machine-scoped enum with default = the role's defaultTier",
+                "result": "pass"
+              },
+              {
+                "title": "nativeRoleKey keeps a role id as it is, and joins a role that extends another role onto its parent in camel case",
+                "result": "pass"
+              },
+              {
+                "title": "the convert escalation role keeps its catalog path and maps to the non-nested native id",
+                "result": "pass"
+              },
+              {
+                "title": "no declared setting id and no key-map native id is a dotted prefix of another (VS Code cannot nest a child under a value)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1954,
+            "titles": [
+              {
+                "title": "sync-manifest-catalog.test.ts: the committed manifest is in sync, and the script is idempotent on a stale copy",
+                "result": "pass"
+              },
+              {
+                "title": "sync-manifest-catalog.test.ts: a stale copy missing the security section and the final role, carrying a retired role and a corrupted role schema, is reported by --check without writing, repaired by one sync, and byte-identical on the next, with explicit surviving and appended key order",
+                "result": "pass"
+              },
+              {
+                "title": "sync-manifest-catalog.test.ts: a misplaced or duplicated per-role key is removed from its wrong section and regenerated in the canonical section, while unrelated local keys survive",
+                "result": "pass"
+              },
+              {
+                "title": "sync-manifest-catalog.test.ts: duplicate per-role sections consolidate losslessly (first section metadata kept, distinct local properties merged first-wins) and a colliding local key is refused with a diagnostic",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6187,
+            "titles": [
+              {
+                "title": "vscode-bundle-catalog.test.ts: the extension type-checks and bundles; its key map, loaded without backend node_modules, maps every settings-catalog row without bundling the catalog or the definitions file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

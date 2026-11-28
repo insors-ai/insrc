@@ -29,6 +29,7 @@ export interface ScratchDraftProposal extends Session {
 }
 export interface ScratchSelectionSend extends Session {
   readonly type: 'send-selection';
+  readonly requestId: string; // monotonically increasing send_<n> per pane
   readonly draftSeq: number;
   readonly docVersion: number;
   readonly selectedText: string;
@@ -52,6 +53,7 @@ export type ScratchEditorToHost =
   | (Session & { readonly type: 'asset-request'; readonly requestId: string; readonly action: 'upload-image'; readonly name: string; readonly mediaType: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp'; readonly dataBase64: string });
 
 export type ScratchHostToEditor =
+  | (Session & { readonly type: 'selection-result'; readonly requestId: string; readonly sent: boolean; readonly message: string })
   | (Session & { readonly type: 'focus-request'; readonly requestId: string; readonly docVersion: number; readonly draftSeq: number })
   | (Session & Snapshot & { readonly type: 'document-state'; readonly locked: boolean })
   | (Session & { readonly type: 'receipt'; readonly draftSeq: number; readonly editId: string })
@@ -105,7 +107,7 @@ export function parseScratchEditorMessage(value: unknown): ScratchEditorToHost |
         (m.parentEditId === undefined || token(m.parentEditId)) && (m.apply === undefined || typeof m.apply === 'boolean') && text(m.markdown, SCRATCH_NOTE_BYTES);
       break;
     case 'send-selection':
-      valid = sessionKeys(m, ['draftSeq', 'docVersion', 'selectedText']) && count(m.draftSeq) && version(m.docVersion) &&
+      valid = sessionKeys(m, ['requestId', 'draftSeq', 'docVersion', 'selectedText']) && typeof m.requestId === 'string' && /^send_[1-9][0-9]*$/.test(m.requestId) && count(Number(m.requestId.slice(5))) && count(m.draftSeq) && version(m.docVersion) &&
         text(m.selectedText, SCRATCH_NOTE_BYTES) && m.selectedText.length > 0;
       break;
     case 'lock': valid = sessionKeys(m, ['locked']) && typeof m.locked === 'boolean'; break;
@@ -130,6 +132,7 @@ export function parseScratchHostMessage(value: unknown): ScratchHostToEditor | u
   const m = value;
   let valid = false;
   switch (m.type) {
+    case 'selection-result': valid = sessionKeys(m, ['requestId', 'sent', 'message']) && token(m.requestId) && typeof m.sent === 'boolean' && text(m.message, 4096); break;
     case 'focus-request': valid = sessionKeys(m, ['requestId', 'docVersion', 'draftSeq']) && token(m.requestId) && version(m.docVersion) && count(m.draftSeq); break;
     case 'document-state': valid = sessionKeys(m, ['version', 'digest', 'markdown', 'locked']) && snapshot(m) && typeof m.locked === 'boolean'; break;
     case 'receipt': valid = sessionKeys(m, ['draftSeq', 'editId']) && count(m.draftSeq) && token(m.editId); break;

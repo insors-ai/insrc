@@ -11,7 +11,7 @@ import { ScratchLockPreference } from './scratch-editor-lock.js';
 import { scratchEditorHtml } from './scratch-editor-html.js';
 import { makeNonce } from './html.js';
 import { checkScratchMarkdownEdit, scratchSourceCodec } from './scratch-markdown.js';
-import { parseScratchEditorMessage, type ScratchHostToEditor } from './scratch-editor-protocol.js';
+import { parseScratchEditorMessage, type ScratchHostToEditor, type ScratchSelectionSend } from './scratch-editor-protocol.js';
 
 export const SCRATCH_EDITOR_VIEW_TYPE = 'insrc.scratchpad.editor';
 export interface ScratchNativeDeps {
@@ -21,6 +21,7 @@ export interface ScratchNativeDeps {
   readonly preference: ScratchLockPreference;
   readonly store: ScratchStore;
   readonly warn: (message: string) => void;
+  readonly sendSelection?: (text: string, assertCurrent: () => void) => Promise<void>;
 }
 interface Pane {
   readonly id: string;
@@ -29,6 +30,7 @@ interface Pane {
   ready: boolean;
   disposed: boolean;
   readonly listeners: VSCode.Disposable[];
+  selection?: { readonly request: ScratchSelectionSend; readonly promise: Promise<void>; pending: boolean };
   focus?: { readonly requestId: string; readonly version: number; readonly sequence: number; readonly settle: (focused: boolean) => void };
 }
 interface DocumentEntry {
@@ -147,6 +149,40 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
       await validate(entry.document.uri);
       if (entry.controller.hasPending) warn('Unapplied scratchpad text remains in recovery; opening the text editor does not apply it.');
       await api.commands.executeCommand('vscode.openWith', entry.document.uri, 'default'); return;
+    }
+    if (message.type === 'send-selection') {
+      const captured = Object.freeze({ ...message }), previous = pane.selection;
+      if (previous && Number(captured.requestId.slice(5)) <= Number(previous.request.requestId.slice(5))) {
+        if (Object.keys(captured).every(key => captured[key as keyof ScratchSelectionSend] === previous.request[key as keyof ScratchSelectionSend])) return previous.promise;
+        throw new Error('Stale or conflicting selection request; retry Send.');
+      }
+      if (previous?.pending) {
+        await delivered(pane, { type: 'selection-result', paneSessionId: pane.id, requestId: captured.requestId, sent: false, message: 'A selection is still being sent; check the composer before retrying.' }); return;
+      }
+      const command = entry.commands.catch(() => {}).then(async () => {
+        try {
+          if (!entry.controller.selectionSourceMatches(pane.id, captured.draftSeq, captured.docVersion)) throw new Error('Source changed before Send; reselect and retry.');
+          const confirmed = await entry.controller.waitForSequence(pane.id, captured.draftSeq);
+          await validate(entry.document.uri);
+          const assertCurrent = (): void => {
+            const current = entry.controller.snapshot;
+            if (stopped || pane.disposed || entry.document.isClosed || entry.controller.conflicted || entry.controller.latestSequence(pane.id) !== captured.draftSeq ||
+              current.version !== confirmed.version || current.digest !== confirmed.digest) throw new Error('Source changed while preparing Send; reselect and retry.');
+          };
+          assertCurrent();
+          if (!deps.sendSelection) throw new Error('Chat is unavailable; retry Send.');
+          await deps.sendSelection(captured.selectedText, assertCurrent);
+          if (pane.selection?.request === captured) pane.selection.pending = false;
+          if (!await delivered(pane, { type: 'selection-result', paneSessionId: pane.id, requestId: captured.requestId, sent: true, message: 'Selection sent to the chat composer.' })) warn('Selection sent, but confirmation was not delivered. Check the composer before retrying.');
+        } catch (failure) {
+          const message = failure instanceof Error ? failure.message : 'Selection could not be inserted; retry Send.';
+          warn(`Scratchpad: ${message}`);
+          if (pane.selection?.request === captured) pane.selection.pending = false;
+          if (!await delivered(pane, { type: 'selection-result', paneSessionId: pane.id, requestId: captured.requestId, sent: false, message })) warn('Selection failure notice was not delivered; the captured selection remains in its pane.');
+        } finally { if (pane.selection?.request === captured) pane.selection.pending = false; }
+      });
+      pane.selection = { request: captured, promise: command, pending: true };
+      entry.commands = command.catch(() => {}); await command; return;
     }
     if (message.type !== 'save' && message.type !== 'undo' && message.type !== 'redo') throw new Error('This scratchpad action is not available yet.');
     const action = message;

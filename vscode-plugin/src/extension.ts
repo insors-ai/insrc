@@ -61,6 +61,7 @@ import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
 import { createChatPanelHost, CHAT_PANEL_TITLE, CHAT_VIEW_TYPE, DEFAULT_TURN_LOCK_TIMEOUT_MS, type ChatPanelChannel } from './chat/chat-panel.js';
 import { createScratchStore } from './chat/scratch-store.js';
 import { createScratchHost, SCRATCH_INTENT_TYPES, type ScratchChatSeam } from './chat/scratch-host.js';
+import { createScratchChatTarget } from './chat/scratch-chat-target.js';
 import { createScratchPanels } from './panels/scratch-panels.js';
 import { registerScratchEditor } from './panels/scratch-editor-native.js';
 import { ScratchRecoveryStore } from './panels/scratch-editor-recovery.js';
@@ -653,8 +654,10 @@ export function activate(context: vscode.ExtensionContext): void {
     // (fs omitted -> the node default applies; no daemon IPC). Built next to the other chat
     // stores; the host router + panels controller are wired after chatHost below.
     const scratchStore = createScratchStore({ root: join(PATHS.insrc, 'scratches'), logger: panelLog });
+    let sendScratchSelection: (text: string, assertCurrent: () => void) => Promise<void> = async () => { throw new Error('Chat is not initialized; retry Send.'); };
     const scratchEditor = registerScratchEditor({
       api: vscode, extensionPath: context.extensionPath, store: scratchStore,
+      sendSelection: (text, assertCurrent) => sendScratchSelection(text, assertCurrent),
       recovery: new ScratchRecoveryStore(join(context.globalStorageUri.fsPath, 'scratchpad-recovery')),
       preference: new ScratchLockPreference(context.globalState),
       warn: message => { panelLog.warn(message); void Promise.resolve(vscode.window.showWarningMessage(message)).catch(() => panelLog.warn('Scratchpad warning could not be displayed.')); },
@@ -786,6 +789,7 @@ export function activate(context: vscode.ExtensionContext): void {
     // `chatReady` resolves on the webview's next ready handshake. The scratch intents themselves
     // are routed by intercepting onDidReceiveMessage below — see scratchOnMessage.
     let chatChannel: ChatPanelChannel | undefined;
+    let scratchChatTarget: ReturnType<typeof createScratchChatTarget> | undefined;
     let chatReadyWaiters: Array<() => void> = [];
     let chatReady = false;
     // Forward reference: assigned once the scratch host is constructed after chatHost.
@@ -797,8 +801,16 @@ export function activate(context: vscode.ExtensionContext): void {
       };
       chatGroupLock.attach(panel);
       const base = webviewChannel(panel);
+      let target = createScratchChatTarget(msg => panel.webview.postMessage({ v: 1, payload: msg }));
+      scratchChatTarget?.dispose(); scratchChatTarget = target;
       const wrapped: ChatPanelChannel = {
-        setHtml: (html) => base.setHtml(html),
+        setHtml: (html) => {
+          target.dispose();
+          target = createScratchChatTarget(msg => panel.webview.postMessage({ v: 1, payload: msg }));
+          if (chatChannel === wrapped) scratchChatTarget = target;
+          chatReady = false;
+          base.setHtml(html);
+        },
         postMessage: (message) => base.postMessage(message),
         reveal: (opts) => base.reveal(opts),
         dispose: () => base.dispose(),
@@ -811,7 +823,8 @@ export function activate(context: vscode.ExtensionContext): void {
             if (env !== null && env.v === 1 && typeof env.payload === 'object' && env.payload !== null) {
               const p = env.payload as { type?: unknown };
               if (typeof p.type === 'string' && SCRATCH_INTENT_TYPES.has(p.type)) scratchOnMessage(p as WebviewToHost);
-              if (p.type === 'ready') {
+              if (p.type === 'ready' && chatChannel === wrapped) {
+                target.markReady();
                 chatReady = true;
                 for (const w of chatReadyWaiters.splice(0)) w();
               }
@@ -823,6 +836,8 @@ export function activate(context: vscode.ExtensionContext): void {
       chatChannel = wrapped;
       chatReady = false;
       base.onDidDispose(() => {
+        target.dispose();
+        if (scratchChatTarget === target) scratchChatTarget = undefined;
         if (chatChannel === wrapped) {
           chatChannel = undefined;
           chatReady = false;
@@ -1028,6 +1043,7 @@ export function activate(context: vscode.ExtensionContext): void {
       return handle;
     };
     const chatSeam: ScratchChatSeam = {
+      capture: () => { if (!scratchChatTarget) throw new Error('Chat is unavailable; retry Send.'); return scratchChatTarget; },
       open: () => chatHost.open(),
       ready: () => (chatReady ? Promise.resolve() : new Promise<void>((r) => void chatReadyWaiters.push(r))),
       disposed: () => chatChannel === undefined,
@@ -1064,6 +1080,7 @@ export function activate(context: vscode.ExtensionContext): void {
       promptTitle: () => Promise.resolve(vscode.window.showInputBox({ prompt: 'Name the new scratchpad' })),
       logger: panelLog,
     });
+    sendScratchSelection = (text, assertCurrent) => scratchHost.sendSelectionToChat(text, assertCurrent);
     scratchOnMessage = (msg: WebviewToHost): void => scratchHost.onMessage(msg);
     // Gate the editor-title icon (contributes.menus["editor/title"] when:insrc.chat.ready) on an
     // activate-time context key set ONLY here, inside the flag gate \u2014 NOT the live

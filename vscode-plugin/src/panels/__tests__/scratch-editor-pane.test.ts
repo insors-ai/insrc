@@ -25,7 +25,7 @@ test('scratch pane uses actual Crepe remembered locks and click-only locked sele
     assert.deepEqual(data.selected, { visible: true, sends: 0, drafts: 0, label: 'Send selection to chat' });
     assert.equal(data.lockedControls.length, 5);
     for (const control of data.lockedControls) assert.equal(control.display, 'none', control.selector);
-    assert.deepEqual(data.clicked, [{ type: 'send-selection', paneSessionId: 'first', draftSeq: 0, docVersion: 1, selectedText: 'Selectable text.' }]);
+    assert.deepEqual(data.clicked, [{ type: 'send-selection', requestId: 'send_1', paneSessionId: 'first', draftSeq: 0, docVersion: 1, selectedText: 'Selectable text.' }]);
     assert.deepEqual(data.remembered, { first: false, second: false, stored: false });
     assert.deepEqual(data.siblings, { first: false, second: true, third: true });
     assert.equal(data.lateAck.after, data.lateAck.before); assert.match(data.lateAck.after, /newer/);
@@ -34,6 +34,15 @@ test('scratch pane uses actual Crepe remembered locks and click-only locked sele
     assert.equal(data.unsupported.fallback, true); assert.equal(data.unsupported.readonly, true); assert.ok(data.unsupported.alert); assert.deepEqual(data.unsupported.drafts, []);
     assert.deepEqual(data.fallback, { type: 'open-text', paneSessionId: 'unsupported' });
     assert.deepEqual(data.shortcuts, { childKeys: 0, actions: ['undo', 'redo', 'save'], drafts: [] });
+    for (const selection of data.selectionChecks) {
+      assert.deepEqual(selection.before, []); assert.deepEqual(selection.drafts, []);
+      assert.equal(selection.sent.length, 1); assert.equal(selection.waiting, true); assert.equal(selection.disabledAfterFailure, false);
+      assert.equal(selection.sent[0].selectedText, 'First bold paragraph.\n\nSecond 😀 paragraph.');
+      assert.equal(selection.sent[0].docVersion, 1); assert.equal(selection.sent[0].draftSeq, 0);
+      assert.equal(selection.retained, selection.sent[0].selectedText); assert.equal(selection.retainedVisible, true);
+      assert.match(selection.status, /reselect and retry/);
+      if (selection.method !== 'pointer') assert.equal(selection.focusedByTab, true);
+    }
     assert.equal(data.limit.readonly, true); assert.match(data.limit.alert, /limits/); assert.deepEqual(data.limit.drafts, []);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

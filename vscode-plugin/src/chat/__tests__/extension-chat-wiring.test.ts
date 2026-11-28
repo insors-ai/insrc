@@ -817,7 +817,7 @@ test('extension-chat-wiring.test.ts: send-to-chat reveals the chat panel, awaits
   assert.match(chatSeam![1]!, /disposed:\s*\(\)\s*=>\s*chatChannel === undefined/, 'disposed reflects the live channel');
   assert.match(chatSeam![1]!, /post:\s*\(msg: HostToWebview\)\s*=>\s*\{\s*chatChannel\?\.postMessage\(\{\s*v:\s*1,\s*payload:\s*msg\s*\}\);?\s*\}/, 'posts are enveloped and fire-and-forget');
   const hostSrc = read(join(HERE, '..', 'scratch-host.ts'));
-  assert.match(hostSrc, /deps\.chat\.open\(\);\s*\n\s*await deps\.chat\.ready\(\);\s*\n\s*if \(deps\.chat\.disposed\(\)\) return;/, 'the host opens the chat, awaits ready, THEN checks disposed (a closed chat is opened first)');
+  assert.match(hostSrc, /deps\.chat\.open\(\);[\s\S]*?await deps\.chat\.ready\(\);\s*\n\s*if \(deps\.chat\.disposed\(\)\) return;/, 'the host opens the chat, awaits ready, THEN checks disposed (a closed chat is opened first)');
   assert.match(hostSrc, /type:\s*'insert-into-input',\s*text:\s*capUtf8\(text\)/, 'the push is capped via the shared capUtf8');
 });
 

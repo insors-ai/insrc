@@ -71,7 +71,33 @@ async function run(): Promise<unknown> {
     let childKeys = 0; nested.addEventListener('keydown', () => { childKeys++; });
     for (const [key, shiftKey] of [['z', false], ['z', true], ['s', false]] as const) nested.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey: true, shiftKey, bubbles: true, cancelable: true }));
     const shortcuts = { childKeys, actions: code.sent.filter(m => m.type === 'undo' || m.type === 'redo' || m.type === 'save').map(m => m.type), drafts: drafts(code.sent) };
-    return { initial, selected, clicked, lockedControls, remembered, siblings, lateAck, host, unsupported, fallback, limit, shortcuts };
+    const selectionChecks = [];
+    for (const method of ['pointer', 'Enter', ' '] as const) {
+      const current = await create(`selection_${method === ' ' ? 'Space' : method}`, 'First **bold** paragraph.\n\nSecond 😀 paragraph.\n');
+      if (method !== 'pointer') current.root.querySelector<HTMLButtonElement>('nav button')!.click();
+      const paragraphs = current.root.querySelectorAll('.ProseMirror p');
+      const range = document.createRange(); range.setStart(paragraphs[0]!.firstChild!, 0); range.setEnd(paragraphs[1]!.firstChild!, paragraphs[1]!.firstChild!.textContent!.length);
+      const domSelection = window.getSelection()!; domSelection.removeAllRanges(); domSelection.addRange(range);
+      document.dispatchEvent(new Event('selectionchange')); await tick();
+      const action = current.root.querySelector<HTMLButtonElement>('.scratch-selection-send')!;
+      const before = [...current.sent];
+      if (method === 'pointer') action.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+      else current.root.querySelector('.ProseMirror')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+      const focusedByTab = document.activeElement === action;
+      action.focus(); domSelection.removeAllRanges(); document.dispatchEvent(new Event('selectionchange'));
+      if (method === 'pointer') action.click(); else action.dispatchEvent(new KeyboardEvent('keydown', { key: method, bubbles: true, cancelable: true }));
+      action.click(); // an in-flight double activation cannot send twice
+      const sent = current.sent.filter(m => m.type === 'send-selection');
+      const capture = sent[0]!;
+      if (capture?.type !== 'send-selection') throw new Error(`Missing ${method} Send`);
+      // Neither a late result for another request nor host markup may replace the capture.
+      await current.pane.receive({ type: 'selection-result', paneSessionId: capture.paneSessionId, requestId: 'send_999', sent: true, message: 'wrong result' });
+      const waiting = action.disabled;
+      await current.pane.receive({ type: 'selection-result', paneSessionId: capture.paneSessionId, requestId: capture.requestId, sent: false, message: 'Source changed; reselect and retry.' });
+      const retained = current.root.querySelector<HTMLTextAreaElement>('.scratch-retained-selection')!;
+      selectionChecks.push({ method, before: before.filter(m => m.type !== 'lock'), sent, focusedByTab, waiting, disabledAfterFailure: action.disabled, retained: retained.value, retainedVisible: !retained.hidden, status: current.root.querySelector('[role=alert]')?.textContent, drafts: drafts(current.sent) });
+    }
+    return { initial, selected, clicked, lockedControls, remembered, siblings, lateAck, host, unsupported, fallback, limit, shortcuts, selectionChecks };
   } finally { for (const { pane } of all) await pane.dispose(); }
 }
 void run().then(result => { const pre = document.createElement('pre'); pre.id = 'scratch-result'; pre.textContent = JSON.stringify(result); document.body.append(pre); })

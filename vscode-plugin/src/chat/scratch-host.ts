@@ -14,6 +14,7 @@
 import type { ScratchEntry, ScratchStore } from './scratch-store.js';
 import type { HostToWebview, WebviewToHost } from './protocol.js';
 import { capUtf8, type ScratchDocWebviewToHost, type ScratchPanels } from '../panels/scratch-panels.js';
+import type { ScratchChatTarget } from './scratch-chat-target.js';
 
 /** The six scratchpad webview->host intents the chat channel routes here. */
 export const SCRATCH_INTENT_TYPES: ReadonlySet<string> = new Set([
@@ -38,6 +39,8 @@ export type ScratchTitlePrompt = () => Promise<string | undefined>;
 
 /** The chat panel side of the send-to-chat / scratch-list routes. */
 export interface ScratchChatSeam {
+  /** Capture this exact panel lifetime for an awaited, checked insertion. */
+  capture?(): ScratchChatTarget;
   /** Reveal the chat panel, opening it when closed. */
   open(): void;
   /** Resolves once the chat webview has posted its ready handshake. */
@@ -57,6 +60,8 @@ export interface ScratchHostDeps {
 }
 
 export interface ScratchHost {
+  /** Explicit rich-editor selection route. Throws on stale source/delivery. */
+  sendSelectionToChat(text: string, assertCurrent: () => void): Promise<void>;
   /** Handle one webview->host message; non-scratch types and malformed fields are ignored. */
   onMessage(msg: WebviewToHost): void;
   /** Handle one DOCUMENT-channel message from the scratchpad document webview
@@ -88,13 +93,25 @@ export function createScratchHost(deps: ScratchHostDeps): ScratchHost {
   };
 
   /** Reveal the chat, await the ready handshake, then push the capped insert; disposed drops silently. */
-  const sendToChat = async (text: string): Promise<void> => {
+  const sendToChat = async (text: string, assertCurrent?: () => void): Promise<void> => {
     try {
       deps.chat.open();
+      if (assertCurrent) {
+        const target = deps.chat.capture?.();
+        if (!target) throw new Error('Chat insertion is unavailable; retry Send.');
+        await target.ready();
+        if (target.disposed()) throw new Error('Chat closed before Send; retry.');
+        assertCurrent();
+        try {
+          if (!await target.post({ type: 'insert-into-input', text: capUtf8(text) })) throw new Error('Delivery refused');
+        } catch (cause) { throw new Error('Selection delivery was not confirmed; check the composer before retrying.', { cause }); }
+        return;
+      }
       await deps.chat.ready();
       if (deps.chat.disposed()) return;
       deps.chat.post({ type: 'insert-into-input', text: capUtf8(text) });
     } catch (err) {
+      if (assertCurrent) throw err;
       log.warn(`[scratches] send-to-chat could not reach the chat: ${String(err)}`);
     }
   };
@@ -234,5 +251,5 @@ export function createScratchHost(deps: ScratchHostDeps): ScratchHost {
     }
   };
 
-  return { onMessage, onDocMessage };
+  return { onMessage, onDocMessage, sendSelectionToChat: (text, assertCurrent) => sendToChat(text, assertCurrent) };
 }

@@ -34,6 +34,7 @@ interface Pane {
   locked: boolean;
   attached: boolean;
   latest?: ScratchDraftProposal | undefined;
+  reportedBaseVersion?: number;
   appliedSeq: number;
   failure?: string | undefined;
   ack?: { readonly editId: string; readonly baseVersion: number; readonly baseDigest: string; readonly snapshot: ScratchSnapshot; readonly request: ScratchDraftProposal } | undefined;
@@ -117,6 +118,7 @@ export class ScratchDocumentController {
         return Promise.reject(new Error('Conflicting pending-draft promotion'));
       }
     } else if (previous?.editId === draft.editId) return Promise.reject(new Error('Reused edit identity'));
+    if (!same) pane.reportedBaseVersion = draft.baseVersion;
     pane.latest = draft;
     const pendingReceipt = this.pendingReceipts.get(pane);
     if (pendingReceipt && draft.parentEditId !== pendingReceipt.draft.editId) {
@@ -219,6 +221,17 @@ export class ScratchDocumentController {
   }
   appliedSequence(id: string): number { return this.panes.get(id)?.appliedSeq ?? 0; }
   latestSequence(id: string): number { return this.panes.get(id)?.latest?.draftSeq ?? 0; }
+  /** A selection may have been captured before our own acknowledgement reached
+   * the renderer. Accept that base only for the latest draft, with either a
+   * pending drain or proof that its own apply produced the current snapshot. */
+  selectionSourceMatches(id: string, sequence: number, version: number): boolean {
+    const pane = this.panes.get(id), current = this.read();
+    if (!pane?.attached || this.disposed || this.frozen || pane.failure || sequence !== this.latestSequence(id)) return false;
+    if (version === current.version) return true;
+    const latest = pane.latest, ack = pane.ack;
+    if (!latest || (version !== latest.baseVersion && version !== pane.reportedBaseVersion && !(ack?.request.draftSeq === sequence && version === ack.baseVersion))) return false;
+    return sequence > pane.appliedSeq || (ack?.request.draftSeq === sequence && ack.snapshot.version === current.version && ack.snapshot.digest === current.digest);
+  }
   /** Save/Send barriers wait for the captured sequence, including a later
    * promotion arriving asynchronously after an acknowledgement was delivered. */
   waitForSequence(id: string, sequence: number, timeoutMs = 10_000): Promise<ScratchSnapshot> {

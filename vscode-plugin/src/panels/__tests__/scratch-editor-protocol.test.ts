@@ -12,13 +12,14 @@ const draft = { ...session, type: 'draft', draftSeq: 1, editId: 'edit_1', baseVe
 test('scratch editor protocol accepts every declared variant and rejects extra keys across channels', () => {
   const incoming = [
     { ...session, type: 'editor-ready' }, draft, { ...draft, parentEditId: 'edit_0' },
-    { ...session, type: 'send-selection', draftSeq: 0, docVersion: 1, selectedText: 'one\n\ntwo' },
+    { ...session, type: 'send-selection', requestId: 'send_1', draftSeq: 0, docVersion: 1, selectedText: 'one\n\ntwo' },
     { ...session, type: 'lock', locked: true },
     ...['undo', 'redo', 'save'].map(type => ({ ...session, type, draftSeq: 0, docVersion: 1 })),
     ...['pick-link', 'pick-image'].map(action => ({ ...session, type: 'asset-request', requestId: 'r1', action })),
     { ...session, type: 'asset-request', requestId: 'r1', action: 'upload-image', name: 'a.png', mediaType: 'image/png', dataBase64: 'eA==' },
   ];
   const outgoing = [
+    { ...session, type: 'selection-result', requestId: 'send_1', sent: false, message: 'Retry Send.' },
     { ...session, ...state, type: 'document-state', locked: true },
     { ...session, type: 'receipt', draftSeq: 1, editId: 'edit_1' },
     { ...session, ...state, type: 'apply-ack', draftSeq: 1, editId: 'edit_1' },
@@ -47,7 +48,8 @@ test('scratch editor protocol rejects invalid sessions, ancestry, versions and m
     { ...draft, baseDigest: 'not-a-digest' }, { ...draft, editId: '' }, { ...draft, editId: 'edit_99' },
     { ...draft, parentEditId: 3 }, { ...draft, apply: 'yes' }, { ...draft, markdown: null }, { ...draft, markdown: '\ud800' },
     Object.assign(Object.create({ hidden: true }), draft),
-    { ...session, type: 'send-selection', draftSeq: 0, docVersion: 1, selectedText: '' },
+    { ...session, type: 'send-selection', requestId: 'send_1', draftSeq: 0, docVersion: 1, selectedText: '' },
+    ...['send_0', 'send_-1', 'send_01', 'send_9007199254740992', 'arbitrary'].map(requestId => ({ ...session, type: 'send-selection', requestId, draftSeq: 0, docVersion: 1, selectedText: 'text' })),
     { ...session, type: 'save', draftSeq: -1, docVersion: 1 },
   ]) assert.equal(parseScratchEditorMessage(value), undefined);
   assert.equal(parseScratchHostMessage({ ...session, ...state, type: 'document-state', locked: 'yes' }), undefined);

@@ -52,13 +52,15 @@ async function harness() {
     workspace: { onDidChangeTextDocument: changed.listen, onWillSaveTextDocument: willSave.listen, onDidCloseTextDocument: closed.listen,
       applyEdit: async (edit: Edit) => { applies++; const pending = gate; gate = undefined; if (pending) await pending.promise; const change = edit.edits[0]!; assert.equal(change.uri, uri); doc.text = doc.text.slice(0, change.range.start.character) + change.text + doc.text.slice(change.range.end.character); doc.version++; doc.isDirty = true; changed.fire({ document: doc }); return true; } },
   } as unknown as typeof VSCode;
+  let sendSelection: (text: string, assertCurrent: () => void) => Promise<void> = async () => { throw new Error('Chat unavailable'); };
   const recovery = new ScratchRecoveryStore(join(dir, 'recovery'));
-  const host = registerScratchEditor({ api, store, extensionPath: dir, recovery, preference: new ScratchLockPreference({ get: <T>() => false as T, update: async () => {} }), warn: m => warnings.push(m) });
+  const host = registerScratchEditor({ api, store, extensionPath: dir, recovery, sendSelection: (text, assertCurrent) => sendSelection(text, assertCurrent), preference: new ScratchLockPreference({ get: <T>() => false as T, update: async () => {} }), warn: m => warnings.push(m) });
   const open = async () => { await provider.resolveCustomTextEditor(doc as unknown as VSCode.TextDocument, panel as unknown as VSCode.WebviewPanel, { isCancellationRequested: false }); const id = panel.webview.html.match(/data-pane-session="([^"]+)"/)![1]!; incoming.fire({ type: 'editor-ready', paneSessionId: id }); await until(() => messages.some(m => m.type === 'document-state')); return id; };
   return { dir, host, doc, panel, provider: () => provider, api, changed, willSave, closed, incoming, disposed, messages, warnings, commands, recovery, uri, entry, resolved, open,
     send: (id: string, m: object) => incoming.fire({ ...m, paneSessionId: id }),
     block: () => { gate = deferred(); return gate; },
     blockValidation: () => { validateGate = deferred(); return validateGate; }, get validating() { return validating; },
+    routeSelection: (route: typeof sendSelection) => { sendSelection = route; },
     setFocusMode: (value: typeof focusMode) => { focusMode = value; },
     setDropped: (value: string) => { dropped = value; }, setActive: (value: boolean) => { active = value; },
     get applies() { return applies; }, get saves() { return saves; },
@@ -162,4 +164,60 @@ test('scratch native adapter rejects a waiting resolve when shutdown starts', as
   assert.equal(h.disposed.size, 0);
   assert.equal(h.changed.size, 0);
   assert.equal(h.doc.text, '# Draft\n');
+}));
+
+
+const selection = { type: 'send-selection', requestId: 'send_1', draftSeq: 1, docVersion: 1, selectedText: 'Exact first paragraph.\n\nSecond 😀 paragraph.' };
+test('scratch native selection Send drains its captured draft and inserts once despite duplicate messages', async () => fixture(async h => {
+  const inserted: string[] = [];
+  h.routeSelection(async (text, assertCurrent) => { assertCurrent(); inserted.push(text); });
+  const id = await h.open(), gate = h.block(); h.send(id, draft); await until(() => h.applies === 1);
+  const captured = { ...selection };
+  h.send(id, captured); h.send(id, captured); captured.selectedText = 'Later mutation';
+  await new Promise(r => setTimeout(r, 25)); assert.deepEqual(inserted, []);
+  gate.resolve(); await until(() => h.messages.some(m => m.type === 'selection-result'));
+  assert.deepEqual(inserted, [selection.selectedText]);
+  assert.equal(h.messages.filter(m => m.type === 'selection-result').length, 1);
+  assert.equal(h.commands.some(c => c.name === 'undo' || c.name === 'redo'), false);
+  // A delayed renderer acknowledgement may legitimately leave a captured base
+  // version behind our own already applied native edit.
+  h.send(id, { ...selection, requestId: 'send_2' });
+  await until(() => inserted.length === 2);
+}));
+
+test('scratch native selection refuses external source changes before Send and during chat readiness', async () => fixture(async h => {
+  let reached = false; const ready = deferred(); const inserted: string[] = [];
+  h.routeSelection(async (text, assertCurrent) => { reached = true; await ready.promise; assertCurrent(); inserted.push(text); });
+  const id = await h.open(); h.send(id, draft); await until(() => h.messages.some(m => m.type === 'apply-ack'));
+  h.send(id, selection); await until(() => reached);
+  h.external('# Changed while chat opens\n'); ready.resolve();
+  await until(() => h.messages.some(m => m.type === 'selection-result' && !m.sent)); assert.deepEqual(inserted, []);
+  reached = false;
+  h.send(id, { ...selection, requestId: 'send_2' });
+  await until(() => h.messages.filter(m => m.type === 'selection-result').length === 2);
+  assert.equal(reached, false); assert.deepEqual(inserted, []);
+}));
+
+test('scratch native selection refuses newer typing or pane disposal during chat readiness', async () => {
+  for (const change of ['typing', 'dispose'] as const) await fixture(async h => {
+    let reached = false; const ready = deferred(); const inserted: string[] = [];
+    h.routeSelection(async (text, assertCurrent) => { reached = true; await ready.promise; assertCurrent(); inserted.push(text); });
+    const id = await h.open();
+    h.send(id, { ...selection, draftSeq: 0 }); await until(() => reached);
+    if (change === 'dispose') h.panel.dispose(); else h.send(id, draft);
+    ready.resolve(); await until(() => h.warnings.some(m => m.includes('Source changed')));
+    assert.deepEqual(inserted, []);
+  });
+});
+
+
+test('scratch native selection bounds concurrent requests and reports dropped confirmation without resending', async () => fixture(async h => {
+  let reached = false; const ready = deferred(), inserted: string[] = [];
+  h.routeSelection(async (text, assertCurrent) => { reached = true; await ready.promise; assertCurrent(); inserted.push(text); });
+  const id = await h.open(); h.setDropped('selection-result');
+  h.send(id, { ...selection, draftSeq: 0 }); await until(() => reached);
+  h.send(id, { ...selection, draftSeq: 0, requestId: 'send_2' });
+  await new Promise(r => setTimeout(r, 25));
+  ready.resolve(); await until(() => h.warnings.some(m => m.includes('confirmation was not delivered')));
+  assert.deepEqual(inserted, [selection.selectedText]);
 }));

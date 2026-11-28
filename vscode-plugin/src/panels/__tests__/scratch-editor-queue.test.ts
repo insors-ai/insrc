@@ -191,3 +191,23 @@ test('scratch queue cannot reuse a historical edit identity at a new sequence', 
   await h.controller.receive('a', { ...h.draft(3, '# Third\n'), baseVersion: snapshot.version, baseDigest: snapshot.digest }); await h.controller.flush();
   assert.equal(h.document.markdown, '# Third\n'); assert.equal(h.edits.length, 3);
 });
+
+
+test('scratch selection source proof retains original base across promotion and refuses unrelated updates', async () => {
+  const h = harness(), client = h.bind('a', true), gate = h.block();
+  client.edit('# First\n'); await until(() => h.edits.length === 1);
+  client.edit('# Selected latest\n');
+  assert.equal(h.controller.selectionSourceMatches('a', 2, 1), true);
+  assert.equal(h.controller.selectionSourceMatches('a', 1, 1), false);
+  gate.resolve(); await h.settle();
+  assert.equal(h.document.version, 3);
+  assert.equal(h.controller.selectionSourceMatches('a', 2, 1), true, 'original pre-promotion base remains proven');
+  assert.equal(h.controller.selectionSourceMatches('a', 2, 2), true, 'promoted base is also proven');
+  assert.equal(h.controller.selectionSourceMatches('a', 2, 3), true);
+  h.external('# Unrelated source\n');
+  assert.equal(h.controller.selectionSourceMatches('a', 2, 1), false);
+  assert.equal(h.controller.selectionSourceMatches('a', 2, 3), false);
+  assert.equal(h.controller.selectionSourceMatches('a', 2, 4), true, 'a new selection of broadcast current source is valid');
+  h.controller.removePane('a'); assert.equal(h.controller.selectionSourceMatches('a', 2, 4), false);
+  await h.controller.dispose();
+});

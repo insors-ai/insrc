@@ -25,3 +25,5 @@ body { margin: 0; background: var(--vscode-editor-background); color: var(--vsco
 /* Selection Send is independent of Crepe's formatting toolbar, so it remains
  * available when Milkdown is readonly. No mutation popups while locked. */
 .scratch-pane[data-locked='true'] :is(.milkdown-toolbar, .milkdown-block-handle, .milkdown-slash-menu, .milkdown-link-preview, .milkdown-link-edit, .milkdown-image-block .operation, .milkdown-image-block .caption-input, .image-resize-handle, .milkdown-image-block .image-edit, .milkdown-image-inline .image-edit, .milkdown-table-block .handle, .milkdown-latex-inline-edit, .milkdown-code-block .tools) { display: none !important; }
+
+.scratch-retained-selection { box-sizing: border-box; width: calc(100% - 24px); min-height: 6em; margin: 8px 12px; color: inherit; background: var(--vscode-input-background, #fff); }

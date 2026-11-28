@@ -9,6 +9,7 @@
  */
 
 import test from 'node:test';
+import { createScratchChatTarget } from '../scratch-chat-target.js';
 import assert from 'node:assert/strict';
 
 import { createScratchHost, SCRATCH_DOC_INTENT_TYPES } from '../scratch-host.js';
@@ -130,4 +131,51 @@ test("scratch-host.test.ts (NEW): 'scratch-save' {id,gen,text} → store.updateS
     await flush();
     assert.equal(warns.filter((w) => w.includes('unknown type')).length, 1, 'unknown document-channel type warned + dropped');
   }
+});
+
+
+test('scratch checked selection route preserves paragraphs caps UTF-8 and only inserts after exact chat readiness', async () => {
+  const chat = fakeChat(), posted: HostToWebview[] = []; let opens = 0, checks = 0;
+  const target = createScratchChatTarget(async message => { posted.push(message); return true; });
+  chat.open = () => { opens++; }; chat.capture = () => target;
+  const host = makeHost(fakeStore(), fakePanels(), chat, []);
+  const text = 'First paragraph.\n\n' + '😀é'.repeat(20_000);
+  const sending = host.sendSelectionToChat(text, () => { checks++; });
+  await flush(); assert.equal(opens, 1); assert.deepEqual(posted, []); assert.equal(checks, 0);
+  target.markReady(); await sending;
+  assert.equal(checks, 1); assert.equal(posted.length, 1);
+  const message = posted[0]!; assert.equal(message.type, 'insert-into-input');
+  if (message.type !== 'insert-into-input') throw new Error('Expected composer insertion');
+  assert.ok(message.text.startsWith('First paragraph.\n\n')); assert.ok(message.text.endsWith('…'));
+  assert.ok(Buffer.byteLength(message.text, 'utf8') <= 65_536);
+  assert.doesNotMatch(message.text, /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/);
+  target.dispose();
+});
+
+test('scratch checked selection route refuses disposed replacement stale source and rejected delivery', async () => {
+  const chat = fakeChat(), posted: HostToWebview[] = [];
+  let target = createScratchChatTarget(async message => { posted.push(message); return true; });
+  chat.capture = () => target;
+  const host = makeHost(fakeStore(), fakePanels(), chat, []);
+  const pending = host.sendSelectionToChat('captured', () => {});
+  const refused = assert.rejects(pending, /closed/);
+  target.dispose(); target = createScratchChatTarget(async message => { posted.push(message); return true; }); target.markReady();
+  await refused; assert.deepEqual(posted, []);
+  await assert.rejects(host.sendSelectionToChat('captured', () => { throw new Error('stale source'); }), /stale source/);
+  assert.deepEqual(posted, []); target.dispose();
+  target = createScratchChatTarget(async () => false); target.markReady();
+  await assert.rejects(host.sendSelectionToChat('captured', () => {}), /not confirmed/); target.dispose();
+  target = createScratchChatTarget(async () => { throw new Error('transport'); }); target.markReady();
+  await assert.rejects(host.sendSelectionToChat('captured', () => {}), /not confirmed/); target.dispose();
+});
+
+test('scratch checked selection readiness timeout is bounded and disposed targets cannot post', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let posted = false;
+  const target = createScratchChatTarget(async () => { posted = true; return true; });
+  const ready = target.ready(), refused = assert.rejects(ready, /did not become ready/);
+  t.mock.timers.tick(10_001); await refused;
+  target.dispose(); target.markReady();
+  assert.equal(await target.post({ type: 'insert-into-input', text: 'captured' }), false);
+  assert.equal(posted, false); await assert.rejects(target.ready(), /closed/);
 });

@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1795804487811-vzqj5e",
+    "runId": "wf-1795852408886-e5rxdv",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-27T18:42:48.673Z",
+    "createdAt": "2026-11-28T08:08:23.541Z",
     "attribution": {
       "outputs": [
         {
@@ -14,7 +14,7 @@
         }
       ]
     },
-    "elapsedMs": 472286,
+    "elapsedMs": 887754,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-11-16T07:56:36.838Z",
@@ -29,9 +29,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 5,
-        "contentHash": "b3f7f7de901e65b36e37c7f123df485104ef46ad95e39541995c8d7ad364b2e9",
-        "at": "2026-11-27T18:42:51.718Z",
+        "number": 6,
+        "contentHash": "8e6d8d11b2a21a7e96d71582b724216ff35eb5863283b324bbb2dcc263bb7289",
+        "at": "2026-11-28T08:08:26.365Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -40,13 +40,13 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 5,
+        "revision": 6,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-27T18:51:11.645Z"
+        "at": "2026-11-28T08:42:52.689Z"
       }
     },
     "envelope": {
@@ -54,12 +54,12 @@
       "references": [],
       "attachments": []
     },
-    "revision": 5
+    "revision": 6
   },
   "body": {
     "summary": {
-      "audience": "technical",
-      "prose": "S001 replaces the legacy scratchpad textarea with Milkdown + Crepe in one VS Code custom text-editor pane backed by the real Markdown TextDocument. It provides remembered lock/pencil controls and a selection Send icon that acts only on a click, alongside safe versioned editing, native document lifecycle integration and explicit error/recovery handling. It preserves identity, browse/new/delete and recency behavior. Published APIs support the design, while real Markdown, undo, save/conflict and host qualification remain mandatory build checks."
+      "prose": "S001 keeps the existing single Milkdown pane and 1 MiB Markdown file contract, but removes full-document validation from typing. Edits render immediately and stage recoverable drafts; a 300 ms typing gap validates only the latest generation in background execution before native application. Explicit Save/Send and native lifecycle actions flush their captured generation, while stale work cannot overwrite newer typing.",
+      "audience": "technical"
     },
     "hldContextSlice": {
       "frameworkSummary": "The daemon-owned private repository-keyed index remains authoritative for link resolution, backlinks and the title/preview list read-model. Client-side scratchpad editing now uses Milkdown + Crepe inside a VS Code CustomTextEditorProvider on the existing .md TextDocument, replacing the host's built-in vscode.markdown.editor. Insrc owns its selection toolbar and lock state without a native-editor extension API dependency. [[c40]] [[c41]] [[c42]]",
@@ -178,134 +178,200 @@
       "surfaceLevel": "internal-shared",
       "api": [
         {
-          "name": "createScratchPanels",
-          "signature": "createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels",
+          "name": "ScratchpadRef",
+          "signature": "interface ScratchpadRef { readonly repo: string; readonly stableId: string; }",
+          "parameters": [],
+          "returns": {
+            "type": "ScratchpadRef",
+            "meaning": "Unchanged shared home/basename identity; no s7 metadata or workspace inference."
+          },
+          "errors": [],
+          "preconditions": [
+            "Existing guarded resolver validates the file and basename."
+          ],
+          "postconditions": [
+            "sc1 identity, ownership and consumers are unchanged."
+          ]
+        },
+        {
+          "name": "observeScratchMarkdown",
+          "signature": "observeScratchMarkdown(editor: Editor, source: () => ScratchSnapshot, onDraft: (draft: ScratchObservedDraft) => void, options: ScratchIdleValidationOptions): Promise<{ activate(): void; flush(reason: 'save' | 'send' | 'undo' | 'redo' | 'lock' | 'native-save'): Promise<{ draftSeq: number }>; deactivate(): void }>",
           "parameters": [
             {
-              "name": "deps",
-              "type": "ScratchPanelsDeps",
-              "purpose": "Existing store/browse dependencies plus injected editor-open, tab/dirty/close, save-listener, persisted-mode and notification seams. VS Code bindings remain in activation.",
+              "name": "editor",
+              "type": "Editor",
+              "purpose": "Live configured Milkdown editor; native TextDocument remains canonical.",
+              "optional": false
+            },
+            {
+              "name": "source",
+              "type": "() => ScratchSnapshot",
+              "purpose": "Exact currently acknowledged source/version/digest.",
+              "optional": false
+            },
+            {
+              "name": "onDraft",
+              "type": "(draft: ScratchObservedDraft) => void",
+              "purpose": "Report completed validation/refusal only for its captured generation.",
+              "optional": false
+            },
+            {
+              "name": "options",
+              "type": "ScratchIdleValidationOptions",
+              "purpose": "Proposed injected stage/validator boundary and fixed 300 ms idle clock; private, not a user-facing configuration.",
               "optional": false
             }
           ],
           "returns": {
-            "type": "ScratchPanels",
-            "meaning": "Browse and one-pane rich-document action boundary."
-          },
-          "errors": [],
-          "preconditions": [
-            "Activation registers proposed viewType insrc.scratchpad.editor as CustomTextEditorProvider, restricted to validated scratchpad URIs; do not replace Markdown editors globally.",
-            "Pin compatible @milkdown packages to published 7.23.0 and lock dependencies. Bundle browser code/CSS locally with the existing VS Code webview CSP pattern; no CDN or library AI/provider calls."
-          ],
-          "postconditions": [
-            "Use Milkdown + Crepe for rich content; the backing TextDocument is the only committed buffer. Proposed new private modules: vscode-plugin/src/panels/scratch-editor-provider.ts (VS Code-free host controller) and vscode-plugin/src/panels/scratch-editor-webview.ts (browser entry). Activation supplies all vscode APIs.",
-            "Preserve the previously accepted remembered-mode behavior with an insrc-owned globalState preference; initial value is locked. A new pane snapshots that preference. Pencil/lock changes this pane and the future-pane preference, not other already-open panes. Call Crepe.setReadonly explicitly, never touch native editor private storage.",
-            "Provide a separate Send-only TooltipProvider with explicit non-empty selection visibility even when readonly; Crepe's formatting tooltip hides when readonly and is not sufficient. Hide mutation tools while locked. Preserve selection on pointer activation and offer keyboard activation with accessible name Send to chat.",
-            "Flag insrc.scratchpad.richEditor defaults true. Off opens the same file in a plain TextDocument editor with one notice; no silent no-op or legacy textarea fallback. A failed rich editor initialization preserves the original file and offers that same explicit fallback.",
-            "Images: override onUpload/inline/block upload to send a host request; persist user-supplied image bytes under a validated scratch-root asset directory with exclusive names and a 10 MiB per-image bound. Preserve relative Markdown paths; use proxyDomURL only for display resolution through asWebviewUri. Never persist blob:/vscode-webview: URLs. Workspace link/image actions use host pickers and explicit user selection. No default remote upload or AI feature."
-          ]
-        },
-        {
-          "name": "ScratchStore",
-          "signature": "interface ScratchStore { listScratches(limit?: number): Promise<ScratchEntry[]>; createScratch(title: string, body?: string): Promise<ScratchEntry>; readScratch(id: string): Promise<{ entry: ScratchEntry; content: string }>; updateScratch(id: string, text: string): Promise<void>; deleteScratch(id: string): Promise<void>; resolveScratch(id: string): Promise<{ ref: ScratchpadRef; filePath: string }>; }",
-          "parameters": [],
-          "returns": {
-            "type": "ScratchStore",
-            "meaning": "Existing guarded store plus deterministic shared identity/path resolution."
+            "type": "ScratchIdleObserver",
+            "meaning": "Owned timer/job lifetime and captured-generation flush barrier."
           },
           "errors": [
             {
-              "type": "ScratchRefused",
-              "condition": "Unsafe ID/path, symlink/non-regular target or invalid root containment."
-            },
-            {
-              "type": "ScratchNotFound",
-              "condition": "Required file is absent."
-            },
-            {
-              "type": "ScratchStoreError",
-              "condition": "Filesystem operation fails."
+              "type": "ValidationUnavailable",
+              "condition": "Background executor fails, times out or cannot reproduce the configured codec; retain draft and refuse application."
             }
           ],
           "preconditions": [
-            "Reuse basename/root/regular-file validation before editor-open, delete and asset actions. No direct URI concatenation from messages."
+            "Install before create, activate after initialization. Initial admission is separate from typing.",
+            "Full parser/round-trip/inventory checks must never run in appendTransaction or input dispatch."
           ],
           "postconditions": [
-            "Proposed shared vscode-plugin/src/chat/scratch-identity.ts exports ScratchpadRef {repo,stableId} and HOME_SCRATCHPAD_SCOPE = 'insrc:scratchpads:home'. Until s7 supplies persisted association/lifecycle mapping, all legacy/new pre-s7 pads resolve to that home scope and existing validated basename including .md. Active workspace never changes their identity.",
-            "resolveScratch is read-only and available without opening a pane. S007 must migrate and preserve that identity before rename/move/archive; no s7 metadata persistence or daemon index is built here.",
-            "Native TextDocument I/O follows normal VS Code save/conflict/backup behavior, as explicitly accepted. Existing store operations retain their guards; do not route native saves through updateScratch or claim ongoing O_NOFOLLOW protection for native saves.",
-            "Rich document admission bound is 1 MiB UTF-8, with a 2 MiB encoded message cap (image transfer is a separate bounded action). Larger notes are refused for rich editing without truncation or file writes. This is a proposed support budget to qualify, not a claim of measured capacity."
+            "User doc-changing transactions capture the immutable intent, serialize at most once for immediate bounded recovery staging, and return without grammar validation. Initial/host/selection transactions do not stage or reset the timer.",
+            "Each content edit resets a trailing-edge 300 ms timer; no max-wait validation runs during continuous typing. Only one job plus the latest queued generation is retained per executor.",
+            "Idle validation is asynchronous and off the input thread. It uses the same factored configured schema/serializer, an intent fingerprint derived from the actual immutable ProseMirror document, and existing independent source-fidelity guards.",
+            "A result is usable only for its exact pane session, worker epoch, draft sequence and base version/digest. Superseded results are ignored; the newest draft gets its own idle pass.",
+            "Explicit flush cancels the timer and waits for validation plus canonical acknowledgement of the captured generation. Newer typing is retained and does not silently extend or replace that action's capture.",
+            "Deactivation cancels timers/jobs and rejects pending flushes without deleting recovery or cancelling already accepted host work."
           ]
         },
         {
-          "name": "ScratchPanels",
-          "signature": "interface ScratchPanels { openBrowse(): Promise<ScratchPanelHandle | undefined>; openDocument(id: string): Promise<void>; refreshBrowse(): Promise<void>; deleteDocument(id: string): Promise<'deleted' | 'cancelled'>; dispose(): void; }",
+          "name": "ScratchRendererState",
+          "signature": "class ScratchRendererState { stage(markdown: string): number; authorize(draftSeq: number, baseVersion: number, baseDigest: string): void; refuse(draftSeq: number, reason: string): void; receive(message: unknown): ScratchViewUpdate; }",
           "parameters": [],
           "returns": {
-            "type": "ScratchPanels",
-            "meaning": "Explicit asynchronous open/delete and controller lifetime."
+            "type": "ScratchRendererState",
+            "meaning": "Proposed split between local pending validation, authorization, canonical acknowledgement and true conflict."
           },
           "errors": [
             {
-              "type": "ScratchRefused | ScratchNotFound | ScratchStoreError",
-              "condition": "Store validation or deletion fails."
-            },
-            {
-              "type": "Error",
-              "condition": "Editor open, synchronization or targeted tab operation fails."
+              "type": "Conflict",
+              "condition": "Unmatched source/session/base changes or failed current-generation fidelity proof."
             }
           ],
           "preconditions": [
-            "Every chat/browse event boundary attaches a rejection handler. Creation and open failure are reported separately; refresh failures do not suppress opening.",
-            "One per-TextDocument queue is shared by every pane in a window. Bind each message to its registered URI, random paneSessionId, monotonic draftSeq/editId and accepted baseVersion/digest; reject cross-document, stale-session, oversized, duplicate-conflicting and unknown messages."
+            "Closed bounded protocol remains authoritative.",
+            "Staging is distinct from refusal: apply:false must not itself freeze normal typing."
           ],
           "postconditions": [
-            "Synchronization: every local doc-changing transaction immediately reports its latest Markdown draft to the host, even while another edit is in flight; selection-only transactions report no edit. Host retains the latest draft for recovery, serializes one WorkspaceEdit at a time, and coalesces superseded queued snapshots. Before applying, recheck base version/digest. A queued descendant may advance only after its identified parent was acknowledged and no unrelated document edit intervened; otherwise reject and retain it as a recovery draft.",
-            "Compute a minimal contiguous text replacement from the accepted source to the admitted Markdown proposal; do not full-replace solely for convenience. Await workspace.applyEdit and acknowledge with draftSeq, document version/digest and canonical snapshot. Match self-origin onDidChange events to the in-flight proposal. Broadcast host/undo/external updates to all panes without echo. An acknowledgement for an older local sequence advances the base but must not overwrite a newer local draft. Any unmatched update freezes mutation and preserves the competing draft for explicit recovery, never last-writer-wins.",
-            "Keep a bounded per-document recovery record in extension-owned local storage for received but unapplied drafts, keyed by canonical URI and sequence, with 1 MiB text bound. Persist before acknowledging receipt; clear only when committed or explicitly discarded. A normal tab dispose must not cancel an already accepted document edit or delete its recovery record. On reopening, show pending recovery without silently overwriting the canonical document. Test close/reload while edits are in flight; if host lifecycle safety cannot be demonstrated, validation fails.",
-            "Single undo authority: remove the published Milkdown history plugin array via Editor.remove before create and replace its key/toolbar actions with host undo/redo commands for the intended document. Drain pending proposals and verify active target before invoking; host change broadcasts are authoritative, never added to another Milkdown history. Standard save command drains first. onWillSaveTextDocument is only a best-effort drain hook because VS Code can bypass it; normal save/autosave guarantees apply, and pending drafts remain recoverable rather than falsely marked saved.",
-            "Fidelity admission: opening, parsing, toggling lock or selecting never writes. Retain the original source. Before allowing a proposal, compare the configured Markdown parse/serialize/parse structure and required raw-syntax fingerprints, including front matter, HTML/comments, code/diagram fences and literal future link syntax. Unknown constructs need exact preservation through an explicitly tested opaque node/plugin; absent that, refuse mutation with the original/draft intact. A minimal diff is not a fidelity proof. Test that supported edits cannot drop unrelated unknown content; no best-effort destructive save.",
-            "Send: clicking captures immutable {paneSessionId,draftSeq,docVersion,selectedText} before focus changes. selectedText is plain selected content from the current ProseMirror document, preserving paragraph boundaries. Drain the captured draft sequence, validate source/session/version and cap with existing capUtf8 (65,536 bytes including ellipsis). If the source changed incompatibly, retain the captured text and report retry; never silently recapture different text. Then use the existing scratch-host send-to-chat route: reveal, await ready, check disposed, insert into composer. No submit, clipboard, attachment or model call.",
-            "Deletion: both chat and browse call deleteDocument. Serialize against local document edits, drain pending drafts and inspect all exact-URI text/custom tabs across groups. Dirty/pending/recovery state cancels and asks the user to save/revert; never force discard. Await targeted closure of clean matching tabs, cancel on false, recheck state and revalidate before deleteScratch. On unlink failure attempt to reopen the still-existing note and report failure. Cross-window global exclusion is not promised; native external-delete/conflict behavior must preserve other windows' dirty drafts.",
-            "Save notifications: activation owns one disposable onDidSaveTextDocument listener scoped to validated scratchpad URIs; coalesce refreshBrowse and proposed ScratchHost.refreshList. Catch each refresh separately, never open closed UI or turn a successful save into a failed save. Creation/deletion and fallback saves use the same refresh boundary.",
-            "Remove legacy documentBodyHtml/documentBootstrap, scratch-save/scratch-saved/scratch-dirty/readiness/content messages and associated types, callbacks, onDocMessage, replySaved, showingId, invalidateId and old generations in one change. Retain capUtf8, the browse webview, six chat intents and existing guarded store APIs. The new versioned editor bridge is a different typed protocol, not reuse of the retired save channel."
+            "Stage immediately increments sequence and posts a recovery-only draft; receipt means recoverable, never validated/applied/saved.",
+            "Only successful current-generation admission may authorize the same immutable draft identity for application.",
+            "Older acknowledgements update the known base without replacing newer visible text. They never auto-promote an unvalidated latest draft.",
+            "A base changed by a confirmed own parent requires fresh admission against the new exact base; unrelated changes freeze and retain the competing draft.",
+            "Status distinguishes waiting for typing gap, validating, waiting for host, applied and conflict. Neither receipt nor apply-ack claims disk save."
+          ]
+        },
+        {
+          "name": "ScratchDocumentController",
+          "signature": "class ScratchDocumentController { receive(paneSessionId: string, draft: ScratchDraftProposal): Promise<void>; waitForSequence(paneSessionId: string, draftSeq: number): Promise<ScratchSnapshot>; flush(): Promise<void>; documentChanged(): void; dispose(): Promise<void>; }",
+          "parameters": [],
+          "returns": {
+            "type": "ScratchDocumentController",
+            "meaning": "Existing one-per-document native apply lane, with recoverable staging separated from validated application."
+          },
+          "errors": [
+            {
+              "type": "StaleDraft",
+              "condition": "Authorization no longer matches the latest accepted draft/base."
+            },
+            {
+              "type": "RecoveryFailure",
+              "condition": "Durable staging failed; no receipt or canonical apply is allowed."
+            }
+          ],
+          "preconditions": [
+            "Retain all URI, session, sequence, duplicate, UTF-8 and encoded-byte checks.",
+            "Recovery-only staging performs bounds/identity/storage checks, not full fidelity admission."
+          ],
+          "postconditions": [
+            "Persist recovery before receipt. Keep received-but-unapplied text through idle waits, worker failure, pane disposal and restart.",
+            "Independently verify authorized source/draft in a background host executor, then recheck native version/digest immediately before minimal WorkspaceEdit.",
+            "Reuse only fully verified immutable bases keyed by exact source/version/digest and executor/schema epoch. Parse a unique source once per job and share its semantic/inventory products; preserve every existing semantic/raw-syntax/intended-document assertion.",
+            "Only one canonical apply runs per document. Already accepted applies may finish; stale validation cannot initiate a new apply.",
+            "Clear recovery only after successful acknowledgement delivery to an attached pane; retain unconfirmed data otherwise.",
+            "Pending state includes staged drafts awaiting authorization. Deletion cancels on that state rather than waiting indefinitely or authorizing it."
+          ]
+        },
+        {
+          "name": "registerScratchEditor",
+          "signature": "registerScratchEditor(deps: ScratchNativeDeps): { openDocument(id: string): Promise<void>; deleteDocument(id: string): Promise<'deleted' | 'cancelled'>; accepts(uri: VSCode.Uri): Promise<boolean>; dispose(): Promise<void>; }",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "ScratchNativeDeps",
+              "purpose": "Existing injected public VS Code/store/recovery APIs plus owned background validator service.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ScratchNativeEditor",
+            "meaning": "Unchanged external service and single-pane UX."
+          },
+          "errors": [
+            {
+              "type": "FlushFailure",
+              "condition": "Explicit action cannot confirm the captured current generation; preserve text and report failure."
+            }
+          ],
+          "preconditions": [
+            "Existing open readiness, explicit fallback, guarded assets/store and editor association rules remain unchanged."
+          ],
+          "postconditions": [
+            "Save, Send, Undo/Redo and locking explicitly flush the captured generation before their source-dependent action. Send never recaptures a different selection or submits.",
+            "Native Save requests a bounded renderer flush; onWillSave remains best effort and can save an earlier canonical version with pending text recoverable, never falsely labelled saved.",
+            "Dirty/pending/recovery deletion cancels; clean exact-URI closure/revalidation/unlink, failure reopening and shared independent refresh remain unchanged.",
+            "All completed browse/create/error, lock, local asset/CSP, native undo and source-fidelity behaviors remain required; no legacy document channel returns.",
+            "One document controller per URI per window owns canonical application. Pane owns timer/codec worker; native service owns host grammar executor. Each executor has at most one running job plus latest queued work, and cannot write files or invoke commands directly."
           ]
         }
       ]
     },
     "dataModelChanges": [
       {
-        "entity": "ScratchpadRef",
-        "change": "new",
-        "details": "One deterministic reference per pre-s7 pad, independent of window/workspace: repo is the exported explicit home-scope value; stableId is the validated existing basename. Many panes reference one document; pane sessions and selection state are transient and are never the stable identity. No daemon registry/graph rows are allocated.",
-        "schemaDiff": "export interface ScratchpadRef { readonly repo: string; readonly stableId: string; }\nexport const HOME_SCRATCHPAD_SCOPE = 'insrc:scratchpads:home';",
+        "entity": "ScratchRendererState",
+        "change": "invariant-change",
+        "details": "Add explicit staged/waiting-idle/validating/authorized/applied/conflict distinctions. Pending admission is not a conflict. Track latest immutable intent and exact base, keep one apply in flight, never auto-authorize newer unvalidated typing.",
         "callSites": [
-          "vscode-plugin/src/chat/scratch-store.ts",
-          "vscode-plugin/src/panels/scratch-panels.ts"
+          "vscode-plugin/src/panels/scratch-editor-webview.ts",
+          "vscode-plugin/src/panels/__tests__/fixtures/scratch-editor-state-browser.ts"
         ]
       },
       {
-        "entity": "ScratchEditorProtocol",
-        "change": "new",
-        "details": "Proposed private protocol discriminants cover editor-ready/document-state/draft/receipt/apply-ack/conflict/lock/send-selection/undo/redo/save/asset-request. Every document action is bound to the host-owned pane session and URI. Host state includes accepted version/digest, in-flight operation, latest pending recovery draft and pane subscribers. Define closed runtime-validated unions; never forward arbitrary commands/paths from Markdown content. Asset payloads are separately bounded. New private browser/provider modules are proposed, not existing capabilities.",
-        "schemaDiff": "interface ScratchDraftProposal { readonly type: 'draft'; readonly paneSessionId: string; readonly draftSeq: number; readonly baseVersion: number; readonly baseDigest: string; readonly parentEditId?: string | undefined; readonly markdown: string; }\ninterface ScratchSelectionSend { readonly type: 'send-selection'; readonly paneSessionId: string; readonly draftSeq: number; readonly docVersion: number; readonly selectedText: string; }",
+        "entity": "ScratchDraftProposal",
+        "change": "invariant-change",
+        "details": "Existing bounded draft identity is staged with apply:false and later authorized for the same content/sequence. Durable receipt does not authorize native application. Atomically migrate all producer/parser/controller/test consumers; no permissive arbitrary-command fields.",
         "callSites": [
-          "vscode-plugin/src/panels/scratch-panels.ts",
-          "vscode-plugin/src/extension.ts",
-          "vscode-plugin/src/chat/scratch-host.ts"
+          "vscode-plugin/src/panels/scratch-editor-state.ts",
+          "vscode-plugin/src/panels/scratch-editor-provider.ts",
+          "vscode-plugin/src/panels/scratch-editor-native.ts"
         ]
       },
       {
-        "entity": "DocumentWebviewProtocol",
-        "change": "field-remove",
-        "details": "Retire legacy textarea renderer and save/dirty/ready/content protocol, generation state and obsolete methods/callbacks/tests atomically. Keep browse/list protocol, capUtf8 and six chat intents. Add the typed rich-editor bridge, unified async delete and save notification refresh. Preserve direct explicit selected-text insertion; cited attachments remain s8.",
+        "entity": "IdleValidationJob",
+        "change": "new",
+        "details": "Proposed private immutable job keyed by executor epoch, pane session, draftSeq, base version/digest and configured-codec identity, carrying bounded source references/draft and an actual-document intent fingerprint. Fingerprint semantics match the existing document comparator, including its sole heading-id exception. A parsed copy of the draft cannot serve as its own expected intent. A failed or superseded job never mutates the TextDocument.",
         "callSites": [
-          "vscode-plugin/src/panels/scratch-panels.ts",
-          "vscode-plugin/src/chat/scratch-host.ts",
-          "vscode-plugin/src/extension.ts",
-          "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
-          "vscode-plugin/src/chat/__tests__/scratch-host.test.ts",
-          "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
+          "vscode-plugin/src/panels/scratch-markdown-milkdown.ts",
+          "vscode-plugin/src/panels/scratch-editor-webview.ts"
+        ]
+      },
+      {
+        "entity": "Background validation lifetime",
+        "change": "new",
+        "details": "New private executor modules are proposed, not current APIs. Keep 1 MiB text and 2 MiB ordinary message limits. Base transfer and candidate jobs use separate bounded messages; do not combine several full snapshots into an oversized message. Worker has no native file/chat/command access. Browser worker is a single local bundled script loaded from trusted fixed code via blob/data-compatible VS Code loading; document content is data only. Retain connect-src 'none', add only the required worker-src policy, terminate/revoke on disposal. Worker codec parity/CSP/native loading are an early qualification gate. Host grammar worker is extension-owned and independently verifies source admission.",
+        "callSites": [
+          "vscode-plugin/src/panels/scratch-editor-native.ts",
+          "vscode-plugin/src/panels/scratch-editor-webview.ts"
         ]
       }
     ],
@@ -313,104 +379,97 @@
       {
         "contractId": "sc1",
         "role": "implements",
-        "howDetails": "Export shared identity and read-only resolver now. Pre-s7 home/basename mapping stays deterministic across panes and windows; s7 owns persisted association and lifecycle migration. No sc2/sc3 or adjacent story feature is designed here."
+        "howDetails": "Unchanged home scope and validated basename identity; no persisted s7 identity, repo inference, backlinks, ranking, search, attachments or other adjacent-story work."
       }
     ],
     "errorPaths": {
       "errorCases": [
         {
-          "scenario": "Unsafe or missing target",
-          "detection": "resolveScratch/runtime message validation rejects basename/root/type/session mismatch.",
-          "response": "Report refusal/not-found; no fallback opening of a refused target or arbitrary command/path.",
-          "userImpact": "Original remains untouched.",
+          "scenario": "Validation fails, times out, or worker fails to initialize",
+          "detection": "Executor error/timeout or configured-codec parity check fails.",
+          "response": "Do not authorize; retain durable draft, expose failure and explicit retry/fallback. Dispose failed executor and reject flush waiters.",
+          "userImpact": "Typing remains recoverable; canonical source unchanged.",
           "recoverable": true
         },
         {
-          "scenario": "Stale base or concurrent external edit",
-          "detection": "Queued base version/digest or identified parent no longer matches authoritative TextDocument.",
-          "response": "Reject, stop automatic mutation, preserve recovery draft and canonical source; never overwrite/merge heuristically.",
-          "userImpact": "User retains both versions for deliberate recovery.",
+          "scenario": "New typing or source change supersedes a job",
+          "detection": "Result session/epoch/sequence/base version/digest differs from current captured identity.",
+          "response": "Discard result; latest typing receives its own gap validation. Own-parent acknowledgement requires new exact-base admission; unrelated source change freezes with recovery.",
+          "userImpact": "No stale overwrite or automatic promotion.",
           "recoverable": true
         },
         {
-          "scenario": "Unsupported Markdown or serializer loss",
-          "detection": "Parse/serialize/parse or required raw-syntax fingerprints differ, or a node has no exact-preservation handler.",
-          "response": "Refuse unsafe mutation, keep original and draft; display limitation in the same pane. Opening alone never writes.",
-          "userImpact": "No silent content loss; qualification failure blocks acceptance.",
+          "scenario": "Fidelity refusal",
+          "detection": "Actual-document intent fingerprint, source syntax inventory or semantic round-trip comparison fails.",
+          "response": "Keep original and draft, show precise refusal; never weaken checks to pass performance.",
+          "userImpact": "Unsafe edit is recoverable rather than applied.",
           "recoverable": true
         },
         {
-          "scenario": "applyEdit/save/undo failure or pane closes during pending edit",
-          "detection": "Awaited operation fails, document version changes unexpectedly, or session disposes with pending drafts.",
-          "response": "Retain bounded recovery record, reject stale acknowledgements, let already accepted safe edits finish, and report actual operation state. Never falsely mark local-only text saved.",
-          "userImpact": "Pending text remains recoverable; no duplicate history.",
+          "scenario": "Recovery or native apply/ack fails",
+          "detection": "Awaited durable write/applyEdit/ack delivery fails or pane detaches.",
+          "response": "No receipt before persistence; retain unconfirmed recovery, finish accepted work once, reject action barrier with actual status.",
+          "userImpact": "No false saved state or duplicate history.",
           "recoverable": true
         },
         {
-          "scenario": "Rich-editor initialization or note-size admission failure",
-          "detection": "create rejects, assets cannot load, or note exceeds 1 MiB UTF-8.",
-          "response": "Keep file intact, report reason and offer explicit same-file plain text fallback; never truncate or silently no-op.",
-          "userImpact": "Source remains accessible without a normal two-view flow.",
+          "scenario": "Explicit action cannot flush",
+          "detection": "Captured-generation barrier times out, refuses or is disposed.",
+          "response": "Pane Save/Send/Undo/Redo/lock reports failure without source-dependent action. Lock blocks input immediately while captured admission completes, commits lock only afterward; failure retains draft and visible state. Native save hook is bounded best effort and must avoid queue reentrancy/deadlock.",
+          "userImpact": "Selection is never replaced with later text; native save may contain earlier canonical source with pending recovery.",
           "recoverable": true
         },
         {
-          "scenario": "Dirty/pending/cancelled deletion",
-          "detection": "Exact-URI inspection finds dirty/recovery/pending state or awaited close returns false.",
-          "response": "Cancel before unlink. On filesystem failure after clean close, attempt reopening and report failure.",
-          "userImpact": "Draft/file retained; unrelated tabs untouched.",
-          "recoverable": true
-        },
-        {
-          "scenario": "Asset failure or invalid Send",
-          "detection": "Image type/size/path action rejects; selected snapshot is stale/oversized; chat disposed before ready.",
-          "response": "No broken asset reference is inserted on failed upload. Reject invalid source snapshot; preserve captured selection. Use existing bounded insertion and disposed-chat handling; no auto-submit.",
-          "userImpact": "Failures are visible and no different text is silently sent.",
+          "scenario": "Invalid target, size, asset or delete",
+          "detection": "Existing URI/session/bounds/asset checks reject or exact-URI dirty/pending/recovery inspection fails.",
+          "response": "Retain existing guarded refusal, explicit same-file fallback, failed-upload no-reference insertion, clean-close failure reopening and refresh behavior.",
+          "userImpact": "Original, drafts and unrelated tabs remain intact.",
           "recoverable": true
         }
       ],
       "edgeCases": [
         {
-          "input": "Locked pane with non-empty selection.",
-          "expected": "Independent Send tooltip remains available, mutation controls hidden; only click inserts."
+          "input": "Continuous typing beyond several timer intervals",
+          "expected": "No full validation during typing; reset 300ms trailing timer; one active/latest queued bounded job, no repeated snapshots accumulating."
         },
         {
-          "input": "New pane after a prior pane changed lock state.",
-          "expected": "Use insrc remembered preference, initially locked; do not change already-open panes."
+          "input": "Typing resumes while a long validation runs",
+          "expected": "Rendering remains responsive; result stale and cannot apply; latest generation validates after its own gap."
         },
         {
-          "input": "Host ack arrives after newer local typing.",
-          "expected": "Advance base/ack sequence without replacing the newer draft; latest received draft is retained for recovery."
+          "input": "Save/Send followed by newer typing",
+          "expected": "Capture exact action generation and selection; later typing remains visible/recoverable and cannot silently change the action. Explicit flush bypasses idle delay."
         },
         {
-          "input": "Same document in several editor groups.",
-          "expected": "One host queue/authority, independent pane sessions/selection; broadcasts have no echo and inactive panes cannot send another pane's selection."
+          "input": "Selection-only, initialization or host echo",
+          "expected": "No draft, timer reset, validation or file write."
         },
         {
-          "input": "Save/autosave/close before the last edit is applied.",
-          "expected": "Pane Save explicitly drains. Native autosave may save an earlier canonical version; pending drafts remain recoverable, and no receipt alone claims saved state. Close/reload pending tests must pass."
+          "input": "Close/reload/delete during pending admission",
+          "expected": "Disposal cancels timers/jobs/waiters; recovery persists and accepted apply finishes safely. Delete cancels when pending rather than authorizing or hanging."
         },
         {
-          "input": "No edits, just open/select/lock.",
-          "expected": "Zero WorkspaceEdits and file writes, including initialization/trailing/normalization transactions."
+          "input": "Multiple panes, locked selection, Unicode and CRLF",
+          "expected": "Preserve existing per-pane selection/lock and host queue, UTF8 bounds, EOL fidelity and click-only bounded composer insertion."
         }
       ],
       "invariantsToPreserve": [
         {
-          "text": "Existing .md paths, IDs and source files remain; store-managed operations retain their guards. Normal native TextDocument I/O has the explicitly accepted host boundary.",
+          "text": "s1 analyze bundle Existing scratch editor pipeline and reuse plus measured-evidence bundle ground unchanged guarded .md home/basename identity and durable canonical TextDocument lifecycle; no open-time write.",
           "source": "c2"
         },
         {
-          "text": "Browse webview and six chat intents remain; all old document protocol consumers migrate together.",
+          "text": "s1 source/usage bundle and completed t1–t14 evidence ground browse/new/delete, all six chat intents and refresh; no legacy channel returns.",
           "source": "c3"
         },
         {
-          "text": "Explicit selected text is capped and inserted after chat reveal/readiness without submitting; save/create/delete refresh existing menus and browse.",
+          "text": "s1 measured-evidence and source bundle ground explicit bounded selected-text insertion with no submit, one pane, local CSP assets, fidelity and recovery. Performance remains unaccepted until original full-bound budgets pass.",
           "source": "c17"
         }
       ]
     },
     "testStrategy": {
-      "testFramework": "node:test/assert for existing host/store/panel suites; browser tests for the packaged Milkdown webview and real VS Code extension-host tests for lifecycle behavior. No implementation tests have been run for this design.",
+      "testFramework": "Existing node:test/assert, browser production Milkdown fixtures and real VS Code native-host coordinator suites. Prior t1–t14 evidence exists; new idle/background behavior is proposed and has not yet passed validation.",
       "testLevels": [
         {
           "level": "unit",
@@ -418,7 +477,9 @@
           "subjects": [
             "Deterministic identity, URI/type/symlink refusal, note/image/message bounds and no-op-on-open guards.",
             "One-in-flight/queued-descendant behavior, duplicate/stale/cross-pane messages, self echo versus external change and late acknowledgements.",
-            "Dirty/recovery/cancelled/failed deletion, created-but-open-failed reporting, save refresh/disposal and bounded composer insertion."
+            "Dirty/recovery/cancelled/failed deletion, created-but-open-failed reporting, save refresh/disposal and bounded composer insertion.",
+            "Deterministic fake clock: 300ms trailing gap, continuous typing no validation, explicit flush bypasses delay, stale epoch/sequence/base discarded, exact captured action sequence and cancellation; pending is not conflict and acknowledgement never auto-authorizes newer typing.",
+            "Independent host background admission retains every fidelity assertion; verified immutable-base cache invalidation and one running/latest queued bound; timeout/failure/reentrancy cannot hang Save/delete/disposal."
           ],
           "fixturesNeeded": [
             "Existing fakeScratchFs/panel/chat seams extended with deterministic document queue and tab operations."
@@ -432,7 +493,9 @@
             "Remove Milkdown history provider/commands/keymap; bind host-targeted undo/redo, drain and broadcast without loops.",
             "Parse/serialize/edit corpus: headings, tight/loose lists, tables, links/images, escaping, front matter, HTML/comments, Unicode, CRLF, fenced code/diagrams and literal custom links. Assert original unchanged on open and no unknown-content loss on supported edits.",
             "Asset onUpload/proxyDomURL keeps portable relative source paths; failures never insert transient/broken URLs.",
-            "Static/typecheck migration: no legacy document protocol/method consumers; six chat intents remain."
+            "Static/typecheck migration: no legacy document protocol/method consumers; six chat intents remain.",
+            "Early gate: factor exactly the live configured schema/serializer into a pure worker-compatible module; prove production codec and actual-document fingerprint parity over the entire supported/refusal corpus. Worker loading under actual packaged CSP with connect-src none, no dynamic imports or document-controlled code.",
+            "Prove appendTransaction performs no full validation and at most one serialization; real browser typing resumes during a deliberately delayed validator without render blocking. Stage recovery immediately, apply only current admitted generation; stale results and old acknowledgements never replace latest text."
           ],
           "fixturesNeeded": [
             "Pinned library package and a browser runner; exact real-note fixtures plus adversarial/unsupported syntax cases."
@@ -446,7 +509,10 @@
             "Close/reload while draft receipt/apply/ack is delayed; prove recovery without false saved state or draft loss.",
             "Multiple groups/panes, remembered lock, locked selection, select->click Send with chat closed/ready/disposed, and no automatic submission.",
             "Real image paste/drop, URL paste, workspace link/image insertion, CSP/offline operation and error paths.",
-            "Budget: 1 MiB UTF-8 note and boundaries; responsiveness target <=150 ms median keystroke-to-render and <=1 s p95 host acknowledgement on a recorded reference host, with a smaller supported bound or explicit design revision if unmet."
+            "Budget: 1 MiB UTF-8 note and boundaries; responsiveness target <=150 ms median keystroke-to-render and <=1 s p95 host acknowledgement on a recorded reference host, with a smaller supported bound or explicit design revision if unmet.",
+            "Repeat full 1MiB 20-trusted-edit qualification on recorded floor/current VS Code private display. Preserve <=150ms median keystroke-to-render and <=1s p95 host ack targets; ordinary latest-burst clock starts at final content edit and includes the 300ms idle delay. Explicit flush starts at action. Report superseded edits separately, no missing slow acknowledgements hidden.",
+            "Add sustained typing, bursts, resumed typing during long validation, Save/Send/Undo/Redo/lock/native autosave while pending and process interruption before idle/result/ack. Measure rendering, staging and job/application separately; immediate serialization or intent capture that still misses render budget blocks acceptance.",
+            "Re-run affected existing authoring/lifecycle/recovery/corpus/packaging mapping; no skip, reduced note bound or revised latency clock counts as success."
           ],
           "fixturesNeeded": [
             "Real VS Code host at the supported engine floor and current 1.146.0 where available; capture versions and unavailable coverage honestly.",
@@ -483,81 +549,89 @@
       ]
     },
     "migration": {
-      "stateBefore": "The analyzer/direct reads show a singleton custom textarea document view in vscode-plugin/src/panels/scratch-panels.ts, save/dirty/ready/content messages, generation state, and chat-host persistence/refresh callbacks. DEF7/HLD5 now approve the library-backed single-pane replacement; current production scratchpad code is unchanged and no S001 PLAN/BUILD exists.",
-      "stateAfter": "One Milkdown/Crepe CustomTextEditorProvider pane on the existing .md TextDocument, versioned host synchronization/recovery and host undo/save authority. Insrc-owned remembered locks and click-only selected-text Send replace the unavailable built-in-editor hook. Browse/new/delete, identity and recency are preserved; legacy document channel is removed.",
+      "stateBefore": "s1 analyze bundle Existing scratch editor pipeline and reuse plus measured-evidence bundle: S001 t1–t14 built and validated, single Milkdown pane already replaces legacy textarea. Full validation runs synchronously inside appendTransaction and t15 failed at 4150.45ms median render /8240.20ms p95 ack for 1MiB. Existing LLD5/PLAN2 approved; BUILD draft with failed t15. This revision supersedes synchronous scheduling only, preserves completed functional scope.",
+      "stateAfter": "Immediate rendered/recovery-staged edits, 300ms trailing-gap background validation, independent background host admission and exact-generation action barriers; same canonical .md, one pane, original bounds/budgets and all completed behavior.",
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Introduce shared identity/resolver and typed private editor/host protocol with runtime bounds, version checks and recovery ownership; preserve all files and sibling story scope.",
+          "action": "After human approval revise PLAN, record outstanding t15 correction and preserve prior task evidence. Qualify shared configured codec/intent parity and real CSP-compatible bundled worker before replacing observation.",
           "rollbackable": true
         },
         {
           "order": 2,
-          "action": "Package pinned Milkdown 7.23.0 browser assets locally; register the custom editor through activation seams and configure lock, independent Send tooltip, host-backed images and removal/rebinding of independent history.",
+          "action": "Split recovery staging/pending from admission/refusal; atomically update producer, closed parser, renderer state, controller and action consumers. Add bounded executors, exact-generation identities, verified-base caching and cancellation.",
           "rollbackable": true
         },
         {
           "order": 3,
-          "action": "Integrate the per-document edit queue, receipts/acks/broadcasts, host commands, recovery and save notifications. Route both deletion entry points through one asynchronous safe operation; catch every event rejection.",
+          "action": "Replace synchronous observer validation with immediate bounded staging and 300ms idle dispatch; route explicit actions through captured-generation flush. Preserve native Save best effort, lock barrier, deletion cancellation and disposal recovery.",
           "rollbackable": true
         },
         {
           "order": 4,
-          "action": "Switch open/new to the new editor under insrc.scratchpad.richEditor (default true); flag-off is explicit same-file text fallback. Atomically remove old document renderer/protocol/types/callbacks/methods and update all fakes/tests.",
-          "rollbackable": true,
-          "prerequisiteFlags": [
-            "insrc.scratchpad.richEditor"
-          ]
-        },
-        {
-          "order": 5,
-          "action": "Run mapped host/store/browser suites, production bundle/CSP checks and the mandatory live/corpus/performance qualification. Any missing/failed required check blocks validation; retain data/drafts on all failures. Present BUILD only after validation passes.",
+          "action": "Validate focused deterministic/browser cases, full corpus and native lifecycle/authoring/recovery/CSP regressions, then full 1MiB performance including continuous/resumed typing. Failed or unavailable mandatory evidence blocks completion. Present BUILD only after gates pass.",
           "rollbackable": true
         }
       ],
-      "backwardCompat": "No upfront data rewrite or rename; .md files, existing basename IDs, list UI and six chat intents stay. New edits may use the qualified supported Markdown serialization, but no write on open or silent unknown-content loss is allowed. Internal openDocument return type, deletion method, refreshList and private protocol require atomic caller migration. Legacy nativeEditor flag was design-only; use richEditor for the revised implementation. Normal VS Code file save behavior applies; no claim of store O_NOFOLLOW on native saves. Existing stored artifact history remains readable; old LLD native-editor blockers are superseded by approved upstream changes.",
+      "backwardCompat": "No file rewrite, bound reduction or shared sc1/API/identity change. Existing documents/recovery retained. Private protocol participants migrate together with fresh pane session epochs so stale worker results cannot cross reload. Keep current richEditor setting and explicit same-file fallback; no legacy editor channel restoration. Rollback code cannot discard pending records or mislabel them saved.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Versioned minimal-edit bridge",
-        "oneLineSummary": "Keep TextDocument authoritative and send coalesced, versioned renderer proposals that become minimal text edits.",
-        "approach": "Milkdown maintains the transient rendered draft while the extension host serializes changes per TextDocument. Each pane has one in-flight proposal and coalesces later local changes. The host validates URI, pane session, base document version and content digest, derives a minimal contiguous text replacement against the accepted base, and uses WorkspaceEdit. Host snapshots acknowledge edits and synchronize all panes.\n\nOnly acknowledged state is canonical. Host updates never echo into new proposals. Independent Milkdown history is removed; explicit undo/redo drains the pending queue then invokes the host stack for the intended resource. Stale proposals preserve recovery drafts instead of overwriting new content. Rich editing is admitted only when the supported syntax round-trips without semantic/opaque-content loss.",
+        "name": "Idle timer on the renderer thread",
+        "oneLineSummary": "Coalesce edits until a 300 ms gap, then perform the existing full validation on the renderer thread.",
+        "approach": "Keep the existing one-pane controller and add one trailing-edge timer. Lightweight draft capture runs per transaction; timer expiry runs current fidelity admission. Explicit commands flush. This is the smallest scheduling change, but the measured full pass still blocks resumed typing and cannot honestly meet the existing render target during validation.",
         "pros": [
-          "One authoritative document and host undo history; rejection behavior is explicit.",
-          "Limits document replacement scope and carries actual source/version identity for Send and synchronization."
+          "Minimal API changes and direct reuse of the current codec/admission routines.",
+          "Eliminates repeated validation during a continuous typing burst."
         ],
         "cons": [
-          "Requires protocol/session/edit IDs, acknowledgement ordering and failure recovery tests.",
-          "Minimal diff does not itself prove Markdown fidelity; serializer loss/unsupported syntax is separately guarded."
+          "A multi-second main-thread pass still freezes input after the gap.",
+          "Does not solve the measured full-bound latency requirement."
         ],
-        "costEstimate": "L"
+        "costEstimate": "S",
+        "reasonRejected": "Smallest code change, but fails the performance part of ac1."
       },
       {
         "id": "a2",
-        "name": "Versioned whole-document checkpoint bridge",
-        "oneLineSummary": "Use the same authoritative TextDocument but apply an acknowledged full-buffer replacement per coalesced checkpoint.",
-        "approach": "The renderer emits a full Markdown snapshot after a short coalescing interval. The host validates base version/digest and applies a whole-document WorkspaceEdit, then broadcasts authoritative state. Selection Send, lock control, input validation and syntax admission are identical to a1.\n\nThis reduces mapping logic but entire-buffer edits disturb ranges and undo granularity and can produce large replacements for small edits. It still cannot bypass stale-version rejection, fidelity checks or normal save/conflict behavior.",
+        "name": "Idle-coalesced background admission",
+        "oneLineSummary": "Render and retain drafts immediately; validate only the latest idle generation in background execution before authorizing native application.",
+        "approach": "Reuse the existing draft/controller/recovery boundary, adding a non-conflicting pending-validation state and explicit generation-bound admission/flush. A 300 ms trailing-edge gap starts full fidelity verification outside the input thread; newer typing supersedes its result. Cache only fully verified immutable bases keyed by exact source/version/digest and codec version, and share a parse within a validation job without dropping checks. Background configured-codec validation must use the same factored schema/serializer as the live editor and pass the full corpus. Host admission remains independently verified and runs once per admitted generation. Preserve 1 MiB/2 MiB bounds, explicit native application, recovery receipts and source/session checks. Worker packaging and codec equivalence are qualification gates, not assumed existing capabilities.",
         "pros": [
-          "Simpler snapshot mapping useful as a qualification baseline.",
-          "Retains canonical TextDocument authority and the same stale-edit guard."
+          "Separates responsiveness, recoverability and verified canonical application.",
+          "Matches idle-gap behavior while protecting resumed typing during a long pass.",
+          "Preserves all fidelity checks and existing source/sequence guards."
         ],
         "cons": [
-          "Large replacements for small changes and weaker range/undo behavior.",
-          "Same fidelity gate and synchronization lifecycle are still necessary."
+          "Requires private protocol/state and worker/schema factoring changes plus native requalification.",
+          "Actual 1 MiB latency remains a measured gate; a timer alone or unverified worker equivalence is insufficient."
         ],
-        "costEstimate": "L",
-        "reasonRejected": "No benefit to ac2/ac3/ac4 or sc1; full replacements weaken ac1's document interaction behavior."
+        "costEstimate": "M"
+      },
+      {
+        "id": "a3",
+        "name": "Validation only on explicit Save",
+        "oneLineSummary": "Keep local editing fast and defer all validation until an explicit Save.",
+        "approach": "Retain local drafts and validate only on Save, with no idle canonical application. Keep existing source identity and UI. This removes per-keystroke validation but leaves native document synchronization and autosave dependent on an explicit action rather than the requested typing gap.",
+        "pros": [
+          "Simple separation of typing from expensive checks."
+        ],
+        "cons": [
+          "Does not implement the user's idle-gap requirement.",
+          "Leaves native TextDocument and autosave stale indefinitely and weakens the agreed lifecycle behavior."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Weakens ac1 and complicates ac4 despite simple local typing."
       }
     ],
-    "chosenAlternative": "a1",
+    "chosenAlternative": "a2",
     "openQuestions": [],
     "uxDefinition": {
       "type": "AdaptiveCard",
       "version": "1.5",
-      "narrative": "Illustrative single-pane scratchpad state: lock controls, rendered content and Send beside a selection. This mock documents intended behavior, not a verified Milkdown implementation.",
+      "narrative": "Illustrative single-pane scratchpad state: lock controls, rendered content and Send beside a selection. This mock documents intended behavior, not a verified Milkdown implementation. Pending status distinguishes waiting for typing gap, validating and applying. [[c60]]",
       "body": [
         {
           "type": "TextBlock",
@@ -609,190 +683,184 @@
               ]
             }
           ]
+        },
+        {
+          "type": "TextBlock",
+          "text": "Waiting for typing gap → Validating → Applying → Applied (not necessarily saved)",
+          "wrap": true,
+          "description": "Status line reports recoverable work without blocking typing or claiming disk persistence."
         }
       ]
     },
     "sequenceDefinition": {
-      "narrative": "One document queue serializes versioned drafts; receipt is recoverability, acknowledgement is canonical application, and neither alone means saved. Selection only reveals Send; explicit click captures and drains the exact source before insertion.",
+      "id": "scratch-idle-admission",
+      "narrative": "Render and recovery staging precede full validation. Idle or explicit-action dispatch runs background fidelity checks; exact identities prevent stale admission and overwrite. [[c60]] [[c61]]",
       "participants": [
         {
-          "id": "user",
-          "label": "User",
-          "description": "Edits or selects and explicitly activates Send."
-        },
-        {
-          "id": "view",
+          "id": "pane",
           "label": "Milkdown pane",
-          "description": "Transient draft and captured selection; no independent undo authority."
+          "description": "Owns immutable live intent, selection, sequence and trailing timer."
         },
         {
-          "id": "host",
-          "label": "Document controller",
-          "description": "Per-document queue, validation and bounded durable recovery."
-        },
-        {
-          "id": "doc",
-          "label": "TextDocument",
-          "description": "Canonical buffer and native save/undo lifecycle."
-        },
-        {
-          "id": "chat",
-          "label": "Chat composer",
-          "description": "Existing reveal/ready/insert route; no submission."
-        }
-      ],
-      "messages": [
-        {
-          "from": "user",
-          "to": "view",
-          "label": "Edit unlocked note"
-        },
-        {
-          "from": "view",
-          "to": "host",
-          "label": "Draft: session, sequence, base version/digest"
-        },
-        {
-          "from": "host",
-          "to": "host",
-          "label": "Persist latest recovery draft; validate base and fidelity"
-        },
-        {
-          "from": "host",
-          "to": "view",
-          "label": "Receipt (recoverable; not saved)",
-          "kind": "return"
-        },
-        {
-          "from": "host",
-          "to": "doc",
-          "label": "Await minimal WorkspaceEdit"
-        },
-        {
-          "from": "doc",
-          "to": "host",
-          "label": "Change event and apply result",
-          "kind": "return"
-        },
-        {
-          "from": "host",
-          "to": "view",
-          "label": "Ack sequence/version/digest/snapshot; broadcast without echo",
-          "kind": "return",
-          "note": "Stale/unmatched change freezes mutations and retains draft. Older ack never replaces newer local typing."
-        },
-        {
-          "from": "user",
-          "to": "view",
-          "label": "Select passage; then click Send",
-          "note": "Selection alone performs no chat action; Send also works locked."
-        },
-        {
-          "from": "view",
-          "to": "host",
-          "label": "Immutable selected text + session/sequence/version"
-        },
-        {
-          "from": "host",
-          "to": "doc",
-          "label": "Drain captured sequence; verify compatible source"
-        },
-        {
-          "from": "host",
-          "to": "chat",
-          "label": "Cap UTF-8; reveal, await ready, insert once",
-          "note": "Reject stale source visibly; retain captured text. Never submit."
-        }
-      ]
-    },
-    "componentDependencyDefinition": {
-      "narrative": "The existing scratch controller owns actions and identity. Proposed private editor modules communicate through a validated bridge; activation alone binds VS Code APIs. Many panes share one document queue. No daemon storage or sibling story features are introduced.",
-      "components": [
-        {
-          "id": "activation",
-          "label": "Extension activation",
-          "path": "vscode-plugin/src/extension.ts",
-          "description": "Registers editor/provider and host lifecycle bindings."
-        },
-        {
-          "id": "panels",
-          "label": "Scratch panels",
-          "path": "vscode-plugin/src/panels/scratch-panels.ts",
-          "description": "Browse, open and unified safe asynchronous deletion."
-        },
-        {
-          "id": "store",
-          "label": "Scratch store + sc1",
-          "path": "vscode-plugin/src/chat/scratch-store.ts",
-          "description": "Guarded operations and proposed deterministic resolver."
+          "id": "codec",
+          "label": "Pane codec worker",
+          "description": "Bounded configured-codec executor with no native authority."
         },
         {
           "id": "controller",
-          "label": "Proposed document controller",
-          "description": "New scratch-editor-provider.ts: shared queue, recovery and validation; injected host seams."
+          "label": "Document controller",
+          "description": "Per URI/window durable staging and sole canonical apply lane."
         },
         {
-          "id": "renderer",
-          "label": "Proposed Milkdown webview",
-          "description": "New scratch-editor-webview.ts: locally bundled Crepe, mode and Send tooltip."
+          "id": "host",
+          "label": "Host validator",
+          "description": "Independent background admission; verified exact-base cache."
         },
         {
           "id": "document",
           "label": "VS Code TextDocument",
-          "description": "One canonical document, native save/conflict/undo lifecycle."
-        },
-        {
-          "id": "chat",
-          "label": "Scratch chat host",
-          "path": "vscode-plugin/src/chat/scratch-host.ts",
-          "description": "Bounded insertion and menu refresh."
+          "description": "Canonical document; native save/undo authority."
         }
       ],
-      "dependencies": [
+      "messages": [
         {
-          "from": "activation",
-          "to": "controller",
-          "label": "register/inject host APIs"
+          "from": "pane",
+          "to": "pane",
+          "label": "Content edit: render, capture intent, serialize once",
+          "description": "No full validation in input dispatch."
         },
         {
-          "from": "panels",
-          "to": "store",
-          "label": "resolve/guard/delete"
-        },
-        {
-          "from": "panels",
+          "from": "pane",
           "to": "controller",
-          "label": "open/delete coordination"
+          "label": "Stage recovery-only draft",
+          "description": "Bounded exact identity; apply:false is pending, not refusal."
         },
         {
           "from": "controller",
-          "to": "renderer",
-          "label": "versioned snapshots and acknowledgements"
+          "to": "pane",
+          "label": "Durable receipt",
+          "description": "Persist before receipt; no saved/validated claim."
         },
         {
-          "from": "renderer",
+          "from": "pane",
+          "to": "codec",
+          "label": "300ms gap or explicit captured flush",
+          "description": "Latest bounded immutable job; resumed typing stays responsive."
+        },
+        {
+          "from": "codec",
+          "to": "pane",
+          "label": "Fidelity result",
+          "description": "Discard stale session/epoch/sequence/base results."
+        },
+        {
+          "from": "pane",
           "to": "controller",
-          "label": "validated drafts and click-only Send"
+          "label": "Authorize same draft identity",
+          "description": "Only current successful admission may proceed."
+        },
+        {
+          "from": "controller",
+          "to": "host",
+          "label": "Independent source/draft admission",
+          "description": "Background full semantic/raw checks; no repeated unique-source parses."
+        },
+        {
+          "from": "host",
+          "to": "controller",
+          "label": "Verified result",
+          "description": "Stale/error result cannot initiate application."
         },
         {
           "from": "controller",
           "to": "document",
-          "label": "minimal edits / lifecycle"
+          "label": "Recheck version/digest; minimal WorkspaceEdit",
+          "description": "One canonical apply; accepted work may finish after disposal."
         },
         {
           "from": "controller",
-          "to": "chat",
-          "label": "insert selection / refresh after save"
+          "to": "pane",
+          "label": "Apply acknowledgement",
+          "description": "Do not replace newer typing or auto-authorize it; clear recovery only after attached delivery."
+        },
+        {
+          "from": "pane",
+          "to": "pane",
+          "label": "Complete captured action barrier",
+          "description": "Save/Send/Undo/Redo/lock only after success; failures retain recovery."
         }
       ]
     },
-    "epicImpact": {
-      "applies": false,
-      "reason": "First Epic story; no approved sibling BUILD.",
-      "storiesCovered": [],
-      "findings": "No prior built stories to migrate.",
-      "sources": [
-        "docs/epics/linked-scratchpads-vs-code-E202611162846f076/HLD.md"
+    "componentDependencyDefinition": {
+      "id": "scratch-idle-ownership",
+      "narrative": "Each pane owns scheduling/codec execution; native service owns independent host admission and per-document queues. Workers have no file/chat/command capability; production configured-codec parity and CSP loading are early gates. [[c61]] [[c62]]",
+      "components": [
+        {
+          "id": "pane",
+          "label": "Pane/idle observer",
+          "description": "One timer and bounded codec executor per pane; immediate staging.",
+          "path": "vscode-plugin/src/panels/scratch-editor-webview.ts"
+        },
+        {
+          "id": "codec",
+          "label": "Configured codec worker (proposed)",
+          "description": "New private fixed locally bundled browser worker; document is data only."
+        },
+        {
+          "id": "shared",
+          "label": "Configured codec extraction (proposed)",
+          "description": "Factor exact live schema/serializer and comparator-compatible fingerprint.",
+          "path": "vscode-plugin/src/panels/scratch-markdown-milkdown.ts"
+        },
+        {
+          "id": "native",
+          "label": "Native service",
+          "description": "Owns host executor and URI controllers.",
+          "path": "vscode-plugin/src/panels/scratch-editor-native.ts"
+        },
+        {
+          "id": "controller",
+          "label": "Document controller",
+          "description": "One durable staging/application lane per URI/window.",
+          "path": "vscode-plugin/src/panels/scratch-editor-provider.ts"
+        },
+        {
+          "id": "host",
+          "label": "Host executor (proposed)",
+          "description": "Independent background grammar/fidelity admission; bounded owned lifetime."
+        }
+      ],
+      "dependencies": [
+        {
+          "from": "pane",
+          "to": "codec",
+          "label": "owns one; bounded latest job"
+        },
+        {
+          "from": "codec",
+          "to": "shared",
+          "label": "same configured codec"
+        },
+        {
+          "from": "pane",
+          "to": "controller",
+          "label": "closed staging/authorization bridge"
+        },
+        {
+          "from": "native",
+          "to": "controller",
+          "label": "owns one per URI"
+        },
+        {
+          "from": "native",
+          "to": "host",
+          "label": "owns bounded executor"
+        },
+        {
+          "from": "controller",
+          "to": "host",
+          "label": "independent exact-base admission"
+        }
       ]
     },
     "companions": [
@@ -824,19 +892,19 @@
       "id": "c3",
       "kind": "code",
       "ref": "vscode-plugin/src/panels/scratch-panels.ts",
-      "quotedText": "Custom webview document view (documentBodyHtml/documentBootstrap, scratch-save/scratch-saved); unbounded browse list (browseHtml/renderBrowse/openBrowse) with per-row open/delete icons."
+      "quotedText": "Historical legacy baseline; current browse preserved, document textarea/save removed by t11."
     },
     {
       "id": "c17",
       "kind": "code",
       "ref": "vscode-plugin/src/chat/scratch-host.ts",
-      "quotedText": "createScratchHost's onMessage is the primary driver of the functions this Story touches: case 'scratch-open' calls deps.panels.openDocument(msg.id) (line 150); case 'scratch-new' awaits deps.panels.openDocument(entry.id) and checks `if (opened === undefined) log.warn('...did not open')` (lines 137-138) — a check that depends on openDocument's current Promise<ScratchPanelHandle | undefined> return shape; case 'scratch-delete' calls deps.panels.invalidateId(msg.id) then deps.panels.closeDocumentIfShowing(msg.id) (lines 155,165); case 'scratch-browse' calls deps.panels.openBrowse() (line 171). case 'scratch-open-menu' (line 109) only calls sendScratchList() — it never calls openDocument and needs no change from this Story."
+      "quotedText": "Current host preserves six chat intents and bounded explicit composer insertion; native service handles .md open/delete."
     },
     {
       "id": "c31",
       "kind": "code",
-      "ref": "vscode-plugin/src/extension.ts:1023",
-      "quotedText": "Activation supplies store and document send/save/dirty callbacks to createScratchPanels."
+      "ref": "vscode-plugin/src/extension.ts",
+      "quotedText": "Activation registers native scratch editor and browse/chat integration."
     },
     {
       "id": "c32",
@@ -878,13 +946,43 @@
       "id": "c52",
       "kind": "doc",
       "ref": "/tmp/.insrc/scratchpad-s001-capability-check/milkdown-7.23.0/",
-      "quotedText": "Published 7.23.0 package metadata/types inspected without installing: Crepe.setReadonly, Editor.remove, history plugin array and image upload/display callbacks. Integration still untested."
+      "quotedText": "Original package inspection; t1–t14 corpus/native evidence exists. Background worker parity remains proposed."
     },
     {
       "id": "c53",
       "kind": "doc",
       "ref": "https://raw.githubusercontent.com/Milkdown/milkdown/main/packages/crepe/src/feature/toolbar/index.ts",
       "quotedText": "Default formatting tooltip requires editable view; a separate owned selection Send tooltip is required."
+    },
+    {
+      "id": "c60",
+      "kind": "stakeholder",
+      "ref": "User chat — typing-gap correction, 2026-11-28",
+      "quotedText": "Full-document validation should follow a typing gap, not block each rendered edit."
+    },
+    {
+      "id": "c61",
+      "kind": "analyze-bundle",
+      "ref": "s1",
+      "quotedText": "Analyzer plus direct source inspection: synchronous appendTransaction admission blocks rendering; graph coverage incomplete."
+    },
+    {
+      "id": "c62",
+      "kind": "doc",
+      "ref": "https://code.visualstudio.com/api/extension-guides/webview#using-web-workers",
+      "quotedText": "Workers need blob/data loading and a single bundled script, without importScripts/dynamic import. Production qualification required."
+    },
+    {
+      "id": "c63",
+      "kind": "doc",
+      "ref": "/tmp/.insrc/scratchpad-t15-performance-full.json",
+      "quotedText": "20 edits,1MiB:4150.45ms median render,8240.20ms p95 ack; acceptance fails."
+    },
+    {
+      "id": "c64",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/BUILD.md",
+      "quotedText": "t1–t14 validated, t15 failed; no completed BUILD acceptance."
     }
   ]
 }

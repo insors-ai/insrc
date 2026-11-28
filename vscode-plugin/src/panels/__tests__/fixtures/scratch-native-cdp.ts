@@ -61,15 +61,16 @@ export async function focusNativeScratchEditor(port: number, _title: string, opt
 /** Real native renderer input for authoring tests. Expressions inspect/select
  * actual DOM; keyboard, mouse, paste and file-drop use Chromium input events. */
 export async function nativeBrowserAction(port: number, selector: string, options: {
-  expression?: string; click?: boolean; text?: string; keys?: { key: string; ctrl?: boolean; shift?: boolean }[]; dropFile?: string;
+  expression?: string; afterInputExpression?: string; click?: boolean; text?: string; keys?: { key: string; ctrl?: boolean; shift?: boolean }[]; dropFile?: string; timeoutMs?: number;
 } = {}): Promise<any> {
-  const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`, { signal: AbortSignal.timeout(5000) })).json() as {type:string;webSocketDebuggerUrl?:string}[];
+  const requestMs=options.timeoutMs??5000;
+  const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`, { signal: AbortSignal.timeout(requestMs) })).json() as {type:string;webSocketDebuggerUrl?:string}[];
   const target = targets.find(t => t.type === 'page' && t.webSocketDebuggerUrl); if (!target?.webSocketDebuggerUrl) throw new Error('No native page');
   const socket = new WebSocket(target.webSocketDebuggerUrl);
-  await new Promise<void>((resolve,reject) => { const timer = setTimeout(() => reject(new Error('Native debugger open timeout')),5000); socket.addEventListener('open',()=>{clearTimeout(timer);resolve();},{once:true});socket.addEventListener('error',()=>{clearTimeout(timer);reject(new Error('Native debugger failed'));},{once:true}); });
+  await new Promise<void>((resolve,reject) => { const timer = setTimeout(() => reject(new Error('Native debugger open timeout')),requestMs); socket.addEventListener('open',()=>{clearTimeout(timer);resolve();},{once:true});socket.addEventListener('error',()=>{clearTimeout(timer);reject(new Error('Native debugger failed'));},{once:true}); });
   let id=0; const contexts:{id:number;sessionId?:string}[]=[], pending=new Map<number,{resolve:(x:any)=>void;reject:(e:Error)=>void;timer:ReturnType<typeof setTimeout>}>();
   socket.addEventListener('message',e=>{const m=JSON.parse(String(e.data));if(m.method==='Runtime.executionContextCreated')contexts.push({id:m.params.context.id,...(m.sessionId?{sessionId:m.sessionId}:{})});if(m.id){const p=pending.get(m.id);pending.delete(m.id);if(p){clearTimeout(p.timer);m.error?p.reject(new Error(m.error.message)):p.resolve(m.result);}}});
-  const call=(method:string,params:unknown={},sessionId?:string):Promise<any>=>new Promise((resolve,reject)=>{const next=++id;const timer=setTimeout(()=>{pending.delete(next);reject(new Error(`Native ${method} timeout`));},5000);pending.set(next,{resolve,reject,timer});socket.send(JSON.stringify({id:next,method,params,...(sessionId?{sessionId}:{})}));});
+  const call=(method:string,params:unknown={},sessionId?:string):Promise<any>=>new Promise((resolve,reject)=>{const next=++id;const timer=setTimeout(()=>{pending.delete(next);reject(new Error(`Native ${method} timeout`));},requestMs);pending.set(next,{resolve,reject,timer});socket.send(JSON.stringify({id:next,method,params,...(sessionId?{sessionId}:{})}));});
   try {
     await call('Page.bringToFront');await call('Runtime.enable');
     const attached=new Set<string>();
@@ -92,7 +93,7 @@ export async function nativeBrowserAction(port: number, selector: string, option
         }
         if(options.text!==undefined)await call('Input.insertText',{text:options.text},context.sessionId);
         if(options.dropFile){const data={items:[],files:[options.dropFile],dragOperationsMask:1};for(const type of ['dragEnter','dragOver','drop'])await call('Input.dispatchDragEvent',{type,...point,data},context.sessionId);}
-        return value;
+        return options.afterInputExpression ? await evaluate(options.afterInputExpression) : value;
       }
       await new Promise(r=>setTimeout(r,30));
     }

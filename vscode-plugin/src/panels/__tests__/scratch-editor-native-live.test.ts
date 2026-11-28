@@ -1,3 +1,4 @@
+import { scratchHostWorkerBytes } from './fixtures/scratch-host-worker-bundle.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
@@ -16,6 +17,7 @@ test('scratch native VS Code qualification exercises TextDocument save undo redo
   await mkdir(out, { recursive: true }); await mkdir(evidenceRoot, { recursive: true });
   try {
     await build({ entryPoints: [fileURLToPath(new URL('./fixtures/scratch-editor-native-host.ts', import.meta.url))], outfile: join(out, 'fixture.cjs'), bundle: true, platform: 'node', format: 'cjs', target: 'node22', external: ['vscode'], logLevel: 'silent' });
+    await writeFile(join(out,'scratch-validation-host-worker.js'),await scratchHostWorkerBytes());
     const { bundleScratchEditor } = await import('../../../esbuild.mjs');
     await bundleScratchEditor(join(out, 'scratch-editor'));
     await writeFile(join(extension, 'package.json'), JSON.stringify({ name: 'scratch-native-fixture', publisher: 'insrc-test', version: '0.0.1', engines: { vscode: '^1.141.0' }, main: './out/fixture.cjs', activationEvents: ['*'], contributes: { customEditors: [{ viewType: 'insrc.scratchpad.editor', displayName: 'Scratchpad qualification', selector: [{ filenamePattern: '*.md' }], priority: 'option' }] } }));
@@ -33,7 +35,7 @@ test('scratch native VS Code qualification exercises TextDocument save undo redo
       trace.push(...text.split('\n').filter(line => /Command 'undo'|Command 'redo'/.test(line)));
     }
     if (evidence.startsWith('{')) evidence = JSON.stringify({ ...JSON.parse(evidence), commandTrace: trace }, null, 2);
-    const retained = process.env['INSRC_NATIVE_EVIDENCE'];
+    const retained = process.env['INSRC_NATIVE_EVIDENCE']?.replace('{suite}','native');
     if (retained) await writeFile(retained, evidence);
     assert.equal(result.timedOut, false, evidence + result.stderr.slice(-2000));
     assert.equal(result.exitCode, 0, evidence + result.stdout.slice(-3000) + result.stderr.slice(-3000));

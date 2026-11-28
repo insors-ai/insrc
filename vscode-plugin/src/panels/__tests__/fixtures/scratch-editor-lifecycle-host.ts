@@ -8,7 +8,8 @@ import { registerScratchEditor, SCRATCH_EDITOR_VIEW_TYPE } from '../../scratch-e
 import { createScratchStore } from '../../../chat/scratch-store.js';
 import { ScratchRecoveryStore, SCRATCH_RECOVERY_BYTES } from '../../scratch-editor-recovery.js';
 import { ScratchLockPreference } from '../../scratch-editor-lock.js';
-import { focusNativeScratchEditor } from './scratch-native-cdp.js';
+import { scratchIdleProbeAssets } from './scratch-idle-native-assets.js';
+import { focusNativeScratchEditor, nativeBrowserAction } from './scratch-native-cdp.js';
 import type { ScratchHostToEditor } from '../../scratch-editor-protocol.js';
 
 const tick = () => new Promise<void>(r => setTimeout(r, 30));
@@ -23,13 +24,13 @@ export async function run() {
   const store = createScratchStore({ root: join(root, 'scratches') });
   const recovery = new ScratchRecoveryStore(join(root, 'recovery'));
   const panes = new Map<string, { panel: vscode.WebviewPanel; session: string }>();
-  const frames: ScratchHostToEditor[] = [];
+  const frames: ScratchHostToEditor[] = [], deliveredFrames: ScratchHostToEditor[] = [];
   let delay: { type: 'receipt' | 'apply' | 'apply-ack'; gate: ReturnType<typeof deferred>; hit: boolean } | undefined;
   const windowApi = new Proxy(vscode.window, { get(target, key) {
     if (key !== 'registerCustomEditorProvider') return Reflect.get(target, key, target);
     return (viewType: string, provider: vscode.CustomTextEditorProvider, options: unknown) => target.registerCustomEditorProvider(viewType, { resolveCustomTextEditor: async (doc, panel, token) => {
       const webview = new Proxy(panel.webview, { get(target, key) {
-        if (key === 'postMessage') return async (message: ScratchHostToEditor) => { frames.push(message); const waiting = delay; if (message.type === waiting?.type) { waiting.hit = true; await waiting.gate.promise; } return await target.postMessage(message); };
+        if (key === 'postMessage') return async (message: ScratchHostToEditor) => { frames.push(message); const waiting = delay; if (message.type === waiting?.type) { waiting.hit = true; await waiting.gate.promise; } const delivered=await target.postMessage(message);if(delivered)deliveredFrames.push(message);return delivered; };
         const value = Reflect.get(target, key, target); return typeof value === 'function' ? value.bind(target) : value;
       }, set(target, key, value) { return Reflect.set(target, key, value, target); } });
       const wrapped = new Proxy(panel, { get(target, key) { if (key === 'webview') return webview; const value = Reflect.get(target, key, target); return typeof value === 'function' ? value.bind(target) : value; } });
@@ -43,9 +44,43 @@ export async function run() {
     return Reflect.get(target, key, target);
   } });
   const api = new Proxy(vscode, { get(target, key) { return key === 'window' ? windowApi : key === 'workspace' ? workspaceApi : Reflect.get(target, key, target); } });
-  const host = registerScratchEditor({ api, extensionPath: process.env['INSRC_NATIVE_FIXTURE_EXTENSION']!, store, recovery, preference: new ScratchLockPreference({ get: <T>() => false as T, update: async () => {} }), warn: m => warnings.push(m) });
+  const probePhase = role.startsWith('pending_') && ['idle','validation','result'].includes(role.slice(8)) ? role.slice(8) as 'idle'|'validation'|'result' : undefined;
+  const probeAssets = probePhase ? await scratchIdleProbeAssets(process.env['INSRC_NATIVE_FIXTURE_EXTENSION']!,root,probePhase) : undefined;
+  if(probeAssets)checks['probeAssets']=probeAssets.evidence;
+  const host = registerScratchEditor({ api, extensionPath: probeAssets?.extensionPath ?? process.env['INSRC_NATIVE_FIXTURE_EXTENSION']!, store, recovery, preference: new ScratchLockPreference({ get: <T>() => false as T, update: async () => {} }), warn: m => warnings.push(m) });
   const text = async (uri: vscode.Uri, value: string) => { const doc = await vscode.workspace.openTextDocument(uri); const edit = new vscode.WorkspaceEdit(); edit.replace(uri, new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length)), value); assert.equal(await vscode.workspace.applyEdit(edit), true); return doc; };
   try {
+    if (probePhase) {
+      const type=probePhase,item=await store.createScratch(`Crash during ${type}`,'# Original interrupted file\n');
+      const resolved=await store.resolveScratch(item.id),uri=vscode.Uri.file(resolved.filePath);
+      await host.openDocument(item.id);
+      const marker=`Interrupted${type}`,selector='.scratch-pane .ProseMirror[contenteditable="true"]';
+      const inspect="return {probe:globalThis.__scratchIdleProbe,text:el.textContent,editable:el.getAttribute('contenteditable'),status:document.querySelector('.scratch-status')?.textContent??''};";
+      let visible=await nativeBrowserAction(port,selector,{expression:"el.focus();const node=(el.querySelector('h1,p')??el).firstChild;const range=document.createRange();range.setStart(node,0);range.collapse(true);getSelection().removeAllRanges();getSelection().addRange(range);return true;",text:marker,afterInputExpression:inspect});
+      let finalMarker=marker;
+      if(type!=='idle') {
+        await until(async()=>{visible=await nativeBrowserAction(port,selector,{expression:inspect});return visible?.probe?.held?.phase===type;},`Actual worker parked at ${type}`);
+        if(type==='result')assert.equal(visible.probe.held.allowed,true,'Actual full configured-codec admission completed before result parking');
+        finalMarker=marker+'Resumed';
+        visible=await nativeBrowserAction(port,selector,{expression:'el.focus();return true;',text:'Resumed',afterInputExpression:inspect});
+        assert.ok(visible.text.includes(finalMarker),'Native input renders while the real validator is parked');
+      }
+      assert.equal(visible.probe.allTrusted,true);assert.ok(visible.probe.trustedInputs>=1);
+      if(type==='idle')assert.equal(visible.probe.validates,0,'No validation began before the idle checkpoint');
+      let pending=await recovery.list(uri.toString());
+      await until(async()=>{pending=await recovery.list(uri.toString());return pending.length===1&&pending[0]!.draft.markdown.includes(finalMarker);},'Latest native edit is durably staged before interruption');
+      const record=pending[0]!,draft=record.draft.markdown,recordBytes=Buffer.byteLength(JSON.stringify(record));
+      assert.equal(record.draft.apply,false);assert.ok(recordBytes<=SCRATCH_RECOVERY_BYTES);
+      const doc=await vscode.workspace.openTextDocument(uri);assert.equal(doc.isDirty,false);assert.equal(doc.getText(),'# Original interrupted file\n');
+      assert.equal(await readFile(resolved.filePath,'utf8'),'# Original interrupted file\n');
+      assert.match(visible.status,/Updating|pending|recover|retained|waiting/i);assert.doesNotMatch(visible.status,/saved/i);
+      await writeFile(join(root,`${role}-manifest.json`),JSON.stringify({id:item.id,marker:finalMarker,type,source:'# Original interrupted file\n',draft}));
+      checks['interruptedWhileBlocked']={type,released:false,hostDisposed:false,recordBytes,bound:SCRATCH_RECOVERY_BYTES,status:visible.status,nativeDirty:false,attemptedAcks:frames.filter(f=>f.type==='apply-ack').length,deliveredAcks:deliveredFrames.filter(f=>f.type==='apply-ack').length,source:'# Original interrupted file\n',draft,probe:visible.probe,resumedWhileBusy:type!=='idle'};
+      await evidence(true,{paused:true});
+      await writeFile(join(root,`${role}-ready-for-restart`),'Crash before releasing the actual idle/worker boundary');
+      await new Promise<void>(()=>{});
+      throw new Error('Pending idle crash probe must never resume');
+    }
     if (role.startsWith('pending_')) {
       const type = role.slice('pending_'.length) as 'receipt' | 'apply' | 'apply-ack';
       assert.ok(['receipt', 'apply', 'apply-ack'].includes(type));
@@ -63,9 +98,10 @@ export async function run() {
       assert.match(visible.status, /Updating|pending|recover|retained|waiting/i); assert.doesNotMatch(visible.status, /saved/i);
       assert.equal(await readFile(resolved.filePath, 'utf8'), '# Original interrupted file\n');
       await writeFile(join(root, `${role}-manifest.json`), JSON.stringify({ id: item.id, marker, type, source: '# Original interrupted file\n', draft: pending[0]!.draft.markdown }));
+      assert.equal(deliveredFrames.filter(f=>f.type==='apply-ack').length,0,'The interrupted acknowledgement has not been delivered');
       const nativeDirty = (await vscode.workspace.openTextDocument(uri)).isDirty;
       assert.equal(nativeDirty, type === 'apply-ack', 'Only the applied-but-unacknowledged stage changes the native dirty model');
-      checks['interruptedWhileBlocked'] = { type, released: false, hostDisposed: false, recordBytes: Buffer.byteLength(record), bound: SCRATCH_RECOVERY_BYTES, status: visible.status, nativeDirty, source: '# Original interrupted file\n', draft: pending[0]!.draft.markdown };
+      checks['interruptedWhileBlocked'] = { type, released: false, hostDisposed: false, recordBytes: Buffer.byteLength(record), bound: SCRATCH_RECOVERY_BYTES, status: visible.status, nativeDirty, attemptedAcks:frames.filter(f=>f.type==='apply-ack').length,deliveredAcks:deliveredFrames.filter(f=>f.type==='apply-ack').length, source: '# Original interrupted file\n', draft: pending[0]!.draft.markdown };
       await evidence(true, { paused: true });
       await writeFile(join(root, `${role}-ready-for-restart`), 'Crash while the live operation is still blocked');
       await new Promise<void>(() => {}); // driver SIGKILL; no release, dispose or revert
@@ -161,12 +197,14 @@ export async function run() {
       const item = await store.createScratch(`Delayed ${type}`, '# Original durable file\n');
       const path = await store.resolveScratch(item.id), target = vscode.Uri.file(path.filePath);
       await host.openDocument(item.id);
+      const phaseSessions=new Set(panes.keys());
       const waiting = { type, gate: deferred(), hit: false }; delay = waiting;
       const marker = `Pending_${type.replaceAll('-', '_')}`;
       await focusNativeScratchEditor(port, item.id, { insertText: marker });
       await until(() => waiting.hit, `Delay reached ${type}`);
       const pending = await recovery.list(target.toString()); assert.ok(pending.some(p => p.draft.markdown.includes(marker)), 'Durable before receipt/apply/ack');
-      const deliveries = frames.filter(f => f.type === 'apply-ack').length;
+      const attempts = frames.filter(f=>f.type==='apply-ack'&&phaseSessions.has(f.paneSessionId)).length;
+      const deliveries = deliveredFrames.filter(f=>f.type==='apply-ack'&&phaseSessions.has(f.paneSessionId)).length;
       // A dirty native tab requires an explicit discard decision. The durable
       // unconfirmed draft must survive that close and a process restart.
       if (type === 'apply-ack') await vscode.commands.executeCommand('workbench.action.revertAndCloseActiveEditor');
@@ -176,7 +214,7 @@ export async function run() {
       await until(async () => (await recovery.list(target.toString())).some(p => p.draft.markdown.includes(marker)), 'Draft survives closed transport');
       await new Promise(r => setTimeout(r, 100));
       assert.equal(await readFile(path.filePath, 'utf8'), '# Original durable file\n', 'No implicit save during delay/close');
-      checks[`close-${type}`] = { persisted: true, diskUnchanged: true, deliveredAcksBeforeClose: deliveries };
+      checks[`close-${type}`] = { persisted: true, diskUnchanged: true, attemptedAcksBeforeClose: attempts, deliveredAcksBeforeClose: deliveries, deliveredAcksAfterClose:deliveredFrames.filter(f=>f.type==='apply-ack'&&phaseSessions.has(f.paneSessionId)).length };
       manifest.push({ id: item.id, marker, type });
     }
     await writeFile(join(root, 'recovery-manifest.json'), JSON.stringify(manifest));

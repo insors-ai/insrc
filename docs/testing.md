@@ -143,9 +143,10 @@ the supported-floor or current VS Code binary; `INSRC_NATIVE_EVIDENCE` retains
 its result. Human-operated focus qualification remains available through
 `INSRC_NATIVE_MANUAL_FOCUS=1` and does not require the private-display assertion.
 
-The mandatory S001 lifecycle evidence includes process interruption *while*
-receipt, native apply, and acknowledgement are blocked, followed by a fresh-host
-recovery check for each phase. The test retains its entire fixture root (source,
+The mandatory S001 lifecycle evidence covers process interruption before the
+idle deadline, during configured validation, before result delivery, and while
+receipt, native apply, and acknowledgement are blocked. Each of the six phases
+has a fresh-host recovery check. The test retains its entire fixture root (source,
 recovery records, profiles and full failure snapshots) on success and failure;
 the evidence JSON records that path. A missing opt-in or TAP skip is unavailable
 required coverage and blocks build acceptance; it is never qualification success.
@@ -156,3 +157,18 @@ paste/file-drop, native simple file dialogs, and the production editor/browse/
 chat UI; its provider stub rejects any submission. Run it serially with other
 native probes and retain the evidence JSON and fixture directory. This Linux
 qualification does not claim Windows or macOS input coverage.
+
+For a batch, `INSRC_NATIVE_EVIDENCE` may contain `{suite}`; the native,
+lifecycle and authoring suites replace it with their own name so results do not
+overwrite one another. Run the complete batch on both supported-floor and
+current `INSRC_CODE_BIN` targets. The lifecycle matrix records 15 process
+scenarios, distinguishes attempted from delivered acknowledgements, and checks
+that the actual owned pre-idle kill occurs before the unchanged 300 ms deadline.
+Validation/result probes park actual production jobs using fixed test code in
+copied temporary assets; the shipped bundles exclude that instrumentation.
+
+Final latency qualification remains separate: use
+`INSRC_NATIVE_PERFORMANCE_TESTS=1` with the original 1 MiB, 20 trusted native
+edits. Keep the <=150 ms median render and <=1 s p95 host-acknowledgement budgets;
+ordinary acknowledgement time includes the 300 ms typing gap. Reduced note
+bounds, altered clocks and unavailable/skipped evidence do not pass the gate.

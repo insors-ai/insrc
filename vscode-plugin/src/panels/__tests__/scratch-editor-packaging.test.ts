@@ -44,6 +44,7 @@ test('scratch editor emits local browser JS/CSS alongside CJS and includes them 
     // Keep the active host entries and both scratch validators mandatory.
     for (const name of ['extension.js', 'uninstall.js', 'scratch-validation-host-worker.js']) assert.ok(existsSync(join(out, name)));
     assert.ok(existsSync(join(out, 'scratch-editor/validator.js')));
+    for (const runtime of ['extension.js','uninstall.js','scratch-validation-host-worker.js','scratch-editor/editor.js','scratch-editor/validator.js']) assert.doesNotMatch(readFileSync(join(out,runtime),'utf8'), /__scratchIdleProbe|insrc-qualification/, `${runtime}: native fault instrumentation is fixture-only`);
     const analysis = await mod.bundleScratchEditor(join(dir, 'inspect'));
     for (const [name, output] of Object.entries(analysis.metafile.outputs) as [string, { imports: { path: string; external?: boolean }[] }][]) {
       assert.equal(output.imports.filter(i => i.external).length, 0, name);

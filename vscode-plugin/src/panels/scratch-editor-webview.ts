@@ -27,6 +27,7 @@ import { ScratchRendererState } from './scratch-editor-state.js';
 import { checkScratchMarkdown } from './scratch-markdown.js';
 import { observeScratchMarkdown, scratchMilkdownCodec, SCRATCH_HOST_TRANSACTION } from './scratch-markdown-milkdown.js';
 import { createScratchBrowserValidator, type ScratchValidationClient } from './scratch-validation-client.js';
+import { ScratchActionFlush } from './scratch-action-flush.js';
 import { configureScratchSchema } from './scratch-markdown-codec.js';
 
 export interface ScratchPaneOptions {
@@ -47,6 +48,12 @@ export class ScratchEditorPane {
   private state: ScratchRendererState | undefined;
   private observer: Awaited<ReturnType<typeof observeScratchMarkdown>> | undefined;
   private validator: ScratchValidationClient | undefined;
+  private readonly flusher = new ScratchActionFlush(
+    () => ({ sequence: this.state?.draftSeq ?? 0, pending: this.state?.hasPending ?? false, unavailable: !this.state || this.failed || this.disposed || !!this.deleting || !!this.state.conflicted }),
+    sequence => this.observer?.expedite(sequence) ?? false);
+  private actionFailure = false;
+  private lockSequence = 0;
+  private lockTransition: { readonly requestId: string; readonly target: boolean; readonly timer: ReturnType<typeof setTimeout> } | undefined;
   private locked = true;
   private failed = false;
   private deleting: string | undefined;
@@ -68,11 +75,7 @@ export class ScratchEditorPane {
     if (!parseScratchEditorMessage({ type: 'editor-ready', paneSessionId: options.paneSessionId })) throw new Error('Invalid editor session');
     root.classList.add('scratch-pane'); root.replaceChildren();
     this.toolbar = document.createElement('nav'); this.toolbar.setAttribute('aria-label', 'Scratchpad controls');
-    this.toggle = this.button('Edit scratchpad', '✎', () => {
-      if (this.failed || this.deleting !== undefined || !this.state) return;
-      this.setLocked(!this.locked);
-      this.post({ type: 'lock', paneSessionId: options.paneSessionId, locked: this.locked });
-    });
+    this.toggle = this.button('Edit scratchpad', '✎', () => { void this.changeLock(); });
     this.toolbar.append(this.toggle);
     for (const [label, glyph, action] of [['Insert workspace link', 'Link', 'pick-link'], ['Insert workspace image', 'Image', 'pick-image']] as const) {
       const button = this.button(label, glyph, () => { void this.pickAsset(action).catch(e => this.assetError(e)); });
@@ -90,6 +93,7 @@ export class ScratchEditorPane {
       if (this.pendingSelection) return;
       const captured = this.captured ?? this.captureSelection(); this.captured = undefined;
       if (!captured) return;
+      this.clearActionFailure();
       this.pendingSelection = captured; this.send.disabled = true;
       this.retainedSelection.value = captured.selectedText; this.retainedSelection.hidden = true;
       this.status.textContent = 'Preparing selection for chat…';
@@ -99,7 +103,15 @@ export class ScratchEditorPane {
         this.status.textContent = 'Send confirmation was not received. Your selection is retained below; check the composer before closing this pane.';
         this.status.setAttribute('role', 'alert');
       }, 30_000);
-      this.post(captured); this.hideSend();
+      this.hideSend();
+      void this.flusher.flush().then(result => {
+        if (result.draftSeq !== captured.draftSeq || this.state!.draftSeq !== captured.draftSeq || this.disposed || this.failed) throw new Error('Selection source changed; reselect and retry Send.');
+        this.post(captured);
+      }).catch(error => {
+        if (this.pendingSelection !== captured || this.disposed) return;
+        clearTimeout(this.selectionTimer); this.pendingSelection = undefined; this.send.disabled = false;
+        this.retainedSelection.hidden = false; this.actionError(error instanceof Error ? error.message : 'Selection could not be confirmed; reselect and retry.');
+      });
     });
     this.send.className = 'scratch-selection-send'; this.send.hidden = true;
     this.send.addEventListener('keydown', e => {
@@ -119,6 +131,29 @@ export class ScratchEditorPane {
     root.addEventListener('paste', this.pasteUrl, true);
     this.toggle.disabled = true;
   }
+  private clearActionFailure(): void { this.actionFailure = false; this.status.textContent = ''; this.status.setAttribute('role','status'); }
+  private actionError(message: string): void { this.actionFailure = true; this.status.textContent = message; this.status.setAttribute('role','alert'); }
+  private cancelLock(message: string): void {
+    const pending = this.lockTransition; if (!pending) return;
+    clearTimeout(pending.timer); this.lockTransition = undefined;
+    this.post({type:'lock-cancel',paneSessionId:this.options.paneSessionId,requestId:pending.requestId});
+    this.setLocked(this.locked); this.actionError(message);
+  }
+  private async changeLock(): Promise<void> {
+    if (this.failed || this.disposed || this.deleting !== undefined || !this.state || this.lockTransition) return;
+    this.clearActionFailure();
+    const target = !this.locked, sequence = this.state.draftSeq, version = this.state.snapshot.version;
+    const requestId = `lock_${++this.lockSequence}`;
+    this.lockTransition = {requestId,target,timer:setTimeout(() => { if (this.lockTransition?.requestId === requestId) this.cancelLock('Lock could not be confirmed; the pane retains its previous state.'); },20_000)};
+    this.setLocked(this.locked); this.hideSend();
+    // Request first so the host can prevent queued Undo/Redo during the lock
+    // barrier. It keeps controller admission permitted until this capture applies.
+    this.post({type:'lock',paneSessionId:this.options.paneSessionId,requestId,locked:target,draftSeq:sequence,docVersion:version});
+    if (target) {
+      try { const captured = await this.flusher.flush(); if (captured.draftSeq !== sequence) throw new Error('Lock capture changed; text retained.'); }
+      catch (error) { if (this.lockTransition?.requestId === requestId) this.cancelLock(error instanceof Error ? error.message : 'Lock validation failed; text retained.'); }
+    }
+  }
   private button(label: string, text: string, action: () => void): HTMLButtonElement {
     const button = document.createElement('button'); button.type = 'button'; button.textContent = text;
     button.title = label; button.setAttribute('aria-label', label); button.addEventListener('click', action); return button;
@@ -130,20 +165,21 @@ export class ScratchEditorPane {
   private fail(message: string): void {
     clearTimeout(this.selectionTimer);
     if (this.pendingSelection) this.retainedSelection.hidden = false;
+    this.flusher.cancel(message); this.cancelLock(message);
     this.observer?.deactivate(); this.validator?.dispose();
     this.failed = true; this.fallback.hidden = false; this.toggle.disabled = true;
     this.status.textContent = message; this.status.setAttribute('role', 'alert'); this.setLocked(this.locked); this.hideSend();
   }
   private setLocked(value: boolean): void {
     this.locked = value;
-    this.root.dataset['locked'] = String(value || this.failed || this.deleting !== undefined);
-    this.crepe?.setReadonly(value || this.failed || this.deleting !== undefined);
-    this.toggle.disabled = this.failed || this.deleting !== undefined || !this.crepe;
+    this.root.dataset['locked'] = String(value || !!this.lockTransition || this.failed || this.deleting !== undefined);
+    this.crepe?.setReadonly(value || !!this.lockTransition || this.failed || this.deleting !== undefined);
+    this.toggle.disabled = this.failed || !!this.lockTransition || this.deleting !== undefined || !this.crepe;
     this.toggle.textContent = value ? '✎' : '🔒';
     const label = value ? 'Edit scratchpad' : 'Lock scratchpad'; this.toggle.title = label; this.toggle.setAttribute('aria-label', label);
     this.toggle.setAttribute('aria-pressed', String(!value));
     if (!value && !this.failed && this.deleting === undefined) this.observer?.refresh();
-    for (const control of this.toolbar.querySelectorAll<HTMLButtonElement>('.scratch-author-action')) { control.hidden = value || this.failed || this.deleting !== undefined; control.disabled = value || this.failed || this.deleting !== undefined; }
+    for (const control of this.toolbar.querySelectorAll<HTMLButtonElement>('.scratch-author-action')) { control.hidden = value || !!this.lockTransition || this.failed || this.deleting !== undefined; control.disabled = value || !!this.lockTransition || this.failed || this.deleting !== undefined; }
   }
   /** Host messages are ordered even while asynchronous Crepe creation is pending. */
   async receive(value: unknown): Promise<void> {
@@ -172,9 +208,23 @@ export class ScratchEditorPane {
       for (const pending of this.inbound.splice(0)) await this.receive(pending);
       return;
     }
+    if (msg.type === 'flush-request') {
+      const sequence = this.state.draftSeq;
+      try { const capture = await this.flusher.flush(); this.post({type:'flush-ready',paneSessionId:this.options.paneSessionId,requestId:msg.requestId,draftSeq:capture.draftSeq,docVersion:this.state.snapshot.version,confirmed:capture.draftSeq === sequence && this.state.draftSeq === sequence && !this.state.hasPending}); }
+      catch { this.post({type:'flush-ready',paneSessionId:this.options.paneSessionId,requestId:msg.requestId,draftSeq:sequence,docVersion:this.state.snapshot.version,confirmed:false}); }
+      return;
+    }
+    if (msg.type === 'lock-state') {
+      if (msg.requestId !== this.lockTransition?.requestId) return;
+      if (msg.success && msg.locked !== this.lockTransition.target) { this.cancelLock('Lock confirmation did not match the request; previous pane state retained.'); return; }
+      clearTimeout(this.lockTransition.timer); this.lockTransition = undefined; this.setLocked(msg.locked);
+      if (!msg.success) this.flusher.cancel(msg.message);
+      this.actionFailure = !msg.success; this.status.textContent = msg.message; this.status.setAttribute('role',msg.success ? 'status' : 'alert'); return;
+    }
     const oldBase = this.state.snapshot;
     const result = this.state.receive(msg);
     if (oldBase.version !== this.state.snapshot.version || oldBase.digest !== this.state.snapshot.digest) this.validator?.invalidateBase();
+    this.flusher.changed();
     if (result.conflict) { this.fail(result.conflict); return; }
     if (result.revalidate) this.observer?.refresh();
     if (msg.type === 'focus-request') {
@@ -193,7 +243,7 @@ export class ScratchEditorPane {
     if (msg.type === 'delete-prepare') {
       this.deleting = msg.requestId; this.setLocked(this.locked); this.hideSend();
       this.post({ type: 'delete-ready', paneSessionId: this.options.paneSessionId, requestId: msg.requestId, docVersion: this.state.snapshot.version, draftSeq: this.state.draftSeq,
-        clean: !this.failed && !this.state.hasPending && !this.state.conflicted && this.assetRequests.size === 0 && this.assetWork === 0 && !this.pendingSelection });
+        clean: !this.failed && !this.state.hasPending && !this.state.conflicted && this.assetRequests.size === 0 && this.assetWork === 0 && !this.pendingSelection && !this.flusher.waiting && !this.lockTransition });
       return;
     }
     if (msg.type === 'delete-release') { if (this.deleting === msg.requestId) { this.deleting = undefined; this.setLocked(this.locked); } return; }
@@ -201,12 +251,13 @@ export class ScratchEditorPane {
       if (msg.requestId !== this.pendingSelection?.requestId) return;
       clearTimeout(this.selectionTimer);
       this.retainedSelection.hidden = msg.sent;
+      this.actionFailure = !msg.sent;
       this.status.textContent = msg.message;
       this.status.setAttribute('role', msg.sent ? 'status' : 'alert');
       this.pendingSelection = undefined; this.send.disabled = false; return;
     }
     if (msg.type === 'document-state') this.setLocked(msg.locked);
-    if (msg.type === 'action-error') { this.status.textContent = msg.message; return; }
+    if (msg.type === 'action-error') { this.actionError(msg.message); return; }
     if (msg.type === 'recovery') {
       // No automatic replay. Host will offer explicit recovery choices (t7).
       this.status.textContent = 'A pending draft is available for recovery. Original file is unchanged.'; this.fallback.hidden = false; return;
@@ -220,8 +271,8 @@ export class ScratchEditorPane {
         view.dispatch(view.state.tr.replaceWith(0, view.state.doc.content.size, parsed.content).setMeta(SCRATCH_HOST_TRANSACTION, true));
       });
     }
-    if (msg.type === 'receipt' && msg.draftSeq === this.state.draftSeq && this.state.hasPending) this.status.textContent = this.state.phase === 'authorized' ? 'Draft retained; waiting for document update.' : 'Draft retained; waiting for validation.';
-    if (msg.type === 'apply-ack' && !this.state.hasPending) this.status.textContent = ''; // applied is not saved
+    if (msg.type === 'receipt' && !this.failed && !this.actionFailure && msg.draftSeq === this.state.draftSeq && this.state.hasPending) this.status.textContent = this.state.phase === 'authorized' ? 'Draft retained; waiting for document update.' : 'Draft retained; waiting for validation.';
+    if (msg.type === 'apply-ack' && !this.failed && !this.actionFailure && !this.state.hasPending) this.status.textContent = ''; // applied is not saved
   }
   private async initialize(markdown: string): Promise<void> {
     try {
@@ -232,7 +283,7 @@ export class ScratchEditorPane {
       // same bounded host-backed callbacks, with no blob/base64 source fallback.
       this.crepe.editor.config(ctx => ctx.update(uploadConfig.key, previous => ({ ...previous, enableHtmlFileUploader: true, uploader: async (files, schema) => {
         const nodes = [], type = schema.nodes['image-block'] ?? schema.nodes['image'];
-        if (!type || this.locked || this.failed) return [];
+        if (!type || this.locked || this.lockTransition || this.failed) return [];
         try { for (const file of Array.from(files)) { if (!file.type.startsWith('image/')) continue; const src = await this.uploadImage(file); const node = type.createAndFill({ src }); if (node) nodes.push(node); } return nodes; }
         catch (error) { this.assetError(error); return []; }
       } })));
@@ -267,8 +318,8 @@ export class ScratchEditorPane {
         validator: this.validator,
         stage: draft => {
           this.hideSend();
-          const sequence = this.state!.stage(draft);
-          this.status.textContent = 'Waiting for a typing gap…';
+          const sequence = this.state!.stage(draft); this.flusher.changed();
+          if (!this.actionFailure) this.status.textContent = 'Waiting for a typing gap…';
           return sequence;
         },
         eligible: (sequence, base) => !this.disposed && !this.failed && !this.locked && this.deleting === undefined &&
@@ -277,7 +328,7 @@ export class ScratchEditorPane {
       }, result => {
         if (this.disposed || this.failed) return;
         if (result.kind === 'proposal') {
-          if (this.state!.authorize(result.draftSeq, result.baseVersion, result.baseDigest)) this.status.textContent = 'Updating document…';
+          if (this.state!.authorize(result.draftSeq, result.baseVersion, result.baseDigest) && !this.actionFailure) this.status.textContent = 'Updating document…';
         } else {
           this.state!.refuse(result.draftSeq, result.reason ?? 'Unsafe draft');
           this.fail(result.reason ?? 'Draft cannot be safely applied. Local editor text is retained.');
@@ -319,22 +370,22 @@ export class ScratchEditorPane {
     this.displayedImages.set(href, loading); return loading;
   }
   private async uploadImage(file: File): Promise<string> {
-    if (this.locked || this.failed || this.deleting !== undefined || !this.state || !this.crepe || file.size < 1 || file.size > 10_485_760 || !['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(file.type)) throw new Error('Choose a PNG, JPEG, GIF or WebP image of at most 10 MiB while editing.');
+    if (this.locked || this.lockTransition || this.failed || this.deleting !== undefined || !this.state || !this.crepe || file.size < 1 || file.size > 10_485_760 || !['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(file.type)) throw new Error('Choose a PNG, JPEG, GIF or WebP image of at most 10 MiB while editing.');
     const doc = this.crepe.editor.action(ctx => ctx.get(editorViewCtx).state.doc), sequence = this.state.draftSeq;
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
       let binary = ''; for (let start = 0; start < bytes.length; start += 8192) binary += String.fromCharCode(...bytes.subarray(start, start + 8192));
       const result = await this.requestAsset({ type: 'asset-request', paneSessionId: this.options.paneSessionId, requestId: `asset_${++this.assetSequence}`, action: 'upload-image', name: file.name || 'pasted-image', mediaType: file.type as 'image/png', dataBase64: btoa(binary) });
-      if (!result.href || this.disposed || this.locked || this.failed || this.deleting !== undefined || this.state.conflicted || this.state.draftSeq !== sequence || this.crepe.editor.action(ctx => ctx.get(editorViewCtx).state.doc !== doc)) throw new Error('Scratchpad changed while uploading; retry inserting the image.');
+      if (!result.href || this.disposed || this.locked || this.lockTransition || this.failed || this.deleting !== undefined || this.state.conflicted || this.state.draftSeq !== sequence || this.crepe.editor.action(ctx => ctx.get(editorViewCtx).state.doc !== doc)) throw new Error('Scratchpad changed while uploading; retry inserting the image.');
       return result.href;
     } catch (error) { this.assetError(error); throw error; }
   }
   private async pickAsset(action: 'pick-link' | 'pick-image'): Promise<void> {
-    if (!this.crepe || this.locked || this.failed || this.deleting !== undefined || !this.state) return;
+    if (!this.crepe || this.locked || this.lockTransition || this.failed || this.deleting !== undefined || !this.state) return;
     const view = this.crepe.editor.action(ctx => ctx.get(editorViewCtx)), doc = view.state.doc, selection = view.state.selection;
     const result = await this.assetRequest(action);
     if (!result.href) return; // user cancelled
-    if (this.disposed || this.locked || this.failed || this.deleting !== undefined || this.state.conflicted || view.state.doc !== doc) throw new Error('Scratchpad changed while choosing a file; retry.');
+    if (this.disposed || this.locked || this.lockTransition || this.failed || this.deleting !== undefined || this.state.conflicted || view.state.doc !== doc) throw new Error('Scratchpad changed while choosing a file; retry.');
     const tr = view.state.tr.setSelection(selection);
     if (action === 'pick-image') {
       const type = view.state.schema.nodes['image-block'] ?? view.state.schema.nodes['image'];
@@ -347,7 +398,7 @@ export class ScratchEditorPane {
     }
   }
   private async insertImageFiles(files: FileList, coordinates?: { left: number; top: number }): Promise<void> {
-    if (!this.crepe || this.locked || this.failed || this.deleting !== undefined || this.disposed) return;
+    if (!this.crepe || this.locked || this.lockTransition || this.failed || this.deleting !== undefined || this.disposed) return;
     const view = this.crepe.editor.action(ctx => ctx.get(editorViewCtx)), doc = view.state.doc;
     const position = coordinates ? view.posAtCoords(coordinates)?.pos : undefined;
     const selection = position === undefined ? view.state.selection : TextSelection.near(doc.resolve(position));
@@ -357,7 +408,7 @@ export class ScratchEditorPane {
     try {
     const nodes = [];
     for (const file of Array.from(files)) nodes.push(type.create({ src: await this.uploadImage(file) }));
-    if (this.disposed || this.locked || this.failed || this.deleting !== undefined || view.state.doc !== doc) throw new Error('Scratchpad changed while uploading; retry inserting the image.');
+    if (this.disposed || this.locked || this.lockTransition || this.failed || this.deleting !== undefined || view.state.doc !== doc) throw new Error('Scratchpad changed while uploading; retry inserting the image.');
     view.dispatch(view.state.tr.setSelection(selection).replaceSelection(new Slice(Fragment.fromArray(nodes), 0, 0)).scrollIntoView());
     } finally { this.assetWork--; }
   }
@@ -375,7 +426,7 @@ export class ScratchEditorPane {
     void this.insertImageFiles(files, { left: event.clientX, top: event.clientY }).catch(error => this.assetError(error));
   };
   private readonly pasteUrl = (event: ClipboardEvent): void => {
-    if (!this.crepe || this.locked || this.failed || this.deleting !== undefined || event.clipboardData?.files.length) return;
+    if (!this.crepe || this.locked || this.lockTransition || this.failed || this.deleting !== undefined || event.clipboardData?.files.length) return;
     const text = event.clipboardData?.getData('text/plain') ?? '';
     if (!/^https?:\/\/[^\s]+$/i.test(text)) return;
     const view = this.crepe.editor.action(ctx => ctx.get(editorViewCtx));
@@ -390,7 +441,7 @@ export class ScratchEditorPane {
   };
   private captureSelection(): ScratchSelectionSend | undefined {
     const selected = this.selected, state = this.state;
-    if (!selected || !state || !this.crepe || this.failed || this.deleting !== undefined || this.pendingSelection) return;
+    if (!selected || !state || !this.crepe || this.lockTransition || this.failed || this.deleting !== undefined || this.pendingSelection) return;
     const sameDocument = this.crepe.editor.action(ctx => ctx.get(editorViewCtx).state.doc === selected.doc);
     if (!sameDocument || state.conflicted) {
       this.retainedSelection.value = selected.text; this.retainedSelection.hidden = false;
@@ -405,7 +456,7 @@ export class ScratchEditorPane {
     // the already captured snapshot; document-changing transactions invalidate it.
     const current = window.getSelection();
     if (document.activeElement === this.send && this.selected && (!current || current.isCollapsed)) return;
-    if (!this.crepe || !this.state || this.failed || this.deleting !== undefined || this.state.conflicted || this.pendingSelection) { this.hideSend(); return; }
+    if (!this.crepe || !this.state || this.lockTransition || this.failed || this.deleting !== undefined || this.state.conflicted || this.pendingSelection) { this.hideSend(); return; }
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed || !selection.anchorNode || !selection.focusNode ||
       !this.editorRoot.contains(selection.anchorNode) || !this.editorRoot.contains(selection.focusNode)) { this.hideSend(); return; }
@@ -446,9 +497,16 @@ export class ScratchEditorPane {
     if (!action) return;
     event.preventDefault(); event.stopPropagation();
     if (this.deleting !== undefined || (action !== 'save' && (this.locked || this.state.conflicted))) return;
-    this.post({ type: action, paneSessionId: this.options.paneSessionId, draftSeq: this.state.draftSeq, docVersion: this.state.snapshot.version });
+    if (this.lockTransition) return;
+    this.clearActionFailure();
+    const sequence = this.state.draftSeq;
+    void this.flusher.flush().then(captured => {
+      if (captured.draftSeq !== sequence || this.state!.draftSeq !== sequence || this.disposed || this.failed) throw new Error('Scratchpad changed while preparing the action; retry.');
+      this.post({type:action,paneSessionId:this.options.paneSessionId,draftSeq:sequence,docVersion:this.state!.snapshot.version});
+    }).catch(error => { if (!this.disposed) this.actionError(error instanceof Error ? error.message : 'Action could not confirm the captured draft; text retained.'); });
   };
   async dispose(): Promise<void> {
+    this.flusher.dispose(); clearTimeout(this.lockTransition?.timer); this.lockTransition = undefined;
     this.disposed = true; this.observer?.deactivate(); this.validator?.dispose(); clearTimeout(this.selectionTimer); document.removeEventListener('selectionchange', this.selectionChanged);
     for (const pending of this.assetRequests.values()) { clearTimeout(pending.timer); pending.reject(new Error('Scratchpad pane closed.')); } this.assetRequests.clear();
     this.root.removeEventListener('paste', this.pasteFiles, true);

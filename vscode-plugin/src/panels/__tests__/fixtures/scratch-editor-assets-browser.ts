@@ -12,6 +12,7 @@ async function run() {
   const sent: ScratchEditorToHost[] = []; let fail = false, cancel = false, uploads = 0;
   const pane = new ScratchEditorPane(root, { paneSessionId: 'assets', post: message => {
     sent.push(message);
+    if (message.type === 'lock') queueMicrotask(() => {void pane.receive({type:'lock-state',paneSessionId:'assets',requestId:message.requestId,locked:message.locked,success:true,message:''});});
     if (message.type !== 'asset-request') return;
     queueMicrotask(() => { void pane.receive(fail ? { type: 'action-error', paneSessionId: 'assets', requestId: message.requestId, message: 'Storage unavailable; no reference inserted.' } : {
       type: 'asset-result', paneSessionId: 'assets', requestId: message.requestId,
@@ -24,7 +25,7 @@ async function run() {
     await tick(); await tick();
     const ownedViews = { rawImageInputs: root.querySelectorAll('.image-edit input').length, images: [...root.querySelectorAll<HTMLImageElement>('.scratch-owned-image img')].map(image => ({ src: image.getAttribute('src'), alt: image.alt })) };
     const initial = { ownedViews, drafts: sent.filter(m => m.type === 'draft'), source: pane['crepe']!.getMarkdown(), resolved: sent.filter(m => m.type === 'asset-request' && m.action === 'resolve-image') };
-    root.querySelector<HTMLButtonElement>('nav button')!.click();
+    root.querySelector<HTMLButtonElement>('nav button')!.click(); await tick();
     const crepe = pane['crepe']!;
     const file = new File([Uint8Array.from(atob(png), ch => ch.charCodeAt(0))], 'paste.png', { type: 'image/png' });
     const inline = await crepe.editor.action(ctx => ctx.get(inlineImageConfig.key).onUpload(file));

@@ -39,7 +39,7 @@ export function scratchMilkdownCodec(ctx: Ctx): ScratchMarkdownCodec<ProseNode> 
 /** Install before create(), activate after opening admission. Input dispatch
  * captures one immutable document and serializes once for recovery. Parsing,
  * roundtrip and inventories run only after a real typing gap, in the worker. */
-export async function observeScratchMarkdown(editor: Editor, options: ScratchObservationOptions, onDraft: (draft: ScratchObservedDraft) => void): Promise<{ activate(): void; deactivate(): void; refresh(): void }> {
+export async function observeScratchMarkdown(editor: Editor, options: ScratchObservationOptions, onDraft: (draft: ScratchObservedDraft) => void): Promise<{ activate(): void; deactivate(): void; refresh(): void; expedite(sequence: number): boolean }> {
   let active = false;
   const scheduler = new ScratchIdleValidation<Candidate, Awaited<ReturnType<ScratchValidationClient['run']>>>({
     source: options.source,
@@ -80,5 +80,5 @@ export async function observeScratchMarkdown(editor: Editor, options: ScratchObs
       },
     });
   }));
-  return { activate: () => { active = true; }, deactivate: () => { active = false; scheduler.dispose(); }, refresh: () => scheduler.refresh() };
+  return { activate: () => { active = true; }, deactivate: () => { active = false; scheduler.dispose(); }, refresh: () => scheduler.refresh(), expedite: sequence => scheduler.expedite(candidate => candidate.draftSeq === sequence) };
 }

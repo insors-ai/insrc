@@ -15,6 +15,7 @@ interface Ticket<C> { readonly candidate: C; readonly due: number }
 export class ScratchIdleValidation<C, R> {
   private latest: Ticket<C> | undefined;
   private active = false;
+  private forced: Ticket<C> | undefined;
   private closed = false;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private checked: { ticket: Ticket<C>; version: number; digest: string } | undefined;
@@ -22,9 +23,13 @@ export class ScratchIdleValidation<C, R> {
   private now(): number { return this.options.now?.() ?? performance.now(); }
   stage(candidate: C): void {
     if (this.closed) return;
-    this.checked = undefined;
+    this.checked = undefined; this.forced = undefined;
     this.latest = { candidate, due: this.now() + 300 };
     this.refresh();
+  }
+  expedite(matches: (candidate: C) => boolean): boolean {
+    if (this.closed || !this.latest || !matches(this.latest.candidate)) return false;
+    this.forced = this.latest; this.refresh(); return true;
   }
   /** Acknowledgements/unlock may make a waiting candidate eligible. Preserve
    * its own typing deadline; host traffic is not a new user edit. */
@@ -33,7 +38,7 @@ export class ScratchIdleValidation<C, R> {
     if (this.closed || this.active || !this.latest) return;
     const ticket = this.latest, base = this.options.source();
     if (this.checked?.ticket === ticket && this.checked.version === base.version && this.checked.digest === base.digest) return;
-    this.timer = setTimeout(() => { this.timer = undefined; void this.run(ticket); }, Math.max(0, ticket.due - this.now()));
+    this.timer = setTimeout(() => { this.timer = undefined; void this.run(ticket); }, this.forced === ticket ? 0 : Math.max(0, ticket.due - this.now()));
   }
   private async run(ticket: Ticket<C>): Promise<void> {
     if (this.closed || this.active || this.latest !== ticket) return;
@@ -57,6 +62,6 @@ export class ScratchIdleValidation<C, R> {
   dispose(): void {
     if (this.closed) return;
     this.closed = true; clearTimeout(this.timer); this.timer = undefined;
-    this.latest = undefined; this.checked = undefined; this.options.dispose();
+    this.latest = undefined; this.checked = undefined; this.forced = undefined; this.options.dispose();
   }
 }

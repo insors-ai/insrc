@@ -10,7 +10,7 @@ async function run(): Promise<unknown> {
   const all: { pane: ScratchEditorPane; root: HTMLElement; sent: ScratchEditorToHost[] }[] = [];
   const create = async (id: string, source = '# Base\n\nSelectable text.\n') => {
     const root = document.createElement('main'); document.body.append(root); const sent: ScratchEditorToHost[] = [];
-    const pane = new ScratchEditorPane(root, { paneSessionId: id, post: m => { sent.push(m); if (m.type === 'lock') void preference.remember(m.locked); } });
+    const pane = new ScratchEditorPane(root, { paneSessionId: id, post: m => { sent.push(m); if (m.type === 'lock') void preference.remember(m.locked).then(() => pane.receive({type:'lock-state',paneSessionId:id,requestId:m.requestId,locked:m.locked,success:true,message:''})); } });
     all.push({ pane, root, sent });
     await pane.receive({ type: 'document-state', paneSessionId: id, version: 1, digest: 'a'.repeat(64), markdown: source, locked: preference.initial() });
     return { pane, root, sent };
@@ -71,15 +71,17 @@ async function run(): Promise<unknown> {
     if (!nested) throw new Error('Actual code-block view is absent');
     let childKeys = 0; nested.addEventListener('keydown', () => { childKeys++; });
     for (const [key, shiftKey] of [['z', false], ['z', true], ['s', false]] as const) nested.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey: true, shiftKey, bubbles: true, cancelable: true }));
+    await tick();
     const shortcuts = { childKeys, actions: code.sent.filter(m => m.type === 'undo' || m.type === 'redo' || m.type === 'save').map(m => m.type), drafts: drafts(code.sent) };
     const lockedKeyStart = third.sent.length;
     const lockedTarget = third.root.querySelector('.ProseMirror')!;
     for (const key of ['z', 'y', 's']) lockedTarget.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey: true, bubbles: true, cancelable: true }));
+    await tick();
     const lockedShortcuts = third.sent.slice(lockedKeyStart).map(m => m.type);
     const selectionChecks = [];
     for (const method of ['pointer', 'Enter', ' '] as const) {
       const current = await create(`selection_${method === ' ' ? 'Space' : method}`, 'First **bold** paragraph.\n\nSecond 😀 paragraph.\n');
-      if (method !== 'pointer') current.root.querySelector<HTMLButtonElement>('nav button')!.click();
+      if (method !== 'pointer') { current.root.querySelector<HTMLButtonElement>('nav button')!.click(); await tick(); }
       const paragraphs = current.root.querySelectorAll('.ProseMirror p');
       const range = document.createRange(); range.setStart(paragraphs[0]!.firstChild!, 0); range.setEnd(paragraphs[1]!.firstChild!, paragraphs[1]!.firstChild!.textContent!.length);
       const domSelection = window.getSelection()!; domSelection.removeAllRanges(); domSelection.addRange(range);
@@ -92,6 +94,7 @@ async function run(): Promise<unknown> {
       action.focus(); domSelection.removeAllRanges(); document.dispatchEvent(new Event('selectionchange'));
       if (method === 'pointer') action.click(); else action.dispatchEvent(new KeyboardEvent('keydown', { key: method, bubbles: true, cancelable: true }));
       action.click(); // an in-flight double activation cannot send twice
+      await tick();
       const sent = current.sent.filter(m => m.type === 'send-selection');
       const capture = sent[0]!;
       if (capture?.type !== 'send-selection') throw new Error(`Missing ${method} Send`);

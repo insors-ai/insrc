@@ -49,13 +49,17 @@ export type ScratchEditorToHost =
   | (Session & { readonly type: 'focus-ready'; readonly requestId: string; readonly docVersion: number; readonly draftSeq: number; readonly focused: boolean })
   | ScratchDraftProposal
   | ScratchSelectionSend
-  | (Session & { readonly type: 'lock'; readonly locked: boolean })
+  | (Session & { readonly type: 'lock'; readonly requestId: string; readonly locked: boolean; readonly draftSeq: number; readonly docVersion: number })
+  | (Session & { readonly type: 'lock-cancel'; readonly requestId: string })
+  | (Session & { readonly type: 'flush-ready'; readonly requestId: string; readonly draftSeq: number; readonly docVersion: number; readonly confirmed: boolean })
   | (Session & { readonly type: 'undo' | 'redo' | 'save'; readonly draftSeq: number; readonly docVersion: number })
   | (Session & { readonly type: 'asset-request'; readonly requestId: string; readonly action: 'pick-link' | 'pick-image' })
   | (Session & { readonly type: 'asset-request'; readonly requestId: string; readonly action: 'resolve-image'; readonly href: string })
   | (Session & { readonly type: 'asset-request'; readonly requestId: string; readonly action: 'upload-image'; readonly name: string; readonly mediaType: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp'; readonly dataBase64: string });
 
 export type ScratchHostToEditor =
+  | (Session & { readonly type: 'flush-request'; readonly requestId: string })
+  | (Session & { readonly type: 'lock-state'; readonly requestId: string; readonly locked: boolean; readonly success: boolean; readonly message: string })
   | (Session & { readonly type: 'delete-prepare' | 'delete-release'; readonly requestId: string })
   | (Session & { readonly type: 'selection-result'; readonly requestId: string; readonly sent: boolean; readonly message: string })
   | (Session & { readonly type: 'focus-request'; readonly requestId: string; readonly docVersion: number; readonly draftSeq: number })
@@ -74,6 +78,7 @@ const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value) &&
   (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
 const token = (value: unknown): value is string => typeof value === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(value);
+const lockId = (value: unknown): value is string => typeof value === 'string' && /^lock_[1-9][0-9]*$/.test(value) && Number.isSafeInteger(Number(value.slice(5)));
 const count = (value: unknown): value is number => Number.isSafeInteger(value) && (value as number) >= 0;
 const version = (value: unknown): value is number => count(value) && value >= 1;
 const digest = (value: unknown): value is string => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
@@ -117,7 +122,9 @@ export function parseScratchEditorMessage(value: unknown): ScratchEditorToHost |
       valid = sessionKeys(m, ['requestId', 'draftSeq', 'docVersion', 'selectedText']) && typeof m.requestId === 'string' && /^send_[1-9][0-9]*$/.test(m.requestId) && count(Number(m.requestId.slice(5))) && count(m.draftSeq) && version(m.docVersion) &&
         text(m.selectedText, SCRATCH_NOTE_BYTES) && m.selectedText.length > 0;
       break;
-    case 'lock': valid = sessionKeys(m, ['locked']) && typeof m.locked === 'boolean'; break;
+    case 'lock-cancel': valid = sessionKeys(m, ['requestId']) && lockId(m.requestId); break;
+    case 'lock': valid = sessionKeys(m, ['requestId', 'locked', 'draftSeq', 'docVersion']) && lockId(m.requestId) && typeof m.locked === 'boolean' && count(m.draftSeq) && version(m.docVersion); break;
+    case 'flush-ready': valid = sessionKeys(m, ['requestId', 'draftSeq', 'docVersion', 'confirmed']) && token(m.requestId) && count(m.draftSeq) && version(m.docVersion) && typeof m.confirmed === 'boolean'; break;
     case 'undo': case 'redo': case 'save':
       valid = sessionKeys(m, ['draftSeq', 'docVersion']) && count(m.draftSeq) && version(m.docVersion);
       break;
@@ -140,6 +147,8 @@ export function parseScratchHostMessage(value: unknown): ScratchHostToEditor | u
   const m = value;
   let valid = false;
   switch (m.type) {
+    case 'flush-request': valid = sessionKeys(m, ['requestId']) && token(m.requestId); break;
+    case 'lock-state': valid = sessionKeys(m, ['requestId', 'locked', 'success', 'message']) && lockId(m.requestId) && typeof m.locked === 'boolean' && typeof m.success === 'boolean' && text(m.message, 4096); break;
     case 'delete-prepare': case 'delete-release': valid = sessionKeys(m, ['requestId']) && token(m.requestId); break;
     case 'selection-result': valid = sessionKeys(m, ['requestId', 'sent', 'message']) && token(m.requestId) && typeof m.sent === 'boolean' && text(m.message, 4096); break;
     case 'focus-request': valid = sessionKeys(m, ['requestId', 'docVersion', 'draftSeq']) && token(m.requestId) && version(m.docVersion) && count(m.draftSeq); break;

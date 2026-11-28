@@ -272,17 +272,19 @@ export class ScratchDocumentController {
   }
   /** Save/Send barriers wait for the captured sequence, including a later
    * promotion arriving asynchronously after an acknowledgement was delivered. */
-  waitForSequence(id: string, sequence: number, timeoutMs = 10_000): Promise<ScratchSnapshot> {
+  waitForSequence(id: string, sequence: number, timeoutMs = 10_000, signal?: AbortSignal): Promise<ScratchSnapshot> {
     const pane = this.panes.get(id);
     if (!pane || !Number.isSafeInteger(sequence) || sequence < 0 || sequence > (pane.latest?.draftSeq ?? 0)) return Promise.reject(new Error('Unknown draft sequence'));
     return new Promise((resolve, reject) => {
-      const finish = (error?: Error): void => { clearTimeout(timer); this.waiters.delete(check); if (error) reject(error); else resolve(this.read()); };
+      const finish = (error?: Error): void => { clearTimeout(timer); signal?.removeEventListener('abort', aborted); this.waiters.delete(check); if (error) reject(error); else resolve(this.read()); };
+      const aborted = (): void => finish(new Error('Captured action cancelled; recovery is retained.'));
       const check = (): void => {
-        if (this.disposed || !pane.attached || this.frozen || pane.failure) finish(new Error('Draft could not be confirmed; recovery is retained.'));
+        if (signal?.aborted) aborted();
+        else if (this.disposed || !pane.attached || this.frozen || pane.failure) finish(new Error('Draft could not be confirmed; recovery is retained.'));
         else if (pane.appliedSeq >= sequence) finish();
       };
       const timer = setTimeout(() => finish(new Error('Timed out waiting for draft acknowledgement; recovery is retained.')), timeoutMs);
-      this.waiters.add(check); check();
+      this.waiters.add(check); signal?.addEventListener('abort', aborted, {once:true}); check();
     });
   }
   async dispose(): Promise<void> { this.disposed = true; this.notify(); await this.flush(); this.panes.clear(); }

@@ -31,8 +31,8 @@ window.acquireVsCodeApi = () => ({ postMessage: message => {
       const send = document.querySelector('.scratch-selection-send');
       const before = frames.filter(f => f.type === 'send-selection').length;
       const visible = !send.hidden; send.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true}));send.click();
-      const pre = document.createElement('pre'); pre.id='production-result';
-      pre.textContent=JSON.stringify({frames,violations,visible,before,editable:editor.getAttribute('contenteditable'),css:getComputedStyle(send).position});document.body.append(pre);
+      queueMicrotask(()=>{const pre = document.createElement('pre'); pre.id='production-result';
+      pre.textContent=JSON.stringify({frames,violations,visible,before,editable:editor.getAttribute('contenteditable'),css:getComputedStyle(send).position});document.body.append(pre);});
     },100);
   },100);
 }});

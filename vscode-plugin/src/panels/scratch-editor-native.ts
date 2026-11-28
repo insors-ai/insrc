@@ -12,7 +12,7 @@ import { ScratchLockPreference } from './scratch-editor-lock.js';
 import { scratchEditorHtml } from './scratch-editor-html.js';
 import { makeNonce } from './html.js';
 import { createScratchHostValidator } from './scratch-validation-host.js';
-import { parseScratchEditorMessage, type ScratchHostToEditor, type ScratchSelectionSend } from './scratch-editor-protocol.js';
+import { parseScratchEditorMessage, type ScratchHostToEditor, type ScratchSelectionSend, type ScratchEditorToHost } from './scratch-editor-protocol.js';
 
 import { readScratchImage, storeScratchImage, resolveScratchImage, scratchWorkspaceLink } from './scratch-editor-assets.js';
 
@@ -28,6 +28,8 @@ export interface ScratchNativeDeps {
   readonly refresh?: () => Promise<void>;
   readonly sendSelection?: (text: string, assertCurrent: () => void) => Promise<void>;
 }
+type LockRequest = Extract<ScratchEditorToHost,{type:'lock'}>;
+type LockResult = Extract<ScratchHostToEditor,{type:'lock-state'}>;
 interface Pane {
   readonly id: string;
   readonly panel: VSCode.WebviewPanel;
@@ -37,6 +39,10 @@ interface Pane {
   initFailure?: string | undefined;
   disposed: boolean;
   readonly listeners: VSCode.Disposable[];
+  lockSequence: number;
+  lastLock?: { readonly request: LockRequest; readonly result: LockResult } | undefined;
+  lock?: { readonly requestId: string; readonly request: LockRequest; readonly abort: AbortController } | undefined;
+  flush?: { readonly requestId: string; readonly promise: Promise<boolean>; readonly settle: (confirmed: boolean) => void } | undefined;
   deletion?: { readonly requestId: string; readonly settle: (ready: boolean) => void };
   selection?: { readonly request: ScratchSelectionSend; readonly promise: Promise<void>; pending: boolean };
   focus?: { readonly requestId: string; readonly version: number; readonly sequence: number; readonly settle: (focused: boolean) => void };
@@ -47,6 +53,7 @@ interface DocumentEntry {
   readonly validator: ReturnType<typeof createScratchHostValidator>;
   readonly panes: Map<string, Pane>;
   commands: Promise<void>;
+  skipSaveFlush: boolean;
   closing?: Promise<void>;
 }
 export function registerScratchEditor(deps: ScratchNativeDeps): {
@@ -100,13 +107,19 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
       warn,
     });
     void validator.client.ready.catch(() => controller.validationUnavailable());
-    const entry: DocumentEntry = { document, controller, validator, panes: new Map(), commands: Promise.resolve() };
+    const entry: DocumentEntry = { document, controller, validator, panes: new Map(), commands: Promise.resolve(), skipSaveFlush: false };
     documents.set(key, entry); return entry;
   }
-  async function drain(entry: DocumentEntry): Promise<void> {
-    for (const pane of entry.panes.values()) if (pane.ready && !pane.disposed) {
-      await entry.controller.waitForSequence(pane.id, entry.controller.latestSequence(pane.id));
-    }
+  function requestRendererFlush(entry: DocumentEntry, pane: Pane): Promise<boolean> {
+    if (!pane.ready || pane.disposed || entry.closing) return Promise.resolve(false);
+    if (pane.flush) return pane.flush.promise;
+    const requestId = randomUUID(); let settle!: (value: boolean) => void;
+    const promise = new Promise<boolean>(resolve => { settle = resolve; });
+    const timer = setTimeout(() => settle(false), 1000);
+    pane.flush = {requestId,promise,settle};
+    void delivered(pane, {type:'flush-request',paneSessionId:pane.id,requestId}).then(sent => {if (!sent) settle(false);}, () => settle(false));
+    void promise.finally(() => { clearTimeout(timer); if (pane.flush?.requestId === requestId) pane.flush = undefined; });
+    return promise;
   }
   function targetActive(entry: DocumentEntry, pane: Pane): boolean {
     const input = api.window.tabGroups.activeTabGroup.activeTab?.input;
@@ -167,10 +180,35 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
       return;
     }
     if (message.type === 'draft') { await entry.controller.receive(pane.id, message); return; }
+    if (message.type === 'flush-ready') {
+      if (pane.flush?.requestId === message.requestId) pane.flush.settle(message.confirmed && !entry.controller.conflicted &&
+        message.draftSeq === entry.controller.latestSequence(pane.id) && message.draftSeq <= entry.controller.appliedSequence(pane.id) && message.docVersion === entry.controller.snapshot.version);
+      return;
+    }
+    if (message.type === 'lock-cancel') { if (pane.lock?.requestId === message.requestId) pane.lock.abort.abort(); return; }
     if (message.type === 'lock') {
-      // Enforce a new lock immediately; failed preference writes are visible.
-      pane.locked = message.locked; entry.controller.setLocked(pane.id, message.locked);
-      await preference.remember(message.locked); return;
+      const sameRequest = (request: LockRequest): boolean => request.locked === message.locked && request.draftSeq === message.draftSeq && request.docVersion === message.docVersion;
+      if (pane.lock?.requestId === message.requestId && sameRequest(pane.lock.request)) return;
+      if (pane.lastLock?.request.requestId === message.requestId && sameRequest(pane.lastLock.request)) { await delivered(pane,pane.lastLock.result); return; }
+      if (pane.lock || Number(message.requestId.slice(5)) <= pane.lockSequence) {
+        if (pane.lock?.requestId === message.requestId) pane.lock.abort.abort();
+        await delivered(pane,{type:'lock-state',paneSessionId:pane.id,requestId:message.requestId,locked:pane.locked,success:false,message:'Stale, conflicting or concurrent lock request refused.'}); return; }
+      const abort = new AbortController(); pane.lockSequence = Number(message.requestId.slice(5)); pane.lock = {requestId:message.requestId,request:{...message},abort};
+      let success = false, notice = '';
+      try {
+        const initial = entry.controller.snapshot;
+        if (message.docVersion !== initial.version && message.draftSeq <= entry.controller.appliedSequence(pane.id)) throw new Error('Source changed before locking; retry.');
+        const confirmed = await entry.controller.waitForSequence(pane.id,message.draftSeq,10_000,abort.signal);
+        await validate(entry.document.uri);
+        const current = (): boolean => !abort.signal.aborted && !pane.disposed && !stopped && !entry.controller.conflicted && entry.controller.latestSequence(pane.id) === message.draftSeq && entry.controller.snapshot.version === confirmed.version && entry.controller.snapshot.digest === confirmed.digest;
+        if (!current()) throw new Error('Source changed while locking; text retained.');
+        await preference.remember(message.locked);
+        if (!current()) throw new Error('Lock was cancelled or source changed; previous pane state retained.');
+        pane.locked = message.locked; entry.controller.setLocked(pane.id,message.locked); success = true;
+      } catch (failure) { notice = failure instanceof Error ? failure.message : 'Lock change failed; previous pane state retained.'; warn(notice); }
+      finally { if (pane.lock?.requestId === message.requestId) pane.lock = undefined; }
+      const result: LockResult = {type:'lock-state',paneSessionId:pane.id,requestId:message.requestId,locked:pane.locked,success,message:notice};
+      pane.lastLock = {request:{...message},result}; await delivered(pane,result); return;
     }
     if (message.type === 'open-text') {
       await validate(entry.document.uri);
@@ -183,7 +221,7 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
         const initial = entry.controller.snapshot, sequence = entry.controller.latestSequence(pane.id);
         const assertCurrent = (): void => {
           const current = entry.controller.snapshot;
-          if (stopped || pane.disposed || entry.document.isClosed || pane.locked || entry.controller.conflicted || current.version !== initial.version || current.digest !== initial.digest || entry.controller.latestSequence(pane.id) !== sequence) throw new Error('Scratchpad changed during the asset action; retry.');
+          if (stopped || pane.disposed || entry.document.isClosed || pane.locked || pane.lock || entry.controller.conflicted || current.version !== initial.version || current.digest !== initial.digest || entry.controller.latestSequence(pane.id) !== sequence) throw new Error('Scratchpad changed during the asset action; retry.');
         };
         let href = '', path: string | undefined;
         if (message.action === 'resolve-image') {
@@ -254,7 +292,7 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
     if (message.type !== 'save' && message.type !== 'undo' && message.type !== 'redo') throw new Error('This scratchpad action is not available yet.');
     const action = message;
     const command = entry.commands.catch(() => {}).then(async () => {
-      if (action.type !== 'save' && pane.locked) throw new Error('Unlock this scratchpad before Undo or Redo.');
+      if (action.type !== 'save' && (pane.locked || pane.lock)) throw new Error('Unlock this scratchpad before Undo or Redo.');
       const initial = entry.controller.snapshot;
       if (action.docVersion !== initial.version && action.draftSeq <= entry.controller.appliedSequence(pane.id)) throw new Error('Source changed before the action; retry.');
       const confirmed = await entry.controller.waitForSequence(pane.id, action.draftSeq);
@@ -262,7 +300,8 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
       if (pane.disposed || entry.document.isClosed || entry.controller.latestSequence(pane.id) !== action.draftSeq ||
         entry.controller.snapshot.version !== confirmed.version || entry.controller.snapshot.digest !== confirmed.digest) throw new Error('The pane changed while draining; retry.');
       if (action.type === 'save') {
-        if (!await entry.document.save()) throw new Error('Scratchpad was not saved.');
+        entry.skipSaveFlush = true;
+        try { if (!await entry.document.save()) throw new Error('Scratchpad was not saved.'); } finally { entry.skipSaveFlush = false; }
       } else {
         if (!targetActive(entry, pane)) throw new Error('The intended scratchpad is no longer active; retry the action there.');
         // Native Undo/Redo are focus-based, not URI-targeted. Reveal the exact
@@ -271,7 +310,7 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
         pane.panel.reveal(undefined, false);
         await api.commands.executeCommand('workbench.action.focusActiveEditorGroup');
         await focusForCommand(entry, pane, confirmed.version, action.draftSeq);
-        if (pane.locked || !targetActive(entry, pane) || entry.controller.snapshot.version !== confirmed.version) throw new Error('The intended document changed before undo/redo; retry.');
+        if (pane.locked || pane.lock || !targetActive(entry, pane) || entry.controller.snapshot.version !== confirmed.version) throw new Error('The intended document changed before undo/redo; retry.');
         await api.commands.executeCommand(action.type);
       }
     });
@@ -282,7 +321,7 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
     entry.closing = (async () => {
       for (const pane of entry.panes.values()) {
         pane.disposed = true; entry.controller.removePane(pane.id);
-        pane.focus?.settle(false); pane.deletion?.settle(false);
+        pane.focus?.settle(false); pane.deletion?.settle(false); pane.flush?.settle(false); pane.lock?.abort.abort();
         for (const listener of pane.listeners) listener.dispose();
       }
       const closed = entry.validator.dispose(); void closed.catch(() => {});
@@ -293,7 +332,7 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
   }
   async function freezeDeletion(entry: DocumentEntry, requestId: string): Promise<boolean> {
     for (const pane of entry.panes.values()) {
-      if (pane.disposed || !pane.ready) return false;
+      if (pane.disposed || !pane.ready || pane.lock) return false;
       let settle!: (ready: boolean) => void;
       const ready = new Promise<boolean>(resolve => { settle = resolve; });
       pane.deletion = { requestId, settle };
@@ -413,14 +452,14 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
       const workerSource = await readFile(join(deps.extensionPath, 'out', 'scratch-editor', 'validator.js'), 'utf8');
       if (stopped || deleting.has(document.uri.toString()) || token.isCancellationRequested || document.isClosed) throw new Error('Scratchpad opening was cancelled.');
       const entry = entryFor(document);
-      const pane: Pane = { id: randomUUID(), panel, locked: preference.initial(), ready: false, initialized: false, disposed: false, listeners: [] };
+      const pane: Pane = { id: randomUUID(), panel, lockSequence: 0, locked: preference.initial(), ready: false, initialized: false, disposed: false, listeners: [] };
       entry.panes.set(pane.id, pane);
       const assets = api.Uri.file(join(deps.extensionPath, 'out', 'scratch-editor'));
       panel.webview.options = { enableScripts: true, localResourceRoots: [assets, api.Uri.file(join(dirname(document.uri.fsPath), 'assets'))] };
       pane.listeners.push(panel.webview.onDidReceiveMessage(value => { void handle(entry, pane, value).catch(failure => error(pane, failure instanceof Error ? `Scratchpad: ${failure.message}` : 'Scratchpad action failed; source and pending recovery are retained.')); }));
       pane.listeners.push(panel.onDidDispose(() => {
         pane.disposed = true; entry.controller.removePane(pane.id);
-        pane.focus?.settle(false); pane.deletion?.settle(false);
+        pane.focus?.settle(false); pane.deletion?.settle(false); pane.flush?.settle(false); pane.lock?.abort.abort();
         for (const listener of pane.listeners) listener.dispose(); entry.panes.delete(pane.id);
         if (!entry.panes.size) void closeEntry(entry).catch(() => warn('Scratchpad closing failed; pending recovery was retained.'));
       }));
@@ -432,7 +471,12 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
     api.workspace.onDidChangeTextDocument(event => { const entry = documents.get(event.document.uri.toString()); if (entry?.document === event.document) { entry.validator.client.invalidateBase(); entry.controller.documentChanged(); } }),
     api.workspace.onWillSaveTextDocument(event => {
       const entry = documents.get(event.document.uri.toString());
-      if (entry && !entry.closing) event.waitUntil(drain(entry).then(() => [], () => { warn('Save may contain an earlier document version; pending draft remains recoverable.'); return []; }));
+      if (entry?.skipSaveFlush) { entry.skipSaveFlush = false; return; }
+      if (entry && !entry.closing) event.waitUntil((async () => {
+        const results = await Promise.all([...entry.panes.values()].map(pane => requestRendererFlush(entry,pane)));
+        if (results.some(confirmed => !confirmed) || entry.controller.hasPending || entry.controller.conflicted) warn('Save may contain an earlier document version; pending draft remains recoverable.');
+        return [];
+      })());
     }),
     api.workspace.onDidCloseTextDocument(document => { const entry = documents.get(document.uri.toString()); if (entry?.document === document) void closeEntry(entry).catch(() => warn('Scratchpad document closed with pending recovery.')); }),
   ];

@@ -16,12 +16,16 @@ test('scratch editor protocol accepts every declared variant and rejects extra k
     { ...session, type: 'asset-request', requestId: 'r2', action: 'resolve-image', href: 'assets/local.png' },
     { ...session, type: 'editor-ready' }, draft, { ...draft, parentEditId: 'edit_0' },
     { ...session, type: 'send-selection', requestId: 'send_1', draftSeq: 0, docVersion: 1, selectedText: 'one\n\ntwo' },
-    { ...session, type: 'lock', locked: true },
+    { ...session, type: 'lock', requestId:'lock_1', locked: true, draftSeq:0,docVersion:1 },
+    {...session,type:'lock-cancel',requestId:'lock_1'},
+    {...session,type:'flush-ready',requestId:'flush_1',draftSeq:0,docVersion:1,confirmed:true},
     ...['undo', 'redo', 'save'].map(type => ({ ...session, type, draftSeq: 0, docVersion: 1 })),
     ...['pick-link', 'pick-image'].map(action => ({ ...session, type: 'asset-request', requestId: 'r1', action })),
     { ...session, type: 'asset-request', requestId: 'r1', action: 'upload-image', name: 'a.png', mediaType: 'image/png', dataBase64: 'eA==' },
   ];
   const outgoing = [
+    {...session,type:'flush-request',requestId:'flush_1'},
+    {...session,type:'lock-state',requestId:'lock_1',locked:true,success:true,message:''},
     { ...session, type: 'delete-prepare', requestId: 'd1' }, { ...session, type: 'delete-release', requestId: 'd1' },
     { ...session, type: 'selection-result', requestId: 'send_1', sent: false, message: 'Retry Send.' },
     { ...session, ...state, type: 'document-state', locked: true },

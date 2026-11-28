@@ -43,6 +43,9 @@ async function harness() {
   let paneAttached = false, initSuccess = true, holdInit = false, richEditor = true; const initializedSessions = new Set<string>();
   let focusMode: 'ok' | 'denied' | 'wrong-version' = 'ok';
   let provider!: VSCode.CustomTextEditorProvider, active = true, gate: ReturnType<typeof deferred> | undefined, dropped: string | undefined, applies = 0, saves = 0;
+  let rendererSequence = 0, flushMode: 'auto' | 'hold' | 'refuse' = 'auto';
+  const flushRequests: {requestId:string;paneSessionId:string;sequence:number}[] = [];
+  const answerFlush = (): void => { for (const request of [...flushRequests]) { const ack = messages.filter(m => m.type === 'apply-ack').at(-1)?.draftSeq ?? 0; if (flushMode === 'hold' || flushMode === 'auto' && ack < request.sequence) continue; flushRequests.splice(flushRequests.indexOf(request),1); incoming.fire({type:'flush-ready',paneSessionId:request.paneSessionId,requestId:request.requestId,draftSeq:request.sequence,docVersion:doc.version,confirmed:flushMode === 'auto'}); } };
   const messages: ScratchHostToEditor[] = [], warnings: string[] = [], commands: { name: string; args: unknown[] }[] = [];
   const doc = { uri, version: 1, isDirty: false, isClosed: false, text: '# Before\n', getText() { return this.text; }, positionAt: (offset: number) => ({ line: 0, character: offset }),
     save: async () => { const waits: PromiseLike<unknown>[] = []; willSave.fire({ document: doc, waitUntil: p => { waits.push(p); } }); await Promise.all(waits); await writeFile(resolved.filePath, doc.text); doc.isDirty = false; saves++; return true; } };
@@ -52,7 +55,7 @@ async function harness() {
   let deletionMode: 'ok' | 'pending' | 'wrong-version' = 'ok', refreshed = 0, failRefresh = false;
   const panel = { viewColumn: 1, get active() { return active; }, visible: true, title: 'Scratchpad', reveal: () => { active = true; }, dispose: () => { paneAttached = false; disposed.fire(); }, onDidDispose: disposed.listen,
     webview: { html: '', options: {}, cspSource: "'self' https://*.vscode-cdn.net", asWebviewUri: (_u: Uri) => ({ toString: () => 'https://file.vscode-resource.vscode-cdn.net/editor.js' }), onDidReceiveMessage: incoming.listen,
-      postMessage: async (m: ScratchHostToEditor) => { if (m.type === dropped) return false; messages.push(m); if (m.type === 'document-state' && !initializedSessions.has(m.paneSessionId)) { initializedSessions.add(m.paneSessionId); if (!holdInit) setImmediate(() => incoming.fire({ type: 'editor-initialized', paneSessionId: m.paneSessionId, success: initSuccess, message: initSuccess ? '' : 'fixture renderer failed' })); } if (m.type === 'delete-prepare') setImmediate(() => incoming.fire({ type: 'delete-ready', paneSessionId: m.paneSessionId, requestId: m.requestId, docVersion: doc.version - (deletionMode === 'wrong-version' ? 1 : 0), draftSeq: messages.filter(message => message.type === 'apply-ack').at(-1)?.draftSeq ?? 0, clean: deletionMode !== 'pending' })); if (m.type === 'focus-request') setImmediate(() => incoming.fire({ type: 'focus-ready', paneSessionId: m.paneSessionId, requestId: m.requestId, docVersion: m.docVersion + (focusMode === 'wrong-version' ? 1 : 0), draftSeq: m.draftSeq, focused: focusMode !== 'denied' })); return true; } } };
+      postMessage: async (m: ScratchHostToEditor) => { if (m.type === dropped) return false; messages.push(m); if (m.type === 'flush-request') { flushRequests.push({requestId:m.requestId,paneSessionId:m.paneSessionId,sequence:rendererSequence}); setImmediate(answerFlush); } if (m.type === 'apply-ack') setImmediate(answerFlush); if (m.type === 'document-state' && !initializedSessions.has(m.paneSessionId)) { initializedSessions.add(m.paneSessionId); if (!holdInit) setImmediate(() => incoming.fire({ type: 'editor-initialized', paneSessionId: m.paneSessionId, success: initSuccess, message: initSuccess ? '' : 'fixture renderer failed' })); } if (m.type === 'delete-prepare') setImmediate(() => incoming.fire({ type: 'delete-ready', paneSessionId: m.paneSessionId, requestId: m.requestId, docVersion: doc.version - (deletionMode === 'wrong-version' ? 1 : 0), draftSeq: messages.filter(message => message.type === 'apply-ack').at(-1)?.draftSeq ?? 0, clean: deletionMode !== 'pending' })); if (m.type === 'focus-request') setImmediate(() => incoming.fire({ type: 'focus-ready', paneSessionId: m.paneSessionId, requestId: m.requestId, docVersion: m.docVersion + (focusMode === 'wrong-version' ? 1 : 0), draftSeq: m.draftSeq, focused: focusMode !== 'denied' })); return true; } } };
   const api = { Uri, Range, WorkspaceEdit: Edit, TabInputCustom: CustomTab, TabInputText: TextTab,
     window: { registerCustomEditorProvider: (_type: string, p: VSCode.CustomTextEditorProvider, options: { supportsMultipleEditorsPerDocument: boolean }) => { assert.equal(options.supportsMultipleEditorsPerDocument, true); provider = p; return { dispose: () => {} }; }, tabGroups: { all: groups, activeTabGroup: { viewColumn: 1, get activeTab() { return activeTab; } }, close: async (tabs: { input: CustomTab | TextTab }[]) => {
         const waiting = closeGate; closeGate = undefined; if (waiting) await waiting.promise;
@@ -71,14 +74,16 @@ async function harness() {
       applyEdit: async (edit: Edit) => { applies++; const pending = gate; gate = undefined; if (pending) await pending.promise; const change = edit.edits[0]!; assert.equal(change.uri, uri); doc.text = doc.text.slice(0, change.range.start.character) + change.text + doc.text.slice(change.range.end.character); doc.version++; doc.isDirty = true; changed.fire({ document: doc }); return true; } },
   } as unknown as typeof VSCode;
   let sendSelection: (text: string, assertCurrent: () => void) => Promise<void> = async () => { throw new Error('Chat unavailable'); };
+  const preferenceWrites: boolean[] = [];
   const recovery = new ScratchRecoveryStore(join(dir, 'recovery'));
   await mkdir(join(dir, 'out', 'scratch-editor'), { recursive: true });
   await writeFile(join(dir, 'out', 'scratch-editor', 'validator.js'), '/* trusted fixture asset */');
   await writeFile(join(dir, 'out', 'scratch-validation-host-worker.js'), await scratchHostWorkerBytes());
-  const host = registerScratchEditor({ richEditor: () => richEditor, refresh: async () => { refreshed++; if (failRefresh) throw new Error('refresh unavailable'); }, api, store, extensionPath: dir, recovery, sendSelection: (text, assertCurrent) => sendSelection(text, assertCurrent), preference: new ScratchLockPreference({ get: <T>() => false as T, update: async () => {} }), warn: m => warnings.push(m) });
+  const host = registerScratchEditor({ richEditor: () => richEditor, refresh: async () => { refreshed++; if (failRefresh) throw new Error('refresh unavailable'); }, api, store, extensionPath: dir, recovery, sendSelection: (text, assertCurrent) => sendSelection(text, assertCurrent), preference: new ScratchLockPreference({ get: <T>() => false as T, update: async (_key, value) => { preferenceWrites.push(value as boolean); } }), warn: m => warnings.push(m) });
   const open = async () => { await provider.resolveCustomTextEditor(doc as unknown as VSCode.TextDocument, panel as unknown as VSCode.WebviewPanel, { isCancellationRequested: false }); paneAttached = true; const id = panel.webview.html.match(/data-pane-session="([^"]+)"/)![1]!; incoming.fire({ type: 'editor-ready', paneSessionId: id }); await until(() => messages.some(m => m.type === 'document-state')); return id; };
   return { dir, host, doc, panel, provider: () => provider, api, changed, willSave, closed, incoming, disposed, messages, warnings, commands, recovery, uri, entry, resolved, open,
-    send: (id: string, m: object) => incoming.fire({ ...m, paneSessionId: id }),
+    send: (id: string, m: object) => { const draft = m as {type?:string;draftSeq?:number}; if (draft.type === 'draft') rendererSequence = Math.max(rendererSequence,draft.draftSeq ?? 0); incoming.fire({ ...m, paneSessionId: id }); },
+    preferenceWrites, flushRequests, setFlushMode: (mode: typeof flushMode) => { flushMode = mode; }, answerFlush,
     block: () => { gate = deferred(); return gate; },
     blockValidation: () => { validateGate = deferred(); return validateGate; }, get validating() { return validating; },
     closedTabs, groups, store,
@@ -265,7 +270,7 @@ test('scratch native assets persist portable bytes correlate failure cancellatio
   await until(() => h.messages.some(m => m.type === 'action-error' && m.requestId === 'a2'));
   h.send(id, { type: 'asset-request', requestId: 'a3', action: 'pick-image' });
   await until(() => h.messages.some(m => m.type === 'asset-result' && m.requestId === 'a3' && m.href === ''));
-  h.send(id, { type: 'lock', locked: true });
+  h.send(id, { type: 'lock', requestId: 'lock_' + (h.messages.filter(m => m.type === 'lock-state').length + 1), locked: true, draftSeq: h.messages.filter(m => m.type === 'apply-ack').at(-1)?.draftSeq ?? 0, docVersion: h.doc.version });
   h.send(id, { type: 'asset-request', requestId: 'a4', action: 'upload-image', name: 'pasted.png', mediaType: 'image/png', dataBase64: png });
   await until(() => h.messages.some(m => m.type === 'action-error' && m.requestId === 'a4')); assert.equal(h.applies, 0);
 }));
@@ -375,16 +380,69 @@ test('scratch native duplicate deletion requests share one close unlink and refr
 
 test('scratch native locked panes refuse Undo Redo including a lock acquired during command drain', async () => fixture(async h => {
   const id = await h.open();
-  h.send(id, { type: 'lock', locked: true });
+  h.send(id, { type: 'lock', requestId: 'lock_' + (h.messages.filter(m => m.type === 'lock-state').length + 1), locked: true, draftSeq: h.messages.filter(m => m.type === 'apply-ack').at(-1)?.draftSeq ?? 0, docVersion: h.doc.version });
   for (const type of ['undo', 'redo']) h.send(id, { type, draftSeq: 0, docVersion: h.doc.version });
   await until(() => h.messages.filter(m => m.type === 'action-error').length === 2);
   assert.equal(h.commands.some(c => c.name === 'undo' || c.name === 'redo'), false);
   h.send(id, { type: 'save', draftSeq: 0, docVersion: h.doc.version }); await until(() => h.saves === 1);
-  h.send(id, { type: 'lock', locked: false });
+  h.send(id, { type: 'lock', requestId: 'lock_2', locked: false, draftSeq: h.messages.filter(m => m.type === 'apply-ack').at(-1)?.draftSeq ?? 0, docVersion: h.doc.version });
+  await until(() => h.messages.some(m => m.type === 'lock-state' && m.requestId === 'lock_2' && m.success));
   const gate = h.blockValidation();
   h.send(id, { type: 'undo', draftSeq: 0, docVersion: h.doc.version }); await until(() => h.validating);
-  h.send(id, { type: 'lock', locked: true }); gate.resolve();
+  h.send(id, { type: 'lock', requestId: 'lock_' + (h.messages.filter(m => m.type === 'lock-state').length + 1), locked: true, draftSeq: h.messages.filter(m => m.type === 'apply-ack').at(-1)?.draftSeq ?? 0, docVersion: h.doc.version }); gate.resolve();
   await until(() => h.messages.filter(m => m.type === 'action-error').length === 3);
   assert.equal(h.commands.some(c => c.name === 'undo' || c.name === 'redo'), false);
   assert.equal(h.doc.text, '# Before\n');
+}));
+
+test('scratch native Save flush is bounded and explicit Save never re-enters its own queue',async()=>fixture(async h=>{
+  const id=await h.open();
+  h.send(id,{type:'save',draftSeq:0,docVersion:1});await until(()=>h.saves===1);
+  assert.equal(h.messages.filter(m=>m.type==='flush-request').length,0,'Explicit Save skips only its own onWillSave flush');
+  h.setFlushMode('hold');const before=performance.now();await h.doc.save();
+  assert.ok(performance.now()-before<1500,'Best-effort flush remains within the native save listener budget');
+  assert.equal(h.saves,2);assert.ok(h.warnings.some(m=>m.includes('earlier document version')));
+  const old=h.messages.filter(m=>m.type==='flush-request').at(-1)!;
+  h.setFlushMode('auto');h.answerFlush();await h.doc.save();assert.equal(h.saves,3);
+  const fresh=h.messages.filter(m=>m.type==='flush-request').at(-1)!;
+  assert.notEqual(fresh.requestId,old.requestId,'A stale reply cannot satisfy a later native save');
+  h.setFlushMode('hold');const closing=h.doc.save();await until(()=>h.flushRequests.length>0);
+  await h.host.dispose();await closing;assert.equal(h.saves,4,'Close cancels the native waiter without deadlock');
+}));
+
+test('scratch native Save flush can promote the captured pending draft without entering the command queue',async()=>fixture(async h=>{
+  const id=await h.open();h.send(id,{...draft,apply:false});await until(()=>h.messages.some(m=>m.type==='receipt'));
+  const saving=h.doc.save();await until(()=>h.flushRequests.length===1);
+  assert.equal(h.saves,0);h.send(id,{...draft,apply:true});await saving;
+  assert.equal(h.saves,1);assert.equal(await readFile(h.resolved.filePath,'utf8'),'# Draft\n');
+  assert.equal(h.messages.filter(m=>m.type==='flush-request').length,1);
+}));
+
+test('scratch native captured lock keeps admission permitted until acknowledgement and cancels without a late lock',async()=>{
+  for(const cancel of [false,true])await fixture(async h=>{
+    const id=await h.open();h.send(id,{...draft,apply:false});await until(()=>h.messages.some(m=>m.type==='receipt'));
+    h.send(id,{type:'lock',requestId:'lock_1',locked:true,draftSeq:1,docVersion:1});
+    await new Promise(resolve=>setTimeout(resolve,10));assert.equal(h.messages.some(m=>m.type==='lock-state'),false,'Pending validation is not yet locked');
+    if(cancel){h.send(id,{type:'lock-cancel',requestId:'lock_1'});await until(()=>h.messages.some(m=>m.type==='lock-state'&&m.requestId==='lock_1'));}
+    h.send(id,{...draft,apply:true});await until(()=>h.messages.some(m=>m.type==='apply-ack'));
+    await until(()=>h.messages.some(m=>m.type==='lock-state'&&m.requestId==='lock_1'));
+    const result=h.messages.find(m=>m.type==='lock-state'&&m.requestId==='lock_1')!;
+    assert.equal(result.type,'lock-state');if(result.type!=='lock-state')throw new Error('Missing lock result');
+    assert.equal(result.success,!cancel);assert.equal(result.locked,!cancel);assert.equal(h.doc.text,'# Draft\n');
+    if(cancel){h.send(id,{type:'undo',draftSeq:1,docVersion:h.doc.version});await until(()=>h.commands.some(c=>c.name==='undo'));assert.equal(h.messages.some(m=>m.type==='lock-state'&&m.success),false);}
+  });
+});
+
+test('scratch lock requests are idempotent while pending and stale replay never changes the preference',async()=>fixture(async h=>{
+  const id=await h.open();h.send(id,{...draft,apply:false});await until(()=>h.messages.some(m=>m.type==='receipt'));
+  const lock={type:'lock',requestId:'lock_1',locked:true,draftSeq:1,docVersion:1};
+  h.send(id,lock);h.send(id,lock);await new Promise(resolve=>setTimeout(resolve,10));
+  assert.equal(h.messages.some(m=>m.type==='lock-state'),false,'Duplicate pending request does not fail or cancel the original');
+  h.send(id,{...draft,apply:true});await until(()=>h.messages.some(m=>m.type==='lock-state'));
+  assert.deepEqual(h.preferenceWrites,[true]);h.send(id,lock);await until(()=>h.messages.filter(m=>m.type==='lock-state').length===2);assert.deepEqual(h.preferenceWrites,[true]);
+  h.send(id,{type:'lock',requestId:'lock_2',locked:false,draftSeq:1,docVersion:h.doc.version});await until(()=>h.messages.some(m=>m.type==='lock-state'&&m.requestId==='lock_2'));
+  h.send(id,lock);await until(()=>h.messages.filter(m=>m.type==='lock-state').length===4);
+  const replay=h.messages.filter(m=>m.type==='lock-state').at(-1)!;
+  assert.equal(replay.type,'lock-state');if(replay.type!=='lock-state')throw new Error('Missing replay refusal');
+  assert.equal(replay.success,false);assert.equal(replay.locked,false);assert.deepEqual(h.preferenceWrites,[true,false]);
 }));

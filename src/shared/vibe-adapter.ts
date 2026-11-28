@@ -9,19 +9,18 @@
  * the VS Code plugin chat call this module directly; the session-based
  * app-server transport (src/shared/vibe-session.ts) is deleted, not demoted.
  *
- * Built across two Tasks of this Story: t1 added the types, the
+ * Built across two Tasks of Story s1: t1 added the types, the
  * construction-time factory, and startTurn's request validation/refusal
- * paths. t2 (this revision) completes the turn-execution internals: live
- * JSONL event production (the installed `vibe` 3.1.4 binary's headless
- * `--output streaming` emits one whole journal entry per line -- the same
- * {type, role, content/detail/state} shape vibe-session.ts's historyLines
- * already parses from the app-server's live JSON-RPC notifications, live-
- * confirmed against the real binary for this Task), the dual process-group
- * policy with cleanup on every exit path, exit-evidence readback from
- * --output-dir export.json, the MCP naming split, and runVibeTurn -- the
- * adapter-owned turn entry whose parameter shape is the OLD VibeTurnOptions
- * (from vibe-session.ts) so a later Task's call-site re-point is mechanical.
- * Nothing imports this module until the consumers are rewired in later Tasks.
+ * paths. t2 completed the turn-execution internals: live JSONL event
+ * production (the installed `vibe` 3.1.4 binary's headless `--output
+ * streaming` emits one whole journal entry per line, live-confirmed against
+ * the real binary), the dual process-group policy with cleanup on every exit
+ * path, exit-evidence readback from --output-dir export.json, and the MCP
+ * naming split. Story s3 then gave the VS Code plugin chat its own
+ * direct-spawn mirror of this same model (dispatchState, export-directory
+ * lifecycle, durable turn-end marker) and deleted the app-server-shaped job
+ * route (runVibeTurn/VibeTurnOptions and their consumer) that bridged this
+ * module onto the old onSession/onHistory callback shape -- s3/t11.
  */
 
 import { execFileSync, spawn as nodeSpawn } from 'node:child_process';
@@ -1371,152 +1370,13 @@ export function createVibeAdapter(context: VibeAdapterContext, deps: VibeAdapter
 	};
 }
 
-/** The OLD app-server VibeSessionOptions/VibeTurnOptions shape, re-declared here (not
- *  imported from the module being deleted) so a later Task's call-site re-point is a pure
- *  import swap: vibe-session-process.ts's runVibeChatJob already builds exactly this shape. */
+/** A model entry from the daemon's own catalog -- used by the backend provider's explicit
+ *  model/effort picker (cli-provider.ts). s3/t11: this is the only survivor of the deleted
+ *  app-server job route's own VibeTurnOptions shape; the plugin chat's own explicit
+ *  selection now goes straight to the plain CLI (buildArgv's --model/--thinking), which
+ *  resolves aliases itself and needs no catalog lookup at all. */
 export interface VibeCatalogModel {
 	readonly id: string;
 	readonly aliases?: readonly string[] | undefined;
 	readonly efforts: readonly string[];
-}
-export interface VibeTurnOptions {
-	readonly command: string;
-	readonly cwd?: string | undefined;
-	readonly env?: NodeJS.ProcessEnv | undefined;
-	readonly timeoutMs: number;
-	readonly signal?: AbortSignal | undefined;
-	readonly agentConfig: Readonly<Record<string, unknown>>;
-	readonly nativeSessionId?: string | undefined;
-	readonly model?: string | undefined;
-	readonly effort?: string | undefined;
-	readonly catalog: readonly VibeCatalogModel[];
-	readonly inheritProcessGroup?: boolean | undefined;
-	readonly prompt: string;
-	readonly onSession?: ((sessionId: string) => void) | undefined;
-	readonly onHistory?: ((method: 'history/entryAdded' | 'history/entryUpdated', params: Record<string, unknown>) => void) | undefined;
-}
-
-/** The chat worker's own outcome shape (vibe-session.ts's VibeTurnResult) -- unchanged so
- *  runVibeChatJob's existing consumption (result.stopReason, onSession/onHistory callbacks)
- *  needs no change beyond the one call-site re-point. */
-export interface VibeTurnOutcome {
-	readonly sessionId: string;
-	readonly stopReason: string | undefined;
-}
-
-/** Reverse of mapApprovalFlags -- the plugin's own agentConfig object (today's shape) back
- *  into the new VibeApproval enum, so runVibeTurn's mapping is total over the old options. */
-function approvalFromAgentConfig(agentConfig: Readonly<Record<string, unknown>>): VibeApproval {
-	if (agentConfig['autoApprove'] === true) return 'auto';
-	if (agentConfig['agent'] === 'ask') return 'manual';
-	if (agentConfig['agent'] === 'accept-edits') return 'edit-auto';
-	return 'default';
-}
-
-/** The TOTAL field mapping from the plugin's existing VibeTurnOptions onto the new
- *  VibeAdapterContext + VibeTurnRequest (plus the adapter-construction `command`) -- every
- *  field VibeTurnOptions carries lands somewhere here; `catalog` is the one documented
- *  exception (the installed CLI self-validates --model and fails fast with its own wording,
- *  surfaced as VibeSelectionError, superseding a client-side catalog lookup). Exported so
- *  the mapping's totality is directly unit-testable without spawning anything. */
-export function mapVibeTurnOptions(options: VibeTurnOptions): { readonly command: string; readonly context: VibeAdapterContext; readonly request: VibeTurnRequest } {
-	const session: VibeSessionRequest = options.nativeSessionId !== undefined
-		? { kind: 'resume', resumeHandle: options.nativeSessionId }
-		: { kind: 'new', model: options.model, thinking: options.effort };
-	const readDirs = options.agentConfig['workspaceRoots'];
-	return {
-		command: options.command,
-		context: {
-			cwd: options.cwd ?? process.cwd(),
-			env: options.env as Readonly<Record<string, string>> | undefined,
-			processGroup: options.inheritProcessGroup === true ? 'supervisor-owned' : 'adapter-owned',
-		},
-		request: {
-			prompt: options.prompt,
-			outputMode: 'streaming',
-			session,
-			mode: 'default',
-			approval: approvalFromAgentConfig(options.agentConfig),
-			readDirs: Array.isArray(readDirs) ? readDirs.filter((d): d is string => typeof d === 'string') : undefined,
-			signal: options.signal,
-			deadlineMs: options.timeoutMs,
-		},
-	};
-}
-
-/**
- * The adapter-owned turn entry: maps the plugin's existing VibeTurnOptions one-to-one onto
- * a VibeAdapterContext + VibeTurnRequest (via mapVibeTurnOptions) and drives startTurn,
- * bridging its rich events back onto onSession/onHistory in the exact shapes historyLines()
- * already consumes -- no mapper or event-mapping change at the call site.
- */
-export async function runVibeTurn(options: VibeTurnOptions): Promise<VibeTurnOutcome> {
-	const { command, context, request } = mapVibeTurnOptions(options);
-	const adapter = createVibeAdapter(context, { command });
-	const turn = adapter.startTurn(request);
-	// Held from the start, not read off `turn.result` only after the loop below:
-	// the iterator and this promise reject with the exact same underlying error
-	// (both driven by runTurn's single finish()/rejectResult() call), but a
-	// caller that only handles the iterator's own throw never touches this
-	// promise at all when that throw exits the function first -- Node then
-	// reports it as an unhandled rejection and can crash the host process on an
-	// otherwise-handled, ordinary CLI failure (review finding r3-1).
-	const resultPromise = turn.result;
-	// A no-op observer attached immediately, independent of the real `await`
-	// below: if a callback throws (see the loop below) this function exits
-	// before ever reaching that `await`, and resultPromise could itself go on
-	// to REJECT too (the CLI call failing for its own, unrelated reason) --
-	// this keeps that rejection from ever being unobserved, without changing
-	// what error the caller actually sees (the callback's own throw still
-	// propagates untouched).
-	void resultPromise.catch(() => undefined);
-
-	let sessionId: string | undefined;
-	let assistantEntrySeq = 0;
-	// Driven manually (not a bare `for await`) so only the ITERATOR's own
-	// rejection is swallowed here -- resultPromise below carries that exact
-	// same underlying error authoritatively. A callback (onSession/onHistory)
-	// throwing is a SEPARATE, genuine event-delivery failure (e.g. historyLines()'s
-	// own active-entry-limit guard) that must propagate and fail the turn even
-	// when the CLI itself went on to exit cleanly -- swallowing it here, as a
-	// blanket try/catch around the whole loop body previously did, silently
-	// turned a real delivery failure into a reported success (review finding
-	// r4-1).
-	const iterator = turn[Symbol.asyncIterator]();
-	for (;;) {
-		let step: IteratorResult<VibeTurnEvent>;
-		try {
-			step = await iterator.next();
-		} catch {
-			break;
-		}
-		if (step.done === true) break;
-		const event = step.value;
-		if (event.kind === 'session') {
-			sessionId = event.sessionId;
-			options.onSession?.(event.sessionId);
-		} else if (event.kind === 'status') {
-			// historyLines() needs no id for a 'reasoning' row -- it only checks type.
-			options.onHistory?.('history/entryAdded', { entry: { type: 'reasoning' } });
-		} else if (event.kind === 'assistant-text') {
-			const id = `assistant-${sessionId ?? 'turn'}-${assistantEntrySeq++}`;
-			options.onHistory?.('history/entryAdded', { entry: { id, type: 'message', role: 'assistant', content: [{ type: 'text', text: event.text }] } });
-		} else if (event.kind === 'tool-call') {
-			// generationStatus:'in_progress' is load-bearing: historyLines() only adds
-			// this id to its active-result map when it sees this, which is what lets
-			// the later history/entryUpdated (the tool's result) actually get through
-			// instead of being silently discarded at the active-map lookup.
-			options.onHistory?.('history/entryAdded', { entry: { type: 'effect', id: event.toolCallId, generationStatus: 'in_progress', detail: { toolName: event.toolName, input: event.arguments } } });
-		} else if (event.kind === 'tool-result') {
-			// The companion '/generationStatus' patch clears the active-map entry
-			// historyLines() added above -- without it, every tool call this turn
-			// bridges leaks an entry for the lifetime of the chat session.
-			options.onHistory?.('history/entryUpdated', { entryId: event.toolCallId, patch: [
-				{ path: '/state', value: { status: event.ok ? 'completed' : 'failed', outputText: event.output, ...(event.error !== undefined ? { error: { message: event.error } } : {}) } },
-				{ path: '/generationStatus', value: 'completed' },
-			] });
-		}
-	}
-	const result = await resultPromise;
-	return { sessionId: result.sessionId ?? sessionId ?? '', stopReason: result.exitEvidence?.stopReason };
 }

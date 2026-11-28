@@ -39,7 +39,6 @@ import { spawn as nodeChildSpawn, execFileSync } from 'node:child_process';
 import { closeSync, mkdtempSync, openSync } from 'node:fs';
 import { readFile as readFileAsync, rm as rmAsync } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ollamaClaudeEnv, type ChatOllamaTarget } from './ollama-routing.js';
@@ -48,8 +47,7 @@ import type { PermissionMode } from './protocol.js';
 import { DEFAULT_GRACE_MS, defaultKillGroup, observeProcess, processDeparted, signalGroup, stopProcess } from './session-lock.js';
 import { parseMarker, SegmentGone, type SegmentCursor, type SessionOutput, type TurnExit } from './session-output.js';
 
-import type { VibeChatJob } from './vibe-session-process.js';
-import type { VibeCatalogModel, VibeDispatchState, VibeExitEvidence, VibeSessionRequest, VibeTurnRequest } from '../../../src/shared/vibe-adapter.js';
+import type { VibeDispatchState, VibeExitEvidence, VibeSessionRequest, VibeTurnRequest } from '../../../src/shared/vibe-adapter.js';
 import { buildArgv, readExitEvidence, vibeMcpNaming } from '../../../src/shared/vibe-adapter.js';
 
 export type ProviderId = 'claude' | 'codex' | 'vibe';
@@ -88,13 +86,12 @@ export interface TurnRequest {
   /**
    * Run config from the chat panel's bottom-right controls: `model` is an id/alias of
    * the provider's family (absent = the CLI's own default), `effort` a level the
-   * model accepts (absent = the CLI's default). Explicit Vibe choices are
-   * applied through its local app-server session.
+   * model accepts (absent = the CLI's default). For vibe, both are passed straight
+   * through to the plain CLI (`--model`/`--thinking`) on a new session, exactly as
+   * the provider itself resolves aliases -- no catalog lookup required.
    */
   readonly model?: string | undefined;
   readonly effort?: string | undefined;
-  /** Snapshot supplied by the trusted chat host for this Vibe turn. */
-  readonly vibeCatalog?: readonly VibeCatalogModel[] | undefined;
 }
 
 /** The started CLI process of a turn, handed to the caller so it can tie a session lease to it. */
@@ -203,13 +200,13 @@ export interface RunOptions {
   /**
    * s3/t5: observes the vibe direct-spawn route's local dispatchState at each of its three
    * transition points (mirroring vibe-adapter.ts's own VibeDispatchState model). Never called
-   * for claude/codex or the vibeCatalog job route.
+   * for claude/codex.
    */
   readonly onDispatchState?: ((state: VibeDispatchState) => void) | undefined;
   /**
    * s3/t7: the vibe direct-spawn route's outcome, classified from export.json's real
    * stopReason/outcome (readExitEvidence) once the process has exited. Never called for
-   * claude/codex or the vibeCatalog job route.
+   * claude/codex.
    */
   readonly onVibeOutcome?: ((outcome: VibeOutcome) => void) | undefined;
 }
@@ -343,10 +340,6 @@ export interface AdapterDeps {
   readonly isInstalled: BinaryProbe;
   /** Resolve the selected model at launch, never from webview-supplied endpoint/auth data. */
   readonly resolveOllamaTarget?: ((request: TurnRequest) => Promise<ChatOllamaTarget | undefined>) | undefined;
-  readonly vibeCatalog?: (() => Promise<readonly VibeCatalogModel[]>) | undefined;
-  /** Override the plain `vibe` binary the worker job dispatches to (tests only). */
-  readonly vibeBinPath?: string | undefined;
-  readonly vibeWorkerPath?: string | undefined;
   readonly logger?: AdapterLogger;
   /** cancel()'s wait after SIGTERM, and again after SIGKILL. Default 5000 ms. */
   readonly stopGraceMs?: number;
@@ -1040,8 +1033,8 @@ export function parseVibeMcpTool(tool: string): { server: string; name: string }
   return identity === undefined ? undefined : { server: identity.server, name: identity.tool };
 }
 
-/** Same output precedence as vibe-session-process.ts's emitEffectResult (the legacy
- *  worker-bridge's own synthesis of this same native row) -- outputText, else output,
+/** Same output precedence the deleted worker-bridge's own emitEffectResult used for this
+ *  same native row (vibe-session-process.ts, removed in s3/t11) -- outputText, else output,
  *  else the error message, else reason, else empty; never a fabricated payload. */
 function effectResultOutput(state: Record<string, unknown> | undefined): string {
   if (state === undefined) return '';
@@ -1066,9 +1059,13 @@ export const vibeMapper: ProviderMapper = {
   // -- so the prompt travels via stdin like claude/codex, not as a positional/flag value.
   inputIsPrompt: false,
   buildArgs(req: TurnRequest, outputDir?: string): string[] {
+    // s3/t11: explicit model/effort selection now goes straight to the plain CLI (--model/
+    // --thinking on a new session) -- the same aliases the picker shows, resolved by vibe
+    // itself, exactly as buildArgv already does for the backend. A resumed session carries no
+    // selection fields (VibeResumedSession's own type); vibe keeps whatever the session started with.
     const session: VibeSessionRequest = req.resume
       ? { kind: 'resume', resumeHandle: req.resume.nativeSessionId }
-      : { kind: 'new' };
+      : { kind: 'new', ...(req.model !== undefined ? { model: req.model } : {}), ...(req.effort !== undefined ? { thinking: req.effort } : {}) };
     const request: VibeTurnRequest = {
       prompt: req.prompt,
       outputMode: 'streaming',
@@ -1077,9 +1074,8 @@ export const vibeMapper: ProviderMapper = {
       ...(req.permissionMode !== undefined ? { approval: req.permissionMode } : {}),
       ...(req.readDirs !== undefined ? { readDirs: req.readDirs } : {}),
     };
-    // Preconditions (LLD 3.2): called only once run() has allocated a per-turn outputDir
-    // (a later Task in this Story). Until that call site is updated, fall back to the
-    // OS temp root -- a real, already-existing directory, with no side effect of its own.
+    // run() always allocates and passes a real per-turn outputDir (t4); the OS temp root is a
+    // pure fallback for a caller that calls buildArgs directly with none (e.g. a unit test).
     return [...buildArgv(request, outputDir ?? tmpdir())];
   },
   mapLine(line: string, turnId: string, state: TurnState): TurnEvent[] {
@@ -1268,16 +1264,11 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       effectiveReq = rest;
     }
     let ollama: ChatOllamaTarget | undefined;
-    let vibeCatalog: readonly VibeCatalogModel[] | undefined;
     try {
       if (deps.resolveOllamaTarget !== undefined) ollama = await deps.resolveOllamaTarget(effectiveReq);
       if (ollama !== undefined) {
         if (mapper.id !== 'claude') throw new Error('Ollama chat routing is supported only for Claude.');
         effectiveReq = { ...effectiveReq, model: ollama.model };
-      }
-      if (mapper.id === 'vibe' && (effectiveReq.model || effectiveReq.effort)) {
-        vibeCatalog = effectiveReq.vibeCatalog ?? await deps.vibeCatalog?.();
-        if (vibeCatalog === undefined) throw new Error('Vibe model selections require the daemon catalog');
       }
     } catch (err) {
       yield { kind: 'error', turnId, message: err instanceof Error ? err.message : String(err) };
@@ -1318,7 +1309,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     // precondition) -- a fresh one every turn, allocated here (after the abort recheck above,
     // so an aborted turn never allocates one) and threaded into buildArgs's outputDir. Removing
     // it on exit is a later Task in this Story (t7), once readExitEvidence needs to read it first.
-    const isVibeDirectSpawn = mapper.id === 'vibe' && vibeCatalog === undefined;
+    const isVibeDirectSpawn = mapper.id === 'vibe';
     const vibeOutputDir = isVibeDirectSpawn ? mkdtempSync(join(tmpdir(), 'insrc-vibe-turn-')) : undefined;
     // s3/t5: mirrors vibe-adapter.ts's own VibeDispatchState model exactly, at the same three
     // transition points -- 'not-sent' (here, before spawn) -> 'possibly-sent' (immediately after
@@ -1341,18 +1332,14 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     const decodeSettled = new Promise<void>((res) => { resolveDecodeSettled = res; });
     let proc: SpawnedProcess;
     try {
-      proc = vibeCatalog !== undefined
-        ? deps.spawn(process.execPath, [deps.vibeWorkerPath ?? fileURLToPath(new URL('./vibe-session-worker.js', import.meta.url)), '--owned-process-group'], {
-          cwd: effectiveReq.cwd, output, gracefulLeader: true, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
-        })
-        : deps.spawn(BINARY[mapper.id], mapper.buildArgs(effectiveReq, vibeOutputDir), {
-          cwd: effectiveReq.cwd,
-          ...(output !== undefined ? { output } : {}),
-          ...(mapper.inputIsPrompt === true ? { closeInput: true } : {}),
-          ...(ollama !== undefined
-            ? { env: ollamaClaudeEnv(process.env, ollama.host) }
-            : mapper.envFor !== undefined ? (() => { const env = mapper.envFor!(effectiveReq); return env !== undefined ? { env } : {}; })() : {}),
-        });
+      proc = deps.spawn(BINARY[mapper.id], mapper.buildArgs(effectiveReq, vibeOutputDir), {
+        cwd: effectiveReq.cwd,
+        ...(output !== undefined ? { output } : {}),
+        ...(mapper.inputIsPrompt === true ? { closeInput: true } : {}),
+        ...(ollama !== undefined
+          ? { env: ollamaClaudeEnv(process.env, ollama.host) }
+          : mapper.envFor !== undefined ? (() => { const env = mapper.envFor!(effectiveReq); return env !== undefined ? { env } : {}; })() : {}),
+      });
       if (isVibeDirectSpawn) {
         vibeDispatchState = 'possibly-sent';
         opts?.onDispatchState?.(vibeDispatchState);
@@ -1442,24 +1429,16 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         yield { kind: 'error', turnId, message: spawnErr.code === 'ENOENT' ? `${BINARY[mapper.id]} CLI not found — install it or check your PATH` : failureMessage(mapper.id, spawnErr) };
         return;
       }
-      // s3/t3: the vibe direct-spawn route now reads its prompt from stdin (bare -p, no
-      // --prompt=), like the vibeCatalog job write below -- one write, then end input
-      // immediately (vibe's bare -p reads stdin to EOF as the whole prompt; it cannot
-      // start before that, unlike claude/codex's formatInput path, which stays open
-      // until the turn's terminal event for a possible later decision write). Classifying
-      // a write/end failure by dispatchState is a later Task in this Story (t6); a
-      // failure here falls through to the same generic 'CLI stdin is closed' handling
-      // claude/codex already use -- and never reverts vibeDispatchState (s3/t5).
-      if (vibeCatalog !== undefined || (mapper.formatInput !== undefined && requestUuid !== undefined) || isVibeDirectSpawn) {
+      // s3/t3: the vibe direct-spawn route reads its prompt from stdin (bare -p, no --prompt=)
+      // -- one write, then end input immediately (vibe's bare -p reads stdin to EOF as the whole
+      // prompt; it cannot start before that, unlike claude/codex's formatInput path, which stays
+      // open until the turn's terminal event for a possible later decision write). A failure here
+      // falls through to the same generic 'CLI stdin is closed' handling claude/codex already
+      // use -- and never reverts vibeDispatchState (s3/t5), classified by dispatchState in the
+      // stdin-write gate (s3/t6).
+      if ((mapper.formatInput !== undefined && requestUuid !== undefined) || isVibeDirectSpawn) {
         if (proc.write === undefined) throw new Error('CLI stdin unavailable for correlated input');
-        const job: VibeChatJob | undefined = vibeCatalog === undefined ? undefined : {
-          command: deps.vibeBinPath ?? BINARY.vibe,
-          request: effectiveReq,
-          catalog: vibeCatalog,
-        };
-        const input = job !== undefined
-          ? JSON.stringify(job) + '\n'
-          : isVibeDirectSpawn ? effectiveReq.prompt : mapper.formatInput!(effectiveReq, requestUuid!);
+        const input = isVibeDirectSpawn ? effectiveReq.prompt : mapper.formatInput!(effectiveReq, requestUuid!);
         // The turn's one user message goes through the same seam as the approval decisions: false is a
         // dead or absent stdin, and an asynchronous failure arrives on onError. Either one fails the turn.
         let accepted = false;
@@ -1470,7 +1449,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
           });
         } catch { /* a seam that throws is a seam that did not deliver */ }
         if (!accepted) throw new Error('CLI stdin is closed');
-        if (job !== undefined || isVibeDirectSpawn) proc.endInput?.();
+        if (isVibeDirectSpawn) proc.endInput?.();
       }
       opts?.onSpawn?.({
         pid: proc.pid,
@@ -1550,10 +1529,6 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       // stdout closed without a terminal event: the process is ending; report how.
       const { code, signal } = await proc.exit;
       terminal = true;
-      if (vibeCatalog !== undefined) {
-        yield doneEvent(false, 'Vibe worker exited without a terminal result', true);
-        return;
-      }
       if (signal !== null) {
         // Killed (e.g. via cancel()) without a terminal event from the stream.
         yield doneEvent(false);
@@ -1577,14 +1552,13 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       if (!terminal) {
         terminal = true;
         proc.kill('SIGTERM');
-        if (vibeCatalog !== undefined) yield doneEvent(false, failureMessage(mapper.id, err), true);
         // s3/t6: the vibe direct-spawn route's stdin-write gate -- classify a write/end
         // failure by the turn's OWN dispatchState (as it already stands at the moment of
         // failure), never unconditionally one way or the other. In practice a write only
         // ever happens after spawn succeeds, so this is 'possibly-sent' or 'accepted' here,
         // never 'not-sent' -- replay-unsafe, exactly like vibe-adapter.ts's own classification
         // of any failure once dispatchState has left 'not-sent'.
-        else if (isVibeDirectSpawn) yield doneEvent(false, failureMessage(mapper.id, err), vibeDispatchState !== 'not-sent' ? true : undefined);
+        if (isVibeDirectSpawn) yield doneEvent(false, failureMessage(mapper.id, err), vibeDispatchState !== 'not-sent' ? true : undefined);
         else yield { kind: 'error', turnId, message: failureMessage(mapper.id, err) };
       }
     } finally {

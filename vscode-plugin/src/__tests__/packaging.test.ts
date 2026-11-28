@@ -171,10 +171,13 @@ test('esbuild emits self-contained CJS out/extension.js that loads under an ESM 
 
     // CommonJS, with 'vscode' left as an external require (not inlined).
     const extSrc = readFileSync(extPath, 'utf8');
-    assert.match(extSrc, /vibe-session-worker\.js/, 'the packaged extension launches the Vibe worker');
-    const vibeWorker = readFileSync(join(out, 'vibe-session-worker.js'), 'utf8');
-    assert.match(vibeWorker, /buildSelectionArgs/, 'the packaged Vibe worker includes model/thinking selection (the adapter\'s new-session-only argv)');
-    assert.match(vibeWorker, /killProcessGroup/, 'the packaged Vibe worker includes turn cancellation (the adapter\'s process-group cleanup)');
+    // s3/t11: the vibe-session-worker.js bundle entry and its app-server job route are deleted
+    // (the direct-spawn vibe branch in cli-adapter.ts fully supersedes it) -- no separate worker
+    // bundle ships any more; the extension bundle itself carries vibe's own argv/cancellation
+    // support directly.
+    assert.ok(!existsSync(join(out, 'vibe-session-worker.js')), 'the deleted Vibe worker bundle entry is not emitted');
+    assert.match(extSrc, /buildSelectionArgs/, 'the packaged extension includes model/thinking selection (the adapter\'s new-session-only argv)');
+    assert.match(extSrc, /signalGroup/, 'the packaged extension includes turn cancellation (the adapter\'s process-group cleanup)');
     assert.match(extSrc, /require\(["']vscode["']\)/, "'vscode' is left as an external require");
     assert.doesNotMatch(extSrc, /\.\.\/\.\.\/src\/shared/, 'the cross-package ../../src import is inlined, not left dangling');
 

@@ -6,7 +6,9 @@
 /**
  * Epic unify-vibe-one-plain-cli-adapter, s1/t2: vibe-adapter.ts's turn-execution
  * internals -- live event production, process-group cleanup, exit-evidence readback,
- * naming, and runVibeTurn's total parameter mapping.
+ * and naming. The runVibeTurn/mapVibeTurnOptions job-bridge tests this file once also
+ * carried were removed in s3/t11, along with runVibeTurn itself (its only consumer,
+ * the app-server-shaped vibe-session-process.ts, is deleted).
  * Run: npx tsx --test src/shared/__tests__/vibe-adapter-turn.test.ts
  */
 
@@ -18,10 +20,8 @@ import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import {
-	createVibeAdapter, fromStreamedName, mapVibeTurnOptions, runVibeTurn,
-} from '../vibe-adapter.js';
-import type { VibeAdapterDeps, VibeChildProcess, VibeTurnRequest, VibeTurnOptions } from '../vibe-adapter.js';
+import { createVibeAdapter, fromStreamedName } from '../vibe-adapter.js';
+import type { VibeAdapterDeps, VibeChildProcess, VibeTurnRequest } from '../vibe-adapter.js';
 
 function fakeChild(pid: number | undefined = 4242, opts: { readonly autoClose?: boolean } = {}): { child: VibeChildProcess; stdout: PassThrough; stderr: PassThrough; stdin: PassThrough; emitter: EventEmitter } {
 	const emitter = new EventEmitter();
@@ -354,56 +354,6 @@ test('the adapter recognizes the tool\'s selection-failure wording and raises Vi
 	}
 });
 
-test("runVibeTurn's parameter mapping from VibeTurnOptions is total: every field the plugin's existing options object carries maps onto the adapter's context+request with no silently dropped option", () => {
-	const controller = new AbortController();
-
-	const newSession: VibeTurnOptions = {
-		command: 'vibe',
-		cwd: '/repo',
-		env: { FOO: 'bar' },
-		timeoutMs: 60_000,
-		signal: controller.signal,
-		agentConfig: { cwd: '/repo', headless: true, workspaceRoots: ['/tmp/a', '/tmp/b'], agent: 'ask' },
-		model: 'mistral-medium-latest',
-		effort: 'high',
-		catalog: [{ id: 'mistral-medium-latest', efforts: ['high'] }],
-		inheritProcessGroup: true,
-		prompt: 'do the thing',
-	};
-	const mappedNew = mapVibeTurnOptions(newSession);
-	assert.equal(mappedNew.command, 'vibe');
-	assert.deepEqual(mappedNew.context, { cwd: '/repo', env: { FOO: 'bar' }, processGroup: 'supervisor-owned' });
-	assert.deepEqual(mappedNew.request, {
-		prompt: 'do the thing',
-		outputMode: 'streaming',
-		session: { kind: 'new', model: 'mistral-medium-latest', thinking: 'high' },
-		mode: 'default',
-		approval: 'manual',
-		readDirs: ['/tmp/a', '/tmp/b'],
-		signal: controller.signal,
-		deadlineMs: 60_000,
-	});
-
-	const resumed: VibeTurnOptions = {
-		command: 'vibe',
-		timeoutMs: 30_000,
-		agentConfig: { autoApprove: true },
-		nativeSessionId: 'prior-session',
-		catalog: [],
-		prompt: 'continue',
-	};
-	const mappedResumed = mapVibeTurnOptions(resumed);
-	assert.equal(mappedResumed.context.processGroup, 'adapter-owned');
-	assert.deepEqual(mappedResumed.request.session, { kind: 'resume', resumeHandle: 'prior-session' });
-	assert.equal(mappedResumed.request.approval, 'auto');
-	assert.equal(mappedResumed.request.readDirs, undefined);
-
-	const editAuto: VibeTurnOptions = { command: 'vibe', timeoutMs: 1000, agentConfig: { agent: 'accept-edits' }, catalog: [], prompt: 'x' };
-	assert.equal(mapVibeTurnOptions(editAuto).request.approval, 'edit-auto');
-	const defaultApproval: VibeTurnOptions = { command: 'vibe', timeoutMs: 1000, agentConfig: {}, catalog: [], prompt: 'x' };
-	assert.equal(mapVibeTurnOptions(defaultApproval).request.approval, 'default');
-});
-
 test('a final stdout chunk delivered after exit but before close is still captured (the exit/close drain race, review finding 2)', async () => {
 	const cwd = realDir();
 	const { child, stdout, emitter } = fakeChild(4242, { autoClose: false });
@@ -529,40 +479,6 @@ test('a mid-flight cancellation (signal fires after dispatch) still rejects with
 	}
 });
 
-test('runVibeTurn on a handled dispatch failure never leaves an internal promise unobserved -- a caller that only catches runVibeTurn\'s own rejection must not also crash the host with an unhandled rejection (review finding r3-1)', async () => {
-	const cwd = realDir();
-	const unhandled: unknown[] = [];
-	const onUnhandledRejection = (reason: unknown): void => { unhandled.push(reason); };
-	process.on('unhandledRejection', onUnhandledRejection);
-	try {
-		// A nonexistent executable -- the adapter's real (uninjected) child_process.spawn
-		// path, matching the reviewer's own Node 22.22.1 repro, exercises the real ENOENT
-		// spawn-error path end to end, not a fake deps stand-in.
-		const command = join(cwd, 'insrc-definitely-not-a-real-vibe-binary');
-		let caught: unknown;
-		try {
-			await runVibeTurn({
-				command, cwd, timeoutMs: 5_000,
-				agentConfig: { cwd, headless: true },
-				catalog: [],
-				prompt: 'hello',
-			});
-		} catch (err) {
-			caught = err;
-		}
-		assert.ok(caught instanceof Error && caught.name === 'VibeTurnError', 'the caller\'s own await must still observe the failure');
-		// Give the event loop a few turns to surface any unhandled rejection that
-		// fired on a promise runVibeTurn itself never touched.
-		await new Promise(resolve => setImmediate(resolve));
-		await new Promise(resolve => setImmediate(resolve));
-		await new Promise(resolve => setImmediate(resolve));
-		assert.deepEqual(unhandled, [], 'no internal promise must surface as an unhandled rejection once the caller has handled the ordinary failure');
-	} finally {
-		process.removeListener('unhandledRejection', onUnhandledRejection);
-		rmSync(cwd, { recursive: true, force: true });
-	}
-});
-
 test('a cancel() or deadline that fires after the leader exits cleanly but during output extraction (export/exit-evidence reads) still rejects, instead of resolving the turn as an ordinary success (review finding r3-2)', async () => {
 	const cwd = realDir();
 	try {
@@ -613,35 +529,5 @@ test('a cancel() or deadline that fires after the leader exits cleanly but durin
 		}
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
-	}
-});
-
-test('runVibeTurn propagates a throwing onSession/onHistory callback as the turn\'s own failure, even when the underlying CLI goes on to exit cleanly -- the r3-1 fix must never swallow a genuine event-delivery failure along with the iterator\'s own rejection (review finding r4-1)', async () => {
-	const cwd = realDir();
-	const dir = mkdtempSync(join(tmpdir(), 'insrc-fake-vibe-r4-'));
-	const bin = join(dir, 'vibe');
-	// A benign fixture: one session row, exit 0 -- matching the reviewer's own repro.
-	writeFileSync(bin, `#!/usr/bin/env node
-let stdin = '';
-for await (const c of process.stdin) stdin += c;
-process.stdout.write(JSON.stringify({ sessionId: 'fixture-session', type: 'message', role: 'assistant', content: [{ type: 'text', text: 'hi' }] }) + '\\n');
-process.exit(0);
-`);
-	chmodSync(bin, 0o755);
-	try {
-		const thrown = new Error('onSession deliberately throws (review finding r4-1 repro)');
-		await assert.rejects(
-			runVibeTurn({
-				command: bin, cwd, timeoutMs: 5_000,
-				agentConfig: { cwd, headless: true },
-				catalog: [],
-				prompt: 'hello',
-				onSession: () => { throw thrown; },
-			}),
-			(err: unknown) => err === thrown,
-		);
-	} finally {
-		rmSync(cwd, { recursive: true, force: true });
-		rmSync(dir, { recursive: true, force: true });
 	}
 });

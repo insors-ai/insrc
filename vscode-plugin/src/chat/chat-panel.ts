@@ -2982,12 +2982,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       return;
     }
     const runCfg = reconcileSessionConfig(s);
-    const vibe = s.provider === 'vibe' && (runCfg.model || runCfg.effort) ? {
-      vibeCatalog: runCatalog.find(entry => entry.id === 'vibe')?.models.map(model => ({
-        id: model.id, efforts: model.efforts,
-        aliases: model.alias === undefined ? [] : [model.alias, ...(model.otherAliases ?? [])],
-      })) ?? [],
-    } : {};
     if (s === session) postRunConfig(s);
     const governor = rt.governor;
     // The stored row keeps the user's own words; the paths are named only in what the CLI is sent.
@@ -3057,8 +3051,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       }
     }
     const req = s.nativeSessionId !== undefined
-      ? { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode: modeOf(s), ...runCfg, ...vibe, ...grant, ...readable, resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
-      : { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode: modeOf(s), ...runCfg, ...vibe, ...grant, ...readable };
+      ? { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode: modeOf(s), ...runCfg, ...grant, ...readable, resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
+      : { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode: modeOf(s), ...runCfg, ...grant, ...readable };
 
     // Story E20261013b2e8109f:S001: this turn's diff state, opened in beforeRun.
     let dt: DiffTurn | undefined;

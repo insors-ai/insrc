@@ -688,12 +688,6 @@ export function activate(context: vscode.ExtensionContext): void {
         definitions: () => client.rpc<ModelDefinitions>('models.definitions'),
         rawConfig: () => configGateway.rawConfig(),
       }),
-      vibeCatalog: async () => {
-        const definitions = await chatModelDefinitions();
-        const family = definitions.families.find(entry => entry.id === 'cli-vibe');
-        const rejected = new Set(family?.rejectedModels);
-        return family?.models.filter(model => !rejected.has(model.id)) ?? [];
-      },
     });
     // A session the migration left in globalState is not in the store yet: its files are kept too.
     const chatKeep = new Set([...chatStore.list().map((c) => c.id), ...migratedChats.kept]);

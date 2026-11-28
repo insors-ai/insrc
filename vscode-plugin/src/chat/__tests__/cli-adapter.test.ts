@@ -18,8 +18,8 @@ import { dirname, join } from 'node:path';
 import { createSessionOutput, parseMarker } from '../session-output.js';
 import { defaultProcessStartTime } from '../session-lock.js';
 import { fileURLToPath } from 'node:url';
-import { createProviderRegistry, classifyPermissionDenial, deriveChatTitle, nodeSpawner, parseVibeMcpTool, writeReachedStdin } from '../cli-adapter.js';
-import { vibeMcpNaming } from '../../../../src/shared/vibe-adapter.js';
+import { createProviderRegistry, classifyPermissionDenial, deriveChatTitle, nodeSpawner, parseVibeMcpTool, vibeMapper, writeReachedStdin } from '../cli-adapter.js';
+import { buildArgv, vibeMcpNaming } from '../../../../src/shared/vibe-adapter.js';
 import type { AdapterDeps, ProviderId, ProviderRegistry, StreamAdapter, TurnProcess, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import {
@@ -816,8 +816,12 @@ test('vibe: streaming text turn maps to assistant-deltas + a synthesized done(ok
   assert.equal(done.ok, true, 'vibe streams no terminal line; the adapter synthesizes done on exit 0');
   assert.equal(done.sessionId, 'sess-vibe-1');
   assert.equal(spawner.calls[0]!.command, 'vibe');
-  assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming']);
-  assert.equal(spawner.calls[0]!.closeInput, true, 'vibe receives an explicit programmatic prompt, so stdin closes immediately');
+  // s3/t3: buildArgs now delegates to the shared buildArgv -- bare -p (stdin prompt
+  // transport), no --prompt= flag, plus the required --output-dir.
+  assert.deepEqual(spawner.calls[0]!.args.slice(0, 3), ['-p', '--output', 'streaming']);
+  assert.equal(spawner.calls[0]!.args[3], '--output-dir');
+  assert.ok(!spawner.calls[0]!.args.some((a) => a.startsWith('--prompt=')), 'the prompt is never embedded in argv');
+  assert.ok(!('closeInput' in spawner.calls[0]!), 'inputIsPrompt is now false: the stdin write/close is a later Task\'s job, not argv-building\'s');
 });
 
 test('vibe: tool_call (arguments_json string) maps to tool-call with command + mcp present; tool_result correlates the command', async () => {
@@ -895,31 +899,74 @@ test('vibe: s3/t2 — parseVibeMcpTool delegates to VibeMcpNaming.fromStreamedNa
 });
 
 test('vibe: argv — resume, --add-dir, and the permission-mode flags', async () => {
+  // Strip the variable --output-dir pair before comparing (buildArgv mints a fresh
+  // value on every call; its own value is covered by the delegation test below).
+  const withoutOutputDir = (argv: readonly string[]): readonly string[] => {
+    const i = argv.indexOf('--output-dir');
+    return i === -1 ? argv : [...argv.slice(0, i), ...argv.slice(i + 2)];
+  };
   {
     const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming']);
+    assert.deepEqual(withoutOutputDir(spawner.calls[0]!.args), ['-p', '--output', 'streaming']);
   }
   {
     const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', permissionMode: 'auto' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming', '--auto-approve']);
+    assert.deepEqual(withoutOutputDir(spawner.calls[0]!.args), ['-p', '--output', 'streaming', '--auto-approve']);
   }
   {
     const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', permissionMode: 'manual' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming', '--agent', 'ask']);
+    assert.deepEqual(withoutOutputDir(spawner.calls[0]!.args), ['-p', '--output', 'streaming', '--approval-policy', 'ask']);
   }
   {
     const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', permissionMode: 'edit-auto' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming', '--agent', 'accept-edits']);
+    assert.deepEqual(withoutOutputDir(spawner.calls[0]!.args), ['-p', '--output', 'streaming', '--approval-policy', 'accept-edits']);
   }
   {
     const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', resume: { provider: 'vibe', nativeSessionId: 'sess-vibe-9' }, readDirs: ['/tmp/att'] })));
-    assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming', '--resume', 'sess-vibe-9', '--add-dir', '/tmp/att']);
+    assert.deepEqual(withoutOutputDir(spawner.calls[0]!.args), ['-p', '--output', 'streaming', '--resume', 'sess-vibe-9', '--add-dir', '/tmp/att']);
   }
+});
+
+test('vibe: s3/t3 — unit: vibeMapper.buildArgs(req, outputDir) produces byte-identical argv to buildArgv itself for the same request', () => {
+  const outputDir = '/tmp/explicit-vibe-output-dir';
+  for (const req of [
+    REQ({ provider: 'vibe', prompt: 'build the thing' }),
+    REQ({ provider: 'vibe', prompt: 'continue', resume: { provider: 'vibe', nativeSessionId: 'sess-xyz' } }),
+    REQ({ provider: 'vibe', prompt: 'read these', readDirs: ['/tmp/att-a', '/tmp/att-b'] }),
+    REQ({ provider: 'vibe', prompt: 'go', permissionMode: 'auto' }),
+    REQ({ provider: 'vibe', prompt: 'go', permissionMode: 'manual' }),
+    REQ({ provider: 'vibe', prompt: 'go', permissionMode: 'edit-auto' }),
+  ] as const) {
+    const fromMapper = vibeMapper.buildArgs(req, outputDir);
+    const expected = buildArgv({
+      prompt: req.prompt,
+      outputMode: 'streaming',
+      mode: 'default',
+      session: req.resume ? { kind: 'resume', resumeHandle: req.resume.nativeSessionId } : { kind: 'new' },
+      ...(req.permissionMode !== undefined ? { approval: req.permissionMode } : {}),
+      ...(req.readDirs !== undefined ? { readDirs: req.readDirs } : {}),
+    }, outputDir);
+    assert.deepEqual(fromMapper, [...expected], `mismatched argv for ${JSON.stringify(req)}`);
+  }
+});
+
+test('vibe: s3/t3 — unit: vibeMapper.inputIsPrompt is false', () => {
+  assert.equal(vibeMapper.inputIsPrompt, false);
+});
+
+test('vibe: s3/t3 — integration: the prompt travels via stdin, not argv (carried from round 3)', async () => {
+  const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
+  const prompt = 'a prompt that would have been --prompt=<this> before this Task';
+  await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', prompt })));
+  const args = spawner.calls[0]!.args;
+  assert.ok(args.includes('-p'), 'the bare -p flag reads the prompt from stdin, per buildArgv (sc1\'s contract)');
+  assert.ok(!args.some((a) => a.includes(prompt)), 'the prompt text never appears anywhere in argv');
+  assert.ok(!('closeInput' in spawner.calls[0]!), 'inputIsPrompt=false: stdin is not closed by argv-building alone');
 });
 
 test('ProviderRegistry.available lists vibe alongside claude/codex when installed', () => {
@@ -2000,8 +2047,12 @@ test('E202611031bd72813:S001 t6: writeReachedStdin — a backpressured write (fa
 });
 
 
-// ISSUE-910fce32967bc4ea: bare -p plus positional text fails on Vibe 3.0.4.
-test('vibe: explicit programmatic prompt preserves multiline option-like text in new and resumed turns', async () => {
+// ISSUE-910fce32967bc4ea (Vibe 3.0.4) is why this route once avoided the bare -p
+// flag; s3/t3 moves to buildArgv's bare -p + stdin transport (sc1's own contract,
+// already live-confirmed for the backend route against the pinned vibe 3.1.4 --
+// see vibe-adapter.ts's own live-confirmed comments). Multiline/option-like text
+// must still never leak into argv itself -- only now via stdin, never a flag value.
+test('vibe: multiline option-like prompt text never leaks into argv in new or resumed turns', async () => {
   const prompt = '--help\nsecond line with "quotes", $HOME and = signs';
   for (const resumed of [false, true]) {
     const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
@@ -2009,22 +2060,20 @@ test('vibe: explicit programmatic prompt preserves multiline option-like text in
       ...(resumed ? { resume: { provider: 'vibe' as const, nativeSessionId: 'saved-vibe' } } : {}),
     })));
     const call = spawner.calls[0]!;
-    const option = call.args.find((arg) => arg.startsWith('--prompt='));
-    assert.equal(option?.slice('--prompt='.length), prompt, 'the complete prompt is the value of the programmatic option');
-    assert.ok(!call.args.includes('-p'), 'no bare prompt flag can redirect to empty stdin');
-    assert.ok(!call.args.includes(prompt), 'prompt is never an unrelated positional argument');
-    assert.equal(call.closeInput, true);
+    assert.ok(!call.args.some((a) => a.startsWith('--prompt=')), 'no --prompt= flag exists anymore');
+    assert.ok(call.args.includes('-p'), 'the bare -p flag reads the prompt from stdin');
+    assert.ok(!call.args.includes(prompt), 'prompt is never an unrelated positional argument, nor any flag value');
     assert.equal(call.args.includes('--resume'), resumed);
   }
 });
 
-test('vibe: title generation uses the same explicit programmatic prompt transport', async () => {
+test('vibe: title generation uses the same stdin prompt transport', async () => {
   const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
   const title = await deriveChatTitle(createProviderRegistry(deps), { provider: 'vibe', prompt: 'Explain this project', cwd: '/repo' });
   assert.equal(title, 'Hello world');
   const call = spawner.calls[0]!;
-  const option = call.args.find((arg) => arg.startsWith('--prompt='));
-  assert.ok(option?.includes('Explain this project'), 'title request reaches the programmatic prompt');
+  assert.ok(!call.args.some((a) => a.includes('Explain this project')), 'the title request prompt never appears in argv');
+  assert.ok(call.args.includes('-p'), 'title generation reaches the same bare -p transport');
   assert.equal(call.env?.VIBE_ACTIVE_MODEL, undefined);
 });
 

@@ -39,6 +39,7 @@ import { spawn as nodeChildSpawn, execFileSync } from 'node:child_process';
 import { closeSync, openSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { tmpdir } from 'node:os';
 import { ollamaClaudeEnv, type ChatOllamaTarget } from './ollama-routing.js';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import type { PermissionMode } from './protocol.js';
@@ -46,8 +47,8 @@ import { DEFAULT_GRACE_MS, defaultKillGroup, observeProcess, processDeparted, si
 import { parseMarker, SegmentGone, type SegmentCursor, type SessionOutput } from './session-output.js';
 
 import type { VibeChatJob } from './vibe-session-process.js';
-import type { VibeCatalogModel } from '../../../src/shared/vibe-adapter.js';
-import { vibeMcpNaming } from '../../../src/shared/vibe-adapter.js';
+import type { VibeCatalogModel, VibeSessionRequest, VibeTurnRequest } from '../../../src/shared/vibe-adapter.js';
+import { buildArgv, vibeMcpNaming } from '../../../src/shared/vibe-adapter.js';
 
 export type ProviderId = 'claude' | 'codex' | 'vibe';
 
@@ -1025,29 +1026,30 @@ function effectResultOutput(state: Record<string, unknown> | undefined): string 
   return '';
 }
 
-const vibeMapper: ProviderMapper = {
+export const vibeMapper: ProviderMapper = {
   id: 'vibe',
   // `vibe -p --resume <session_id>` continues a saved session in headless mode.
   resume: true,
-  // Vibe's bare -p reads stdin, not the positional initial prompt. Bind the
-  // programmatic prompt explicitly with '=' so multiline and leading '-' text
-  // remain one literal value. Stdin closes immediately. Consequence:
-  // no stdin decision relay — headless vibe denies any approval nobody answers.
-  inputIsPrompt: true,
-  buildArgs(req: TurnRequest): string[] {
-    const args = [`--prompt=${req.prompt}`, '--output', 'streaming'];
-    if (req.resume) args.push('--resume', req.resume.nativeSessionId);
-    // Attachments: vibe takes extra readable dirs as repeatable `--add-dir`.
-    if (req.readDirs && req.readDirs.length > 0) for (const d of req.readDirs) args.push('--add-dir', d);
-    // Permission modes (k3): auto => approve everything; manual => ask (denied
-    // unanswered in headless); edit-auto => accept-edits agent. Undefined => no
-    // flag, byte-identical argv to the default (k2). vibe has no pre-allow list
-    // equivalent to claude --allowedTools (--enabled-tools DISABLES the rest in
-    // headless), so req.allowedTools is not expressible and is ignored here.
-    if (req.permissionMode === 'auto') args.push('--auto-approve');
-    else if (req.permissionMode === 'manual') args.push('--agent', 'ask');
-    else if (req.permissionMode === 'edit-auto') args.push('--agent', 'accept-edits');
-    return args;
+  // s3/t3: buildArgs now delegates to the shared adapter's own buildArgv, whose bare
+  // `-p` reads the prompt from stdin (sc1's contract) rather than embedding it in argv
+  // -- so the prompt travels via stdin like claude/codex, not as a positional/flag value.
+  inputIsPrompt: false,
+  buildArgs(req: TurnRequest, outputDir?: string): string[] {
+    const session: VibeSessionRequest = req.resume
+      ? { kind: 'resume', resumeHandle: req.resume.nativeSessionId }
+      : { kind: 'new' };
+    const request: VibeTurnRequest = {
+      prompt: req.prompt,
+      outputMode: 'streaming',
+      session,
+      mode: 'default',
+      ...(req.permissionMode !== undefined ? { approval: req.permissionMode } : {}),
+      ...(req.readDirs !== undefined ? { readDirs: req.readDirs } : {}),
+    };
+    // Preconditions (LLD 3.2): called only once run() has allocated a per-turn outputDir
+    // (a later Task in this Story). Until that call site is updated, fall back to the
+    // OS temp root -- a real, already-existing directory, with no side effect of its own.
+    return [...buildArgv(request, outputDir ?? tmpdir())];
   },
   mapLine(line: string, turnId: string, state: TurnState): TurnEvent[] {
     const trimmed = line.trim();

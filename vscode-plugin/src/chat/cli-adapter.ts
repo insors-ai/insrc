@@ -1342,7 +1342,11 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       });
       if (isVibeDirectSpawn) {
         vibeDispatchState = 'possibly-sent';
-        opts?.onDispatchState?.(vibeDispatchState);
+        // A throwing callback must never be treated as a spawn failure: the child already
+        // exists at this point, and the `catch` below assumes no child ran, so it skips
+        // killing the process and never constructs vibeFinalize's exit-driven cleanup --
+        // orphaning the running child and its export directory.
+        try { opts?.onDispatchState?.(vibeDispatchState); } catch { /* caller's own bug */ }
       }
     } catch (err) {
       // s3/t7: the spawn attempt itself failed -- no child ever ran, so there is nothing to
@@ -1478,7 +1482,9 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
           // on mapLine's successful return.
           if (isVibeDirectSpawn && vibeDispatchState !== 'accepted' && state.sessionId !== undefined) {
             vibeDispatchState = 'accepted';
-            opts?.onDispatchState?.(vibeDispatchState);
+            // A throwing callback must not replace whatever this `finally` was already
+            // unwinding for (a thrown mapLine error, or none at all).
+            try { opts?.onDispatchState?.(vibeDispatchState); } catch { /* caller's own bug */ }
           }
         }
         if (events === undefined) continue; // non-fatal: skip malformed line, never yield a malformed event

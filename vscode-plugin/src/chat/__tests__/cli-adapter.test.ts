@@ -1167,10 +1167,10 @@ async function withVibeDirectSpawnFixture<T>(fn: (cwd: string) => Promise<T>): P
   }
 }
 
-test("vibe: s3/t7 — integration: a fixture binary exiting cleanly with no stopReason yields vibeOutcome 'ok', read identically live and on reattach", async () => {
-  // "On reattach" is carried forward to t9/t10, which pass this computed outcome through the
-  // durable turn-end marker a follower reads; this Task proves the LIVE read half against a
-  // REAL exiting process writing a REAL export.json, not a simulated reader.
+test("vibe: s3/t7 — integration: a fixture binary exiting cleanly with no stopReason yields vibeOutcome 'ok' (live read)", async () => {
+  // The reattach half of this proof is 'vibe: s3/t9+t10 — integration: detach/reattach
+  // producing identical classification', below -- this Task proves the LIVE read half
+  // against a REAL exiting process writing a REAL export.json, not a simulated reader.
   await withVibeDirectSpawnFixture(async (cwd) => {
     let resolveOutcome!: (o: string) => void;
     const outcomePromise = new Promise<string>((res) => { resolveOutcome = res; });

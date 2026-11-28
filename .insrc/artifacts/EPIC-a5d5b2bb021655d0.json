@@ -12,7 +12,6 @@
     "envelope": {
       "description": "",
       "references": [],
-      "attachments": [],
       "binding": {
         "reference": {
           "entityId": "insors-ai/insrc#325",
@@ -21,10 +20,11 @@
         },
         "createdAtRevision": 1,
         "posted": []
-      }
+      },
+      "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "completed",
       "revision": {
         "number": 1,
         "contentHash": "7f67311f00c6101c952763f219208b46e606b381c765f6354708dffd623980a3",

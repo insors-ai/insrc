@@ -1,13 +1,15 @@
 /**
  * ISSUE-4b33600426ce4112 t2 — the bare-sweep entry point carries a finite per-test
- * timeout, so a bare glob run always terminates and reports every file.
+ * timeout, so a bare glob run always terminates and reports every file (a single stuck
+ * or slow file can no longer block the sweep indefinitely).
  *
  * Run: npx tsx --test --test-force-exit scripts/__tests__/test-sweep.test.ts
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -15,25 +17,57 @@ import { promisify } from 'node:util';
 const execFileAsync = promisify(execFile);
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-test('package.json test:sweep runs tsx --test with a finite --test-timeout', () => {
+/** The test:sweep script command from package.json (split into argv). */
+function sweepScriptArgv(): string[] {
 	const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as { scripts?: Record<string, string> };
 	const sweep = pkg.scripts?.['test:sweep'] ?? '';
-	assert.match(sweep, /--test\b/, 'the sweep script runs the node test runner');
-	const m = /--test-timeout=(\d+)/.exec(sweep);
-	assert.ok(m, 'the sweep script carries --test-timeout');
-	assert.ok(Number(m![1]) > 0 && Number(m![1]) <= 600_000, 'the timeout is finite and sane');
+	return sweep.split(/\s+/).filter((s) => s.length > 0);
+}
+
+test('package.json test:sweep runs the node test runner with a finite --test-timeout', () => {
+	const argv = sweepScriptArgv();
+	assert.ok(argv.some((a) => a === '--test'), 'the sweep script runs the node test runner');
+	const flag = argv.find((a) => a.startsWith('--test-timeout='));
+	assert.ok(flag, 'the sweep script carries --test-timeout');
+	const ms = Number(flag!.split('=')[1]);
+	assert.ok(Number.isFinite(ms) && ms > 0 && ms <= 600_000, 'the timeout is finite and sane');
 });
 
-test('a bare tsx --test run with --test-timeout terminates and reports every file', async () => {
-	// A tiny glob (this helper's own file) proves the invocation completes with a full
-	// per-file report under a finite per-test timeout; without one, a single stuck file
-	// would block the sweep indefinitely (ISSUE-4b33600426ce4112 repro: 6/6 hangs).
-	const { stdout } = await execFileAsync(
-		process.execPath,
-		[join(ROOT, 'node_modules', 'tsx', 'dist', 'cli.mjs'), '--test', '--test-reporter', 'tap', '--test-timeout=30000', join(ROOT, 'src', 'workflow', '__tests__', 'helpers', 'exec-stand-in.test.ts')],
-		{ cwd: ROOT, timeout: 90_000, maxBuffer: 16 * 1024 * 1024 },
-	);
-	assert.match(stdout, /^# tests \d+/m, 'the run printed a TAP summary (it terminated)');
-	assert.match(stdout, /^# pass \d+/m);
-	assert.doesNotMatch(stdout, /^# fail [1-9]/m, 'no failures in the bounded run');
+test('npm run test:sweep terminates and reports every requested file', async () => {
+	const files = [
+		join('src', 'workflow', '__tests__', 'helpers', 'exec-stand-in.test.ts'),
+		join('src', 'workflow', '__tests__', 'anchor-folders.test.ts'),
+	];
+	const { stdout } = await execFileAsync('npm', ['run', 'test:sweep', '--', ...files], { cwd: ROOT, timeout: 120_000, maxBuffer: 16 * 1024 * 1024 });
+	assert.match(stdout, /^# tests 2$/m, 'the sweep printed a TAP summary (it terminated)');
+	assert.match(stdout, /^# pass 2$/m, 'both requested files\' tests passed');
+	assert.match(stdout, /^# fail 0$/m);
+	assert.ok(stdout.includes('anchor-folders.test.ts'), 'file-level results are reported in the TAP output');
+});
+
+test('a stuck file is failed at the per-test timeout and cannot block the sweep', async () => {
+	// A deliberately never-settling test in a temp file; the sweep script is invoked with
+	// an extra short --test-timeout (later flag wins) so the timeout actually fires.
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-sweep-hang-'));
+	try {
+		const hang = join(dir, 'hang.test.ts');
+		writeFileSync(hang, "import { test } from 'node:test';\ntest('never settles', () => new Promise(() => {}));\n");
+		const argv = [...sweepScriptArgv(), '--test-timeout=3000', hang];
+		let stdout = '';
+		let code = 0;
+		try {
+			const out = await execFileAsync(argv[0]!, argv.slice(1), { cwd: ROOT, timeout: 60_000, maxBuffer: 16 * 1024 * 1024 });
+			stdout = out.stdout;
+		} catch (err) {
+			const e = err as { code?: number; stdout?: string };
+			code = e.code ?? 1;
+			stdout = e.stdout ?? '';
+		}
+		assert.match(stdout, /^# tests 1$/m, 'the sweep still terminated and printed the summary');
+		assert.match(stdout, /^not ok 1 - never settles/m, 'the stuck file is reported, not dropped');
+		assert.match(stdout, /test timed out after 3000ms|Promise resolution is still pending/, 'the stuck test was stopped by the per-test timeout or the loop-drain detector — either way the sweep cannot hang');
+		assert.notEqual(code, 0, 'the stuck file is a reported failure, not a silent pass');
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
 });

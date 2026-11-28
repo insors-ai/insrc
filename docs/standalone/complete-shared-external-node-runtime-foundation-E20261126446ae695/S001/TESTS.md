@@ -4,11 +4,11 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 87 pass, 0 fail, 0 skipped, 0 not found; 8 reported by the builder and not run by the gate.
+**Totals:** 96 pass, 0 fail, 0 skipped, 0 not found; 8 reported by the builder and not run by the gate.
 
 ## t1
 
-Run at 2026-11-26T07:40:02.075Z on commit `b7c3a40b8`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-28T10:11:13.449Z on commit `0fa2f8c20`. Tests check: **passed**. 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: runtime-policy-exact-identity-target-baseline-profile-and-pinned-inventory**
 
@@ -24,11 +24,28 @@ Run at 2026-11-26T07:40:02.075Z on commit `b7c3a40b8`. Tests check: **passed**. 
 | :--- | :--- | :--- |
 | pass | official profile metadata reproduces all pinned assets without target execution or extraction | `src/installer/__tests__/runtime-policy.test.ts` |
 
+**unit: ordinary-runtime-deadlines-ignore-qualification-env-and-trusted-qualifier-remains-bounded**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ordinary installer imports and action deadlines ignore every ambient qualification selector | `src/installer/__tests__/production-deadlines.test.ts` |
+| pass | explicit trusted qualification admission preserves bounded runtime and manager deadlines | `src/installer/__tests__/production-deadlines.test.ts` |
+| pass | qualification-profile-selects-frozen-normal-and-slow-vm-role-budgets | `src/installer/__tests__/qualification-time-budgets.test.ts` |
+| pass | invalid-profile-fails-before-any-filesystem-or-worker-admission | `src/installer/__tests__/qualification-time-budgets.test.ts` |
+| pass | profile-snapshot-cannot-change-after-module-import | `src/installer/__tests__/qualification-time-budgets.test.ts` |
+| pass | copied-policy-asset-has-source-bytes-and-loads-from-installed-control | `src/installer/__tests__/qualification-time-budgets.test.ts` |
+| pass | explicit-short-scope-overrides-remain-exact-under-slow-vm | `src/installer/__tests__/qualification-scopes.test.ts` |
+| pass | omitted-child-profile-is-canonicalized-and-conflicting-profile-rejected | `src/installer/__tests__/qualification-scopes.test.ts` |
+| pass | normal-coordinator-and-git-role-caps-remain-exact | `src/installer/__tests__/qualification-scopes.test.ts` |
+
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/installer/__tests__/runtime-policy.test.ts` | 0 | 4 | 3.6 s |  |
+| `src/installer/__tests__/production-deadlines.test.ts` | 0 | 2 | 2.2 s |  |
+| `src/installer/__tests__/qualification-scopes.test.ts` | 0 | 3 | 0.5 s |  |
+| `src/installer/__tests__/qualification-time-budgets.test.ts` | 0 | 4 | 0.9 s |  |
+| `src/installer/__tests__/runtime-policy.test.ts` | 0 | 4 | 4.9 s |  |
 
 ## t2
 

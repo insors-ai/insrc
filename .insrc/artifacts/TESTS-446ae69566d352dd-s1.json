@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 22,
-        "contentHash": "a78bf30035ff2d9ce09d43e4ac786914a57b3079ee52aedc7a533219521d53a6",
-        "at": "2026-11-28T06:35:35.249Z",
+        "number": 23,
+        "contentHash": "df0cd2a83fb968d2cec154436ff5d58720902c4533e92affd52cff910338f0a7",
+        "at": "2026-11-28T10:11:13.483Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,18 +23,18 @@
     "epicHash": "446ae69566d352dd",
     "storyId": "s1",
     "createdAt": "2026-11-26T07:40:02.075Z",
-    "updatedAt": "2026-11-28T06:35:35.180Z",
+    "updatedAt": "2026-11-28T10:11:13.449Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-26T06:29:10.586Z",
     "epicSlug": "complete-shared-external-node-runtime-foundation",
-    "revision": 22
+    "revision": 23
   },
   "body": {
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "b7c3a40b8",
-        "ranAt": "2026-11-26T07:40:02.075Z",
+        "commit": "0fa2f8c20",
+        "ranAt": "2026-11-28T10:11:13.449Z",
         "testsPassed": true,
         "tests": [
           {
@@ -72,14 +72,130 @@
               }
             ],
             "files": []
+          },
+          {
+            "name": "ordinary-runtime-deadlines-ignore-qualification-env-and-trusted-qualifier-remains-bounded",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/production-deadlines.test.ts",
+                "title": "ordinary installer imports and action deadlines ignore every ambient qualification selector",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/production-deadlines.test.ts",
+                "title": "explicit trusted qualification admission preserves bounded runtime and manager deadlines",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+                "title": "qualification-profile-selects-frozen-normal-and-slow-vm-role-budgets",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+                "title": "invalid-profile-fails-before-any-filesystem-or-worker-admission",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+                "title": "profile-snapshot-cannot-change-after-module-import",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+                "title": "copied-policy-asset-has-source-bytes-and-loads-from-installed-control",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-scopes.test.ts",
+                "title": "explicit-short-scope-overrides-remain-exact-under-slow-vm",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-scopes.test.ts",
+                "title": "omitted-child-profile-is-canonicalized-and-conflicting-profile-rejected",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-scopes.test.ts",
+                "title": "normal-coordinator-and-git-role-caps-remain-exact",
+                "result": "pass"
+              }
+            ],
+            "files": []
           }
         ],
         "files": [
           {
+            "file": "src/installer/__tests__/production-deadlines.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2225,
+            "titles": [
+              {
+                "title": "ordinary installer imports and action deadlines ignore every ambient qualification selector",
+                "result": "pass"
+              },
+              {
+                "title": "explicit trusted qualification admission preserves bounded runtime and manager deadlines",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/qualification-scopes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 510,
+            "titles": [
+              {
+                "title": "explicit-short-scope-overrides-remain-exact-under-slow-vm",
+                "result": "pass"
+              },
+              {
+                "title": "omitted-child-profile-is-canonicalized-and-conflicting-profile-rejected",
+                "result": "pass"
+              },
+              {
+                "title": "normal-coordinator-and-git-role-caps-remain-exact",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 921,
+            "titles": [
+              {
+                "title": "qualification-profile-selects-frozen-normal-and-slow-vm-role-budgets",
+                "result": "pass"
+              },
+              {
+                "title": "invalid-profile-fails-before-any-filesystem-or-worker-admission",
+                "result": "pass"
+              },
+              {
+                "title": "profile-snapshot-cannot-change-after-module-import",
+                "result": "pass"
+              },
+              {
+                "title": "copied-policy-asset-has-source-bytes-and-loads-from-installed-control",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/installer/__tests__/runtime-policy.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3589,
+            "durationMs": 4925,
             "titles": [
               {
                 "title": "runtime policy pins all six official distribution identities without enabling targets",

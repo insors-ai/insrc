@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 22,
-        "contentHash": "eed0f394e3c56ad6b096fff2745a52144b6b2f27fea0c57609e2dd8f5f5129e6",
-        "at": "2026-11-28T06:36:33.492Z",
+        "number": 23,
+        "contentHash": "29a94153b8764e30006243c2c16088fe8e112d197766198b7055200389684276",
+        "at": "2026-11-28T10:12:18.672Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "446ae69566d352dd",
     "storyId": "s1",
-    "revision": 22,
-    "updatedAt": "2026-11-28T06:35:35.180Z",
+    "revision": 23,
+    "updatedAt": "2026-11-28T10:11:13.449Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "complete-shared-external-node-runtime-foundation"
@@ -78,7 +78,7 @@
         "passed": true
       }
     ],
-    "summary": "Manual-review T5 rework at2f6bcaea7: normalize bootstrap home separators, record real INT/TERM/HUP until exact publication child exit and owned-stage cleanup, rehash canonical Node/bootstrap/native before final handoff, require explicit target, and exercise production publication handler with cached/final tamper and real owned-group signal fixtures. Focused15/15 checks and11/11owned-group closure pass; registered gate runs the5named mappings. Other review findings remain open; historical macOS/Linux proof is not current after these changes. No Windows native execution, host daemon/Ollama operation or lifecycle completion claimed.",
+    "summary": "PLAN4 rework in progress: T1 separates fixed ordinary installer deadlines from explicit bounded qualification admission, retaining official profiles/public fields and worker/harness closure behavior. Surrounding checks cover 30 cases in ten files plus20 controller cases; protected runtime publication, writable SDK isolation, integrity/consumer corrections, T9 regression and current macOS/Linux native qualification remain pending before final Story BUILD approval.",
     "testRecord": {
       "md": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/TESTS.md"
     },
@@ -88,1319 +88,1858 @@
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t1.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "scripts/generate-runtime-profiles.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/runtime-policy.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/runtime-metadata.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/runtime-policy.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/runtime-policy.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t2.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/_runtime-profile-fixture.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/runtime-store.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/runtime-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t3.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/runtime-acquire.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/ollama-tar.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/runtime-acquire.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/runtime-archive.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/tar-primitives.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t4.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/runtime-install.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/controller-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/runtime-install.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t5.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "scripts/bootstrap-publish.cjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "scripts/install.ps1"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "scripts/install.sh"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "scripts/package-installer.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "scripts/render-installer-bootstrap.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/bootstrap-bundle-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/bootstrap-control.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/bootstrap.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/bootstrap-control.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/bootstrap-foundation.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/terminal-entry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t6.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "scripts/installer-payload.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/application-payload.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/bundle-recovery.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/bundle.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/foundation-payload-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/foundation-payload.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/publisher.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/application-payload.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/bundle-delivery.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/bundle.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/distribution-artifacts.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/download.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/manager.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/ollama-catalog.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/release-descriptor.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/safe-zip.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t7.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/_dev-runtime-fixture.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-complete-payload-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-git-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-manager-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-manager-peers-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-manager.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-metadata.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-payload-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-payload.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-runtime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-source-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-toolchain-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-toolchain.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-worker-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-worker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/installed-dev-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/dev-delivery.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/dev-git.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/dev-payload.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/dev-toolchain.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/dev-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/dev.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/production-peers.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t8.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "scripts/qualify-ollama.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/_installed-control-fixture.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/_ollama-fixture.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dependencies.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/installed-status.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/ollama-inspect-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/ollama-prepare.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/ollama-production-worker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/ollama-service-worker-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/ollama-service.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/ollama-signal-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/ollama-signals.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/production-peers.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/terminal-install.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/dependencies.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/installed-control.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/installed-launcher.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/installed-receipt.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/manager-entry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/ollama-prepare.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/ollama-service-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/ollama-service.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/runtime-binding.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/terminal-install.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/plans/runtime-foundation-native-qualification.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/installer-s2-qualification.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "scripts/qualify-runtime-foundation.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t9.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".github/workflows/ci.yml"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-complete-payload.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dependency-integration.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/ollama-validation.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/ollama-service-snapshot.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t10.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/payload-source-links.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t10-linux.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-git.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/EPIC-446ae69566d352dd.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/EPIC-446ae69566d352dd.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-446ae69566d352dd.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-446ae69566d352dd.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/LLD-446ae69566d352dd-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-446ae69566d352dd-s1-t1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-446ae69566d352dd-s1-t10.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-446ae69566d352dd-s1-t2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-446ae69566d352dd-s1-t3.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-446ae69566d352dd-s1-t4.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-446ae69566d352dd-s1-t5.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-446ae69566d352dd-s1-t6.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-446ae69566d352dd-s1-t7.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-446ae69566d352dd-s1-t8.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-446ae69566d352dd-s1-t9.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-446ae69566d352dd-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-446ae69566d352dd-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/ISSUE.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/component-dependency.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/er-model.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/README.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/audit-linux.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/export-linux.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/linux-audit-default-profile.stderr"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/linux-audit-old-macos-pin.stderr"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/linux-audit.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/linux-native-result.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/linux-preflight-failed.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/linux-raw-metadata.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/linux-supervisor.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/lld-scope-audit.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/macos-equivalence.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/scope-decision.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/supervise-linux-r2.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/supervise-linux.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/sequence-diagram.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-446ae69566d352dd-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/plan-alignment.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/plan-scope-audit.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/foundation-regression-reconciliation.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/reconcile-regression.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/regression-logs/src_installer___tests___application-payload.test.ts.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/regression-logs/src_installer___tests___bootstrap-control.test.ts.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/regression-logs/src_installer___tests___bootstrap.test.ts.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/regression-logs/src_installer___tests___dev-metadata.test.ts.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/regression-logs/src_installer___tests___dev-payload.test.ts.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/regression-logs/src_installer___tests___dev-runtime.test.ts.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/regression-logs/src_installer___tests___dev-toolchain.test.ts.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/regression-logs/src_installer___tests___installed-dev.test.ts.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/regression-logs/src_installer___tests___installed-status.test.ts.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/regression-logs/src_installer___tests___ollama-service-snapshot.test.ts.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/regression-logs/src_installer___tests___payload-source-links.test.ts.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/regression-logs/src_installer___tests___production-peers.test.ts.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/regression-logs/src_installer___tests___publisher.test.ts.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/regression-logs/src_installer___tests___runtime-install.test.ts.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/regression-logs/src_installer___tests___runtime-policy.test.ts.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/regression-logs/src_installer___tests___runtime-store.test.ts.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/t10-test-mapping.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/t10-validation-handoff.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/controller-store.test-t10.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/runtime-policy.test-t10.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/t10-final-audit.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/t10-registered-validation.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/posix-20261128/t10-settings-restored.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/REVIEW-FEEDBACK.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/bootstrap-batch/0-src_installer___tests___bootstrap-control.test.ts.log"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/bootstrap-batch/1-src_installer___tests___bootstrap.test.ts.log"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/bootstrap-batch/README.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/bootstrap-batch/child-admissions.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/bootstrap-batch/child-disposals.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/bootstrap-batch/child-results.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/bootstrap-batch/cleanup.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/bootstrap-batch/results.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/disposition-status.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
       },
       {
         "target": {
           "file": "src/installer/terminal-main.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-28T06:35:35.180Z"
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/bootstrap-batch/registered-1.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/bootstrap-batch/registered-2.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/bootstrap-batch/registered-3.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/bootstrap-batch/registered-build-round.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/bootstrap-batch/registered-test-record-t5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/bootstrap-batch/settings-restored.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/lld-revision6-source-audit.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/REVIEW-FEEDBACK-ROUND2.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/ROUND2-STATUS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/round2-design-audit.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/REVIEW-FEEDBACK-ROUND3.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/ROUND3-STATUS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/round3/design-source-audit.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/round3/native-publication-probe-result.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/round3/native-publication-probe.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/round3/release-audit-artifacts.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/round3/release-audit/asset/insrc-daemon-install.sh"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/round3/release-audit/main-tree.json.gz"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/round3/release-audit/release-commit.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/round3/release-audit/release-tree.json.gz"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/round3/release-audit/releases-response.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/round3/release-audit/summary.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-realignment/README.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-realignment/lld8-approval-tool-result.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-realignment/lld8-owner-resolutions.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-realignment/plan3-baseline.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-realignment/plan4-audit.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-realignment/review-owner-map.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "copy-assets.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/README.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/controller-closure.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/controller-runs/32b3bd3b-76a9-4dfc-bf00-7a15680795ce/child-admissions.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/controller-runs/32b3bd3b-76a9-4dfc-bf00-7a15680795ce/child-disposals.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/controller-runs/32b3bd3b-76a9-4dfc-bf00-7a15680795ce/child-results.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/controller-runs/32b3bd3b-76a9-4dfc-bf00-7a15680795ce/cleanup.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/controller-runs/32b3bd3b-76a9-4dfc-bf00-7a15680795ce/results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/controller-runs/7ab7e6b4-35b8-47b9-a850-093908b70a69/child-admissions.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/controller-runs/7ab7e6b4-35b8-47b9-a850-093908b70a69/child-disposals.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/controller-runs/7ab7e6b4-35b8-47b9-a850-093908b70a69/child-results.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/controller-runs/7ab7e6b4-35b8-47b9-a850-093908b70a69/cleanup.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/controller-runs/7ab7e6b4-35b8-47b9-a850-093908b70a69/results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/controller.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/initial-0-scripts___tests___qualification-containment.test.ts.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/initial-1-src_installer___tests___dev-toolchain.test.ts.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/initial-2-src_installer___tests___production-deadlines.test.ts.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/initial-3-src_installer___tests___qualification-installed.test.ts.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/initial-4-src_installer___tests___qualification-manager.test.ts.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/initial-5-src_installer___tests___qualification-runtime.test.ts.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/initial-6-src_installer___tests___qualification-scopes.test.ts.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/initial-7-src_installer___tests___qualification-time-budgets.test.ts.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/initial-8-src_installer___tests___qualification-worker.test.ts.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/initial-9-src_installer___tests___runtime-policy.test.ts.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/initial-child-admissions.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/initial-child-disposals.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/initial-child-results.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/initial-cleanup.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/initial-results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/retry-0-src_installer___tests___dev-toolchain.test.ts.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/retry-0-src_installer___tests___production-deadlines.test.ts.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/retry-child-admissions.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/retry-child-disposals.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/retry-child-results.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/retry-cleanup.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/retry-results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-build-t1/source-inputs.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "scripts/qualification-containment.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "scripts/test-harness/build.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "scripts/test-harness/context.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "scripts/test-harness/process.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "scripts/test-harness/run.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/production-deadlines.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/qualification-manager.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/qualification-scopes.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/qualification-time-budgets.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/operation-time-budgets.d.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/operation-time-budgets.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/qualification-time-budgets.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T10:11:13.449Z"
       }
     ],
-    "commit": "2f6bcaea7"
+    "commit": "0fa2f8c20"
   },
   "citations": []
 }

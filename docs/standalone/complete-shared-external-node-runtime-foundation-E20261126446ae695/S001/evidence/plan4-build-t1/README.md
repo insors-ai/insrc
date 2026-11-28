@@ -45,10 +45,15 @@ release-owned publisher/CI target guard remains owned by T6.
   and released the checkout. Their raw results and closure journals are adjacent.
 - Shared-harness controller checks: all 20 passed in 125.08s; raw TAP and the
   completed checkout-run closure journals are retained here. Registered T1
-  validation remains pending at this implementation commit checkpoint.
+  validation passed all seven acceptance checks, typecheck (14.198s), and all
+  13 mapped cases (8.581s) at `0fa2f8c20`. BUILD23/TESTS23 and the raw gate
+  result/TAP are retained. Temporary build settings were restored and verified.
 
 `source-inputs.json` binds the edited inputs by SHA256. The original failure and
 the corrective run have separate evidence prefixes. Previous macOS/Linux VM
 evidence remains historical: T9 regression and current T10 native qualification
 are still required. No installed host daemon/Ollama operation, Windows native
 qualification, field migration, or release enablement was performed.
+
+Only T1 has been revalidated against PLAN4 at this checkpoint. The other nine
+BUILD rows retain earlier-round results and do not establish current completion.

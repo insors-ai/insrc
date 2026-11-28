@@ -3,7 +3,7 @@
   "verdict": "changes-requested",
   "allFindingsResolved": false,
   "existingStory": "446ae69566d352dd/s1",
-  "reworkAdmission": "Current round is registered design.story revision8 plus isolated native primitive validation only; no production code implementation. Prior T5 passed at2f6bcaea7/BUILD22/TESTS22. Owner choices and LLD/PLAN approval remain required.",
+  "reworkAdmission": "LLD8 and PLAN4 approved; T1 implementation passed registered validation at0fa2f8c20/BUILD23/TESTS23. T2-T10 current PLAN4 implementation/revalidation remains outstanding; final Story BUILD is unapproved.",
   "nativeEvidence": "Prior macOS/Linux source equivalence becomes historical after production edits; affected regression/native qualification required before final BUILD approval",
   "findings": [
     {
@@ -75,9 +75,9 @@
     },
     {
       "id": "8",
-      "status": "approved-design-awaiting-implementation",
+      "status": "resolved",
       "scope": "runtime/consumer",
-      "evidence": "../../LLD.md",
+      "evidence": "../plan4-build-t1/README.md",
       "plan4Owners": [
         "t1"
       ]

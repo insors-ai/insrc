@@ -1,0 +1,266 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "t1",
+    "passed": true,
+    "checks": [
+      {
+        "check": "All six declared os/arch policy identities retain Node22.22.1/npm10.9.4/header22.22.1 consistency; profile metadata is derived from verified official archive/assets and reproducible, not copied from an installed receipt.",
+        "satisfied": true,
+        "evidence": "runtime-policy.json is unchanged. The generator verifies pinned asset sizes and SHA256, checks npm/header versions, and derives inventory metadata in memory. The daemon-passed reproduction test compares all six derived profiles with the pinned profiles."
+      },
+      {
+        "check": "Completion64KiB, inventory16MiB,32768 entries,128MiB/file,1GiB expanded,256MiB/compressed asset,600s network and120s verification bounds are explicit and tested.",
+        "satisfied": true,
+        "evidence": "RUNTIME_LIMITS explicitly declares every listed bound. runtime-policy.test.ts asserts the exact complete object; production-deadlines.test.ts checks actual timeout arguments. Both passed according to the daemon."
+      },
+      {
+        "check": "RuntimeIdentity/ReleaseManifest/IPC fields remain unchanged; metadata computation alone neither executes target code nor enables a native target.",
+        "satisfied": true,
+        "evidence": "The implementation leaves contracts, schemas and daemon IPC unchanged. The reproduction test forbids subprocess execution and filesystem extraction/allocation during derivation. Native qualification remains a separate publisher check."
+      },
+      {
+        "check": "Keep original archive/profile/inventory/completion bytes, hashes and public fields unchanged; POSIX mode protection is a verifier/publication rule, not regenerated official content or a new runtime identity/layout.",
+        "satisfied": true,
+        "evidence": "Pinned policy, inventory/completion serializers and runtime layout are unchanged. runtime-metadata.ts adds only the internal RuntimeProtection union alongside the deadline import change; it does not rewrite modes or official metadata."
+      },
+      {
+        "check": "Ordinary production entrypoint import and runtime/download deadline behavior are unchanged for unset, normal, slow-vm and invalid INSRC_QUALIFICATION_PROFILE; remove indirect production import-time selector failure as well as direct runtime-metadata/download coupling.",
+        "satisfied": true,
+        "evidence": "Production consumers and transitive harness context now import environment-independent operation-time-budgets.mjs. The daemon-passed production test covers unset, normal, slow-vm, invalid and empty selectors, importing manager/terminal and exercising resolver, coordinator, Git and download deadline paths."
+      },
+      {
+        "check": "Only explicit trusted qualification invocation installs bounded process-local context before relevant modules load; preserve approved normal/slow-VM harness propagation without exposing a wire/receipt/ambient-env override or changing unrelated completed harness contracts.",
+        "satisfied": true,
+        "evidence": "The explicit qualification preloader admits a frozen normal/slow-vm policy into process-local context; ordinary policy imports do not read the selector. Trusted child launches propagate the preloader. Tests retain exact role budgets, immutable snapshots, conflict rejection and explicit short overrides; wire and receipt contracts are unchanged."
+      },
+      {
+        "check": "Exercise normal manager/terminal/resolver import and relevant action paths with every selector case, including transitive budget imports; qualification-only invalid selectors retain their typed diagnostic. Actual native execution/publication eligibility is release-owned and separate from six-target profile metadata; deferred Windows and unqualified arch/baseline combinations cannot self-enable.",
+        "satisfied": true,
+        "evidence": "The required test bodies exercise the advertised imports/actions and timeout values. Invalid qualification selectors assert qualification-profile-invalid before I/O or worker admission. Six-target tests require qualification rejection without evidence; packaging retains exact target/baseline/runtime/addon qualification checks independently of profile metadata."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "All acceptance checks are supported by repository code and meaningful daemon-passed tests; implementation changes stay within deadline isolation, trusted qualification propagation, internal lane typing and supporting fixtures/assets.",
+    "testsPassed": true,
+    "typecheckClean": true,
+    "evidence": {
+      "typecheck": {
+        "ok": true,
+        "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node node_modules/typescript/bin/tsc --noEmit",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 14198,
+        "outputTail": ""
+      },
+      "tests": {
+        "ok": true,
+        "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-mZM1Ue/report.tap src/installer/__tests__/production-deadlines.test.ts\n/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-kN4C5T/report.tap src/installer/__tests__/qualification-scopes.test.ts\n/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-qKRkvB/report.tap src/installer/__tests__/qualification-time-budgets.test.ts\n/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-Vtz5ov/report.tap src/installer/__tests__/runtime-policy.test.ts",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 8581,
+        "outputTail": "TAP version 13\n# Subtest: runtime policy pins all six official distribution identities without enabling targets\nok 1 - runtime policy pins all six official distribution identities without enabling targets\n  ---\n  duration_ms: 1.457208\n  type: 'test'\n  ...\n# Subtest: runtime layout binds complete identity and rejects unsafe aliases without filesystem allocation\nok 2 - runtime layout binds complete identity and rejects unsafe aliases without filesystem allocation\n  ---\n  duration_ms: 1.466916\n  type: 'test'\n  ...\n# Subtest: runtime metadata has fixed finite bounds and locale independent inventory serialization\nok 3 - runtime metadata has fixed finite bounds and locale independent inventory serialization\n  ---\n  duration_ms: 0.284375\n  type: 'test'\n  ...\n# Subtest: official profile metadata reproduces all pinned assets without target execution or extraction\nok 4 - official profile metadata reproduces all pinned assets without target execution or extraction\n  ---\n  duration_ms: 4567.009709\n  type: 'test'\n  ...\n1..4\n# tests 4\n# suites 0\n# pass 4\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 4882.2205\n",
+        "files": [
+          {
+            "file": "src/installer/__tests__/production-deadlines.test.ts",
+            "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-mZM1Ue/report.tap src/installer/__tests__/production-deadlines.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2225,
+            "titles": [
+              {
+                "title": "ordinary installer imports and action deadlines ignore every ambient qualification selector",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "explicit trusted qualification admission preserves bounded runtime and manager deadlines",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_installer___tests___production-deadlines.test.ts.1795860666881.95620.tap"
+          },
+          {
+            "file": "src/installer/__tests__/qualification-scopes.test.ts",
+            "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-kN4C5T/report.tap src/installer/__tests__/qualification-scopes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 510,
+            "titles": [
+              {
+                "title": "explicit-short-scope-overrides-remain-exact-under-slow-vm",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "omitted-child-profile-is-canonicalized-and-conflicting-profile-rejected",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "normal-coordinator-and-git-role-caps-remain-exact",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_installer___tests___qualification-scopes.test.ts.1795860667430.95620.tap"
+          },
+          {
+            "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+            "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-qKRkvB/report.tap src/installer/__tests__/qualification-time-budgets.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 921,
+            "titles": [
+              {
+                "title": "qualification-profile-selects-frozen-normal-and-slow-vm-role-budgets",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "invalid-profile-fails-before-any-filesystem-or-worker-admission",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "profile-snapshot-cannot-change-after-module-import",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "copied-policy-asset-has-source-bytes-and-loads-from-installed-control",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_installer___tests___qualification-time-budgets.test.ts.1795860668354.95620.tap"
+          },
+          {
+            "file": "src/installer/__tests__/runtime-policy.test.ts",
+            "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-Vtz5ov/report.tap src/installer/__tests__/runtime-policy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4925,
+            "titles": [
+              {
+                "title": "runtime policy pins all six official distribution identities without enabling targets",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "runtime layout binds complete identity and rejects unsafe aliases without filesystem allocation",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "runtime metadata has fixed finite bounds and locale independent inventory serialization",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "official profile metadata reproduces all pinned assets without target execution or extraction",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_installer___tests___runtime-policy.test.ts.1795860673282.95620.tap"
+          }
+        ],
+        "namedTests": [
+          {
+            "name": "runtime-policy-exact-identity-target-baseline-profile-and-pinned-inventory",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-policy.test.ts",
+                "title": "runtime policy pins all six official distribution identities without enabling targets",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-policy.test.ts",
+                "title": "runtime layout binds complete identity and rejects unsafe aliases without filesystem allocation",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-policy.test.ts",
+                "title": "runtime metadata has fixed finite bounds and locale independent inventory serialization",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runtime-profile-metadata-is-reproducible-from-pinned-official-assets-without-target-execution",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-policy.test.ts",
+                "title": "official profile metadata reproduces all pinned assets without target execution or extraction",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ordinary-runtime-deadlines-ignore-qualification-env-and-trusted-qualifier-remains-bounded",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/production-deadlines.test.ts",
+                "title": "ordinary installer imports and action deadlines ignore every ambient qualification selector",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/production-deadlines.test.ts",
+                "title": "explicit trusted qualification admission preserves bounded runtime and manager deadlines",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+                "title": "qualification-profile-selects-frozen-normal-and-slow-vm-role-budgets",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+                "title": "invalid-profile-fails-before-any-filesystem-or-worker-admission",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+                "title": "profile-snapshot-cannot-change-after-module-import",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+                "title": "copied-policy-asset-has-source-bytes-and-loads-from-installed-control",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-scopes.test.ts",
+                "title": "explicit-short-scope-overrides-remain-exact-under-slow-vm",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-scopes.test.ts",
+                "title": "omitted-child-profile-is-canonicalized-and-conflicting-profile-rejected",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-scopes.test.ts",
+                "title": "normal-coordinator-and-git-role-caps-remain-exact",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ]
+      },
+      "testRecord": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/TESTS.md"
+    }
+  },
+  "passed": true
+}

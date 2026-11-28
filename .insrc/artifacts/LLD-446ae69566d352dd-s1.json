@@ -28,7 +28,7 @@
     "standalone": true,
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 5,
         "contentHash": "95ee67b33e5421be44d44d9d763307217ef48203d7f5fbabf2ce704e9169e91b",
@@ -39,12 +39,24 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 5,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T05:17:24.622Z"
+      }
     },
     "envelope": {
+      "description": "",
+      "references": [],
       "attachments": []
     },
-    "revision": 5
+    "revision": 5,
+    "rangeBase": "dee5816b5648cdc1088b092390e0623621526b59"
   },
   "body": {
     "hldContextSlice": {

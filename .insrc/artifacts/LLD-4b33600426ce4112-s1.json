@@ -1,0 +1,346 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795856871448-vln4i8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T09:09:35.611Z",
+    "epicCreatedAt": "2026-10-08T17:29:20.823Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "unknown",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 96165,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4b33600426ce4112",
+    "epicSlug": "bug-test-sweep-hangs-intermittently-npx",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1795856871448-vln4i8",
+    "hldEffectiveHash": "290a411de989b0b5386efd76178f7758391078222f05ed4e52a292392772db16",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Make the test sweep finish reliably without --test-force-exit",
+    "standalone": true,
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5fed01e74f83dc4769f90bf147eb6db4fc229d941a4c4ce2bfacad196de95efb",
+        "at": "2026-11-28T09:09:38.188Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T09:22:07.744Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "03b372ab3871d0d0052a64f60a9640545b582b0e"
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story makes bare parallel test sweeps terminate reliably without --test-force-exit. A finite default per-test timeout on the bare sweep entry point bounds every file (a straggler is failed at the bound and reported, never dropped), and the exec-stand-in test helper keeps its gh/git socket server ref'd while installed, so an awaited stand-in response cannot outlive the event loop and cancel the rest of its file. Product unref semantics (daemon housekeeping timers, session pool, mcp pipe) are deliberately untouched.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone bugfix Story (ISSUE-anchored, no parent HLD). Design directly against the repo: the harness (scripts/test-harness/run.mjs) is the owned bounded sweep path; bare globs need a per-test bound to finish reliably.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "bare sweep termination",
+          "exec-stand-in handle discipline"
+        ],
+        "depends": [],
+        "internal": "test infrastructure only"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "installExecStandIn",
+          "signature": "(fn?: ExecFake) => void",
+          "parameters": [
+            {
+              "name": "fn",
+              "type": "ExecFake | undefined",
+              "purpose": "stand-in handler; undefined removes the stand-ins",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "PATH points at the stand-in bin dir (or is restored)"
+          },
+          "errors": [],
+          "preconditions": [
+            "called from a test file that spawns gh/git via execFile"
+          ],
+          "postconditions": [
+            "the stand-in server is listening AND ref'd (no unref before remove()), so awaited execFile responses keep the event loop alive"
+          ]
+        },
+        {
+          "name": "remove",
+          "signature": "() => void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "stand-ins uninstalled"
+          },
+          "errors": [],
+          "preconditions": [
+            "installExecStandIn was called"
+          ],
+          "postconditions": [
+            "server closed, PATH restored, temp dir removed; the unref call is gone"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "test-run invocation (package.json scripts / docs/testing.md)",
+        "change": "field-add",
+        "details": "The documented bare sweep entry point gains a finite default --test-timeout (e.g. an npm \"test:sweep\" script passing --test-timeout) so bare globs always carry a per-test bound; the harness remains the owned gate path with per-file budgets and the pinned --test-force-exit command. No stored data changes.",
+        "callSites": [
+          "package.json",
+          "docs/testing.md"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A test promise never settles in a parallel bare sweep (event loop drained; only unref'd handles pending)",
+          "detection": "node:test reports \"Promise resolution is still pending but the event loop has already resolved\" and cancels the rest of the file; without a per-test timeout the parent sweep never terminates",
+          "response": "The default finite --test-timeout fails the stuck test at the bound and the file is reported; the exec-stand-in server staying ref'd removes the known loop-drain window for gh/git awaits",
+          "userImpact": "Bare npx tsx --test <glob> runs finish on every run with a complete per-file report instead of hanging to an external kill",
+          "recoverable": true
+        },
+        {
+          "scenario": "A file is merely slow under parallel load (compiler-API scans, e2e)",
+          "detection": "The per-test timeout fires (\"test timed out after Nms\")",
+          "response": "The file is reported failed-at-timeout and the sweep continues; a single-file rerun (as the headers recommend) passes",
+          "userImpact": "Slow-but-healthy files are visible as timeouts, not silently dropped",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "bare single-file run npx tsx --test <file>",
+          "expected": "unchanged; headers already recommend --test-force-exit for single files"
+        },
+        {
+          "input": "harness run npm test -- <file>",
+          "expected": "unchanged: owned bounded child per file, pinned Node 22.22.1 command with --test-force-exit; the gate path is untouched"
+        },
+        {
+          "input": "product code with unref'd housekeeping handles (session-pool sweep, state-store TTL, mcp session pipe, daemon children)",
+          "expected": "untouched — unref stays so real daemons/hosts are not kept alive; only the test stand-in server changes"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The harness remains the owned sweep path: one bounded child per test file with budgets, pinned runtime and --test-force-exit in the gate testCommand",
+          "source": "c1"
+        },
+        {
+          "text": "Product unref() semantics are deliberate (do not keep a host/daemon alive for housekeeping) and must not change",
+          "source": "c1"
+        },
+        {
+          "text": "Every test file still reports a result in a sweep; nothing is dropped",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via tsx (repo convention; harness runs files as bounded children under Node 22.22.1)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "exec-stand-in keeps its server ref'd while installed and closes it on remove, so an awaited stand-in response cannot outlive the event loop",
+          "subjects": [
+            "src/workflow/__tests__/helpers/exec-stand-in.ts (installExecStandIn/remove) and its existing usage tests"
+          ],
+          "fixturesNeeded": [
+            "existing exec-stand-in usage tests"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "A bare parallel sweep carrying the new default timeout terminates and reports every file",
+          "subjects": [
+            "bare tsx --test --test-timeout=<default> glob runs of src/workflow + src/mcp",
+            "package.json sweep script"
+          ],
+          "fixturesNeeded": []
+        },
+        {
+          "level": "smoke",
+          "purpose": "The repro sweep now finishes within the bound on every attempt (was 6/6 hangs at 100s on Node 22.22.1)",
+          "subjects": [
+            "repeated bare sweeps of the workflow+mcp subsets on Node 22.22.1"
+          ],
+          "fixturesNeeded": []
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "bare sweep with the default timeout terminates on every run and reports every file (smoke: N attempts, 0 external kills)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "exec-stand-in unit test: no unref before remove; an awaited gh/git call through the stand-in resolves"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "harness gate path unchanged: npm test -- <file> passes under the pinned command (regression on the touched helper)"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "no default per-test timeout on bare runs; exec-stand-in server unref'd while installed",
+      "stateAfter": "bare sweep entry point carries a finite default --test-timeout; exec-stand-in server ref'd until remove()",
+      "migrationSteps": [
+        "add the sweep script/default flag",
+        "drop server.unref() in exec-stand-in.ts",
+        "note in docs/testing.md that bare globs should use the bounded invocation"
+      ],
+      "backwardCompat": "single-file and harness runs unchanged",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Default per-test timeout for bare runs",
+        "oneLineSummary": "Give bare tsx --test sweeps a finite per-test timeout so a straggler file fails at the bound instead of blocking the sweep forever.",
+        "approach": "Invocation/docs-level default --test-timeout (plus an npm sweep script that passes it); harness stays the owned sweep path; stragglers are reported as timeout failures, not dropped.",
+        "pros": [
+          "Smallest change that makes every bare run terminate",
+          "No product-code change"
+        ],
+        "cons": [
+          "Does not repair the underlying unsettled promise"
+        ],
+        "costEstimate": "XS"
+      },
+      {
+        "id": "a2",
+        "name": "Repair unref'd-handle awaits in test-reachable code",
+        "oneLineSummary": "Keep handles that tests await ref'd while work is in flight (exec-stand-in server, deadline timers).",
+        "approach": "exec-stand-in server stays ref'd until remove(); audit deadline timers on awaited paths; product unref semantics carefully scoped.",
+        "pros": [
+          "Root-cause repair",
+          "Matches c03a454b diagnosis pattern"
+        ],
+        "cons": [
+          "Load-dependent, statistical verification",
+          "Product-code unref changes risk daemon liveness"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a3",
+        "name": "Harness-only sweeps (docs only)",
+        "oneLineSummary": "Declare the harness the only supported sweep; change nothing.",
+        "approach": "Document that bare parallel globs are unsupported.",
+        "pros": [
+          "Zero code change"
+        ],
+        "cons": [
+          "Violates the ISSUE fixIntent"
+        ],
+        "costEstimate": "XS"
+      },
+      {
+        "id": "a4",
+        "name": "Timeout default + test-helper ref discipline (combined)",
+        "oneLineSummary": "a1 for guaranteed termination plus a2 scoped strictly to the test helper exec-stand-in (server ref'd while installed); product unref untouched.",
+        "approach": "Finite default --test-timeout in the documented bare sweep entry point + exec-stand-in keeps its server ref'd until remove().",
+        "pros": [
+          "Guarantees termination and full reporting",
+          "Smallest safe code change",
+          "No product behaviour change"
+        ],
+        "cons": [
+          "Cannot prove a rare race is gone, only bounded"
+        ],
+        "costEstimate": "S"
+      }
+    ],
+    "chosenAlternative": "a4",
+    "openQuestions": [],
+    "epicImpact": {
+      "applies": false,
+      "reason": "Standalone ISSUE-anchored bugfix; no Epic stories built yet.",
+      "storiesCovered": [
+        "s1"
+      ],
+      "findings": "(a) awaited promises depending on unref'd handles can drain the loop under load; (b) no per-test timeout on bare runs lets one straggler file block the sweep forever. Harness already bounds each file.",
+      "sources": [
+        "src/workflow/__tests__/helpers/exec-stand-in.ts",
+        "src/workflow/team/sighting-store.ts",
+        "scripts/test-harness/run.mjs"
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/__tests__/helpers/exec-stand-in.ts:78"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/team/sighting-store.ts:61"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "docs/testing.md"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/activation.ts:34-58"
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+{
+  "reviewedHead": "4ec83d006f7b979212275fbbf038995902830309",
+  "verdict": "changes-requested",
+  "allFindingsResolved": false,
+  "existingStory": "446ae69566d352dd/s1",
+  "reworkAdmission": "registered s1/t5 admitted; focused bootstrap checks passed, registered validation pending",
+  "nativeEvidence": "Prior macOS/Linux source equivalence becomes historical after production edits; affected regression/native qualification required before final BUILD approval",
+  "findings": [
+    {
+      "id": "1",
+      "status": "implemented-focused-tests-pass",
+      "scope": "bootstrap",
+      "evidence": "bootstrap-batch/README.md"
+    },
+    {
+      "id": "2",
+      "status": "implemented-focused-tests-pass",
+      "scope": "bootstrap",
+      "evidence": "bootstrap-batch/README.md"
+    },
+    {
+      "id": "3",
+      "status": "implemented-focused-tests-pass",
+      "scope": "bootstrap",
+      "evidence": "bootstrap-batch/README.md"
+    },
+    {
+      "id": "4",
+      "status": "pending",
+      "scope": "design/integrity"
+    },
+    {
+      "id": "5",
+      "status": "pending",
+      "scope": "design/integrity"
+    },
+    {
+      "id": "6",
+      "status": "pending",
+      "scope": "design/integrity"
+    },
+    {
+      "id": "7",
+      "status": "pending",
+      "scope": "runtime/consumer"
+    },
+    {
+      "id": "8",
+      "status": "pending",
+      "scope": "runtime/consumer"
+    },
+    {
+      "id": "9",
+      "status": "pending",
+      "scope": "runtime/consumer"
+    },
+    {
+      "id": "10",
+      "status": "pending",
+      "scope": "runtime/consumer"
+    },
+    {
+      "id": "11",
+      "status": "pending",
+      "scope": "runtime/consumer"
+    },
+    {
+      "id": "12",
+      "status": "pending",
+      "scope": "target/CI"
+    },
+    {
+      "id": "13",
+      "status": "pending",
+      "scope": "runtime/consumer"
+    },
+    {
+      "id": "14",
+      "status": "implemented-focused-tests-pass",
+      "scope": "bootstrap",
+      "evidence": "bootstrap-batch/README.md"
+    },
+    {
+      "id": "15",
+      "status": "pending",
+      "scope": "target/CI"
+    },
+    {
+      "id": "16",
+      "status": "pending",
+      "scope": "collector"
+    },
+    {
+      "id": "17",
+      "status": "pending",
+      "scope": "bootstrap"
+    },
+    {
+      "id": "T1",
+      "status": "pending",
+      "scope": "tests"
+    },
+    {
+      "id": "T2",
+      "status": "implemented-focused-tests-pass",
+      "scope": "tests",
+      "evidence": "bootstrap-batch/README.md"
+    },
+    {
+      "id": "T3",
+      "status": "pending",
+      "scope": "tests"
+    },
+    {
+      "id": "T4",
+      "status": "partially-implemented",
+      "scope": "tests",
+      "note": "Bootstrap table diagnostics tightened; terminal/dev-toolchain assertions remain pending"
+    },
+    {
+      "id": "T5",
+      "status": "implemented-focused-tests-pass",
+      "scope": "tests",
+      "evidence": "bootstrap-batch/README.md"
+    },
+    {
+      "id": "T6",
+      "status": "pending",
+      "scope": "tests"
+    }
+  ]
+}

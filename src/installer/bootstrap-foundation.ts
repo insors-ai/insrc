@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { InstallerError, PRIVATE_NODE_VERSION } from './contracts.js';
 import type { Target, RuntimeIdentity } from './contracts.js';
-import { assertLocalControlRoot, assertToken, resolveInstallationLocation } from './location.js';
+import { assertLocalControlRoot, assertToken, normalizeHome, resolveInstallationLocation } from './location.js';
 import { parseInstaller } from './schemas.js';
 import { ControllerStore } from './controller-store.js';
 import { verifyBootstrapControl } from './bootstrap-control.js';
@@ -22,7 +22,7 @@ export async function publishBootstrapFoundation(targetInput: Target, args: stri
   const [home, id, work, bootstrapHash, nativeHash] = args as [string, string, string, string, string];
   assertToken(id);
   const location = resolveInstallationLocation(id, { home, ...(process.platform === 'win32' ? { userSid: controlBinding().userSid() } : {}) });
-  if (dirname(work) !== join(location.home, 'install') || !/^bootstrap-stage\.[A-Za-z0-9-]+$/.test(work.slice(dirname(work).length + 1))) throw new InstallerError('path-invalid', 'Bootstrap work must be its private script stage');
+  if (normalizeHome(dirname(work), target.os) !== join(location.home, 'install') || !/^bootstrap-stage\.[A-Za-z0-9-]+$/.test(work.slice(dirname(work).length + 1))) throw new InstallerError('path-invalid', 'Bootstrap work must be its private script stage');
   assertLocalControlRoot(work, process.platform === 'win32' ? path => controlBinding().localVolume(path) : undefined);
   const control = dirname(fileURLToPath(import.meta.url)), hashes = { bootstrap: bootstrapHash, native: nativeHash };
   const deadline = AbortSignal.timeout(RUNTIME_LIMITS.verificationMs), verification = signal ? AbortSignal.any([deadline, signal]) : deadline;

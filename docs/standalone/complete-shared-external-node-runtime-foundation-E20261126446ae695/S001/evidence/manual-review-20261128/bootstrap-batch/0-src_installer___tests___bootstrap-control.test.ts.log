@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: bootstrap control publication copies exact bytes and reuses only a verified immutable directory
+ok 1 - bootstrap control publication copies exact bytes and reuses only a verified immutable directory
+  ---
+  duration_ms: 1553.254875
+  type: 'test'
+  ...
+# Subtest: bootstrap control verification rejects extra members and unsafe private ancestors
+ok 2 - bootstrap control verification rejects extra members and unsafe private ancestors
+  ---
+  duration_ms: 34.282708
+  type: 'test'
+  ...
+# Subtest: bootstrap control close uncertainty is bounded and retains the only owned publication stage
+ok 3 - bootstrap control close uncertainty is bounded and retains the only owned publication stage
+  ---
+  duration_ms: 5060.063583
+  type: 'test'
+  ...
+# Subtest: bootstrap control late cancellation during positive close cannot report successful reuse
+ok 4 - bootstrap control late cancellation during positive close cannot report successful reuse
+  ---
+  duration_ms: 34.717542
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7194.461458

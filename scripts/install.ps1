@@ -123,6 +123,9 @@ try {
     $node = $canonicalNode
     $installArgs = @('--home', $HomeDirectory, '--installation-id', $InstallationId)
     if ($OperationId) { $installArgs += @('--operation-id', $OperationId) }
+    Verify-File $node $nodeSha
+    Verify-File (Join-Path $control 'bootstrap.mjs') $bootstrapSha
+    Verify-File (Join-Path $control 'native/control.node') $nativeSha
     & $node (Join-Path $control 'bootstrap.mjs') @installArgs
     $installerExit = $LASTEXITCODE
 } finally {

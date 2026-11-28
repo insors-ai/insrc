@@ -25,20 +25,32 @@ while [ "$#" -gt 0 ]; do
 done
 case "$home" in /*) ;; *) fail 'home must be absolute';; esac
 case "$home/" in *'/../'*|*'/./'*|//* ) fail 'unsafe home';; esac
+# Match the helper's canonical POSIX home before constructing any child path.
+while :; do
+  case "$home" in *'//'*) home=${home%%//*}/${home#*//};; *) break;; esac
+done
+home=${home%/}
 current=$home
 while :; do [ ! -L "$current" ] || fail 'home ancestor is a symlink'; [ "$current" != / ] || break; current=${current%/*}; [ -n "$current" ] || current=/; done
 mkdir -p "$home/install"
 [ ! -L "$home/install" ] || fail 'control root is a symlink'
 chmod 700 "$home/install"
 stage=$(mktemp -d "$home/install/bootstrap-stage.XXXXXXXX")
-helper_active=0
+helper_active=0; signal_exit=0
 cleanup() {
   if [ "$helper_active" -eq 1 ]; then printf '%s\n' "insrc: publication child exit unconfirmed; retained $stage" >&2
   else rm -rf "$stage"; fi
 }
 trap cleanup EXIT
-trap 'exit 130' INT
-trap 'exit 143' TERM HUP
+record_signal() {
+  signal_exit=$1
+  # A foreground helper has not returned to the shell yet. Record cancellation
+  # and wait for its exact exit before deciding whether the stage can be removed.
+  [ "$helper_active" -eq 1 ] || exit "$signal_exit"
+}
+trap 'record_signal 130' INT
+trap 'record_signal 143' TERM
+trap 'record_signal 129' HUP
 fetch() {
   command -v curl >/dev/null 2>&1 || fail 'prerequisite missing: curl (install it as your user)'
   case "$1" in https://*) ;; *) fail 'HTTPS asset required';; esac
@@ -81,12 +93,18 @@ helper_active=1
 if
   :
   # @@PUBLISH_FOUNDATION@@
-then helper_active=0
-else helper_active=0; fail 'bootstrap publication failed'; fi
+then helper_status=0
+else helper_status=$?; fi
+helper_active=0
+[ "$signal_exit" -eq 0 ] || exit "$signal_exit"
+[ "$helper_status" -eq 0 ] || fail 'bootstrap publication failed'
 # Reaching here means the exact helper child exited. A native close return alone
 # never substitutes for a fresh ordinary manager admission in the next process.
 cleanup
 trap - EXIT INT TERM HUP
 set -- --home "$home" --installation-id "$identity"
 if [ -n "$operation" ]; then set -- "$@" --operation-id "$operation"; fi
+verify "$canonical_node" "$node_sha"
+verify "$control/bootstrap.mjs" "$bootstrap_sha"
+verify "$control/native/control.node" "$native_sha"
 exec "$canonical_node" "$control/bootstrap.mjs" "$@"

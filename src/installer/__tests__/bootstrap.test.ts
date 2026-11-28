@@ -13,27 +13,30 @@ import { ControllerStore } from '../controller-store.js';
 import { resolveInstallationLocation } from '../location.js';
 import { archiveFixture, node22Fixture } from './_runtime-fixture.js';
 import { renderInstallerBootstrap } from '../../../scripts/render-installer-bootstrap.mjs';
-import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
+import { spawnFixture, stopOwnedChildren, waitFor } from '../../daemon/tools/__tests__/_proc.js';
 
 const sha = (bytes: string | Buffer): string => createHash('sha256').update(bytes).digest('hex');
 const q = (text: string): string => "'" + text.replaceAll("'", "'\\''") + "'";
 const target: Target = { os: process.platform as Target['os'], arch: process.arch as Target['arch'], baseline: 'native-v1' };
+interface BootstrapEvent { name: string; pid: number; node: string; time: number; sameExecution?: boolean; code?: number }
 let built: Promise<{ directory: string; bootstrap: string; native: string }> | undefined;
 async function controlSource() {
   return built ??= (async () => {
     const directory = fs.mkdtempSync(join(fs.realpathSync(tmpdir()), 'ibc-')), entry = join(directory, 'fixture.mjs'), bootstrap = join(directory, 'bootstrap.mjs');
-    const helper = fileURLToPath(new URL('../../../out/installer/bootstrap-foundation.js', import.meta.url));
+    const main = fileURLToPath(new URL('../../../out/installer/terminal-main.js', import.meta.url));
     const store = fileURLToPath(new URL('../../../out/installer/controller-store.js', import.meta.url));
     const location = fileURLToPath(new URL('../../../out/installer/location.js', import.meta.url));
-    fs.writeFileSync(entry, `import fs from 'node:fs';import {join,dirname} from 'node:path';import {fileURLToPath} from 'node:url';import {spawnSync} from 'node:child_process';
-import {publishBootstrapFoundation} from ${JSON.stringify(helper)};import {ControllerStore} from ${JSON.stringify(store)};import {resolveInstallationLocation} from ${JSON.stringify(location)};
+    fs.writeFileSync(entry, `import fs from 'node:fs';import {join,dirname} from 'node:path';import {fileURLToPath} from 'node:url';import {spawnSync} from 'node:child_process';import {syncBuiltinESMExports} from 'node:module';
+import {terminalMain as productionTerminalMain} from ${JSON.stringify(main)};import {ControllerStore} from ${JSON.stringify(store)};import {resolveInstallationLocation} from ${JSON.stringify(location)};
 const target=${JSON.stringify(target)};const event=(name,extra={})=>fs.appendFileSync(process.env.INSRC_BOOTSTRAP_TEST_EVENTS,JSON.stringify({name,pid:process.pid,node:process.execPath,time:Date.now(),...extra})+'\\n');
 export async function terminalMain(args=process.argv.slice(2)){
  if(args[0]==='--bootstrap-publication'){
   const native=join(dirname(fileURLToPath(import.meta.url)),'native/control.node');const before=[fs.lstatSync(process.execPath).ino,fs.lstatSync(native).ino];event('helper-start',{work:args[3],control:dirname(native)});
-  const abort=new AbortController();const cancel=()=>abort.abort(Error('fixture interrupt'));process.once('SIGINT',cancel);let timer;if(process.env.INSRC_BOOTSTRAP_TEST_CANCEL==='1')timer=setTimeout(()=>process.emit('SIGINT'),20);
-  try{await publishBootstrapFoundation(target,args.slice(1),abort.signal);clearTimeout(timer);event('helper-after-close',{sameExecution:before[0]===fs.lstatSync(process.execPath).ino&&before[1]===fs.lstatSync(native).ino});process.once('exit',()=>event('helper-exit'));setTimeout(()=>process.exit(0),40);}
-  catch(error){event('helper-error',{message:error.message});process.stderr.write(error.message+'\\n');process.exit(1);}return;
+  if(process.env.INSRC_BOOTSTRAP_TEST_SIGNAL==='1'){
+   const open=fs.promises.open;let held=false;fs.promises.open=async(...values)=>{const handle=await open(...values);if(!held&&String(values[0]).includes('runtime-stage-')){held=true;event('helper-publication-ready');await new Promise(resolve=>{let timer;const release=()=>{clearTimeout(timer);process.removeListener('SIGINT',release);process.removeListener('SIGTERM',release);process.removeListener('SIGHUP',release);resolve();};process.once('SIGINT',release);process.once('SIGTERM',release);process.once('SIGHUP',release);timer=setTimeout(release,10000);});}return handle;};syncBuiltinESMExports();
+  }
+  process.once('exit',code=>{if(code===0){event('helper-after-close',{sameExecution:before[0]===fs.lstatSync(process.execPath).ino&&before[1]===fs.lstatSync(native).ino});const tamper=process.env.INSRC_BOOTSTRAP_TEST_POST_TAMPER;if(tamper){const control=join(args[1],'install/bootstrap',args[4]+'-'+args[5]);const file=tamper==='node'?join(args[1],'runtimes/22.22.1',target.os+'-'+target.arch+'-'+target.baseline,${JSON.stringify(runtimeArchive(target).sha256)},'distribution/bin/node'):join(control,tamper==='bootstrap'?'bootstrap.mjs':'native/control.node');fs.appendFileSync(file,'post-publication-tamper');}}else event('helper-error',{code});event('helper-exit',{code});});
+  return productionTerminalMain(args);
  }
  const home=args[args.indexOf('--home')+1];const owner=ControllerStore.acquire(resolveInstallationLocation('fixture',{home}));event('manager-fresh-lock');owner.close();
  fs.writeFileSync(process.env.INSRC_BOOTSTRAP_TEST_RESULT,JSON.stringify({version:process.version,node:process.execPath,argv:args,options:process.env.NODE_OPTIONS??null,nodePath:process.env.NODE_PATH??null,cuda:process.env.ONNXRUNTIME_NODE_INSTALL_CUDA,tty:[!!process.stdin.isTTY,!!process.stdout.isTTY,!!process.stderr.isTTY]}));
@@ -52,7 +55,7 @@ if(process.argv[1]&&fs.realpathSync(process.argv[1])===fs.realpathSync(fileURLTo
 }
 after(async () => { if (built) { const source = await built; fs.rmSync(source.directory, { recursive: true, force: true }); } });
 
-async function fixture(options: { corruptArchive?: boolean; corruptNode?: boolean; corruptNative?: boolean; wrongTarget?: boolean; missingTar?: boolean; trapNode?: boolean; tty?: boolean; cancel?: boolean } = {}) {
+async function fixture(options: { corruptArchive?: boolean; corruptNode?: boolean; corruptNative?: boolean; wrongTarget?: boolean; missingTar?: boolean; trapNode?: boolean; tty?: boolean; signal?: 'SIGINT' | 'SIGTERM' | 'SIGHUP'; postPublicationTamper?: 'node' | 'bootstrap' | 'native' } = {}) {
   const source = await controlSource(), archive = await archiveFixture();
   const root = fs.mkdtempSync(join(fs.realpathSync(tmpdir()), 'ibt-')), home = join(root, "data home Ω's"), tools = join(root, 'tools'), children: ChildProcess[] = [];
   fs.mkdirSync(tools);
@@ -70,22 +73,30 @@ async function fixture(options: { corruptArchive?: boolean; corruptNode?: boolea
   if (options.trapNode) fs.writeFileSync(join(tools, 'node'), `#!/bin/sh\necho called > ${q(join(root, 'host-node-called'))}\nexit 88\n`, { mode: 0o700 });
   const resultFile = join(root, 'result.json'), eventsFile = join(root, 'events.jsonl'), tuiFile = join(root, 'tui.json');
   const identity = { version: '22.22.1' as const, target, sha256: runtimeArchive(target).sha256, relativeExecutable: 'bin/node' }, paths = runtimeStorePaths(home, identity);
-  async function invoke() {
+  async function invoke(requestedHome = home) {
     fs.rmSync(resultFile, { force: true });
-    const args = [script, '--home', home, '--installation-id', 'fixture', '--operation-id', 'terminal-smoke'];
+    const args = [script, '--home', requestedHome, '--installation-id', 'fixture', '--operation-id', 'terminal-smoke'];
     const command = options.tty ? '/usr/bin/script' : '/bin/sh';
     const values = !options.tty ? args : process.platform === 'darwin' ? ['-q', '/dev/null', '/bin/sh', ...args] : ['-q', '-e', '-c', ['/bin/sh', ...args].map(q).join(' '), '/dev/null'];
-    const child = spawnFixture(command, values, { env: { ...process.env, PATH: tools, NODE_OPTIONS: '--require=/must-not-load', NODE_PATH: '/must-not-load', ONNXRUNTIME_NODE_INSTALL_CUDA: '', INSRC_BOOTSTRAP_TEST_EVENTS: eventsFile, INSRC_BOOTSTRAP_TEST_RESULT: resultFile, INSRC_BOOTSTRAP_TEST_TUI_RESULT: tuiFile, INSRC_BOOTSTRAP_TEST_TUI: options.tty ? '1' : '0', INSRC_BOOTSTRAP_TEST_CANCEL: options.cancel ? '1' : '0' }, stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child);
+    const child = spawnFixture(command, values, { env: { ...process.env, PATH: tools, NODE_OPTIONS: '--require=/must-not-load', NODE_PATH: '/must-not-load', ONNXRUNTIME_NODE_INSTALL_CUDA: '', INSRC_BOOTSTRAP_TEST_EVENTS: eventsFile, INSRC_BOOTSTRAP_TEST_RESULT: resultFile, INSRC_BOOTSTRAP_TEST_TUI_RESULT: tuiFile, INSRC_BOOTSTRAP_TEST_TUI: options.tty ? '1' : '0', INSRC_BOOTSTRAP_TEST_SIGNAL: options.signal ? '1' : '0', INSRC_BOOTSTRAP_TEST_POST_TAMPER: options.postPublicationTamper ?? '' }, stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child);
+    const closed = once(child, 'close');
     let output = ''; child.stdout!.on('data', (b: Buffer) => { output += b; }); child.stderr!.on('data', (b: Buffer) => { output += b; });
-    const [code] = await once(child, 'close'); return { code, output, result: fs.existsSync(resultFile) ? JSON.parse(fs.readFileSync(resultFile, 'utf8')) : undefined };
+    if (options.signal) {
+      assert.ok(await waitFor(() => events().some(e => e.name === 'helper-publication-ready') || child.exitCode !== null || child.signalCode !== null, 90000), 'publication readiness deadline');
+      assert.ok(events().some(e => e.name === 'helper-publication-ready'), output);
+      assert.equal(child.exitCode, null); assert.equal(child.signalCode, null); assert.ok(child.pid);
+      process.kill(-child.pid, options.signal);
+    }
+    const [code, signal] = await closed; return { code, signal, output, result: fs.existsSync(resultFile) ? JSON.parse(fs.readFileSync(resultFile, 'utf8')) : undefined };
   }
-  return { root, home, paths, invoke, offline() { fs.writeFileSync(join(root, 'offline'), 'offline'); }, events() { return fs.existsSync(eventsFile) ? fs.readFileSync(eventsFile, 'utf8').trim().split('\n').map(line => JSON.parse(line)) : []; }, async clean() { await stopOwnedChildren(children); fs.rmSync(root, { recursive: true, force: true }); }, tuiFile };
+  function events(): BootstrapEvent[] { return fs.existsSync(eventsFile) ? fs.readFileSync(eventsFile, 'utf8').trim().split('\n').map(line => JSON.parse(line)) : []; }
+  return { root, home, paths, control: join(home, 'install/bootstrap', assets.bootstrap.sha256 + '-' + assets.native.sha256), invoke, offline() { fs.writeFileSync(join(root, 'offline'), 'offline'); }, events, async clean() { await stopOwnedChildren(children); fs.rmSync(root, { recursive: true, force: true }); }, tuiFile };
 }
 
 test('bootstrap authenticates archive executable and control bytes before running code and diagnoses prerequisites', { timeout: 120_000 }, async () => {
-  for (const options of [{ corruptArchive: true }, { wrongTarget: true }, { missingTar: true }, { corruptNode: true }, { corruptNative: true }]) {
+  for (const [options, diagnostic] of [[{ corruptArchive: true }, /asset size mismatch/], [{ wrongTarget: true }, /asset size mismatch/], [{ missingTar: true }, /prerequisite missing: tar/], [{ corruptNode: true }, /asset digest mismatch/], [{ corruptNative: true }, /asset digest mismatch/]] as const) {
     const f = await fixture(options);
-    try { const result = await f.invoke(); assert.notEqual(result.code, 0, result.output); assert.equal(result.result, undefined); assert.deepEqual(f.events(), []); assert.match(result.output, /prerequisite missing: tar|size mismatch|digest mismatch/); }
+    try { const result = await f.invoke(); assert.notEqual(result.code, 0, result.output); assert.equal(result.result, undefined); assert.deepEqual(f.events(), []); assert.match(result.output, diagnostic); }
     finally { await f.clean(); }
   }
 });
@@ -98,8 +109,8 @@ test('bootstrap uses real native publication exact helper exit and a fresh manag
       assert.equal(result.result.version, 'v22.22.1'); assert.equal(result.result.options, null); assert.equal(result.result.nodePath, null); assert.equal(result.result.cuda, '');
       assert.equal(fs.existsSync(join(f.root, 'host-node-called')), false);
       const events = f.events(); assert.deepEqual(events.map(e => e.name), ['helper-start', 'helper-after-close', 'helper-exit', 'manager-fresh-lock']);
-      assert.equal(events[1].sameExecution, true); assert.notEqual(events[0].pid, events[3].pid);
-      assert.ok(events[3].time >= events[2].time); assert.match(events[0].node, /bootstrap-stage\..*\/execution\//);
+      assert.equal(events[1]!.sameExecution, true); assert.notEqual(events[0]!.pid, events[3]!.pid);
+      assert.ok(events[3]!.time >= events[2]!.time); assert.match(events[0]!.node, /bootstrap-stage\..*\/execution\//);
       assert.equal(result.result.node, join(f.paths.directory, 'bin/node'));
       assert.equal(fs.existsSync(join(f.home, 'install', 'controller.json')), false, 'publication is not enrollment');
     } finally { await f.clean(); }
@@ -132,9 +143,53 @@ test('bootstrap preserves incomplete immutable entries and lock conflicts withou
 });
 
 test('bootstrap cancellation closes its publication child before cleanup and never launches the manager', { timeout: 120_000 }, async () => {
-  const f = await fixture({ cancel: true });
-  try { const result = await f.invoke(); assert.notEqual(result.code, 0); assert.equal(result.result, undefined); assert.ok(f.events().some(e => e.name === 'helper-error')); assert.equal(f.events().some(e => e.name === 'manager-fresh-lock'), false); assert.equal(fs.existsSync(f.paths.root), false); }
-  finally { await f.clean(); }
+  for (const [signal, code] of [['SIGINT', 130], ['SIGTERM', 143], ['SIGHUP', 129]] as const) {
+    const f = await fixture({ signal });
+    try {
+      const result = await f.invoke(); assert.equal(result.code, code, result.output); assert.equal(result.signal, null);
+      assert.equal(result.result, undefined); assert.ok(f.events().some(e => e.name === 'helper-publication-ready'));
+      assert.ok(f.events().some(e => e.name === 'helper-error')); assert.equal(f.events().some(e => e.name === 'manager-fresh-lock'), false);
+      assert.match(result.output, /cancelled: Bootstrap publication interrupted/);
+      assert.doesNotMatch(result.output, /publication child exit unconfirmed/);
+      assert.equal(fs.existsSync(f.paths.root), false);
+      assert.deepEqual(fs.readdirSync(join(f.home, 'install')).filter(name => /^(bootstrap|runtime)-stage\./.test(name) || name.startsWith('runtime-stage-')), []);
+    } finally { await f.clean(); }
+  }
+});
+
+test('bootstrap canonicalizes trailing and repeated separators before publication and cached reuse', { timeout: 120_000 }, async () => {
+  const f = await fixture();
+  try {
+    const first = await f.invoke(f.home + '/'); assert.equal(first.code, 0, first.output); assert.ok(first.result.argv.includes(f.home));
+    const inode = fs.lstatSync(join(f.paths.directory, 'bin/node')).ino; f.offline();
+    const repeated = await f.invoke(dirname(f.home) + '//' + f.home.slice(dirname(f.home).length + 1));
+    assert.equal(repeated.code, 0, repeated.output); assert.ok(repeated.result.argv.includes(f.home));
+    assert.equal(fs.lstatSync(join(f.paths.directory, 'bin/node')).ino, inode);
+  } finally { await f.clean(); }
+});
+
+test('bootstrap authenticates all canonical executable and control assets after publication', { timeout: 180_000 }, async () => {
+  for (const postPublicationTamper of ['node', 'bootstrap', 'native'] as const) {
+    const f = await fixture({ postPublicationTamper });
+    try {
+      const result = await f.invoke(); assert.notEqual(result.code, 0); assert.equal(result.result, undefined);
+      assert.match(result.output, /asset digest mismatch/); assert.ok(f.events().some(e => e.name === 'helper-exit' && e.code === 0));
+      assert.equal(f.events().some(e => e.name === 'manager-fresh-lock'), false);
+      assert.deepEqual(fs.readdirSync(join(f.home, 'install')).filter(name => name.startsWith('bootstrap-stage.')), []);
+    } finally { await f.clean(); }
+  }
+});
+
+test('bootstrap refuses tampered cached bootstrap and native control offline before helper execution', { timeout: 180_000 }, async () => {
+  for (const name of ['bootstrap.mjs', 'native/control.node']) {
+    const f = await fixture();
+    try {
+      const first = await f.invoke(); assert.equal(first.code, 0, first.output); const events = f.events().length; f.offline();
+      fs.appendFileSync(join(f.control, name), 'cached-control-tamper');
+      const result = await f.invoke(); assert.notEqual(result.code, 0); assert.equal(result.result, undefined);
+      assert.match(result.output, /asset digest mismatch/); assert.equal(f.events().length, events);
+    } finally { await f.clean(); }
+  }
 });
 
 test('concurrent terminal bootstraps keep one native owner and publish one immutable foundation', { timeout: 180_000 }, async () => {
@@ -170,6 +225,9 @@ test('private runtime and PowerShell source preserve pinned policy nonmoving exe
   assert.match(ps, /Verify-File \$node \$nodeSha/); assert.match(ps, /headers\.archive/); assert.match(ps, /node\.lib/);
   assert.ok(ps.indexOf('$helperExit = $LASTEXITCODE') < ps.indexOf('$node = $canonicalNode', ps.indexOf('$helperExit = $LASTEXITCODE')));
   assert.match(ps, /execution.zip/); assert.doesNotMatch(ps, /Move-Item|renameSync|ExecutionPolicy|Start-Process.+RunAs/); assert.match(ps, /@installArgs/); assert.match(ps, /exit \$installerExit/);
+  const finalChecks = ps.slice(ps.indexOf('$node = $canonicalNode', ps.indexOf('$helperExit = $LASTEXITCODE')));
+  assert.match(finalChecks, /Verify-File \$node \$nodeSha/); assert.match(finalChecks, /Verify-File \(Join-Path \$control 'bootstrap.mjs'\) \$bootstrapSha/); assert.match(finalChecks, /Verify-File \(Join-Path \$control 'native\/control.node'\) \$nativeSha/);
+  assert.throws(() => renderInstallerBootstrap('posix', { 'linux-x64': { bootstrap: { url: 'https://example.invalid/bootstrap', sha256: 'a'.repeat(64) }, native: { url: 'https://example.invalid/native', sha256: 'b'.repeat(64) } } }), /invalid bootstrap target identity/);
   assert.throws(() => renderInstallerBootstrap('posix', { 'linux-x64': { bootstrap: { url: 'http://example.invalid', sha256: 'a'.repeat(64) }, native: { url: 'https://example.invalid', sha256: 'b'.repeat(64) } } }), /invalid digest-bound/);
   // These are source assertions; actual Windows execution remains T10 evidence.
 });

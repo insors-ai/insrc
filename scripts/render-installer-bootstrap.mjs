@@ -15,8 +15,8 @@ export function renderInstallerBootstrap(platform, assets) {
       if (!/^https:\/\//.test(asset[kind]?.url ?? '') || !/^[a-f0-9]{64}$/.test(asset[kind]?.sha256 ?? '') || /[\r\n\0]/.test(asset[kind].url)) throw new Error('invalid digest-bound control asset');
     }
     const root = `node-v${policy.nodeVersion}-${target.replace('win32-', 'win-')}`;
-    const baseline = asset.target?.baseline ?? 'native-v1';
-    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(baseline) || asset.target && `${asset.target.os}-${asset.target.arch}` !== target) throw new Error('invalid bootstrap target identity');
+    const baseline = asset.target?.baseline;
+    if (typeof baseline !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(baseline) || `${asset.target.os}-${asset.target.arch}` !== target) throw new Error('invalid bootstrap target identity');
     const profile = policy.profiles[target], headers = policy.supplemental.headers, library = policy.supplemental.libraries[target.endsWith('-arm64') ? 'arm64' : 'x64'];
     const values = { runtime_url: `https://nodejs.org/download/release/v${policy.nodeVersion}/${root}.${windows ? 'zip' : 'tar.gz'}`, runtime_sha: policy.archives[target], runtime_bytes: String(profile.archiveBytes), runtime_root: root, node_sha: profile.nodeSha256, baseline,
       headers_url: headers.url, headers_sha: headers.sha256, headers_bytes: String(headers.bytes), library_url: library.url, library_sha: library.sha256, library_bytes: String(library.bytes),

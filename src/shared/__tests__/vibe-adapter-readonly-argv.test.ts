@@ -68,6 +68,8 @@ test('stableDescriptorHash changes when the binary content identity, pinned env 
 });
 
 test('createVibeAdapter still exists and read-only requests without a qualified capability refuse before dispatch (unaffected by this Task)', () => {
+	// No denial wording is configured for this adapter, so startTurn's own
+	// short-circuit (review r5 finding 3) fires before any cache lookup at all.
 	const adapter = createVibeAdapter({ cwd: process.cwd(), processGroup: 'adapter-owned' });
-	assert.throws(() => adapter.startTurn(readOnlyRequest()), /no qualified capability yet/);
+	assert.throws(() => adapter.startTurn(readOnlyRequest()), /INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING is not configured/);
 });

@@ -224,8 +224,10 @@ test('the VibeReadOnlyUnavailableError path when probes exhaust the retry bound 
 	// startTurn's mode:'read-only' branch is not yet wired to this suite's result
 	// (that wiring is s2/t4-t5) -- it still carries its pre-existing s1 placeholder,
 	// which already throws VibeReadOnlyUnavailableError regardless of qualification.
+	// No denial wording is configured for this adapter either, so startTurn's own
+	// short-circuit (review r5 finding 3) fires before any cache lookup at all.
 	const adapter = createVibeAdapter({ cwd: realDir(), processGroup: 'adapter-owned' });
-	assert.throws(() => adapter.startTurn({ prompt: 'x', outputMode: 'json', session: { kind: 'new' }, mode: 'read-only' }), /no qualified capability yet/);
+	assert.throws(() => adapter.startTurn({ prompt: 'x', outputMode: 'json', session: { kind: 'new' }, mode: 'read-only' }), /INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING is not configured/);
 });
 
 // -- Review response: code-review of e8105ad49, 5 findings ----------------------------------
@@ -272,7 +274,7 @@ test('a run that only performs the two allowed calls, with no structural-denial 
 test('an unresolvable executable fails qualification closed rather than hashing under a reusable-but-ambiguous identity (review finding 3a)', async () => {
 	_readOnlyQualificationCacheForTests().clear();
 	const context: VibeAdapterContext = { cwd: realDir(), env: { PATH: '/nonexistent-insrc-test-path-xyz' }, processGroup: 'adapter-owned' };
-	const result = await qualifyReadOnlyCapability(context, { command: 'definitely-not-a-real-vibe-binary-xyz' }, 1);
+	const result = await qualifyReadOnlyCapability(context, { command: 'definitely-not-a-real-vibe-binary-xyz', structuralDenialWordingForTests: DENIAL_WORDING }, 1);
 	assert.equal(result.status, 'unavailable');
 	assert.match(result.reason ?? '', /stable descriptor computation failed/);
 });
@@ -351,9 +353,13 @@ test("a hanging offline child is actually killed by the suite's own bounded per-
 	_setQualificationProbeTimeoutMsForTests(300);
 	try {
 		const startedAt = Date.now();
-		const result = await qualifyReadOnlyCapability(context, { command: scriptPath }, 1);
+		// A wording must be configured, or review r5 finding 3's short-circuit would
+		// return 'unavailable' instantly without ever spawning the hanging child at
+		// all -- defeating this test's actual point (proving the KILL mechanism).
+		const result = await qualifyReadOnlyCapability(context, { command: scriptPath, structuralDenialWordingForTests: DENIAL_WORDING }, 1);
 		const elapsedMs = Date.now() - startedAt;
 		assert.equal(result.status, 'unavailable');
+		assert.ok(elapsedMs > 250, `this assertion is only meaningful if the probe actually ran and was killed, not short-circuited (took ${elapsedMs}ms)`);
 		assert.ok(elapsedMs < 5_000, `the suite's own bounded per-probe timeout must actually kill the hung child, not wait indefinitely (took ${elapsedMs}ms)`);
 	} finally {
 		_setQualificationProbeTimeoutMsForTests(undefined);
@@ -405,10 +411,11 @@ test('a missing, malformed, or config-less post-dispatch export invalidates the 
 	const command = 'vibe-unverifiable-evidence';
 	const argv = _buildArgvForTests({ prompt: 'x', outputMode: 'streaming', session: { kind: 'new' }, mode: 'read-only' }, '/tmp/unused-output-dir');
 	const key = stableDescriptorHash(context, command, argv, { resolveCommandPath: (cmd) => cmd, statSync: () => ({ size: 1, mtimeMs: 1 }) });
-	_readOnlyQualificationCacheForTests().set(key, { status: 'qualified', allowedTools: ['insrc_analyze', 'insrc_analyze_step'], provenAgainst: { stableDescriptorHash: key, effectiveConfigFingerprint: 'fp-cached' } });
+	const cacheKey = `${key}#configured:${DENIAL_WORDING.source}/${DENIAL_WORDING.flags}`;
+	_readOnlyQualificationCacheForTests().set(cacheKey, { status: 'qualified', allowedTools: ['insrc_analyze', 'insrc_analyze_step'], provenAgainst: { stableDescriptorHash: key, effectiveConfigFingerprint: 'fp-cached' } });
 
 	const adapter = createVibeAdapter(context, {
-		command, resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }),
+		command, resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }), structuralDenialWordingForTests: DENIAL_WORDING,
 		spawn: () => {
 			const { child, stdout, emitter } = fakeChild();
 			queueMicrotask(() => {
@@ -428,7 +435,7 @@ test('a missing, malformed, or config-less post-dispatch export invalidates the 
 	assert.equal(result.text, 'ok', "the turn's own answer is unaffected by an unreadable export");
 	// No `tick()`/wait here at all -- the invalidation is awaited BEFORE resolveResult
 	// publishes, so it must already be visible the instant `turn.result` settles.
-	assert.equal(_readOnlyQualificationCacheForTests().has(key), false, 'an unreadable/unverifiable export invalidates the cache, never leaves it untouched');
+	assert.equal(_readOnlyQualificationCacheForTests().has(cacheKey), false, 'an unreadable/unverifiable export invalidates the cache, never leaves it untouched');
 });
 
 // -- Review response round 2: code-review of 5cb577231, 3 findings ---------------------------
@@ -469,9 +476,10 @@ test("a DIFFERENT generic failure wording (\"operation timed out\") not covered 
 	assert.match(result.reason ?? '', /structural denial probe: file_system\.read_file was not observed as a denied call/);
 });
 
-test('with NO denial wording configured at all (the real production default), qualification can never succeed via the structural denial probe, even when the journal shows a genuinely well-formed denial (review r4 finding 1, fail-closed default)', async () => {
+test('with NO denial wording configured at all (the real production default), qualification short-circuits before ever spawning a probe, even though the fixture would otherwise show a genuinely well-formed denial (review r4 finding 1 fail-closed default; review r5 finding 3 short-circuit)', async () => {
 	_readOnlyQualificationCacheForTests().clear();
 	const required = ['connector_insrc_insrc_analyze', 'connector_insrc_insrc_analyze_step'];
+	let spawnInvoked = false;
 	const deps: VibeAdapterDeps = {
 		command: 'vibe-no-wording-configured',
 		resolveCommandPath: (cmd) => cmd,
@@ -479,6 +487,7 @@ test('with NO denial wording configured at all (the real production default), qu
 		// No structuralDenialWordingForTests at all, and INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING
 		// is not set in this test run -- this is the real, unconfigured production default.
 		spawn: () => {
+			spawnInvoked = true;
 			const { child, stdout, emitter } = fakeChild();
 			queueMicrotask(() => { stdout.write(bothToolsCompletedJournal()); stdout.end(); emitter.emit('exit', 0, null); });
 			return child;
@@ -490,7 +499,8 @@ test('with NO denial wording configured at all (the real production default), qu
 	assert.equal(process.env['INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING'], undefined, 'this test assumes the real production default: nothing configured');
 	const result = await qualifyReadOnlyCapability(baseContext(realDir()), deps, 1);
 	assert.equal(result.status, 'unavailable', 'with no verified denial wording configured, qualification must fail closed by design, never guess');
-	assert.match(result.reason ?? '', /structural denial probe: file_system\.read_file was not observed as a denied call/);
+	assert.match(result.reason ?? '', /INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING is not configured/);
+	assert.equal(spawnInvoked, false, 'review r5 finding 3: no probe should even be attempted when the denial wording is unconfigured');
 });
 
 test('a transient qualification failure (e.g. a missing export on one run) is never cached durably -- a LATER, separate call starts a fresh run and can still succeed (review r3 finding 2)', async () => {
@@ -542,4 +552,81 @@ process.exit(0);
 	const context: VibeAdapterContext = { cwd: dir, env: { PATH: `bin:${nodeDir}:/usr/bin:/bin` }, processGroup: 'adapter-owned' };
 	const result = await qualifyReadOnlyCapability(context, { command: scriptName, structuralDenialWordingForTests: DENIAL_WORDING }, 1);
 	assert.equal(result.status, 'qualified');
+});
+
+// -- Review response round 5: code-review of 9ca038a25, 3 findings ---------------------------
+
+test('changing or removing the configured denial wording invalidates a prior qualification -- both through qualifyReadOnlyCapability and through the adapter\'s own readOnly snapshot (review r5 finding 1)', async () => {
+	_readOnlyQualificationCacheForTests().clear();
+	const required = ['connector_insrc_insrc_analyze', 'connector_insrc_insrc_analyze_step'];
+	const context = baseContext(realDir());
+	const deps: VibeAdapterDeps = {
+		command: 'vibe-wording-change',
+		resolveCommandPath: (cmd) => cmd,
+		identityStatSync: () => ({ size: 1, mtimeMs: 1 }),
+		structuralDenialWordingForTests: DENIAL_WORDING,
+		spawn: () => {
+			const { child, stdout, emitter } = fakeChild();
+			queueMicrotask(() => { stdout.write(bothToolsCompletedJournal()); stdout.end(); emitter.emit('exit', 0, null); });
+			return child;
+		},
+		mkdtemp: async () => realDir(),
+		readFile: async () => exportJson(required),
+		rm: async () => undefined,
+	};
+	const qualified = await qualifyReadOnlyCapability(context, deps, 1);
+	assert.equal(qualified.status, 'qualified');
+	assert.equal(createVibeAdapter(context, deps).readOnly.status, 'qualified', "the adapter's own snapshot sees the same cache entry under the same wording");
+
+	// A DIFFERENT wording is now configured -- the prior qualification was proven under
+	// the OLD wording, which no longer applies; it must never be reused as-is.
+	const changedWordingDeps: VibeAdapterDeps = { ...deps, structuralDenialWordingForTests: /some other text entirely/i };
+	const afterChange = await qualifyReadOnlyCapability(context, changedWordingDeps, 1);
+	assert.equal(afterChange.status, 'unavailable', 'a changed wording must never reuse a qualification proven under a different one');
+	assert.equal(createVibeAdapter(context, changedWordingDeps).readOnly.status, 'unavailable', "the adapter's own snapshot must not see the stale entry under the new wording either");
+
+	// Removing the wording entirely (unconfigured) must also never reuse the original entry.
+	const removedWordingDeps: VibeAdapterDeps = { ...deps, structuralDenialWordingForTests: undefined };
+	assert.equal(createVibeAdapter(context, removedWordingDeps).readOnly.status, 'unavailable', 'removing the wording entirely must not reuse the original qualification either');
+});
+
+test('an invalid denial-wording pattern surfaces as a reasoned unavailable result, never a raw thrown SyntaxError (review r5 finding 2)', async () => {
+	_readOnlyQualificationCacheForTests().clear();
+	const context = baseContext(realDir());
+	// An actually-malformed regex source (unbalanced group) -- the real env var is a plain
+	// string, so this is exactly the shape a typo'd configuration would take.
+	const deps: VibeAdapterDeps = { command: 'vibe-invalid-wording' };
+	const originalEnv = process.env['INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING'];
+	process.env['INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING'] = '(unterminated[';
+	try {
+		const result = await qualifyReadOnlyCapability(context, deps, 1);
+		assert.equal(result.status, 'unavailable');
+		assert.match(result.reason ?? '', /INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING is not a valid pattern/);
+		assert.doesNotThrow(() => createVibeAdapter(context, deps), 'construction must also never let the raw SyntaxError escape');
+		assert.equal(createVibeAdapter(context, deps).readOnly.status, 'unavailable');
+	} finally {
+		if (originalEnv === undefined) delete process.env['INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING'];
+		else process.env['INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING'] = originalEnv;
+	}
+});
+
+test('missing denial configuration short-circuits before launching ANY probe (not just the first), and names the setting in the reason, for both qualifyReadOnlyCapability and adapter construction (review r5 finding 3)', async () => {
+	_readOnlyQualificationCacheForTests().clear();
+	const context = baseContext(realDir());
+	let spawnInvoked = false;
+	const deps: VibeAdapterDeps = {
+		command: 'vibe-no-wording-short-circuit',
+		resolveCommandPath: (cmd) => cmd,
+		identityStatSync: () => ({ size: 1, mtimeMs: 1 }),
+		spawn: () => { spawnInvoked = true; throw new Error('must not spawn when denial wording is unconfigured'); },
+		mkdtemp: async () => realDir(),
+		readFile: async () => { throw new Error('must not reach a readFile either'); },
+		rm: async () => undefined,
+	};
+	const result = await qualifyReadOnlyCapability(context, deps, 3);
+	assert.equal(result.status, 'unavailable');
+	assert.match(result.reason ?? '', /INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING/);
+	assert.equal(spawnInvoked, false);
+	assert.equal(createVibeAdapter(context, deps).readOnly.status, 'unavailable', "construction's own snapshot short-circuits identically, never spawning");
+	assert.equal(spawnInvoked, false, 'construction must not have spawned anything either');
 });

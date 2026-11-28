@@ -541,10 +541,46 @@ const STRUCTURAL_DENIAL_PROBE_TOOL = 'file_system.read_file';
  *  correct, safe default per the review's own wording ("keep qualification unavailable when
  *  the installed CLI cannot supply that evidence"), not a guess that might again prove
  *  wrong a third time. */
-function structuralDenialWording(deps: VibeAdapterDeps): RegExp | undefined {
-	if (deps.structuralDenialWordingForTests !== undefined) return deps.structuralDenialWordingForTests;
+interface DenialWordingResult {
+	readonly status: 'configured' | 'unconfigured' | 'invalid';
+	readonly wording?: RegExp | undefined;
+	readonly error?: string | undefined;
+}
+
+/** `'invalid'` (review r5 finding 2): a malformed `INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING`
+ *  must surface as a reasoned `'unavailable'` capability, never a raw thrown `SyntaxError`
+ *  from `new RegExp(...)` escaping qualification's own fail-closed contract. */
+function structuralDenialWording(deps: VibeAdapterDeps): DenialWordingResult {
+	if (deps.structuralDenialWordingForTests !== undefined) return { status: 'configured', wording: deps.structuralDenialWordingForTests };
 	const configured = process.env['INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING'];
-	return configured !== undefined && configured.length > 0 ? new RegExp(configured, 'i') : undefined;
+	if (configured === undefined || configured.length === 0) return { status: 'unconfigured' };
+	try {
+		return { status: 'configured', wording: new RegExp(configured, 'i') };
+	} catch (error) {
+		return { status: 'invalid', error: (error as Error).message };
+	}
+}
+
+/** The reasoned `'unavailable'` capability for a `DenialWordingResult` that is not
+ *  `'configured'` -- the single source of this wording for every short-circuit below
+ *  (`qualifyReadOnlyCapability`, `createVibeAdapter`'s snapshot, `startTurn`'s dispatch
+ *  recheck), so all three name the same setting and reason consistently (review r5
+ *  finding 3's own "include the setting name in the reason" ask). */
+function denialWordingUnavailable(denial: DenialWordingResult): ReadOnlyCapability {
+	const reason = denial.status === 'invalid'
+		? `structural denial probe: INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING is not a valid pattern: ${denial.error}`
+		: 'structural denial probe: INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING is not configured -- qualification cannot confirm a policy denial without it';
+	return { status: 'unavailable', allowedTools: [], reason, provenAgainst: undefined };
+}
+
+/** A stable fingerprint of the EFFECTIVE denial-wording configuration, mixed into the
+ *  qualification cache key (review r5 finding 1) -- the wording is part of what a
+ *  `'qualified'` outcome actually proved, so changing OR REMOVING it must invalidate any
+ *  qualification proven under a different (or no) wording, rather than reusing a cache entry
+ *  the current configuration had no part in producing. */
+function denialWordingCacheFingerprint(denial: DenialWordingResult): string {
+	if (denial.status !== 'configured') return denial.status;
+	return `configured:${denial.wording!.source}/${denial.wording!.flags}`;
 }
 
 /** True when the journal shows `toolName` was actually attempted and FAILED with output text
@@ -726,6 +762,13 @@ export async function qualifyReadOnlyCapability(
 	maxAllowRetries = 3,
 	opts: QualificationBudget = {},
 ): Promise<ReadOnlyCapability> {
+	// Short-circuit BEFORE resolving anything or spawning a single probe (review r5
+	// finding 3) -- with no verified wording, qualification can never succeed via this
+	// check regardless of what any probe would show, so running the suite at all would
+	// only spend real subprocess launches and connector-tool calls for nothing.
+	const denial = structuralDenialWording(deps);
+	if (denial.status !== 'configured') return denialWordingUnavailable(denial);
+
 	const resolved = resolvedDeps(deps);
 	let descriptorKey: string;
 	let resolvedCommand: string;
@@ -737,30 +780,35 @@ export async function qualifyReadOnlyCapability(
 	} catch (error) {
 		return { status: 'unavailable', allowedTools: [], reason: `stable descriptor computation failed: ${(error as Error).message}`, provenAgainst: undefined };
 	}
+	// The wording is mixed into the EFFECTIVE cache key (review r5 finding 1): changing or
+	// removing the configured wording must invalidate a 'qualified' entry proven under a
+	// DIFFERENT (or no) wording -- the wording is part of what that outcome actually proved.
+	const cacheKey = `${descriptorKey}#${denialWordingCacheFingerprint(denial)}`;
 
-	const cached = readOnlyQualificationCache.get(descriptorKey);
+	const cached = readOnlyQualificationCache.get(cacheKey);
 	if (cached !== undefined) return cached;
 
-	// The shared run is keyed ONLY by descriptor -- every waiter for the SAME descriptor
-	// joins the SAME run, built once, regardless of any individual caller's own opts (review
-	// r2 finding 1). It caches its own result unconditionally once it completes (a genuine
-	// probe outcome, never shortened or cancelled by any one caller), so a later caller
-	// always sees that real outcome rather than one caller's own cancellation/deadline --
-	// EXCEPT a transient/exhausted outcome (`cacheable: false`, review r3 finding 2), which
-	// is returned to this batch of waiters but deliberately never written to the durable
-	// cache, so a later, separate call starts a fresh run rather than being stuck forever.
-	let run = inFlightQualifications.get(descriptorKey);
+	// The shared run is keyed ONLY by descriptor+wording -- every waiter for the SAME
+	// cache key joins the SAME run, built once, regardless of any individual caller's own
+	// opts (review r2 finding 1). It caches its own result unconditionally once it
+	// completes (a genuine probe outcome, never shortened or cancelled by any one caller),
+	// so a later caller always sees that real outcome rather than one caller's own
+	// cancellation/deadline -- EXCEPT a transient/exhausted outcome (`cacheable: false`,
+	// review r3 finding 2), which is returned to this batch of waiters but deliberately
+	// never written to the durable cache, so a later, separate call starts a fresh run
+	// rather than being stuck forever.
+	let run = inFlightQualifications.get(cacheKey);
 	if (run === undefined) {
 		// The probe dispatches with the SAME resolved path the hash above was computed
 		// against (review finding 3) -- never the bare command, which a concurrent PATH
 		// change could resolve to a different binary by the time of the actual spawn.
-		run = runQualificationSuite(context, { ...resolved, command: resolvedCommand }, descriptorKey, maxAllowRetries, structuralDenialWording(deps))
+		run = runQualificationSuite(context, { ...resolved, command: resolvedCommand }, descriptorKey, maxAllowRetries, denial.wording)
 			.then(outcome => {
-				if (outcome.cacheable) readOnlyQualificationCache.set(descriptorKey, outcome.capability);
+				if (outcome.cacheable) readOnlyQualificationCache.set(cacheKey, outcome.capability);
 				return outcome.capability;
 			})
-			.finally(() => { inFlightQualifications.delete(descriptorKey); });
-		inFlightQualifications.set(descriptorKey, run);
+			.finally(() => { inFlightQualifications.delete(cacheKey); });
+		inFlightQualifications.set(cacheKey, run);
 	}
 
 	// This caller's own signal/deadline bounds only ITS OWN wait on the shared run above --
@@ -1255,14 +1303,20 @@ export function createVibeAdapter(context: VibeAdapterContext, deps: VibeAdapter
 	// Task of this Story), which only runs when a caller actually requests
 	// mode:'read-only'.
 	let readOnly: ReadOnlyCapability;
-	try {
-		const probeRequest: VibeTurnRequest = { prompt: QUALIFICATION_PROBE_PROMPT, outputMode: 'streaming', session: { kind: 'new' }, mode: 'read-only' };
-		const resolvedCommand = resolveExecutable(deps, context, resolved.command);
-		const descriptorKey = stableDescriptorHash(context, resolved.command, buildArgv(probeRequest, ''), hashDepsFor(deps, resolvedCommand));
-		const cached = readOnlyQualificationCache.get(descriptorKey);
-		readOnly = cached ?? { status: 'unavailable', allowedTools: [], reason: 'read-only qualification has not completed yet for this descriptor', provenAgainst: undefined };
-	} catch (error) {
-		readOnly = { status: 'unavailable', allowedTools: [], reason: `stable descriptor computation failed: ${(error as Error).message}`, provenAgainst: undefined };
+	const constructionDenial = structuralDenialWording(deps);
+	if (constructionDenial.status !== 'configured') {
+		readOnly = denialWordingUnavailable(constructionDenial);
+	} else {
+		try {
+			const probeRequest: VibeTurnRequest = { prompt: QUALIFICATION_PROBE_PROMPT, outputMode: 'streaming', session: { kind: 'new' }, mode: 'read-only' };
+			const resolvedCommand = resolveExecutable(deps, context, resolved.command);
+			const descriptorKey = stableDescriptorHash(context, resolved.command, buildArgv(probeRequest, ''), hashDepsFor(deps, resolvedCommand));
+			const cacheKey = `${descriptorKey}#${denialWordingCacheFingerprint(constructionDenial)}`;
+			const cached = readOnlyQualificationCache.get(cacheKey);
+			readOnly = cached ?? { status: 'unavailable', allowedTools: [], reason: 'read-only qualification has not completed yet for this descriptor', provenAgainst: undefined };
+		} catch (error) {
+			readOnly = { status: 'unavailable', allowedTools: [], reason: `stable descriptor computation failed: ${(error as Error).message}`, provenAgainst: undefined };
+		}
 	}
 
 	return {
@@ -1270,6 +1324,12 @@ export function createVibeAdapter(context: VibeAdapterContext, deps: VibeAdapter
 		startTurn(request: VibeTurnRequest) {
 			if (request.mode === 'read-only') {
 				if (request.approval !== undefined) throw new VibeReadOnlyApprovalRejectedError();
+				// Re-check the CURRENT denial-wording configuration too, not just the
+				// descriptor (review r5 finding 1) -- a cached 'qualified' entry proven
+				// under a wording that has since changed or been removed must never be
+				// honored at dispatch, even if the descriptor itself is unchanged.
+				const dispatchDenial = structuralDenialWording(deps);
+				if (dispatchDenial.status !== 'configured') throw new VibeReadOnlyUnavailableError(denialWordingUnavailable(dispatchDenial).reason ?? 'denial wording not configured');
 				// Always re-check the shared module-level cache by THIS call's own stable
 				// descriptor -- never trust readOnly's construction-time snapshot, which may
 				// be stale (a background qualification elsewhere may have since resolved).
@@ -1286,7 +1346,8 @@ export function createVibeAdapter(context: VibeAdapterContext, deps: VibeAdapter
 				} catch (error) {
 					throw new VibeReadOnlyUnavailableError(`stable descriptor computation failed: ${(error as Error).message}`);
 				}
-				const cached = readOnlyQualificationCache.get(descriptorKey);
+				const cacheKey = `${descriptorKey}#${denialWordingCacheFingerprint(dispatchDenial)}`;
+				const cached = readOnlyQualificationCache.get(cacheKey);
 				if (cached === undefined || cached.status !== 'qualified' || cached.provenAgainst === undefined) {
 					throw new VibeReadOnlyUnavailableError(cached?.reason ?? 'no qualified capability yet');
 				}
@@ -1295,7 +1356,7 @@ export function createVibeAdapter(context: VibeAdapterContext, deps: VibeAdapter
 				let rejectResult!: (error: Error) => void;
 				const result = new Promise<VibeTurnResult>((resolve, reject) => { resolveResult = resolve; rejectResult = reject; });
 				const fingerprintCheckedDeps = wrapDepsForPostDispatchFingerprintCheck(
-					{ ...resolved, command: resolvedCommand }, descriptorKey, cached.provenAgainst.effectiveConfigFingerprint,
+					{ ...resolved, command: resolvedCommand }, cacheKey, cached.provenAgainst.effectiveConfigFingerprint,
 				);
 				void runTurn(context, request, fingerprintCheckedDeps, queue.push, queue.finish, resolveResult, rejectResult);
 				return Object.assign(Object.create(null) as object, queue.iterable, { result }) as AsyncIterable<VibeTurnEvent> & { readonly result: Promise<VibeTurnResult> };

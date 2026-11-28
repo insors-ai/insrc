@@ -32,6 +32,14 @@ function descriptorFor(context: VibeAdapterContext, command: string): string {
 	return stableDescriptorHash(context, command, argv, { resolveCommandPath: (cmd) => cmd, statSync: () => ({ size: 1, mtimeMs: 1 }) });
 }
 
+// A test-only stand-in for an operator's own live-confirmed denial wording (review r5
+// finding 1 -- the actual cache key mixes this in; see structuralDenialWordingForTests).
+const DENIAL_WORDING = /denied|not enabled/i;
+
+function cacheKeyFor(context: VibeAdapterContext, command: string): string {
+	return `${descriptorFor(context, command)}#configured:${DENIAL_WORDING.source}/${DENIAL_WORDING.flags}`;
+}
+
 test("VibeExecutionAdapter.readOnly reflects the cached capability for this adapter's stable descriptor", () => {
 	_readOnlyQualificationCacheForTests().clear();
 	const context: VibeAdapterContext = { cwd: realDir(), processGroup: 'adapter-owned' };
@@ -41,9 +49,9 @@ test("VibeExecutionAdapter.readOnly reflects the cached capability for this adap
 		allowedTools: ['insrc_analyze', 'insrc_analyze_step'],
 		provenAgainst: { stableDescriptorHash: key, effectiveConfigFingerprint: 'fp-fixed' },
 	};
-	_readOnlyQualificationCacheForTests().set(key, cachedCapability);
+	_readOnlyQualificationCacheForTests().set(cacheKeyFor(context, 'vibe-cached'), cachedCapability);
 
-	const adapter = createVibeAdapter(context, { command: 'vibe-cached', resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }) });
+	const adapter = createVibeAdapter(context, { command: 'vibe-cached', resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }), structuralDenialWordingForTests: DENIAL_WORDING });
 	assert.deepEqual(adapter.readOnly, cachedCapability);
 });
 
@@ -57,7 +65,7 @@ test("the cache-miss-on-descriptor-change path when the binary content or pinned
 	// Pre-populate the cache for the BASE descriptor only.
 	const baseKey = descriptorFor(baseContext, command);
 	const baseCapability: ReadOnlyCapability = { status: 'qualified', allowedTools: ['insrc_analyze', 'insrc_analyze_step'], provenAgainst: { stableDescriptorHash: baseKey, effectiveConfigFingerprint: 'fp-base' } };
-	_readOnlyQualificationCacheForTests().set(baseKey, baseCapability);
+	_readOnlyQualificationCacheForTests().set(cacheKeyFor(baseContext, command), baseCapability);
 
 	// A changed pinned env subset is a DIFFERENT descriptor: a cold miss. Construction
 	// returns an 'unavailable' snapshot synchronously, distinct from the base entry, and
@@ -68,6 +76,7 @@ test("the cache-miss-on-descriptor-change path when the binary content or pinned
 		command,
 		resolveCommandPath: (cmd) => cmd,
 		identityStatSync: () => ({ size: 1, mtimeMs: 1 }),
+		structuralDenialWordingForTests: DENIAL_WORDING,
 		spawn: () => { spawnInvoked = true; throw new Error('construction must never spawn'); },
 	});
 	assert.notDeepEqual(adapterChangedEnv.readOnly, baseCapability);
@@ -75,6 +84,6 @@ test("the cache-miss-on-descriptor-change path when the binary content or pinned
 	assert.equal(spawnInvoked, false, 'createVibeAdapter must never itself trigger a qualification probe');
 
 	// The base descriptor is unaffected by the miss on the changed one.
-	const adapterBaseAgain = createVibeAdapter(baseContext, { command, resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }) });
+	const adapterBaseAgain = createVibeAdapter(baseContext, { command, resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }), structuralDenialWordingForTests: DENIAL_WORDING });
 	assert.deepEqual(adapterBaseAgain.readOnly, baseCapability);
 });

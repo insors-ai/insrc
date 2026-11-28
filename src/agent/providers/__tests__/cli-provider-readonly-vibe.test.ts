@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { test } from 'node:test';
+import { after, before, test } from 'node:test';
 
 import { CliProvider } from '../cli-provider.js';
 import { UnqualifiedCapabilityPolicyError } from '../../../shared/types.js';
@@ -71,10 +71,33 @@ function descriptorFor(cwd: string, command: string): string {
 	return stableDescriptorHash({ cwd, processGroup: 'adapter-owned' }, command, argv);
 }
 
+// readOnlySessionOnce (cli-provider.ts) has no per-call deps override for the denial
+// wording -- it only ever reads INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING (review r5 finding
+// 3's short-circuit refuses instantly, with no spawn, when it's unset), so this whole file
+// configures it once for its own tests and restores the prior value afterward. None of these
+// fixtures ever show a denial attempt, so the exact pattern is irrelevant -- only that
+// *something* is configured.
+const DENIAL_WORDING_ENV_VALUE = 'denied|not enabled';
+let originalDenialWordingEnv: string | undefined;
+before(() => {
+	originalDenialWordingEnv = process.env['INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING'];
+	process.env['INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING'] = DENIAL_WORDING_ENV_VALUE;
+});
+after(() => {
+	if (originalDenialWordingEnv === undefined) delete process.env['INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING'];
+	else process.env['INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING'] = originalDenialWordingEnv;
+});
+
+/** The actual Map key the module now uses (review r5 finding 1): the pure stable descriptor
+ *  plus the effective denial-wording fingerprint. */
+function cacheKeyFor(cwd: string, command: string): string {
+	return `${descriptorFor(cwd, command)}#configured:${new RegExp(DENIAL_WORDING_ENV_VALUE, 'i').source}/i`;
+}
+
 function qualify(dir: string, command: string): void {
 	const key = descriptorFor(dir, command);
 	const cap: ReadOnlyCapability = { status: 'qualified', allowedTools: ['insrc_analyze', 'insrc_analyze_step'], provenAgainst: { stableDescriptorHash: key, effectiveConfigFingerprint: 'ignored-for-this-test' } };
-	_readOnlyQualificationCacheForTests().set(key, cap);
+	_readOnlyQualificationCacheForTests().set(cacheKeyFor(dir, command), cap);
 }
 
 const SCHEMA = { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } } };
@@ -112,8 +135,7 @@ test("the VibeReadOnlyUnavailableError path when probes exhaust the retry bound 
 	_readOnlyQualificationCacheForTests().clear();
 	const f = makeFakeVibe('{"ok":true}');
 	try {
-		const key = descriptorFor(f.dir, f.bin);
-		_readOnlyQualificationCacheForTests().set(key, { status: 'unavailable', allowedTools: [], reason: "allow-side probe: insrc_analyze and/or insrc_analyze_step did not show a confirmed completed call (attempt 3/3)", provenAgainst: undefined });
+		_readOnlyQualificationCacheForTests().set(cacheKeyFor(f.dir, f.bin), { status: 'unavailable', allowedTools: [], reason: "allow-side probe: insrc_analyze and/or insrc_analyze_step did not show a confirmed completed call (attempt 3/3)", provenAgainst: undefined });
 		const provider = new CliProvider({ kind: 'vibe', binPath: f.bin, timeoutMs: 10_000 });
 		await assert.rejects(
 			provider.runReadOnlySession<{ ok: boolean }>('analyze this', SCHEMA, { cwd: f.dir, deadlineMs: 20_000 }),
@@ -151,5 +173,7 @@ test("a cold cache that spends this call's own deadline on qualification leaves 
 			provider.runReadOnlySession<{ ok: boolean }>('analyze this', SCHEMA, { cwd: f.dir, deadlineMs: 50 }),
 			(e: unknown) => e instanceof Error && e.name === 'ReadOnlySessionTimeoutError',
 		);
-	} finally { rmSync(f.dir, { recursive: true, force: true }); }
+	} finally {
+		rmSync(f.dir, { recursive: true, force: true });
+	}
 });

@@ -17,10 +17,26 @@ import assert from 'node:assert/strict';
 import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { test } from 'node:test';
+import { after, before, test } from 'node:test';
 
 import { CliProvider } from '../cli-provider.js';
 import { VibeReadOnlyUnavailableError } from '../../../shared/vibe-adapter.js';
+
+// readOnlySessionOnce (cli-provider.ts) has no per-call deps override for the denial
+// wording -- it only ever reads INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING (review r5 finding
+// 3's short-circuit refuses instantly, with no spawn, when it's unset). This file's one
+// read-only test needs SOME value configured to reach the real qualification-suite spawns
+// it asserts on; the fixture never shows a denial attempt, so the exact pattern is
+// irrelevant. Configured once for this whole file and restored afterward.
+let originalDenialWordingEnv: string | undefined;
+before(() => {
+	originalDenialWordingEnv = process.env['INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING'];
+	process.env['INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING'] = 'denied|not enabled';
+});
+after(() => {
+	if (originalDenialWordingEnv === undefined) delete process.env['INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING'];
+	else process.env['INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING'] = originalDenialWordingEnv;
+});
 
 /**
  * A fake `vibe`: records every invocation (argv, stdin) as a JSON line in

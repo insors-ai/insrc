@@ -30,6 +30,17 @@ function descriptorFor(context: VibeAdapterContext, command: string): string {
 	return stableDescriptorHash(context, command, argv, { resolveCommandPath: (cmd) => cmd, statSync: () => ({ size: 1, mtimeMs: 1 }) });
 }
 
+// A test-only stand-in for an operator's own live-confirmed denial wording (review r5
+// finding 1 -- the cache key below mixes this in, so changing/removing it must invalidate
+// a stale entry; see structuralDenialWordingForTests).
+const DENIAL_WORDING = /denied|not enabled/i;
+
+/** The actual Map key the module now uses (review r5 finding 1): the pure stable descriptor
+ *  plus the effective denial-wording fingerprint. */
+function cacheKeyFor(context: VibeAdapterContext, command: string): string {
+	return `${descriptorFor(context, command)}#configured:${DENIAL_WORDING.source}/${DENIAL_WORDING.flags}`;
+}
+
 function readOnlyRequest(overrides: Partial<VibeTurnRequest> = {}): VibeTurnRequest {
 	return { prompt: 'x', outputMode: 'streaming', session: { kind: 'new' }, mode: 'read-only', ...overrides };
 }
@@ -62,6 +73,7 @@ function dispatchDeps(command: string, exportMarker: string) {
 		command,
 		resolveCommandPath: (cmd: string) => cmd,
 		identityStatSync: () => ({ size: 1, mtimeMs: 1 }),
+		structuralDenialWordingForTests: DENIAL_WORDING,
 		spawn: () => {
 			const { child, stdout, emitter } = fakeChild();
 			queueMicrotask(() => { stdout.write(ASSISTANT_LINE); stdout.end(); emitter.emit('exit', 0, null); });
@@ -91,8 +103,9 @@ test('a read-only request with a \'qualified\' cached capability dispatches via 
 	const context: VibeAdapterContext = { cwd: realDir(), processGroup: 'adapter-owned' };
 	const command = 'vibe-dispatch-ok';
 	const key = descriptorFor(context, command);
+	const cacheKey = cacheKeyFor(context, command);
 	const marker = 'm1';
-	_readOnlyQualificationCacheForTests().set(key, qualifiedCapability(key, fingerprintFor(marker)));
+	_readOnlyQualificationCacheForTests().set(cacheKey, qualifiedCapability(key, fingerprintFor(marker)));
 
 	const adapter = createVibeAdapter(context, dispatchDeps(command, marker));
 	const turn = adapter.startTurn(readOnlyRequest());
@@ -107,11 +120,11 @@ test('a read-only request with an \'unavailable\' cached capability throws VibeR
 	_readOnlyQualificationCacheForTests().clear();
 	const context: VibeAdapterContext = { cwd: realDir(), processGroup: 'adapter-owned' };
 	const command = 'vibe-dispatch-unavailable';
-	const key = descriptorFor(context, command);
-	_readOnlyQualificationCacheForTests().set(key, { status: 'unavailable', allowedTools: [], reason: 'bypass-absence failure: tool(s) outside the allowlist are enabled: file_system.bash', provenAgainst: undefined });
+	const cacheKey = cacheKeyFor(context, command);
+	_readOnlyQualificationCacheForTests().set(cacheKey, { status: 'unavailable', allowedTools: [], reason: 'bypass-absence failure: tool(s) outside the allowlist are enabled: file_system.bash', provenAgainst: undefined });
 
 	let spawnInvoked = false;
-	const adapter = createVibeAdapter(context, { command, resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }), spawn: () => { spawnInvoked = true; throw new Error('must not spawn'); } });
+	const adapter = createVibeAdapter(context, { command, resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }), structuralDenialWordingForTests: DENIAL_WORDING, spawn: () => { spawnInvoked = true; throw new Error('must not spawn'); } });
 	assert.throws(() => adapter.startTurn(readOnlyRequest()), (error: unknown) => error instanceof VibeReadOnlyUnavailableError && error.message.includes('bypass-absence failure'));
 	assert.equal(spawnInvoked, false);
 });
@@ -121,6 +134,7 @@ test("startTurn's mode:'read-only' branch re-checking the cache by stableDescrip
 	const context: VibeAdapterContext = { cwd: realDir(), processGroup: 'adapter-owned' };
 	const command = 'vibe-dispatch-recheck';
 	const key = descriptorFor(context, command);
+	const cacheKey = cacheKeyFor(context, command);
 	// Cache is EMPTY at construction time -- the adapter's own readOnly snapshot says unavailable.
 	const adapter = createVibeAdapter(context, dispatchDeps(command, 'm2'));
 	assert.equal(adapter.readOnly.status, 'unavailable');
@@ -128,7 +142,7 @@ test("startTurn's mode:'read-only' branch re-checking the cache by stableDescrip
 	// Qualification resolves in the background AFTER construction (t3's suite, simulated
 	// here by directly populating the cache) -- startTurn must re-check the cache fresh at
 	// dispatch time rather than trusting the stale construction-time snapshot.
-	_readOnlyQualificationCacheForTests().set(key, qualifiedCapability(key, fingerprintFor('m2')));
+	_readOnlyQualificationCacheForTests().set(cacheKey, qualifiedCapability(key, fingerprintFor('m2')));
 	const turn = adapter.startTurn(readOnlyRequest());
 	for await (const _e of turn) { /* drain */ }
 	const result = await turn.result;
@@ -140,8 +154,9 @@ test('a qualified dispatch whose own export.json diverges from the cached finger
 	const context: VibeAdapterContext = { cwd: realDir(), processGroup: 'adapter-owned' };
 	const command = 'vibe-dispatch-drift';
 	const key = descriptorFor(context, command);
+	const cacheKey = cacheKeyFor(context, command);
 	// Cached fingerprint is for 'cached-marker'; the real dispatch's own export.json reports 'drifted-marker'.
-	_readOnlyQualificationCacheForTests().set(key, qualifiedCapability(key, fingerprintFor('cached-marker')));
+	_readOnlyQualificationCacheForTests().set(cacheKey, qualifiedCapability(key, fingerprintFor('cached-marker')));
 
 	const adapter = createVibeAdapter(context, dispatchDeps(command, 'drifted-marker'));
 	const turn = adapter.startTurn(readOnlyRequest());
@@ -150,7 +165,7 @@ test('a qualified dispatch whose own export.json diverges from the cached finger
 	assert.equal(result.text, 'ok', "the completed turn's own result is unaffected by the mismatch");
 
 	await tick();
-	assert.equal(_readOnlyQualificationCacheForTests().has(key), false, 'the mismatch invalidates the cache entry');
+	assert.equal(_readOnlyQualificationCacheForTests().has(cacheKey), false, 'the mismatch invalidates the cache entry');
 });
 
 test('a scripted post-dispatch export.json mismatch invalidating the cache for the NEXT call while the current call\'s result is unaffected', async () => {
@@ -158,7 +173,8 @@ test('a scripted post-dispatch export.json mismatch invalidating the cache for t
 	const context: VibeAdapterContext = { cwd: realDir(), processGroup: 'adapter-owned' };
 	const command = 'vibe-dispatch-next-call';
 	const key = descriptorFor(context, command);
-	_readOnlyQualificationCacheForTests().set(key, qualifiedCapability(key, fingerprintFor('cached-marker')));
+	const cacheKey = cacheKeyFor(context, command);
+	_readOnlyQualificationCacheForTests().set(cacheKey, qualifiedCapability(key, fingerprintFor('cached-marker')));
 
 	const adapter = createVibeAdapter(context, dispatchDeps(command, 'drifted-marker'));
 	const firstTurn = adapter.startTurn(readOnlyRequest());
@@ -175,10 +191,10 @@ test("the VibeReadOnlyUnavailableError path when probes exhaust the retry bound 
 	_readOnlyQualificationCacheForTests().clear();
 	const context: VibeAdapterContext = { cwd: realDir(), processGroup: 'adapter-owned' };
 	const command = 'vibe-dispatch-exhausted';
-	const key = descriptorFor(context, command);
-	_readOnlyQualificationCacheForTests().set(key, { status: 'unavailable', allowedTools: [], reason: "allow-side probe: insrc_analyze and/or insrc_analyze_step did not show a confirmed completed call (attempt 3/3)", provenAgainst: undefined });
+	const cacheKey = cacheKeyFor(context, command);
+	_readOnlyQualificationCacheForTests().set(cacheKey, { status: 'unavailable', allowedTools: [], reason: "allow-side probe: insrc_analyze and/or insrc_analyze_step did not show a confirmed completed call (attempt 3/3)", provenAgainst: undefined });
 
-	const adapter = createVibeAdapter(context, { command, resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }) });
+	const adapter = createVibeAdapter(context, { command, resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }), structuralDenialWordingForTests: DENIAL_WORDING });
 	assert.throws(() => adapter.startTurn(readOnlyRequest()), (error: unknown) => error instanceof VibeReadOnlyUnavailableError && error.message.includes('did not show a confirmed completed call'));
 });
 
@@ -187,10 +203,11 @@ test("a FAILED turn (nonzero exit) still invalidates the cache on unverifiable e
 	const context: VibeAdapterContext = { cwd: realDir(), processGroup: 'adapter-owned' };
 	const command = 'vibe-dispatch-failed-turn';
 	const key = descriptorFor(context, command);
-	_readOnlyQualificationCacheForTests().set(key, qualifiedCapability(key, fingerprintFor('cached-marker')));
+	const cacheKey = cacheKeyFor(context, command);
+	_readOnlyQualificationCacheForTests().set(cacheKey, qualifiedCapability(key, fingerprintFor('cached-marker')));
 
 	const adapter = createVibeAdapter(context, {
-		command, resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }),
+		command, resolveCommandPath: (cmd) => cmd, identityStatSync: () => ({ size: 1, mtimeMs: 1 }), structuralDenialWordingForTests: DENIAL_WORDING,
 		spawn: () => {
 			const { child, emitter } = fakeChild();
 			queueMicrotask(() => { (child.stderr as PassThrough).write('boom'); emitter.emit('exit', 1, null); });
@@ -210,5 +227,5 @@ test("a FAILED turn (nonzero exit) still invalidates the cache on unverifiable e
 		(error: unknown) => error instanceof Error && /boom/.test(error.message),
 		"the original turn failure must still be what the caller sees",
 	);
-	assert.equal(_readOnlyQualificationCacheForTests().has(key), false, 'a failed turn with unverifiable evidence invalidates the cache exactly like a successful-but-drifted one');
+	assert.equal(_readOnlyQualificationCacheForTests().has(cacheKey), false, 'a failed turn with unverifiable evidence invalidates the cache exactly like a successful-but-drifted one');
 });

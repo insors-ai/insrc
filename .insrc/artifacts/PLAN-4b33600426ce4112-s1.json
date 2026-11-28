@@ -1,0 +1,216 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795857814876-5tlfhl",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T09:25:39.090Z",
+    "epicCreatedAt": "2026-10-08T17:29:20.823Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "unknown",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 115772,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4b33600426ce4112",
+    "epicSlug": "bug-test-sweep-hangs-intermittently-npx",
+    "storyId": "s1",
+    "lldRunId": "wf-1795856871448-vln4i8",
+    "lldEffectiveHash": "290a411de989b0b5386efd76178f7758391078222f05ed4e52a292392772db16",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3fba0ffb76f47c52d65660d8a111125cabf9341fc163f33cc18db835682a72d6",
+        "at": "2026-11-28T09:25:41.819Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T09:29:07.019Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "67ed9db778fb157b4e7afdb58e72bd8413818e74"
+  },
+  "body": {
+    "summary": {
+      "prose": "Build the sweep-hang fix in four small tasks: keep the exec-stand-in test server ref'd while installed (drops server.unref()), give bare test sweeps a finite default per-test timeout via a package.json sweep script documented in docs/testing.md, smoke-verify the repro sweep terminates on every run, and regression-check that the harness gate path is unchanged.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Drop server.unref() in the exec-stand-in test helper",
+        "summary": "src/workflow/__tests__/helpers/exec-stand-in.ts: keep the gh/git stand-in Unix-socket server ref'd while installed (remove server.unref()), so an awaited execFile response keeps the event loop alive; remove() still closes the server and restores PATH. Add a unit assertion that the server handle is ref'd while installed.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "installExecStandIn leaves the stand-in server ref'd until remove()",
+          "an awaited gh/git call through the stand-in resolves",
+          "remove() closes the server and restores PATH"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "exec-stand-in keeps its server ref'd while installed"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Give the bare sweep a finite default per-test timeout",
+        "summary": "Add an npm script (e.g. \"test:sweep\") that runs tsx --test with a finite --test-timeout so bare parallel globs always bound each file, and document it in docs/testing.md: bare globs should use the bounded invocation; the harness remains the owned gate path.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "package.json has the sweep script with a finite --test-timeout",
+          "docs/testing.md documents the bounded bare invocation"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "bare sweep with the default timeout terminates and reports every file"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Smoke-verify the repro sweep terminates on every run",
+        "summary": "Run the bare workflow+mcp sweep repeatedly on Node 22.22.1 with the new default: every attempt finishes within the bound and every file reports a result (previously 6/6 hangs at 100s without a timeout).",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "N consecutive bare sweeps finish without an external kill and report all files"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "repro sweep finishes within the bound on every attempt"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Regression: harness gate path unchanged",
+        "summary": "Run npm test -- on the touched helper's test file and the gate-pinned single-file runs to prove the harness path (bounded child, --test-force-exit) is unaffected; root typecheck clean.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "npm test -- <exec-stand-in usage file> passes under the pinned Node 22.22.1 command",
+          "typecheck clean (root npx tsc --noEmit)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "harness run of the touched helper file passes"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "src/workflow/__tests__/helpers/exec-stand-in.ts (installExecStandIn/remove) and its existing usage tests",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "bare tsx --test --test-timeout=<default> glob runs of src/workflow + src/mcp",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "package.json sweep script",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "repeated bare sweeps of the workflow+mcp subsets on Node 22.22.1",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ],
+    "epicImpact": {
+      "applies": false,
+      "reason": "Standalone ISSUE-anchored bugfix.",
+      "storiesCovered": [
+        "s1"
+      ],
+      "findings": "Two compounding mechanisms: unref'd test-awaited handles can drain the loop; no per-test timeout on bare runs.",
+      "sources": [
+        "src/workflow/__tests__/helpers/exec-stand-in.ts"
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/__tests__/helpers/exec-stand-in.ts:78"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/testing.md"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "docs/standalone/bug-test-sweep-hangs-intermittently-npx-E202610084b336004/S001/LLD.md"
+    }
+  ]
+}

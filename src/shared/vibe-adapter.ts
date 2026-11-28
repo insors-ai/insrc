@@ -351,6 +351,12 @@ export async function readExitEvidence(exportPath: string, readFile: (path: stri
 	// be trusted, never silently coerced into looking like a clean, stop-reason-less run.
 	if (rawOutcome !== undefined && typeof rawOutcome !== 'string') return undefined;
 	if (rawStopReason !== undefined && rawStopReason !== null && typeof rawStopReason !== 'string') return undefined;
+	// Review r3 (9cc97b3f6): every real export.json this has been live-confirmed against
+	// carries a `stop_reason` key explicitly (null when there is none, never omitted) --
+	// omission entirely is NOT a confirmed-safe equivalent to an explicit null, it means this
+	// is not the live-confirmed schema shape at all. Never conflate "confirmed absent" with
+	// "field not even present".
+	if (!('stop_reason' in obj)) return undefined;
 	const stopReason = typeof rawStopReason === 'string' ? rawStopReason : undefined;
 	const outcome = typeof rawOutcome === 'string' ? rawOutcome : undefined;
 	// A parseable object with NEITHER recognized field (e.g. `{}`, or a truncated/partial

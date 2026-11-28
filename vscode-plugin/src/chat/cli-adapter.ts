@@ -1325,15 +1325,15 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     // no child ever existed. A later stdin write/end failure never reverts it (t6 classifies by
     // whatever it already reached, not a fresh guess).
     let vibeDispatchState: VibeDispatchState = 'not-sent';
-    // Review r2 (0196de296): a native vibe error row (mapLine's own type:'error' branch,
-    // terminal to this generator immediately) terminates BEFORE proc.exit -- the SEPARATE
-    // vibeFinalize chain below computes its own outcome from export.json alone, with no idea
-    // this happened, and could legitimately read a LATER-written 'finished' export (vibe
-    // recovering internally, or simply writing its exit summary after the fact) as 'ok'. The
-    // durable marker must never disagree with what the live observer already saw: once a
-    // native error row is seen, the marker's own vibeOutcome is forced to 'replay-unsafe'
-    // regardless of what export.json says.
-    let sawVibeNativeError = false;
+    // Review r2/r3 (0196de296, 9cc97b3f6): a native vibe error row OR an early stdin/stdout
+    // I/O failure (t6's own write-failure gate) terminates this generator BEFORE proc.exit --
+    // the SEPARATE vibeFinalize chain below computes its own outcome from export.json alone,
+    // with no idea either happened, and could legitimately read a LATER-written 'finished'
+    // export (vibe recovering internally, or simply writing its exit summary after the kill
+    // signal) as 'ok'. The durable marker must never disagree with what the live observer
+    // already saw: once EITHER early-termination path is taken, the marker's own vibeOutcome
+    // is forced to 'replay-unsafe' regardless of what export.json says.
+    let sawVibeUnsafeTermination = false;
     // s3/t9: vibeDispatchState's 'accepted' transition depends on this generator's OWN decode
     // loop actually reaching that line, which only happens while a consumer keeps pulling
     // events -- unlike `proc.exit` (a plain process-level event, independent of consumption).
@@ -1424,9 +1424,9 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         if (isVibeDirectSpawn) await decodeSettled;
         const finalizedOutcome = vibeFinalize !== undefined ? await vibeFinalize.catch(() => undefined) : undefined;
         // Review r2 (0196de296): a native error row already seen live always wins over
-        // whatever export.json says by the time it's read -- see sawVibeNativeError's own
+        // whatever export.json says by the time it's read -- see sawVibeUnsafeTermination's own
         // declaration comment.
-        const vibeOutcome = sawVibeNativeError ? 'replay-unsafe' : finalizedOutcome;
+        const vibeOutcome = sawVibeUnsafeTermination ? 'replay-unsafe' : finalizedOutcome;
         const exit: TurnExit = { ...e, ...(isVibeDirectSpawn ? { vibeDispatchState, vibeOutcome } : {}) };
         void sessionOutput.endTurn(sessionId, turnId, exit).catch((err: unknown) => log.warn(`[chat:${mapper.id}] could not close the output segment of ${turnId}: ${String(err)}`));
       };
@@ -1525,7 +1525,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
           }
           if (ev.kind === 'done') sawDone = true;
           if (ev.kind === 'error') sawError = true;
-          if (isVibeDirectSpawn && ev.kind === 'error') sawVibeNativeError = true;
+          if (isVibeDirectSpawn && ev.kind === 'error') sawVibeUnsafeTermination = true;
           if (sawDone || sawError) {
             terminal = true;
             // Keep reading (and discarding) stdout so a CLI that outlives its answer never
@@ -1611,8 +1611,15 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         // ever happens after spawn succeeds, so this is 'possibly-sent' or 'accepted' here,
         // never 'not-sent' -- replay-unsafe, exactly like vibe-adapter.ts's own classification
         // of any failure once dispatchState has left 'not-sent'.
-        if (isVibeDirectSpawn) yield doneEvent(false, failureMessage(mapper.id, err), vibeDispatchState !== 'not-sent' ? true : undefined);
-        else yield { kind: 'error', turnId, message: failureMessage(mapper.id, err) };
+        if (isVibeDirectSpawn) {
+          const unsafe = vibeDispatchState !== 'not-sent';
+          // Review r3 (9cc97b3f6): this early-termination path can yield replayUnsafe:true
+          // well before proc.exit -- the durable marker must agree, not independently read
+          // whatever export.json happens to say by the time close() runs (see
+          // sawVibeUnsafeTermination's own declaration comment).
+          if (unsafe) sawVibeUnsafeTermination = true;
+          yield doneEvent(false, failureMessage(mapper.id, err), unsafe ? true : undefined);
+        } else yield { kind: 'error', turnId, message: failureMessage(mapper.id, err) };
       }
     } finally {
       // s3/t9: vibeDispatchState will not change again past this point -- see its own

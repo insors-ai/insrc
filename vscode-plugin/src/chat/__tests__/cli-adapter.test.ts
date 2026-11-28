@@ -56,7 +56,10 @@ function depsFor(script: FakeProcScript | FakeProcScript[], installed: ProviderI
     // real --output-dir file, so without this default every fake-spawner vibe test would
     // read 'no-evidence' (replayUnsafe) instead of the clean success most of them intend. A
     // test that cares about a different outcome overrides readVibeExportFile itself.
-    readVibeExportFile: async () => JSON.stringify({ outcome: 'finished' }),
+    // Review r3 (9cc97b3f6): the live-confirmed schema always carries an explicit stop_reason
+    // key (null when there is none) -- omitting it is no longer read as a confirmed-safe
+    // equivalent, so the default fixture must include it too.
+    readVibeExportFile: async () => JSON.stringify({ outcome: 'finished', stop_reason: null }),
   };
   return { deps, spawner, warns };
 }
@@ -1112,6 +1115,39 @@ test('vibe: s3/t6 — integration: a stdin write/end failure AFTER spawn succeed
   assert.equal(last.replayUnsafe, true, "dispatchState had already left 'not-sent' (spawn succeeded before the write), so the gate marks it replay-unsafe, never assumed pre-dispatch-safe");
 });
 
+test("vibe: review r3 (9cc97b3f6) — an early I/O failure (after spawn, before export.json exists) forces the durable marker to replay-unsafe even when a 'finished' export is read back, live and on reattach never disagreeing", async () => {
+  const root = mkdtempSync(join(tmpdir(), 'insrc-s3-review-r3-'));
+  try {
+    const sessionOutput = createSessionOutput({ root, pollMs: 5 });
+    // throwAfter:0 fails the FIRST stdout read, strictly after spawn+write (and so after
+    // onSpawn fires, unlike a synchronous write-rejection) -- real kill-path I/O-failure
+    // coverage with a real cursor to reattach from.
+    const { deps } = depsFor({ lines: VIBE_TEXT_TURN, throwAfter: 0 }, ['vibe']);
+    // The fake export deliberately says 'finished' (no real failure signal at all) -- proving
+    // the override, not export.json, is what makes this turn classify unsafe.
+    const withFinishedExport: AdapterDeps = { ...deps, sessionOutput, readVibeExportFile: async () => JSON.stringify({ outcome: 'finished', stop_reason: null }) };
+    const adapter = createProviderRegistry(withFinishedExport).get('vibe');
+    let cursor: TurnCursor | undefined;
+    const events = await collect(adapter.run(REQ({ provider: 'vibe' }), {
+      sessionId: 'sess-io-failure',
+      onSpawn: (p) => { cursor = p.cursor; },
+    }));
+    const liveDone = events.at(-1) as { kind: string; ok?: boolean; replayUnsafe?: true };
+    assert.equal(liveDone.kind, 'done');
+    assert.equal(liveDone.ok, false);
+    assert.equal(liveDone.replayUnsafe, true, "dispatchState had already left 'not-sent' (spawn+write succeeded before the stream errored)");
+    assert.ok(cursor !== undefined);
+    await waitForTurnEndMarker(join(root, 'sess-io-failure.ndjson'));
+    const resumed = await collect(adapter.resume({ cursor: cursor!, pid: undefined, startedAt: null }));
+    const resumedDone = resumed.find((e) => e.kind === 'done') as { ok: boolean; replayUnsafe?: true } | undefined;
+    assert.ok(resumedDone !== undefined);
+    assert.equal(resumedDone?.ok, false, 'the durable marker must not read the finished export as safe once an I/O failure already happened live');
+    assert.equal(resumedDone?.replayUnsafe, true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("vibe: s3/t7 — unit: readExitEvidence-driven outcome classification: stopReason undefined -> 'ok'; stopReason present -> 'replay-unsafe'; export.json missing/malformed -> 'no-evidence'", async () => {
   // Through the real readExitEvidence, not just classifyVibeOutcome fed constructed objects --
   // a missing file, a malformed one, and a well-formed one with/without stop_reason.
@@ -1121,8 +1157,17 @@ test("vibe: s3/t7 — unit: readExitEvidence-driven outcome classification: stop
   const malformed = await readExitEvidence('/x/export.json', async () => 'not valid json {{{');
   assert.equal(classifyVibeOutcome(malformed), 'no-evidence', 'malformed (unparseable) export.json');
 
-  const clean = await readExitEvidence('/x/export.json', async () => JSON.stringify({ outcome: 'finished' }));
+  // Review r3 (9cc97b3f6): every real export.json live-confirmed against the installed
+  // binary carries an EXPLICIT stop_reason key (null when there is none, never omitted) --
+  // the clean/safe case requires that explicit null, not merely the key's absence.
+  const clean = await readExitEvidence('/x/export.json', async () => JSON.stringify({ outcome: 'finished', stop_reason: null }));
   assert.equal(classifyVibeOutcome(clean), 'ok');
+
+  // The reviewer's own reproduction: outcome:'finished' with stop_reason OMITTED entirely
+  // (not the live-confirmed schema shape) must NOT be fabricated into 'ok'.
+  const outcomeOnlyNoStopReasonKey = await readExitEvidence('/x/export.json', async () => JSON.stringify({ outcome: 'finished' }));
+  assert.equal(outcomeOnlyNoStopReasonKey, undefined, 'stop_reason omitted entirely is not a confirmed-safe equivalent to an explicit null');
+  assert.equal(classifyVibeOutcome(outcomeOnlyNoStopReasonKey), 'no-evidence');
 
   const withStopReason = await readExitEvidence('/x/export.json', async () => JSON.stringify({ stop_reason: 'max_turns' }));
   assert.equal(classifyVibeOutcome(withStopReason), 'replay-unsafe');
@@ -1328,7 +1373,7 @@ test("vibe: s3/t9 — unit: endTurn constructing the turn-end marker with the ne
     const root = mkdtempSync(join(tmpdir(), 'insrc-s3t9-vibe-'));
     try {
       const { deps } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
-      const withExport: AdapterDeps = { ...deps, sessionOutput: createSessionOutput({ root, pollMs: 5 }), readVibeExportFile: async () => JSON.stringify({ outcome: 'finished' }) };
+      const withExport: AdapterDeps = { ...deps, sessionOutput: createSessionOutput({ root, pollMs: 5 }), readVibeExportFile: async () => JSON.stringify({ outcome: 'finished', stop_reason: null }) };
       await collect(createProviderRegistry(withExport).get('vibe').run(REQ({ provider: 'vibe' }), { sessionId: 'sess-vibe' }));
       const marker = await waitForTurnEndMarker(join(root, 'sess-vibe.ndjson'));
       assert.equal(marker['vibeDispatchState'], 'accepted', "VIBE_TEXT_TURN's sessionId row drives dispatchState to accepted before exit");

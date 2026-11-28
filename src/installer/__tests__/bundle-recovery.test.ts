@@ -14,15 +14,21 @@ import { BUNDLE_LIMITS, canonicalJson, digest, parseReleaseDescriptor } from '..
 import type { ReleaseDescriptor } from '../release-descriptor.js';
 import { runtimeArchive } from '../runtime-policy.js';
 import { requireTerminal } from '../terminal-admission.js';
-import { httpsDownloadTransport } from '../download.js';
 import type { DownloadTransport } from '../download.js';
+import { ownedRuntimeHome } from './_owned-runtime-home.js';
 
-async function seedRuntime(f: ReturnType<typeof managerFixture>): Promise<void> {
+function runtimeTransport(archive: string, expectedUrl: string, capture: Awaited<ReturnType<typeof ownedRuntimeHome>>): DownloadTransport {
+  return async url => {
+    if (url.href !== expectedUrl) throw new InstallerError('download-invalid', `Unexpected bundle recovery runtime URL: ${url.href}`);
+    const body = createReadStream(archive), closed = new Promise<void>(resolve => body.once('close', resolve));
+    capture.trackResource(closed); return { status: 200, body, closed };
+  };
+}
+async function seedRuntime(f: ReturnType<typeof managerFixture>, capture: Awaited<ReturnType<typeof ownedRuntimeHome>>): Promise<void> {
   const archive = await archiveFixture(), official = runtimeArchive(f.target), store = ControllerStore.acquire(f.location);
-  try { await store.ensureRuntime({ ...f.next.manifest.runtime, sha256: official.sha256 }, { transport: async (url, signal) => {
-    if (url.href !== official.url) return httpsDownloadTransport(url, signal);
-    const body = createReadStream(archive); return { status: 200, body, closed: new Promise<void>(resolve => body.once('close', resolve)) };
-  } }); } finally { store.close(); }
+  try { await store.ensureRuntime({ ...f.next.manifest.runtime, sha256: official.sha256 }, { transport: runtimeTransport(archive, official.url, capture) }); }
+  catch (cause) { if ((cause as NodeJS.ErrnoException).code === 'resource-close-uncertain') capture.retain(cause); throw cause; }
+  finally { store.close(); }
 }
 async function payload(f: ReturnType<typeof managerFixture>): Promise<{ zip: Buffer; descriptor: ReleaseDescriptor }> {
   const native = readFileSync('out/installer/native/control.node'), bootstrap = Buffer.from('// controlled bootstrap fixture');
@@ -45,18 +51,20 @@ async function payload(f: ReturnType<typeof managerFixture>): Promise<{ zip: Buf
 }
 
 privateRuntimeTest(import.meta.url, 'fresh-bundle-peer-validates-durable-descriptor-without-resolve-map', async () => {
-  const f = managerFixture();
+  const capture = await ownedRuntimeHome('ibr-');
   try {
-    await seedRuntime(f);
+    const f = managerFixture(capture.root, true);
+    await seedRuntime(f, capture);
     const { zip, descriptor } = await payload(f); let discovery = 0, downloads = 0;
     const transport: DownloadTransport = async input => {
       const url = input.href;
       if (url === descriptor.payload.url) { downloads++; return { status: 200, body: Readable.from([zip]) }; }
+      if (url !== 'https://api.github.com/repos/insors-ai/insrc/releases/latest' && url !== 'https://fixture.invalid/descriptor.json') throw new InstallerError('download-invalid', `Unexpected bundle recovery URL: ${url}`);
       discovery++;
-      const value = url.startsWith('https://api.github.com/') ? { draft: false, assets: [{ name: `insrc-${f.target.os}-${f.target.arch}.release.json`, browser_download_url: 'https://fixture.invalid/descriptor.json' }] } : descriptor;
-      assert.ok(url.startsWith('https://api.github.com/') || url === 'https://fixture.invalid/descriptor.json');
+      const value = url === 'https://api.github.com/repos/insors-ai/insrc/releases/latest' ? { draft: false, assets: [{ name: `insrc-${f.target.os}-${f.target.arch}.release.json`, browser_download_url: 'https://fixture.invalid/descriptor.json' }] } : descriptor;
       return { status: 200, body: Readable.from([Buffer.from(JSON.stringify(value))]) };
     };
+    await assert.rejects(transport(new URL('https://unexpected.invalid/descriptor'), AbortSignal.timeout(1000)), { code: 'download-invalid' });
     f.peers.bundle = bundleDelivery(f.target, { transport });
     const ready = await f.peers.dependencies!.inspect(f.location);
     f.peers.dependencies!.inspect = async () => ({ ...ready, ollama: 'missing', ollamaInstallOffer: { id: 'offer', version: 'fixture', destination: f.home }, blockers: ['missing'] });
@@ -88,12 +96,13 @@ privateRuntimeTest(import.meta.url, 'fresh-bundle-peer-validates-durable-descrip
     assert.equal(result.state.candidateId, descriptor.manifest.releaseId); assert.equal(downloads, 1); assert.equal(discovery, originalDiscovery);
     assert.equal(f.state.migrations.length, 1); assert.equal(f.state.activations.length, 1);
     assert.equal(readFileSync(join(f.old.directory, 'marker'), 'utf8'), 'old'); assert.deepEqual(JSON.parse(readFileSync(file, 'utf8')), saved);
-  } finally { f.cleanup(); }
+  } finally { await capture.cleanup(); }
 });
 
 privateRuntimeTest(import.meta.url, 'private-release-offer-bound-supports-full-descriptors-without-widening-other-records', async () => {
-  const f = managerFixture();
+  const capture = await ownedRuntimeHome('ibr-');
   try {
+    const f = managerFixture(capture.root, true);
     const official = runtimeArchive(f.target);
     const manifest = { ...f.next.manifest, runtime: { ...f.next.manifest.runtime, sha256: official.sha256 }, migrations: Array.from({ length: 512 }, (_, i) => ({ id: `hook-${i}`, version: '1', module: `out/migrations/${i}-${'m'.repeat(180)}.js` })) };
     const descriptor = parseReleaseDescriptor({ schemaVersion: 2, publication: 'qualified', manifest, inventorySha256: digest('inventory'),
@@ -108,5 +117,16 @@ privateRuntimeTest(import.meta.url, 'private-release-offer-bound-supports-full-d
       assert.throws(() => store.writeOperationData('large-offer', 'dependency', record), { code: 'record-invalid' });
       assert.throws(() => store.writeOperationData('large-offer', 'release-offer', 'x'.repeat(BUNDLE_LIMITS.descriptorBytes + MAX_CONTROL_BYTES)), { code: 'record-invalid' });
     } finally { store.close(); }
-  } finally { f.cleanup(); }
+  } finally { await capture.cleanup(); }
+});
+
+privateRuntimeTest(import.meta.url, 'bundle-recovery-runtime-transport-refuses-unknown-URLs-before-opening-any-resource', async () => {
+  const capture = await ownedRuntimeHome('ibr-');
+  try {
+    const f = managerFixture(capture.root, true), official = runtimeArchive(f.target);
+    const transport = runtimeTransport(join(capture.root, 'never-opened'), official.url, capture);
+    await assert.rejects(transport(new URL('https://unexpected.invalid/runtime'), AbortSignal.timeout(1000)), {
+      code: 'download-invalid', message: 'Unexpected bundle recovery runtime URL: https://unexpected.invalid/runtime',
+    });
+  } finally { await capture.cleanup(); }
 });

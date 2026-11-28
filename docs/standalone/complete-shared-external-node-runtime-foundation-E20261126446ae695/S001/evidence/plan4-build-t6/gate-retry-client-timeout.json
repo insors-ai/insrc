@@ -1,0 +1,7 @@
+{
+  "at": "2026-11-28T15:12:21.275536+00:00",
+  "sourceCommit": "ab12f7878326393dc811e7265e5cb1435a9fd49e",
+  "clientError": "timed out awaiting tools/call after 300s",
+  "originalGateMayContinue": true,
+  "duplicateGateStarted": false
+}

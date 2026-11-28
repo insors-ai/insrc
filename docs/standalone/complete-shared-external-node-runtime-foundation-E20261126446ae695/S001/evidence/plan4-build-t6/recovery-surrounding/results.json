@@ -1,0 +1,69 @@
+{
+  "runId": "46cff372-7c6f-4757-b372-c52c090912c6",
+  "runtime": {
+    "executable": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node",
+    "version": "v22.22.1"
+  },
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 1200000,
+    "runMs": 5400000,
+    "cleanupMs": 5000
+  },
+  "selectedFiles": [
+    "src/installer/__tests__/bundle-recovery.test.ts",
+    "src/installer/__tests__/bundle.test.ts"
+  ],
+  "requestedConcurrency": 1,
+  "effectiveConcurrency": 1,
+  "diagnosticFlags": [
+    "DEBUG"
+  ],
+  "liveTests": "unset",
+  "results": [
+    {
+      "file": "src/installer/__tests__/bundle-recovery.test.ts",
+      "childId": "4cb57728-7598-4c32-b0ef-d28086f5d0a2",
+      "log": ".insrc/tmp/test-harness/runs/46cff372-7c6f-4757-b372-c52c090912c6/0-src_installer___tests___bundle-recovery.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/46cff372-7c6f-4757-b372-c52c090912c6/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/bundle.test.ts",
+      "childId": "72d90222-5206-4c22-9827-3b64c9746d7b",
+      "log": ".insrc/tmp/test-harness/runs/46cff372-7c6f-4757-b372-c52c090912c6/1-src_installer___tests___bundle.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/46cff372-7c6f-4757-b372-c52c090912c6/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 8,
+          "pass": 8,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    }
+  ],
+  "cleanupPath": ".insrc/tmp/test-harness/runs/46cff372-7c6f-4757-b372-c52c090912c6/cleanup.json",
+  "incomplete": false
+}

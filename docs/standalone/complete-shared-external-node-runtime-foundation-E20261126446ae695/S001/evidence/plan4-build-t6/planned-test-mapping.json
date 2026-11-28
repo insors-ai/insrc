@@ -25,6 +25,14 @@
       {
         "file": "src/installer/__tests__/publisher.test.ts",
         "title": "publisher format2 binds app-only inventory public manifest1 source and exact external runtime identity"
+      },
+      {
+        "file": "src/installer/__tests__/bundle-recovery.test.ts",
+        "title": "fresh-bundle-peer-validates-durable-descriptor-without-resolve-map"
+      },
+      {
+        "file": "src/installer/__tests__/bundle-recovery.test.ts",
+        "title": "private-release-offer-bound-supports-full-descriptors-without-widening-other-records"
       }
     ]
   },
@@ -135,6 +143,10 @@
       {
         "file": "src/installer/__tests__/bundle.test.ts",
         "title": "bundle fixture transports refuse unknown URLs without a real HTTPS fallback"
+      },
+      {
+        "file": "src/installer/__tests__/bundle-recovery.test.ts",
+        "title": "bundle-recovery-runtime-transport-refuses-unknown-URLs-before-opening-any-resource"
       }
     ]
   }

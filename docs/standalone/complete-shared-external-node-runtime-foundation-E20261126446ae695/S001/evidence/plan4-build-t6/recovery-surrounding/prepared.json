@@ -1,0 +1,18 @@
+{
+  "runId": "46cff372-7c6f-4757-b372-c52c090912c6",
+  "canonicalRoot": "/Users/subhagho/work/projects/insors/insrc",
+  "runtimeExecutable": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node",
+  "buildExitCode": 0,
+  "completedAt": "2026-11-28T15:16:13.731Z",
+  "inputFingerprint": "d84b4b85780c94cb45b569ee0a1e101ec14c181553b6a77e2de24fea56986201",
+  "outputFingerprint": "b570a5b7a32ef2a2b0fd80b567c61d1d47f1a03d2a9186d125b8d2ef08e6a5cd",
+  "requiredArtifacts": [
+    "out/daemon/index.js",
+    "out/bin/insrc-mcp.js",
+    "out/shared/daemon-run-files.js",
+    "out/cli/services/daemon.js",
+    "out/daemon/server.js",
+    "out/shared/daemon-process.js",
+    "out/installer/native/control.node"
+  ]
+}

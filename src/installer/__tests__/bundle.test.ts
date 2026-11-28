@@ -136,7 +136,7 @@ test('download digest target runtime cancellation and retry preserve incumbent',
     await assert.rejects(prepareBundle(f.store, release, { ...options, transport: sendBytes(zip.subarray(0, zip.length - 12)) }), /size or digest/); unchanged(f);
     await assert.rejects(prepareBundle(f.store, { ...release, inventorySha256: '0'.repeat(64) }, options), /Inventory identity/); unchanged(f);
     const cancellation = new AbortController();
-    await assert.rejects(prepareBundle(f.store, release, { ...options, signal: cancellation.signal, transport: async () => { cancellation.abort(); return { status: 200, body: Readable.from([zip]) }; } }), /abort|cancel/i); unchanged(f);
+    await assert.rejects(prepareBundle(f.store, release, { ...options, signal: cancellation.signal, transport: async url => { assert.equal(url.href, release.payload.url); cancellation.abort(); return { status: 200, body: Readable.from([zip]) }; } }), /abort|cancel/i); unchanged(f);
     const prepared = await prepareBundle(f.store, release, options); unchanged(f);
     assert.equal(prepared.directory, join(f.home, 'releases/candidate'));
     const before = lstatSync(join(prepared.directory, 'manager.mjs')).ino;
@@ -150,9 +150,9 @@ test('download digest target runtime cancellation and retry preserve incumbent',
 test('release discovery rejects insecure redirects and never falls back to dev', async () => {
   await assert.rejects(resolveBundleDelivery({ mode: 'dev', repository: 'repo', branch: 'main' }, target), /bundle delivery/);
   await assert.rejects(downloadJson('http://fixture.invalid'), /HTTPS/);
-  await assert.rejects(downloadJson('https://fixture.invalid', { transport: async () => ({ status: 302, location: 'http://fixture.invalid/insecure', body: Readable.from([]) }) }), /HTTPS/);
+  await assert.rejects(downloadJson('https://fixture.invalid', { transport: async url => { assert.equal(url.href, 'https://fixture.invalid/'); return { status: 302, location: 'http://fixture.invalid/insecure', body: Readable.from([]) }; } }), /HTTPS/);
   let count = 0;
-  await assert.rejects(downloadJson('https://fixture.invalid', { transport: async () => { count++; return { status: 302, location: '/again', body: Readable.from([]) }; } }), /Too many/); assert.equal(count, 9);
+  await assert.rejects(downloadJson('https://fixture.invalid', { transport: async url => { assert.ok(['https://fixture.invalid/', 'https://fixture.invalid/again'].includes(url.href)); count++; return { status: 302, location: '/again', body: Readable.from([]) }; } }), /Too many/); assert.equal(count, 9);
   assert.equal(BUNDLE_LIMITS.entries, 65_536);
 });
 

@@ -229,6 +229,11 @@ export interface SessionOutput {
   }): AsyncIterable<{ readonly line: string; readonly cursor: SegmentCursor }>;
   /** The last part of the current turn's stderr ('' when there is none). */
   errTail(sessionId: string): string;
+  /** s3/t10: the turn's own turn-end marker (code/signal/unknown/vibe fields), read directly --
+   *  `tail()` itself consumes and never yields marker lines, so a follower that reaches EOF with
+   *  no terminal CLI row (vibe has none) needs this to classify from what was actually written.
+   *  Undefined when the turn never closed, or its segment can no longer be found (never thrown). */
+  readTurnEndMarker(cursor: SegmentCursor): Promise<Extract<Marker, { kind: 'turn-end' }> | undefined>;
   /** Deletes a session's files (its session was removed). */
   remove(sessionId: string): Promise<void>;
   /** Deletes the files of sessions not in `keep` that have not been written for `olderThanMs`. */
@@ -662,6 +667,21 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
 
     errTail(sessionId: string): string {
       return (fs.readTextSync(paths(sessionId).err) ?? '').slice(-ERR_TAIL);
+    },
+
+    async readTurnEndMarker(cursor: SegmentCursor): Promise<Extract<Marker, { kind: 'turn-end' }> | undefined> {
+      let file: string;
+      try {
+        file = await fileFor(cursor);
+      } catch {
+        return undefined; // the segment is gone; nothing to classify from
+      }
+      const text = (await fs.readFile(file)).toString('utf8');
+      for (const line of text.split('\n')) {
+        const marker = parseMarker(line);
+        if (marker?.kind === 'turn-end' && marker.turnId === cursor.turnId) return marker;
+      }
+      return undefined;
     },
 
     async remove(sessionId: string): Promise<void> {

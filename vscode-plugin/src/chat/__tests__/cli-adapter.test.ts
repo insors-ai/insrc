@@ -15,7 +15,7 @@ import assert from 'node:assert/strict';
 import { appendFileSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { createSessionOutput, parseMarker } from '../session-output.js';
+import { createSessionOutput, parseMarker, type SessionOutput } from '../session-output.js';
 import { defaultProcessStartTime } from '../session-lock.js';
 import { fileURLToPath } from 'node:url';
 import { createProviderRegistry, classifyPermissionDenial, classifyVibeOutcome, deriveChatTitle, nodeSpawner, parseVibeMcpTool, vibeMapper, writeReachedStdin } from '../cli-adapter.js';
@@ -1270,17 +1270,13 @@ test("vibe: s3/t9 — unit: endTurn constructing the turn-end marker with the ne
   }
 });
 
-test('vibe: s3/t9 — integration: detach/reattach producing identical classification', async () => {
+test('vibe: s3/t9+t10 — integration: detach/reattach producing identical classification', async () => {
   // A genuine detach: the reader stops consuming run()'s own generator right after observing
   // the session-identity row (dispatchState already 'accepted'), while the REAL fixture process
   // keeps running (DETACH mode) until released below -- proving close() (driven independently by
-  // proc.exit, not by generator resumption) still finalizes correctly. resume()'s own EOF path
-  // does not yet read these marker fields for a vibe turn with no native terminal row (that
-  // consumption is t10's own scope -- without it, resume() reports "ended without a result" even
-  // though the turn genuinely completed; disclosed below, not fixed here). This Task proves the
-  // value a live observer saw and the one durably written to the marker -- which a reattach
-  // reader will consult once t10 lands -- are identical, since both originate from the one
-  // endTurn call.
+  // proc.exit, not by generator resumption) still finalizes correctly. With t10's own fix,
+  // resume()'s EOF path now reads the marker's vibe fields for a no-native-terminal-row vibe
+  // turn, so the reattached reader observes the SAME classification the live observer did.
   await withVibeDirectSpawnFixture(async (cwd) => {
     const root = mkdtempSync(join(tmpdir(), 'insrc-s3t9-reattach-'));
     try {
@@ -1303,17 +1299,85 @@ test('vibe: s3/t9 — integration: detach/reattach producing identical classific
       writeFileSync(join(cwd, 'release'), '');
       // Reattach: resume() follows the SAME segment from the cursor the detached reader had.
       const resumed = await collect(adapter.resume({ cursor: cursor!, pid: undefined, startedAt: null }));
-      const resumedError = resumed.find((e) => e.kind === 'error') as { message: string } | undefined;
-      assert.equal(resumedError?.message, 'the turn ended without a result', 'resume() does not yet consult the marker\'s vibe fields for a no-native-terminal-row vibe turn -- t10\'s own scope, not a regression introduced here');
-      // The durable marker (what t10's own follower will read instead of reporting the error
-      // above) carries the identical classification the live observer saw.
+      const resumedDone = resumed.find((e) => e.kind === 'done') as { ok: boolean; replayUnsafe?: true } | undefined;
+      assert.ok(resumedDone !== undefined, 'resume() now classifies from the marker instead of reporting "ended without a result"');
+      assert.equal(resumedDone?.ok, false);
+      assert.equal(resumedDone?.replayUnsafe, true, 'STOPREASON in the prompt drove the fixture to write a real stop_reason');
+      // The durable marker carries the identical classification both the live observer and the
+      // reattached reader saw -- they can never disagree, all three read from the one endTurn call.
       const marker = await waitForTurnEndMarker(join(root, 'sess-reattach.ndjson'));
       assert.equal(marker['vibeDispatchState'], liveDispatchState);
-      assert.equal(marker['vibeOutcome'], 'replay-unsafe', 'STOPREASON in the prompt drove the fixture to write a real stop_reason');
+      assert.equal(marker['vibeOutcome'], 'replay-unsafe');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
   });
+});
+
+test("vibe: s3/t10 — unit: the follower's missing-result branch for mapper.id==='vibe'", async () => {
+  const closedSegment = async (provider: ProviderId, exit: Parameters<SessionOutput['endTurn']>[2]) => {
+    const root = mkdtempSync(join(tmpdir(), 'insrc-s3t10-'));
+    const sessionOutput = createSessionOutput({ root, pollMs: 5 });
+    const seg = await sessionOutput.beginTurn('s1', 't1');
+    await sessionOutput.endTurn('s1', 't1', exit);
+    const adapter = createProviderRegistry({ isInstalled: () => true, spawn: makeFakeSpawner({ lines: [] }).spawn, sessionOutput }).get(provider);
+    try {
+      return await collect(adapter.resume({ cursor: seg.cursor, pid: undefined, startedAt: null }));
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  };
+  // vibeOutcome 'ok' -> classified safe, done(ok:true), no replayUnsafe.
+  {
+    const events = await closedSegment('vibe', { code: 0, signal: null, vibeDispatchState: 'accepted', vibeOutcome: 'ok' });
+    const done = events.find((e) => e.kind === 'done') as { ok: boolean; replayUnsafe?: true } | undefined;
+    assert.equal(done?.ok, true);
+    assert.equal(done?.replayUnsafe, undefined);
+  }
+  // vibeOutcome 'replay-unsafe' -> classified unsafe.
+  {
+    const events = await closedSegment('vibe', { code: 0, signal: null, vibeDispatchState: 'accepted', vibeOutcome: 'replay-unsafe' });
+    const done = events.find((e) => e.kind === 'done') as { ok: boolean; replayUnsafe?: true } | undefined;
+    assert.equal(done?.ok, false);
+    assert.equal(done?.replayUnsafe, true);
+  }
+  // vibeOutcome 'no-evidence' -> unverified safety defaults to unsafe, never inferred as safe.
+  {
+    const events = await closedSegment('vibe', { code: 0, signal: null, vibeDispatchState: 'possibly-sent', vibeOutcome: 'no-evidence' });
+    const done = events.find((e) => e.kind === 'done') as { ok: boolean; replayUnsafe?: true } | undefined;
+    assert.equal(done?.ok, false);
+    assert.equal(done?.replayUnsafe, true);
+  }
+  // claude: the marker-based branch is vibe-only -- a claude marker with no vibe fields at all
+  // (today's byte-identical shape) still falls through to the pre-existing generic error.
+  {
+    const events = await closedSegment('claude', { code: 0, signal: null });
+    const err = events.find((e) => e.kind === 'error') as { message: string } | undefined;
+    assert.equal(err?.message, 'the turn ended without a result');
+  }
+});
+
+test('vibe: s3/t10 — integration: host-loss simulation read as replayUnsafe', async () => {
+  // Simulates session-output.ts's own host-loss path (beginTurn's "a turn whose host went away
+  // before its exit never got a turn-end" fallback): a synthesized unknown:true marker, which
+  // never carries a vibeOutcome (written by a different call site than vibeFinalize's endTurn).
+  // A vibe turn in this state must ALWAYS be classified replay-unsafe, regardless of there
+  // being no vibeOutcome field to read at all.
+  const root = mkdtempSync(join(tmpdir(), 'insrc-s3t10-hostloss-'));
+  try {
+    const sessionOutput = createSessionOutput({ root, pollMs: 5 });
+    const seg = await sessionOutput.beginTurn('s1', 't1');
+    // A second beginTurn for the SAME session, while t1 is still open, triggers the real
+    // host-loss fallback marker for t1 (the exact mechanism session-output.ts already uses).
+    await sessionOutput.beginTurn('s1', 't2');
+    const adapter = createProviderRegistry({ isInstalled: () => true, spawn: makeFakeSpawner({ lines: [] }).spawn, sessionOutput }).get('vibe');
+    const events = await collect(adapter.resume({ cursor: seg.cursor, pid: undefined, startedAt: null }));
+    const done = events.find((e) => e.kind === 'done') as { ok: boolean; replayUnsafe?: true } | undefined;
+    assert.equal(done?.ok, false);
+    assert.equal(done?.replayUnsafe, true, 'a host-loss synthesized marker is always replay-unsafe for vibe, with no vibeOutcome to read at all');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('ProviderRegistry.available lists vibe alongside claude/codex when installed', () => {

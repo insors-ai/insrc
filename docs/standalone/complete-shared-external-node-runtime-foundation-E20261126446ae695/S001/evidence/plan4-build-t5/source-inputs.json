@@ -1,0 +1,8 @@
+{
+  "base": "419217c84",
+  "files": {
+    "src/installer/bootstrap-foundation.ts": "00a6f9aa51374f10bf29568141d480194c69868f69ed9280eb6f1e20441d8a3d",
+    "src/installer/__tests__/bootstrap.test.ts": "36987cf3d1595a8e615bd71286afdfa683a9e7cc6f76c01face866eeeaec00da",
+    "src/installer/__tests__/bootstrap-control.test.ts": "5ee4c62ec8e75529d897369ebdb140e29fe075d03b598a0c9c7246b26d038394"
+  }
+}

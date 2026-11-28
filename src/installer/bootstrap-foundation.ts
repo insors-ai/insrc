@@ -1,6 +1,6 @@
 /** Publication-only terminal helper. Exact process exit is observed by the script. */
 import { createReadStream } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { InstallerError, PRIVATE_NODE_VERSION } from './contracts.js';
 import type { Target, RuntimeIdentity } from './contracts.js';
@@ -19,10 +19,11 @@ export async function publishBootstrapFoundation(targetInput: Target, args: stri
   const target = structuredClone(parseInstaller('target', targetInput));
   if (process.version !== `v${PRIVATE_NODE_VERSION}` || target.os !== process.platform || target.arch !== process.arch) throw new InstallerError('runtime-invalid', 'Exact bootstrap target runtime required');
   if (args.length !== 5 || args.some(value => !value)) throw new InstallerError('schema-invalid', 'Bootstrap publication requires home, identity, work and control digests');
-  const [home, id, work, bootstrapHash, nativeHash] = args as [string, string, string, string, string];
+  const [home, id, workInput, bootstrapHash, nativeHash] = args as [string, string, string, string, string];
+  const work = normalizeHome(workInput, target.os);
   assertToken(id);
   const location = resolveInstallationLocation(id, { home, ...(process.platform === 'win32' ? { userSid: controlBinding().userSid() } : {}) });
-  if (normalizeHome(dirname(work), target.os) !== join(location.home, 'install') || !/^bootstrap-stage\.[A-Za-z0-9-]+$/.test(work.slice(dirname(work).length + 1))) throw new InstallerError('path-invalid', 'Bootstrap work must be its private script stage');
+  if (dirname(work) !== join(location.home, 'install') || !/^bootstrap-stage\.[A-Za-z0-9-]+$/.test(basename(work))) throw new InstallerError('path-invalid', 'Bootstrap work must be its private script stage');
   assertLocalControlRoot(work, process.platform === 'win32' ? path => controlBinding().localVolume(path) : undefined);
   const control = dirname(fileURLToPath(import.meta.url)), hashes = { bootstrap: bootstrapHash, native: nativeHash };
   const deadline = AbortSignal.timeout(RUNTIME_LIMITS.verificationMs), verification = signal ? AbortSignal.any([deadline, signal]) : deadline;

@@ -178,9 +178,9 @@ export function syncManifest(pkg, catalog) {
 			if (isLocal(key)) continue; // plugin-local keys survive everywhere
 			const row = rows.get(key);
 			if (row === undefined) {
-				// Not a catalog row: a declared-RETIRED path is removed; any other
-				// non-role property survives everywhere.
-				if (isRetiredPath(key.slice('insrc.'.length))) delete section.properties[key];
+				// Not a catalog row: a declared-RETIRED insrc.* path is removed; any
+				// other property (including non-insrc keys) survives everywhere.
+				if (key.startsWith('insrc.') && isRetiredPath(key.slice('insrc.'.length))) delete section.properties[key];
 				continue;
 			}
 			if (section.title !== row.group) { delete section.properties[key]; continue; } // the row's group section owns the key — a copy here is removed

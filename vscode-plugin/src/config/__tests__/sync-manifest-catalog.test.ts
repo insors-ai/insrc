@@ -142,19 +142,24 @@ test('sync-manifest-catalog.test.ts: a misplaced or duplicated per-role key is r
     section(stale, 'General').properties[roleKey] = { type: 'number', default: 1, scope: 'machine' };
     // An unrelated plugin-local key sharing the canonical section must survive.
     perRole.properties['insrc.chat.testFlag'] = { type: 'boolean', default: false, scope: 'machine' };
+    // A NON-insrc property whose tail matches a retired path must survive too
+    // (the retirement lookup only applies to insrc.* keys).
+    section(stale, 'General').properties['other.models.embedding'] = { type: 'string', default: 'x' };
   });
   try {
     assert.equal(sync(copy).status, 0);
     const repaired = JSON.parse(readFileSync(copy, 'utf8')) as Manifest;
     const expected = committed();
     section(expected, PER_ROLE_TITLE).properties['insrc.chat.testFlag'] = { type: 'boolean', default: false, scope: 'machine' };
-    assert.deepEqual(repaired, expected, 'the wrong-section copy is removed and the canonical section regenerated; the local key survives');
+    section(expected, 'General').properties['other.models.embedding'] = { type: 'string', default: 'x' };
+    assert.deepEqual(repaired, expected, 'the wrong-section copy is removed and the canonical section regenerated; the local keys survive');
 
     const roleKey = Object.keys(section(expected, PER_ROLE_TITLE).properties).find((k) => k.startsWith('insrc.models.tasks.'))!;
     const wrong = section(repaired, 'General').properties;
     assert.ok(!(roleKey in wrong), 'the misplaced role key is removed from the wrong section');
     assert.deepEqual(section(repaired, PER_ROLE_TITLE).properties[roleKey], section(expected, PER_ROLE_TITLE).properties[roleKey], 'regenerated canonically in its section');
     assert.deepEqual(section(repaired, PER_ROLE_TITLE).properties['insrc.chat.testFlag'], { type: 'boolean', default: false, scope: 'machine' }, 'the unrelated local key survives');
+    assert.deepEqual(section(repaired, 'General').properties['other.models.embedding'], { type: 'string', default: 'x' }, 'a non-insrc key is never treated as a retired insrc path');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

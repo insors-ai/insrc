@@ -17,6 +17,7 @@
     "build": "node scripts/test-harness/build.mjs",
     "insrc": "tsx src/cli/index.tsx",
     "test": "node scripts/test-harness/run.mjs",
+    "test:sweep": "node node_modules/tsx/dist/cli.mjs --test --test-timeout=120000",
     "test:memory": "npm test --workspace @insrc/project-memory"
   },
   "dependencies": {

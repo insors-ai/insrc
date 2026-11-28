@@ -1,0 +1,33 @@
+[
+  {
+    "name": "UTM-macOS-fresh-live-acquisition-offline-reuse-and-isolated-installed-consumer-smoke",
+    "reported": {
+      "result": "pass",
+      "evidence": "Retained actual UTM source2fca011a69ec3b0ce5e9e53e9074928baec02495: approved budget Story S001/evidence/t6-native-result.json, t6-supervisor.json and t6-audit.json; foundation S001/evidence/posix-20261128/macos-equivalence.json proves only separately validated controller tests differ from current production source.11/9/25 closed groups; live Node22.22.1/npm10.9.4, same-inode zero-network reuse and real installed native consumers; no daemon activation or release enablement."
+    }
+  },
+  {
+    "name": "OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke",
+    "reported": {
+      "result": "pass",
+      "evidence": "Foundation S001/evidence/posix-20261128/linux-native-result.json, linux-supervisor.json, linux-audit.json and linux-raw-metadata.json: actual OrbStack Ubuntu22.04.5/glibc2.35 ARM64 source0938af2dcbc631960d64946fa3cd6a446b3aafef; live Node22.22.1/npm10.9.4, same-inode zero-network reuse,55202-file app-only payload/native consumers/fresh manager;11/9/25 matching zero-exit closed groups, no actors/leases. Current production paths unchanged; source pin retained."
+    }
+  },
+  {
+    "name": "unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests",
+    "cases": [
+      {
+        "file": "src/installer/__tests__/runtime-policy.test.ts",
+        "title": "runtime policy pins all six official distribution identities without enabling targets"
+      },
+      {
+        "file": "src/installer/__tests__/controller-store.test.ts",
+        "title": "native publication remains gated without exact target runtime and live qualification"
+      },
+      {
+        "file": "src/installer/__tests__/controller-store.test.ts",
+        "title": "native publisher denies unqualified output before publishing target artifacts"
+      }
+    ]
+  }
+]

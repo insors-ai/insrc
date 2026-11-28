@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: prepared Ollama inspection reads completion records without walking or opening payload contents
+ok 1 - prepared Ollama inspection reads completion records without walking or opening payload contents
+  ---
+  duration_ms: 23399.5315
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 23720.22275

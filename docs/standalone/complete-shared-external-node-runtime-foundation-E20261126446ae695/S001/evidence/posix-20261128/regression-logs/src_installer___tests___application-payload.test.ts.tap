@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: app-only inventory rejects ordinary and renamed pinned Node Ollama archives executables and build inputs
+ok 1 - app-only inventory rejects ordinary and renamed pinned Node Ollama archives executables and build inputs
+  ---
+  duration_ms: 1.365958
+  type: 'test'
+  ...
+# Subtest: app-only inventory permits native application dependencies and runtime policy metadata
+ok 2 - app-only inventory permits native application dependencies and runtime policy metadata
+  ---
+  duration_ms: 0.148791
+  type: 'test'
+  ...
+# Subtest: enabled Ollama policy assets share the application exclusion metadata without changing qualification
+ok 3 - enabled Ollama policy assets share the application exclusion metadata without changing qualification
+  ---
+  duration_ms: 0.313208
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 260.552458

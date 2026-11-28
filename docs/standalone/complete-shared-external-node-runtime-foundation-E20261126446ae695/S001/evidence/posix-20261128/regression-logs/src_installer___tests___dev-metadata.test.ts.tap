@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: dev-source-offer-binds-repo-branch-commit-target-runtime-recipe-without-payload-hash
+ok 1 - dev-source-offer-binds-repo-branch-commit-target-runtime-recipe-without-payload-hash
+  ---
+  duration_ms: 13.236208
+  type: 'test'
+  ...
+# Subtest: dev-receipt-binds-final-manifest-inventory-and-contained-checkout-without-self-hash
+ok 2 - dev-receipt-binds-final-manifest-inventory-and-contained-checkout-without-self-hash
+  ---
+  duration_ms: 10.031875
+  type: 'test'
+  ...
+# Subtest: dev receipt2 and recipe reject legacy embedded formats without changing public manifest1
+ok 3 - dev receipt2 and recipe reject legacy embedded formats without changing public manifest1
+  ---
+  duration_ms: 0.784417
+  type: 'test'
+  ...
+# Subtest: invalid-option-like-ref-source-and-ambiguous-receipts-rejected
+ok 4 - invalid-option-like-ref-source-and-ambiguous-receipts-rejected
+  ---
+  duration_ms: 1.117917
+  type: 'test'
+  ...
+# Subtest: preparation protocol binds paths source nonce run and bounded complete results
+ok 5 - preparation protocol binds paths source nonce run and bounded complete results
+  ---
+  duration_ms: 4.300583
+  type: 'test'
+  ...
+# Subtest: commit migration metadata preserves order and rejects malformed or duplicate hooks
+ok 6 - commit migration metadata preserves order and rejects malformed or duplicate hooks
+  ---
+  duration_ms: 0.592542
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 396.772125

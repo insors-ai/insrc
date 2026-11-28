@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: dev candidate opening reuses the bundle runtime read-only and rejects missing runtime or foreign process
+ok 1 - dev candidate opening reuses the bundle runtime read-only and rejects missing runtime or foreign process
+  ---
+  duration_ms: 40886.641875
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 41262.222542

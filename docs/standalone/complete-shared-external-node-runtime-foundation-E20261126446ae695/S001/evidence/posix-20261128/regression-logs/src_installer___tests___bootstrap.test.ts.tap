@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: bootstrap authenticates archive executable and control bytes before running code and diagnoses prerequisites
+ok 1 - bootstrap authenticates archive executable and control bytes before running code and diagnoses prerequisites
+  ---
+  duration_ms: 4930.016083
+  type: 'test'
+  ...
+# Subtest: bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node
+ok 2 - bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node
+  ---
+  duration_ms: 73170.136292
+  type: 'test'
+  ...
+# Subtest: bootstrap reuses verified cached runtime and control offline with quoted Unicode paths
+ok 3 - bootstrap reuses verified cached runtime and control offline with quoted Unicode paths
+  ---
+  duration_ms: 28788.529042
+  type: 'test'
+  ...
+# Subtest: bootstrap preserves incomplete immutable entries and lock conflicts without installation
+ok 4 - bootstrap preserves incomplete immutable entries and lock conflicts without installation
+  ---
+  duration_ms: 31834.892209
+  type: 'test'
+  ...
+# Subtest: bootstrap cancellation closes its publication child before cleanup and never launches the manager
+ok 5 - bootstrap cancellation closes its publication child before cleanup and never launches the manager
+  ---
+  duration_ms: 2791.126417
+  type: 'test'
+  ...
+# Subtest: concurrent terminal bootstraps keep one native owner and publish one immutable foundation
+ok 6 - concurrent terminal bootstraps keep one native owner and publish one immutable foundation
+  ---
+  duration_ms: 42415.388042
+  type: 'test'
+  ...
+# Subtest: POSIX terminal I O and fixture TUI use the canonical runtime after helper exit
+ok 7 - POSIX terminal I O and fixture TUI use the canonical runtime after helper exit
+  ---
+  duration_ms: 42399.193125
+  type: 'test'
+  ...
+# Subtest: private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission
+ok 8 - private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission
+  ---
+  duration_ms: 3.472583
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 226580.929542

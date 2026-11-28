@@ -1,0 +1,693 @@
+{
+  "status": "pass",
+  "checkedAt": "2026-11-28T05:27:28.739Z",
+  "canonicalSource": "b06fb951d955e707408c246011a4c61aa1bd6ee0",
+  "canonicalTests": 284,
+  "canonicalFiles": 62,
+  "historicalControllerTests": 22,
+  "followUpControllerTests": 6,
+  "sourcePinsRetained": true,
+  "testsRerun": false,
+  "rawLogFilesCopied": 16,
+  "subjects": [
+    {
+      "subject": "runtime-policy-exact-identity-target-baseline-profile-and-pinned-inventory",
+      "coveredByTaskIds": [
+        "t1"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t1",
+          "name": "runtime-policy-exact-identity-target-baseline-profile-and-pinned-inventory",
+          "caseProof": [
+            {
+              "file": "src/installer/__tests__/runtime-policy.test.ts",
+              "title": "runtime policy pins all six official distribution identities without enabling targets",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/56-src_installer___tests___runtime-policy.test.ts.log",
+              "logSha256": "28a6f17ddd42925a3dc5bf9f5cf7d3401bd5e50c55d8ded0c3370b958e96ae45"
+            },
+            {
+              "file": "src/installer/__tests__/runtime-policy.test.ts",
+              "title": "runtime layout binds complete identity and rejects unsafe aliases without filesystem allocation",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/56-src_installer___tests___runtime-policy.test.ts.log",
+              "logSha256": "28a6f17ddd42925a3dc5bf9f5cf7d3401bd5e50c55d8ded0c3370b958e96ae45"
+            },
+            {
+              "file": "src/installer/__tests__/runtime-policy.test.ts",
+              "title": "runtime metadata has fixed finite bounds and locale independent inventory serialization",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/56-src_installer___tests___runtime-policy.test.ts.log",
+              "logSha256": "28a6f17ddd42925a3dc5bf9f5cf7d3401bd5e50c55d8ded0c3370b958e96ae45"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "descriptor2-and-dev-receipt2-application-only-with-public-manifest1-unchanged",
+      "coveredByTaskIds": [
+        "t6",
+        "t7",
+        "t9"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t9",
+          "name": "descriptor2-and-dev-receipt2-application-only-with-public-manifest1-unchanged",
+          "reported": {
+            "result": "pass",
+            "evidence": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t9.md#current-source-final-scoped-regression-and-independent-post-run-audit-pass; canonicalRoot=/private/tmp/.insrc/installer-validation-f607312b8; run=71b814b1-1d39-422d-9ccd-aa5108d3b5f0; source=a27375313b4518d0520c8f5c51ee9bdd80b3da5f; 57files/275PASS/0fail-cancel-skip-todo/incomplete=false; 66 matching closed groups, inner+outer strict confirmed cleanup; readonly post-run exact-coverage/fingerprint/closure audit PASS without rebuild; registered-repo input fingerprint equals isolated tested input a1f8d6dd56a77b5ae8555c6884f2df498ebc97cb99ed274dd9e50afb805577d6; original output not claimed tested; exact raw logs archived .insrc/tmp/runtime-foundation-t9-final-71b814b1.tar.gz SHA256 5212707abaa0542004770c5483109bf68a320e7bf29d93c84eb812806ec7f756; machine summary .insrc/tmp/runtime-foundation-t9-final-71b814b1.json"
+          },
+          "caseProof": [],
+          "scope": "Previously registered builder-reported aggregate; current full canonical proof is independently retained by the completed budget Story."
+        }
+      ]
+    },
+    {
+      "subject": "legacy-embedded-runtime-formats-rejected-without-adoption",
+      "coveredByTaskIds": [
+        "t6",
+        "t7",
+        "t9"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t9",
+          "name": "legacy-embedded-runtime-formats-rejected-without-adoption",
+          "reported": {
+            "result": "pass",
+            "evidence": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t9.md#current-source-final-scoped-regression-and-independent-post-run-audit-pass; canonicalRoot=/private/tmp/.insrc/installer-validation-f607312b8; run=71b814b1-1d39-422d-9ccd-aa5108d3b5f0; source=a27375313b4518d0520c8f5c51ee9bdd80b3da5f; 57files/275PASS/0fail-cancel-skip-todo/incomplete=false; 66 matching closed groups, inner+outer strict confirmed cleanup; readonly post-run exact-coverage/fingerprint/closure audit PASS without rebuild; registered-repo input fingerprint equals isolated tested input a1f8d6dd56a77b5ae8555c6884f2df498ebc97cb99ed274dd9e50afb805577d6; original output not claimed tested; exact raw logs archived .insrc/tmp/runtime-foundation-t9-final-71b814b1.tar.gz SHA256 5212707abaa0542004770c5483109bf68a320e7bf29d93c84eb812806ec7f756; machine summary .insrc/tmp/runtime-foundation-t9-final-71b814b1.json"
+          },
+          "caseProof": [],
+          "scope": "Previously registered builder-reported aggregate; current full canonical proof is independently retained by the completed budget Story."
+        }
+      ]
+    },
+    {
+      "subject": "resolver-import-boundary-excludes-application-paths-storage-provider-and-source-build",
+      "coveredByTaskIds": [
+        "t2"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t2",
+          "name": "resolver-import-boundary-excludes-application-paths-storage-provider-and-source-build",
+          "caseProof": [
+            {
+              "file": "src/installer/__tests__/runtime-store.test.ts",
+              "title": "resolver import graph stays within installer-only read primitives",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/57-src_installer___tests___runtime-store.test.ts.log",
+              "logSha256": "2e3da07606128a45e7ed602a42c4c3bf9ea63c48ef6f4780f673b2b9fe6af836"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "resolver-returns-canonical-node-npm-headers-and-win-library-from-exact-identity",
+      "coveredByTaskIds": [
+        "t2"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t2",
+          "name": "resolver-returns-canonical-node-npm-headers-and-win-library-from-exact-identity",
+          "caseProof": [
+            {
+              "file": "src/installer/__tests__/runtime-store.test.ts",
+              "title": "resolver returns frozen canonical Node npm headers and platform library for the exact identity",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/57-src_installer___tests___runtime-store.test.ts.log",
+              "logSha256": "2e3da07606128a45e7ed602a42c4c3bf9ea63c48ef6f4780f673b2b9fe6af836"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "resolver-rejects-missing-corrupt-extra-files-wrong-mode-target-digest-npm-headers-inventory-receipt",
+      "coveredByTaskIds": [
+        "t2"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t2",
+          "name": "resolver-rejects-missing-corrupt-extra-files-wrong-mode-target-digest-npm-headers-inventory-receipt",
+          "caseProof": [
+            {
+              "file": "src/installer/__tests__/runtime-store.test.ts",
+              "title": "resolver rejects corrupt receipts inventories files modes targets aliases and extra members",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/57-src_installer___tests___runtime-store.test.ts.log",
+              "logSha256": "2e3da07606128a45e7ed602a42c4c3bf9ea63c48ef6f4780f673b2b9fe6af836"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "rewritten-self-consistent-local-runtime-metadata-cannot-replace-policy-inventory-digest",
+      "coveredByTaskIds": [
+        "t2"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t2",
+          "name": "rewritten-self-consistent-local-runtime-metadata-cannot-replace-policy-inventory-digest",
+          "caseProof": [
+            {
+              "file": "src/installer/__tests__/runtime-store.test.ts",
+              "title": "rewritten self consistent receipt and inventory cannot replace independent pinned hashes",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/57-src_installer___tests___runtime-store.test.ts.log",
+              "logSha256": "2e3da07606128a45e7ed602a42c4c3bf9ea63c48ef6f4780f673b2b9fe6af836"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "resolver-does-no-mkdir-download-lock-selection-db-or-provider-work",
+      "coveredByTaskIds": [
+        "t2"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t2",
+          "name": "resolver-does-no-mkdir-download-lock-selection-db-or-provider-work",
+          "caseProof": [
+            {
+              "file": "src/installer/__tests__/runtime-store.test.ts",
+              "title": "resolver performs only runtime reads without downloads allocation locks or application traversal",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/57-src_installer___tests___runtime-store.test.ts.log",
+              "logSha256": "2e3da07606128a45e7ed602a42c4c3bf9ea63c48ef6f4780f673b2b9fe6af836"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "runtime-caps-and-cancellation-are-finite-and-do-not-trigger-app-or-Ollama-hashing",
+      "coveredByTaskIds": [
+        "t2"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t2",
+          "name": "runtime-caps-and-cancellation-are-finite-and-do-not-trigger-app-or-Ollama-hashing",
+          "caseProof": [
+            {
+              "file": "src/installer/__tests__/runtime-store.test.ts",
+              "title": "resolver bounds metadata and stops at cancellation without scanning application or Ollama data",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/57-src_installer___tests___runtime-store.test.ts.log",
+              "logSha256": "2e3da07606128a45e7ed602a42c4c3bf9ea63c48ef6f4780f673b2b9fe6af836"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "bootstrap-no-host-node-verifies-archive-and-executable-before-execution",
+      "coveredByTaskIds": [
+        "t3",
+        "t5"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t5",
+          "name": "bootstrap-no-host-node-verifies-archive-and-executable-before-execution",
+          "caseProof": [
+            {
+              "file": "src/installer/__tests__/bootstrap.test.ts",
+              "title": "bootstrap authenticates archive executable and control bytes before running code and diagnoses prerequisites",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/3-src_installer___tests___bootstrap.test.ts.log",
+              "logSha256": "26584819f2979c3f5c04ef1d219919db4cdea35acf63c58a3f63a864b9ce7f81"
+            },
+            {
+              "file": "src/installer/__tests__/bootstrap.test.ts",
+              "title": "bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/3-src_installer___tests___bootstrap.test.ts.log",
+              "logSha256": "26584819f2979c3f5c04ef1d219919db4cdea35acf63c58a3f63a864b9ce7f81"
+            },
+            {
+              "file": "src/installer/__tests__/bootstrap.test.ts",
+              "title": "private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/3-src_installer___tests___bootstrap.test.ts.log",
+              "logSha256": "26584819f2979c3f5c04ef1d219919db4cdea35acf63c58a3f63a864b9ce7f81"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "verified-runtime-and-control-reuse-offline-across-bundle-and-dev",
+      "coveredByTaskIds": [
+        "t4",
+        "t5",
+        "t7",
+        "t9"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t9",
+          "name": "verified-runtime-and-control-reuse-offline-across-bundle-and-dev",
+          "reported": {
+            "result": "pass",
+            "evidence": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t9.md#current-source-final-scoped-regression-and-independent-post-run-audit-pass; canonicalRoot=/private/tmp/.insrc/installer-validation-f607312b8; run=71b814b1-1d39-422d-9ccd-aa5108d3b5f0; source=a27375313b4518d0520c8f5c51ee9bdd80b3da5f; 57files/275PASS/0fail-cancel-skip-todo/incomplete=false; 66 matching closed groups, inner+outer strict confirmed cleanup; readonly post-run exact-coverage/fingerprint/closure audit PASS without rebuild; registered-repo input fingerprint equals isolated tested input a1f8d6dd56a77b5ae8555c6884f2df498ebc97cb99ed274dd9e50afb805577d6; original output not claimed tested; exact raw logs archived .insrc/tmp/runtime-foundation-t9-final-71b814b1.tar.gz SHA256 5212707abaa0542004770c5483109bf68a320e7bf29d93c84eb812806ec7f756; machine summary .insrc/tmp/runtime-foundation-t9-final-71b814b1.json"
+          },
+          "caseProof": [],
+          "scope": "Previously registered builder-reported aggregate; current full canonical proof is independently retained by the completed budget Story."
+        }
+      ]
+    },
+    {
+      "subject": "bootstrap-native-operation-lock-exclusive-publication-exact-helper-exit-then-fresh-manager-lock",
+      "coveredByTaskIds": [
+        "t4",
+        "t5"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t5",
+          "name": "bootstrap-native-operation-lock-exclusive-publication-exact-helper-exit-then-fresh-manager-lock",
+          "caseProof": [
+            {
+              "file": "src/installer/__tests__/bootstrap.test.ts",
+              "title": "bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/3-src_installer___tests___bootstrap.test.ts.log",
+              "logSha256": "26584819f2979c3f5c04ef1d219919db4cdea35acf63c58a3f63a864b9ce7f81"
+            },
+            {
+              "file": "src/installer/__tests__/bootstrap.test.ts",
+              "title": "concurrent terminal bootstraps keep one native owner and publish one immutable foundation",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/3-src_installer___tests___bootstrap.test.ts.log",
+              "logSha256": "26584819f2979c3f5c04ef1d219919db4cdea35acf63c58a3f63a864b9ce7f81"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "bootstrap-publication-stage-distinct-from-running-node-and-loaded-native-library",
+      "coveredByTaskIds": [
+        "t4",
+        "t5"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t5",
+          "name": "bootstrap-publication-stage-distinct-from-running-node-and-loaded-native-library",
+          "caseProof": [
+            {
+              "file": "src/installer/__tests__/bootstrap.test.ts",
+              "title": "bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/3-src_installer___tests___bootstrap.test.ts.log",
+              "logSha256": "26584819f2979c3f5c04ef1d219919db4cdea35acf63c58a3f63a864b9ce7f81"
+            },
+            {
+              "file": "src/installer/__tests__/bootstrap.test.ts",
+              "title": "private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/3-src_installer___tests___bootstrap.test.ts.log",
+              "logSha256": "26584819f2979c3f5c04ef1d219919db4cdea35acf63c58a3f63a864b9ce7f81"
+            },
+            {
+              "file": "src/installer/__tests__/runtime-install.test.ts",
+              "title": "runtime publication stage is distinct from running Node and the loaded native library",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/55-src_installer___tests___runtime-install.test.ts.log",
+              "logSha256": "561c84821941f5cd0e2a11a70186e54a9021ba1a78e3f125861378e9c0b51f0e"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "runtime-stage-cancellation-conflict-and-uncertain-closure-retain-safe-state",
+      "coveredByTaskIds": [
+        "t3",
+        "t4",
+        "t5"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t5",
+          "name": "runtime-stage-cancellation-conflict-and-uncertain-closure-retain-safe-state",
+          "caseProof": [
+            {
+              "file": "src/installer/__tests__/bootstrap.test.ts",
+              "title": "bootstrap preserves incomplete immutable entries and lock conflicts without installation",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/3-src_installer___tests___bootstrap.test.ts.log",
+              "logSha256": "26584819f2979c3f5c04ef1d219919db4cdea35acf63c58a3f63a864b9ce7f81"
+            },
+            {
+              "file": "src/installer/__tests__/bootstrap.test.ts",
+              "title": "bootstrap cancellation closes its publication child before cleanup and never launches the manager",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/3-src_installer___tests___bootstrap.test.ts.log",
+              "logSha256": "26584819f2979c3f5c04ef1d219919db4cdea35acf63c58a3f63a864b9ce7f81"
+            },
+            {
+              "file": "src/installer/__tests__/bootstrap.test.ts",
+              "title": "concurrent terminal bootstraps keep one native owner and publish one immutable foundation",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/3-src_installer___tests___bootstrap.test.ts.log",
+              "logSha256": "26584819f2979c3f5c04ef1d219919db4cdea35acf63c58a3f63a864b9ce7f81"
+            },
+            {
+              "file": "src/installer/__tests__/bootstrap-control.test.ts",
+              "title": "bootstrap control close uncertainty is bounded and retains the only owned publication stage",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/2-src_installer___tests___bootstrap-control.test.ts.log",
+              "logSha256": "a864ead9043997cc7771ec50a40e6e7f4dd7b62ac6e9494c270b062714145487"
+            },
+            {
+              "file": "src/installer/__tests__/bootstrap-control.test.ts",
+              "title": "bootstrap control late cancellation during positive close cannot report successful reuse",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/2-src_installer___tests___bootstrap-control.test.ts.log",
+              "logSha256": "a864ead9043997cc7771ec50a40e6e7f4dd7b62ac6e9494c270b062714145487"
+            },
+            {
+              "file": "src/installer/__tests__/runtime-install.test.ts",
+              "title": "runtime publication retains verifier close uncertainty and refuses later discard",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/55-src_installer___tests___runtime-install.test.ts.log",
+              "logSha256": "561c84821941f5cd0e2a11a70186e54a9021ba1a78e3f125861378e9c0b51f0e"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "bundle-dev-manager-terminal-TUI-Retry-and-publisher-probes-use-shared-resolver",
+      "coveredByTaskIds": [
+        "t6",
+        "t7",
+        "t8"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t8",
+          "name": "bundle-dev-manager-terminal-TUI-Retry-and-publisher-probes-use-shared-resolver",
+          "caseProof": [
+            {
+              "file": "src/installer/__tests__/installed-dev.test.ts",
+              "title": "dev-common-handoff-selects-candidate-bootstrap-runtime-and-retains-mode",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/24-src_installer___tests___installed-dev.test.ts.log",
+              "logSha256": "654d972324a0313bb43338656f8e3069d4de5f5312ebebc7be2e088a6ffa3186"
+            },
+            {
+              "file": "src/installer/__tests__/production-peers.test.ts",
+              "title": "published-control-payload-includes-real-dependency-adapter-without-application-boot-imports",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/46-src_installer___tests___production-peers.test.ts.log",
+              "logSha256": "a7172e8ba1154f26e137fcfdcae0fc9a17bc05d95a53b6a71aad50cb548ab5d5"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "private-dev-node-npm-headers-native-env-and-worker-source-closure-preserved",
+      "coveredByTaskIds": [
+        "t7"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t7",
+          "name": "private-dev-node-npm-headers-native-env-and-worker-source-closure-preserved",
+          "caseProof": [
+            {
+              "file": "src/installer/__tests__/dev-toolchain.test.ts",
+              "title": "dev-private-node-and-explicit-npm-cli-work-with-no-host-npm-wrapper",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/20-src_installer___tests___dev-toolchain.test.ts.log",
+              "logSha256": "f27b79a6b012dcc4b5b2951461c4edb28102a0ce048de6514379103bc46d556f"
+            },
+            {
+              "file": "src/installer/__tests__/dev-toolchain.test.ts",
+              "title": "dev-build-children-ignore-host-node-npm-and-preserve-explicit-cuda-setting",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/20-src_installer___tests___dev-toolchain.test.ts.log",
+              "logSha256": "f27b79a6b012dcc4b5b2951461c4edb28102a0ce048de6514379103bc46d556f"
+            },
+            {
+              "file": "src/installer/__tests__/dev-toolchain.test.ts",
+              "title": "missing-or-mismatched-private-toolchain-headers-and-prerequisites-refuse-without-elevation",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/20-src_installer___tests___dev-toolchain.test.ts.log",
+              "logSha256": "f27b79a6b012dcc4b5b2951461c4edb28102a0ce048de6514379103bc46d556f"
+            },
+            {
+              "file": "src/installer/__tests__/dev-payload.test.ts",
+              "title": "npm-build-fetch-and-native-probe-failure-preserve-incumbent",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/17-src_installer___tests___dev-payload.test.ts.log",
+              "logSha256": "68a662d6cf798e6e7e6867290acd1054594b9c3d412fa34e2a349e8cdce6e323"
+            },
+            {
+              "file": "src/installer/__tests__/dev-payload.test.ts",
+              "title": "dev payload flushes its directory tree before prepared and fails closed on fsync error",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/17-src_installer___tests___dev-payload.test.ts.log",
+              "logSha256": "68a662d6cf798e6e7e6867290acd1054594b9c3d412fa34e2a349e8cdce6e323"
+            },
+            {
+              "file": "src/installer/__tests__/dev-metadata.test.ts",
+              "title": "preparation protocol binds paths source nonce run and bounded complete results",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/16-src_installer___tests___dev-metadata.test.ts.log",
+              "logSha256": "6adf7360d2ab272cca0d0b09d7a4a63c69b39b5c22d3439a52e79cf0ce9db1ab"
+            },
+            {
+              "file": "src/installer/__tests__/dev-toolchain.test.ts",
+              "title": "native Python imports leave the private Node npm distribution unchanged",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/20-src_installer___tests___dev-toolchain.test.ts.log",
+              "logSha256": "f27b79a6b012dcc4b5b2951461c4edb28102a0ce048de6514379103bc46d556f"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "publisher-app-and-IDE-inventory-exclude-Node-Ollama-distributions-and-archives-including-renamed-contributions",
+      "coveredByTaskIds": [
+        "t6"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t6",
+          "name": "publisher-app-and-IDE-inventory-exclude-Node-Ollama-distributions-and-archives-including-renamed-contributions",
+          "caseProof": [
+            {
+              "file": "src/installer/__tests__/application-payload.test.ts",
+              "title": "app-only inventory rejects ordinary and renamed pinned Node Ollama archives executables and build inputs",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/1-src_installer___tests___application-payload.test.ts.log",
+              "logSha256": "f1446d010ae13504dba0de4fe82f303962c34de7f5cd2a40b3fa898f1de8fb47"
+            },
+            {
+              "file": "src/installer/__tests__/application-payload.test.ts",
+              "title": "app-only inventory permits native application dependencies and runtime policy metadata",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/1-src_installer___tests___application-payload.test.ts.log",
+              "logSha256": "f1446d010ae13504dba0de4fe82f303962c34de7f5cd2a40b3fa898f1de8fb47"
+            },
+            {
+              "file": "src/installer/__tests__/publisher.test.ts",
+              "title": "publisher format2 binds app-only inventory public manifest1 source and exact external runtime identity",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/47-src_installer___tests___publisher.test.ts.log",
+              "logSha256": "55d71d75d212749c832900e2c6ef5986a1881430ce7ae3e3bedb15c978efd8ba"
+            },
+            {
+              "file": "src/installer/__tests__/publisher.test.ts",
+              "title": "publisher rejects a real pinned Node archive even when renamed as an application resource",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/47-src_installer___tests___publisher.test.ts.log",
+              "logSha256": "55d71d75d212749c832900e2c6ef5986a1881430ce7ae3e3bedb15c978efd8ba"
+            },
+            {
+              "file": "src/installer/__tests__/publisher.test.ts",
+              "title": "publisher source provenance excludes renamed runtime inputs and preserves native dependency contributions",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/47-src_installer___tests___publisher.test.ts.log",
+              "logSha256": "55d71d75d212749c832900e2c6ef5986a1881430ce7ae3e3bedb15c978efd8ba"
+            },
+            {
+              "file": "src/installer/__tests__/publisher.test.ts",
+              "title": "published manual and both IDE installer script assets have exact byte parity",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/47-src_installer___tests___publisher.test.ts.log",
+              "logSha256": "55d71d75d212749c832900e2c6ef5986a1881430ce7ae3e3bedb15c978efd8ba"
+            },
+            {
+              "file": "src/installer/__tests__/payload-source-links.test.ts",
+              "title": "payload collector snapshots complete internal native build hardlink pairs without mutating source",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/45-src_installer___tests___payload-source-links.test.ts.log",
+              "logSha256": "fd56d890775bfcf32aeda6430de7d670c1792074d87202702585016280e4ea13"
+            },
+            {
+              "file": "src/installer/__tests__/payload-source-links.test.ts",
+              "title": "payload collector rejects unaccounted hardlink aliases inside or outside the source root",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/45-src_installer___tests___payload-source-links.test.ts.log",
+              "logSha256": "fd56d890775bfcf32aeda6430de7d670c1792074d87202702585016280e4ea13"
+            },
+            {
+              "file": "src/installer/__tests__/payload-source-links.test.ts",
+              "title": "payload collector does not count repeated directory symlink paths as distinct inode aliases",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/45-src_installer___tests___payload-source-links.test.ts.log",
+              "logSha256": "fd56d890775bfcf32aeda6430de7d670c1792074d87202702585016280e4ea13"
+            },
+            {
+              "file": "src/installer/__tests__/payload-source-links.test.ts",
+              "title": "payload collector rejects alias or content changes after collecting the complete hardlink group",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/45-src_installer___tests___payload-source-links.test.ts.log",
+              "logSha256": "fd56d890775bfcf32aeda6430de7d670c1792074d87202702585016280e4ea13"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "S3-Ollama-consent-retention-agent-recommendations-and-install-only-Retry-preserved",
+      "coveredByTaskIds": [
+        "t8",
+        "t9"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t9",
+          "name": "S3-Ollama-consent-retention-agent-recommendations-and-install-only-Retry-preserved",
+          "reported": {
+            "result": "pass",
+            "evidence": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t9.md#current-source-final-scoped-regression-and-independent-post-run-audit-pass; canonicalRoot=/private/tmp/.insrc/installer-validation-f607312b8; run=71b814b1-1d39-422d-9ccd-aa5108d3b5f0; source=a27375313b4518d0520c8f5c51ee9bdd80b3da5f; 57files/275PASS/0fail-cancel-skip-todo/incomplete=false; 66 matching closed groups, inner+outer strict confirmed cleanup; readonly post-run exact-coverage/fingerprint/closure audit PASS without rebuild; registered-repo input fingerprint equals isolated tested input a1f8d6dd56a77b5ae8555c6884f2df498ebc97cb99ed274dd9e50afb805577d6; original output not claimed tested; exact raw logs archived .insrc/tmp/runtime-foundation-t9-final-71b814b1.tar.gz SHA256 5212707abaa0542004770c5483109bf68a320e7bf29d93c84eb812806ec7f756; machine summary .insrc/tmp/runtime-foundation-t9-final-71b814b1.json"
+          },
+          "caseProof": [],
+          "scope": "Previously registered builder-reported aggregate; current full canonical proof is independently retained by the completed budget Story."
+        }
+      ]
+    },
+    {
+      "subject": "terminal-install-success-ready-lock-release-same-terminal-TUI-and-failure-no-TUI-preserved",
+      "coveredByTaskIds": [
+        "t5",
+        "t8",
+        "t9"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t9",
+          "name": "terminal-install-success-ready-lock-release-same-terminal-TUI-and-failure-no-TUI-preserved",
+          "reported": {
+            "result": "pass",
+            "evidence": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t9.md#current-source-final-scoped-regression-and-independent-post-run-audit-pass; canonicalRoot=/private/tmp/.insrc/installer-validation-f607312b8; run=71b814b1-1d39-422d-9ccd-aa5108d3b5f0; source=a27375313b4518d0520c8f5c51ee9bdd80b3da5f; 57files/275PASS/0fail-cancel-skip-todo/incomplete=false; 66 matching closed groups, inner+outer strict confirmed cleanup; readonly post-run exact-coverage/fingerprint/closure audit PASS without rebuild; registered-repo input fingerprint equals isolated tested input a1f8d6dd56a77b5ae8555c6884f2df498ebc97cb99ed274dd9e50afb805577d6; original output not claimed tested; exact raw logs archived .insrc/tmp/runtime-foundation-t9-final-71b814b1.tar.gz SHA256 5212707abaa0542004770c5483109bf68a320e7bf29d93c84eb812806ec7f756; machine summary .insrc/tmp/runtime-foundation-t9-final-71b814b1.json"
+          },
+          "caseProof": [],
+          "scope": "Previously registered builder-reported aggregate; current full canonical proof is independently retained by the completed budget Story."
+        }
+      ]
+    },
+    {
+      "subject": "status-readiness-and-control-checks-do-not-scan-full-app-Ollama-payload",
+      "coveredByTaskIds": [
+        "t8"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t8",
+          "name": "status-readiness-and-control-checks-do-not-scan-full-app-Ollama-payload",
+          "caseProof": [
+            {
+              "file": "src/installer/__tests__/dev-runtime.test.ts",
+              "title": "dev candidate opening reuses the bundle runtime read-only and rejects missing runtime or foreign process",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/19-src_installer___tests___dev-runtime.test.ts.log",
+              "logSha256": "a0c7c014516ddccf02e78b736a1f21bbccdd6d4f817909f250a82978e412f1af"
+            },
+            {
+              "file": "src/installer/__tests__/installed-status.test.ts",
+              "title": "prepared Ollama inspection reads completion records without walking or opening payload contents",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/25-src_installer___tests___installed-status.test.ts.log",
+              "logSha256": "794626817ac1b9fd86967e6af0914aa18af56287dcd7ca475b14db6352c322d7"
+            },
+            {
+              "file": "src/installer/__tests__/ollama-service-snapshot.test.ts",
+              "title": "legal service fact publication during reconciliation preserves causal consistency and rejects persistent contradictions",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/38-src_installer___tests___ollama-service-snapshot.test.ts.log",
+              "logSha256": "ae0afeac76522a7bb8e33b4a492ed5857711957eb9c884baaaf8b2901c16afa8"
+            },
+            {
+              "file": "src/installer/__tests__/ollama-service-snapshot.test.ts",
+              "title": "exit published during reconciliation rechecks surviving and closed endpoints before recording the terminal result",
+              "result": "pass",
+              "retainedLog": ".insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6/38-src_installer___tests___ollama-service-snapshot.test.ts.log",
+              "logSha256": "ae0afeac76522a7bb8e33b4a492ed5857711957eb9c884baaaf8b2901c16afa8"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "final-scoped-installer-publisher-bootstrap-dev-dependencies-terminal-regression",
+      "coveredByTaskIds": [
+        "t9"
+      ],
+      "evidenceBasis": "exact accepted named test plus current retained TAP",
+      "mappings": [
+        {
+          "taskId": "t9",
+          "name": "final-scoped-installer-publisher-bootstrap-dev-dependencies-terminal-regression",
+          "reported": {
+            "result": "pass",
+            "evidence": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t9.md#current-source-final-scoped-regression-and-independent-post-run-audit-pass; canonicalRoot=/private/tmp/.insrc/installer-validation-f607312b8; run=71b814b1-1d39-422d-9ccd-aa5108d3b5f0; source=a27375313b4518d0520c8f5c51ee9bdd80b3da5f; 57files/275PASS/0fail-cancel-skip-todo/incomplete=false; 66 matching closed groups, inner+outer strict confirmed cleanup; readonly post-run exact-coverage/fingerprint/closure audit PASS without rebuild; registered-repo input fingerprint equals isolated tested input a1f8d6dd56a77b5ae8555c6884f2df498ebc97cb99ed274dd9e50afb805577d6; original output not claimed tested; exact raw logs archived .insrc/tmp/runtime-foundation-t9-final-71b814b1.tar.gz SHA256 5212707abaa0542004770c5483109bf68a320e7bf29d93c84eb812806ec7f756; machine summary .insrc/tmp/runtime-foundation-t9-final-71b814b1.json"
+          },
+          "caseProof": [],
+          "scope": "Previously registered builder-reported aggregate; current full canonical proof is independently retained by the completed budget Story."
+        }
+      ]
+    }
+  ],
+  "limit": "Earlier306-case regression is baseline evidence; the only later maintained-code delta is the separately validated controller test maintenance. Native macOS and Linux proof retain their own exact source revisions. Windows remains deferred, not credited."
+}

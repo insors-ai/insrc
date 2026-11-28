@@ -1,6 +1,6 @@
 {
- "note": "Captured from the code before the chat was moved to VS Code theme colours (Story E202610137fefc3fc:S001).",
- "styleBlocks": 2,
+ "note": "Captured from the code before the chat was moved to VS Code theme colours (Story E202610137fefc3fc:S001), updated for the current shell: three <style> blocks (shared token sheet, the chat's own layout, the shared shell's own sheet) and the new-chat button (insrc-newchat) in the chrome's right cluster.",
+ "styleBlocks": 3,
  "selectors": [
   "#insrc-input",
   "#insrc-input::placeholder",
@@ -151,6 +151,7 @@
   "insrc-actchip",
   "insrc-active",
   "insrc-actmenu",
+  "insrc-newchat",
   "insrc-history",
   "insrc-histmenu",
   "insrc-older",

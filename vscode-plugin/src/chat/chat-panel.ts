@@ -2437,9 +2437,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // Story E202611134642d49a:S001 t3: the chat renders through the SAME shared shell as the
     // other webview panels. The chat keeps its own body markup; everything else — CSP meta
     // (with the chat-only img-src data: extra), the nonce'd single script — comes from
-    // shellHtml. The chat's styles are appended as headExtra AFTER the shell's own <style>
-    // so the shell rules keep their cascade position; the title <h2> is suppressed because
-    // the chat paints its own .chrome header.
+    // shellHtml. The chat's styles are appended as headExtra (shellHtml emits headExtra ahead
+    // of its own <style>); the title <h2> is suppressed because the chat paints its own
+    // .chrome header. chatStyles is already two complete <style> elements (token sheet +
+    // layout) — it must not be wrapped in another <style>: the browser ends the outer block
+    // at the inner </style>, and the stray leading "<style>" text would invalidate the token
+    // sheet's first (.insrc-term) rule in CSS parsing.
     const chatStyles = renderStyle(theme) + layoutStyle;
     const provCls = surfaceClass('provider-dropdown');
     const histCls = surfaceClass('history-dropdown');
@@ -2911,10 +2914,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `${MARKED_SRC}\n;${HLJS_SRC}\n;${bootstrap}`,
       // Story E202611134642d49a:S001 t3: the shared shell frame (CSP meta + nonce'd single
       // script + envelope). The chat-only `img-src data:` (header glyph data-URI) is the
-      // cspExtra; the chat's own styles ride as headExtra AFTER the shell's <style> so the
-      // shell rules keep their cascade position; the title <h2> is suppressed because the
-      // chat paints its own .chrome header.
-      { cspExtra: chatCspExtra, headExtra: `<style>${chatStyles}</style>`, bodyClass: 'insrc-term', hideTitle: true },
+      // cspExtra; the chat's own styles ride as headExtra, already complete <style> elements
+      // (wrapping them again would nest and drop the token sheet's first rule — see above);
+      // the title <h2> is suppressed because the chat paints its own .chrome header.
+      { cspExtra: chatCspExtra, headExtra: chatStyles, bodyClass: 'insrc-term', hideTitle: true },
     );
   };
 

@@ -1,10 +1,12 @@
 /**
  * Story E202610137fefc3fc:S001 — the dev chat takes every colour from the VS Code theme.
  *
- * The chat's own style is read from the shell the host renders (its last <style> block; the
- * first is the shared token sheet, which the docs-review panel uses and this Story leaves
- * alone). The tests keep fixed colours out, keep every name defined, and pin which theme
- * variable each name holds and which name each component uses.
+ * The chat's own style is read from the shell the host renders. The head now carries three
+ * <style> blocks: the shared token sheet (which the docs-review panel uses and this Story
+ * leaves alone), then the chat's own layout style (the block that owns the named `:root`
+ * layer), then the shared shell's own sheet. The tests keep fixed colours out, keep every
+ * name defined, and pin which theme variable each name holds and which name each component
+ * uses.
  *
  *   npx tsx --test src/chat/__tests__/chat-theme.test.ts
  */
@@ -43,8 +45,16 @@ function shellHtml(): string {
   return html;
 }
 const styleBlocks = (html: string): string[] => [...html.matchAll(/<style>([\s\S]*?)<\/style>/g)].map((m) => m[1]!);
-/** The chat's own style: the last block. */
-const ownStyle = (html: string): string => styleBlocks(html).at(-1)!;
+/**
+ * The chat's own style: the block that owns the named layer (the `:root` rule holding
+ * `--assistant-bg`), not a positional one — the shared shell's own sheet also rides in the
+ * head, after the chat's two blocks (token sheet, then layout).
+ */
+const ownStyle = (html: string): string => {
+  const block = styleBlocks(html).find((b) => /:root\{[^}]*--assistant-bg/.test(b));
+  assert.ok(block, 'the shell has the chat\'s own style block (the :root layer)');
+  return block!;
+};
 /** The `:root` rule's declarations, name -> value. */
 function layer(style: string): Map<string, string> {
   const root = /:root\{([^}]*)\}/.exec(style);
@@ -95,7 +105,7 @@ const APPROVED_THEME_VARIABLES = [
 
 test("chat theme: the chat's own style has no hex, rgb, rgba or hsl value, no radial gradient and no var() with a literal fallback; its only color-mix is the assistant message's ground, declared once; the colour scheme follows the theme kind; a linear gradient is built only from names and transparent", () => {
   const html = shellHtml();
-  assert.equal(styleBlocks(html).length, 2, 'the shared sheet, then the chat\'s own style');
+  assert.equal(styleBlocks(html).length, 3, 'the shared token sheet, then the chat\'s own style, then the shared shell\'s own sheet');
   // Data URIs are shapes, not colours; they are checked on their own below.
   const uris = [...ownStyle(html).matchAll(/url\("data:[^"]*"\)/g)].map((m) => m[0]);
   // One derived colour is allowed, by the user's decision of 2026-10-13: the assistant message's
@@ -305,11 +315,12 @@ test('chat theme: each component uses the name the mapping gives it (bars, trans
   assert.match(style, /:focus-visible\{outline:1px solid var\(--focus\);outline-offset:1px;\}<?$/);
 });
 
-test('chat theme: the history chip is one wrapper around the trigger button with a masked icon in the current text colour; the trigger keeps its id, and every image source the shell declares is allowed by its content security policy', () => {
+test('chat theme: the new-chat button and the history chip share the chrome\'s right cluster (new-chat first), the chip is one wrapper around the trigger button with a masked icon in the current text colour; the trigger keeps its id, and every image source the shell declares is allowed by its content security policy', () => {
   const html = shellHtml();
   const style = ownStyle(html);
   assert.equal((html.match(/class="histchip"/g) ?? []).length, 1);
-  assert.match(html, /<span class="right"><span class="histchip"><button type="button" id="insrc-history" class="chatbtn [^"]*" aria-haspopup="menu"[^>]*><span class="pico"><\/span><span class="chatlbl">new…<\/span><span class="chev">▾<\/span><\/button><div id="insrc-histmenu" class="popup chatmenu" role="menu" aria-label="session"><\/div><\/span><\/span>/);
+  assert.equal((html.match(/class="newchatbtn"/g) ?? []).length, 1);
+  assert.match(html, /<span class="right"><button type="button" id="insrc-newchat" class="newchatbtn"[^>]*><span class="pico">[\s\S]*?<\/span><\/button><span class="histchip"><button type="button" id="insrc-history" class="chatbtn [^"]*" aria-haspopup="menu"[^>]*><span class="pico"><\/span><span class="chatlbl">new…<\/span><span class="chev">▾<\/span><\/button><div id="insrc-histmenu" class="popup chatmenu" role="menu" aria-label="session"><\/div><\/span><\/span>/);
   const icon = rule(style, '.histchip::before');
   assert.match(icon, /background-color:currentColor/);
   assert.match(icon, /(?:^|;)mask:url\("data:image\/svg\+xml,[^"]*"\) center\/12px 12px no-repeat/);
@@ -427,6 +438,14 @@ test("chat theme: every selector and element id of the shell and the row rendere
     '.ticks',
     '.ticks i',
     '.ticks i.on',
+    // The new-chat button in the chrome's right cluster, ahead of the history chip.
+    '.newchatbtn',
+    '.newchatbtn:focus-visible',
+    '.newchatbtn:hover',
+    // The per-message timestamp in the who row.
+    '.insrc-when',
+    '.insrc-who--assistant .insrc-when',
+    '.insrc-who--user .insrc-when',
     // Story E20261013b2e8109f:S001: the no-shrink rule and the diff widget (the seven .insrc-diff-* rules of the old box left the fixture).
     '#insrc-term>*',
     '.insrc-diffw',
@@ -469,7 +488,7 @@ test("chat theme: every selector and element id of the shell and the row rendere
   const markup = html.slice(html.indexOf('<body')).split('<script')[0]!;
   assert.deepEqual([...new Set([...markup.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]!))], before.ids);
   assert.match(html, /<body class="insrc-term">/, 'the body carries no theme class of its own; VS Code adds the theme kind');
-  // Still two style blocks and one script, under the same policy.
+  // Still three style blocks (token sheet, chat layout, shared shell sheet) and one script, under the same policy.
   assert.equal(styleBlocks(html).length, before.styleBlocks);
   assert.equal((html.match(/<script\b/g) ?? []).length, 1);
   assert.match(html, /<script nonce="N">/);

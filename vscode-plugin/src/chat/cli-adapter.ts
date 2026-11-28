@@ -399,8 +399,12 @@ function coerceToolResultOutput(content: unknown): string {
 interface ProviderMapper {
   readonly id: ProviderId;
   readonly resume: boolean;
-  /** Build the argv for a turn (prompt + optional resume). */
-  buildArgs(req: TurnRequest): string[];
+  /**
+   * Build the argv for a turn (prompt + optional resume). `outputDir`: the vibe mapper's
+   * own per-turn export directory (s3/t3), threaded through once run() allocates one
+   * (a later Task in this Story); every other mapper ignores it.
+   */
+  buildArgs(req: TurnRequest, outputDir?: string): string[];
   /** Initial structured user input; absent for providers using argv/stdin prompt text. */
   formatInput?(req: TurnRequest, requestUuid: string): string;
   /** Map one native line to 0..n TurnEvents. Return [] to ignore (noise). Throw to signal an unparseable line. */

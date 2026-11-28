@@ -344,8 +344,15 @@ export async function readExitEvidence(exportPath: string, readFile: (path: stri
 	try { parsed = JSON.parse(raw); } catch { return undefined; }
 	const obj = record(parsed);
 	if (obj === undefined) return undefined;
-	const stopReason = typeof obj['stop_reason'] === 'string' ? obj['stop_reason'] : undefined;
-	const outcome = typeof obj['outcome'] === 'string' ? obj['outcome'] : undefined;
+	const rawOutcome = obj['outcome'];
+	const rawStopReason = obj['stop_reason'];
+	// Review r2 (0196de296): a field present but neither a string nor (for stop_reason) an
+	// explicit JSON null is invalid data, not a confirmed absence -- the whole export cannot
+	// be trusted, never silently coerced into looking like a clean, stop-reason-less run.
+	if (rawOutcome !== undefined && typeof rawOutcome !== 'string') return undefined;
+	if (rawStopReason !== undefined && rawStopReason !== null && typeof rawStopReason !== 'string') return undefined;
+	const stopReason = typeof rawStopReason === 'string' ? rawStopReason : undefined;
+	const outcome = typeof rawOutcome === 'string' ? rawOutcome : undefined;
 	// A parseable object with NEITHER recognized field (e.g. `{}`, or a truncated/partial
 	// write) is not a real export.json -- undefined (no-evidence) rather than a confirmed-but-
 	// absent stopReason, which classifyVibeOutcome would otherwise read as a fabricated 'ok'.

@@ -1133,11 +1133,26 @@ test("vibe: s3/t7 — unit: readExitEvidence-driven outcome classification: stop
   assert.equal(empty, undefined);
   assert.equal(classifyVibeOutcome(empty), 'no-evidence');
 
+  // Review r2 (0196de296): the reviewer's own 3 reproductions, live-confirmed against the
+  // installed vibe binary ('deadline' is a REAL, distinct, non-successful outcome value --
+  // e.g. --time-limit stopping the run -- with stop_reason null, proving outcome must be
+  // checked, not just stopReason's absence).
+  const failedNullStopReason = await readExitEvidence('/x/export.json', async () => JSON.stringify({ outcome: 'failed', stop_reason: null }));
+  assert.equal(classifyVibeOutcome(failedNullStopReason), 'replay-unsafe', 'a non-finished outcome is never safe, even with no stop_reason');
+
+  const invalidStopReasonType = await readExitEvidence('/x/export.json', async () => JSON.stringify({ outcome: 'finished', stop_reason: 42 }));
+  assert.equal(invalidStopReasonType, undefined, 'stop_reason present but neither a string nor null is invalid data, not a confirmed absence');
+  assert.equal(classifyVibeOutcome(invalidStopReasonType), 'no-evidence');
+
+  const deadline = await readExitEvidence('/x/export.json', async () => JSON.stringify({ outcome: 'deadline', stop_reason: null }));
+  assert.equal(classifyVibeOutcome(deadline), 'replay-unsafe', "the live-confirmed 'deadline' outcome is never inferred safe");
+
   // The pure classifier's own boundary, directly: never inferred from merely having decoded a
-  // row -- an evidence object with no stopReason but an unrelated outcome string is still 'ok'.
+  // row -- 'ok' requires BOTH outcome==='finished' AND no stopReason.
   assert.equal(classifyVibeOutcome(undefined), 'no-evidence');
   assert.equal(classifyVibeOutcome({ stopReason: undefined, outcome: 'finished' }), 'ok');
   assert.equal(classifyVibeOutcome({ stopReason: 'max_turns' }), 'replay-unsafe');
+  assert.equal(classifyVibeOutcome({ stopReason: undefined, outcome: 'failed' }), 'replay-unsafe', 'a recognized but non-finished outcome is never safe');
 });
 
 // s3/t7: a REAL executable fixture for the direct-spawn route (plain `vibe -p --output-dir
@@ -1243,6 +1258,57 @@ test('vibe: s3/t7 — the export directory is removed on every exit path, includ
     const args = spawner.calls[0]!.args;
     const dir = args[args.indexOf('--output-dir') + 1]!;
     await waitFor(() => !existsSync(dir));
+  }
+});
+
+test("vibe: review r2 (0196de296) — a native type:'error' row (terminates BEFORE proc.exit, so export.json cannot be consulted) still gets a conservative replay-unsafe classification, live and on reattach", async () => {
+  const nativeErrorLine = JSON.stringify({ type: 'error', message: 'vibe internal failure' });
+  // live: run()'s own main decode loop.
+  {
+    const { deps } = depsFor({ lines: [nativeErrorLine] }, ['vibe']);
+    const events = await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' })));
+    const done = events.at(-1) as { kind: string; ok?: boolean; message?: string; replayUnsafe?: true };
+    // The diagnostic is preserved (not silently dropped), but it is reported as a done, not a
+    // flat error -- ok:false + replayUnsafe:true, never inferred safe, exactly like every
+    // other early-termination path once a turn has actually been dispatched.
+    assert.equal(done.kind, 'done');
+    assert.equal(done.ok, false);
+    assert.equal(done.replayUnsafe, true);
+    assert.equal(done.message, 'vibe internal failure');
+  }
+  // reattach: resume()'s own mapLine loop sees the SAME native row and must not disagree.
+  {
+    const root = mkdtempSync(join(tmpdir(), 'insrc-s3-review-r2-'));
+    try {
+      const sessionOutput = createSessionOutput({ root, pollMs: 5 });
+      // No hangUntilKilled: the fake process must actually exit on its own so proc.exit
+      // resolves and the close()/vibeFinalize chain (independent of this generator's own
+      // early return on the error row) can write the durable marker resume() will read.
+      const { deps } = depsFor({ lines: [nativeErrorLine] }, ['vibe']);
+      const adapter = createProviderRegistry({ ...deps, sessionOutput }).get('vibe');
+      let cursor: TurnCursor | undefined;
+      const stream = adapter.run(REQ({ provider: 'vibe' }), { sessionId: 'sess-native-error', onSpawn: (p) => { cursor = p.cursor; } });
+      const events: TurnEvent[] = [];
+      for await (const ev of stream) {
+        events.push(ev);
+        if (ev.kind === 'done') break; // the native error row IS the terminal event here
+      }
+      assert.ok(cursor !== undefined);
+      // close()'s own marker write is driven by proc.exit independently of this generator's
+      // early return -- wait for it deterministically before reattaching, same as the t9+t10
+      // detach/reattach test does.
+      await waitForTurnEndMarker(join(root, 'sess-native-error.ndjson'));
+      const resumed = await collect(adapter.resume({ cursor: cursor!, pid: undefined, startedAt: null }));
+      // The row is already past the resumed cursor (it was consumed live), so resume() sees
+      // EOF with no new row -- it must read the SAME classification off the durable marker
+      // the live close() already wrote, not report an unclassified terminal error.
+      const resumedDone = resumed.find((e) => e.kind === 'done') as { ok: boolean; replayUnsafe?: true } | undefined;
+      assert.ok(resumedDone !== undefined);
+      assert.equal(resumedDone?.ok, false);
+      assert.equal(resumedDone?.replayUnsafe, true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   }
 });
 

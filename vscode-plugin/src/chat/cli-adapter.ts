@@ -356,14 +356,21 @@ export interface AdapterDeps {
   readonly readVibeExportFile?: ((path: string) => Promise<string>) | undefined;
 }
 
-/** s3/t7: classified from export.json's real stopReason (via readExitEvidence) -- 'ok' ONLY
- *  when the evidence exists and carries no stopReason; never inferred from merely having
- *  decoded a row. 'no-evidence' when export.json is missing, unreadable or malformed. */
+/** s3/t7: classified from export.json's real outcome/stopReason (via readExitEvidence) --
+ *  'ok' ONLY when the evidence exists, the run-level outcome is the live-confirmed
+ *  successful value ('finished', e.g. 'deadline' is a real, distinct, non-successful value),
+ *  AND no stopReason is present; never inferred from merely having decoded a row. 'no-evidence'
+ *  when export.json is missing, unreadable, malformed, or carries invalid field data. */
 export type VibeOutcome = 'ok' | 'no-evidence' | 'replay-unsafe';
+
+/** The only run-level `outcome` value the installed vibe binary writes for a genuinely
+ *  successful completion (live-confirmed); every other value (`'deadline'`, a future one, or
+ *  one this codebase hasn't seen yet) is never assumed safe. */
+const VIBE_SUCCESSFUL_OUTCOME = 'finished';
 
 export function classifyVibeOutcome(evidence: VibeExitEvidence | undefined): VibeOutcome {
   if (evidence === undefined) return 'no-evidence';
-  return evidence.stopReason === undefined ? 'ok' : 'replay-unsafe';
+  return evidence.outcome === VIBE_SUCCESSFUL_OUTCOME && evidence.stopReason === undefined ? 'ok' : 'replay-unsafe';
 }
 
 const NOOP_LOGGER: AdapterLogger = { warn: () => {}, error: () => {} };
@@ -1318,6 +1325,15 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     // no child ever existed. A later stdin write/end failure never reverts it (t6 classifies by
     // whatever it already reached, not a fresh guess).
     let vibeDispatchState: VibeDispatchState = 'not-sent';
+    // Review r2 (0196de296): a native vibe error row (mapLine's own type:'error' branch,
+    // terminal to this generator immediately) terminates BEFORE proc.exit -- the SEPARATE
+    // vibeFinalize chain below computes its own outcome from export.json alone, with no idea
+    // this happened, and could legitimately read a LATER-written 'finished' export (vibe
+    // recovering internally, or simply writing its exit summary after the fact) as 'ok'. The
+    // durable marker must never disagree with what the live observer already saw: once a
+    // native error row is seen, the marker's own vibeOutcome is forced to 'replay-unsafe'
+    // regardless of what export.json says.
+    let sawVibeNativeError = false;
     // s3/t9: vibeDispatchState's 'accepted' transition depends on this generator's OWN decode
     // loop actually reaching that line, which only happens while a consumer keeps pulling
     // events -- unlike `proc.exit` (a plain process-level event, independent of consumption).
@@ -1406,7 +1422,11 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         // triggers `.return()`, which runs the finally below immediately -- this never actually
         // blocks the well-behaved detach path this Task's own test exercises.
         if (isVibeDirectSpawn) await decodeSettled;
-        const vibeOutcome = vibeFinalize !== undefined ? await vibeFinalize.catch(() => undefined) : undefined;
+        const finalizedOutcome = vibeFinalize !== undefined ? await vibeFinalize.catch(() => undefined) : undefined;
+        // Review r2 (0196de296): a native error row already seen live always wins over
+        // whatever export.json says by the time it's read -- see sawVibeNativeError's own
+        // declaration comment.
+        const vibeOutcome = sawVibeNativeError ? 'replay-unsafe' : finalizedOutcome;
         const exit: TurnExit = { ...e, ...(isVibeDirectSpawn ? { vibeDispatchState, vibeOutcome } : {}) };
         void sessionOutput.endTurn(sessionId, turnId, exit).catch((err: unknown) => log.warn(`[chat:${mapper.id}] could not close the output segment of ${turnId}: ${String(err)}`));
       };
@@ -1505,6 +1525,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
           }
           if (ev.kind === 'done') sawDone = true;
           if (ev.kind === 'error') sawError = true;
+          if (isVibeDirectSpawn && ev.kind === 'error') sawVibeNativeError = true;
           if (sawDone || sawError) {
             terminal = true;
             // Keep reading (and discarding) stdout so a CLI that outlives its answer never
@@ -1519,8 +1540,16 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
             opts?.onDecoderState?.(decoderSnapshot(state));
             opts?.onProgress?.(proc.cursor);
           }
-          // Enrich a mapper-produced done with the session id captured so far.
-          yield ev.kind === 'done' ? doneEvent(ev.ok, ev.message, ev.replayUnsafe) : ev;
+          // Review r2 (0196de296): a native vibe error row (mapLine's own type:'error' branch)
+          // terminates BEFORE proc.exit, so export.json cannot be consulted yet -- but the
+          // export/marker path is the only place that ever sets replayUnsafe, so this diagnostic
+          // would otherwise reach the panel as a confident-looking terminal error with NO replay
+          // safety signal at all, even though the prompt was already sent. Give it the same
+          // conservative classification every other early-termination path already gets:
+          // preserve the message, but ok:false + replayUnsafe:true, never inferred safe.
+          yield ev.kind === 'done' ? doneEvent(ev.ok, ev.message, ev.replayUnsafe)
+            : isVibeDirectSpawn && ev.kind === 'error' ? doneEvent(false, ev.message, true)
+            : ev;
           if (sawDone || sawError) return;
         }
         // Every event of this line has been handed over: report the position after it, and the
@@ -1835,7 +1864,12 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
             opts?.onDecoderState?.(decoderSnapshot(state));
             opts?.onProgress?.(cursor);
           }
-          yield ev.kind === 'done' ? doneEvent(ev.ok, ev.message, ev.replayUnsafe) : ev;
+          // Review r2 (0196de296): mirror run()'s own conservative classification of a native
+          // vibe error row, so a reattached reader never disagrees with the live one on replay
+          // safety for the exact same row.
+          yield ev.kind === 'done' ? doneEvent(ev.ok, ev.message, ev.replayUnsafe)
+            : mapper.id === 'vibe' && ev.kind === 'error' ? doneEvent(false, ev.message, true)
+            : ev;
           // Default: end at the first terminal event. With drain (the observer), keep reading to the
           // segment's end so nothing after the terminal is abandoned.
           if (ev.kind === 'done' || ev.kind === 'error') {

@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, writeFile, symlink, rm, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -33,4 +34,10 @@ test('scratch assets refuse symlink roots files traversal and outside-workspace 
   await symlink(join(outside, 'outside.png'), join(workspace, 'escape.png'));
   await assert.rejects(scratchWorkspaceLink(document, join(workspace, 'escape.png'), workspace), /workspace/);
   await assert.rejects(readScratchImage(join(workspace, 'escape.png')));
+}));
+
+
+test('scratch image reads refuse non-regular FIFO inputs without waiting for a writer', { skip: process.platform === 'win32' }, async () => fixture(async dir => {
+  const path = join(dir, 'pipe.png'); execFileSync('mkfifo', [path]);
+  await assert.rejects(readScratchImage(path), /regular/);
 }));

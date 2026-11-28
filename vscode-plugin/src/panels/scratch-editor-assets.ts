@@ -17,7 +17,7 @@ export function scratchImageType(bytes: Uint8Array): string | undefined {
   return undefined;
 }
 export async function readScratchImage(path: string): Promise<{ bytes: Uint8Array; mediaType: string }> {
-  const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {
     const stat = await file.stat();
     if (!stat.isFile() || stat.size < 1 || stat.size > SCRATCH_IMAGE_BYTES) throw new Error('Choose a regular PNG, JPEG, GIF or WebP image of at most 10 MiB.');

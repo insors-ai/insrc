@@ -14,7 +14,10 @@ import { editorViewCtx } from '@milkdown/kit/core';
 import { Fragment, Slice } from '@milkdown/kit/prose/model';
 import { TextSelection } from '@milkdown/kit/prose/state';
 import type { Node as ProseNode } from '@milkdown/kit/prose/model';
-import { imageBlockSchema } from '@milkdown/kit/component/image-block';
+import { $view } from '@milkdown/kit/utils';
+import { imageSchema } from '@milkdown/kit/preset/commonmark';
+import { inlineImageView } from '@milkdown/kit/component/image-inline';
+import { imageBlockConfig, imageBlockView, imageBlockSchema } from '@milkdown/kit/component/image-block';
 import { uploadConfig } from '@milkdown/kit/plugin/upload';
 import { history } from '@milkdown/kit/plugin/history';
 import { parseScratchEditorMessage, parseScratchHostMessage, type ScratchEditorToHost, type ScratchSelectionSend } from './scratch-editor-protocol.js';
@@ -221,6 +224,27 @@ export class ScratchEditorPane {
         try { for (const file of Array.from(files)) { if (!file.type.startsWith('image/')) continue; const src = await this.uploadImage(file); const node = type.createAndFill({ src }); if (node) nodes.push(node); } return nodes; }
         catch (error) { this.assetError(error); return []; }
       } })));
+      // The vendor image-input preview writes typed URLs straight to <img>,
+      // outside proxyDomURL. Own both node views instead of trying to sanitize
+      // the DOM after a preview has already fetched its source.
+      await this.crepe.editor.remove(imageBlockView); await this.crepe.editor.remove(inlineImageView);
+      for (const schema of [imageBlockSchema, imageSchema]) this.crepe.editor.use($view(schema.node, ctx => (initialNode) => {
+        const inline = initialNode.isInline, dom = document.createElement(inline ? 'span' : 'figure');
+        dom.className = inline ? 'scratch-owned-image scratch-owned-image-inline' : 'scratch-owned-image'; dom.contentEditable = 'false';
+        const image = document.createElement('img'), caption = document.createElement(inline ? 'span' : 'figcaption');
+        dom.append(image, caption); let alive = true, generation = 0, currentSource: string | undefined;
+        const update = (node: ProseNode): boolean => {
+          if (node.type !== initialNode.type) return false;
+          image.alt = typeof node.attrs['alt'] === 'string' ? node.attrs['alt'] : '';
+          caption.textContent = String(node.attrs['caption'] ?? node.attrs['title'] ?? ''); caption.hidden = !caption.textContent;
+          const source = String(node.attrs['src'] ?? ''); if (source === currentSource) return true;
+          currentSource = source; const version = ++generation; image.removeAttribute('src');
+          const proxy = ctx.get(imageBlockConfig.key).proxyDomURL;
+          void Promise.resolve(proxy ? proxy(source) : '').then(url => { if (alive && version === generation && url) image.src = url; });
+          return true;
+        };
+        update(initialNode); return { dom, update, destroy: () => { alive = false; generation++; }, selectNode: () => dom.classList.add('ProseMirror-selectednode'), deselectNode: () => dom.classList.remove('ProseMirror-selectednode') };
+      }));
       this.crepe.setReadonly(true); // no editable interval while create() awaits plugins
       await this.crepe.editor.remove(history); // native TextDocument is the sole undo authority
       this.observer = await observeScratchMarkdown(this.crepe.editor, () => this.state!.snapshot.markdown, result => {
@@ -260,7 +284,6 @@ export class ScratchEditorPane {
     });
   }
   private async imageDisplay(href: string): Promise<string> {
-    if (/^data:image\/(png|jpeg|gif|webp);base64,/.test(href)) return href;
     if (!href) return '';
     const existing = this.displayedImages.get(href); if (existing) return existing;
     const loading = this.displayQueue.then(async () => {

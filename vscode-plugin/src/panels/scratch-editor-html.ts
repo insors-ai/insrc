@@ -25,7 +25,7 @@ export function scratchEditorHtml(assets: ScratchEditorAssets, nonce: string, pa
   return shellHtml('Scratchpad', `<main id="scratch-editor"${paneSessionId === undefined ? '' : ` data-pane-session="${paneSessionId}"`}></main>`, nonce, undefined, {
     hideTitle: true,
     resourceSource: source,
-    cspExtra: ` connect-src 'none'; img-src ${source} data: blob:; font-src ${source} data:;`,
+    cspExtra: ` connect-src 'none'; img-src ${source} data:; font-src ${source} data:;`,
     headExtra: `<link rel="stylesheet" href="${escapeHtml(assets.style)}"><script defer nonce="${nonce}" src="${escapeHtml(assets.script)}"></script>`,
   });
 }

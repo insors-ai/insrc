@@ -36,9 +36,7 @@ async function run(): Promise<unknown> {
     });
     const image = await create('image', '![](data:image/png;base64,iVBORw0KGgo=)\n');
     await tick();
-    const actualResizeHandle = image.root.querySelector<HTMLElement>('.image-resize-handle');
-    if (!actualResizeHandle) throw new Error('Actual Crepe image resize handle not rendered');
-    lockedControls.push({ selector: '.image-resize-handle', display: getComputedStyle(actualResizeHandle).display });
+    const ownedImage = { count: image.root.querySelectorAll('.scratch-owned-image').length, rawInputs: image.root.querySelectorAll('.image-edit').length, resizeControls: image.root.querySelectorAll('.image-resize-handle').length };
     send.focus(); send.click(); await tick();
     const clicked = first.sent.filter(m => m.type === 'send-selection');
     first.root.querySelector<HTMLButtonElement>('nav button')!.click(); await tick();
@@ -97,7 +95,7 @@ async function run(): Promise<unknown> {
       const retained = current.root.querySelector<HTMLTextAreaElement>('.scratch-retained-selection')!;
       selectionChecks.push({ method, before: before.filter(m => m.type !== 'lock'), sent, focusedByTab, waiting, disabledAfterFailure: action.disabled, retained: retained.value, retainedVisible: !retained.hidden, status: current.root.querySelector('[role=alert]')?.textContent, drafts: drafts(current.sent) });
     }
-    return { initial, selected, clicked, lockedControls, remembered, siblings, lateAck, host, unsupported, fallback, limit, shortcuts, selectionChecks };
+    return { initial, selected, clicked, lockedControls, ownedImage, remembered, siblings, lateAck, host, unsupported, fallback, limit, shortcuts, selectionChecks };
   } finally { for (const { pane } of all) await pane.dispose(); }
 }
 void run().then(result => { const pre = document.createElement('pre'); pre.id = 'scratch-result'; pre.textContent = JSON.stringify(result); document.body.append(pre); })

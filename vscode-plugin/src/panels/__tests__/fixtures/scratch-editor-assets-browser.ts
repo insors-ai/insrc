@@ -6,6 +6,7 @@ import { uploadConfig } from '@milkdown/kit/plugin/upload';
 import type { ScratchEditorToHost } from '../../scratch-editor-protocol.js';
 const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==';
 const tick = () => new Promise<void>(r => setTimeout(r, 0));
+async function until(predicate: () => boolean, label: string) { for (let i = 0; i < 300 && !predicate(); i++) await tick(); if (!predicate()) throw new Error(`Asset checkpoint: ${label}`); }
 async function run() {
   const root = document.createElement('main'); document.body.append(root);
   const sent: ScratchEditorToHost[] = []; let fail = false, cancel = false, uploads = 0;
@@ -19,9 +20,10 @@ async function run() {
     }); });
   } });
   try {
-    await pane.receive({ type: 'document-state', paneSessionId: 'assets', version: 1, digest: 'a'.repeat(64), markdown: '# Image test\n\n![Existing](assets/existing.png)\n', locked: true });
+    await pane.receive({ type: 'document-state', paneSessionId: 'assets', version: 1, digest: 'a'.repeat(64), markdown: '# Image test\n\n![Existing](assets/existing.png)\n\nInline ![Inline](assets/inline.png) image.\n', locked: true });
     await tick(); await tick();
-    const initial = { drafts: sent.filter(m => m.type === 'draft'), source: pane['crepe']!.getMarkdown(), resolved: sent.filter(m => m.type === 'asset-request' && m.action === 'resolve-image') };
+    const ownedViews = { rawImageInputs: root.querySelectorAll('.image-edit input').length, images: [...root.querySelectorAll<HTMLImageElement>('.scratch-owned-image img')].map(image => ({ src: image.getAttribute('src'), alt: image.alt })) };
+    const initial = { ownedViews, drafts: sent.filter(m => m.type === 'draft'), source: pane['crepe']!.getMarkdown(), resolved: sent.filter(m => m.type === 'asset-request' && m.action === 'resolve-image') };
     root.querySelector<HTMLButtonElement>('nav button')!.click();
     const crepe = pane['crepe']!;
     const file = new File([Uint8Array.from(atob(png), ch => ch.charCodeAt(0))], 'paste.png', { type: 'image/png' });
@@ -44,17 +46,17 @@ async function run() {
     const pastedUrl = crepe.getMarkdown();
     const mixed = new DataTransfer(); mixed.items.add(file); mixed.setData('text/html', '<img src="blob:clipboard-bypass">');
     const mixedPaste = new ClipboardEvent('paste', { clipboardData: mixed, bubbles: true, cancelable: true }); root.querySelector('.ProseMirror')!.dispatchEvent(mixedPaste);
-    for (let turn = 0; turn < 20; turn++) await tick();
-    const mixedSource = crepe.getMarkdown();
+    await until(() => crepe.getMarkdown().includes('assets/image_5.png') || pane['failed'], 'mixed paste applied');
+    const mixedSource = crepe.getMarkdown(), mixedStatus = root.querySelector('.scratch-status')!.textContent, failedAfterMixed = pane['failed'];
     const drop = new DragEvent('drop', { dataTransfer: mixed, clientX: 20, clientY: 100, bubbles: true, cancelable: true }); root.querySelector('.ProseMirror')!.dispatchEvent(drop);
-    for (let turn = 0; turn < 20; turn++) await tick();
-    const droppedSource = crepe.getMarkdown();
+    await until(() => crepe.getMarkdown().includes('assets/image_6.png') || pane['failed'], 'drop applied');
+    const droppedSource = crepe.getMarkdown(), dropStatus = root.querySelector('.scratch-status')!.textContent;
     fail = true;
     const failedMixed = new ClipboardEvent('paste', { clipboardData: mixed, bubbles: true, cancelable: true }); root.querySelector('.ProseMirror')!.dispatchEvent(failedMixed);
-    for (let turn = 0; turn < 20; turn++) await tick();
+    await until(() => root.querySelector('.scratch-status')!.textContent!.includes('Storage unavailable'), 'failed mixed paste refused');
     const failedMixedSource = crepe.getMarkdown(); fail = false; const linkHrefs: string[] = [];
     crepe.editor.action(ctx => ctx.get(editorViewCtx).state.doc.descendants(node => { for (const mark of node.marks) if (mark.type.name === 'link') linkHrefs.push(mark.attrs['href']); }));
-    return { initial, inline, block, display, uploadedNodes: uploadedNodes.map(node => node.attrs.src), beforeFailure, failure, afterFailure, afterCancel, pickedImage, pickedLink, pastedUrl, mixedSource, droppedSource, dropPrevented: drop.defaultPrevented, failedMixedSource, mixedPrevented: mixedPaste.defaultPrevented, linkHrefs, pastePrevented: paste.defaultPrevented, sent: sent.filter(m => m.type !== 'draft'), drafts: sent.filter(m => m.type === 'draft') };
+    return { initial, inline, block, display, uploadedNodes: uploadedNodes.map(node => node.attrs.src), beforeFailure, failure, afterFailure, afterCancel, pickedImage, pickedLink, pastedUrl, mixedSource, mixedStatus, failedAfterMixed, droppedSource, dropStatus, dropPrevented: drop.defaultPrevented, failedMixedSource, mixedPrevented: mixedPaste.defaultPrevented, linkHrefs, pastePrevented: paste.defaultPrevented, sent: sent.filter(m => m.type !== 'draft'), drafts: sent.filter(m => m.type === 'draft') };
   } finally { await pane.dispose(); }
 }
 void run().then(result => { const pre = document.createElement('pre'); pre.id = 'scratch-result'; pre.textContent = JSON.stringify(result); document.body.append(pre); }).catch(error => { const pre = document.createElement('pre'); pre.id = 'scratch-error'; pre.textContent = `${error}\n${error?.stack ?? ''}`; document.body.append(pre); });

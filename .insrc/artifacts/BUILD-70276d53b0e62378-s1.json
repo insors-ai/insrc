@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 3,
+        "contentHash": "c2e3f32988a23f88fe6317369420df89e2ba6445fcd5e9d8b453d0dfdd5102d5",
+        "at": "2026-11-28T05:49:11.887Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T06:06:40.510Z",
+        "override": {
+          "reason": "Automated code review is unavailable (review endpoints are being rewritten); the build gate judge (cli-codex) returned passed:true with all 6 checks satisfied on rev 3 (12/12 tests, typecheck clean), and a human code review packet was generated at /tmp/.insrc/review-packet-70276d53b0e62378-s1.md with verdict \"no blocking findings\". Approved on the user's explicit in-chat yes for BUILD-70276d53b0e62378-s1."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-3b020333-085c-42e3-908f-84c5ea25e1bd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T05:26:10.920Z",
+    "epicCreatedAt": "2026-11-20T04:36:31.019Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "70276d53b0e62378",
+    "storyId": "s1",
+    "revision": 3,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "epicSlug": "update-chat-theme-tests-current-shell",
+    "updatedAt": "2026-11-28T05:48:15.157Z"
+  },
+  "body": {
+    "focus": "ISSUE-70276d53b0e62378 (approved): Update chat theme tests for the current shell structure. Reproduction: 9 chat-theme.test.ts assertions (lines 96,147,165,212,308,328,479,498,528) fail because the tests identify stylesheet ownership by historical position (expect 2 style blocks; the shell now has 3) and freeze pre-change history-chip markup (new-chat button intentionally added before the chip). Root cause: structural assumptions no longer match the rendered shell; no visual regression established. Fix: rebuild the snapshots against the current shell — restore accurate coverage of stylesheet ownership, token-only colors, selectors, CSP and history/new-chat behavior; fix any real visual discrepancy within the existing design rather than weakening snapshots. Acceptance: all 9 affected tests plus the positive/negative theme controls pass.",
+    "producesLld": false,
+    "commit": "0510d84b4",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Round 2 after judge feedback: (1) body.insrc-term now carries margin:0;padding:0;display:flex so the shared shell sheet's later plain body{padding:12px} loses on specificity — full-bleed layout restored; a test pins this. (2) Added positive/negative theme controls: a valid theme variant renders a deterministic token sheet carrying the variant; invalid tokens (sizePx 0, empty colour, '<style>' marker glyph) throw TerminalThemeError naming the path. Earlier round (1def96435) rebuilt the guard for the 3-block shell and removed the nested <style> wrapper around headExtra. All 12 chat-theme tests pass; chat-shell 43/43; tsc clean. Commit 0510d84b4.",
+    "testRecord": {
+      "md": "docs/standalone/update-chat-theme-tests-current-shell-E2026112070276d53/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-theme-before.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T05:48:15.157Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T05:48:15.157Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T05:48:15.157Z"
+      }
+    ]
+  },
+  "citations": []
+}

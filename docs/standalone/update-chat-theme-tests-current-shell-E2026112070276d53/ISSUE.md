@@ -1,4 +1,5 @@
 <!-- insrc:artifact ISSUE-70276d53b0e62378 -->
+**Tracker:** [insors-ai/insrc#361](https://github.com/insors-ai/insrc/issues/361)
 
 # Update chat theme tests for the current shell structure
 
@@ -13,8 +14,3 @@ The tests identify stylesheet ownership by historical position and freeze markup
 ## Fix intent
 
 Restore accurate coverage of stylesheet ownership, token-only colors, selectors, CSP and history/new-chat behavior against the current shell. Acceptance: all six affected assertions and positive/negative theme controls pass, and any actual visual discrepancy discovered is fixed within the existing design rather than hidden by weaker snapshots. Keep general probe-process lifetime in batch 01.
-
-## Citations
-
-- **[[c1]]** `doc` `docs/plans/failing-tests-2026-11-20.md`
-- **[[c2]]** `code` `vscode-plugin/src/chat/chat-panel.ts`

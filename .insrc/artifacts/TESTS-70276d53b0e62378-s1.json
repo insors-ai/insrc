@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "a9f04a7202f02ef0c1a4e9f0dfafc145b562a4fd481cf1c1eed626a9d3eecbc5",
+        "at": "2026-11-28T05:48:15.441Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "70276d53b0e62378",
+    "storyId": "s1",
+    "createdAt": "2026-11-28T05:42:31.224Z",
+    "updatedAt": "2026-11-28T05:48:15.157Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-20T04:36:31.019Z",
+    "epicSlug": "update-chat-theme-tests-current-shell",
+    "revision": 2
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "0510d84b4",
+        "ranAt": "2026-11-28T05:48:15.157Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/chat/__tests__/chat-theme.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 516,
+            "titles": [
+              {
+                "title": "chat theme: the chat's own style has no hex, rgb, rgba or hsl value, no radial gradient and no var() with a literal fallback; its only color-mix is the assistant message's ground, declared once; the colour scheme follows the theme kind; a linear gradient is built only from names and transparent",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: every name used in the shell style, the row renderer style and the chat's markdown rules is defined in the named layer",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: every name but the one derived ground holds a theme variable of this design's mapping, and every optional one falls back to another theme variable",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: each component uses the name the mapping gives it (bars, transcript, user and assistant bubbles, tool row, markers, diff lines, approval card and buttons, decided badge, selection card, input, selects, pill, attachment chips, progress, markdown)",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: the new-chat button and the history chip share the chrome's right cluster (new-chat first), the chip is one wrapper around the trigger button with a masked icon in the current text colour; the trigger keeps its id, and every image source the shell declares is allowed by its content security policy",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: every selector and element id of the shell and the row renderer from before the change is still present, the added selectors are exactly the listed ones, and the shell is still one nonce'd inline script under the same policy",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: the shared token sheet and the docs-review markdown rules are byte-identical to before the change, and the docs-review panel uses none of the chat's three style sources",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: the transcript's children do not shrink, the diff widget's rules name only the shell's theme names, and the .insrc-term-diff rule still out-ranks the shared sheet",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: the progress widget keeps its colours, and its idle variant has its own slower animation that reduced motion stops",
+                "result": "pass"
+              },
+              {
+                "title": "the shell inlines the highlighter source once, holds no script tag in it, and the CSP is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme controls: a valid theme variant renders a deterministic token sheet carrying the variant, and invalid tokens are rejected with TerminalThemeError naming the path",
+                "result": "pass"
+              },
+              {
+                "title": "the token classes take their colours from existing :root names with no new --vscode- name in the widget rules, and the added selectors are listed exactly",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

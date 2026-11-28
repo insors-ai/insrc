@@ -25,7 +25,7 @@
     "kind": "defect",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 1,
         "contentHash": "ce5d519efb1cfc85529b6f0cf95c417f9e2da9e8dfe66fca86536571a6e802cb",
@@ -36,9 +36,39 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T05:25:08.119Z"
+      }
     },
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "70276d53b0e62378",
+      "slug": "EPIC-70276d53b0e62378"
+    },
+    "tracker": {
+      "adapter": "github",
+      "labelsCreated": [
+        "epic:update-chat-theme-tests-current-shell"
+      ],
+      "issueRef": "insors-ai/insrc#361",
+      "epicStatus": "closed",
+      "storyStatus": {
+        "s1": "closed"
+      },
+      "lastSyncedAt": "2026-11-28T06:08:33Z"
+    }
   },
   "body": {
     "title": "Update chat theme tests for the current shell structure",

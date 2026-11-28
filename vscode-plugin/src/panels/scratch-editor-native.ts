@@ -191,6 +191,9 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
       await validate(document.uri);
       if (stopped || token.isCancellationRequested || document.isClosed) throw new Error('Scratchpad opening was cancelled.');
       const previous = documents.get(document.uri.toString()); if (previous?.closing) await previous.closing;
+      // Closing can yield while extension shutdown or cancellation begins.
+      // Do not attach listeners or publish a new entry after that boundary.
+      if (stopped || token.isCancellationRequested || document.isClosed) throw new Error('Scratchpad opening was cancelled.');
       const entry = entryFor(document);
       const pane: Pane = { id: randomUUID(), panel, locked: preference.initial(), ready: false, disposed: false, listeners: [] };
       entry.panes.set(pane.id, pane);

@@ -98,8 +98,12 @@ test('scratch native adapter rejects unrelated URIs and disposes listeners witho
 test('scratch native save hook drains pending source and idle external changes broadcast without edits', async () => fixture(async h => {
   const id = await h.open(); h.external('# External\n'); await until(() => h.messages.some(m => m.type === 'document-state' && m.markdown === '# External\n'));
   assert.equal(h.applies, 0);
-  h.send(id, { ...draft, baseVersion: h.doc.version, baseDigest: scratchDigest('# External\n') }); await until(() => h.messages.some(m => m.type === 'apply-ack'));
-  await h.doc.save(); assert.equal(await readFile(h.resolved.filePath, 'utf8'), '# Draft\n');
+  const gate = h.block();
+  h.send(id, { ...draft, baseVersion: h.doc.version, baseDigest: scratchDigest('# External\n') }); await until(() => h.applies === 1);
+  const saving = h.doc.save();
+  await new Promise(r => setTimeout(r, 25)); assert.equal(h.saves, 0);
+  assert.equal(await readFile(h.resolved.filePath, 'utf8'), '# Before\n');
+  gate.resolve(); await saving; assert.equal(await readFile(h.resolved.filePath, 'utf8'), '# Draft\n');
 }));
 
 test('scratch editor HTML accepts the production nonce and only a bounded opaque pane session', () => {
@@ -126,4 +130,36 @@ test('scratch native adapter requires a matching renderer focus acknowledgement 
     await until(() => h.messages.filter(m => m.type === 'action-error').length > errors);
     assert.equal(h.commands.some(c => c.name === 'undo'), false); assert.equal(h.doc.text, '# Before\n');
   }
+}));
+
+
+test('scratch native adapter drains pending edits before both Undo and Redo', async () => {
+  for (const action of ['undo', 'redo'] as const) await fixture(async h => {
+    const id = await h.open(), gate = h.block();
+    h.send(id, draft); await until(() => h.applies === 1);
+    h.send(id, { type: action, draftSeq: 1, docVersion: 1 });
+    await new Promise(r => setTimeout(r, 25));
+    assert.equal(h.commands.some(c => c.name === action), false);
+    assert.equal(h.messages.some(m => m.type === 'focus-request'), false);
+    gate.resolve(); await until(() => h.commands.some(c => c.name === action));
+    assert.equal(h.doc.version, 3);
+    assert.equal(h.doc.text, action === 'undo' ? '# Before\n' : '# Draft\n');
+    assert.equal(h.commands.filter(c => c.name === action).length, 1);
+  });
+});
+
+test('scratch native adapter rejects a waiting resolve when shutdown starts', async () => fixture(async h => {
+  const id = await h.open(), gate = h.block();
+  h.send(id, draft); await until(() => h.applies === 1);
+  h.panel.dispose();
+  const resolving = h.provider().resolveCustomTextEditor(h.doc as unknown as VSCode.TextDocument, h.panel as unknown as VSCode.WebviewPanel, { isCancellationRequested: false });
+  // Let URI validation finish so resolution is waiting on the closing entry.
+  await new Promise(r => setTimeout(r, 25));
+  const shutdown = h.host.dispose();
+  const rejected = assert.rejects(Promise.resolve(resolving), /cancelled/);
+  gate.resolve(); await rejected; await shutdown;
+  assert.equal(h.incoming.size, 0);
+  assert.equal(h.disposed.size, 0);
+  assert.equal(h.changed.size, 0);
+  assert.equal(h.doc.text, '# Draft\n');
 }));

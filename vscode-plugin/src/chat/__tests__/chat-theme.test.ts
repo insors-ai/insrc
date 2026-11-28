@@ -19,7 +19,7 @@ import { dirname, join } from 'node:path';
 import { createChatPanelHost, type ChatPanelChannel } from '../chat-panel.js';
 import { createInMemoryChatSessionStore } from '../session-store.js';
 import { createAttachmentStore } from '../attachment-store.js';
-import { renderTerminalStyle } from '../design-tokens.js';
+import { renderTerminalStyle, terminalTheme, TerminalThemeError } from '../design-tokens.js';
 import { CHAT_MARKDOWN_TOKENS, DOCS_REVIEW_MARKDOWN_TOKENS, renderMarkdownStyle } from '../markdown-style.js';
 import { RENDER_REGISTRY_STYLE } from '../render-registry.js';
 import type { ProviderRegistry, StreamAdapter } from '../cli-adapter.js';
@@ -232,6 +232,11 @@ test('chat theme: each component uses the name the mapping gives it (bars, trans
   // tokens. The chat's rules must win over both: a more specific body rule, and a diff rule that
   // comes later in the document with the same specificity.
   has('body.insrc-term', 'background:var(--bg)', 'color:var(--fg)', 'font-family:var(--font)');
+  // The shared shell's own sheet rides last in the head and paints a plain `body{padding:12px}`
+  // (0,0,1); the chat's body rule carries the class (0,1,1) and the full-bleed box set, so the
+  // panel stays edge to edge — the shell's later element rule cannot re-inset it.
+  has('body.insrc-term', 'margin:0', 'padding:0', 'display:flex');
+  assert.match(styleBlocks(shellHtml()).at(-1)!, /body \{[^}]*padding: 12px;/, "the shared shell sheet's plain body rule is present and loses on specificity");
   has('.insrc-term-diff', 'background:var(--panel)', 'color:var(--fg)', 'border:1px solid var(--border-lit)');
   const sheet = styleBlocks(shellHtml())[0]!;
   const html = shellHtml();
@@ -575,6 +580,30 @@ test('the shell inlines the highlighter source once, holds no script tag in it, 
   assert.ok(!review.includes(HLJS_SRC), 'the review pane does not carry the highlighter');
   const marked = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'webview-marked.ts'), 'utf8');
   assert.ok(!marked.includes('hljs'), 'webview-marked.ts is untouched by the highlighter');
+});
+
+// Positive/negative theme controls: the shell's token sheet is produced by renderTerminalStyle,
+// so a valid theme variant must render a deterministic sheet carrying the variant, and an
+// invalid token must be rejected before any CSS is emitted (the shell can never carry a broken
+// or injectable style).
+test('chat theme controls: a valid theme variant renders a deterministic token sheet carrying the variant, and invalid tokens are rejected with TerminalThemeError naming the path', () => {
+  const variant = { ...terminalTheme, marker: { ...terminalTheme.marker, done: '✔' } };
+  const rendered = renderTerminalStyle(variant);
+  assert.ok(rendered.startsWith('<style>') && rendered.endsWith('</style>'));
+  assert.ok(rendered.includes('--it-mk-done: "✔";'), 'the variant reaches the sheet');
+  assert.equal(renderTerminalStyle(variant), rendered, 'deterministic for the same theme');
+  assert.throws(
+    () => renderTerminalStyle({ ...terminalTheme, font: { ...terminalTheme.font, sizePx: 0 } }),
+    (e: unknown) => e instanceof TerminalThemeError && /font\.sizePx/.test((e as Error).message),
+  );
+  assert.throws(
+    () => renderTerminalStyle({ ...terminalTheme, color: { ...terminalTheme.color, accent: '' } }),
+    (e: unknown) => e instanceof TerminalThemeError && /color\.accent/.test((e as Error).message),
+  );
+  assert.throws(
+    () => renderTerminalStyle({ ...terminalTheme, marker: { ...terminalTheme.marker, pending: '<style>' } }),
+    (e: unknown) => e instanceof TerminalThemeError && /marker\.pending/.test((e as Error).message),
+  );
 });
 
 test('the token classes take their colours from existing :root names with no new --vscode- name in the widget rules, and the added selectors are listed exactly', () => {

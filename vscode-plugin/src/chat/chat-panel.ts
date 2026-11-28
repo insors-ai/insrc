@@ -2193,7 +2193,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // The body carries the shared sheet's `.insrc-term` class, whose rule out-ranks a plain `body`
       // rule and paints from that sheet's own tokens (theme variables with fixed fallbacks). This
       // rule out-ranks it in turn, so the body's ground, text and font come from the layer above.
-      `body.insrc-term{background:var(--bg);color:var(--fg);font-family:var(--font);}` +
+      // The shared shell's own sheet rides LAST in the head and paints a plain
+      // `body{...;padding:12px;}` (0,0,1); this class rule (0,1,1) also carries the full-bleed box
+      // set (margin/padding 0, display:flex), so the shell's later element rule can never re-inset
+      // the panel — the .box stays edge to edge.
+      `body.insrc-term{background:var(--bg);color:var(--fg);font-family:var(--font);margin:0;padding:0;display:flex;}` +
       `::selection{background:var(--sel);}a{color:var(--link);}` +
       // Full-bleed: the .box IS the whole panel (approved --panel surface), edge to edge — no floating
       // card border/radius/shadow (that framing was the mock's page card; in-panel it fills).

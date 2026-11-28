@@ -13,7 +13,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, existsSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -171,11 +171,16 @@ test('esbuild emits self-contained CJS out/extension.js that loads under an ESM 
 
     // CommonJS, with 'vscode' left as an external require (not inlined).
     const extSrc = readFileSync(extPath, 'utf8');
-    // s3/t11: the vibe-session-worker.js bundle entry and its app-server job route are deleted
-    // (the direct-spawn vibe branch in cli-adapter.ts fully supersedes it) -- no separate worker
-    // bundle ships any more; the extension bundle itself carries vibe's own argv/cancellation
-    // support directly.
-    assert.ok(!existsSync(join(out, 'vibe-session-worker.js')), 'the deleted Vibe worker bundle entry is not emitted');
+    // s3/t11: the app-server job route's worker bundle entry is deleted (the direct-spawn vibe
+    // branch in cli-adapter.ts fully supersedes it) -- the bundle now emits only the two known
+    // entry points; the extension bundle itself carries vibe's own argv/cancellation support
+    // directly.
+    const emittedJsFiles = readdirSync(out).filter((f) => f.endsWith('.js'));
+    assert.deepEqual(
+      emittedJsFiles.sort(),
+      ['extension.js', 'scratch-validation-host-worker.js', 'uninstall.js'],
+      'only the known entry points are emitted -- no separate Vibe worker bundle',
+    );
     assert.match(extSrc, /buildSelectionArgs/, 'the packaged extension includes model/thinking selection (the adapter\'s new-session-only argv)');
     assert.match(extSrc, /signalGroup/, 'the packaged extension includes turn cancellation (the adapter\'s process-group cleanup)');
     assert.match(extSrc, /require\(["']vscode["']\)/, "'vscode' is left as an external require");

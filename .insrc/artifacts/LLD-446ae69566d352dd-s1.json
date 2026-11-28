@@ -45,7 +45,16 @@
     "envelope": {
       "attachments": []
     },
-    "revision": 8
+    "revision": 8,
+    "questionResolutions": {
+      "q14408171": {
+        "question": "R2-1 owner choice: accept manual-only recovery guidance with no operation.lock or all-consumer shutdown proof/enforcement during an operator move, or request a separately designed control-owned recovery command? Proposed default is manual-only with the exact diagnostic in §4.3.",
+        "status": "resolved",
+        "choice": "Manual-only recovery guidance, without enforced locking or all-consumer shutdown proof; accept the disclosed concurrency risk, use the exact root-write/no-deletion diagnostic and retain the recovery-command follow-up for consideration before general release.",
+        "rationale": "User explicitly approved LLD8 with manual-only recovery guidance and corrected read-only runtime plus writable SDK isolation in this turn.",
+        "resolvedAt": "2026-11-28T09:29:45.905Z"
+      }
+    }
   },
   "body": {
     "hldContextSlice": {

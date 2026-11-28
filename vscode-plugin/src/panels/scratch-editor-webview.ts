@@ -24,7 +24,7 @@ import { uploadConfig } from '@milkdown/kit/plugin/upload';
 import { history } from '@milkdown/kit/plugin/history';
 import { parseScratchEditorMessage, parseScratchHostMessage, type ScratchEditorToHost, type ScratchSelectionSend } from './scratch-editor-protocol.js';
 import { ScratchRendererState } from './scratch-editor-state.js';
-import { checkScratchMarkdown } from './scratch-markdown.js';
+import { checkScratchMarkdown, checkScratchMarkdownEdit } from './scratch-markdown.js';
 import { observeScratchMarkdown, scratchMilkdownCodec, SCRATCH_HOST_TRANSACTION } from './scratch-markdown-milkdown.js';
 import { configureScratchSchema } from './scratch-markdown-codec.js';
 
@@ -170,6 +170,17 @@ export class ScratchEditorPane {
     }
     const result = this.state.receive(msg);
     if (result.conflict) { this.fail(result.conflict); return; }
+    if (result.revalidate && this.crepe && !this.failed && !this.locked) {
+      // Own-parent acknowledgement changes the admission base. The idle
+      // observer migration moves this check to its background scheduler.
+      const sequence = this.state.draftSeq, base = this.state.snapshot;
+      if (this.state.validating(sequence, base.version, base.digest)) {
+        const checked = this.crepe.editor.action(ctx => checkScratchMarkdownEdit(base.markdown, this.state!.markdown,
+          scratchMilkdownCodec(ctx), ctx.get(editorViewCtx).state.doc));
+        if (checked.allowed) this.state.authorize(sequence, base.version, base.digest);
+        else { this.state.refuse(sequence, checked.reason); this.fail(checked.reason); return; }
+      }
+    }
     if (msg.type === 'focus-request') {
       if (!this.failed && this.crepe) this.crepe.editor.action(ctx => ctx.get(editorViewCtx).focus());
       // VS Code 1.146's preload relays webview focus on a 250 ms poll. Wait
@@ -213,7 +224,7 @@ export class ScratchEditorPane {
         view.dispatch(view.state.tr.replaceWith(0, view.state.doc.content.size, parsed.content).setMeta(SCRATCH_HOST_TRANSACTION, true));
       });
     }
-    if (msg.type === 'receipt') this.status.textContent = 'Draft retained; waiting for document update.';
+    if (msg.type === 'receipt' && msg.draftSeq === this.state.draftSeq && this.state.hasPending) this.status.textContent = this.state.phase === 'authorized' ? 'Draft retained; waiting for document update.' : 'Draft retained; waiting for validation.';
     if (msg.type === 'apply-ack' && !this.state.hasPending) this.status.textContent = ''; // applied is not saved
   }
   private async initialize(markdown: string): Promise<void> {
@@ -256,11 +267,14 @@ export class ScratchEditorPane {
         if (result.kind === 'unchanged' || this.disposed || this.failed) return;
         this.hideSend();
         try {
-          if (result.kind === 'proposal' && !this.locked) { this.state!.edit(result.draft); this.status.textContent = 'Updating document…'; }
+          if (result.kind === 'proposal' && !this.locked) {
+            const sequence = this.state!.stage(result.draft), base = this.state!.snapshot;
+            this.state!.authorize(sequence, base.version, base.digest); this.status.textContent = 'Updating document…';
+          }
           else {
             // A serializable refused proposal is recovery-only, including after
             // an older acknowledgement; it can never become an apply request.
-            if (result.draft) this.state!.edit(result.draft, false);
+            if (result.draft) { const sequence = this.state!.stage(result.draft); this.state!.refuse(sequence, result.reason ?? 'Unsafe draft'); }
             this.fail(result.reason ?? 'Draft cannot be safely applied. Source and local editor text are retained.');
           }
         } catch { this.fail('Draft could not be sent. Keep this pane open and preserve your text before closing.'); }

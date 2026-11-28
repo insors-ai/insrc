@@ -22,8 +22,8 @@ export interface ScratchDraftProposal extends Session {
   readonly baseVersion: number;
   readonly baseDigest: string;
   readonly parentEditId?: string | undefined;
-  /** false reports the latest recovery draft while an older edit is in flight.
-   * Its same-id/text promotion to true uses the newly acknowledged base. */
+  /** false (or historical absent) is recovery-only pending validation. Only
+   * explicit true authorizes this exact identity/text/base after admission. */
   readonly apply?: boolean | undefined;
   readonly markdown: string;
 }

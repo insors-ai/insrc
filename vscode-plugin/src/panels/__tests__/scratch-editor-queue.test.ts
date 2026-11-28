@@ -7,6 +7,11 @@ import type { ScratchDraftProposal, ScratchHostToEditor } from '../scratch-edito
 const tick = (): Promise<void> => new Promise(resolve => setImmediate(resolve));
 async function until(predicate: () => boolean): Promise<void> { for (let i = 0; i < 100 && !predicate(); i++) await tick(); assert.ok(predicate(), 'expected asynchronous checkpoint'); }
 const deferred = () => { let resolve!: () => void; const promise = new Promise<void>(r => { resolve = r; }); return { promise, resolve }; };
+/** These queue cases use an always-admit validator; fidelity is independently
+ * covered by the actual Milkdown/worker corpus and real-pane tests. */
+function edit(client: ScratchRendererState, markdown: string): void {
+  const sequence = client.stage(markdown); client.authorize(sequence, client.snapshot.version, client.snapshot.digest);
+}
 
 function harness() {
   let document = { version: 1, markdown: '# Before\n' };
@@ -32,10 +37,16 @@ function harness() {
   const bind = (id: string, asyncAcks = false): ScratchRendererState => {
     const client = new ScratchRendererState(id, controller.snapshot, draft => { const result = controller.receive(id, draft); receives.push(result); void result.catch(() => {}); });
     clients.set(id, client); messages.set(id, []);
-    controller.addPane(id, msg => { messages.get(id)!.push(msg); if (asyncAcks && msg.type === 'apply-ack') setImmediate(() => client.receive(msg)); else client.receive(msg); }, false);
+    const deliver = (msg: ScratchHostToEditor): void => {
+      const update = client.receive(msg);
+      // This queue fixture supplies an always-admit validator. The production
+      // pane instead reruns actual-document admission after the base changes.
+      if (update.revalidate) client.authorize(client.draftSeq, client.snapshot.version, client.snapshot.digest);
+    };
+    controller.addPane(id, msg => { messages.get(id)!.push(msg); if (asyncAcks && msg.type === 'apply-ack') setImmediate(() => deliver(msg)); else deliver(msg); }, false);
     return client;
   };
-  const draft = (seq: number, markdown: string, parentEditId?: string): ScratchDraftProposal => ({ type: 'draft', paneSessionId: 'a', draftSeq: seq, editId: `edit_${seq}`, baseVersion: 1, baseDigest: scratchDigest('# Before\n'), markdown, ...(parentEditId ? { parentEditId } : {}) });
+  const draft = (seq: number, markdown: string, parentEditId?: string): ScratchDraftProposal => ({ type: 'draft', paneSessionId: 'a', draftSeq: seq, editId: `edit_${seq}`, baseVersion: 1, baseDigest: scratchDigest('# Before\n'), markdown, apply: true, ...(parentEditId ? { parentEditId } : {}) });
   return { controller, edits, retained, applied, recovery, messages, bind, draft,
     get document() { return document; }, get maxActive() { return maxActive; },
     block: () => { gate = deferred(); return gate; },
@@ -65,8 +76,8 @@ test('scratch queue serializes minimal edits and coalesces acknowledged descenda
 
 test('scratch queue retains every newer draft while an old ack promotes only the latest snapshot', async () => {
   const h = harness(), a = h.bind('a'), b = h.bind('b'), gate = h.block();
-  a.edit('# First\n'); await until(() => h.edits.length === 1);
-  a.edit('# Second\n'); a.edit('# Latest\n');
+  edit(a, '# First\n'); await until(() => h.edits.length === 1);
+  edit(a, '# Second\n'); edit(a, '# Latest\n');
   await until(() => h.retained.length === 2);
   assert.equal(h.retained[1]?.apply, false); assert.equal(h.retained[1]?.draftSeq, 3);
   assert.equal(a.markdown, '# Latest\n'); assert.equal(h.recovery.get('a')?.markdown, '# Latest\n');
@@ -99,13 +110,13 @@ test('scratch queue rejects stale, cross-session and conflicting duplicate input
 
 test('scratch queue external changes freeze pending edits and preserve both canonical and competing drafts', async () => {
   const h = harness(), a = h.bind('a'), b = h.bind('b'), gate = h.block();
-  a.edit('# First\n'); await until(() => h.edits.length === 1); a.edit('# Competing draft\n');
+  edit(a, '# First\n'); await until(() => h.edits.length === 1); edit(a, '# Competing draft\n');
   await until(() => h.retained.length === 2);
   h.external('# External\n'); gate.resolve(); await h.settle();
   assert.equal(h.document.markdown, '# External\n'); assert.equal(a.markdown, '# Competing draft\n');
   assert.equal(b.markdown, '# External\n'); assert.equal(h.recovery.get('a')?.markdown, '# Competing draft\n');
   assert.equal(h.controller.conflicted, true); assert.equal(a.conflicted, true);
-  assert.equal(h.applied.length, 0); assert.throws(() => a.edit('# More\n'));
+  assert.equal(h.applied.length, 0); assert.throws(() => edit(a, '# More\n'));
 });
 
 test('scratch queue does not apply without persisted receipt and lets accepted work finish after pane disposal', async () => {
@@ -120,8 +131,8 @@ test('scratch queue does not apply without persisted receipt and lets accepted w
 
 test('scratch queue captured-sequence barrier waits across asynchronous ack and promotion delivery', async () => {
   const h = harness(), a = h.bind('a', true), gate = h.block();
-  a.edit('# First\n'); await until(() => h.edits.length === 1);
-  a.edit('# Pending two\n'); a.edit('# Latest three\n'); await until(() => h.retained.length === 2);
+  edit(a, '# First\n'); await until(() => h.edits.length === 1);
+  edit(a, '# Pending two\n'); edit(a, '# Latest three\n'); await until(() => h.retained.length === 2);
   let completed = false;
   const barrier = h.controller.waitForSequence('a', 3).then(snapshot => { completed = true; return snapshot; });
   gate.resolve(); await h.controller.flush(); assert.equal(completed, false);
@@ -132,8 +143,8 @@ test('scratch queue captured-sequence barrier waits across asynchronous ack and 
 
 test('scratch queue shares one apply lane across competing panes without overwriting either draft', async () => {
   const h = harness(), a = h.bind('a'), b = h.bind('b'), gate = h.block();
-  a.edit('# Pane A\n'); await until(() => h.edits.length === 1);
-  b.edit('# Pane B\n'); await until(() => h.retained.length === 2);
+  edit(a, '# Pane A\n'); await until(() => h.edits.length === 1);
+  edit(b, '# Pane B\n'); await until(() => h.retained.length === 2);
   gate.resolve(); await h.settle();
   assert.equal(h.document.markdown, '# Pane A\n'); assert.equal(h.edits.length, 1); assert.equal(h.maxActive, 1);
   assert.equal(a.markdown, '# Pane A\n'); assert.equal(b.markdown, '# Pane B\n');
@@ -195,8 +206,8 @@ test('scratch queue cannot reuse a historical edit identity at a new sequence', 
 
 test('scratch selection source proof retains original base across promotion and refuses unrelated updates', async () => {
   const h = harness(), client = h.bind('a', true), gate = h.block();
-  client.edit('# First\n'); await until(() => h.edits.length === 1);
-  client.edit('# Selected latest\n');
+  edit(client, '# First\n'); await until(() => h.edits.length === 1);
+  edit(client, '# Selected latest\n');
   assert.equal(h.controller.selectionSourceMatches('a', 2, 1), true);
   assert.equal(h.controller.selectionSourceMatches('a', 1, 1), false);
   gate.resolve(); await h.settle();

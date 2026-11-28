@@ -94,7 +94,7 @@ async function harness() {
     external: (text: string) => { doc.text = text; doc.version++; changed.fire({ document: doc }); },
   };
 }
-const draft = { type: 'draft', draftSeq: 1, editId: 'edit_1', baseVersion: 1, baseDigest: scratchDigest('# Before\n'), markdown: '# Draft\n' };
+const draft = { type: 'draft', draftSeq: 1, editId: 'edit_1', baseVersion: 1, baseDigest: scratchDigest('# Before\n'), markdown: '# Draft\n', apply: true };
 
 test('scratch native adapter drains captured save and routes undo redo to the exact active custom document', async () => fixture(async h => {
   const id = await h.open(), gate = h.block(); h.send(id, draft); await until(() => h.applies === 1);
@@ -277,9 +277,10 @@ test('scratch native deletion closes only exact URI tabs across groups before gu
 }));
 
 test('scratch native deletion cancels dirty pending recovery unconfirmed panes and close cancellation without unlink', async () => {
-  for (const state of ['dirty', 'pending', 'recovery', 'renderer-pending', 'wrong-version', 'close-cancelled'] as const) await fixture(async h => {
+  for (const state of ['dirty', 'pending', 'staged', 'recovery', 'renderer-pending', 'wrong-version', 'close-cancelled'] as const) await fixture(async h => {
     const id = await h.open(); let result: Promise<'deleted' | 'cancelled'>;
     if (state === 'dirty') h.doc.isDirty = true;
+    if (state === 'staged') { h.send(id, { ...draft, apply: false }); await until(() => h.messages.some(m => m.type === 'receipt')); assert.equal(h.applies, 0); }
     if (state === 'recovery') await h.recovery.retain(h.uri.toString(), { ...draft, paneSessionId: 'other-window' } as never);
     if (state === 'renderer-pending') h.setDeleteMode('pending');
     if (state === 'wrong-version') h.setDeleteMode('wrong-version');

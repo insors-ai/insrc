@@ -1,5 +1,6 @@
 import { createScratchCrepe } from '../../scratch-editor-webview.js';
-import { observeScratchMarkdown } from '../../scratch-markdown-milkdown.js';
+import { observeScratchMarkdown, scratchMilkdownCodec } from '../../scratch-markdown-milkdown.js';
+import { checkScratchMarkdownEdit } from '../../scratch-markdown.js';
 import { ScratchRendererState } from '../../scratch-editor-state.js';
 import type { ScratchDraftProposal } from '../../scratch-editor-protocol.js';
 import { editorViewCtx } from '@milkdown/kit/core';
@@ -10,7 +11,7 @@ async function run(): Promise<unknown> {
   const root = document.createElement('main'); document.body.appendChild(root);
   const editor = createScratchCrepe({ root, defaultValue: source });
   const observer = await observeScratchMarkdown(editor.editor, () => state.snapshot.markdown, result => {
-    if (result.kind === 'proposal') state.edit(result.draft);
+    if (result.kind === 'proposal') { const sequence = state.stage(result.draft); state.authorize(sequence, state.snapshot.version, state.snapshot.digest); }
     else throw new Error('Browser transaction did not qualify');
   });
   await editor.create(); observer.activate();
@@ -20,13 +21,17 @@ async function run(): Promise<unknown> {
       view.dispatch(view.state.tr.insert(view.state.doc.content.size, view.state.schema.node('paragraph', null, view.state.schema.text('First edit'))));
       view.dispatch(view.state.tr.insertText(' and newer typing', view.state.doc.content.size - 1));
     });
-    const first = sent[0]!;
+    const first = sent.find(draft => draft.apply)!;
     const beforeAck = { state: state.markdown, view: editor.getMarkdown(), drafts: sent.map(draft => ({ ...draft })) };
     const ack = { type: 'apply-ack', paneSessionId: 'pane', draftSeq: first.draftSeq, editId: first.editId, version: 2, digest: 'b'.repeat(64), markdown: first.markdown };
     const action = state.receive(ack);
     const afterAck = { state: state.markdown, view: editor.getMarkdown(), drafts: sent.map(draft => ({ ...draft })), action };
+    const checked = editor.editor.action(ctx => checkScratchMarkdownEdit(state.snapshot.markdown, state.markdown, scratchMilkdownCodec(ctx), ctx.get(editorViewCtx).state.doc));
+    if (!checked.allowed) throw new Error('Fresh actual-document admission failed');
+    state.authorize(state.draftSeq, state.snapshot.version, state.snapshot.digest);
+    const afterRevalidation = sent.map(draft => ({ ...draft }));
     state.receive(ack);
-    return { beforeAck, afterAck, afterDuplicate: state.markdown, pending: state.hasPending, frozen: state.conflicted };
+    return { beforeAck, afterAck, afterRevalidation, afterDuplicate: state.markdown, pending: state.hasPending, frozen: state.conflicted };
   } finally { observer.deactivate(); await editor.destroy(); }
 }
 void run().then(result => { const pre = document.createElement('pre'); pre.id = 'scratch-result'; pre.textContent = JSON.stringify(result); document.body.appendChild(pre); })

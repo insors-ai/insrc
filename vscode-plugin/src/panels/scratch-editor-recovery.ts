@@ -104,7 +104,10 @@ export class ScratchRecoveryStore {
       const previous = existing[0];
       if (previous) {
         const old = previous.draft;
-        const promotion = old.apply === false && draft.apply === true && old.markdown === draft.markdown && old.parentEditId !== undefined && old.parentEditId === draft.parentEditId;
+        const sameBase = old.baseVersion === draft.baseVersion && old.baseDigest === draft.baseDigest;
+        const promotion = old.apply === false && draft.apply === true && old.parentEditId === draft.parentEditId &&
+          (sameBase || old.parentEditId !== undefined) &&
+          sameScratchDraft({ ...old, apply: true, baseVersion: draft.baseVersion, baseDigest: draft.baseDigest }, draft);
         if (old.draftSeq > draft.draftSeq || old.draftSeq === draft.draftSeq && !sameScratchDraft(old, draft) && !promotion) throw new Error('Stale or conflicting recovery write');
       }
       const temporary = join(this.root, `.tmp-${randomUUID()}`);

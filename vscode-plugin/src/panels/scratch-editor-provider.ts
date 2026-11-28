@@ -103,8 +103,8 @@ export class ScratchDocumentController {
     if (previous && draft.draftSeq < previous.draftSeq) return Promise.reject(new Error('Stale draft sequence'));
     if (same) {
       if (sameScratchDraft(previous, draft)) return this.receipts;
-      // A reported recovery draft may be promoted only with identical identity,
-      // sequence and text, once its older in-flight parent has been acknowledged.
+      // Explicit admission preserves identity/text and either the exact live
+      // base or the newly acknowledged base of its identified own parent.
       if (previous.editId !== draft.editId || previous.markdown !== draft.markdown || previous.apply !== false || draft.apply !== true) return Promise.reject(new Error('Conflicting duplicate draft'));
       const parent = pane.ack;
       const originalBase = parent && (
@@ -112,9 +112,13 @@ export class ScratchDocumentController {
         previous.baseVersion === parent.baseVersion && previous.baseDigest === parent.baseDigest
       );
       const current = this.read();
-      if (!parent || !originalBase || previous.parentEditId === undefined || draft.parentEditId !== previous.parentEditId ||
-        parent.editId !== previous.parentEditId || draft.baseVersion !== parent.snapshot.version || draft.baseDigest !== parent.snapshot.digest ||
-        current.version !== parent.snapshot.version || current.digest !== parent.snapshot.digest) {
+      const direct = previous.baseVersion === draft.baseVersion && previous.baseDigest === draft.baseDigest &&
+        current.version === draft.baseVersion && current.digest === draft.baseDigest && draft.parentEditId === previous.parentEditId &&
+        (draft.parentEditId === undefined || parent?.editId === draft.parentEditId);
+      const rebased = parent && originalBase && previous.parentEditId !== undefined && draft.parentEditId === previous.parentEditId &&
+        parent.editId === previous.parentEditId && draft.baseVersion === parent.snapshot.version && draft.baseDigest === parent.snapshot.digest &&
+        current.version === parent.snapshot.version && current.digest === parent.snapshot.digest;
+      if (!direct && !rebased) {
         return Promise.reject(new Error('Conflicting pending-draft promotion'));
       }
     } else if (previous?.editId === draft.editId) return Promise.reject(new Error('Reused edit identity'));
@@ -138,7 +142,9 @@ export class ScratchDocumentController {
         this.conflict(pane, draft.draftSeq, 'Draft receipt could not be delivered; draft retained.'); return;
       }
       if (this.frozen || pane.locked) { this.conflict(pane, draft.draftSeq, 'Source changed or pane is locked; draft retained.'); return; }
-      if (draft.apply === false) return;
+      // Historical drafts without apply remain readable/recoverable, but only
+      // explicit validated authorization can enter the canonical apply lane.
+      if (draft.apply !== true) return;
       const superseded = this.jobs.findIndex(job => job.pane === pane && job.draft.parentEditId === draft.parentEditId);
       if (superseded >= 0) this.jobs[superseded] = { pane, draft };
       else this.jobs.push({ pane, draft });

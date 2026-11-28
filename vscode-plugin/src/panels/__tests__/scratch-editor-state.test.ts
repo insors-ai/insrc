@@ -19,15 +19,16 @@ test('scratch renderer preserves newer real Milkdown typing across older and dup
     assert.equal(result.timedOut, false); assert.equal(result.exitCode, 0, result.stderr);
     const match = result.stdout.match(/<pre id="scratch-result">([\s\S]*?)<\/pre>/); assert.ok(match, result.stdout.slice(-2500));
     const data = JSON.parse(match[1]!.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&'));
-    assert.equal(data.beforeAck.drafts.length, 2);
-    assert.equal(data.beforeAck.drafts[0].apply, true); assert.equal(data.beforeAck.drafts[1].apply, false);
+    assert.equal(data.beforeAck.drafts.length, 3);
+    assert.equal(data.beforeAck.drafts[0].apply, false); assert.equal(data.beforeAck.drafts[1].apply, true); assert.equal(data.beforeAck.drafts[2].apply, false);
     assert.match(data.beforeAck.state, /newer typing/);
     assert.equal(data.beforeAck.state, data.beforeAck.view);
     assert.equal(data.afterAck.state, data.beforeAck.state); assert.equal(data.afterAck.view, data.beforeAck.view);
-    assert.deepEqual(data.afterAck.action, {}, 'old ack does not request a view replacement');
+    assert.deepEqual(data.afterAck.action, { revalidate: true }, 'old ack requests fresh validation, never a view replacement or automatic authorization');
     assert.equal(data.afterAck.drafts.length, 3);
-    assert.equal(data.afterAck.drafts[2].draftSeq, 2); assert.equal(data.afterAck.drafts[2].apply, true);
-    assert.equal(data.afterAck.drafts[2].baseVersion, 2); assert.equal(data.afterAck.drafts[2].parentEditId, data.beforeAck.drafts[0].editId);
+    assert.equal(data.afterAck.drafts[2].apply, false);
+    assert.equal(data.afterRevalidation.length, 4); assert.equal(data.afterRevalidation[3].draftSeq, 2); assert.equal(data.afterRevalidation[3].apply, true);
+    assert.equal(data.afterRevalidation[3].baseVersion, 2); assert.equal(data.afterRevalidation[3].parentEditId, data.beforeAck.drafts[0].editId);
     assert.equal(data.afterDuplicate, data.beforeAck.state); assert.equal(data.pending, true); assert.equal(data.frozen, false);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

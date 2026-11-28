@@ -31,7 +31,7 @@ test('scratch pane uses actual Crepe remembered locks and click-only locked sele
     assert.deepEqual(data.remembered, { first: false, second: false, stored: false });
     assert.deepEqual(data.siblings, { first: false, second: true, third: true });
     assert.equal(data.lateAck.after, data.lateAck.before); assert.match(data.lateAck.after, /newer/);
-    assert.equal(data.lateAck.drafts.length, 3); assert.equal(data.lateAck.drafts[1].apply, false); assert.equal(data.lateAck.drafts[2].apply, true);
+    assert.equal(data.lateAck.drafts.length, 4); assert.equal(data.lateAck.drafts[2].apply, false); assert.equal(data.lateAck.drafts[3].apply, true);
     assert.match(data.host.markdown, /Host change/); assert.deepEqual(data.host.drafts, []);
     assert.equal(data.unsupported.fallback, true); assert.equal(data.unsupported.readonly, true); assert.ok(data.unsupported.alert); assert.deepEqual(data.unsupported.drafts, []);
     assert.deepEqual(data.fallback, { type: 'open-text', paneSessionId: 'unsupported' });
@@ -60,8 +60,10 @@ test('scratch lock preference defaults safely and surfaces persistence failures 
 
 test('scratch refused draft stays recovery-only after the older edit acknowledgement', () => {
   const sent: ScratchDraftProposal[] = [], state = new ScratchRendererState('pane', { version: 1, digest: 'a'.repeat(64), markdown: '# Original\n' }, d => sent.push(d));
-  state.edit('# First\n'); state.edit('# Refused but preserved\n', false);
+  const first = state.stage('# First\n'); state.authorize(first, state.snapshot.version, state.snapshot.digest);
+  state.stage('# Refused but preserved\n');
+  state.refuse(state.draftSeq, 'Explicit fidelity refusal');
   const old = sent[0]!;
   state.receive({ type: 'apply-ack', paneSessionId: 'pane', draftSeq: old.draftSeq, editId: old.editId, version: 2, digest: 'b'.repeat(64), markdown: old.markdown });
-  assert.equal(sent.length, 2); assert.equal(sent[1]?.apply, false); assert.equal(state.markdown, '# Refused but preserved\n'); assert.equal(state.conflicted, true);
+  assert.equal(sent.length, 3); assert.equal(sent[2]?.apply, false); assert.equal(state.markdown, '# Refused but preserved\n'); assert.equal(state.conflicted, true);
 });

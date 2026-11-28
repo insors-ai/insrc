@@ -9,7 +9,7 @@ import { ScratchDocumentController, scratchDigest } from '../scratch-editor-prov
 import type { ScratchDraftProposal, ScratchHostToEditor } from '../scratch-editor-protocol.js';
 
 const initial = '# Canonical\n';
-const draft = (seq = 1, markdown = '# Draft\n', paneSessionId = 'pane'): ScratchDraftProposal => ({ type: 'draft', paneSessionId, draftSeq: seq, editId: `edit_${seq}`, baseVersion: 1, baseDigest: scratchDigest(initial), markdown });
+const draft = (seq = 1, markdown = '# Draft\n', paneSessionId = 'pane'): ScratchDraftProposal => ({ type: 'draft', paneSessionId, draftSeq: seq, editId: `edit_${seq}`, baseVersion: 1, baseDigest: scratchDigest(initial), markdown, apply: true });
 const deferred = () => { let resolve!: () => void; const promise = new Promise<void>(r => { resolve = r; }); return { promise, resolve }; };
 async function until(predicate: () => boolean): Promise<void> { for (let i = 0; i < 200 && !predicate(); i++) await new Promise(r => setTimeout(r, 5)); assert.ok(predicate(), 'asynchronous checkpoint'); }
 async function fixture(run: (root: string, uri: string, note: string) => Promise<void>): Promise<void> {

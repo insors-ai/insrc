@@ -1400,7 +1400,16 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         // the final vibeDispatchState and the computed vibeOutcome, then thread both onto the SAME
         // endTurn call site every provider already uses. A non-vibe turn never computes
         // vibeFinalize, so its TurnExit is byte-identical to before.
-        if (isVibeDirectSpawn) await Promise.race([decodeSettled, new Promise<void>((r) => setTimeout(r, 2000))]);
+        // No bound: a genuinely abandoned generator (the consumer dropped the iterator without
+        // ever calling .return(), so its own finally below never runs) simply leaves this
+        // particular endTurn call pending rather than ever reading a stale value -- beginTurn's
+        // OWN pre-existing fallback (a still-open turn on the NEXT beginTurn for this session
+        // gets its own unknown:true marker) is the established safety net for that case, exactly
+        // as it already is for claude/codex's own abandon-without-return scenario today. A
+        // `for await` consumer that `break`s (as every caller in this codebase does) always
+        // triggers `.return()`, which runs the finally below immediately -- this never actually
+        // blocks the well-behaved detach path this Task's own test exercises.
+        if (isVibeDirectSpawn) await decodeSettled;
         const vibeOutcome = vibeFinalize !== undefined ? await vibeFinalize.catch(() => undefined) : undefined;
         const exit: TurnExit = { ...e, ...(isVibeDirectSpawn ? { vibeDispatchState, vibeOutcome } : {}) };
         void sessionOutput.endTurn(sessionId, turnId, exit).catch((err: unknown) => log.warn(`[chat:${mapper.id}] could not close the output segment of ${turnId}: ${String(err)}`));

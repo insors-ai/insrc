@@ -19,6 +19,7 @@ import { createSessionOutput, parseMarker } from '../session-output.js';
 import { defaultProcessStartTime } from '../session-lock.js';
 import { fileURLToPath } from 'node:url';
 import { createProviderRegistry, classifyPermissionDenial, deriveChatTitle, nodeSpawner, parseVibeMcpTool, writeReachedStdin } from '../cli-adapter.js';
+import { vibeMcpNaming } from '../../../../src/shared/vibe-adapter.js';
 import type { AdapterDeps, ProviderId, ProviderRegistry, StreamAdapter, TurnProcess, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import {
@@ -854,7 +855,26 @@ test('vibe: s3/t2 — a native top-level "effect" row (direct-spawn, no worker b
   assert.equal(results[1]!.isError, true, 'a failed effect status surfaces as isError');
 });
 
-test('vibe: s3/t2 — parseVibeMcpTool delegates to VibeMcpNaming.fromStreamedName (ac4)', () => {
+test('vibe: s3/t2 — parseVibeMcpTool delegates to VibeMcpNaming.fromStreamedName, not an independent parser (ac4)', () => {
+  // Spy on the shared singleton itself: a call count of 1 with the exact streamed
+  // name, and parseVibeMcpTool's result built strictly from the spy's own (here,
+  // deliberately bogus) return value, proves delegation -- an independent parser
+  // reimplementing the same logic would ignore the spy and never be caught by this.
+  const original = vibeMcpNaming.fromStreamedName;
+  let calls: string[] = [];
+  (vibeMcpNaming as { fromStreamedName: typeof original }).fromStreamedName = (streamedName: string) => {
+    calls.push(streamedName);
+    return { server: 'spy-server', tool: 'spy-tool', streamedName };
+  };
+  try {
+    const result = parseVibeMcpTool('mcp_insrc.insrc_analyze_step');
+    assert.deepEqual(calls, ['mcp_insrc.insrc_analyze_step'], 'parseVibeMcpTool calls fromStreamedName exactly once, with the raw tool name');
+    assert.deepEqual(result, { server: 'spy-server', name: 'spy-tool' }, 'the result is built from the spy\'s own identity, not computed independently');
+  } finally {
+    (vibeMcpNaming as { fromStreamedName: typeof original }).fromStreamedName = original;
+  }
+
+  // The real fromStreamedName's own behavior still flows through unchanged.
   assert.deepEqual(parseVibeMcpTool('mcp_insrc.insrc_analyze_step'), { server: 'insrc', name: 'insrc_analyze_step' });
   assert.equal(parseVibeMcpTool('bash'), undefined, 'a non-mcp tool name is not an mcp identity');
   assert.equal(parseVibeMcpTool('mcp_other.some_tool'), undefined, 'a non-insrc MCP server is not this tool\'s identity, matching fromStreamedName\'s own restriction');

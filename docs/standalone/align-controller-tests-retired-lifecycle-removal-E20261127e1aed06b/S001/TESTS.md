@@ -8,7 +8,7 @@ What the build validation gate ran for each Task of this Story, and what each te
 
 ## s1
 
-Run at 2026-11-27T20:03:13.390Z on commit `82190bed1`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-28T04:32:48.689Z on commit `e4210ffef`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **scripts/__tests__/test-harness-commands.test.ts**
 
@@ -30,5 +30,5 @@ Run by file: the build commit touched this test file.
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `scripts/__tests__/test-harness-commands.test.ts` | 0 | 4 | 30.9 s |  |
-| `scripts/__tests__/test-harness-consumers.test.ts` | 0 | 2 | 53.2 s |  |
+| `scripts/__tests__/test-harness-commands.test.ts` | 0 | 4 | 38.5 s |  |
+| `scripts/__tests__/test-harness-consumers.test.ts` | 0 | 2 | 66.8 s |  |

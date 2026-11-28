@@ -1,0 +1,123 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "s1",
+    "passed": true,
+    "checks": [
+      {
+        "check": "Actual changes address manual review feedback",
+        "satisfied": true,
+        "evidence": "Current commands test asserts coverage.status === 'reported' and restores --test-concurrency=1. Retained diagnostic TAP identifies the pino/thread-stream MessagePort; the transport-free comparison exits naturally."
+      },
+      {
+        "check": "Required protections remain",
+        "satisfied": true,
+        "evidence": "Tests retain command-overlap refusal, native lock refusal, saved-mode assertions, raw mutation refusal with output fingerprints, stale-output rebuild/package checks, and positive cleanup assertions. Coordinator tests retain prepared-reader exclusion and drift checks."
+      },
+      {
+        "check": "Daemon-tested files exercise their claims",
+        "satisfied": true,
+        "evidence": "Inspected both test files and selected child cases. Daemon TAP files contain four commands passes and two consumers passes, with zero failures, cancellations or skips. Typecheck passed."
+      },
+      {
+        "check": "Approved maintenance scope respected",
+        "satisfied": true,
+        "evidence": "Story implementation commits c7932b377, 82190bed1 and e4210ffef change only the two approved test files as maintained code, plus workflow records and diagnostic evidence. Production helpers, runtime and budgets are unchanged."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "The repository changes satisfy the maintenance contract, preserve the required protections, and pass the daemon's validation.",
+    "testsPassed": true,
+    "typecheckClean": true,
+    "evidence": {
+      "typecheck": {
+        "ok": true,
+        "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node node_modules/typescript/bin/tsc --noEmit",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 13004,
+        "outputTail": ""
+      },
+      "tests": {
+        "ok": true,
+        "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-HO1qb7/report.tap scripts/__tests__/test-harness-commands.test.ts\n/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-p7cYaS/report.tap scripts/__tests__/test-harness-consumers.test.ts",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 105312,
+        "outputTail": "TAP version 13\n# Subtest: Retirement mutation refuses raw invocation without changing prepared output\nok 1 - Retirement mutation refuses raw invocation without changing prepared output\n  ---\n  duration_ms: 1132.655292\n  type: 'test'\n  ...\n# src/daemon/__tests__/review-retirement-package.test.ts: passed (.insrc/tmp/test-harness/runs/bdf0ee63-4a05-4360-98b7-be725087c697/0-src_daemon___tests___review-retirement-package.test.ts.log)\n# Subtest: Retirement-package stale-output rebuild remains a serial mutation regression\nok 2 - Retirement-package stale-output rebuild remains a serial mutation regression\n  ---\n  duration_ms: 65401.573084\n  type: 'test'\n  ...\n1..2\n# tests 2\n# suites 0\n# pass 2\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 66715.169333\n",
+        "files": [
+          {
+            "file": "scripts/__tests__/test-harness-commands.test.ts",
+            "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-HO1qb7/report.tap scripts/__tests__/test-harness-commands.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 38539,
+            "titles": [
+              {
+                "title": "Root and VSCode command overlap refuses before asset synchronization",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "Build stages and specialized launcher gate policies survive wrapper integration",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "Specialized stages retain writer ownership and reader closure precedes later mutation",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "Native refusal and saved-mode controls remain enforced",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/scripts___tests___test-harness-commands.test.ts.1795840301706.95620.tap"
+          },
+          {
+            "file": "scripts/__tests__/test-harness-consumers.test.ts",
+            "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-p7cYaS/report.tap scripts/__tests__/test-harness-consumers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 66773,
+            "titles": [
+              {
+                "title": "Retirement mutation refuses raw invocation without changing prepared output",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "Retirement-package stale-output rebuild remains a serial mutation regression",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/scripts___tests___test-harness-consumers.test.ts.1795840368520.95620.tap"
+          }
+        ],
+        "namedTests": [
+          {
+            "name": "scripts/__tests__/test-harness-commands.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "scripts/__tests__/test-harness-commands.test.ts"
+            ]
+          },
+          {
+            "name": "scripts/__tests__/test-harness-consumers.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "scripts/__tests__/test-harness-consumers.test.ts"
+            ]
+          }
+        ]
+      },
+      "testRecord": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/TESTS.md"
+    }
+  },
+  "passed": true
+}

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "76d20c8ecd0650bf92b9c8585aecd6872e9b06c3d9a2dcf18d0836323294b013",
-        "at": "2026-11-27T20:03:52.414Z",
+        "number": 5,
+        "contentHash": "f43362138bbd267bf77275fada83ac09c48b649ba5e7ae533ab27ee2d9825d70",
+        "at": "2026-11-28T04:33:35.637Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,25 +29,25 @@
     "schemaVersion": 1,
     "epicHash": "e1aed06b860a76cb",
     "storyId": "s1",
-    "revision": 3,
+    "revision": 5,
     "standalone": true,
     "sizeClass": "trivial",
     "authoredBy": "controller",
-    "triageRationale": "Approved small bugfix; no LLD/plan, using the no-LLD trivial execution route.",
+    "triageRationale": "Approved small bugfix; no LLD/plan, using the no-LLD trivial execution route. Manual review rework belongs to this existing batch.",
     "epicSlug": "align-controller-tests-retired-lifecycle-removal",
-    "updatedAt": "2026-11-27T20:03:13.390Z"
+    "updatedAt": "2026-11-28T04:32:48.689Z"
   },
   "body": {
-    "focus": "Align controller tests with retired lifecycle removal: fix three stale baseline cases in scripts/__tests__/test-harness-commands.test.ts and test-harness-consumers.test.ts using the approved ISSUE-e1aed06b860a76cb scope. Keep production helpers/runtime/budgets unchanged and preserve current refusal, prepared-reader/drift, mutation and positive cleanup checks.",
+    "focus": "Align controller tests with retired lifecycle removal: address manual review feedback within the approved two-file maintenance scope, preserving current refusal, prepared-reader/drift, mutation and positive cleanup checks. Keep production helpers/runtime/budgets unchanged.",
     "producesLld": false,
-    "commit": "82190bed1",
+    "commit": "e4210ffef",
     "tasks": [
       {
         "id": "s1",
         "passed": true
       }
     ],
-    "summary": "Committed two-file controller reconciliation in c7932b377 and correction82190bed1. First registered validation correctly exposed ambient strict-closure dependence; the commands test now selects strict mode in its existing owned run's cloned environment. A targeted run with the parent flag absent passed and independently matched11 zero-exit command closures. Earlier corrected focused run passed16 tests, but newest complete registered validation is authoritative. Retained interrupted stale isolated attempt remains blocked and separate; no inferred cleanup. Host daemon/Ollama untouched; UTM native qualification completed before test work.",
+    "summary": "Review corrections committed in e4210ffef: require reported TAP coverage and retain --test-concurrency=1 in the nested invocation, preserving exact selected successes and strict owned-group cleanup. Bounded runtime diagnostics identified a referenced Pino/thread-stream logging worker MessagePort after the selected saved-mode assertion passed; the same selection with existing transport-free diagnostic mode exited naturally. Ordinary saved-mode coverage retains --test-force-exit and positive closure; no production changes. Evidence: S001/evidence/manual-review-20261128/DISPOSITION.md. TESTS.md header totals count named-test mappings (zero on this no-LLD run-by-file route); use the per-file tables for the actual four commands and two consumer cases. Earlier 306-case regression and UTM native evidence retain original source pins; affected files and typecheck are rerun by this gate. Old interrupted isolate remains blocked and untouched; no host daemon/Ollama changes. Human BUILD approval remains pending.",
     "testRecord": {
       "md": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/TESTS.md"
     },
@@ -57,49 +57,168 @@
           "file": ".insrc/artifacts/ISSUE-e1aed06b860a76cb.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T20:03:13.390Z"
+        "timestamp": "2026-11-28T04:32:48.689Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-e1aed06b860a76cb.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T20:03:13.390Z"
+        "timestamp": "2026-11-28T04:32:48.689Z"
       },
       {
         "target": {
           "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/ISSUE.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T20:03:13.390Z"
+        "timestamp": "2026-11-28T04:32:48.689Z"
       },
       {
         "target": {
           "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/controller-maintenance.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T20:03:13.390Z"
+        "timestamp": "2026-11-28T04:32:48.689Z"
       },
       {
         "target": {
           "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/surrounding-audit.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T20:03:13.390Z"
+        "timestamp": "2026-11-28T04:32:48.689Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/test-harness-commands.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T20:03:13.390Z"
+        "timestamp": "2026-11-28T04:32:48.689Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/test-harness-consumers.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T20:03:13.390Z"
+        "timestamp": "2026-11-28T04:32:48.689Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/manual-review-20261128/DISPOSITION.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T04:32:48.689Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/manual-review-20261128/REVIEW-FEEDBACK.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T04:32:48.689Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/manual-review-20261128/default-child-admissions.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T04:32:48.689Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/manual-review-20261128/default-child-disposals.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T04:32:48.689Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/manual-review-20261128/default-child-results.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T04:32:48.689Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/manual-review-20261128/default-cleanup.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T04:32:48.689Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/manual-review-20261128/default.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T04:32:48.689Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/manual-review-20261128/diagnose-quiet.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T04:32:48.689Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/manual-review-20261128/diagnose.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T04:32:48.689Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/manual-review-20261128/diagnostic-quiet-result.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T04:32:48.689Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/manual-review-20261128/diagnostic-result.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T04:32:48.689Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/manual-review-20261128/handles.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T04:32:48.689Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/manual-review-20261128/quiet-child-admissions.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T04:32:48.689Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/manual-review-20261128/quiet-child-disposals.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T04:32:48.689Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/manual-review-20261128/quiet-child-results.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T04:32:48.689Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/manual-review-20261128/quiet-cleanup.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T04:32:48.689Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-controller-tests-retired-lifecycle-removal-E20261127e1aed06b/S001/evidence/manual-review-20261128/quiet.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T04:32:48.689Z"
       }
     ]
   },

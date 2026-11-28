@@ -1,0 +1,23 @@
+TAP version 13
+# Subtest: Retirement mutation refuses raw invocation without changing prepared output
+ok 1 - Retirement mutation refuses raw invocation without changing prepared output
+  ---
+  duration_ms: 1132.655292
+  type: 'test'
+  ...
+# src/daemon/__tests__/review-retirement-package.test.ts: passed (.insrc/tmp/test-harness/runs/bdf0ee63-4a05-4360-98b7-be725087c697/0-src_daemon___tests___review-retirement-package.test.ts.log)
+# Subtest: Retirement-package stale-output rebuild remains a serial mutation regression
+ok 2 - Retirement-package stale-output rebuild remains a serial mutation regression
+  ---
+  duration_ms: 65401.573084
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 66715.169333

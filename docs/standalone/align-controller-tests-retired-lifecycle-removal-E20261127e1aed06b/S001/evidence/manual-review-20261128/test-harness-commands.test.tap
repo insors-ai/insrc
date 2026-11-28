@@ -1,0 +1,36 @@
+TAP version 13
+# Subtest: Root and VSCode command overlap refuses before asset synchronization
+ok 1 - Root and VSCode command overlap refuses before asset synchronization
+  ---
+  duration_ms: 2122.171042
+  type: 'test'
+  ...
+# Subtest: Build stages and specialized launcher gate policies survive wrapper integration
+ok 2 - Build stages and specialized launcher gate policies survive wrapper integration
+  ---
+  duration_ms: 16.791208
+  type: 'test'
+  ...
+# Subtest: Specialized stages retain writer ownership and reader closure precedes later mutation
+ok 3 - Specialized stages retain writer ownership and reader closure precedes later mutation
+  ---
+  duration_ms: 229.559125
+  type: 'test'
+  ...
+# src/daemon/db/__tests__/driver-log-policy.test.ts: passed (.insrc/tmp/test-harness/runs/a0407ef1-bab9-46e7-9e20-b9902cdc2336/0-src_daemon_db___tests___driver-log-policy.test.ts.log)
+# src/installer/__tests__/controller-store.test.ts: passed (.insrc/tmp/test-harness/runs/a0407ef1-bab9-46e7-9e20-b9902cdc2336/1-src_installer___tests___controller-store.test.ts.log)
+# Subtest: Native refusal and saved-mode controls remain enforced
+ok 4 - Native refusal and saved-mode controls remain enforced
+  ---
+  duration_ms: 35417.01475
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 38407.208334

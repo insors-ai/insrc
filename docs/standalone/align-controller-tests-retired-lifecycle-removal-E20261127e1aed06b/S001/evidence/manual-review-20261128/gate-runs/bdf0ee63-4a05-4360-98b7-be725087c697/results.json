@@ -1,0 +1,45 @@
+{
+  "runId": "bdf0ee63-4a05-4360-98b7-be725087c697",
+  "runtime": {
+    "executable": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node",
+    "version": "v22.22.1"
+  },
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 600000,
+    "runMs": 5400000,
+    "cleanupMs": 5000
+  },
+  "selectedFiles": [
+    "src/daemon/__tests__/review-retirement-package.test.ts"
+  ],
+  "requestedConcurrency": 2,
+  "effectiveConcurrency": 2,
+  "diagnosticFlags": [],
+  "liveTests": "unset",
+  "results": [
+    {
+      "file": "src/daemon/__tests__/review-retirement-package.test.ts",
+      "childId": "4da3b1b9-95c1-439c-ad7b-733edd8d0779",
+      "log": ".insrc/tmp/test-harness/runs/bdf0ee63-4a05-4360-98b7-be725087c697/0-src_daemon___tests___review-retirement-package.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/bdf0ee63-4a05-4360-98b7-be725087c697/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    }
+  ],
+  "cleanupPath": ".insrc/tmp/test-harness/runs/bdf0ee63-4a05-4360-98b7-be725087c697/cleanup.json",
+  "incomplete": false
+}

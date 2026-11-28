@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "ad67726bd85138adf78384b4bfd386778ff77a0a489e660aecd56aae347393d5",
+        "at": "2026-11-28T04:32:48.732Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "e1aed06b860a76cb",
+    "storyId": "s1",
+    "createdAt": "2026-11-27T19:59:03.925Z",
+    "updatedAt": "2026-11-28T04:32:48.689Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-27T17:43:12.009Z",
+    "epicSlug": "align-controller-tests-retired-lifecycle-removal",
+    "revision": 3
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "e4210ffef",
+        "ranAt": "2026-11-28T04:32:48.689Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "scripts/__tests__/test-harness-commands.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "scripts/__tests__/test-harness-commands.test.ts"
+            ]
+          },
+          {
+            "name": "scripts/__tests__/test-harness-consumers.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "scripts/__tests__/test-harness-consumers.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/test-harness-commands.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 38539,
+            "titles": [
+              {
+                "title": "Root and VSCode command overlap refuses before asset synchronization",
+                "result": "pass"
+              },
+              {
+                "title": "Build stages and specialized launcher gate policies survive wrapper integration",
+                "result": "pass"
+              },
+              {
+                "title": "Specialized stages retain writer ownership and reader closure precedes later mutation",
+                "result": "pass"
+              },
+              {
+                "title": "Native refusal and saved-mode controls remain enforced",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/test-harness-consumers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 66773,
+            "titles": [
+              {
+                "title": "Retirement mutation refuses raw invocation without changing prepared output",
+                "result": "pass"
+              },
+              {
+                "title": "Retirement-package stale-output rebuild remains a serial mutation regression",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

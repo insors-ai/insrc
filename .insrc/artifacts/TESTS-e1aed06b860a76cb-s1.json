@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "73c382f2962e94b1311dcc9cdc5c87a04b22c61f06c01e302c56f7097afb9aca",
-        "at": "2026-11-27T20:03:13.405Z",
+        "number": 3,
+        "contentHash": "ad67726bd85138adf78384b4bfd386778ff77a0a489e660aecd56aae347393d5",
+        "at": "2026-11-28T04:32:48.732Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,18 +23,18 @@
     "epicHash": "e1aed06b860a76cb",
     "storyId": "s1",
     "createdAt": "2026-11-27T19:59:03.925Z",
-    "updatedAt": "2026-11-27T20:03:13.390Z",
+    "updatedAt": "2026-11-28T04:32:48.689Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-27T17:43:12.009Z",
     "epicSlug": "align-controller-tests-retired-lifecycle-removal",
-    "revision": 2
+    "revision": 3
   },
   "body": {
     "tasks": [
       {
         "taskId": "s1",
-        "commit": "82190bed1",
-        "ranAt": "2026-11-27T20:03:13.390Z",
+        "commit": "e4210ffef",
+        "ranAt": "2026-11-28T04:32:48.689Z",
         "testsPassed": true,
         "tests": [
           {
@@ -59,7 +59,7 @@
             "file": "scripts/__tests__/test-harness-commands.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 30906,
+            "durationMs": 38539,
             "titles": [
               {
                 "title": "Root and VSCode command overlap refuses before asset synchronization",
@@ -84,7 +84,7 @@
             "file": "scripts/__tests__/test-harness-consumers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 53215,
+            "durationMs": 66773,
             "titles": [
               {
                 "title": "Retirement mutation refuses raw invocation without changing prepared output",

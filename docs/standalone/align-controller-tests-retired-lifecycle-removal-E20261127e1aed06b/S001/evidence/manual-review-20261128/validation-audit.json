@@ -1,0 +1,51 @@
+{
+  "source": "e4210ffef",
+  "registeredTestsPassed": true,
+  "cases": 6,
+  "mainLeaseAbsent": true,
+  "runs": [
+    {
+      "runId": "e0abe98c-5e6e-43e9-9cbd-c95ae2543d35",
+      "cleanup": {
+        "confirmedClosed": true,
+        "interrupted": false,
+        "cancellationErrors": [],
+        "evidenceErrors": [],
+        "childCloseJournal": "child-results.jsonl",
+        "closureMode": "legacy"
+      },
+      "actorMarkers": 0,
+      "closureBasis": "legacy",
+      "limitation": "Legacy scope reports closure; no strict process-group journal proof is claimed for this run."
+    },
+    {
+      "runId": "a0407ef1-bab9-46e7-9e20-b9902cdc2336",
+      "cleanup": {
+        "confirmedClosed": true,
+        "interrupted": false,
+        "cancellationErrors": [],
+        "evidenceErrors": [],
+        "childCloseJournal": "child-results.jsonl",
+        "closureMode": "owned-groups"
+      },
+      "actorMarkers": 0,
+      "closureBasis": "owned-groups",
+      "matchedOwnedGroups": 11
+    },
+    {
+      "runId": "bdf0ee63-4a05-4360-98b7-be725087c697",
+      "cleanup": {
+        "confirmedClosed": true,
+        "interrupted": false,
+        "cancellationErrors": [],
+        "evidenceErrors": [],
+        "childCloseJournal": "child-results.jsonl",
+        "closureMode": "legacy"
+      },
+      "actorMarkers": 0,
+      "closureBasis": "legacy",
+      "limitation": "Legacy scope reports closure; no strict process-group journal proof is claimed for this run."
+    }
+  ],
+  "historicalQualification": "Earlier 306-case regression and UTM proof remain pinned to their recorded source; not rerun by this review correction."
+}

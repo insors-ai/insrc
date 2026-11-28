@@ -3,7 +3,7 @@
  * timeout, so a bare glob run always terminates and reports every file (a single stuck
  * or slow file can no longer block the sweep indefinitely).
  *
- * Bare glob sweeps (`npx tsx --test 'src/**/*.test.ts'`) have no per-test timeout;
+ * Bare glob sweeps (e.g. `npx tsx --test 'src/<glob>.test.ts'`) have no per-test timeout;
  * run them through `npm run test:sweep -- '<globs>'` (adds --test-timeout=120000).
  * The harness (`npm test --`) remains the owned gate path: one bounded child per
  * file, pinned runtime, --test-force-exit.

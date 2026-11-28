@@ -63,6 +63,7 @@ import { createScratchStore } from './chat/scratch-store.js';
 import { createScratchHost, SCRATCH_INTENT_TYPES, type ScratchChatSeam } from './chat/scratch-host.js';
 import { createScratchChatTarget } from './chat/scratch-chat-target.js';
 import { createScratchPanels } from './panels/scratch-panels.js';
+import { createScratchRefresh } from './panels/scratch-refresh.js';
 import { registerScratchEditor } from './panels/scratch-editor-native.js';
 import { ScratchRecoveryStore } from './panels/scratch-editor-recovery.js';
 import { ScratchLockPreference } from './panels/scratch-editor-lock.js';
@@ -655,9 +656,11 @@ export function activate(context: vscode.ExtensionContext): void {
     // stores; the host router + panels controller are wired after chatHost below.
     const scratchStore = createScratchStore({ root: join(PATHS.insrc, 'scratches'), logger: panelLog });
     let sendScratchSelection: (text: string, assertCurrent: () => void) => Promise<void> = async () => { throw new Error('Chat is not initialized; retry Send.'); };
+    let refreshScratchpads = async (): Promise<void> => {};
     const scratchEditor = registerScratchEditor({
       api: vscode, extensionPath: context.extensionPath, store: scratchStore,
       sendSelection: (text, assertCurrent) => sendScratchSelection(text, assertCurrent),
+      refresh: () => refreshScratchpads(),
       recovery: new ScratchRecoveryStore(join(context.globalStorageUri.fsPath, 'scratchpad-recovery')),
       preference: new ScratchLockPreference(context.globalState),
       warn: message => { panelLog.warn(message); void Promise.resolve(vscode.window.showWarningMessage(message)).catch(() => panelLog.warn('Scratchpad warning could not be displayed.')); },
@@ -1052,6 +1055,7 @@ export function activate(context: vscode.ExtensionContext): void {
       },
     };
     const scratchPanels = createScratchPanels({
+      deleteDocument: id => scratchEditor.deleteDocument(id),
       panels: scratchPanelFactory,
       store: scratchStore,
       logger: panelLog,
@@ -1074,12 +1078,19 @@ export function activate(context: vscode.ExtensionContext): void {
     // adapter (webviewPanelChannel above) routes them here while the chat host still receives
     // every message unchanged. scratch-new's title comes from the injected input boundary.
     const scratchHost = createScratchHost({
+      refresh: () => refreshScratchpads(),
       store: scratchStore,
       panels: scratchPanels,
       chat: chatSeam,
       promptTitle: () => Promise.resolve(vscode.window.showInputBox({ prompt: 'Name the new scratchpad' })),
       logger: panelLog,
     });
+    const scratchRefresh = createScratchRefresh({ browse: () => scratchPanels.refreshBrowse(), menu: () => scratchHost.refreshList(), warn: message => panelLog.warn(message) });
+    refreshScratchpads = () => scratchRefresh.request();
+    context.subscriptions.push({ dispose: () => scratchRefresh.dispose() });
+    context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(document => {
+      void scratchEditor.accepts(document.uri).then(accepted => { if (accepted) return refreshScratchpads(); }).catch(failure => panelLog.warn(`Scratchpad save refresh failed: ${String(failure)}`));
+    }));
     sendScratchSelection = (text, assertCurrent) => scratchHost.sendSelectionToChat(text, assertCurrent);
     scratchOnMessage = (msg: WebviewToHost): void => scratchHost.onMessage(msg);
     // Gate the editor-title icon (contributes.menus["editor/title"] when:insrc.chat.ready) on an

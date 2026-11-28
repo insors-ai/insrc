@@ -44,6 +44,7 @@ export class ScratchEditorPane {
   private observer: Awaited<ReturnType<typeof observeScratchMarkdown>> | undefined;
   private locked = true;
   private failed = false;
+  private deleting: string | undefined;
   private disposed = false;
   private initialization: Promise<void> | undefined;
   private selected: { readonly text: string; readonly doc: ProseNode } | undefined;
@@ -52,6 +53,7 @@ export class ScratchEditorPane {
   private sendSequence = 0;
   private selectionTimer: ReturnType<typeof setTimeout> | undefined;
   private assetSequence = 0;
+  private assetWork = 0;
   private displayQueue: Promise<unknown> = Promise.resolve();
   private readonly displayedImages = new Map<string, Promise<string>>();
   private readonly assetRequests = new Map<string, { resolve: (value: { href: string; displayUrl: string }) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>();
@@ -62,7 +64,7 @@ export class ScratchEditorPane {
     root.classList.add('scratch-pane'); root.replaceChildren();
     this.toolbar = document.createElement('nav'); this.toolbar.setAttribute('aria-label', 'Scratchpad controls');
     this.toggle = this.button('Edit scratchpad', '✎', () => {
-      if (this.failed || !this.state) return;
+      if (this.failed || this.deleting !== undefined || !this.state) return;
       this.setLocked(!this.locked);
       this.post({ type: 'lock', paneSessionId: options.paneSessionId, locked: this.locked });
     });
@@ -128,12 +130,13 @@ export class ScratchEditorPane {
   }
   private setLocked(value: boolean): void {
     this.locked = value;
-    this.root.dataset['locked'] = String(value || this.failed);
-    this.crepe?.setReadonly(value || this.failed);
+    this.root.dataset['locked'] = String(value || this.failed || this.deleting !== undefined);
+    this.crepe?.setReadonly(value || this.failed || this.deleting !== undefined);
+    this.toggle.disabled = this.failed || this.deleting !== undefined || !this.crepe;
     this.toggle.textContent = value ? '✎' : '🔒';
     const label = value ? 'Edit scratchpad' : 'Lock scratchpad'; this.toggle.title = label; this.toggle.setAttribute('aria-label', label);
     this.toggle.setAttribute('aria-pressed', String(!value));
-    for (const control of this.toolbar.querySelectorAll<HTMLButtonElement>('.scratch-author-action')) { control.hidden = value || this.failed; control.disabled = value || this.failed; }
+    for (const control of this.toolbar.querySelectorAll<HTMLButtonElement>('.scratch-author-action')) { control.hidden = value || this.failed || this.deleting !== undefined; control.disabled = value || this.failed || this.deleting !== undefined; }
   }
   /** Host messages are ordered even while asynchronous Crepe creation is pending. */
   async receive(value: unknown): Promise<void> {
@@ -176,6 +179,13 @@ export class ScratchEditorPane {
       this.post({ type: 'focus-ready', paneSessionId: this.options.paneSessionId, requestId: msg.requestId, docVersion: msg.docVersion, draftSeq: msg.draftSeq, focused });
       return;
     }
+    if (msg.type === 'delete-prepare') {
+      this.deleting = msg.requestId; this.setLocked(this.locked); this.hideSend();
+      this.post({ type: 'delete-ready', paneSessionId: this.options.paneSessionId, requestId: msg.requestId, docVersion: this.state.snapshot.version, draftSeq: this.state.draftSeq,
+        clean: !this.failed && !this.state.hasPending && !this.state.conflicted && this.assetRequests.size === 0 && this.assetWork === 0 && !this.pendingSelection });
+      return;
+    }
+    if (msg.type === 'delete-release') { if (this.deleting === msg.requestId) { this.deleting = undefined; this.setLocked(this.locked); } return; }
     if (msg.type === 'selection-result') {
       if (msg.requestId !== this.pendingSelection?.requestId) return;
       clearTimeout(this.selectionTimer);
@@ -295,22 +305,22 @@ export class ScratchEditorPane {
     this.displayedImages.set(href, loading); return loading;
   }
   private async uploadImage(file: File): Promise<string> {
-    if (this.locked || this.failed || !this.state || !this.crepe || file.size < 1 || file.size > 10_485_760 || !['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(file.type)) throw new Error('Choose a PNG, JPEG, GIF or WebP image of at most 10 MiB while editing.');
+    if (this.locked || this.failed || this.deleting !== undefined || !this.state || !this.crepe || file.size < 1 || file.size > 10_485_760 || !['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(file.type)) throw new Error('Choose a PNG, JPEG, GIF or WebP image of at most 10 MiB while editing.');
     const doc = this.crepe.editor.action(ctx => ctx.get(editorViewCtx).state.doc), sequence = this.state.draftSeq;
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
       let binary = ''; for (let start = 0; start < bytes.length; start += 8192) binary += String.fromCharCode(...bytes.subarray(start, start + 8192));
       const result = await this.requestAsset({ type: 'asset-request', paneSessionId: this.options.paneSessionId, requestId: `asset_${++this.assetSequence}`, action: 'upload-image', name: file.name || 'pasted-image', mediaType: file.type as 'image/png', dataBase64: btoa(binary) });
-      if (!result.href || this.disposed || this.locked || this.failed || this.state.conflicted || this.state.draftSeq !== sequence || this.crepe.editor.action(ctx => ctx.get(editorViewCtx).state.doc !== doc)) throw new Error('Scratchpad changed while uploading; retry inserting the image.');
+      if (!result.href || this.disposed || this.locked || this.failed || this.deleting !== undefined || this.state.conflicted || this.state.draftSeq !== sequence || this.crepe.editor.action(ctx => ctx.get(editorViewCtx).state.doc !== doc)) throw new Error('Scratchpad changed while uploading; retry inserting the image.');
       return result.href;
     } catch (error) { this.assetError(error); throw error; }
   }
   private async pickAsset(action: 'pick-link' | 'pick-image'): Promise<void> {
-    if (!this.crepe || this.locked || this.failed || !this.state) return;
+    if (!this.crepe || this.locked || this.failed || this.deleting !== undefined || !this.state) return;
     const view = this.crepe.editor.action(ctx => ctx.get(editorViewCtx)), doc = view.state.doc, selection = view.state.selection;
     const result = await this.assetRequest(action);
     if (!result.href) return; // user cancelled
-    if (this.disposed || this.locked || this.failed || this.state.conflicted || view.state.doc !== doc) throw new Error('Scratchpad changed while choosing a file; retry.');
+    if (this.disposed || this.locked || this.failed || this.deleting !== undefined || this.state.conflicted || view.state.doc !== doc) throw new Error('Scratchpad changed while choosing a file; retry.');
     const tr = view.state.tr.setSelection(selection);
     if (action === 'pick-image') {
       const type = view.state.schema.nodes['image-block'] ?? view.state.schema.nodes['image'];
@@ -323,16 +333,19 @@ export class ScratchEditorPane {
     }
   }
   private async insertImageFiles(files: FileList, coordinates?: { left: number; top: number }): Promise<void> {
-    if (!this.crepe || this.locked || this.failed || this.disposed) return;
+    if (!this.crepe || this.locked || this.failed || this.deleting !== undefined || this.disposed) return;
     const view = this.crepe.editor.action(ctx => ctx.get(editorViewCtx)), doc = view.state.doc;
     const position = coordinates ? view.posAtCoords(coordinates)?.pos : undefined;
     const selection = position === undefined ? view.state.selection : TextSelection.near(doc.resolve(position));
     const type = view.state.schema.nodes['image-block'] ?? view.state.schema.nodes['image'];
     if (!type) throw new Error('Image authoring is unavailable.');
+    this.assetWork++;
+    try {
     const nodes = [];
     for (const file of Array.from(files)) nodes.push(type.create({ src: await this.uploadImage(file) }));
-    if (this.disposed || this.locked || this.failed || view.state.doc !== doc) throw new Error('Scratchpad changed while uploading; retry inserting the image.');
+    if (this.disposed || this.locked || this.failed || this.deleting !== undefined || view.state.doc !== doc) throw new Error('Scratchpad changed while uploading; retry inserting the image.');
     view.dispatch(view.state.tr.setSelection(selection).replaceSelection(new Slice(Fragment.fromArray(nodes), 0, 0)).scrollIntoView());
+    } finally { this.assetWork--; }
   }
   // The clipboard plugin precedes the upload plugin and consumes HTML. Capture
   // files before either plugin so mixed HTML/file clipboard input cannot bypass
@@ -348,7 +361,7 @@ export class ScratchEditorPane {
     void this.insertImageFiles(files, { left: event.clientX, top: event.clientY }).catch(error => this.assetError(error));
   };
   private readonly pasteUrl = (event: ClipboardEvent): void => {
-    if (!this.crepe || this.locked || this.failed || event.clipboardData?.files.length) return;
+    if (!this.crepe || this.locked || this.failed || this.deleting !== undefined || event.clipboardData?.files.length) return;
     const text = event.clipboardData?.getData('text/plain') ?? '';
     if (!/^https?:\/\/[^\s]+$/i.test(text)) return;
     const view = this.crepe.editor.action(ctx => ctx.get(editorViewCtx));
@@ -363,7 +376,7 @@ export class ScratchEditorPane {
   };
   private captureSelection(): ScratchSelectionSend | undefined {
     const selected = this.selected, state = this.state;
-    if (!selected || !state || !this.crepe || this.failed || this.pendingSelection) return;
+    if (!selected || !state || !this.crepe || this.failed || this.deleting !== undefined || this.pendingSelection) return;
     const sameDocument = this.crepe.editor.action(ctx => ctx.get(editorViewCtx).state.doc === selected.doc);
     if (!sameDocument || state.conflicted) {
       this.retainedSelection.value = selected.text; this.retainedSelection.hidden = false;
@@ -378,7 +391,7 @@ export class ScratchEditorPane {
     // the already captured snapshot; document-changing transactions invalidate it.
     const current = window.getSelection();
     if (document.activeElement === this.send && this.selected && (!current || current.isCollapsed)) return;
-    if (!this.crepe || !this.state || this.failed || this.state.conflicted || this.pendingSelection) { this.hideSend(); return; }
+    if (!this.crepe || !this.state || this.failed || this.deleting !== undefined || this.state.conflicted || this.pendingSelection) { this.hideSend(); return; }
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed || !selection.anchorNode || !selection.focusNode ||
       !this.editorRoot.contains(selection.anchorNode) || !this.editorRoot.contains(selection.focusNode)) { this.hideSend(); return; }

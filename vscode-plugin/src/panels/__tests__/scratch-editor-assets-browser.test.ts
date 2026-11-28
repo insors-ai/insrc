@@ -16,6 +16,7 @@ test('scratch actual Crepe upload display picker and URL paste callbacks preserv
     assert.equal(result.exitCode, 0, result.stderr); assert.equal(result.timedOut, false);
     const match = result.stdout.match(/<pre id="scratch-result">([\s\S]*?)<\/pre>/); assert.ok(match, result.stdout.slice(-4500));
     const d = JSON.parse(match[1]!.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&'));
+    assert.deepEqual(d.pendingDelete, { type: 'delete-ready', paneSessionId: 'pending_asset', requestId: 'delete_pending_asset', docVersion: 1, draftSeq: 0, clean: false });
     assert.deepEqual(d.initial.drafts, []); assert.match(d.initial.source, /assets\/existing.png/); assert.equal(d.initial.resolved.length, 2); assert.equal(d.initial.ownedViews.rawImageInputs, 0); assert.equal(d.initial.ownedViews.images.length, 2);
     assert.deepEqual(d.initial.ownedViews.images.map((image: { alt: string }) => image.alt), ['Existing', 'Inline']); assert.equal(d.initial.ownedViews.images[0].alt, 'Existing'); assert.match(d.initial.ownedViews.images[0].src, /^data:image\/png/);
     assert.equal(d.inline, 'assets/image_1.png'); assert.equal(d.block, 'assets/image_2.png'); assert.match(d.display, /^data:image\/png/);

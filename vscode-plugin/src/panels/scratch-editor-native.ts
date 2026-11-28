@@ -23,6 +23,7 @@ export interface ScratchNativeDeps {
   readonly preference: ScratchLockPreference;
   readonly store: ScratchStore;
   readonly warn: (message: string) => void;
+  readonly refresh?: () => Promise<void>;
   readonly sendSelection?: (text: string, assertCurrent: () => void) => Promise<void>;
 }
 interface Pane {
@@ -32,6 +33,7 @@ interface Pane {
   ready: boolean;
   disposed: boolean;
   readonly listeners: VSCode.Disposable[];
+  deletion?: { readonly requestId: string; readonly settle: (ready: boolean) => void };
   selection?: { readonly request: ScratchSelectionSend; readonly promise: Promise<void>; pending: boolean };
   focus?: { readonly requestId: string; readonly version: number; readonly sequence: number; readonly settle: (focused: boolean) => void };
 }
@@ -44,11 +46,15 @@ interface DocumentEntry {
 }
 export function registerScratchEditor(deps: ScratchNativeDeps): {
   openDocument(id: string): Promise<void>;
+  deleteDocument(id: string): Promise<'deleted' | 'cancelled'>;
+  accepts(uri: VSCode.Uri): Promise<boolean>;
   dispose(): Promise<void>;
 } {
   const { api, recovery, preference, store, warn } = deps;
   const documents = new Map<string, DocumentEntry>();
   let stopped = false;
+  const deleting = new Set<string>();
+  const deleteJobs = new Map<string, Promise<'deleted' | 'cancelled'>>();
   async function validate(uri: VSCode.Uri): Promise<void> {
     if (uri.scheme !== 'file') throw new Error('Only existing scratchpad files can use this editor.');
     const resolved = await store.resolveScratch(basename(uri.fsPath));
@@ -137,6 +143,11 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
       await recover(entry, pane); return;
     }
     if (!pane.ready) throw new Error('Scratchpad is not ready.');
+    if (message.type === 'delete-ready') {
+      const pending = pane.deletion;
+      if (pending?.requestId === message.requestId) pending.settle(message.clean && message.docVersion === entry.controller.snapshot.version && message.draftSeq === entry.controller.latestSequence(pane.id));
+      return;
+    }
     if (message.type === 'focus-ready') {
       const pending = pane.focus;
       if (pending?.requestId === message.requestId) pending.settle(message.focused && pending.version === message.docVersion && pending.sequence === message.draftSeq);
@@ -257,7 +268,7 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
     entry.closing = (async () => {
       for (const pane of entry.panes.values()) {
         pane.disposed = true; entry.controller.removePane(pane.id);
-        pane.focus?.settle(false);
+        pane.focus?.settle(false); pane.deletion?.settle(false);
         for (const listener of pane.listeners) listener.dispose();
       }
       await entry.controller.dispose();
@@ -265,14 +276,81 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
     })();
     return entry.closing;
   }
+  async function freezeDeletion(entry: DocumentEntry, requestId: string): Promise<boolean> {
+    for (const pane of entry.panes.values()) {
+      if (pane.disposed || !pane.ready) return false;
+      let settle!: (ready: boolean) => void;
+      const ready = new Promise<boolean>(resolve => { settle = resolve; });
+      pane.deletion = { requestId, settle };
+      const timer = setTimeout(() => settle(false), 2000);
+      try { if (!await delivered(pane, { type: 'delete-prepare', paneSessionId: pane.id, requestId }) || !await ready) return false; } catch { return false; }
+      finally { clearTimeout(timer); delete pane.deletion; }
+    }
+    return true;
+  }
+  const matchingTabs = (key: string): VSCode.Tab[] => api.window.tabGroups.all.flatMap(group => group.tabs.filter(tab => {
+    const input = tab.input;
+    return (input instanceof api.TabInputText || input instanceof api.TabInputCustom) && input.uri.toString() === key;
+  }));
+  const dirty = (key: string): boolean => api.workspace.textDocuments.some(doc => !doc.isClosed && doc.uri.toString() === key && doc.isDirty) || matchingTabs(key).some(tab => tab.isDirty);
+  async function deleteDocument(id: string): Promise<'deleted' | 'cancelled'> {
+    const existing = deleteJobs.get(id); if (existing) return existing;
+    const resolved = await store.resolveScratch(id), uri = api.Uri.file(resolved.filePath), key = uri.toString();
+    const resolvedJob = deleteJobs.get(id); if (resolvedJob) return resolvedJob;
+    deleting.add(key);
+    const requestId = randomUUID(), entry = documents.get(key);
+    const operation = async (): Promise<'deleted' | 'cancelled'> => {
+      const cancel = (): 'cancelled' => { warn('Deletion cancelled. Save or revert the scratchpad and resolve pending or recovered drafts before retrying.'); return 'cancelled'; };
+      try {
+        if (stopped) return cancel();
+        if (entry?.closing) await entry.closing;
+        else if (entry) { await entry.controller.flush(); if (entry.controller.hasPending || entry.controller.conflicted) return cancel(); }
+        if (dirty(key) || (await recovery.list(key)).length) return cancel();
+        if (entry && !entry.closing && !await freezeDeletion(entry, requestId)) return cancel();
+        const version = entry?.controller.snapshot;
+        const current = (): boolean => !stopped && !dirty(key) && (!entry || !entry.controller.hasPending && !entry.controller.conflicted && entry.controller.snapshot.version === version?.version && entry.controller.snapshot.digest === version.digest);
+        if (!current()) return cancel();
+        const tabs = matchingTabs(key);
+        if (!tabs.length && entry && [...entry.panes.values()].some(pane => !pane.disposed)) return cancel();
+        if (tabs.length && !await api.window.tabGroups.close(tabs, true)) return cancel();
+        if (matchingTabs(key).length) return cancel();
+        if (entry) await closeEntry(entry);
+        await validate(uri);
+        if (!current() || matchingTabs(key).length || (await recovery.list(key)).length) return cancel();
+        // Recheck after the last asynchronous recovery read. Exclusion is local
+        // to this window; other windows retain normal external-delete behavior.
+        if (!current() || matchingTabs(key).length) return cancel();
+        try { await store.deleteScratch(id); }
+        catch (failure) {
+          deleting.delete(key);
+          try { await openDocument(id); } catch { warn('Scratchpad deletion failed and its file could not be reopened.'); }
+          throw failure;
+        }
+        try { await deps.refresh?.(); } catch { warn('Scratchpad deleted, but list refresh failed.'); } return 'deleted';
+      } finally {
+        deleting.delete(key);
+        if (entry) for (const pane of entry.panes.values()) if (!pane.disposed) {
+          try { if (!await delivered(pane, { type: 'delete-release', paneSessionId: pane.id, requestId })) warn('Scratchpad deletion release could not be confirmed; reopen its pane.'); } catch { warn('Scratchpad deletion release could not be confirmed; reopen its pane.'); }
+        }
+      }
+    };
+    const command = entry ? entry.commands.catch(() => {}).then(operation) : Promise.resolve().then(operation);
+    if (entry) entry.commands = command.then(() => {}, () => {});
+    const result = command.finally(() => { deleteJobs.delete(id); }); deleteJobs.set(id, result); return result;
+  }
+  async function openDocument(id: string): Promise<void> {
+    const resolved = await store.resolveScratch(id), uri = api.Uri.file(resolved.filePath);
+    if (stopped || deleting.has(uri.toString())) throw new Error('Scratchpad editor is disposed or the file is being deleted.');
+    await api.commands.executeCommand('vscode.openWith', uri, SCRATCH_EDITOR_VIEW_TYPE);
+  }
   const provider: VSCode.CustomTextEditorProvider = {
     resolveCustomTextEditor: async (document, panel, token) => {
       await validate(document.uri);
-      if (stopped || token.isCancellationRequested || document.isClosed) throw new Error('Scratchpad opening was cancelled.');
+      if (stopped || deleting.has(document.uri.toString()) || token.isCancellationRequested || document.isClosed) throw new Error('Scratchpad opening was cancelled.');
       const previous = documents.get(document.uri.toString()); if (previous?.closing) await previous.closing;
       // Closing can yield while extension shutdown or cancellation begins.
       // Do not attach listeners or publish a new entry after that boundary.
-      if (stopped || token.isCancellationRequested || document.isClosed) throw new Error('Scratchpad opening was cancelled.');
+      if (stopped || deleting.has(document.uri.toString()) || token.isCancellationRequested || document.isClosed) throw new Error('Scratchpad opening was cancelled.');
       const entry = entryFor(document);
       const pane: Pane = { id: randomUUID(), panel, locked: preference.initial(), ready: false, disposed: false, listeners: [] };
       entry.panes.set(pane.id, pane);
@@ -281,7 +359,7 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
       pane.listeners.push(panel.webview.onDidReceiveMessage(value => { void handle(entry, pane, value).catch(failure => error(pane, failure instanceof Error ? `Scratchpad: ${failure.message}` : 'Scratchpad action failed; source and pending recovery are retained.')); }));
       pane.listeners.push(panel.onDidDispose(() => {
         pane.disposed = true; entry.controller.removePane(pane.id);
-        pane.focus?.settle(false);
+        pane.focus?.settle(false); pane.deletion?.settle(false);
         for (const listener of pane.listeners) listener.dispose(); entry.panes.delete(pane.id);
         if (!entry.panes.size) void closeEntry(entry).catch(() => warn('Scratchpad closing failed; pending recovery was retained.'));
       }));
@@ -298,7 +376,8 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
     api.workspace.onDidCloseTextDocument(document => { const entry = documents.get(document.uri.toString()); if (entry?.document === document) void closeEntry(entry).catch(() => warn('Scratchpad document closed with pending recovery.')); }),
   ];
   return {
-    openDocument: async id => { const resolved = await store.resolveScratch(id); if (stopped) throw new Error('Scratchpad editor is disposed.'); await api.commands.executeCommand('vscode.openWith', api.Uri.file(resolved.filePath), SCRATCH_EDITOR_VIEW_TYPE); },
+    openDocument, deleteDocument,
+    accepts: async uri => { try { await validate(uri); return true; } catch { return false; } },
     dispose: async () => { stopped = true; for (const listener of listeners) listener.dispose(); for (const entry of [...documents.values()]) await closeEntry(entry); },
   };
 }

@@ -179,3 +179,11 @@ test('scratch checked selection readiness timeout is bounded and disposed target
   assert.equal(await target.post({ type: 'insert-into-input', text: 'captured' }), false);
   assert.equal(posted, false); await assert.rejects(target.ready(), /closed/);
 });
+
+
+test('scratch creation uses the shared refresh boundary without suppressing opening when refresh fails', async () => {
+  const panels = fakePanels(), chat = fakeChat(), warnings: string[] = []; let refreshed = 0;
+  const host = createScratchHost({ store: fakeStore(), panels, chat, promptTitle: async () => 'New pad', refresh: async () => { refreshed++; throw new Error('refresh refused'); }, logger: { warn: message => warnings.push(message) } });
+  host.onMessage({ type: 'scratch-new' }); await flush();
+  assert.equal(refreshed, 1); assert.ok(panels.calls.includes('openDocument:New pad.md')); assert.ok(warnings.some(message => message.includes('refresh')));
+});

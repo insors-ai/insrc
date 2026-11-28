@@ -89,6 +89,7 @@ export interface ScratchPanelHandle extends PanelHandle {
 }
 
 export interface ScratchPanelsDeps {
+  readonly deleteDocument?: (id: string) => Promise<'deleted' | 'cancelled'>;
   readonly panels: PanelFactory;
   readonly store: ScratchStore;
   readonly logger?: { warn(msg: string): void } | undefined;
@@ -104,6 +105,7 @@ export interface ScratchPanelsDeps {
 }
 
 export interface ScratchPanels {
+  deleteDocument?(id: string): Promise<'deleted' | 'cancelled'>;
   /** Browse-all: an UNBOUNDED list rendered as a table; create-or-reveal singleton. */
   openBrowse(): Promise<ScratchPanelHandle | undefined>;
   /** Document view: open (or switch to) scratchpad `id`; create-or-reveal singleton. */
@@ -289,6 +291,7 @@ export function documentBootstrap(gen: number, id: string): string {
 }
 
 export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
+  const deleteFlights = new Map<string, Promise<'deleted' | 'cancelled'>>();
   const log = deps.logger ?? { warn: () => {} };
   const nonce = (): string => deps.genNonce?.() ?? 'scratch';
   const sendToChat = deps.onSendToChat ?? (() => {});
@@ -382,7 +385,7 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
     }
   };
 
-  const deleteAndRefresh = async (id: string): Promise<void> => {
+  const deleteAndRefresh = async (id: string): Promise<'deleted' | 'cancelled'> => {
     let deleteError: string | undefined;
     try {
       await deps.store.deleteScratch(id);
@@ -401,6 +404,19 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
       closeDocumentIfShowing(id);
     }
     if (browseHandle !== undefined) await renderBrowse(browseHandle, deleteError);
+    return deleteError === undefined ? 'deleted' : 'cancelled';
+  };
+
+  const deleteDocument = async (id: string): Promise<'deleted' | 'cancelled'> => {
+    const pending = deleteFlights.get(id); if (pending) return pending;
+    if (!deps.deleteDocument) return deleteAndRefresh(id);
+    // Until t11 removes the legacy textarea, its unreported draft cannot be
+    // inspected through a TextDocument. Conservatively keep an open legacy pad.
+    if (docHandle && showingId === id) { log.warn('Close the scratchpad document before deleting it.'); return 'cancelled'; }
+    const deleting = Promise.resolve().then(() => deps.deleteDocument!(id)).catch(async failure => {
+      if (browseHandle) await renderBrowse(browseHandle, `delete failed: ${String(failure)}`); throw failure;
+    }).finally(() => { deleteFlights.delete(id); });
+    deleteFlights.set(id, deleting); return deleting;
   };
 
   const invalidateId = (id: string): void => {
@@ -436,7 +452,7 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
           if (env === null || env.v !== 1 || typeof env.payload !== 'object' || env.payload === null) return;
           const msg = env.payload as { type?: unknown; id?: unknown };
           if (msg.type === 'scratch-open' && typeof msg.id === 'string') void openDocument(msg.id);
-          else if (msg.type === 'scratch-delete' && typeof msg.id === 'string') void deleteAndRefresh(msg.id);
+          else if (msg.type === 'scratch-delete' && typeof msg.id === 'string') void deleteDocument(msg.id).catch(failure => log.warn(`Scratchpad deletion failed: ${String(failure)}`));
         });
       },
       () => browseHandle,
@@ -448,6 +464,7 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
   };
 
   const openDocument = async (id: string): Promise<ScratchPanelHandle | undefined> => {
+    if (deleteFlights.has(id)) { log.warn('Scratchpad is being deleted; retry opening it afterward.'); return undefined; }
     const generation = ++docGeneration;
     // Retire the previous generation's bookkeeping: this open's setHtml replaces the
     // old webview (or the panel was disposed/closed, which also bumps the counter),
@@ -574,6 +591,7 @@ export function createScratchPanels(deps: ScratchPanelsDeps): ScratchPanels {
 
   return {
     openBrowse,
+    deleteDocument,
     openDocument,
     refreshBrowse,
     replySaved,

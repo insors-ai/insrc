@@ -11,6 +11,7 @@ const draft = { ...session, type: 'draft', draftSeq: 1, editId: 'edit_1', baseVe
 
 test('scratch editor protocol accepts every declared variant and rejects extra keys across channels', () => {
   const incoming = [
+    { ...session, type: 'delete-ready', requestId: 'd1', docVersion: 1, draftSeq: 0, clean: true },
     { ...session, type: 'asset-request', requestId: 'r2', action: 'resolve-image', href: 'assets/local.png' },
     { ...session, type: 'editor-ready' }, draft, { ...draft, parentEditId: 'edit_0' },
     { ...session, type: 'send-selection', requestId: 'send_1', draftSeq: 0, docVersion: 1, selectedText: 'one\n\ntwo' },
@@ -20,6 +21,7 @@ test('scratch editor protocol accepts every declared variant and rejects extra k
     { ...session, type: 'asset-request', requestId: 'r1', action: 'upload-image', name: 'a.png', mediaType: 'image/png', dataBase64: 'eA==' },
   ];
   const outgoing = [
+    { ...session, type: 'delete-prepare', requestId: 'd1' }, { ...session, type: 'delete-release', requestId: 'd1' },
     { ...session, type: 'selection-result', requestId: 'send_1', sent: false, message: 'Retry Send.' },
     { ...session, ...state, type: 'document-state', locked: true },
     { ...session, type: 'receipt', draftSeq: 1, editId: 'edit_1' },

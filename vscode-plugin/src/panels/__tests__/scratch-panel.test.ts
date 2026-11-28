@@ -13,6 +13,7 @@
  * Run: npx tsx --test vscode-plugin/src/panels/__tests__/scratch-panel.test.ts
  */
 import { test } from 'node:test';
+import { createScratchHost } from '../../chat/scratch-host.js';
 import assert from 'node:assert/strict';
 import { runInNewContext } from 'node:vm';
 
@@ -1156,4 +1157,34 @@ test('scratch-panel.test.ts: send-to-chat post via textarea selection (selection
   // buttons with title= in the ac5 test) — they run in this same file and must pass;
   // this test's own presence in the suite alongside them is the pin.
   assert.ok(true);
+});
+
+
+test('scratch browse and chat route deletion through the same asynchronous native boundary and preserve failed files', async () => {
+  const h = harness(), entry = await h.store.createScratch('Shared deletion', 'Keep');
+  const calls: string[] = [], warnings: string[] = []; let refused = false;
+  const panels = createScratchPanels({ panels: h.factory, store: h.store, genNonce: () => 'N', logger: { warn: message => warnings.push(message) }, deleteDocument: async id => { calls.push(id); if (refused) throw new Error('native close refused'); return 'cancelled'; } });
+  const posted: unknown[] = [];
+  const host = createScratchHost({ panels, store: h.store, promptTitle: async () => undefined, chat: { open: () => { throw new Error('refresh must not open chat'); }, ready: async () => {}, disposed: () => false, post: message => posted.push(message) } });
+  await panels.openBrowse(); const browse = h.panels.at(-1)!;
+  browse.injectMessage({ v: 1, payload: { type: 'scratch-delete', id: entry.id } });
+  for (let turn = 0; turn < 20; turn++) await Promise.resolve();
+  host.onMessage({ type: 'scratch-delete', id: entry.id });
+  for (let turn = 0; turn < 20; turn++) await Promise.resolve();
+  assert.deepEqual(calls, [entry.id, entry.id]); assert.equal((await h.store.readScratch(entry.id)).content, 'Keep');
+  refused = true; browse.injectMessage({ v: 1, payload: { type: 'scratch-delete', id: entry.id } });
+  for (let turn = 0; turn < 30; turn++) await Promise.resolve();
+  assert.match(browse.html, /native close refused/); assert.ok(warnings.length > 0); assert.equal((await h.store.readScratch(entry.id)).content, 'Keep');
+  panels.dispose();
+});
+
+
+test('scratch deletion blocks an in-flight legacy open and coalesces duplicate controller requests', async () => {
+  const h = harness(), entry = await h.store.createScratch('Deletion exclusion', 'Keep');
+  let release!: () => void, calls = 0; const waiting = new Promise<void>(resolve => { release = resolve; });
+  const panels = createScratchPanels({ panels: h.factory, store: h.store, deleteDocument: async () => { calls++; await waiting; return 'cancelled'; } });
+  const first = panels.deleteDocument!(entry.id), second = panels.deleteDocument!(entry.id);
+  assert.equal(await panels.openDocument(entry.id), undefined); release();
+  assert.equal(await first, 'cancelled'); assert.equal(await second, 'cancelled'); assert.equal(calls, 1);
+  assert.equal((await h.store.readScratch(entry.id)).content, 'Keep'); panels.dispose();
 });

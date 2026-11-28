@@ -95,7 +95,16 @@ async function run(): Promise<unknown> {
       const retained = current.root.querySelector<HTMLTextAreaElement>('.scratch-retained-selection')!;
       selectionChecks.push({ method, before: before.filter(m => m.type !== 'lock'), sent, focusedByTab, waiting, disabledAfterFailure: action.disabled, retained: retained.value, retainedVisible: !retained.hidden, status: current.root.querySelector('[role=alert]')?.textContent, drafts: drafts(current.sent) });
     }
-    return { initial, selected, clicked, lockedControls, ownedImage, remembered, siblings, lateAck, host, unsupported, fallback, limit, shortcuts, selectionChecks };
+    const deleting = await create('deletion');
+    if (deleting.pane['crepe']!.readonly) deleting.root.querySelector<HTMLButtonElement>('nav button')!.click();
+    const rememberedBeforeDelete = preference.initial(), deleteMessages = deleting.sent.length;
+    await deleting.pane.receive({ type: 'delete-prepare', paneSessionId: 'deletion', requestId: 'delete_request' });
+    const frozen = deleting.pane['crepe']!.readonly;
+    await deleting.pane.receive({ type: 'delete-release', paneSessionId: 'deletion', requestId: 'wrong_request' });
+    const wrongRelease = deleting.pane['crepe']!.readonly;
+    await deleting.pane.receive({ type: 'delete-release', paneSessionId: 'deletion', requestId: 'delete_request' });
+    const deleteHandshake = { frozen, wrongRelease, released: deleting.pane['crepe']!.readonly, rememberedBeforeDelete, rememberedAfterDelete: preference.initial(), messages: deleting.sent.slice(deleteMessages) };
+    return { deleteHandshake, initial, selected, clicked, lockedControls, ownedImage, remembered, siblings, lateAck, host, unsupported, fallback, limit, shortcuts, selectionChecks };
   } finally { for (const { pane } of all) await pane.dispose(); }
 }
 void run().then(result => { const pre = document.createElement('pre'); pre.id = 'scratch-result'; pre.textContent = JSON.stringify(result); document.body.append(pre); })

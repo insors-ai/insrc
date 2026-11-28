@@ -56,7 +56,25 @@ async function run() {
     await until(() => root.querySelector('.scratch-status')!.textContent!.includes('Storage unavailable'), 'failed mixed paste refused');
     const failedMixedSource = crepe.getMarkdown(); fail = false; const linkHrefs: string[] = [];
     crepe.editor.action(ctx => ctx.get(editorViewCtx).state.doc.descendants(node => { for (const mark of node.marks) if (mark.type.name === 'link') linkHrefs.push(mark.attrs['href']); }));
-    return { initial, inline, block, display, uploadedNodes: uploadedNodes.map(node => node.attrs.src), beforeFailure, failure, afterFailure, afterCancel, pickedImage, pickedLink, pastedUrl, mixedSource, mixedStatus, failedAfterMixed, droppedSource, dropStatus, dropPrevented: drop.defaultPrevented, failedMixedSource, mixedPrevented: mixedPaste.defaultPrevented, linkHrefs, pastePrevented: paste.defaultPrevented, sent: sent.filter(m => m.type !== 'draft'), drafts: sent.filter(m => m.type === 'draft') };
+    const pendingRoot = document.createElement('main'); document.body.append(pendingRoot);
+    const pendingMessages: ScratchEditorToHost[] = [];
+    const pendingPane = new ScratchEditorPane(pendingRoot, { paneSessionId: 'pending_asset', post: message => { pendingMessages.push(message); } });
+    let finishRead!: (bytes: ArrayBuffer) => void;
+    try {
+      await pendingPane.receive({ type: 'document-state', paneSessionId: 'pending_asset', version: 1, digest: 'b'.repeat(64), markdown: '# Pending image\n', locked: false });
+      const delayedFile = new File([file], 'delayed.png', { type: 'image/png' });
+      Object.defineProperty(delayedFile, 'arrayBuffer', { value: () => new Promise<ArrayBuffer>(resolve => { finishRead = resolve; }) });
+      const delayedData = new DataTransfer(); delayedData.items.add(delayedFile);
+      pendingRoot.querySelector('.ProseMirror')!.dispatchEvent(new ClipboardEvent('paste', { clipboardData: delayedData, bubbles: true, cancelable: true }));
+      await pendingPane.receive({ type: 'delete-prepare', paneSessionId: 'pending_asset', requestId: 'delete_pending_asset' });
+      const pendingDelete = pendingMessages.find(message => message.type === 'delete-ready');
+      await pendingPane.receive({ type: 'delete-release', paneSessionId: 'pending_asset', requestId: 'delete_pending_asset' });
+      // Finish the owned browser read before disposal; no actor remains live.
+      finishRead(await file.arrayBuffer()); await tick();
+      const request = pendingMessages.find(message => message.type === 'asset-request');
+      if (request?.type === 'asset-request') await pendingPane.receive({ type: 'action-error', paneSessionId: 'pending_asset', requestId: request.requestId, message: 'fixture cancellation' });
+      return { pendingDelete, initial, inline, block, display, uploadedNodes: uploadedNodes.map(node => node.attrs.src), beforeFailure, failure, afterFailure, afterCancel, pickedImage, pickedLink, pastedUrl, mixedSource, mixedStatus, failedAfterMixed, droppedSource, dropStatus, dropPrevented: drop.defaultPrevented, failedMixedSource, mixedPrevented: mixedPaste.defaultPrevented, linkHrefs, pastePrevented: paste.defaultPrevented, sent: sent.filter(m => m.type !== 'draft'), drafts: sent.filter(m => m.type === 'draft') };
+    } finally { await pendingPane.dispose(); }
   } finally { await pane.dispose(); }
 }
 void run().then(result => { const pre = document.createElement('pre'); pre.id = 'scratch-result'; pre.textContent = JSON.stringify(result); document.body.append(pre); }).catch(error => { const pre = document.createElement('pre'); pre.id = 'scratch-error'; pre.textContent = `${error}\n${error?.stack ?? ''}`; document.body.append(pre); });

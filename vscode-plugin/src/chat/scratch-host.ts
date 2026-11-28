@@ -52,6 +52,7 @@ export interface ScratchChatSeam {
 }
 
 export interface ScratchHostDeps {
+  readonly refresh?: () => Promise<void>;
   readonly store: ScratchStore;
   readonly panels: ScratchPanels;
   readonly chat: ScratchChatSeam;
@@ -60,6 +61,7 @@ export interface ScratchHostDeps {
 }
 
 export interface ScratchHost {
+  refreshList(): Promise<void>;
   /** Explicit rich-editor selection route. Throws on stale source/delivery. */
   sendSelectionToChat(text: string, assertCurrent: () => void): Promise<void>;
   /** Handle one webview->host message; non-scratch types and malformed fields are ignored. */
@@ -147,13 +149,13 @@ export function createScratchHost(deps: ScratchHostDeps): ScratchHost {
             // refresh failure must not skip it, and a failed open must be visible
             // in the log instead of silently looking like nothing happened.
             try {
-              await deps.panels.refreshBrowse();
+              await (deps.refresh ? deps.refresh() : deps.panels.refreshBrowse());
             } catch (err) {
               log.warn(`[scratches] browse refresh failed after create: ${String(err)}`);
             }
             const opened = await deps.panels.openDocument(entry.id);
             if (opened === undefined) log.warn(`[scratches] created ${entry.id} but its document panel did not open`);
-            void sendScratchList();
+            if (!deps.refresh) void sendScratchList();
           } catch (err) {
             // The create failed: re-send the list WITH the error so the menu surfaces
             // the failure instead of silently looking unchanged/healthy.
@@ -168,6 +170,10 @@ export function createScratchHost(deps: ScratchHostDeps): ScratchHost {
         return;
       case 'scratch-delete':
         if (typeof msg.id !== 'string') { log.warn('[scratches] dropped malformed scratch-delete: non-string id'); return; }
+        if (deps.panels.deleteDocument) {
+          void deps.panels.deleteDocument(msg.id).catch(failure => { log.warn(`Scratchpad deletion failed: ${String(failure)}`); void sendScratchList(`delete failed: ${String(failure)}`); });
+          return;
+        }
         void (async (): Promise<void> => {
           deps.panels.invalidateId(msg.id);
           let deleteError: string | undefined;
@@ -180,7 +186,7 @@ export function createScratchHost(deps: ScratchHostDeps): ScratchHost {
             log.warn(`[scratches] delete failed for ${msg.id}: ${String(err)}`);
           }
           deps.panels.closeDocumentIfShowing(msg.id);
-          await deps.panels.refreshBrowse();
+          await (deps.refresh ? deps.refresh() : deps.panels.refreshBrowse());
           void sendScratchList(deleteError);
         })();
         return;
@@ -238,7 +244,7 @@ export function createScratchHost(deps: ScratchHostDeps): ScratchHost {
           // Refresh the browse table and the chat menu list even on failure so the
           // mtime/state stays truthful (a failed save leaves the file unchanged).
           try {
-            await deps.panels.refreshBrowse();
+            await (deps.refresh ? deps.refresh() : deps.panels.refreshBrowse());
           } catch (err) {
             log.warn(`[scratches] browse refresh failed after save: ${String(err)}`);
           }
@@ -251,5 +257,5 @@ export function createScratchHost(deps: ScratchHostDeps): ScratchHost {
     }
   };
 
-  return { onMessage, onDocMessage, sendSelectionToChat: (text, assertCurrent) => sendToChat(text, assertCurrent) };
+  return { refreshList: () => sendScratchList(), onMessage, onDocMessage, sendSelectionToChat: (text, assertCurrent) => sendToChat(text, assertCurrent) };
 }

@@ -25,6 +25,7 @@ class Uri {
 }
 class Range { constructor(readonly start: { character: number }, readonly end: { character: number }) {} }
 class Edit { readonly edits: { uri: Uri; range: Range; text: string }[] = []; replace(uri: Uri, range: Range, text: string) { this.edits.push({ uri, range, text }); } }
+class TextTab { constructor(readonly uri: Uri) {} }
 class CustomTab { constructor(readonly uri: Uri, readonly viewType = SCRATCH_EDITOR_VIEW_TYPE) {} }
 async function fixture(run: (h: Awaited<ReturnType<typeof harness>>) => Promise<void>) {
   const h = await harness(); try { await run(h); } finally { await h.host.dispose(); await rm(h.dir, { recursive: true, force: true }); }
@@ -43,23 +44,39 @@ async function harness() {
   const doc = { uri, version: 1, isDirty: false, isClosed: false, text: '# Before\n', getText() { return this.text; }, positionAt: (offset: number) => ({ line: 0, character: offset }),
     save: async () => { const waits: PromiseLike<unknown>[] = []; willSave.fire({ document: doc, waitUntil: p => { waits.push(p); } }); await Promise.all(waits); await writeFile(resolved.filePath, doc.text); doc.isDirty = false; saves++; return true; } };
   let activeTab = { input: new CustomTab(uri) };
+  const groups = [{ tabs: [{ input: activeTab.input as CustomTab | TextTab, get isDirty() { return doc.isDirty; } }] }];
+  const closedTabs: string[] = []; let closeRefused = false, closeGate: ReturnType<typeof deferred> | undefined;
+  let deletionMode: 'ok' | 'pending' | 'wrong-version' = 'ok', refreshed = 0, failRefresh = false;
   const panel = { get active() { return active; }, visible: true, title: 'Scratchpad', reveal: () => { active = true; }, dispose: () => disposed.fire(), onDidDispose: disposed.listen,
     webview: { html: '', options: {}, cspSource: "'self' https://*.vscode-cdn.net", asWebviewUri: (_u: Uri) => ({ toString: () => 'https://file.vscode-resource.vscode-cdn.net/editor.js' }), onDidReceiveMessage: incoming.listen,
-      postMessage: async (m: ScratchHostToEditor) => { if (m.type === dropped) return false; messages.push(m); if (m.type === 'focus-request') setImmediate(() => incoming.fire({ type: 'focus-ready', paneSessionId: m.paneSessionId, requestId: m.requestId, docVersion: m.docVersion + (focusMode === 'wrong-version' ? 1 : 0), draftSeq: m.draftSeq, focused: focusMode !== 'denied' })); return true; } } };
-  const api = { Uri, Range, WorkspaceEdit: Edit, TabInputCustom: CustomTab,
-    window: { registerCustomEditorProvider: (_type: string, p: VSCode.CustomTextEditorProvider, options: { supportsMultipleEditorsPerDocument: boolean }) => { assert.equal(options.supportsMultipleEditorsPerDocument, true); provider = p; return { dispose: () => {} }; }, tabGroups: { activeTabGroup: { get activeTab() { return activeTab; } } }, showOpenDialog: async () => undefined, showWarningMessage: async () => undefined },
+      postMessage: async (m: ScratchHostToEditor) => { if (m.type === dropped) return false; messages.push(m); if (m.type === 'delete-prepare') setImmediate(() => incoming.fire({ type: 'delete-ready', paneSessionId: m.paneSessionId, requestId: m.requestId, docVersion: doc.version - (deletionMode === 'wrong-version' ? 1 : 0), draftSeq: messages.filter(message => message.type === 'apply-ack').at(-1)?.draftSeq ?? 0, clean: deletionMode !== 'pending' })); if (m.type === 'focus-request') setImmediate(() => incoming.fire({ type: 'focus-ready', paneSessionId: m.paneSessionId, requestId: m.requestId, docVersion: m.docVersion + (focusMode === 'wrong-version' ? 1 : 0), draftSeq: m.draftSeq, focused: focusMode !== 'denied' })); return true; } } };
+  const api = { Uri, Range, WorkspaceEdit: Edit, TabInputCustom: CustomTab, TabInputText: TextTab,
+    window: { registerCustomEditorProvider: (_type: string, p: VSCode.CustomTextEditorProvider, options: { supportsMultipleEditorsPerDocument: boolean }) => { assert.equal(options.supportsMultipleEditorsPerDocument, true); provider = p; return { dispose: () => {} }; }, tabGroups: { all: groups, activeTabGroup: { get activeTab() { return activeTab; } }, close: async (tabs: { input: CustomTab | TextTab }[]) => {
+        const waiting = closeGate; closeGate = undefined; if (waiting) await waiting.promise;
+        if (closeRefused) return false;
+        for (const group of groups) group.tabs = group.tabs.filter(tab => { if (!tabs.includes(tab)) return true; closedTabs.push(tab.input.uri.toString()); return false; });
+        if (!groups.some(group => group.tabs.some(tab => tab.input.uri.toString() === uri.toString()))) { panel.dispose(); doc.isClosed = true; closed.fire(doc); }
+        return true;
+      } }, showOpenDialog: async () => undefined, showWarningMessage: async () => undefined },
     commands: { executeCommand: async (name: string, ...args: unknown[]) => { commands.push({ name, args }); if (name === 'undo' || name === 'redo') { assert.equal(args.length, 0); doc.text = name === 'undo' ? '# Before\n' : '# Draft\n'; doc.version++; doc.isDirty = true; changed.fire({ document: doc }); } } },
-    workspace: { getWorkspaceFolder: () => undefined, onDidChangeTextDocument: changed.listen, onWillSaveTextDocument: willSave.listen, onDidCloseTextDocument: closed.listen,
+    workspace: { get textDocuments() { return doc.isClosed ? [] : [doc]; }, getWorkspaceFolder: () => undefined, onDidChangeTextDocument: changed.listen, onWillSaveTextDocument: willSave.listen, onDidCloseTextDocument: closed.listen,
       applyEdit: async (edit: Edit) => { applies++; const pending = gate; gate = undefined; if (pending) await pending.promise; const change = edit.edits[0]!; assert.equal(change.uri, uri); doc.text = doc.text.slice(0, change.range.start.character) + change.text + doc.text.slice(change.range.end.character); doc.version++; doc.isDirty = true; changed.fire({ document: doc }); return true; } },
   } as unknown as typeof VSCode;
   let sendSelection: (text: string, assertCurrent: () => void) => Promise<void> = async () => { throw new Error('Chat unavailable'); };
   const recovery = new ScratchRecoveryStore(join(dir, 'recovery'));
-  const host = registerScratchEditor({ api, store, extensionPath: dir, recovery, sendSelection: (text, assertCurrent) => sendSelection(text, assertCurrent), preference: new ScratchLockPreference({ get: <T>() => false as T, update: async () => {} }), warn: m => warnings.push(m) });
+  const host = registerScratchEditor({ refresh: async () => { refreshed++; if (failRefresh) throw new Error('refresh unavailable'); }, api, store, extensionPath: dir, recovery, sendSelection: (text, assertCurrent) => sendSelection(text, assertCurrent), preference: new ScratchLockPreference({ get: <T>() => false as T, update: async () => {} }), warn: m => warnings.push(m) });
   const open = async () => { await provider.resolveCustomTextEditor(doc as unknown as VSCode.TextDocument, panel as unknown as VSCode.WebviewPanel, { isCancellationRequested: false }); const id = panel.webview.html.match(/data-pane-session="([^"]+)"/)![1]!; incoming.fire({ type: 'editor-ready', paneSessionId: id }); await until(() => messages.some(m => m.type === 'document-state')); return id; };
   return { dir, host, doc, panel, provider: () => provider, api, changed, willSave, closed, incoming, disposed, messages, warnings, commands, recovery, uri, entry, resolved, open,
     send: (id: string, m: object) => incoming.fire({ ...m, paneSessionId: id }),
     block: () => { gate = deferred(); return gate; },
     blockValidation: () => { validateGate = deferred(); return validateGate; }, get validating() { return validating; },
+    closedTabs, groups, store,
+    get refreshed() { return refreshed; },
+    setRefreshFailure: () => { failRefresh = true; },
+    setDeleteMode: (mode: typeof deletionMode) => { deletionMode = mode; },
+    refuseClose: () => { closeRefused = true; },
+    blockClose: () => { closeGate = deferred(); return closeGate; },
+    addTab: (target: Uri, group = 1) => { while (groups.length <= group) groups.push({ tabs: [] }); groups[group]!.tabs.push({ input: new TextTab(target), get isDirty() { return target.toString() === uri.toString() && doc.isDirty; } }); },
     routeSelection: (route: typeof sendSelection) => { sendSelection = route; },
     setFocusMode: (value: typeof focusMode) => { focusMode = value; },
     setDropped: (value: string) => { dropped = value; }, setActive: (value: boolean) => { active = value; },
@@ -237,4 +254,53 @@ test('scratch native assets persist portable bytes correlate failure cancellatio
   h.send(id, { type: 'lock', locked: true });
   h.send(id, { type: 'asset-request', requestId: 'a4', action: 'upload-image', name: 'pasted.png', mediaType: 'image/png', dataBase64: png });
   await until(() => h.messages.some(m => m.type === 'action-error' && m.requestId === 'a4')); assert.equal(h.applies, 0);
+}));
+
+
+test('scratch native deletion closes only exact URI tabs across groups before guarded unlink and isolates refresh failure', async () => fixture(async h => {
+  await h.open(); const unrelated = Uri.file(join(h.dir, 'unrelated.md')); h.addTab(h.uri); h.addTab(unrelated, 2); h.setRefreshFailure();
+  assert.equal(await h.host.deleteDocument(h.entry.id), 'deleted');
+  await assert.rejects(readFile(h.resolved.filePath), { code: 'ENOENT' });
+  assert.deepEqual(h.closedTabs, [h.uri.toString(), h.uri.toString()]);
+  assert.equal(h.groups[2]?.tabs.length, 1); assert.equal(h.refreshed, 1);
+  assert.ok(h.warnings.some(message => message.includes('list refresh failed')));
+}));
+
+test('scratch native deletion cancels dirty pending recovery unconfirmed panes and close cancellation without unlink', async () => {
+  for (const state of ['dirty', 'pending', 'recovery', 'renderer-pending', 'wrong-version', 'close-cancelled'] as const) await fixture(async h => {
+    const id = await h.open(); let result: Promise<'deleted' | 'cancelled'>;
+    if (state === 'dirty') h.doc.isDirty = true;
+    if (state === 'recovery') await h.recovery.retain(h.uri.toString(), { ...draft, paneSessionId: 'other-window' } as never);
+    if (state === 'renderer-pending') h.setDeleteMode('pending');
+    if (state === 'wrong-version') h.setDeleteMode('wrong-version');
+    if (state === 'close-cancelled') h.refuseClose();
+    if (state === 'pending') {
+      const gate = h.block(); h.send(id, draft); await until(() => h.applies === 1);
+      result = h.host.deleteDocument(h.entry.id); await new Promise(r => setTimeout(r, 25)); assert.equal(h.closedTabs.length, 0); gate.resolve();
+    } else result = h.host.deleteDocument(h.entry.id);
+    assert.equal(await result, 'cancelled', state);
+    assert.equal(await readFile(h.resolved.filePath, 'utf8'), '# Before\n'); assert.equal(h.closedTabs.length, 0, state);
+    if (state === 'renderer-pending' || state === 'wrong-version' || state === 'close-cancelled') assert.ok(h.messages.some(m => m.type === 'delete-release'));
+  });
+});
+
+test('scratch native deletion excludes reopen until close settles and attempts reopen on unlink failure', async () => fixture(async h => {
+  await h.open(); const gate = h.blockClose();
+  const original = h.store.deleteScratch; h.store.deleteScratch = async () => { throw new Error('unlink refused'); };
+  const deleting = h.host.deleteDocument(h.entry.id); const refusal = assert.rejects(deleting, /unlink refused/);
+  await until(() => h.messages.some(m => m.type === 'delete-prepare'));
+  await assert.rejects(h.host.openDocument(h.entry.id), /being deleted/);
+  assert.equal(await readFile(h.resolved.filePath, 'utf8'), '# Before\n'); gate.resolve(); await refusal;
+  assert.ok(h.commands.some(c => c.name === 'vscode.openWith')); assert.equal(await readFile(h.resolved.filePath, 'utf8'), '# Before\n');
+  h.store.deleteScratch = original;
+}));
+
+
+test('scratch save refresh admission is exact URI scoped and activation owns one disposable save listener', async () => fixture(async h => {
+  assert.equal(await h.host.accepts(h.uri as unknown as VSCode.Uri), true);
+  assert.equal(await h.host.accepts(Uri.file(join(h.dir, h.entry.id)) as unknown as VSCode.Uri), false);
+  const source = await readFile(fileURLToPath(new URL('../../extension.ts', import.meta.url)), 'utf8');
+  assert.equal(source.match(/workspace\.onDidSaveTextDocument\(/g)?.length, 1);
+  assert.match(source, /context\.subscriptions\.push\(vscode\.workspace\.onDidSaveTextDocument/);
+  assert.match(source, /scratchEditor\.accepts\(document\.uri\)/);
 }));

@@ -847,7 +847,7 @@ test("extension-chat-wiring.test.ts regex pins: textarea element, save button, '
   assert.match(host, /onDocMessage/, 'the host exposes the document-channel route');
   assert.match(host, /deps\.store\.updateScratch\(msg\.id,\s*msg\.text\)/, 'scratch-save persists via store.updateScratch(id, text)');
   assert.match(host, /deps\.panels\.replySaved\(gen,\s*\{\s*type:\s*'scratch-saved',\s*id:\s*msg\.id,\s*gen,\s*ok,/, 'the save is answered via replySaved with the same gen');
-  assert.match(host, /await deps\.panels\.refreshBrowse\(\)/, 'the browse table refreshes after a save');
+  assert.match(host, /await \(deps\.refresh \? deps\.refresh\(\) : deps\.panels\.refreshBrowse\(\)\)/, 'the shared refresh boundary refreshes browse after a save');
   assert.match(host, /void sendScratchList\(\)/, 'the chat scratch-list is re-pushed after a save');
   // The chat-channel interception stays chat-only: SCRATCH_INTENT_TYPES has no document types.
   assert.match(host, /'send-to-chat',\s*\n\]\)/, 'SCRATCH_INTENT_TYPES still ends at the six chat intents (no document types)');

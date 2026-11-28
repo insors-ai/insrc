@@ -4,11 +4,9 @@ import fs from 'node:fs';
 import io from 'node:fs/promises';
 import type { FileHandle } from 'node:fs/promises';
 import { join, dirname, relative, isAbsolute } from 'node:path';
-import { tmpdir } from 'node:os';
 import { once } from 'node:events';
 import { fileURLToPath } from 'node:url';
 import { syncBuiltinESMExports } from 'node:module';
-import type { ChildProcess } from 'node:child_process';
 import type { Target, RuntimeIdentity } from '../contracts.js';
 import type { DownloadTransport } from '../download.js';
 import { ControllerStore } from '../controller-store.js';
@@ -18,17 +16,20 @@ import { runtimeArchive, runtimeStorePaths } from '../runtime-policy.js';
 import { stageRuntime, discardRuntimeStage } from '../runtime-acquire.js';
 import { ensurePrivateRuntime } from '../runtime-install.js';
 import { officialInputs } from './_runtime-profile-fixture.js';
-import { childLine, spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
+import { ownedRuntimeHome } from './_owned-runtime-home.js';
+import { childLine, spawnFixture } from '../../daemon/tools/__tests__/_proc.js';
 
 const target: Target = { os: process.platform as Target['os'], arch: process.arch as Target['arch'], baseline: 'native-v1' };
 const identity: RuntimeIdentity = { version: '22.22.1', target, sha256: runtimeArchive(target).sha256, relativeExecutable: target.os === 'win32' ? 'node.exe' : 'bin/node' };
 const lockFixture = fileURLToPath(new URL('./control-fixture.mjs', import.meta.url));
-function setup() {
-  const home = fs.mkdtempSync(join(fs.realpathSync(tmpdir()), 'irp-'));
-  if (process.platform === 'win32') controlBinding().protect(home);
-  return { home, location: resolveInstallationLocation('fixture', { home, ...(process.platform === 'win32' ? { userSid: controlBinding().userSid() } : {}) }),
-    clean: () => fs.rmSync(home, { recursive: true, force: true }) };
+async function setup() {
+  const capture = await ownedRuntimeHome('irp-'), home = capture.root;
+  try {
+    if (process.platform === 'win32') controlBinding().protect(home);
+    return { home, capture, location: resolveInstallationLocation('fixture', { home, ...(process.platform === 'win32' ? { userSid: controlBinding().userSid() } : {}) }), clean: () => capture.cleanup() };
+  } catch (cause) { await capture.cleanup(); throw cause; }
 }
+
 async function transport(): Promise<DownloadTransport> {
   const directory = await officialInputs();
   return async url => {
@@ -39,10 +40,10 @@ async function transport(): Promise<DownloadTransport> {
 const noNetwork: DownloadTransport = async () => { throw Error('network must not be reached'); };
 
 test('runtime publication uses the native exclusive lock durable namespace and verified offline reuse', async t => {
-  const f = setup(), children: ChildProcess[] = []; let store: ControllerStore | undefined;
+  const f = await setup(); let store: ControllerStore | undefined;
   const fsync = fs.fsyncSync, synced = new Set<number>();
   try {
-    const child = spawnFixture(process.execPath, [lockFixture, f.home, 'hold'], { stdio: ['pipe', 'pipe', 'pipe'] }); children.push(child);
+    const child = f.capture.trackChild(spawnFixture(process.execPath, [lockFixture, f.home, 'hold'], { stdio: ['pipe', 'pipe', 'pipe'] }));
     assert.match(await childLine(child), /ready/);
     assert.throws(() => ControllerStore.acquire(f.location), { code: 'busy' });
     const closed = once(child, 'close'); child.stdin!.end('exit\n'); assert.deepEqual(await closed, [0, null]);
@@ -67,12 +68,13 @@ test('runtime publication uses the native exclusive lock durable namespace and v
     assert.equal(fs.existsSync(join(f.home, 'releases')), false);
     store.close(); store = undefined;
     assert.ok(fs.existsSync(runtime.node), 'shared runtime survives controller closure');
-  } finally { t.mock.restoreAll(); syncBuiltinESMExports(); store?.close(); await stopOwnedChildren(children); f.clean(); }
+  } finally { t.mock.restoreAll(); syncBuiltinESMExports(); store?.close(); await f.clean(); }
 });
 
 test('runtime publication never overwrites an incomplete destination and retains its stage', async () => {
-  const f = setup(), store = ControllerStore.acquire(f.location);
+  const f = await setup(); let store: ControllerStore | undefined;
   try {
+    store = ControllerStore.acquire(f.location);
     const stage = await stageRuntime(store, identity, { transport: await transport() }), paths = runtimeStorePaths(f.home, identity);
     fs.mkdirSync(paths.root, { recursive: true, mode: 0o700 });
     fs.writeFileSync(join(paths.root, 'sentinel'), 'incomplete entry', { mode: 0o600 });
@@ -83,12 +85,13 @@ test('runtime publication never overwrites an incomplete destination and retains
     assert.ok(fs.existsSync(stage.directory));
     await assert.rejects(ensurePrivateRuntime(store, identity, { transport: noNetwork }), { code: 'runtime-invalid' });
     await discardRuntimeStage(stage, store);
-  } finally { store.close(); f.clean(); }
+  } finally { store?.close(); await f.clean(); }
 });
 
 test('runtime publication rejects stale original owners and forged or tampered stages', async () => {
-  const f = setup(); let store = ControllerStore.acquire(f.location);
+  const f = await setup(); let store: ControllerStore | undefined;
   try {
+    store = ControllerStore.acquire(f.location);
     const stage = await stageRuntime(store, identity, { transport: await transport() });
     await assert.rejects(store.publishRuntime({ ...stage }), /original ownership proof/);
     store.close();
@@ -97,23 +100,25 @@ test('runtime publication rejects stale original owners and forged or tampered s
     await assert.rejects(store.publishRuntime(stage), /original ownership proof/);
     assert.equal(fs.existsSync(runtimeStorePaths(f.home, identity).root), false);
     assert.ok(fs.existsSync(stage.directory));
-  } finally { store.close(); f.clean(); }
+  } finally { store?.close(); await f.clean(); }
 });
 
 test('runtime publication verifies staged bytes and cannot publish a modified executable', async () => {
-  const f = setup(), store = ControllerStore.acquire(f.location);
+  const f = await setup(); let store: ControllerStore | undefined;
   try {
+    store = ControllerStore.acquire(f.location);
     const stage = await stageRuntime(store, identity, { transport: await transport() });
     fs.appendFileSync(join(stage.directory, 'distribution', identity.relativeExecutable), 'tamper');
     await assert.rejects(store.publishRuntime(stage), { code: 'runtime-invalid' });
     assert.equal(fs.existsSync(runtimeStorePaths(f.home, identity).root), false);
     assert.ok(fs.existsSync(stage.directory)); await discardRuntimeStage(stage, store);
-  } finally { store.close(); f.clean(); }
+  } finally { store?.close(); await f.clean(); }
 });
 
 test('runtime publication stage is distinct from running Node and the loaded native library', async () => {
-  const f = setup(), store = ControllerStore.acquire(f.location);
+  const f = await setup(); let store: ControllerStore | undefined;
   try {
+    store = ControllerStore.acquire(f.location);
     const stage = await stageRuntime(store, identity, { transport: await transport() });
     const native = fs.realpathSync(fileURLToPath(new URL('../../../out/installer/native/control.node', import.meta.url)));
     for (const executing of [fs.realpathSync(process.execPath), native]) {
@@ -127,18 +132,19 @@ test('runtime publication stage is distinct from running Node and the loaded nat
       assert.ok(fs.lstatSync(join(paths.directory, identity.relativeExecutable)).nlink === 1);
     }
     await discardRuntimeStage(stage, store);
-  } finally { store.close(); f.clean(); }
+  } finally { store?.close(); await f.clean(); }
 });
 
 test('runtime publication retains verifier close uncertainty and refuses later discard', async t => {
-  const f = setup(), store = ControllerStore.acquire(f.location), open = io.open, abort = new AbortController();
-  let retained: FileHandle | undefined;
+  const f = await setup(), open = io.open, abort = new AbortController();
+  let store: ControllerStore | undefined, retained: FileHandle | undefined, closed: (() => void) | undefined;
   try {
+    store = ControllerStore.acquire(f.location);
     const stage = await stageRuntime(store, identity, { transport: await transport() });
     t.mock.method(io, 'open', async (...args: Parameters<typeof open>) => {
       const file = await open(...args);
       if (retained || String(args[0]) !== join(stage.directory, 'completion.json')) return file;
-      retained = file;
+      retained = file; f.capture.trackResource(new Promise<void>(resolve => { closed = resolve; }));
       return new Proxy(file, { get(handle, key) {
         if (key === 'close') return async () => { abort.abort(); return new Promise<void>(() => {}); };
         const value = Reflect.get(handle, key); return typeof value === 'function' ? value.bind(handle) : value;
@@ -148,5 +154,5 @@ test('runtime publication retains verifier close uncertainty and refuses later d
     assert.ok(retained); assert.equal((await retained.stat()).isFile(), true);
     await assert.rejects(discardRuntimeStage(stage, store), { code: 'resource-close-uncertain' });
     assert.ok(fs.existsSync(stage.directory)); assert.equal(fs.existsSync(runtimeStorePaths(f.home, identity).root), false);
-  } finally { t.mock.restoreAll(); syncBuiltinESMExports(); await retained?.close(); store.close(); f.clean(); }
+  } finally { t.mock.restoreAll(); syncBuiltinESMExports(); try { await retained?.close(); closed?.(); } catch (cause) { f.capture.retain(cause); throw cause; } finally { store?.close(); await f.clean(); } }
 });

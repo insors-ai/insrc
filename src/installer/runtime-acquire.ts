@@ -1,6 +1,7 @@
 /** Official runtime acquisition/staging. Publication belongs to the next layer. */
-import { lstat, mkdtemp, mkdir, rm } from 'node:fs/promises';
-import { lstatSync } from 'node:fs';
+import { lstat, mkdtemp, mkdir, open, readdir, rmdir, unlink } from 'node:fs/promises';
+import { constants, lstatSync } from 'node:fs';
+import type { Stats } from 'node:fs';
 import { join } from 'node:path';
 import { InstallerError } from './contracts.js';
 import type { InstallationLocation, RuntimeIdentity } from './contracts.js';
@@ -14,12 +15,14 @@ import { RUNTIME_LIMITS } from './runtime-metadata.js';
 import { extractRuntimeProfile } from './runtime-archive.js';
 import type { RuntimeArchiveSources } from './runtime-archive.js';
 import { operationTimeBudgets } from './operation-time-budgets.mjs';
+import { closeOwnedFile } from './owned-file.js';
+import { verifyRuntimeEntry } from './runtime-store.js';
 
 export interface RuntimeStageOwner { readonly location: InstallationLocation; assertHeld(): void }
 export interface StagedRuntime {
   readonly workDirectory: string; readonly directory: string; readonly identity: RuntimeIdentity;
 }
-const stages = new WeakMap<StagedRuntime, { owner: RuntimeStageOwner; dev: number; ino: number; uncertain?: boolean }>();
+const stages = new WeakMap<StagedRuntime, { owner: RuntimeStageOwner; dev: number; ino: number; uid: number; uncertain?: boolean | undefined }>();
 const DRAIN_MS = operationTimeBudgets().runtime.resourceDrainMs;
 
 /** On abort, wait for positive operation closure. Unknown actors retain their stage. */
@@ -33,14 +36,52 @@ export async function closedRuntimeOperation<T>(operation: Promise<T>, signal: A
   try { return await Promise.race([operation, uncertain]); }
   finally { signal.removeEventListener('abort', aborted); if (timer) clearTimeout(timer); }
 }
-async function removeOwned(work: string, expected: { dev: number; ino: number }): Promise<void> {
-  const stat = await lstat(work);
-  if (!stat.isDirectory() || stat.isSymbolicLink() || stat.dev !== expected.dev || stat.ino !== expected.ino
-    || (process.platform !== 'win32' && (stat.uid !== process.getuid?.() || (stat.mode & 0o077)))
-    || (process.platform === 'win32' && !controlBinding().safePath(work, true, true))) {
-    throw new InstallerError('resource-close-uncertain', `Runtime stage ownership is uncertain; retained ${work}`);
+async function removeOwned(work: string, expected: { dev: number; ino: number; uid: number; uncertain?: boolean | undefined }, owner: RuntimeStageOwner): Promise<void> {
+  const expiresAt = performance.now() + RUNTIME_LIMITS.verificationMs;
+  const uncertain = () => new InstallerError('resource-close-uncertain', `Runtime stage ownership or closure is uncertain; retained ${work}`);
+  const same = (a: Stats, b: Stats) => a.dev === b.dev && a.ino === b.ino && a.uid === b.uid && a.isDirectory() === b.isDirectory() && !b.isSymbolicLink();
+  function held() { owner.assertHeld(); if (expected.uncertain || performance.now() >= expiresAt) throw uncertain(); }
+  async function root() {
+    held(); const stat = await lstat(work); held();
+    if (!stat.isDirectory() || stat.isSymbolicLink() || stat.dev !== expected.dev || stat.ino !== expected.ino || stat.uid !== expected.uid
+      || (process.platform !== 'win32' && (stat.uid !== process.getuid?.() || (stat.mode & 0o7077)))
+      || (process.platform === 'win32' && !controlBinding().safePath(work, true, true))) throw uncertain();
   }
-  await rm(work, { recursive: true });
+  await root();
+  const directories: { path: string; stat: Stats }[] = [], files: { path: string; stat: Stats }[] = [];
+  let count = 0;
+  async function visit(path: string, depth: number): Promise<void> {
+    held(); if (++count > RUNTIME_LIMITS.entries * 2 + 16 || depth > 66) throw uncertain();
+    const stat = await lstat(path); held();
+    if (stat.dev !== expected.dev || stat.uid !== expected.uid || stat.isSymbolicLink()
+      || (process.platform !== 'win32' && (stat.mode & 0o7022))
+      || (process.platform === 'win32' && !controlBinding().safePath(path, stat.isDirectory(), true))) throw uncertain();
+    if (stat.isDirectory()) {
+      directories.push({ path, stat });
+      for (const name of await readdir(path)) await visit(join(path, name), depth + 1);
+    } else if (stat.isFile() && stat.nlink === 1) files.push({ path, stat });
+    else throw uncertain();
+  }
+  // Validate the whole closed, original stage before changing any permissions.
+  await visit(work, 0); await root();
+  for (const { path, stat } of directories) {
+    held(); const current = await lstat(path); if (!same(stat, current)) throw uncertain();
+    if (process.platform === 'win32' || (current.mode & 0o200)) continue;
+    const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_DIRECTORY);
+    try {
+      if (!same(current, await handle.stat())) throw uncertain(); held();
+      await handle.chmod((current.mode & 0o777) | 0o200);
+      if (!same(current, await lstat(path))) throw uncertain();
+    } finally { await closeOwnedFile(handle); }
+  }
+  await root();
+  for (const { path, stat } of files) {
+    held(); const current = await lstat(path); if (!same(stat, current) || !current.isFile() || current.nlink !== 1) throw uncertain();
+    await unlink(path);
+  }
+  for (const { path, stat } of directories.reverse()) {
+    held(); if (!same(stat, await lstat(path))) throw uncertain(); await rmdir(path);
+  }
 }
 /** T4 can only consume this same-process proof under the original live owner. */
 export function assertRuntimeStage(stage: StagedRuntime, owner: RuntimeStageOwner): void {
@@ -50,7 +91,7 @@ export function assertRuntimeStage(stage: StagedRuntime, owner: RuntimeStageOwne
   owner.assertHeld();
   const stat = lstatSync(stage.workDirectory);
   if (!stat.isDirectory() || stat.isSymbolicLink() || stat.dev !== proof.dev || stat.ino !== proof.ino
-    || (process.platform !== 'win32' && (stat.uid !== process.getuid?.() || (stat.mode & 0o077)))
+    || stat.uid !== proof.uid || (process.platform !== 'win32' && (stat.uid !== process.getuid?.() || (stat.mode & 0o7077)))
     || (process.platform === 'win32' && !controlBinding().safePath(stage.workDirectory, true, true))) {
     throw new InstallerError('runtime-invalid', 'Runtime stage root ownership changed');
   }
@@ -63,7 +104,11 @@ export function retainUncertainRuntimeStage(stage: StagedRuntime, owner: Runtime
 }
 export async function discardRuntimeStage(stage: StagedRuntime, owner: RuntimeStageOwner): Promise<void> {
   assertRuntimeStage(stage, owner); const proof = stages.get(stage)!;
-  await removeOwned(stage.workDirectory, proof); stages.delete(stage);
+  try { await removeOwned(stage.workDirectory, proof, owner); stages.delete(stage); }
+  catch (cause) {
+    proof.uncertain = true;
+    throw new InstallerError('resource-close-uncertain', `Runtime stage discard is uncertain; retained ${stage.workDirectory}`, { cause });
+  }
 }
 
 /** No source path, URL/hash override or capability marker is accepted from wire. */
@@ -98,14 +143,17 @@ export async function stageRuntime(owner: RuntimeStageOwner, identityInput: Runt
     // belongs to read-only resolution, not thousands of staged file writes.
     await closedRuntimeOperation(extractRuntimeProfile(sources, directory, identity, signal), signal);
     signal.throwIfAborted();
+    // The read-only clock begins after durable extraction and writer closure.
+    // This form is mutable source content, never canonical launch authority.
+    await closedRuntimeOperation(verifyRuntimeEntry(directory, identity, signal, 'source-stage'), signal);
     owner.assertHeld(); signal.throwIfAborted();
     Object.freeze(identity.target); Object.freeze(identity);
-    const stage = Object.freeze({ workDirectory: work, directory, identity }); stages.set(stage, { owner, dev: info.dev, ino: info.ino }); return stage;
+    const stage = Object.freeze({ workDirectory: work, directory, identity }); stages.set(stage, { owner, dev: info.dev, ino: info.ino, uid: info.uid }); return stage;
   } catch (cause) {
     if (cause instanceof InstallerError && cause.code === 'resource-close-uncertain') {
       throw new InstallerError('resource-close-uncertain', `Runtime resource closure is uncertain; retained ${work}`, { cause });
     }
-    try { await removeOwned(work, info); }
+    try { await removeOwned(work, info, owner); }
     catch (cleanup) { throw new InstallerError('resource-close-uncertain', `Runtime stage cleanup is uncertain; retained ${work}`, { cause: cleanup }); }
     throw cause;
   }

@@ -1,0 +1,8 @@
+{
+  "baseCommit": "075f16bca2b20e821f6f185aba853cd3217fa39b",
+  "sha256": {
+    "src/installer/runtime-acquire.ts": "01ec24b175d48cbddceaf03de5cd91d56c8091dc6ef4ef590fc2688ea063da97",
+    "src/installer/__tests__/runtime-acquire.test.ts": "679edc711948ede29552c96ab6cbc76620f76590c2ec4b634c353c556fdddf71",
+    "src/installer/__tests__/runtime-install.test.ts": "cf4f6933a8586aac31dc89409ccd02c6a61fdca44bb84de9bb3225e1ead558dc"
+  }
+}

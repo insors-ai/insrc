@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1795855505705-fwteug",
+    "runId": "wf-1795876020614-pobg5w",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-28T08:49:15.579Z",
+    "createdAt": "2026-11-28T14:31:38.899Z",
     "epicCreatedAt": "2026-11-16T07:56:36.838Z",
     "attribution": {
       "outputs": [
@@ -15,21 +15,21 @@
         }
       ]
     },
-    "elapsedMs": 242322,
+    "elapsedMs": 268333,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "2846f076fd5f785f",
     "epicSlug": "linked-scratchpads-vs-code",
     "storyId": "s1",
-    "lldRunId": "wf-1795852408886-e5rxdv",
+    "lldRunId": "wf-1795869400579-5mi1tb",
     "lldEffectiveHash": "6a3ff5cbf2ff1b4fcad2dfccd261c71a154dd373bb83d02ed9422e22fff3c58e",
     "authoredBy": "controller",
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 3,
-        "contentHash": "9f0733168e42ccb6143b69f267b090522c43864412e830a9967d6c3673059a1e",
-        "at": "2026-11-28T08:49:18.024Z",
+        "number": 4,
+        "contentHash": "ea6694de3cd881f5d5b3443c9db682f836bfea3848189d972a33855b6a8ab229",
+        "at": "2026-11-28T14:31:41.772Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -38,13 +38,13 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 3,
+        "revision": 4,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-28T09:00:56.675Z"
+        "at": "2026-11-28T14:34:18.058Z"
       }
     },
     "envelope": {
@@ -52,13 +52,13 @@
       "references": [],
       "attachments": []
     },
-    "revision": 3,
-    "rangeBase": "53ca2b8e01ff3a973a48c0d62c22532cb9e491c9"
+    "revision": 4,
+    "rangeBase": "7ce7c553f0a3726942c1b87ddba360df0e4bbee7"
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Preserve the completed S001 single-pane editor and its t1–t14 history while correcting the failed typing-performance gate. Six new tasks qualify the configured background codec, separate recoverable pending drafts from admission, add idle scheduling and independent host validation, and integrate captured-version action barriers. Requalification precedes the existing final t15 gate, retaining the 1 MiB bound and original render/acknowledgement targets; no new idle implementation has yet been validated."
+      "prose": "Preserve the passed S001 implementation and task history while correcting the remaining full-bound acknowledgement-latency failure. Three new tasks add exact-canonical immutable proof adoption, concurrent independent validation with current-only application, and comprehensive requalification. The existing final t15 remains failed until fresh native results meet the original 1MiB/2MiB and150msmedian-render/1sp95canonical-ack limits, with every fidelity check and recorded failure retained."
     },
     "tasks": [
       {
@@ -640,14 +640,112 @@
         ]
       },
       {
+        "id": "t22",
+        "title": "Adopt fully checked candidate proofs on exact canonical confirmation",
+        "size": "L",
+        "order": 21,
+        "dependsOn": [
+          "t21"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c7",
+          "c8"
+        ],
+        "acceptanceChecks": [
+          "Reuse the existing job/verifier and fixed worker/client boundaries. Retain only executor-local deeply immutable fully checked source/inventory proofs, at most one current base and one bounded candidate handoff, never AST, live editor objects, cross-executor proof or native apply permission. Every existing source/candidate semantic, serialization/roundtrip, raw fingerprint, protected-span, EOL, size and actual-intent assertion remains.",
+          "Bind candidate handoff to its successful job and exact generation/base identity within the same worker epoch and codec version. Only actual canonical confirmation of accepted provenance, exact source bytes, version and digest atomically replaces the previous base. Do not infer confirmation from a receipt, prepared result, renderer boolean, matching digest alone or predicted version.",
+          "Reconcile matching own native change and document-state-before-apply-ack ordering without prematurely losing a valid handoff. Preserve accepted older apply/newer staged typing behavior; proof adoption never authorizes the newer draft or changes its visible text.",
+          "Unrelated change, wrong bytes/version/digest/provenance, supersession before accepted apply, failed/refused/timed-out check, invalidation token, codec/epoch change, closure or reload invalidates reuse and falls back to complete source verification. Active obsolete jobs cannot repopulate cleared proof state.",
+          "Qualify real configured and independent host executors: parse/cache instrumentation proves next-base source reuse, fresh candidate/intent/protected-span checking and cold fallback. Cover forged/replayed/cross-pane identities, both change/ack orders, cancellation/disposal and bounded retained memory; all original syntax outcomes remain."
+        ],
+        "summary": "Reuse the existing job/verifier and fixed worker/client boundaries. Retain only executor-local deeply immutable fully checked source/inventory proofs, at most one current base and one bounded candidate handoff, never AST, live editor objects, cross-executor proof or native apply permission. Every existing source/candidate semantic, serialization/roundtrip, raw fingerprint, protected-span, EOL, size and actual-intent assertion remains. Bind candidate handoff to its successful job and exact generation/base identity within the same worker epoch and codec version. Only actual canonical confirmation of accepted provenance, exact source bytes, version and digest atomically replaces the previous base. Do not infer confirmation from a receipt, prepared result, renderer boolean, matching digest alone or predicted version. Reconcile matching own native change and document-state-before-apply-ack ordering without prematurely losing a valid handoff. Preserve accepted older apply/newer staged typing behavior; proof adoption never authorizes the newer draft or changes its visible text. Unrelated change, wrong bytes/version/digest/provenance, supersession before accepted apply, failed/refused/timed-out check, invalidation token, codec/epoch change, closure or reload invalidates reuse and falls back to complete source verification. Active obsolete jobs cannot repopulate cleared proof state. Qualify real configured and independent host executors: parse/cache instrumentation proves next-base source reuse, fresh candidate/intent/protected-span checking and cold fallback. Cover forged/replayed/cross-pane identities, both change/ack orders, cancellation/disposal and bounded retained memory; all original syntax outcomes remain.",
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Exact canonical candidate proof adoption invalidation and bounded lifetime"
+          },
+          {
+            "level": "integration",
+            "name": "Real configured and host worker candidate reuse preserves every fidelity check"
+          }
+        ]
+      },
+      {
+        "id": "t23",
+        "title": "Join concurrent independent validation before exact-current native apply",
+        "size": "L",
+        "order": 22,
+        "dependsOn": [
+          "t22"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c7",
+          "c8"
+        ],
+        "acceptanceChecks": [
+          "Extend the existing typed ScratchObservationOptions with required prepare(sequence, base) callback; keep activate/deactivate/refresh/expedite and existing ScratchActionFlush ownership. After the same300ms trailing gap start configured work and one closed identity-only validate-draft intent; no max-wait/full validation during continuous typing. Explicit captured actions expedite both exact checks.",
+          "Runtime-validate the closed intent fields paneSessionId,draftSeq,editId,baseVersion,baseDigest under current message bounds. Resolve only matching immutable durably staged bytes; a bounded latest intent may await matching persistence. Reject absent, mismatched, superseded, cross-pane or disposed identities. Never accept another payload or grant application authority through preparation.",
+          "Prepare independent host verification concurrently, outside the staging/canonical-apply lane. Per document retain at most one active/latest queued host job and one prepared exact-current result; staging/receipts and other pane input must not block behind a full check. Coalesce/settle replaced jobs and waiters without unbounded workers, snapshots or stuck promises.",
+          "Native mutation requires the current configured-success apply:true authorization joined with its exact successful independent host proof plus unchanged native source/version/digest immediately before WorkspaceEdit. Either result may arrive first; neither alone applies. Missing prepared proof starts/joins that same bounded check, never bypasses host admission. Stale/error/refused peer results cannot freeze newer input or initiate older not-yet-accepted apply.",
+          "Preserve captured Save/Send/Undo/Redo/lock barriers, no silent recapture, native Save one-second best-effort behavior and reentrancy, lock uncertainty/cancellation/preference rollback, guarded deletion, recovery clearing only after attached delivery, accepted-apply completion, no echo/history duplication and click-only bounded composer insertion. Ship private bridge/worker changes atomically; old/unknown protocol cannot weaken admission.",
+          "Exercise both completion orders, delayed persistence, result/authorization arrival permutations, supersession/native conflict, stale session/epoch/seq/edit/base, rejected peer, timeout/disposal and many panes. Controlled barriers in actual packaged executors prove real concurrency and no canonical edit until both successes/current guards; deterministic timing proves ordinary gap and captured expedite behavior."
+        ],
+        "summary": "Extend the existing typed ScratchObservationOptions with required prepare(sequence, base) callback; keep activate/deactivate/refresh/expedite and existing ScratchActionFlush ownership. After the same300ms trailing gap start configured work and one closed identity-only validate-draft intent; no max-wait/full validation during continuous typing. Explicit captured actions expedite both exact checks. Runtime-validate the closed intent fields paneSessionId,draftSeq,editId,baseVersion,baseDigest under current message bounds. Resolve only matching immutable durably staged bytes; a bounded latest intent may await matching persistence. Reject absent, mismatched, superseded, cross-pane or disposed identities. Never accept another payload or grant application authority through preparation. Prepare independent host verification concurrently, outside the staging/canonical-apply lane. Per document retain at most one active/latest queued host job and one prepared exact-current result; staging/receipts and other pane input must not block behind a full check. Coalesce/settle replaced jobs and waiters without unbounded workers, snapshots or stuck promises. Native mutation requires the current configured-success apply:true authorization joined with its exact successful independent host proof plus unchanged native source/version/digest immediately before WorkspaceEdit. Either result may arrive first; neither alone applies. Missing prepared proof starts/joins that same bounded check, never bypasses host admission. Stale/error/refused peer results cannot freeze newer input or initiate older not-yet-accepted apply. Preserve captured Save/Send/Undo/Redo/lock barriers, no silent recapture, native Save one-second best-effort behavior and reentrancy, lock uncertainty/cancellation/preference rollback, guarded deletion, recovery clearing only after attached delivery, accepted-apply completion, no echo/history duplication and click-only bounded composer insertion. Ship private bridge/worker changes atomically; old/unknown protocol cannot weaken admission. Exercise both completion orders, delayed persistence, result/authorization arrival permutations, supersession/native conflict, stale session/epoch/seq/edit/base, rejected peer, timeout/disposal and many panes. Controlled barriers in actual packaged executors prove real concurrency and no canonical edit until both successes/current guards; deterministic timing proves ordinary gap and captured expedite behavior.",
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Concurrent exact-stage validation intent and current-only join race matrix"
+          },
+          {
+            "level": "integration",
+            "name": "Actual independent validation overlap and captured action barriers"
+          }
+        ]
+      },
+      {
+        "id": "t24",
+        "title": "Requalify concurrent proof lifecycle and affected native editor behavior",
+        "size": "L",
+        "order": 23,
+        "dependsOn": [
+          "t23"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c7",
+          "c8"
+        ],
+        "acceptanceChecks": [
+          "Rerun full supported/refused Markdown corpus and actual packaged configured/host worker parity/CSP qualification with every prior fidelity assertion; verify no input-thread full checks, one serialization, continuous typing and resumed render during either busy executor. Prove concurrency and canonical proof adoption use actual production execution, not only mocked allowed results.",
+          "Rerun affected deterministic scheduler, state, protocol, recovery, queue, source/candidate cache, captured action, native Save/lock/preference, authoring/Send/delete/refresh and activation regressions. Missing, skipped, false-positive or unexercised required cases block acceptance.",
+          "On private-display supported-floor/current real VSCode hosts repeat native Save/Undo/Redo/revert/autosave, multipane/cross-window conflict, rich paste/drop/pickers, locked/editable explicit Send with chat readiness/disposal, guarded delete/refresh and six interrupted-process/fresh-host recovery phases. Exercise pending concurrent proof/canonical adoption where those phases changed; no active user desktop automation or skipped required coverage.",
+          "Refresh current evidence associations for affected existing task named tests, preserving historical successes and failures. Retain version, source, process, probe and proof-lifecycle evidence per scenario; distinguish builder-reported live results from daemon-run tests. Update relevant generated design artifacts if implementation changes ordering/ownership.",
+          "Hand off original full-bound latency and final production VSIX/task/ac1-ac4 acceptance to existing t15, still failed until fresh results satisfy all unchanged requirements. Do not lower note/message bounds, change clocks, drop slow/missing samples, label receipt as acknowledgement or weaken checks."
+        ],
+        "summary": "Rerun full supported/refused Markdown corpus and actual packaged configured/host worker parity/CSP qualification with every prior fidelity assertion; verify no input-thread full checks, one serialization, continuous typing and resumed render during either busy executor. Prove concurrency and canonical proof adoption use actual production execution, not only mocked allowed results. Rerun affected deterministic scheduler, state, protocol, recovery, queue, source/candidate cache, captured action, native Save/lock/preference, authoring/Send/delete/refresh and activation regressions. Missing, skipped, false-positive or unexercised required cases block acceptance. On private-display supported-floor/current real VSCode hosts repeat native Save/Undo/Redo/revert/autosave, multipane/cross-window conflict, rich paste/drop/pickers, locked/editable explicit Send with chat readiness/disposal, guarded delete/refresh and six interrupted-process/fresh-host recovery phases. Exercise pending concurrent proof/canonical adoption where those phases changed; no active user desktop automation or skipped required coverage. Refresh current evidence associations for affected existing task named tests, preserving historical successes and failures. Retain version, source, process, probe and proof-lifecycle evidence per scenario; distinguish builder-reported live results from daemon-run tests. Update relevant generated design artifacts if implementation changes ordering/ownership. Hand off original full-bound latency and final production VSIX/task/ac1-ac4 acceptance to existing t15, still failed until fresh results satisfy all unchanged requirements. Do not lower note/message bounds, change clocks, drop slow/missing samples, label receipt as acknowledgement or weaken checks.",
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Packaged concurrent validation fidelity CSP and affected editor regressions"
+          },
+          {
+            "level": "live",
+            "name": "Supported-floor/current concurrent validation native lifecycle authoring and interrupted recovery"
+          }
+        ]
+      },
+      {
         "id": "t15",
         "title": "Record performance, packaging and final acceptance evidence",
         "summary": "Measure 1 MiB UTF-8 note/boundaries and 2 MiB bridge limits on a recorded reference host: <=150 ms median keystroke-to-render and <=1 s p95 host ack. If unmet, validation fails; a reduced support bound needs a tracked design revision and fresh approval before acceptance. Verify production VSIX includes browser JS/CSS and retains Node/CJS activation/uninstall packaging; no remote assets/AI calls or accidental Markdown-wide takeover. Map actual evidence to ac1-ac4 and every task; preserve failures/unavailable tests honestly, do not mark BUILD valid until mandatory checks pass; update relevant design visuals if implementation changes interactions.",
         "size": "M",
-        "order": 21,
+        "order": 24,
         "dependsOn": [
           "t14",
-          "t21"
+          "t21",
+          "t24"
         ],
         "acceptanceChecks": [
           "Measure 1 MiB UTF-8 note/boundaries and 2 MiB bridge limits on a recorded reference host: <=150 ms median keystroke-to-render and <=1 s p95 host ack. If unmet, validation fails; a reduced support bound needs a tracked design revision and fresh approval before acceptance.",
@@ -680,7 +778,8 @@
           "t9",
           "t12",
           "t17",
-          "t21"
+          "t21",
+          "t24"
         ]
       },
       {
@@ -691,7 +790,8 @@
           "t12",
           "t17",
           "t19",
-          "t21"
+          "t21",
+          "t24"
         ]
       },
       {
@@ -701,7 +801,8 @@
           "t10",
           "t11",
           "t20",
-          "t21"
+          "t21",
+          "t24"
         ]
       },
       {
@@ -709,7 +810,8 @@
         "coveredByTaskIds": [
           "t17",
           "t18",
-          "t20"
+          "t20",
+          "t24"
         ]
       },
       {
@@ -718,7 +820,30 @@
           "t16",
           "t19",
           "t20",
-          "t21"
+          "t21",
+          "t24"
+        ]
+      },
+      {
+        "lldStrategyItem": "Concurrent join permutations: host-before-configured, configured-before-host, stage durability pending, missing intent/proof, stale/cross-pane/session/epoch/seq/edit/base results, rejected peer, timeout/disposal, newer typing and native source changes. Assert no native application until both exact proofs and current authorization.",
+        "coveredByTaskIds": [
+          "t23",
+          "t24"
+        ]
+      },
+      {
+        "lldStrategyItem": "Verified candidate adoption hits on exact canonical confirmation and misses on byte/version/digest/codec/epoch mismatch, stale invalidation token, unrelated source, refused check, forged proof or replay. Assert all previous semantic/raw/EOL/intent checks remain; only executor-local deeply immutable source/inventory persists.",
+        "coveredByTaskIds": [
+          "t22",
+          "t24"
+        ]
+      },
+      {
+        "lldStrategyItem": "Document-state before apply-ack, accepted older apply with newer staged input, cancellation while joining, explicit action flush and source conflicts preserve current-only application and one active/latest queued memory bound.",
+        "coveredByTaskIds": [
+          "t22",
+          "t23",
+          "t24"
         ]
       },
       {
@@ -728,7 +853,8 @@
           "t6",
           "t12",
           "t16",
-          "t21"
+          "t21",
+          "t24"
         ]
       },
       {
@@ -738,7 +864,8 @@
           "t12",
           "t13",
           "t20",
-          "t21"
+          "t21",
+          "t24"
         ]
       },
       {
@@ -748,7 +875,8 @@
           "t12",
           "t16",
           "t19",
-          "t21"
+          "t21",
+          "t24"
         ]
       },
       {
@@ -757,7 +885,8 @@
           "t9",
           "t12",
           "t14",
-          "t21"
+          "t21",
+          "t24"
         ]
       },
       {
@@ -765,14 +894,16 @@
         "coveredByTaskIds": [
           "t11",
           "t12",
-          "t21"
+          "t21",
+          "t24"
         ]
       },
       {
         "lldStrategyItem": "Early gate: factor exactly the live configured schema/serializer into a pure worker-compatible module; prove production codec and actual-document fingerprint parity over the entire supported/refusal corpus. Worker loading under actual packaged CSP with connect-src none, no dynamic imports or document-controlled code.",
         "coveredByTaskIds": [
           "t16",
-          "t21"
+          "t21",
+          "t24"
         ]
       },
       {
@@ -781,7 +912,23 @@
           "t17",
           "t18",
           "t19",
-          "t21"
+          "t21",
+          "t24"
+        ]
+      },
+      {
+        "lldStrategyItem": "Real configured and host workers execute concurrently after the same gap (controlled independent barriers, not merely mocked resolved promises); no full validation during continuous input and no result alone mutates canonical text. Parse/cache counters prove fully checked candidate adoption avoids source rechecks without skipping fresh candidate, intent or unchanged-span checks.",
+        "coveredByTaskIds": [
+          "t22",
+          "t23",
+          "t24"
+        ]
+      },
+      {
+        "lldStrategyItem": "Direct tracked QUALIFICATION.json completeness test accounts for all tasks/ac1-ac4, every native sample and superseded edit, versions/bounds/clocks and failed budget honesty. Historical t15 failures remain alongside refreshed task mappings.",
+        "coveredByTaskIds": [
+          "t24",
+          "t15"
         ]
       },
       {
@@ -790,7 +937,8 @@
           "t7",
           "t13",
           "t20",
-          "t21"
+          "t21",
+          "t24"
         ]
       },
       {
@@ -799,7 +947,8 @@
           "t5",
           "t13",
           "t17",
-          "t21"
+          "t21",
+          "t24"
         ]
       },
       {
@@ -810,7 +959,8 @@
           "t13",
           "t14",
           "t20",
-          "t21"
+          "t21",
+          "t24"
         ]
       },
       {
@@ -818,7 +968,8 @@
         "coveredByTaskIds": [
           "t9",
           "t14",
-          "t21"
+          "t21",
+          "t24"
         ]
       },
       {
@@ -839,22 +990,36 @@
           "t18",
           "t20",
           "t21",
-          "t15"
+          "t15",
+          "t24"
         ]
       },
       {
         "lldStrategyItem": "Re-run affected existing authoring/lifecycle/recovery/corpus/packaging mapping; no skip, reduced note bound or revised latency clock counts as success.",
         "coveredByTaskIds": [
           "t21",
+          "t15",
+          "t24"
+        ]
+      },
+      {
+        "lldStrategyItem": "Re-run original 1MiB 20 ordinary trusted edits plus12sustained/5burst/2resumed/1explicitSave on each supported-floor/current native host. Preserve <=150msmedian render and <=1sp95canonical ack including300msgap; latest burst/resumed results also meet1s. Include cold first job and all slow/missing results, report superseded edits without claiming their missing ack is success.",
+        "coveredByTaskIds": [
           "t15"
+        ]
+      },
+      {
+        "lldStrategyItem": "Repeat all t21 native save/undo/revert/autosave, rich authoring/explicitSend, lock/preference failure, multipane/cross-window and six process-interruption phases after scheduling/proof changes. Missing/skipped required evidence blocks BUILD.",
+        "coveredByTaskIds": [
+          "t24"
         ]
       }
     ],
     "epicImpact": {
       "applies": false,
-      "reason": "First Epic story; no approved sibling BUILD according to workflow handoff.",
+      "reason": "S001 is the first Epic Story; no approved sibling BUILD applies.",
       "storiesCovered": [],
-      "findings": "This is a revision of in-progress S001, not migration of another built story. Preserve existing S001 implementation and task evidence.",
+      "findings": "Revise only the in-progress S001 private validation path; preserve completed implementation and ledger history.",
       "sources": [
         "docs/epics/linked-scratchpads-vs-code-E202611162846f076/HLD.md",
         "docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/BUILD.md"
@@ -866,37 +1031,49 @@
       "id": "c1",
       "kind": "prior-artifact",
       "ref": "docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/LLD.md",
-      "quotedText": "Approved LLD6 summary/HLD slice: preserve S001 one-pane editor, sc1 identity, completed scope and sibling boundaries."
+      "quotedText": "Approved LLD8 preserves the S001 single-pane editor, sc1 identity, completed scope and sibling boundaries."
     },
     {
       "id": "c2",
       "kind": "prior-artifact",
       "ref": "docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/LLD.md#3-contract-details",
-      "quotedText": "Contract details/data model: immediate bounded recoverable staging, 300ms idle background admission, exact-generation authorization, independent host checks, captured action barriers; retain existing foundation."
+      "quotedText": "Retained foundation: immediate bounded recovery staging, 300ms idle background admission, exact-generation authorization, independent host checks and captured action barriers."
     },
     {
       "id": "c3",
       "kind": "prior-artifact",
       "ref": "docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/LLD.md#7-error-paths",
-      "quotedText": "Detect worker failure, supersession, source conflict and refusal; retain canonical/draft/recovery with bounded explicit-action errors."
+      "quotedText": "Retain worker failure, supersession, source conflict, refusal, bounded action errors, native canonical/draft/recovery and disposal invariants."
     },
     {
       "id": "c4",
       "kind": "prior-artifact",
       "ref": "docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/LLD.md#8-test-strategy",
-      "quotedText": "All 20 test subjects: codec parity, idle/races, lifecycle/authoring/corpus and original 1MiB render<=150ms median/ack<=1s p95, with idle delay included."
+      "quotedText": "Retain original full-bound render<=150ms median and canonical ack<=1s p95, including idle gap. All27subjects require original corpus, race, lifecycle, authoring and new proof/join qualification with honest current evidence."
     },
     {
       "id": "c5",
       "kind": "prior-artifact",
       "ref": "docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/LLD.md#9-migration",
-      "quotedText": "In-progress S001 t1–t14 evidence preserved, failed t15 correction tracked; qualify codec before atomic private protocol/observer migration; no data rewrite or bound reduction."
+      "quotedText": "Preserve in-progress task history and failed t15; migrate private protocol/observer atomically, no data rewrite or support-bound reduction. Requalify before acceptance."
     },
     {
       "id": "c6",
       "kind": "prior-artifact",
-      "ref": "docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/LLD.md",
-      "quotedText": "Background validation lifetime and source c62: trusted fixed single-bundle worker loading compatible with actual VS Code CSP; same configured codec, no native/cloud authority; early parity/startup qualification."
+      "ref": "docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/LLD.md#3-contract-details",
+      "quotedText": "Fixed packaged configured/host workers keep exact codecs, trusted CSP loading and no native/cloud authority. LLD8 extends executor-local immutable candidate/base lifetime and concurrent read-only preparation; both exact current independent successes and final native guards remain mandatory."
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/LLD.md#7-error-paths",
+      "quotedText": "Handle staged-intent persistence, either completion order, stale/refused/error peer, current-only authorization, exact-canonical adoption and fallback on mismatch/invalidation; no proof alone permits mutation."
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/LLD.md#8-test-strategy",
+      "quotedText": "Prove actual worker concurrency and cache adoption, retain all fidelity checks and original syntax outcomes, repeat supported-floor/current native lifecycle/recovery and full40sample latency matrix, and assert task/ac1-ac4 evidence completeness."
     }
   ]
 }

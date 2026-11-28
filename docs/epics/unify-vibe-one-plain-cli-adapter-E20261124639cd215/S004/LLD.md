@@ -333,6 +333,11 @@ Change VibeConfigEntry to something like `{ name: string } & Record<string, unkn
 
 - testFramework is inferred as 'vitest' from repository convention; no convention.detect analyzeBundle was run to confirm it, across any round of this Story.
 
+## Resolved questions
+
+- `q9ef3306b` — testFramework is inferred as 'vitest' from repository convention; no convention.detect analyzeBundle was run to confirm it, across any round of this Story.
+  - **resolved**: Confirm before planning — Already verified explicitly this Epic (Story s3's own plan round, q3377461d): grep across the repo found 1643 backend files and 144 vscode-plugin files importing from 'node:test', zero importing from 'vitest', no vitest.config.* anywhere, and both package.json test scripts (node scripts/test-harness/run.mjs, the plugin's --suite=vscode variant) drive node:test's own harness. testFramework is 'node:test', not 'vitest' -- the carried inference is wrong, same as it was for s3. _(2026-11-28T14:59:10.097Z)_
+
 ## Citations
 
 - **[[c1]]** `code` `src/daemon/mcp-register.ts:466-538`

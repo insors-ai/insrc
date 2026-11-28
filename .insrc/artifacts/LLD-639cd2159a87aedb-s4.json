@@ -54,6 +54,15 @@
       "description": "",
       "references": [],
       "attachments": []
+    },
+    "questionResolutions": {
+      "q9ef3306b": {
+        "question": "testFramework is inferred as 'vitest' from repository convention; no convention.detect analyzeBundle was run to confirm it, across any round of this Story.",
+        "status": "resolved",
+        "choice": "Confirm before planning",
+        "rationale": "Already verified explicitly this Epic (Story s3's own plan round, q3377461d): grep across the repo found 1643 backend files and 144 vscode-plugin files importing from 'node:test', zero importing from 'vitest', no vitest.config.* anywhere, and both package.json test scripts (node scripts/test-harness/run.mjs, the plugin's --suite=vscode variant) drive node:test's own harness. testFramework is 'node:test', not 'vitest' -- the carried inference is wrong, same as it was for s3.",
+        "resolvedAt": "2026-11-28T14:59:10.097Z"
+      }
     }
   },
   "body": {

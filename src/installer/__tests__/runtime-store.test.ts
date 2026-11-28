@@ -172,9 +172,10 @@ test('resolver rejects corrupt receipts inventories files modes targets aliases 
       await f.resolve(); await assert.rejects(f.resolve(bad as RuntimeIdentity), { code: 'runtime-invalid', message }); await f.resolve();
     }
     await f.resolve();
-    await assert.rejects(f.resolve({ ...identity, target: { ...target, baseline: 'other' } }), error => {
-      assert.equal((error as { code: string }).code, 'runtime-invalid'); assert.match((error as Error).message, /ENOENT.*other/); return true;
-    }); await f.resolve();
+    const wrongBaseline = { ...identity, target: { ...target, baseline: 'other' } }, missing = runtimeStorePaths(f.home, wrongBaseline);
+    await assert.rejects(f.resolve(wrongBaseline), { code: 'runtime-invalid',
+      message: recovery({ ...f, paths: missing }, `ENOENT: no such file or directory, lstat '${missing.root}'`) });
+    await f.resolve();
     await assert.rejects(f.resolve({ ...identity, target: { ...target, baseline: '../escape' } }), { code: 'runtime-invalid', message: 'Expected a bounded path-safe identity' }); await f.resolve();
   } finally { await f.clean(); }
 });

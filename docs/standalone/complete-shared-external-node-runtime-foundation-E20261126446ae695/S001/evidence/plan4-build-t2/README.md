@@ -52,7 +52,14 @@ registered with the cleanup owner rather than erased.
 - Deliberate negative cleanup fixtures retain small isolated roots, named in
   the helper TAP diagnostics. Their controlled unconfirmed promises own no live
   resource. They are not deleted by PID/age or treated as successful disposal.
-- Registered T2 validation is pending at this implementation checkpoint.
+- Initial registered T2 gate at28ce36b21 passed typecheck and all17 cases but
+  rejected the incomplete exact-diagnostic assertion for wrong baseline. The
+  failed verdict and passing raw TAP are retained as gate-initial evidence.
+- Precision correction asserts the complete canonical missing path and full
+  recovery message. Run888ae005-21dd-4958-a5ce-46b5618a1003 passed all9 resolver
+  cases again in157.68s with confirmed owned-group closure. Production code is
+  unchanged. The corrected registered gate is pending.
+- Raw failed TAP retains its original whitespace; source diff checks are clean.
 
 `source-inputs.json` binds the four edited inputs. T3/T4 production acquisition
 and publication, T7 SDK isolation, T8 consumer wiring, T9 full scoped regression

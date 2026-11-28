@@ -1,0 +1,377 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "t2",
+    "passed": false,
+    "checks": [
+      {
+        "check": "Direct calls return frozen canonical absolute runtime paths only for the exact verified identity; tampered files/metadata, extra files, bad target/baseline, links and unsafe roots fail closed.",
+        "satisfied": true,
+        "evidence": "runtime-store.ts verifies canonical identity, owned non-link ancestors, exact membership, file digests and modes before freezing the result and nested identity. Resolver tests exercise corruption, extras, identity mismatches, links and unsafe homes; daemon reports passing."
+      },
+      {
+        "check": "A self-consistent rewritten receipt/inventory cannot replace the independently pinned expected inventory hash.",
+        "satisfied": true,
+        "evidence": "Completion bytes are compared against policy-derived inventorySha256; verifyRuntimeInventory independently hashes inventory bytes against runtimeProfile. Tests forge both receipt and inventory, then inventory alone, and verify rejection and restoration."
+      },
+      {
+        "check": "Resolver imports no application paths/DB/provider/source builder and performs no network, mkdir, controller lock, selection or application/Ollama traversal.",
+        "satisfied": true,
+        "evidence": "Inspected resolver uses installer read primitives. The esbuild import-boundary test checks transitive inputs; runtime mocks restrict opens/readdir and reject mutations/downloads. No application, DB, provider or source-builder imports occur."
+      },
+      {
+        "check": "Task-local fixtures prove this API; production consumer wiring is assessed in t8, not required prematurely for t2 validation.",
+        "satisfied": true,
+        "evidence": "runtime-store.test.ts independently constructs protected official-profile copies and calls the resolver/content verifier directly. The task commit does not modify production consumers."
+      },
+      {
+        "check": "Default canonical resolution accepts only exact published root/directories0500, metadata0400, files pinnedmode&~0222 with zero write bits and exact execute intent. Source-stage checks original modes; permission-transition accepts only root0700/0500 with every descendant protected. No arbitrary mixed subtree or old-home adoption, allocation or launch paths from a weak verifier flag.",
+        "satisfied": true,
+        "evidence": "verifyRuntimeEntry implements those exact POSIX modes. resolveRuntimeStore always uses published verification; alternative lanes only classify rejection diagnostics. Tests exercise write/execute drift, mixed descendants, source-stage, transition and ignored weakening options."
+      },
+      {
+        "check": "Use the exact LLD8 §4.3 runtime-invalid manual recovery, root-only unfinished and unsupported-development-layout messages. Manual text advises safely quoted root-only chmod, preservation/move and delete nothing, and explicitly disclaims product locking/all-consumer proof. Test spaces/Unicode/apostrophes and preservation; do not implement an operator move/recovery command.",
+        "satisfied": true,
+        "evidence": "All three strings match LLD §4.3. The manual diagnostic test preserves corrupt bytes/root inode and uses a shell printf probe to verify single-argument quoting of a root containing spaces, Unicode and an apostrophe. No recovery command is implemented."
+      },
+      {
+        "check": "For every rejection mutation, establish a positive baseline beforehand, assert its precise expected code/message and prove restoration succeeds; no bare rejects or shared broken fixture false positives. Protected-fixture mutation helpers may deliberately alter only their captured isolated homes.",
+        "satisfied": false,
+        "evidence": "Most mutations use rejectedMutation with exact code/full-message assertions and successful resolution before/after. However, the bad-baseline 'other' case in runtime-store.test.ts only checks runtime-invalid and /ENOENT.*other/. It does not assert the precise expected diagnostic, so the required universal exact-diagnostic coverage and corresponding named rejection-matrix test are incomplete despite passing."
+      },
+      {
+        "check": "Implement the proposed shared _owned-runtime-home.ts test helper using captured mkdtemp dev/inode/UID, retained child/resource closure and bounded nofollow checks. Restore directory ownerwrite only within that root after positive closure; never follow a link to chmod its target, mutate SDK/global/blocked roots or erase uncertain evidence. All adopting callers await cleanup, including allocation failure/after/finally. Prove cleanup/retention/refusal cases independently.",
+        "satisfied": true,
+        "evidence": "Helper captures a newly allocated root identity, waits for retained children/resources, bounds traversal, rejects unknown links/replacements, and restores directory write through O_NOFOLLOW/O_DIRECTORY descriptors. Eight independent tests cover closure, links, replacement, uncertainty, allocation failure and bounds. Resolver allocation failure and finally paths await cleanup."
+      },
+      {
+        "check": "Introduce the owned-home helper without turning raw/shared mutable SDK caches into cleanup targets. Resolver fixtures can seed the strict protected form independently before T4 is implemented; fixture APIs with asynchronous disposal are awaited by every changed caller.",
+        "satisfied": true,
+        "evidence": "Only freshly allocated resolver homes are adopted. Official input caches and the writable source copy remain separate. Fixtures seed protected modes directly, and all changed resolver callers await asynchronous disposal."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "The task-scoped implementation and daemon checks pass, but the bad-baseline rejection lacks the precise expected-message assertion explicitly required for every rejection mutation.",
+    "testsPassed": true,
+    "typecheckClean": true,
+    "evidence": {
+      "typecheck": {
+        "ok": true,
+        "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node node_modules/typescript/bin/tsc --noEmit",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 10761,
+        "outputTail": ""
+      },
+      "tests": {
+        "ok": true,
+        "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-gzGG3T/report.tap src/installer/__tests__/owned-runtime-home.test.ts\n/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-iQ3ajc/report.tap src/installer/__tests__/runtime-store.test.ts",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 154774,
+        "outputTail": "TAP version 13\n# Subtest: resolver import graph stays within installer-only read primitives\nok 1 - resolver import graph stays within installer-only read primitives\n  ---\n  duration_ms: 43.797833\n  type: 'test'\n  ...\n# Subtest: resolver returns frozen canonical Node npm headers and platform library for the exact identity\nok 2 - resolver returns frozen canonical Node npm headers and platform library for the exact identity\n  ---\n  duration_ms: 4958.327875\n  type: 'test'\n  ...\n# Subtest: resolver rejects corrupt receipts inventories files modes targets aliases and extra members\nok 3 - resolver rejects corrupt receipts inventories files modes targets aliases and extra members\n  ---\n  duration_ms: 58407.927167\n  type: 'test'\n  ...\n# Subtest: rewritten self consistent receipt and inventory cannot replace independent pinned hashes\nok 4 - rewritten self consistent receipt and inventory cannot replace independent pinned hashes\n  ---\n  duration_ms: 7346.444875\n  type: 'test'\n  ...\n# Subtest: resolver performs only runtime reads without downloads allocation locks or application traversal\nok 5 - resolver performs only runtime reads without downloads allocation locks or application traversal\n  ---\n  duration_ms: 3313.733792\n  type: 'test'\n  ...\n# Subtest: resolver bounds metadata and stops at cancellation without scanning application or Ollama data\nok 6 - resolver bounds metadata and stops at cancellation without scanning application or Ollama data\n  ---\n  duration_ms: 11318.90125\n  type: 'test'\n  ...\n# Subtest: strict POSIX runtime protection preserves pinned bytes and rejects every write or execute mode drift\nok 7 - strict POSIX runtime protection preserves pinned bytes and rejects every write or execute mode drift\n  ---\n  duration_ms: 32575.722042\n  type: 'test'\n  ...\n# Subtest: verifier lanes reject mixed layouts and never grant canonical paths from a weaker flag\nok 8 - verifier lanes reject mixed layouts and never grant canonical paths from a weaker flag\n  ---\n  duration_ms: 24759.559084\n  type: 'test'\n  ...\n# Subtest: manual runtime diagnostics preserve corrupt entries and quote spaces Unicode and apostrophes safely\nok 9 - manual runtime diagnostics preserve corrupt entries and quote spaces Unicode and apostrophes safely\n  ---\n  duration_ms: 5521.371292\n  type: 'test'\n  ...\n1..9\n# tests 9\n# suites 0\n# pass 9\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 149426.302708\n",
+        "files": [
+          {
+            "file": "src/installer/__tests__/owned-runtime-home.test.ts",
+            "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-gzGG3T/report.tap src/installer/__tests__/owned-runtime-home.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5293,
+            "titles": [
+              {
+                "title": "owned runtime cleanup restores directory write only after positive resource and child closure",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "owned runtime cleanup unlinks only declared fixture links without touching external targets",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "owned runtime cleanup retains a root with an undeclared symlink before chmod",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "owned runtime cleanup refuses replacement roots and never adopts a caller path",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "owned runtime cleanup retains failed resource closure and explicit uncertainty",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "owned runtime cleanup is awaited for a partially allocated protected fixture",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "owned runtime cleanup retains unconfirmed resources after its bounded wait",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "owned runtime cleanup bounds traversal before changing protected directory modes",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_installer___tests___owned-runtime-home.test.ts.1795862218579.95620.tap"
+          },
+          {
+            "file": "src/installer/__tests__/runtime-store.test.ts",
+            "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-iQ3ajc/report.tap src/installer/__tests__/runtime-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 149481,
+            "titles": [
+              {
+                "title": "resolver import graph stays within installer-only read primitives",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "resolver returns frozen canonical Node npm headers and platform library for the exact identity",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "resolver rejects corrupt receipts inventories files modes targets aliases and extra members",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "rewritten self consistent receipt and inventory cannot replace independent pinned hashes",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "resolver performs only runtime reads without downloads allocation locks or application traversal",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "resolver bounds metadata and stops at cancellation without scanning application or Ollama data",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "strict POSIX runtime protection preserves pinned bytes and rejects every write or execute mode drift",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "verifier lanes reject mixed layouts and never grant canonical paths from a weaker flag",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "manual runtime diagnostics preserve corrupt entries and quote spaces Unicode and apostrophes safely",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_installer___tests___runtime-store.test.ts.1795862368067.95620.tap"
+          }
+        ],
+        "namedTests": [
+          {
+            "name": "resolver-import-boundary-excludes-application-paths-storage-provider-and-source-build",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "resolver import graph stays within installer-only read primitives",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "resolver-returns-canonical-node-npm-headers-and-win-library-from-exact-identity",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "resolver returns frozen canonical Node npm headers and platform library for the exact identity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "resolver-rejects-missing-corrupt-extra-files-wrong-mode-target-digest-npm-headers-inventory-receipt",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "resolver rejects corrupt receipts inventories files modes targets aliases and extra members",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "strict POSIX runtime protection preserves pinned bytes and rejects every write or execute mode drift",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "rewritten-self-consistent-local-runtime-metadata-cannot-replace-policy-inventory-digest",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "rewritten self consistent receipt and inventory cannot replace independent pinned hashes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "resolver-does-no-mkdir-download-lock-selection-db-or-provider-work",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "resolver performs only runtime reads without downloads allocation locks or application traversal",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runtime-caps-and-cancellation-are-finite-and-do-not-trigger-app-or-Ollama-hashing",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "resolver bounds metadata and stops at cancellation without scanning application or Ollama data",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runtime-rejection-matrix-proves-positive-baseline-and-exact-diagnostic-for-each-mutation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "resolver rejects corrupt receipts inventories files modes targets aliases and extra members",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "strict POSIX runtime protection preserves pinned bytes and rejects every write or execute mode drift",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "rewritten self consistent receipt and inventory cannot replace independent pinned hashes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "posix-runtime-protection-preserves-pinned-inventory-and-rejects-write-bits-or-execute-drift",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "strict POSIX runtime protection preserves pinned bytes and rejects every write or execute mode drift",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "verifier lanes reject mixed layouts and never grant canonical paths from a weaker flag",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runtime-manual-unfinished-and-development-layout-diagnostics-preserve-entries-with-safe-path-guidance",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "verifier lanes reject mixed layouts and never grant canonical paths from a weaker flag",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "manual runtime diagnostics preserve corrupt entries and quote spaces Unicode and apostrophes safely",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "shared-runtime-fixture-cleanup-restores-owned-directory-write-after-positive-closure",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/owned-runtime-home.test.ts",
+                "title": "owned runtime cleanup restores directory write only after positive resource and child closure",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/owned-runtime-home.test.ts",
+                "title": "owned runtime cleanup unlinks only declared fixture links without touching external targets",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/owned-runtime-home.test.ts",
+                "title": "owned runtime cleanup retains a root with an undeclared symlink before chmod",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/owned-runtime-home.test.ts",
+                "title": "owned runtime cleanup refuses replacement roots and never adopts a caller path",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/owned-runtime-home.test.ts",
+                "title": "owned runtime cleanup retains failed resource closure and explicit uncertainty",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/owned-runtime-home.test.ts",
+                "title": "owned runtime cleanup is awaited for a partially allocated protected fixture",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/owned-runtime-home.test.ts",
+                "title": "owned runtime cleanup retains unconfirmed resources after its bounded wait",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/owned-runtime-home.test.ts",
+                "title": "owned runtime cleanup bounds traversal before changing protected directory modes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ]
+      },
+      "testRecord": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/TESTS.md"
+    }
+  },
+  "passed": false
+}

@@ -1,0 +1,9 @@
+{
+  "baseCommit": "28ce36b216fc8bba39b6a620e320e18a553e2c4c",
+  "sha256": {
+    "src/installer/runtime-store.ts": "cbf2fa6ea1980b21780d3948c9ff89775d1ee8931ae55e5a101f10ef5a6a5ac4",
+    "src/installer/__tests__/runtime-store.test.ts": "efe53d02746befba7dd7659293117a0a01027ff0b4f0a23c1a33658ec9257e0b",
+    "src/installer/__tests__/_owned-runtime-home.ts": "95e215e06af179c660c6fbd78483673801b65b1d0972cc4d3f99a703c5cfee92",
+    "src/installer/__tests__/owned-runtime-home.test.ts": "ba672a58cf08bf66312f07f924d5184692ff3505faf352f7907613cbbc776bcd"
+  }
+}

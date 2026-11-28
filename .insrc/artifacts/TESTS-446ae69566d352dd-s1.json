@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 23,
-        "contentHash": "df0cd2a83fb968d2cec154436ff5d58720902c4533e92affd52cff910338f0a7",
-        "at": "2026-11-28T10:11:13.483Z",
+        "number": 24,
+        "contentHash": "da336f1629c764e5707cb898436af38b2eec4fd3f324481a4bc3da9f882e58f1",
+        "at": "2026-11-28T10:39:28.222Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "446ae69566d352dd",
     "storyId": "s1",
     "createdAt": "2026-11-26T07:40:02.075Z",
-    "updatedAt": "2026-11-28T10:11:13.449Z",
+    "updatedAt": "2026-11-28T10:39:28.193Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-26T06:29:10.586Z",
     "epicSlug": "complete-shared-external-node-runtime-foundation",
-    "revision": 23
+    "revision": 24
   },
   "body": {
     "tasks": [
@@ -220,8 +220,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "390d4790a",
-        "ranAt": "2026-11-26T07:52:29.153Z",
+        "commit": "28ce36b21",
+        "ranAt": "2026-11-28T10:39:28.193Z",
         "testsPassed": true,
         "tests": [
           {
@@ -258,6 +258,11 @@
               {
                 "file": "src/installer/__tests__/runtime-store.test.ts",
                 "title": "resolver rejects corrupt receipts inventories files modes targets aliases and extra members",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "strict POSIX runtime protection preserves pinned bytes and rejects every write or execute mode drift",
                 "result": "pass"
               }
             ],
@@ -301,14 +306,162 @@
               }
             ],
             "files": []
+          },
+          {
+            "name": "runtime-rejection-matrix-proves-positive-baseline-and-exact-diagnostic-for-each-mutation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "resolver rejects corrupt receipts inventories files modes targets aliases and extra members",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "strict POSIX runtime protection preserves pinned bytes and rejects every write or execute mode drift",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "rewritten self consistent receipt and inventory cannot replace independent pinned hashes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "posix-runtime-protection-preserves-pinned-inventory-and-rejects-write-bits-or-execute-drift",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "strict POSIX runtime protection preserves pinned bytes and rejects every write or execute mode drift",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "verifier lanes reject mixed layouts and never grant canonical paths from a weaker flag",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runtime-manual-unfinished-and-development-layout-diagnostics-preserve-entries-with-safe-path-guidance",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "verifier lanes reject mixed layouts and never grant canonical paths from a weaker flag",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "manual runtime diagnostics preserve corrupt entries and quote spaces Unicode and apostrophes safely",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "shared-runtime-fixture-cleanup-restores-owned-directory-write-after-positive-closure",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/owned-runtime-home.test.ts",
+                "title": "owned runtime cleanup restores directory write only after positive resource and child closure",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/owned-runtime-home.test.ts",
+                "title": "owned runtime cleanup unlinks only declared fixture links without touching external targets",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/owned-runtime-home.test.ts",
+                "title": "owned runtime cleanup retains a root with an undeclared symlink before chmod",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/owned-runtime-home.test.ts",
+                "title": "owned runtime cleanup refuses replacement roots and never adopts a caller path",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/owned-runtime-home.test.ts",
+                "title": "owned runtime cleanup retains failed resource closure and explicit uncertainty",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/owned-runtime-home.test.ts",
+                "title": "owned runtime cleanup is awaited for a partially allocated protected fixture",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/owned-runtime-home.test.ts",
+                "title": "owned runtime cleanup retains unconfirmed resources after its bounded wait",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/owned-runtime-home.test.ts",
+                "title": "owned runtime cleanup bounds traversal before changing protected directory modes",
+                "result": "pass"
+              }
+            ],
+            "files": []
           }
         ],
         "files": [
           {
+            "file": "src/installer/__tests__/owned-runtime-home.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5293,
+            "titles": [
+              {
+                "title": "owned runtime cleanup restores directory write only after positive resource and child closure",
+                "result": "pass"
+              },
+              {
+                "title": "owned runtime cleanup unlinks only declared fixture links without touching external targets",
+                "result": "pass"
+              },
+              {
+                "title": "owned runtime cleanup retains a root with an undeclared symlink before chmod",
+                "result": "pass"
+              },
+              {
+                "title": "owned runtime cleanup refuses replacement roots and never adopts a caller path",
+                "result": "pass"
+              },
+              {
+                "title": "owned runtime cleanup retains failed resource closure and explicit uncertainty",
+                "result": "pass"
+              },
+              {
+                "title": "owned runtime cleanup is awaited for a partially allocated protected fixture",
+                "result": "pass"
+              },
+              {
+                "title": "owned runtime cleanup retains unconfirmed resources after its bounded wait",
+                "result": "pass"
+              },
+              {
+                "title": "owned runtime cleanup bounds traversal before changing protected directory modes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/installer/__tests__/runtime-store.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 13685,
+            "durationMs": 149481,
             "titles": [
               {
                 "title": "resolver import graph stays within installer-only read primitives",
@@ -332,6 +485,18 @@
               },
               {
                 "title": "resolver bounds metadata and stops at cancellation without scanning application or Ollama data",
+                "result": "pass"
+              },
+              {
+                "title": "strict POSIX runtime protection preserves pinned bytes and rejects every write or execute mode drift",
+                "result": "pass"
+              },
+              {
+                "title": "verifier lanes reject mixed layouts and never grant canonical paths from a weaker flag",
+                "result": "pass"
+              },
+              {
+                "title": "manual runtime diagnostics preserve corrupt entries and quote spaces Unicode and apostrophes safely",
                 "result": "pass"
               }
             ],

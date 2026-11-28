@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 96 pass, 0 fail, 0 skipped, 0 not found; 8 reported by the builder and not run by the gate.
+**Totals:** 112 pass, 0 fail, 0 skipped, 0 not found; 8 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -49,7 +49,7 @@ Run at 2026-11-28T10:11:13.449Z on commit `0fa2f8c20`. Tests check: **passed**. 
 
 ## t2
 
-Run at 2026-11-26T07:52:29.153Z on commit `390d4790a`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-28T10:39:28.193Z on commit `28ce36b21`. Tests check: **passed**. 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: resolver-import-boundary-excludes-application-paths-storage-provider-and-source-build**
 
@@ -68,6 +68,7 @@ Run at 2026-11-26T07:52:29.153Z on commit `390d4790a`. Tests check: **passed**. 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | resolver rejects corrupt receipts inventories files modes targets aliases and extra members | `src/installer/__tests__/runtime-store.test.ts` |
+| pass | strict POSIX runtime protection preserves pinned bytes and rejects every write or execute mode drift | `src/installer/__tests__/runtime-store.test.ts` |
 
 **unit: rewritten-self-consistent-local-runtime-metadata-cannot-replace-policy-inventory-digest**
 
@@ -87,11 +88,47 @@ Run at 2026-11-26T07:52:29.153Z on commit `390d4790a`. Tests check: **passed**. 
 | :--- | :--- | :--- |
 | pass | resolver bounds metadata and stops at cancellation without scanning application or Ollama data | `src/installer/__tests__/runtime-store.test.ts` |
 
+**unit: runtime-rejection-matrix-proves-positive-baseline-and-exact-diagnostic-for-each-mutation**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | resolver rejects corrupt receipts inventories files modes targets aliases and extra members | `src/installer/__tests__/runtime-store.test.ts` |
+| pass | strict POSIX runtime protection preserves pinned bytes and rejects every write or execute mode drift | `src/installer/__tests__/runtime-store.test.ts` |
+| pass | rewritten self consistent receipt and inventory cannot replace independent pinned hashes | `src/installer/__tests__/runtime-store.test.ts` |
+
+**unit: posix-runtime-protection-preserves-pinned-inventory-and-rejects-write-bits-or-execute-drift**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | strict POSIX runtime protection preserves pinned bytes and rejects every write or execute mode drift | `src/installer/__tests__/runtime-store.test.ts` |
+| pass | verifier lanes reject mixed layouts and never grant canonical paths from a weaker flag | `src/installer/__tests__/runtime-store.test.ts` |
+
+**unit: runtime-manual-unfinished-and-development-layout-diagnostics-preserve-entries-with-safe-path-guidance**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | verifier lanes reject mixed layouts and never grant canonical paths from a weaker flag | `src/installer/__tests__/runtime-store.test.ts` |
+| pass | manual runtime diagnostics preserve corrupt entries and quote spaces Unicode and apostrophes safely | `src/installer/__tests__/runtime-store.test.ts` |
+
+**integration: shared-runtime-fixture-cleanup-restores-owned-directory-write-after-positive-closure**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | owned runtime cleanup restores directory write only after positive resource and child closure | `src/installer/__tests__/owned-runtime-home.test.ts` |
+| pass | owned runtime cleanup unlinks only declared fixture links without touching external targets | `src/installer/__tests__/owned-runtime-home.test.ts` |
+| pass | owned runtime cleanup retains a root with an undeclared symlink before chmod | `src/installer/__tests__/owned-runtime-home.test.ts` |
+| pass | owned runtime cleanup refuses replacement roots and never adopts a caller path | `src/installer/__tests__/owned-runtime-home.test.ts` |
+| pass | owned runtime cleanup retains failed resource closure and explicit uncertainty | `src/installer/__tests__/owned-runtime-home.test.ts` |
+| pass | owned runtime cleanup is awaited for a partially allocated protected fixture | `src/installer/__tests__/owned-runtime-home.test.ts` |
+| pass | owned runtime cleanup retains unconfirmed resources after its bounded wait | `src/installer/__tests__/owned-runtime-home.test.ts` |
+| pass | owned runtime cleanup bounds traversal before changing protected directory modes | `src/installer/__tests__/owned-runtime-home.test.ts` |
+
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/installer/__tests__/runtime-store.test.ts` | 0 | 6 | 13.7 s |  |
+| `src/installer/__tests__/owned-runtime-home.test.ts` | 0 | 8 | 5.3 s |  |
+| `src/installer/__tests__/runtime-store.test.ts` | 0 | 9 | 149.5 s |  |
 
 ## t3
 

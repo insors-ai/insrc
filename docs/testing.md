@@ -113,14 +113,7 @@ node --import tsx --test --test-concurrency=1 'scripts/__tests__/test-harness*.t
 
 Independent source tests may also run directly. Use the coordinator for compiled
 or native consumers. Keep the actor/output controllers separate from a broad
-backend sweep.
-
-Bare glob sweeps (`npx tsx --test 'src/**/*.test.ts'`) have no per-test timeout, so a
-single stuck or very slow file can block the whole run indefinitely. Run bare sweeps
-through `npm run test:sweep -- '<globs>'`, which adds a finite `--test-timeout`
-(120 s): a straggler is then failed at the bound and reported, and every file still
-gets a result. The harness (`npm test --`) remains the owned sweep path for the gate:
-one bounded child per file, pinned runtime, `--test-force-exit`. See the [failure audit](plans/failing-tests-2026-11-20.md),
+backend sweep. See the [failure audit](plans/failing-tests-2026-11-20.md),
 [batch index](plans/test-remediation-batches-2026-11-20.md), and
 [Batch 01 evidence](plans/test-harness-build-2026-11-20.md) for remaining failures
 and the scope of validation actually performed.
@@ -156,12 +149,3 @@ paste/file-drop, native simple file dialogs, and the production editor/browse/
 chat UI; its provider stub rejects any submission. Run it serially with other
 native probes and retain the evidence JSON and fixture directory. This Linux
 qualification does not claim Windows or macOS input coverage.
-
-The recorded performance probe uses `INSRC_NATIVE_PERFORMANCE_TESTS=1` on the
-private display, with 20 full-bound samples by default. It measures trusted
-`beforeinput` to the first ProseMirror DOM-mutation animation frame and to the
-matching host `apply-ack`, using one renderer clock. First-character replacements
-keep the note at exactly 1 MiB. `INSRC_PERF_BYTES` and `INSRC_PERF_SAMPLES` are
-explicit diagnostic overrides; a smaller passing run does not qualify the
-approved 1 MiB limit. The probe retains its fixture and complete measurements,
-and fails when either approved latency target is exceeded.

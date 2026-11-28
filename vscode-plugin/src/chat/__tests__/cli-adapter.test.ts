@@ -1058,6 +1058,17 @@ test("vibe: s3/t5 — unit: dispatchState transitions: 'not-sent' before spawn, 
     assert.equal(events.at(-1)!.kind, 'error', 'the write failure surfaces as a turn error');
     assert.deepEqual(states, ['possibly-sent'], 'never advances to accepted, and is never reverted');
   }
+  // mapLine captures sessionId, then THROWS later in the same call (a malformed content
+  // block) -- the 'accepted' transition must still be observed even though the line itself
+  // is skipped as unparseable (a prior validate round correctly caught this miss).
+  {
+    const states: string[] = [];
+    const { deps } = depsFor({ lines: [JSON.stringify({ type: 'message', role: 'assistant', sessionId: 'sess-malformed', content: [null] })] }, ['vibe']);
+    const events = await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' }), { onDispatchState: (s) => states.push(s) }));
+    assert.deepEqual(states, ['possibly-sent', 'accepted']);
+    const done = events.at(-1) as { ok: boolean; sessionId?: string };
+    assert.equal(done.sessionId, 'sess-malformed', 'the session id is still captured despite the later throw');
+  }
 });
 
 test('vibe: s3/t5 — integration: a spawn failure before any child exists is deterministic pre-dispatch-safe', async () => {

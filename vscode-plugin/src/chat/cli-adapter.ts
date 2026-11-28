@@ -1416,21 +1416,25 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         const next = await stdout.next();
         if (inputFailure !== undefined) throw inputFailure;
         if (next.done === true) break;
-        let events: TurnEvent[];
+        let events: TurnEvent[] | undefined;
         try {
           // Host-written marker lines (session output segments) are never CLI events.
           events = parseMarker(next.value) !== undefined ? [] : mapper.mapLine(next.value, turnId, state);
         } catch {
           log.warn(`[chat:${mapper.id}] skipped unparseable stream line`);
-          continue; // non-fatal: skip malformed line, never yield a malformed event
+        } finally {
+          // s3/t5: a decoded session-identity row is the 'accepted' transition point -- the
+          // shared adapter's own model reaches it at the identical moment (a row carrying
+          // sessionId), via the same state.sessionId capture mapLine performs. mapLine may
+          // capture it and THEN throw later in the same call (e.g. a malformed later content
+          // block); the transition must still be observed, so this runs in `finally`, not only
+          // on mapLine's successful return.
+          if (isVibeDirectSpawn && vibeDispatchState !== 'accepted' && state.sessionId !== undefined) {
+            vibeDispatchState = 'accepted';
+            opts?.onDispatchState?.(vibeDispatchState);
+          }
         }
-        // s3/t5: a decoded session-identity row is the 'accepted' transition point --
-        // the shared adapter's own model reaches it at the identical moment (a row
-        // carrying sessionId), via the same state.sessionId capture mapLine performs.
-        if (isVibeDirectSpawn && vibeDispatchState !== 'accepted' && state.sessionId !== undefined) {
-          vibeDispatchState = 'accepted';
-          opts?.onDispatchState?.(vibeDispatchState);
-        }
+        if (events === undefined) continue; // non-fatal: skip malformed line, never yield a malformed event
         for (const ev of events) {
           // S004: register a surfaced permission request so decide() can later answer it.
           if (ev.kind === 'approval-request') {

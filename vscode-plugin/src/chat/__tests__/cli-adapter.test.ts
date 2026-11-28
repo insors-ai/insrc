@@ -18,7 +18,7 @@ import { dirname, join } from 'node:path';
 import { createSessionOutput, parseMarker } from '../session-output.js';
 import { defaultProcessStartTime } from '../session-lock.js';
 import { fileURLToPath } from 'node:url';
-import { createProviderRegistry, classifyPermissionDenial, deriveChatTitle, nodeSpawner, parseVibeMcpTool, vibeMapper, writeReachedStdin } from '../cli-adapter.js';
+import { createProviderRegistry, classifyPermissionDenial, classifyVibeOutcome, deriveChatTitle, nodeSpawner, parseVibeMcpTool, vibeMapper, writeReachedStdin } from '../cli-adapter.js';
 import { buildArgv, vibeMcpNaming } from '../../../../src/shared/vibe-adapter.js';
 import type { AdapterDeps, ProviderId, ProviderRegistry, StreamAdapter, TurnProcess, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
@@ -1102,6 +1102,71 @@ test('vibe: s3/t6 — integration: a stdin write/end failure AFTER spawn succeed
   assert.equal(last.kind, 'done', 'classified via dispatchState as done(ok:false, replayUnsafe:true), not a plain error event');
   assert.equal(last.ok, false);
   assert.equal(last.replayUnsafe, true, "dispatchState had already left 'not-sent' (spawn succeeded before the write), so the gate marks it replay-unsafe, never assumed pre-dispatch-safe");
+});
+
+test("vibe: s3/t7 — unit: readExitEvidence-driven outcome classification: stopReason undefined -> 'ok'; stopReason present -> 'replay-unsafe'; export.json missing/malformed -> 'no-evidence'", () => {
+  assert.equal(classifyVibeOutcome(undefined), 'no-evidence', 'missing/unreadable/malformed export.json (readExitEvidence itself returns undefined for all three)');
+  assert.equal(classifyVibeOutcome({ stopReason: undefined }), 'ok');
+  assert.equal(classifyVibeOutcome({ stopReason: 'max_turns' }), 'replay-unsafe');
+  // Never inferred from merely having decoded a row -- an outcome with no stopReason field
+  // but an unrelated `outcome` string present is still 'ok', not something else guessed from it.
+  assert.equal(classifyVibeOutcome({ stopReason: undefined, outcome: 'finished' }), 'ok');
+});
+
+test("vibe: s3/t7 — integration: a fixture binary exiting cleanly with no stopReason yields vibeOutcome 'ok', read identically live and on reattach", async () => {
+  // "On reattach" is carried forward to t9/t10, which pass this computed outcome through the
+  // durable turn-end marker a follower reads; this Task proves the LIVE read half.
+  let resolveOutcome!: (o: string) => void;
+  const outcomePromise = new Promise<string>((res) => { resolveOutcome = res; });
+  const { deps } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
+  const withExport: AdapterDeps = { ...deps, readVibeExportFile: async () => JSON.stringify({ outcome: 'finished' }) };
+  const events = await collect(createProviderRegistry(withExport).get('vibe').run(REQ({ provider: 'vibe' }), { onVibeOutcome: (o) => resolveOutcome(o) }));
+  assert.equal(events.at(-1)!.kind, 'done');
+  assert.equal(await outcomePromise, 'ok');
+});
+
+test("vibe: s3/t7 — integration: a fixture binary exiting cleanly with a stopReason yields vibeOutcome 'replay-unsafe' despite exit code 0", async () => {
+  let resolveOutcome!: (o: string) => void;
+  const outcomePromise = new Promise<string>((res) => { resolveOutcome = res; });
+  const { deps } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']); // default exit: { code: 0, signal: null }
+  const withExport: AdapterDeps = { ...deps, readVibeExportFile: async () => JSON.stringify({ stop_reason: 'max_turns' }) };
+  const events = await collect(createProviderRegistry(withExport).get('vibe').run(REQ({ provider: 'vibe' }), { onVibeOutcome: (o) => resolveOutcome(o) }));
+  const done = events.at(-1) as { kind: string; ok: boolean };
+  assert.equal(done.kind, 'done');
+  assert.equal(done.ok, true, 'exit code 0 still synthesizes an ok:true done -- vibeOutcome is reported as a separate signal here; wiring it into the done/marker itself is a later Task (t9)');
+  assert.equal(await outcomePromise, 'replay-unsafe', 'a real stop_reason overrides the clean exit code -- never inferred from exit code alone');
+});
+
+test('vibe: s3/t7 — the export directory is removed on every exit path, including an error or cancelled turn', async () => {
+  const dirsOf = async (lines: readonly string[], run: (reg: ReturnType<typeof createProviderRegistry>) => Promise<unknown>): Promise<string> => {
+    const { deps, spawner } = depsFor({ lines }, ['vibe']);
+    await run(createProviderRegistry(deps));
+    const args = spawner.calls[0]!.args;
+    return args[args.indexOf('--output-dir') + 1]!;
+  };
+  // clean exit
+  {
+    const dir = await dirsOf(VIBE_TEXT_TURN, (reg) => collect(reg.get('vibe').run(REQ({ provider: 'vibe' }))));
+    await waitFor(() => !existsSync(dir));
+  }
+  // a cancelled (killed) turn
+  {
+    const dir = await dirsOf([JSON.stringify({ type: 'reasoning' })], async (reg) => {
+      const adapter = reg.get('vibe');
+      for await (const ev of adapter.run(REQ({ provider: 'vibe' }))) {
+        if (ev.kind === 'status') adapter.cancel((ev as { turnId: string }).turnId);
+      }
+    });
+    await waitFor(() => !existsSync(dir));
+  }
+  // an I/O error (the stdout stream itself erroring)
+  {
+    const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN, throwAfter: 0 }, ['vibe']);
+    await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' })));
+    const args = spawner.calls[0]!.args;
+    const dir = args[args.indexOf('--output-dir') + 1]!;
+    await waitFor(() => !existsSync(dir));
+  }
 });
 
 test('ProviderRegistry.available lists vibe alongside claude/codex when installed', () => {

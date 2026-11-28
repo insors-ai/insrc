@@ -37,6 +37,7 @@
 import { onUtf8Data } from '../../../src/shared/utf8-stream.js';
 import { spawn as nodeChildSpawn, execFileSync } from 'node:child_process';
 import { closeSync, mkdtempSync, openSync } from 'node:fs';
+import { readFile as readFileAsync, rm as rmAsync } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
@@ -48,8 +49,8 @@ import { DEFAULT_GRACE_MS, defaultKillGroup, observeProcess, processDeparted, si
 import { parseMarker, SegmentGone, type SegmentCursor, type SessionOutput } from './session-output.js';
 
 import type { VibeChatJob } from './vibe-session-process.js';
-import type { VibeCatalogModel, VibeDispatchState, VibeSessionRequest, VibeTurnRequest } from '../../../src/shared/vibe-adapter.js';
-import { buildArgv, vibeMcpNaming } from '../../../src/shared/vibe-adapter.js';
+import type { VibeCatalogModel, VibeDispatchState, VibeExitEvidence, VibeSessionRequest, VibeTurnRequest } from '../../../src/shared/vibe-adapter.js';
+import { buildArgv, readExitEvidence, vibeMcpNaming } from '../../../src/shared/vibe-adapter.js';
 
 export type ProviderId = 'claude' | 'codex' | 'vibe';
 
@@ -205,6 +206,12 @@ export interface RunOptions {
    * for claude/codex or the vibeCatalog job route.
    */
   readonly onDispatchState?: ((state: VibeDispatchState) => void) | undefined;
+  /**
+   * s3/t7: the vibe direct-spawn route's outcome, classified from export.json's real
+   * stopReason/outcome (readExitEvidence) once the process has exited. Never called for
+   * claude/codex or the vibeCatalog job route.
+   */
+  readonly onVibeOutcome?: ((outcome: VibeOutcome) => void) | undefined;
 }
 
 export interface StreamAdapter {
@@ -351,6 +358,19 @@ export interface AdapterDeps {
   readonly processStartTime?: ((pid: number) => number | undefined) | undefined;
   /** How often resume() checks whether the followed process is still alive. Default 200 ms. */
   readonly livenessPollMs?: number | undefined;
+  /** s3/t7: test-only override of the real fs/promises readFile, for reading a vibe turn's
+   *  export.json (see readExitEvidence). Defaults to the real file read. */
+  readonly readVibeExportFile?: ((path: string) => Promise<string>) | undefined;
+}
+
+/** s3/t7: classified from export.json's real stopReason (via readExitEvidence) -- 'ok' ONLY
+ *  when the evidence exists and carries no stopReason; never inferred from merely having
+ *  decoded a row. 'no-evidence' when export.json is missing, unreadable or malformed. */
+export type VibeOutcome = 'ok' | 'no-evidence' | 'replay-unsafe';
+
+export function classifyVibeOutcome(evidence: VibeExitEvidence | undefined): VibeOutcome {
+  if (evidence === undefined) return 'no-evidence';
+  return evidence.stopReason === undefined ? 'ok' : 'replay-unsafe';
 }
 
 const NOOP_LOGGER: AdapterLogger = { warn: () => {}, error: () => {} };
@@ -1326,6 +1346,10 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         opts?.onDispatchState?.(vibeDispatchState);
       }
     } catch (err) {
+      // s3/t7: the spawn attempt itself failed -- no child ever ran, so there is nothing to
+      // read from export.json (no outcome to classify), but the directory t4 already
+      // allocated still needs removing on this exit path too.
+      if (vibeOutputDir !== undefined) await rmAsync(vibeOutputDir, { recursive: true, force: true }).catch(() => {});
       if (segment !== undefined && sessionOutput !== undefined && sessionId !== undefined) {
         void sessionOutput.endTurn(sessionId, turnId, { code: null, signal: null }).catch(() => {});
       }
@@ -1534,6 +1558,20 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       if (!terminal && output === undefined) {
         proc.kill('SIGTERM');
         pendingByTurn.delete(turnId);
+      }
+      // s3/t7: on every exit path (clean, error, or an abandoned/killed turn) -- fire-and-forget
+      // (never awaited here) so a turn left running in the background after detach (the
+      // `!terminal && output !== undefined` case just above) does not block this generator's
+      // return; it still finalizes once the process actually exits, whenever that is. Reads
+      // export.json ONLY after the process has truly exited, so a write still in flight is
+      // never read as absent/malformed.
+      if (isVibeDirectSpawn && vibeOutputDir !== undefined) {
+        const outputDir = vibeOutputDir;
+        void proc.exit.catch(() => {}).then(async () => {
+          const evidence = await readExitEvidence(join(outputDir, 'export.json'), deps.readVibeExportFile ?? ((p) => readFileAsync(p, 'utf8')));
+          opts?.onVibeOutcome?.(classifyVibeOutcome(evidence));
+          await rmAsync(outputDir, { recursive: true, force: true }).catch(() => {});
+        });
       }
     }
   }

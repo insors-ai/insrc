@@ -338,7 +338,7 @@ function parseJournalLine(line: string): { readonly events: readonly VibeTurnEve
 /** Reads back `stop_reason`/`outcome`/the effective model from --output-dir's export.json
  *  (live-confirmed field names: snake_case, config.active_model). A missing file, invalid
  *  JSON, or a shape without these fields yields undefined evidence -- never a fabricated value. */
-async function readExitEvidence(exportPath: string, readFile: (path: string) => Promise<string>): Promise<VibeExitEvidence | undefined> {
+export async function readExitEvidence(exportPath: string, readFile: (path: string) => Promise<string>): Promise<VibeExitEvidence | undefined> {
 	let raw: string;
 	try { raw = await readFile(exportPath); } catch { return undefined; }
 	let parsed: unknown;
@@ -852,7 +852,7 @@ function buildApprovalArgs(approval: VibeApproval | undefined): readonly string[
 	return [];
 }
 
-function buildArgv(request: VibeTurnRequest, outputDir: string): readonly string[] {
+export function buildArgv(request: VibeTurnRequest, outputDir: string): readonly string[] {
 	const args: string[] = ['-p', '--output', request.outputMode, '--output-dir', outputDir];
 	args.push(...buildSelectionArgs(request.session));
 	if (request.mode === 'read-only') {

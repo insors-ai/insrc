@@ -46,7 +46,7 @@ import { ollamaClaudeEnv, type ChatOllamaTarget } from './ollama-routing.js';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import type { PermissionMode } from './protocol.js';
 import { DEFAULT_GRACE_MS, defaultKillGroup, observeProcess, processDeparted, signalGroup, stopProcess } from './session-lock.js';
-import { parseMarker, SegmentGone, type SegmentCursor, type SessionOutput } from './session-output.js';
+import { parseMarker, SegmentGone, type Marker, type SegmentCursor, type SessionOutput, type TurnExit } from './session-output.js';
 
 import type { VibeChatJob } from './vibe-session-process.js';
 import type { VibeCatalogModel, VibeDispatchState, VibeExitEvidence, VibeSessionRequest, VibeTurnRequest } from '../../../src/shared/vibe-adapter.js';
@@ -1790,6 +1790,9 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       ...(replayUnsafe === true ? { replayUnsafe } : {}),
     });
     let sawTerminalInDrain = req.sawTerminal === true;
+    // s3/t10: the LAST turn-end marker seen while following, for mapper.id==='vibe' only --
+    // classified below if the loop ends at EOF with no native terminal row (vibe has none).
+    let vibeTurnEndMarker: Extract<Marker, { kind: 'turn-end' }> | undefined;
     try {
       opts?.onAttach?.(handle);
       // A caller that carries no saved decoder state (a reloaded live reader) has a saved cursor
@@ -1820,7 +1823,9 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       for await (const { line, cursor } of sessionOutput.tail(req.cursor, { finished: follower.check, signal: opts?.signal })) {
         let events: TurnEvent[];
         try {
-          events = parseMarker(line) !== undefined ? [] : mapper.mapLine(line, turnId, state);
+          const marker = parseMarker(line);
+          if (mapper.id === 'vibe' && marker?.kind === 'turn-end') vibeTurnEndMarker = marker;
+          events = marker !== undefined ? [] : mapper.mapLine(line, turnId, state);
         } catch {
           log.warn(`[chat:${mapper.id}] skipped unparseable stream line`);
           continue;
@@ -1870,6 +1875,18 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     // terminal was ingested and the pid may still be alive) — never a synthetic completion. A drain
     // that DID see a terminal ends cleanly instead (the segment's turn-end marker closed it).
     if (sawTerminalInDrain && opts?.drain === true) return;
+    // s3/t10: vibe has no native terminal row at all (run() itself synthesizes 'done' from the
+    // process exit the same way) -- a seen turn-end marker is definitive proof the turn ended,
+    // stronger evidence than pid liveness, so it classifies BEFORE the generic verifiedDead
+    // fallback below. A host-loss synthesized marker (unknown:true) is always replay-unsafe,
+    // regardless of any vibeOutcome (which a host-loss marker never carries anyway, written by
+    // a different, non-vibeFinalize-aware call site); otherwise classify from the real written
+    // vibeOutcome -- 'ok' is the only safe case, never inferred, never a flat unclassified error.
+    if (mapper.id === 'vibe' && vibeTurnEndMarker !== undefined) {
+      const replayUnsafe = vibeTurnEndMarker.unknown === true || vibeTurnEndMarker.vibeOutcome !== 'ok';
+      yield doneEvent(!replayUnsafe, undefined, replayUnsafe ? true : undefined);
+      return;
+    }
     // E202611031bd72813:S001 t5: EOF without a terminal event — a plain terminal error ONLY when a
     // recorded pid is verified dead; alive OR ABSENT pid is an observation failure (an absent pid
     // is unverifiable, never a synthetic completion).

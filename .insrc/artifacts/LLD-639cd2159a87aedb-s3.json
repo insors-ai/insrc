@@ -76,6 +76,13 @@
         "choice": "Keep within Story s3",
         "rationale": "User explicitly confirmed in chat that widening session-output.ts's TurnExit/Marker/parseMarker with two optional vibe-outcome fields is acceptable scope for Story s3, rather than requiring a separate story or an HLD back-flow -- the marker already tolerates extra fields on a recognized kind, and this stays the single durable finalization mechanism both live and follow readers consume (per the chosen alternative a1).",
         "resolvedAt": "2026-11-28T05:21:01.183Z"
+      },
+      "q11e93349": {
+        "question": "The approval-flag effective-equivalence live verification is still unperformed; it now explicitly gates the migration's cutover (step 12) rather than being an open-ended check with no stated consequence.",
+        "status": "resolved",
+        "choice": "Gate cutover at step 12",
+        "rationale": "User explicitly confirmed in chat: migration preparation (steps 1-11) may proceed with the approval-flag effective-equivalence live verification still pending; step 12 (cutover) is explicitly blocked until that live verification establishes equivalence and the result is recorded.",
+        "resolvedAt": "2026-11-28T05:25:06.368Z"
       }
     }
   },

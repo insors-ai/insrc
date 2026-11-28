@@ -51,7 +51,9 @@ test('a stuck file is failed at the per-test timeout and cannot block the sweep'
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-sweep-hang-'));
 	try {
 		const hang = join(dir, 'hang.test.ts');
-		writeFileSync(hang, "import { test } from 'node:test';\ntest('never settles', () => new Promise(() => {}));\n");
+		// The never-settling test holds a REF'D interval, so the event loop cannot drain:
+		// only the finite --test-timeout can stop it, which is what this test proves.
+		writeFileSync(hang, "import { test } from 'node:test';\ntest('never settles', async () => { setInterval(() => {}, 1000); await new Promise(() => {}); });\n");
 		const argv = [...sweepScriptArgv(), '--test-timeout=3000', hang];
 		let stdout = '';
 		let code = 0;
@@ -64,8 +66,8 @@ test('a stuck file is failed at the per-test timeout and cannot block the sweep'
 			stdout = e.stdout ?? '';
 		}
 		assert.match(stdout, /^# tests 1$/m, 'the sweep still terminated and printed the summary');
-		assert.match(stdout, /^not ok 1 - never settles/m, 'the stuck file is reported, not dropped');
-		assert.match(stdout, /test timed out after 3000ms|Promise resolution is still pending/, 'the stuck test was stopped by the per-test timeout or the loop-drain detector — either way the sweep cannot hang');
+		assert.match(stdout, /^not ok 1 - /m, 'the stuck file is reported at file level, not dropped');
+		assert.match(stdout, /test timed out after 3000ms/, 'the stuck test (loop held alive) was stopped by the per-test timeout itself');
 		assert.notEqual(code, 0, 'the stuck file is a reported failure, not a silent pass');
 	} finally {
 		rmSync(dir, { recursive: true, force: true });

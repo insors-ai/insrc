@@ -1,3 +1,4 @@
+import { createScratchBrowserValidator } from '../../scratch-validation-client.js';
 import { createScratchCrepe } from '../../scratch-editor-webview.js';
 import { checkScratchMarkdown, checkScratchMarkdownEdit, prepareScratchMarkdownTransaction } from '../../scratch-markdown.js';
 import { observeScratchMarkdown, scratchMilkdownCodec, type ScratchObservedDraft } from '../../scratch-markdown-milkdown.js';
@@ -10,7 +11,10 @@ async function examine(source: string): Promise<unknown> {
   const root = document.createElement('div'); document.body.appendChild(root);
   const editor = createScratchCrepe({ root, defaultValue: source });
   const observed: ScratchObservedDraft[] = [];
-  const observer = await observeScratchMarkdown(editor.editor, () => source, draft => observed.push(draft));
+  const validator = createScratchBrowserValidator(JSON.parse(document.head.querySelector('#scratch-validator-source')!.textContent!));
+  await validator.ready;
+  let sequence = 0;
+  const observer = await observeScratchMarkdown(editor.editor, { source: () => ({ version: 1, digest: 'a'.repeat(64), markdown: source }), stage: () => ++sequence, eligible: seq => seq === sequence, validator, failed: message => { throw new Error(message); } }, draft => observed.push(draft));
   await editor.create();
   try {
     const openingEvents = [...observed];
@@ -26,6 +30,8 @@ async function examine(source: string): Promise<unknown> {
       const paragraph = view.state.schema.node('paragraph', null, view.state.schema.text('Added text.'));
       view.dispatch(view.state.tr.insert(view.state.doc.content.size, paragraph));
     });
+    for (let i = 0; !observed.length && i < 1000; i++) await new Promise(resolve => setTimeout(resolve, 10));
+    if (!observed.length) throw new Error('Idle corpus validation did not settle');
     return editor.editor.action(ctx => {
       const codec = scratchMilkdownCodec(ctx);
       const document = codec.parse(source);

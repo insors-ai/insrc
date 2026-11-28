@@ -33,13 +33,18 @@ interface Job { readonly id: number; readonly request: ScratchValidationRequest;
 export class ScratchValidationClient {
   private readonly epoch = globalThis.crypto.randomUUID();
   private sequence = 0;
-  private ready = false;
+  private started = false;
+  readonly ready: Promise<void>;
+  private readyResolve!: () => void;
+  private readyReject!: (error: Error) => void;
   private closed = false;
   private active: Job | undefined;
   private queued: Job | undefined;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private readonly unlisten: () => void;
   constructor(private readonly port: ScratchValidationPort, private readonly timeoutMs = 15_000) {
+    this.ready = new Promise((resolve, reject) => { this.readyResolve = resolve; this.readyReject = reject; });
+    void this.ready.catch(() => { /* callers may use run() without awaiting startup */ });
     this.unlisten = port.listen(value => this.receive(value), () => this.stop('Background validation failed; draft retained.'));
     this.arm();
     try { port.post({ type: 'init', epoch: this.epoch, codecVersion: SCRATCH_CODEC_VERSION }); }
@@ -58,7 +63,7 @@ export class ScratchValidationClient {
     this.timer = setTimeout(() => this.stop('Background validation timed out; draft retained.'), this.timeoutMs);
   }
   private pump(): void {
-    if (!this.ready || this.closed || this.active || !this.queued) return;
+    if (!this.started || this.closed || this.active || !this.queued) return;
     const job = this.queued; this.queued = undefined; this.active = job;
     const common = { epoch: this.epoch, requestId: job.id, baseKey: job.request.baseKey };
     const messages = [{ ...common, type: 'base', source: job.request.source },
@@ -72,8 +77,8 @@ export class ScratchValidationClient {
     if (this.closed || !value || typeof value !== 'object' || !scratchValidationMessageFits(value)) return;
     const message = value as Record<string, unknown>;
     if (message['epoch'] !== this.epoch) return;
-    if (message['type'] === 'ready' && message['codecVersion'] === SCRATCH_CODEC_VERSION && !this.ready) {
-      this.ready = true; clearTimeout(this.timer); this.pump(); return;
+    if (message['type'] === 'ready' && message['codecVersion'] === SCRATCH_CODEC_VERSION && !this.started) {
+      this.started = true; this.readyResolve(); clearTimeout(this.timer); this.pump(); return;
     }
     const job = this.active;
     if (!job || message['type'] !== 'result' || message['requestId'] !== job.id || message['baseKey'] !== job.request.baseKey ||
@@ -87,7 +92,7 @@ export class ScratchValidationClient {
   }
   private stop(message: string): void {
     if (this.closed) return;
-    this.closed = true; clearTimeout(this.timer); this.unlisten?.(); this.port.terminate();
+    this.closed = true; this.readyReject(new Error(message)); clearTimeout(this.timer); this.unlisten?.(); this.port.terminate();
     this.active?.reject(new Error(message)); this.queued?.reject(new Error(message)); this.active = undefined; this.queued = undefined;
   }
   dispose(): void { this.stop('Background validation disposed; draft retained.'); }

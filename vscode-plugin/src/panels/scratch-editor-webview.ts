@@ -24,8 +24,9 @@ import { uploadConfig } from '@milkdown/kit/plugin/upload';
 import { history } from '@milkdown/kit/plugin/history';
 import { parseScratchEditorMessage, parseScratchHostMessage, type ScratchEditorToHost, type ScratchSelectionSend } from './scratch-editor-protocol.js';
 import { ScratchRendererState } from './scratch-editor-state.js';
-import { checkScratchMarkdown, checkScratchMarkdownEdit } from './scratch-markdown.js';
+import { checkScratchMarkdown } from './scratch-markdown.js';
 import { observeScratchMarkdown, scratchMilkdownCodec, SCRATCH_HOST_TRANSACTION } from './scratch-markdown-milkdown.js';
+import { createScratchBrowserValidator, type ScratchValidationClient } from './scratch-validation-client.js';
 import { configureScratchSchema } from './scratch-markdown-codec.js';
 
 export interface ScratchPaneOptions {
@@ -45,6 +46,7 @@ export class ScratchEditorPane {
   private crepe: Crepe | undefined;
   private state: ScratchRendererState | undefined;
   private observer: Awaited<ReturnType<typeof observeScratchMarkdown>> | undefined;
+  private validator: ScratchValidationClient | undefined;
   private locked = true;
   private failed = false;
   private deleting: string | undefined;
@@ -128,6 +130,7 @@ export class ScratchEditorPane {
   private fail(message: string): void {
     clearTimeout(this.selectionTimer);
     if (this.pendingSelection) this.retainedSelection.hidden = false;
+    this.observer?.deactivate(); this.validator?.dispose();
     this.failed = true; this.fallback.hidden = false; this.toggle.disabled = true;
     this.status.textContent = message; this.status.setAttribute('role', 'alert'); this.setLocked(this.locked); this.hideSend();
   }
@@ -139,6 +142,7 @@ export class ScratchEditorPane {
     this.toggle.textContent = value ? '✎' : '🔒';
     const label = value ? 'Edit scratchpad' : 'Lock scratchpad'; this.toggle.title = label; this.toggle.setAttribute('aria-label', label);
     this.toggle.setAttribute('aria-pressed', String(!value));
+    if (!value && !this.failed && this.deleting === undefined) this.observer?.refresh();
     for (const control of this.toolbar.querySelectorAll<HTMLButtonElement>('.scratch-author-action')) { control.hidden = value || this.failed || this.deleting !== undefined; control.disabled = value || this.failed || this.deleting !== undefined; }
   }
   /** Host messages are ordered even while asynchronous Crepe creation is pending. */
@@ -170,17 +174,7 @@ export class ScratchEditorPane {
     }
     const result = this.state.receive(msg);
     if (result.conflict) { this.fail(result.conflict); return; }
-    if (result.revalidate && this.crepe && !this.failed && !this.locked) {
-      // Own-parent acknowledgement changes the admission base. The idle
-      // observer migration moves this check to its background scheduler.
-      const sequence = this.state.draftSeq, base = this.state.snapshot;
-      if (this.state.validating(sequence, base.version, base.digest)) {
-        const checked = this.crepe.editor.action(ctx => checkScratchMarkdownEdit(base.markdown, this.state!.markdown,
-          scratchMilkdownCodec(ctx), ctx.get(editorViewCtx).state.doc));
-        if (checked.allowed) this.state.authorize(sequence, base.version, base.digest);
-        else { this.state.refuse(sequence, checked.reason); this.fail(checked.reason); return; }
-      }
-    }
+    if (result.revalidate) this.observer?.refresh();
     if (msg.type === 'focus-request') {
       if (!this.failed && this.crepe) this.crepe.editor.action(ctx => ctx.get(editorViewCtx).focus());
       // VS Code 1.146's preload relays webview focus on a 250 ms poll. Wait
@@ -263,24 +257,33 @@ export class ScratchEditorPane {
       }));
       this.crepe.setReadonly(true); // no editable interval while create() awaits plugins
       await this.crepe.editor.remove(history); // native TextDocument is the sole undo authority
-      this.observer = await observeScratchMarkdown(this.crepe.editor, () => this.state!.snapshot.markdown, result => {
-        if (result.kind === 'unchanged' || this.disposed || this.failed) return;
-        this.hideSend();
-        try {
-          if (result.kind === 'proposal' && !this.locked) {
-            const sequence = this.state!.stage(result.draft), base = this.state!.snapshot;
-            this.state!.authorize(sequence, base.version, base.digest); this.status.textContent = 'Updating document…';
-          }
-          else {
-            // A serializable refused proposal is recovery-only, including after
-            // an older acknowledgement; it can never become an apply request.
-            if (result.draft) { const sequence = this.state!.stage(result.draft); this.state!.refuse(sequence, result.reason ?? 'Unsafe draft'); }
-            this.fail(result.reason ?? 'Draft cannot be safely applied. Source and local editor text are retained.');
-          }
-        } catch { this.fail('Draft could not be sent. Keep this pane open and preserve your text before closing.'); }
+      const trusted = JSON.parse(document.head.querySelector('#scratch-validator-source')?.textContent ?? 'null') as unknown;
+      if (typeof trusted !== 'string' || !trusted) throw new Error('Missing packaged validator');
+      this.validator = createScratchBrowserValidator(trusted);
+      this.observer = await observeScratchMarkdown(this.crepe.editor, {
+        source: () => this.state!.snapshot,
+        validator: this.validator,
+        stage: draft => {
+          this.hideSend();
+          const sequence = this.state!.stage(draft);
+          this.status.textContent = 'Waiting for a typing gap…';
+          return sequence;
+        },
+        eligible: (sequence, base) => !this.disposed && !this.failed && !this.locked && this.deleting === undefined &&
+          this.state!.hasPending && this.state!.validating(sequence, base.version, base.digest),
+        failed: message => this.fail(message),
+      }, result => {
+        if (this.disposed || this.failed) return;
+        if (result.kind === 'proposal') {
+          if (this.state!.authorize(result.draftSeq, result.baseVersion, result.baseDigest)) this.status.textContent = 'Updating document…';
+        } else {
+          this.state!.refuse(result.draftSeq, result.reason ?? 'Unsafe draft');
+          this.fail(result.reason ?? 'Draft cannot be safely applied. Local editor text is retained.');
+        }
       });
       await this.crepe.create();
-      if (this.disposed) { await this.crepe.destroy(); this.crepe = undefined; return; }
+      await this.validator.ready;
+      if (this.disposed) { this.observer.deactivate(); await this.crepe.destroy(); this.crepe = undefined; return; }
       const checked = this.crepe.editor.action(ctx => checkScratchMarkdown(markdown, scratchMilkdownCodec(ctx)));
       this.setLocked(this.locked);
       if (!checked.allowed) { this.fail(checked.reason ?? 'Markdown cannot be safely edited. Open this file in the text editor.'); return; }
@@ -444,7 +447,7 @@ export class ScratchEditorPane {
     this.post({ type: action, paneSessionId: this.options.paneSessionId, draftSeq: this.state.draftSeq, docVersion: this.state.snapshot.version });
   };
   async dispose(): Promise<void> {
-    this.disposed = true; clearTimeout(this.selectionTimer); document.removeEventListener('selectionchange', this.selectionChanged);
+    this.disposed = true; this.observer?.deactivate(); this.validator?.dispose(); clearTimeout(this.selectionTimer); document.removeEventListener('selectionchange', this.selectionChanged);
     for (const pending of this.assetRequests.values()) { clearTimeout(pending.timer); pending.reject(new Error('Scratchpad pane closed.')); } this.assetRequests.clear();
     this.root.removeEventListener('paste', this.pasteFiles, true);
     this.root.removeEventListener('drop', this.dropFiles, true);

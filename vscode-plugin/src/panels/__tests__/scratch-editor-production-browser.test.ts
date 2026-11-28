@@ -1,11 +1,10 @@
+import { runScratchBrowser } from './fixtures/scratch-browser-runner.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { scratchEditorHtml } from '../scratch-editor-html.js';
-import { runInProcessGroup } from '../../../../src/shared/process-group.js';
 
 test('scratch production browser bundle boots under local CSP with no initial write and locked explicit Send', async () => {
   const chrome = process.env['INSRC_CHROME_BIN'] ?? ['/usr/bin/google-chrome', '/usr/bin/chromium'].find(existsSync);
@@ -17,9 +16,6 @@ test('scratch production browser bundle boots under local CSP with no initial wr
     // Chrome has no vscode-webview scheme. Only resource locations are adapted;
     // the emitted JS/CSS, nonce policy and bootstrap are the production ones.
     let html = scratchEditorHtml({ script: 'vscode-webview://fixture/editor.js', style: 'vscode-webview://fixture/editor.css', cspSource: 'vscode-webview://fixture' }, 'fixture_nonce', 'production');
-    html = html.replaceAll('vscode-webview://fixture/editor.js', pathToFileURL(join(dir, 'editor.js')).href)
-      .replaceAll('vscode-webview://fixture/editor.css', pathToFileURL(join(dir, 'editor.css')).href)
-      .replaceAll('vscode-webview://fixture', 'file:');
     const driver = `
 const frames = [], violations = [];
 document.addEventListener('securitypolicyviolation', e => violations.push(e.violatedDirective));
@@ -43,8 +39,7 @@ window.acquireVsCodeApi = () => ({ postMessage: message => {
 `;
     html = html.replace('<main id="scratch-editor"', `<script nonce="fixture_nonce">${driver}</script><main id="scratch-editor"`);
     writeFileSync(join(dir, 'index.html'), html);
-    const result = await runInProcessGroup(chrome, ['--headless=new', '--no-sandbox', '--disable-gpu', '--disable-background-networking', '--no-first-run', `--user-data-dir=${join(dir, 'profile')}`, '--virtual-time-budget=10000', '--dump-dom', pathToFileURL(join(dir, 'index.html')).href], { timeoutMs: 60000 });
-    assert.equal(result.timedOut, false); assert.equal(result.exitCode, 0, result.stderr);
+    const result = { stdout: await runScratchBrowser(chrome, dir, 'production-result', 'fixture_nonce') };
     const match = result.stdout.match(/<pre id="production-result">([\s\S]*?)<\/pre>/); assert.ok(match, result.stdout.slice(-3000));
     const data = JSON.parse(match[1]!.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&'));
     assert.deepEqual(data.violations, []); assert.equal(data.editable, 'false'); assert.equal(data.visible, true); assert.equal(data.before, 0); assert.equal(data.css, 'fixed');

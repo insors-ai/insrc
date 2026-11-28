@@ -47,11 +47,14 @@ async function run(): Promise<unknown> {
     const siblings = { first: first.pane['crepe']!.readonly, second: second.pane['crepe']!.readonly, third: third.pane['crepe']!.readonly };
     first.pane['crepe']!.editor.action(ctx => {
       const view = ctx.get(editorViewCtx); view.dispatch(view.state.tr.insertText(' first', 6));
-      view.dispatch(view.state.tr.insertText(' newer', 12));
+
     });
+    for (let i = 0; !drafts(first.sent).some(d => d.apply) && i < 1000; i++) await new Promise(resolve => setTimeout(resolve, 10));
+    first.pane['crepe']!.editor.action(ctx => { const view = ctx.get(editorViewCtx); view.dispatch(view.state.tr.insertText(' newer', 12)); });
     const before = first.pane['crepe']!.getMarkdown(), proposed = drafts(first.sent), old = proposed[0]!;
     if (!old) throw new Error(`No accepted proposal: ${first.root.textContent}`);
     await first.pane.receive({ type: 'apply-ack', paneSessionId: 'first', draftSeq: old.draftSeq, editId: old.editId, version: 2, digest: 'b'.repeat(64), markdown: old.markdown });
+    for (let i = 0; drafts(first.sent).filter(d => d.apply).length < 2 && i < 1000; i++) await new Promise(resolve => setTimeout(resolve, 10));
     const lateAck = { before, after: first.pane['crepe']!.getMarkdown(), drafts: drafts(first.sent) };
     await third.pane.receive({ type: 'document-state', paneSessionId: 'third', version: 2, digest: 'c'.repeat(64), markdown: '# Host change\n', locked: true });
     const host = { markdown: third.pane['crepe']!.getMarkdown(), drafts: drafts(third.sent) };

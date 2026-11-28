@@ -3,6 +3,7 @@
  * saves use normal VS Code file semantics, not ScratchStore's no-follow I/O. */
 import type * as VSCode from 'vscode';
 import { basename, dirname, join } from 'node:path';
+import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import type { ScratchStore } from '../chat/scratch-store.js';
 import { ScratchDocumentController } from './scratch-editor-provider.js';
@@ -405,6 +406,8 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
       // Closing can yield while extension shutdown or cancellation begins.
       // Do not attach listeners or publish a new entry after that boundary.
       if (stopped || deleting.has(document.uri.toString()) || token.isCancellationRequested || document.isClosed) throw new Error('Scratchpad opening was cancelled.');
+      const workerSource = await readFile(join(deps.extensionPath, 'out', 'scratch-editor', 'validator.js'), 'utf8');
+      if (stopped || deleting.has(document.uri.toString()) || token.isCancellationRequested || document.isClosed) throw new Error('Scratchpad opening was cancelled.');
       const entry = entryFor(document);
       const pane: Pane = { id: randomUUID(), panel, locked: preference.initial(), ready: false, initialized: false, disposed: false, listeners: [] };
       entry.panes.set(pane.id, pane);
@@ -417,7 +420,7 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
         for (const listener of pane.listeners) listener.dispose(); entry.panes.delete(pane.id);
         if (!entry.panes.size) void closeEntry(entry).catch(() => warn('Scratchpad closing failed; pending recovery was retained.'));
       }));
-      panel.webview.html = scratchEditorHtml({ cspSource: panel.webview.cspSource, script: panel.webview.asWebviewUri(api.Uri.file(join(assets.fsPath, 'editor.js'))).toString(), style: panel.webview.asWebviewUri(api.Uri.file(join(assets.fsPath, 'editor.css'))).toString() }, makeNonce(), pane.id);
+      panel.webview.html = scratchEditorHtml({ workerSource, cspSource: panel.webview.cspSource, script: panel.webview.asWebviewUri(api.Uri.file(join(assets.fsPath, 'editor.js'))).toString(), style: panel.webview.asWebviewUri(api.Uri.file(join(assets.fsPath, 'editor.css'))).toString() }, makeNonce(), pane.id);
     },
   };
   const listeners = [

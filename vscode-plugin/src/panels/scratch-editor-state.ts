@@ -43,13 +43,13 @@ export class ScratchRendererState {
   }
 
   validating(sequence: number, baseVersion: number, baseDigest: string): boolean {
-    if (this.frozen || sequence !== this.latest?.draftSeq || this.inFlight || baseVersion !== this.canonical.version || baseDigest !== this.canonical.digest) return false;
+    if (this.frozen || sequence <= this.acknowledged || sequence !== this.latest?.draftSeq || this.inFlight || baseVersion !== this.canonical.version || baseDigest !== this.canonical.digest) return false;
     this.admission = 'validating'; return true;
   }
   /** The caller has freshly validated this exact generation against this base. */
   authorize(sequence: number, baseVersion: number, baseDigest: string): boolean {
     const latest = this.latest;
-    if (this.frozen || !latest || sequence !== latest.draftSeq || this.inFlight || baseVersion !== this.canonical.version || baseDigest !== this.canonical.digest) return false;
+    if (this.frozen || sequence <= this.acknowledged || !latest || sequence !== latest.draftSeq || this.inFlight || baseVersion !== this.canonical.version || baseDigest !== this.canonical.digest) return false;
     const authorized: ScratchDraftProposal = { ...latest, apply: true, baseVersion, baseDigest };
     if (!parseScratchEditorMessage(authorized)) return false;
     this.latest = authorized; this.inFlight = authorized; this.admission = 'authorized'; this.post(authorized); return true;

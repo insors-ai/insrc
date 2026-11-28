@@ -1,3 +1,4 @@
+import { runScratchBrowser } from './fixtures/scratch-browser-runner.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, rmSync, existsSync } from 'node:fs';
@@ -15,8 +16,7 @@ test('scratch renderer preserves newer real Milkdown typing across older and dup
   try {
     await build({ entryPoints: [fileURLToPath(new URL('./fixtures/scratch-editor-state-browser.ts', import.meta.url))], outfile: join(dir, 'fixture.js'), bundle: true, platform: 'browser', format: 'iife', target: 'chrome120', loader: { '.woff': 'file', '.woff2': 'file', '.ttf': 'file' }, logLevel: 'silent' });
     writeFileSync(join(dir, 'index.html'), '<!doctype html><meta charset="utf-8"><script defer src="./fixture.js"></script>');
-    const result = await runInProcessGroup(chrome, ['--headless=new', '--no-sandbox', '--disable-gpu', '--disable-background-networking', '--no-first-run', `--user-data-dir=${join(dir, 'profile')}`, '--virtual-time-budget=8000', '--dump-dom', `file://${join(dir, 'index.html')}`], { timeoutMs: 60_000 });
-    assert.equal(result.timedOut, false); assert.equal(result.exitCode, 0, result.stderr);
+    const result = { stdout: await runScratchBrowser(chrome, dir) };
     const match = result.stdout.match(/<pre id="scratch-result">([\s\S]*?)<\/pre>/); assert.ok(match, result.stdout.slice(-2500));
     const data = JSON.parse(match[1]!.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&'));
     assert.equal(data.beforeAck.drafts.length, 3);

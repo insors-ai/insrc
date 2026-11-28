@@ -88,7 +88,7 @@ export type ScratchMarkdownAdmission =
 
 /** VS Code applies replacement text using the TextDocument's EOL. Keep
  * proposals and acknowledgements byte-identical for uniform CRLF documents. */
-function preserveScratchEol(source: string, serialized: string): string {
+export function preserveScratchEol(source: string, serialized: string): string {
   return source.includes('\r\n') ? serialized.replace(/\r?\n/g, '\r\n') : serialized;
 }
 

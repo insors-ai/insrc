@@ -1373,11 +1373,16 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     // to the outcome -- so an awaiter never sees the directory still present after this settles.
     const vibeFinalize: Promise<VibeOutcome> | undefined = isVibeDirectSpawn && vibeOutputDir !== undefined
       ? proc.exit.catch(() => {}).then(async () => {
-          const evidence = await readExitEvidence(join(vibeOutputDir, 'export.json'), deps.readVibeExportFile ?? ((p) => readFileAsync(p, 'utf8')));
-          const outcome = classifyVibeOutcome(evidence);
-          try { opts?.onVibeOutcome?.(outcome); } catch { /* caller's own bug; cleanup still runs */ }
-          await rmAsync(vibeOutputDir, { recursive: true, force: true }).catch(() => {});
-          return outcome;
+          try {
+            const evidence = await readExitEvidence(join(vibeOutputDir, 'export.json'), deps.readVibeExportFile ?? ((p) => readFileAsync(p, 'utf8')));
+            const outcome = classifyVibeOutcome(evidence);
+            try { opts?.onVibeOutcome?.(outcome); } catch { /* caller's own bug; cleanup still runs */ }
+            return outcome;
+          } finally {
+            // Removal must run even if reading/classifying the evidence above throws -- the
+            // directory is this call's own responsibility and must never be left behind.
+            await rmAsync(vibeOutputDir, { recursive: true, force: true }).catch(() => {});
+          }
         })
       : undefined;
     if (segment !== undefined && sessionOutput !== undefined && sessionId !== undefined) {

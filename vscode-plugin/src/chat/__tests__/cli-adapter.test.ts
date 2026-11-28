@@ -1268,13 +1268,15 @@ test("vibe: s3/t9 — unit: endTurn constructing the turn-end marker with the ne
   }
 });
 
-test('vibe: s3/t9+t10 — integration: detach/reattach producing identical classification', async () => {
-  // A genuine detach: the reader stops consuming run()'s own generator right after observing
-  // the session-identity row (dispatchState already 'accepted'), while the REAL fixture process
-  // keeps running (DETACH mode) until released below -- proving close() (driven independently by
-  // proc.exit, not by generator resumption) still finalizes correctly. With t10's own fix,
-  // resume()'s EOF path now reads the marker's vibe fields for a no-native-terminal-row vibe
-  // turn, so the reattached reader observes the SAME classification the live observer did.
+/** A genuine detach: the reader stops consuming run()'s own generator right after observing
+ *  the session-identity row (dispatchState already 'accepted'), while the REAL fixture process
+ *  keeps running (DETACH mode) until released below -- proving close() (driven independently by
+ *  proc.exit, not by generator resumption) still finalizes correctly. With t10's own fix,
+ *  resume()'s EOF path now reads the marker's vibe fields for a no-native-terminal-row vibe
+ *  turn, so the reattached reader observes the SAME classification the live observer did.
+ *  Run against BOTH a clean exit (expectedOutcome 'ok') and a stopReason exit ('replay-unsafe')
+ *  -- the named Task test requires both halves to match live-vs-reattach, not just one. */
+async function assertDetachReattachMatches(prompt: string, expectedOutcome: 'ok' | 'replay-unsafe', sessionId: string): Promise<void> {
   await withVibeDirectSpawnFixture(async (cwd) => {
     const root = mkdtempSync(join(tmpdir(), 'insrc-s3t9-reattach-'));
     try {
@@ -1286,8 +1288,8 @@ test('vibe: s3/t9+t10 — integration: detach/reattach producing identical class
       // whether this generator is still being consumed -- it still fires after the detach below.
       let resolveLiveOutcome!: (o: string) => void;
       const liveOutcomePromise = new Promise<string>((res) => { resolveLiveOutcome = res; });
-      const stream = adapter.run(REQ({ provider: 'vibe', prompt: 'DETACH STOPREASON', cwd }), {
-        sessionId: 'sess-reattach',
+      const stream = adapter.run(REQ({ provider: 'vibe', prompt, cwd }), {
+        sessionId,
         onDispatchState: (s) => { liveDispatchState = s; },
         onVibeOutcome: (o) => resolveLiveOutcome(o),
         onSpawn: (p) => { cursor = p.cursor; }, // available at spawn, before any line is processed
@@ -1304,7 +1306,7 @@ test('vibe: s3/t9+t10 — integration: detach/reattach producing identical class
       // turn finished) and the reattached reader's classification, compared DIRECTLY against
       // each other -- not each against a separately hardcoded constant.
       const liveOutcome = await liveOutcomePromise;
-      assert.equal(liveOutcome, 'replay-unsafe', 'STOPREASON in the prompt drove the fixture to write a real stop_reason');
+      assert.equal(liveOutcome, expectedOutcome);
       const resumed = await collect(adapter.resume({ cursor: cursor!, pid: undefined, startedAt: null }));
       const resumedDone = resumed.find((e) => e.kind === 'done') as { ok: boolean; replayUnsafe?: true } | undefined;
       assert.ok(resumedDone !== undefined, 'resume() now classifies from the marker instead of reporting "ended without a result"');
@@ -1312,13 +1314,21 @@ test('vibe: s3/t9+t10 — integration: detach/reattach producing identical class
       assert.equal(resumedDone?.ok, liveOutcome === 'ok');
       // The durable marker carries the identical classification both the live observer and the
       // reattached reader saw -- they can never disagree, all three read from the one endTurn call.
-      const marker = await waitForTurnEndMarker(join(root, 'sess-reattach.ndjson'));
+      const marker = await waitForTurnEndMarker(join(root, `${sessionId}.ndjson`));
       assert.equal(marker['vibeDispatchState'], liveDispatchState);
-      assert.equal(marker['vibeOutcome'], 'replay-unsafe');
+      assert.equal(marker['vibeOutcome'], expectedOutcome);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
   });
+}
+
+test("vibe: s3/t9+t10 — integration: detach/reattach producing identical classification, clean exit -> 'ok'", async () => {
+  await assertDetachReattachMatches('DETACH', 'ok', 'sess-reattach-ok');
+});
+
+test("vibe: s3/t9+t10 — integration: detach/reattach producing identical classification, stopReason exit -> 'replay-unsafe'", async () => {
+  await assertDetachReattachMatches('DETACH STOPREASON', 'replay-unsafe', 'sess-reattach-unsafe');
 });
 
 test("vibe: s3/t10 — unit: the follower's missing-result branch for mapper.id==='vibe'", async () => {

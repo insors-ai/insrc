@@ -84,6 +84,17 @@
           "revision": 8,
           "at": "2026-11-28T14:24:55.462Z",
           "externalId": "7240652075"
+        },
+        {
+          "target": {
+            "entityId": "PLAN-2846f076fd5f785f-s1",
+            "type": "PLAN",
+            "relation": "documents",
+            "fragment": "docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/PLAN.md"
+          },
+          "revision": 4,
+          "at": "2026-11-28T14:36:46.955Z",
+          "externalId": "7240799886"
         }
       ],
       "binding": {

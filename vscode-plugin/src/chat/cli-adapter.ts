@@ -1568,9 +1568,13 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       if (isVibeDirectSpawn && vibeOutputDir !== undefined) {
         const outputDir = vibeOutputDir;
         void proc.exit.catch(() => {}).then(async () => {
-          const evidence = await readExitEvidence(join(outputDir, 'export.json'), deps.readVibeExportFile ?? ((p) => readFileAsync(p, 'utf8')));
-          opts?.onVibeOutcome?.(classifyVibeOutcome(evidence));
-          await rmAsync(outputDir, { recursive: true, force: true }).catch(() => {});
+          try {
+            const evidence = await readExitEvidence(join(outputDir, 'export.json'), deps.readVibeExportFile ?? ((p) => readFileAsync(p, 'utf8')));
+            // A throwing onVibeOutcome (caller bug) must never skip the directory removal below.
+            try { opts?.onVibeOutcome?.(classifyVibeOutcome(evidence)); } catch { /* caller's own bug; cleanup still runs */ }
+          } finally {
+            await rmAsync(outputDir, { recursive: true, force: true }).catch(() => {});
+          }
         });
       }
     }

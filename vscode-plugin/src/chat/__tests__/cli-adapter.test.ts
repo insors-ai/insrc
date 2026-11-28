@@ -1113,45 +1113,84 @@ test("vibe: s3/t7 — unit: readExitEvidence-driven outcome classification: stop
   assert.equal(classifyVibeOutcome({ stopReason: undefined, outcome: 'finished' }), 'ok');
 });
 
+// s3/t7: a REAL executable fixture for the direct-spawn route (plain `vibe -p --output-dir
+// <dir>`, no vibeCatalog/worker indirection) -- reads the prompt from stdin per t3's own
+// contract, writes a real export.json to the real --output-dir it was passed, and exits 0.
+// Whether it writes a stop_reason is driven by a marker in the prompt text itself, since the
+// real mkdtemp'd outputDir is unknown until run() allocates it.
+const VIBE_DIRECT_SPAWN_FIXTURE = String.raw`#!/usr/bin/env node
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+let stdin = '';
+for await (const c of process.stdin) stdin += c;
+process.stdout.write(JSON.stringify({ type: 'message', role: 'assistant', sessionId: 'sess-fixture', content: [{ type: 'text', text: 'hi' }] }) + '\n');
+const args = process.argv.slice(2);
+const outputDir = args[args.indexOf('--output-dir') + 1];
+mkdirSync(outputDir, { recursive: true });
+const stopReason = stdin.includes('STOPREASON') ? 'max_turns' : null;
+writeFileSync(join(outputDir, 'export.json'), JSON.stringify({ outcome: 'finished', stop_reason: stopReason }));
+process.exit(0);
+`;
+
+/** Puts a real `vibe` executable (VIBE_DIRECT_SPAWN_FIXTURE) first on PATH for the duration
+ *  of `fn`, so the real nodeSpawner resolves it exactly as it would the installed binary --
+ *  restores PATH and removes the fixture directory afterward either way. */
+async function withVibeDirectSpawnFixture<T>(fn: (cwd: string) => Promise<T>): Promise<T> {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-vibe-fixture-bin-')));
+  writeFileSync(join(dir, 'vibe'), VIBE_DIRECT_SPAWN_FIXTURE, { mode: 0o755 });
+  const originalPath = process.env['PATH'];
+  process.env['PATH'] = `${dir}${process.platform === 'win32' ? ';' : ':'}${originalPath ?? ''}`;
+  try {
+    return await fn(dir); // a real, existing cwd -- REQ()'s default '/repo' does not exist on disk
+  } finally {
+    process.env['PATH'] = originalPath;
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 test("vibe: s3/t7 — integration: a fixture binary exiting cleanly with no stopReason yields vibeOutcome 'ok', read identically live and on reattach", async () => {
   // "On reattach" is carried forward to t9/t10, which pass this computed outcome through the
-  // durable turn-end marker a follower reads; this Task proves the LIVE read half.
-  let resolveOutcome!: (o: string) => void;
-  const outcomePromise = new Promise<string>((res) => { resolveOutcome = res; });
-  const { deps } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
-  const withExport: AdapterDeps = { ...deps, readVibeExportFile: async () => JSON.stringify({ outcome: 'finished' }) };
-  const events = await collect(createProviderRegistry(withExport).get('vibe').run(REQ({ provider: 'vibe' }), { onVibeOutcome: (o) => resolveOutcome(o) }));
-  assert.equal(events.at(-1)!.kind, 'done');
-  assert.equal(await outcomePromise, 'ok');
+  // durable turn-end marker a follower reads; this Task proves the LIVE read half against a
+  // REAL exiting process writing a REAL export.json, not a simulated reader.
+  await withVibeDirectSpawnFixture(async (cwd) => {
+    let resolveOutcome!: (o: string) => void;
+    const outcomePromise = new Promise<string>((res) => { resolveOutcome = res; });
+    const adapter = createProviderRegistry({ isInstalled: () => true, spawn: nodeSpawner }).get('vibe');
+    const events = await collect(adapter.run(REQ({ provider: 'vibe', prompt: 'hi', cwd }), { onVibeOutcome: (o) => resolveOutcome(o) }));
+    assert.equal(events.at(-1)!.kind, 'done');
+    assert.equal(await outcomePromise, 'ok');
+  });
 });
 
 test("vibe: s3/t7 — integration: a fixture binary exiting cleanly with a stopReason yields vibeOutcome 'replay-unsafe' despite exit code 0", async () => {
-  let resolveOutcome!: (o: string) => void;
-  const outcomePromise = new Promise<string>((res) => { resolveOutcome = res; });
-  const { deps } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']); // default exit: { code: 0, signal: null }
-  const withExport: AdapterDeps = { ...deps, readVibeExportFile: async () => JSON.stringify({ stop_reason: 'max_turns' }) };
-  const events = await collect(createProviderRegistry(withExport).get('vibe').run(REQ({ provider: 'vibe' }), { onVibeOutcome: (o) => resolveOutcome(o) }));
-  const done = events.at(-1) as { kind: string; ok: boolean };
-  assert.equal(done.kind, 'done');
-  assert.equal(done.ok, true, 'exit code 0 still synthesizes an ok:true done -- vibeOutcome is reported as a separate signal here; wiring it into the done/marker itself is a later Task (t9)');
-  assert.equal(await outcomePromise, 'replay-unsafe', 'a real stop_reason overrides the clean exit code -- never inferred from exit code alone');
+  await withVibeDirectSpawnFixture(async (cwd) => {
+    let resolveOutcome!: (o: string) => void;
+    const outcomePromise = new Promise<string>((res) => { resolveOutcome = res; });
+    const adapter = createProviderRegistry({ isInstalled: () => true, spawn: nodeSpawner }).get('vibe');
+    const events = await collect(adapter.run(REQ({ provider: 'vibe', prompt: 'STOPREASON', cwd }), { onVibeOutcome: (o) => resolveOutcome(o) }));
+    const done = events.at(-1) as { kind: string; ok: boolean };
+    assert.equal(done.kind, 'done');
+    assert.equal(done.ok, true, 'exit code 0 still synthesizes an ok:true done -- vibeOutcome is reported as a separate signal here; wiring it into the done/marker itself is a later Task (t9)');
+    assert.equal(await outcomePromise, 'replay-unsafe', 'a real stop_reason overrides the clean exit code -- never inferred from exit code alone');
+  });
 });
 
 test('vibe: s3/t7 — the export directory is removed on every exit path, including an error or cancelled turn', async () => {
-  const dirsOf = async (lines: readonly string[], run: (reg: ReturnType<typeof createProviderRegistry>) => Promise<unknown>): Promise<string> => {
-    const { deps, spawner } = depsFor({ lines }, ['vibe']);
+  const dirsOf = async (script: FakeProcScript, run: (reg: ReturnType<typeof createProviderRegistry>) => Promise<unknown>): Promise<string> => {
+    const { deps, spawner } = depsFor(script, ['vibe']);
     await run(createProviderRegistry(deps));
     const args = spawner.calls[0]!.args;
     return args[args.indexOf('--output-dir') + 1]!;
   };
   // clean exit
   {
-    const dir = await dirsOf(VIBE_TEXT_TURN, (reg) => collect(reg.get('vibe').run(REQ({ provider: 'vibe' }))));
+    const dir = await dirsOf({ lines: VIBE_TEXT_TURN }, (reg) => collect(reg.get('vibe').run(REQ({ provider: 'vibe' }))));
     await waitFor(() => !existsSync(dir));
   }
-  // a cancelled (killed) turn
+  // a cancelled (killed) turn -- hangUntilKilled, so the process is still genuinely running
+  // (never exits on its own) when cancel() reaches it, proving this is real kill-path cleanup.
   {
-    const dir = await dirsOf([JSON.stringify({ type: 'reasoning' })], async (reg) => {
+    const dir = await dirsOf({ lines: [JSON.stringify({ type: 'reasoning' })], hangUntilKilled: true }, async (reg) => {
       const adapter = reg.get('vibe');
       for await (const ev of adapter.run(REQ({ provider: 'vibe' }))) {
         if (ev.kind === 'status') adapter.cancel((ev as { turnId: string }).turnId);

@@ -19,7 +19,7 @@ import { createSessionOutput, parseMarker } from '../session-output.js';
 import { defaultProcessStartTime } from '../session-lock.js';
 import { fileURLToPath } from 'node:url';
 import { createProviderRegistry, classifyPermissionDenial, classifyVibeOutcome, deriveChatTitle, nodeSpawner, parseVibeMcpTool, vibeMapper, writeReachedStdin } from '../cli-adapter.js';
-import { buildArgv, vibeMcpNaming } from '../../../../src/shared/vibe-adapter.js';
+import { buildArgv, readExitEvidence, vibeMcpNaming } from '../../../../src/shared/vibe-adapter.js';
 import type { AdapterDeps, ProviderId, ProviderRegistry, StreamAdapter, TurnProcess, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import {
@@ -1104,13 +1104,26 @@ test('vibe: s3/t6 — integration: a stdin write/end failure AFTER spawn succeed
   assert.equal(last.replayUnsafe, true, "dispatchState had already left 'not-sent' (spawn succeeded before the write), so the gate marks it replay-unsafe, never assumed pre-dispatch-safe");
 });
 
-test("vibe: s3/t7 — unit: readExitEvidence-driven outcome classification: stopReason undefined -> 'ok'; stopReason present -> 'replay-unsafe'; export.json missing/malformed -> 'no-evidence'", () => {
-  assert.equal(classifyVibeOutcome(undefined), 'no-evidence', 'missing/unreadable/malformed export.json (readExitEvidence itself returns undefined for all three)');
-  assert.equal(classifyVibeOutcome({ stopReason: undefined }), 'ok');
-  assert.equal(classifyVibeOutcome({ stopReason: 'max_turns' }), 'replay-unsafe');
-  // Never inferred from merely having decoded a row -- an outcome with no stopReason field
-  // but an unrelated `outcome` string present is still 'ok', not something else guessed from it.
+test("vibe: s3/t7 — unit: readExitEvidence-driven outcome classification: stopReason undefined -> 'ok'; stopReason present -> 'replay-unsafe'; export.json missing/malformed -> 'no-evidence'", async () => {
+  // Through the real readExitEvidence, not just classifyVibeOutcome fed constructed objects --
+  // a missing file, a malformed one, and a well-formed one with/without stop_reason.
+  const missing = await readExitEvidence('/definitely/does/not/exist/export.json', async (p) => { throw new Error(`ENOENT: ${p}`); });
+  assert.equal(classifyVibeOutcome(missing), 'no-evidence', 'a missing export.json');
+
+  const malformed = await readExitEvidence('/x/export.json', async () => 'not valid json {{{');
+  assert.equal(classifyVibeOutcome(malformed), 'no-evidence', 'malformed (unparseable) export.json');
+
+  const clean = await readExitEvidence('/x/export.json', async () => JSON.stringify({ outcome: 'finished' }));
+  assert.equal(classifyVibeOutcome(clean), 'ok');
+
+  const withStopReason = await readExitEvidence('/x/export.json', async () => JSON.stringify({ stop_reason: 'max_turns' }));
+  assert.equal(classifyVibeOutcome(withStopReason), 'replay-unsafe');
+
+  // The pure classifier's own boundary, directly: never inferred from merely having decoded a
+  // row -- an evidence object with no stopReason but an unrelated outcome string is still 'ok'.
+  assert.equal(classifyVibeOutcome(undefined), 'no-evidence');
   assert.equal(classifyVibeOutcome({ stopReason: undefined, outcome: 'finished' }), 'ok');
+  assert.equal(classifyVibeOutcome({ stopReason: 'max_turns' }), 'replay-unsafe');
 });
 
 // s3/t7: a REAL executable fixture for the direct-spawn route (plain `vibe -p --output-dir

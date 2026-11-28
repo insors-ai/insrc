@@ -49,7 +49,7 @@ Run at 2026-11-28T10:11:13.449Z on commit `0fa2f8c20`. Tests check: **passed**. 
 
 ## t2
 
-Run at 2026-11-28T10:39:28.193Z on commit `28ce36b21`. Tests check: **passed**. 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-28T10:48:53.443Z on commit `e6c98e204`. Tests check: **passed**. 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: resolver-import-boundary-excludes-application-paths-storage-provider-and-source-build**
 
@@ -128,7 +128,7 @@ Run at 2026-11-28T10:39:28.193Z on commit `28ce36b21`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/installer/__tests__/owned-runtime-home.test.ts` | 0 | 8 | 5.3 s |  |
-| `src/installer/__tests__/runtime-store.test.ts` | 0 | 9 | 149.5 s |  |
+| `src/installer/__tests__/runtime-store.test.ts` | 0 | 9 | 150.6 s |  |
 
 ## t3
 

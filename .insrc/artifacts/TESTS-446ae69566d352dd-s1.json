@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 24,
-        "contentHash": "da336f1629c764e5707cb898436af38b2eec4fd3f324481a4bc3da9f882e58f1",
-        "at": "2026-11-28T10:39:28.222Z",
+        "number": 25,
+        "contentHash": "5b0d572295e80e38f50d1acbe4e4e5a0b604536e8e868fe4c35cf66462f00585",
+        "at": "2026-11-28T10:48:53.471Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "446ae69566d352dd",
     "storyId": "s1",
     "createdAt": "2026-11-26T07:40:02.075Z",
-    "updatedAt": "2026-11-28T10:39:28.193Z",
+    "updatedAt": "2026-11-28T10:48:53.443Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-26T06:29:10.586Z",
     "epicSlug": "complete-shared-external-node-runtime-foundation",
-    "revision": 24
+    "revision": 25
   },
   "body": {
     "tasks": [
@@ -220,8 +220,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "28ce36b21",
-        "ranAt": "2026-11-28T10:39:28.193Z",
+        "commit": "e6c98e204",
+        "ranAt": "2026-11-28T10:48:53.443Z",
         "testsPassed": true,
         "tests": [
           {
@@ -420,7 +420,7 @@
             "file": "src/installer/__tests__/owned-runtime-home.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 5293,
+            "durationMs": 5317,
             "titles": [
               {
                 "title": "owned runtime cleanup restores directory write only after positive resource and child closure",
@@ -461,7 +461,7 @@
             "file": "src/installer/__tests__/runtime-store.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 149481,
+            "durationMs": 150645,
             "titles": [
               {
                 "title": "resolver import graph stays within installer-only read primitives",

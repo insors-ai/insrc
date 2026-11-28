@@ -58,10 +58,15 @@ registered with the cleanup owner rather than erased.
 - Precision correction asserts the complete canonical missing path and full
   recovery message. Run888ae005-21dd-4958-a5ce-46b5618a1003 passed all9 resolver
   cases again in157.68s with confirmed owned-group closure. Production code is
-  unchanged. The corrected registered gate is pending.
+  unchanged. The corrected registered gate passed all9 acceptance checks, typecheck and
+  all17 mapped cases at e6c98e204; final raw verdict/TAP and verified settings
+  restoration are retained here.
 - Raw failed TAP retains its original whitespace; source diff checks are clean.
 
 `source-inputs.json` binds the four edited inputs. T3/T4 production acquisition
 and publication, T7 SDK isolation, T8 consumer wiring, T9 full scoped regression
 and T10 current macOS/Linux VM qualification remain separate pending work.
 Windows native execution/enablement and host-v2 migration were not performed.
+
+T1 and T2 are now revalidated against PLAN4. The remaining eight older BUILD
+rows do not establish current completion, and final Story BUILD is unapproved.

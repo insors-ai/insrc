@@ -3,7 +3,7 @@
   "verdict": "changes-requested",
   "allFindingsResolved": false,
   "existingStory": "446ae69566d352dd/s1",
-  "reworkAdmission": "LLD8 and PLAN4 approved; T1 implementation passed registered validation at0fa2f8c20/BUILD23/TESTS23. T2-T10 current PLAN4 implementation/revalidation remains outstanding; final Story BUILD is unapproved.",
+  "reworkAdmission": "LLD8 and PLAN4 approved. T1 passed at0fa2f8c20; T2 passed at e6c98e204 after closing its exact-diagnostic assertion gap. T3-T10 current implementation/revalidation and final Story BUILD approval remain outstanding.",
   "nativeEvidence": "Prior macOS/Linux source equivalence becomes historical after production edits; affected regression/native qualification required before final BUILD approval",
   "findings": [
     {
@@ -164,11 +164,12 @@
     },
     {
       "id": "T1",
-      "status": "pending",
+      "status": "resolved",
       "scope": "tests",
       "plan4Owners": [
         "t2"
-      ]
+      ],
+      "evidence": "../plan4-build-t2/README.md"
     },
     {
       "id": "T2",
@@ -291,9 +292,9 @@
       "id": "R3-2",
       "severity": "LOW-MED",
       "kind": "guidance",
-      "status": "approved-design-awaiting-build",
+      "status": "resolved",
       "scope": "Exact root-only safely quoted chmod guidance before preservation/move; delete nothing; no product enforcement",
-      "evidence": "../../LLD.md",
+      "evidence": "../plan4-build-t2/README.md",
       "plan4Owners": [
         "t2"
       ]

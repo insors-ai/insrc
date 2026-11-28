@@ -1,0 +1,24 @@
+{
+  "lldRevision": 7,
+  "status": "draft",
+  "acceptedPriorFixes": [
+    "1",
+    "2",
+    "3",
+    "14",
+    "T2",
+    "T5"
+  ],
+  "productionChanged": false,
+  "testsRun": false,
+  "diagramSourcesAndEndpointsChecked": true,
+  "pixelRenderingPerformed": false,
+  "strategySubjects": 30,
+  "ownerDecisionQuestionIds": [
+    "q14408171",
+    "q3f4b548f"
+  ],
+  "manualEnforcementClaimRemoved": true,
+  "readOnlyOlderReaderCompatibilityUnresolved": true,
+  "sourceFeedbackCopyMatches": true
+}

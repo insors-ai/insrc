@@ -3,7 +3,7 @@
   "verdict": "changes-requested",
   "allFindingsResolved": false,
   "existingStory": "446ae69566d352dd/s1",
-  "reworkAdmission": "Registered T5 rework passed at2f6bcaea7, BUILD22/TESTS22; LLD6 pending human approval before remaining design rework/PLAN revision",
+  "reworkAdmission": "Prior T5 passed at2f6bcaea7 (BUILD22/TESTS22); current round is registered design.story revision7 only. No production implementation until LLD/PLAN approval; owner recovery/protection choices unresolved.",
   "nativeEvidence": "Prior macOS/Linux source equivalence becomes historical after production edits; affected regression/native qualification required before final BUILD approval",
   "findings": [
     {
@@ -26,19 +26,19 @@
     },
     {
       "id": "4",
-      "status": "design-revision6-pending-human-approval",
+      "status": "design-revision7-pending-owner-decision-and-human-approval",
       "scope": "design/integrity",
       "evidence": "../../LLD.md"
     },
     {
       "id": "5",
-      "status": "design-revision6-pending-human-approval",
+      "status": "design-revision7-pending-owner-decision-and-human-approval",
       "scope": "design/integrity",
       "evidence": "../../LLD.md"
     },
     {
       "id": "6",
-      "status": "design-revision6-pending-human-approval",
+      "status": "design-revision7-pending-owner-decision-and-human-approval",
       "scope": "design/integrity",
       "evidence": "../../LLD.md"
     },
@@ -49,7 +49,7 @@
     },
     {
       "id": "8",
-      "status": "design-revision6-pending-human-approval",
+      "status": "design-revision7-pending-owner-decision-and-human-approval",
       "scope": "runtime/consumer",
       "evidence": "../../LLD.md"
     },
@@ -96,7 +96,7 @@
     },
     {
       "id": "17",
-      "status": "design-revision6-pending-human-approval",
+      "status": "design-revision7-pending-owner-decision-and-human-approval",
       "scope": "bootstrap",
       "evidence": "../../LLD.md"
     },
@@ -132,6 +132,58 @@
       "id": "T6",
       "status": "pending",
       "scope": "tests"
+    },
+    {
+      "id": "R2-1",
+      "severity": "MED",
+      "kind": "design",
+      "status": "draft-correction-pending-owner-decision",
+      "scope": "manual recovery wording and exact diagnostic",
+      "evidence": "../../LLD.md"
+    },
+    {
+      "id": "R2-2",
+      "severity": "LOW-MED",
+      "kind": "advisory-owner-decision",
+      "status": "read-only-proposal-pending-compatibility-and-owner-choice",
+      "scope": "POSIX write protection versus SDK-only accepted accidental-write risk",
+      "evidence": "../../LLD.md"
+    },
+    {
+      "id": "R2-3",
+      "severity": "LOW",
+      "kind": "documentation",
+      "status": "documented-in-draft-pending-human-approval",
+      "scope": "Shell-only/pre-fork signal latency; no prompt-cancellation promise",
+      "evidence": "../../LLD.md"
+    },
+    {
+      "id": "R2-4",
+      "severity": "LOW",
+      "kind": "test",
+      "status": "pending-existing-t5-plan-realignment",
+      "scope": "Rename foreign-archive pinned-size case honestly; no code change yet"
+    },
+    {
+      "id": "R2-5",
+      "severity": "LOW",
+      "kind": "nit",
+      "status": "pending-existing-t5-plan-realignment",
+      "scope": "Normalize work once and use canonical value downstream; no code change yet"
     }
-  ]
+  ],
+  "round2": {
+    "reviewedHead": "46f99ef5c611",
+    "feedback": "REVIEW-FEEDBACK-ROUND2.md",
+    "feedbackSha256": "8b85f5df2220bdbefeba38b4e86f4bcc86d3a3b0c412e457c4cb7500be0bf725",
+    "verdict": "Six fixes accepted; LLD6 acceptable after R2-1 correction; no artifact approved",
+    "productionChangesThisRound": false,
+    "testsRunThisRound": false,
+    "lldRevision": 7,
+    "ownerChoicesPending": [
+      "q14408171",
+      "q3f4b548f"
+    ],
+    "nativeQualification": "Current macOS/Linux reruns still pending; Linux must include dash group cancellation."
+  }
 }

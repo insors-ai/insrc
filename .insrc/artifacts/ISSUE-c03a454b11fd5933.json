@@ -24,12 +24,12 @@
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-12T10:00:51.699Z",
     "envelope": {
+      "description": "",
       "references": [],
-      "attachments": [],
-      "description": ""
+      "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 0,
         "contentHash": "979cc8dd08e8b109e3343437df02f691c4bc353f00ab0343b745ebd45ac96156",
@@ -40,7 +40,32 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T07:47:28.171Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "c03a454b11fd5933",
+      "slug": "EPIC-c03a454b11fd5933"
+    },
+    "tracker": {
+      "adapter": "github",
+      "labelsCreated": [
+        "epic:bug-test-vscode-plugin-src-tests"
+      ],
+      "issueRef": "insors-ai/insrc#362",
+      "epicStatus": "closed",
+      "storyStatus": {
+        "s1": "closed"
+      },
+      "lastSyncedAt": "2026-11-28T08:07:31Z"
     }
   },
   "body": {

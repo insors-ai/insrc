@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "498f2e4703bbf85972c95671647b3db327a1f1b6ecd0f64028a70df807958568",
+        "at": "2026-11-28T07:49:18.187Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T08:06:01.757Z",
+        "override": {
+          "reason": "Automated code review is unavailable (review endpoints are being rewritten); the build gate judge (cli-codex) returned passed:true with all 4 checks satisfied (4/4 tests, typecheck clean), and a human code review packet was generated at /tmp/.insrc/review-packet-c03a454b11fd5933-s1.md with verdict \"no blocking findings\". Approved on the user's explicit in-chat yes for BUILD-c03a454b11fd5933-s1."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-cfcfac7e-97b3-4b09-924a-79c3cb6e0275",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T07:47:44.070Z",
+    "epicCreatedAt": "2026-10-12T10:00:51.699Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c03a454b11fd5933",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "epicSlug": "bug-test-vscode-plugin-src-tests",
+    "updatedAt": "2026-11-28T07:48:41.395Z"
+  },
+  "body": {
+    "focus": "ISSUE-c03a454b11fd5933 (approved): Make the activation tests run to completion. Gate-visible failure on HEAD: hosts/__tests__/activation.test.ts test 1 asserts the launch target as join(paths.daemonRoot, 'scripts', 'insrc-mcp'), but extension.ts:167 now resolves join(await selectedMcpRoot(paths) ?? paths.daemonRoot, 'scripts', 'insrc-mcp') (owned-runtime routing) and returns it only when it exists. (The ISSUE's original bare-run hang — 5 cancelled tests in src/__tests__/activation.test.ts — is a --test-force-exit artifact owned by ISSUE-4b336004; under the gate's pinned command that file is 15/15.) Fix: update the test expectation to the selectedMcpRoot resolution; no product change.",
+    "producesLld": false,
+    "commit": "8ed798155",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "hosts/__tests__/activation.test.ts test 1 now asserts the current launch-target contract: join(await selectedMcpRoot(paths) ?? paths.daemonRoot, 'scripts', 'insrc-mcp') plus the existsSync(target) ? target : undefined guard. Test-side expectation only, no product change. File is 4/4 under the pinned command; tsc clean root + plugin. Commit 8ed798155.",
+    "testRecord": {
+      "md": "docs/standalone/bug-test-vscode-plugin-src-tests-E20261012c03a454b/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/hosts/__tests__/activation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T07:48:41.395Z"
+      }
+    ]
+  },
+  "citations": []
+}

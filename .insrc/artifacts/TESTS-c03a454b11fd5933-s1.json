@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "1b29e4f4f0f8d7e13751b26199a0c0914b0f3d8e529f36875671b5cec224d201",
+        "at": "2026-11-28T07:48:41.591Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "c03a454b11fd5933",
+    "storyId": "s1",
+    "createdAt": "2026-11-28T07:48:41.395Z",
+    "updatedAt": "2026-11-28T07:48:41.395Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-12T10:00:51.699Z",
+    "epicSlug": "bug-test-vscode-plugin-src-tests",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "8ed798155",
+        "ranAt": "2026-11-28T07:48:41.395Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vscode-plugin/src/hosts/__tests__/activation.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/hosts/__tests__/activation.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/hosts/__tests__/activation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 369,
+            "titles": [
+              {
+                "title": "extension.ts constructs the AiHostRegistry (HostSpecs + real HostEnv/HostFileSystem) and calls registerHostCommands with the s1 surfaces",
+                "result": "pass"
+              },
+              {
+                "title": "the activation-time host-wire step runs through the guarded runOnboarding sequence (S005 coalescing) and only fires when present hosts exist",
+                "result": "pass"
+              },
+              {
+                "title": "contributes.commands includes insrc.hosts.wire alongside the S002 daemon entries (palette reachability, k6)",
+                "result": "pass"
+              },
+              {
+                "title": "sync-assets bundles the canonical steering block so the steering body ships with the extension",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

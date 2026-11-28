@@ -1,4 +1,5 @@
 <!-- insrc:artifact ISSUE-c03a454b11fd5933 -->
+**Tracker:** [insors-ai/insrc#362](https://github.com/insors-ai/insrc/issues/362)
 
 # Make the activation tests run to completion
 
@@ -16,10 +17,3 @@ runReachabilityProbe (vscode-plugin/src/activation.ts:34-58) races the daemon pr
 ## Fix intent
 
 The hung-probe test must keep the process alive long enough for the probe's deadline to fire, or otherwise stop depending on the unref'd timer, without changing the product's choice not to keep a host alive. All six tests in the file then run and report, so the five activation-shell checks they cover (deadline, never-throws, synchronous activation, package scaffold, the vscode-import boundary) are actually exercised again.
-
-## Citations
-
-- **[[c1]]** `code` `vscode-plugin/src/activation.ts:34-58` — "timer = setTimeout(() => resolve('errored'), timeoutMs); // Do not keep the process alive for the probe (Node hosts / tests). ... (timer as { unref(): unknown }).unref(); ... reachability = await Prom"
-- **[[c2]]** `code` `vscode-plugin/src/__tests__/activation.test.ts:46-52` — "test('runReachabilityProbe degrades a hung probe to errored within the bounded deadline', ...) ... await runReachabilityProbe({ client: hung, status, probeTimeoutMs: 20 }); assert.equal(status.current"
-- **[[c3]]** `step-output` `npx tsx --test src/__tests__/activation.test.ts, 2026-10-12` — "# tests 6 / # pass 1 / # fail 0 / # cancelled 5; not ok 2 ... failureType: 'cancelledByParent' error: 'Promise resolution is still pending but the event loop has already resolved'"
-- **[[c4]]** `step-output` `git log -2 -- vscode-plugin/src/__tests__/activation.test.ts vscode-plugin/src/activation.ts` — "9bb8c6f3 2026-09-24 feat(daemon): S001 daemon.update+updateOutcome IPC ...; 93c6f909 2026-09-22 feat(vscode): S006 Marketplace publish scaffolding ..."

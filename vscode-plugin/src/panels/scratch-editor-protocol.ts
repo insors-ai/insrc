@@ -50,6 +50,7 @@ export type ScratchEditorToHost =
   | (Session & { readonly type: 'lock'; readonly locked: boolean })
   | (Session & { readonly type: 'undo' | 'redo' | 'save'; readonly draftSeq: number; readonly docVersion: number })
   | (Session & { readonly type: 'asset-request'; readonly requestId: string; readonly action: 'pick-link' | 'pick-image' })
+  | (Session & { readonly type: 'asset-request'; readonly requestId: string; readonly action: 'resolve-image'; readonly href: string })
   | (Session & { readonly type: 'asset-request'; readonly requestId: string; readonly action: 'upload-image'; readonly name: string; readonly mediaType: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp'; readonly dataBase64: string });
 
 export type ScratchHostToEditor =
@@ -116,7 +117,8 @@ export function parseScratchEditorMessage(value: unknown): ScratchEditorToHost |
       break;
     case 'asset-request':
       if (!token(m.requestId)) break;
-      if (m.action === 'pick-link' || m.action === 'pick-image') valid = sessionKeys(m, ['requestId', 'action']);
+      if (m.action === 'resolve-image') valid = sessionKeys(m, ['requestId', 'action', 'href']) && text(m.href, 8192);
+      else if (m.action === 'pick-link' || m.action === 'pick-image') valid = sessionKeys(m, ['requestId', 'action']);
       else if (m.action === 'upload-image') {
         valid = sessionKeys(m, ['requestId', 'action', 'name', 'mediaType', 'dataBase64']) && image(m);
         return valid && encodedWithin(m, SCRATCH_ASSET_MESSAGE_BYTES) ? m as unknown as ScratchEditorToHost : undefined;

@@ -47,9 +47,9 @@ async function harness() {
     webview: { html: '', options: {}, cspSource: "'self' https://*.vscode-cdn.net", asWebviewUri: (_u: Uri) => ({ toString: () => 'https://file.vscode-resource.vscode-cdn.net/editor.js' }), onDidReceiveMessage: incoming.listen,
       postMessage: async (m: ScratchHostToEditor) => { if (m.type === dropped) return false; messages.push(m); if (m.type === 'focus-request') setImmediate(() => incoming.fire({ type: 'focus-ready', paneSessionId: m.paneSessionId, requestId: m.requestId, docVersion: m.docVersion + (focusMode === 'wrong-version' ? 1 : 0), draftSeq: m.draftSeq, focused: focusMode !== 'denied' })); return true; } } };
   const api = { Uri, Range, WorkspaceEdit: Edit, TabInputCustom: CustomTab,
-    window: { registerCustomEditorProvider: (_type: string, p: VSCode.CustomTextEditorProvider, options: { supportsMultipleEditorsPerDocument: boolean }) => { assert.equal(options.supportsMultipleEditorsPerDocument, true); provider = p; return { dispose: () => {} }; }, tabGroups: { activeTabGroup: { get activeTab() { return activeTab; } } }, showWarningMessage: async () => undefined },
+    window: { registerCustomEditorProvider: (_type: string, p: VSCode.CustomTextEditorProvider, options: { supportsMultipleEditorsPerDocument: boolean }) => { assert.equal(options.supportsMultipleEditorsPerDocument, true); provider = p; return { dispose: () => {} }; }, tabGroups: { activeTabGroup: { get activeTab() { return activeTab; } } }, showOpenDialog: async () => undefined, showWarningMessage: async () => undefined },
     commands: { executeCommand: async (name: string, ...args: unknown[]) => { commands.push({ name, args }); if (name === 'undo' || name === 'redo') { assert.equal(args.length, 0); doc.text = name === 'undo' ? '# Before\n' : '# Draft\n'; doc.version++; doc.isDirty = true; changed.fire({ document: doc }); } } },
-    workspace: { onDidChangeTextDocument: changed.listen, onWillSaveTextDocument: willSave.listen, onDidCloseTextDocument: closed.listen,
+    workspace: { getWorkspaceFolder: () => undefined, onDidChangeTextDocument: changed.listen, onWillSaveTextDocument: willSave.listen, onDidCloseTextDocument: closed.listen,
       applyEdit: async (edit: Edit) => { applies++; const pending = gate; gate = undefined; if (pending) await pending.promise; const change = edit.edits[0]!; assert.equal(change.uri, uri); doc.text = doc.text.slice(0, change.range.start.character) + change.text + doc.text.slice(change.range.end.character); doc.version++; doc.isDirty = true; changed.fire({ document: doc }); return true; } },
   } as unknown as typeof VSCode;
   let sendSelection: (text: string, assertCurrent: () => void) => Promise<void> = async () => { throw new Error('Chat unavailable'); };
@@ -220,4 +220,21 @@ test('scratch native selection bounds concurrent requests and reports dropped co
   await new Promise(r => setTimeout(r, 25));
   ready.resolve(); await until(() => h.warnings.some(m => m.includes('confirmation was not delivered')));
   assert.deepEqual(inserted, [selection.selectedText]);
+}));
+
+
+test('scratch native assets persist portable bytes correlate failure cancellation and forbid locked uploads', async () => fixture(async h => {
+  const id = await h.open(), png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==';
+  h.send(id, { type: 'asset-request', requestId: 'a1', action: 'upload-image', name: 'pasted.png', mediaType: 'image/png', dataBase64: png });
+  await until(() => h.messages.some(m => m.type === 'asset-result' && m.requestId === 'a1'));
+  const stored = h.messages.find(m => m.type === 'asset-result' && m.requestId === 'a1');
+  assert.ok(stored?.type === 'asset-result'); assert.match(stored.href, /^assets\/[A-Za-z0-9-]+\.png$/);
+  assert.deepEqual(await readFile(join(h.dir, 'scratches', stored.href)), Buffer.from(png, 'base64')); assert.equal(h.applies, 0);
+  h.send(id, { type: 'asset-request', requestId: 'a2', action: 'resolve-image', href: '../elsewhere.png' });
+  await until(() => h.messages.some(m => m.type === 'action-error' && m.requestId === 'a2'));
+  h.send(id, { type: 'asset-request', requestId: 'a3', action: 'pick-image' });
+  await until(() => h.messages.some(m => m.type === 'asset-result' && m.requestId === 'a3' && m.href === ''));
+  h.send(id, { type: 'lock', locked: true });
+  h.send(id, { type: 'asset-request', requestId: 'a4', action: 'upload-image', name: 'pasted.png', mediaType: 'image/png', dataBase64: png });
+  await until(() => h.messages.some(m => m.type === 'action-error' && m.requestId === 'a4')); assert.equal(h.applies, 0);
 }));

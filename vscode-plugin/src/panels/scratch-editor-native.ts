@@ -2,7 +2,7 @@
  * native TextDocument; recovery is separate extension-owned storage. Native
  * saves use normal VS Code file semantics, not ScratchStore's no-follow I/O. */
 import type * as VSCode from 'vscode';
-import { basename, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { ScratchStore } from '../chat/scratch-store.js';
 import { ScratchDocumentController } from './scratch-editor-provider.js';
@@ -12,6 +12,8 @@ import { scratchEditorHtml } from './scratch-editor-html.js';
 import { makeNonce } from './html.js';
 import { checkScratchMarkdownEdit, scratchSourceCodec } from './scratch-markdown.js';
 import { parseScratchEditorMessage, type ScratchHostToEditor, type ScratchSelectionSend } from './scratch-editor-protocol.js';
+
+import { readScratchImage, storeScratchImage, resolveScratchImage, scratchWorkspaceLink } from './scratch-editor-assets.js';
 
 export const SCRATCH_EDITOR_VIEW_TYPE = 'insrc.scratchpad.editor';
 export interface ScratchNativeDeps {
@@ -124,6 +126,7 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
     const copy = await api.workspace.openTextDocument({ content: record.draft.markdown, language: 'markdown' });
     await api.window.showTextDocument(copy, { preview: false }); // explicit copy; never replay into source
   }
+  const panelResource = (pane: Pane, path: string): string => pane.panel.webview.asWebviewUri(api.Uri.file(path)).toString();
   async function handle(entry: DocumentEntry, pane: Pane, value: unknown): Promise<void> {
     const message = parseScratchEditorMessage(value);
     if (!message || message.paneSessionId !== pane.id || pane.disposed || stopped) throw new Error('Invalid scratchpad message/session.');
@@ -149,6 +152,46 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
       await validate(entry.document.uri);
       if (entry.controller.hasPending) warn('Unapplied scratchpad text remains in recovery; opening the text editor does not apply it.');
       await api.commands.executeCommand('vscode.openWith', entry.document.uri, 'default'); return;
+    }
+    if (message.type === 'asset-request') {
+      try {
+        await validate(entry.document.uri);
+        const initial = entry.controller.snapshot, sequence = entry.controller.latestSequence(pane.id);
+        const assertCurrent = (): void => {
+          const current = entry.controller.snapshot;
+          if (stopped || pane.disposed || entry.document.isClosed || pane.locked || entry.controller.conflicted || current.version !== initial.version || current.digest !== initial.digest || entry.controller.latestSequence(pane.id) !== sequence) throw new Error('Scratchpad changed during the asset action; retry.');
+        };
+        let href = '', path: string | undefined;
+        if (message.action === 'resolve-image') {
+          path = await resolveScratchImage(entry.document.uri.fsPath, message.href); href = message.href;
+        } else {
+          assertCurrent();
+          if (message.action === 'upload-image') {
+            const bytes = Buffer.from(message.dataBase64, 'base64');
+            const result = await storeScratchImage(entry.document.uri.fsPath, bytes, message.mediaType);
+            href = result.href; path = result.path;
+          } else {
+            const picked = (await api.window.showOpenDialog({ canSelectMany: false, openLabel: message.action === 'pick-image' ? 'Insert image' : 'Insert workspace link' }))?.[0];
+            if (picked) {
+              assertCurrent();
+              if (picked.scheme !== 'file') throw new Error('Choose a local workspace file.');
+              const workspace = api.workspace.getWorkspaceFolder(picked);
+              if (!workspace) throw new Error('Choose a file inside an open workspace.');
+              // Resolve against the workspace before reading a picked image too.
+              const link = await scratchWorkspaceLink(entry.document.uri.fsPath, picked.fsPath, workspace.uri.fsPath);
+              if (message.action === 'pick-link') href = link;
+              else { const image = await readScratchImage(picked.fsPath), stored = await storeScratchImage(entry.document.uri.fsPath, image.bytes, image.mediaType); href = stored.href; path = stored.path; }
+            }
+          }
+          assertCurrent();
+        }
+        await delivered(pane, { type: 'asset-result', paneSessionId: pane.id, requestId: message.requestId, href, displayUrl: path ? panelResource(pane, path) : '' });
+      } catch (failure) {
+        const messageText = failure instanceof Error ? failure.message : 'Image or link could not be inserted.';
+        warn(`Scratchpad: ${messageText}`);
+        await delivered(pane, { type: 'action-error', paneSessionId: pane.id, requestId: message.requestId, message: messageText });
+      }
+      return;
     }
     if (message.type === 'send-selection') {
       const captured = Object.freeze({ ...message }), previous = pane.selection;
@@ -234,7 +277,7 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
       const pane: Pane = { id: randomUUID(), panel, locked: preference.initial(), ready: false, disposed: false, listeners: [] };
       entry.panes.set(pane.id, pane);
       const assets = api.Uri.file(join(deps.extensionPath, 'out', 'scratch-editor'));
-      panel.webview.options = { enableScripts: true, localResourceRoots: [assets] };
+      panel.webview.options = { enableScripts: true, localResourceRoots: [assets, api.Uri.file(join(dirname(document.uri.fsPath), 'assets'))] };
       pane.listeners.push(panel.webview.onDidReceiveMessage(value => { void handle(entry, pane, value).catch(failure => error(pane, failure instanceof Error ? `Scratchpad: ${failure.message}` : 'Scratchpad action failed; source and pending recovery are retained.')); }));
       pane.listeners.push(panel.onDidDispose(() => {
         pane.disposed = true; entry.controller.removePane(pane.id);

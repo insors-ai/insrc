@@ -12,6 +12,8 @@ export function createScratchCrepe(config: CrepeConfig): Crepe {
 
 import { editorViewCtx } from '@milkdown/kit/core';
 import type { Node as ProseNode } from '@milkdown/kit/prose/model';
+import { imageBlockSchema } from '@milkdown/kit/component/image-block';
+import { uploadConfig } from '@milkdown/kit/plugin/upload';
 import { history } from '@milkdown/kit/plugin/history';
 import { parseScratchEditorMessage, parseScratchHostMessage, type ScratchEditorToHost, type ScratchSelectionSend } from './scratch-editor-protocol.js';
 import { ScratchRendererState } from './scratch-editor-state.js';
@@ -44,6 +46,10 @@ export class ScratchEditorPane {
   private pendingSelection: ScratchSelectionSend | undefined;
   private sendSequence = 0;
   private selectionTimer: ReturnType<typeof setTimeout> | undefined;
+  private assetSequence = 0;
+  private displayQueue: Promise<unknown> = Promise.resolve();
+  private readonly displayedImages = new Map<string, Promise<string>>();
+  private readonly assetRequests = new Map<string, { resolve: (value: { href: string; displayUrl: string }) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>();
   private readonly inbound: unknown[] = [];
 
   constructor(private readonly root: HTMLElement, private readonly options: ScratchPaneOptions) {
@@ -56,6 +62,10 @@ export class ScratchEditorPane {
       this.post({ type: 'lock', paneSessionId: options.paneSessionId, locked: this.locked });
     });
     this.toolbar.append(this.toggle);
+    for (const [label, glyph, action] of [['Insert workspace link', 'Link', 'pick-link'], ['Insert workspace image', 'Image', 'pick-image']] as const) {
+      const button = this.button(label, glyph, () => { void this.pickAsset(action).catch(e => this.assetError(e)); });
+      button.className = 'scratch-author-action'; this.toolbar.append(button);
+    }
     this.fallback = this.button('Open this file in the text editor', 'Open in text editor', () => this.post({ type: 'open-text', paneSessionId: options.paneSessionId }));
     this.fallback.hidden = true; this.toolbar.append(this.fallback);
     this.status = document.createElement('p'); this.status.className = 'scratch-status'; this.status.setAttribute('role', 'status');
@@ -92,6 +102,7 @@ export class ScratchEditorPane {
     document.addEventListener('selectionchange', this.selectionChanged);
     root.addEventListener('keydown', this.keydown, true);
     root.addEventListener('scroll', this.hideSend, true);
+    root.addEventListener('paste', this.pasteUrl, true);
     this.toggle.disabled = true;
   }
   private button(label: string, text: string, action: () => void): HTMLButtonElement {
@@ -115,6 +126,7 @@ export class ScratchEditorPane {
     this.toggle.textContent = value ? '✎' : '🔒';
     const label = value ? 'Edit scratchpad' : 'Lock scratchpad'; this.toggle.title = label; this.toggle.setAttribute('aria-label', label);
     this.toggle.setAttribute('aria-pressed', String(!value));
+    for (const control of this.toolbar.querySelectorAll<HTMLButtonElement>('.scratch-author-action')) { control.hidden = value || this.failed; control.disabled = value || this.failed; }
   }
   /** Host messages are ordered even while asynchronous Crepe creation is pending. */
   async receive(value: unknown): Promise<void> {
@@ -124,6 +136,11 @@ export class ScratchEditorPane {
   private async receiveInternal(value: unknown): Promise<void> {
     const msg = parseScratchHostMessage(value);
     if (!msg || msg.paneSessionId !== this.options.paneSessionId || this.disposed) return;
+    if (msg.type === 'asset-result' || msg.type === 'action-error' && this.assetRequests.has(msg.requestId)) {
+      const pending = this.assetRequests.get(msg.requestId);
+      if (pending) { clearTimeout(pending.timer); this.assetRequests.delete(msg.requestId); if (msg.type === 'asset-result') pending.resolve(msg); else pending.reject(new Error(msg.message)); }
+      return;
+    }
     if (this.initialization) {
       if (this.inbound.length >= 32) { this.fail('Too many updates while opening. Original source is retained; reopen the pane.'); return; }
       this.inbound.push(msg); return this.initialization;
@@ -180,7 +197,26 @@ export class ScratchEditorPane {
   }
   private async initialize(markdown: string): Promise<void> {
     try {
-      this.crepe = createScratchCrepe({ root: this.editorRoot, defaultValue: markdown, features: { [CrepeFeature.TopBar]: false } });
+      this.crepe = createScratchCrepe({ root: this.editorRoot, defaultValue: markdown, features: { [CrepeFeature.TopBar]: false }, featureConfigs: {
+        [CrepeFeature.ImageBlock]: { onUpload: file => this.uploadImage(file), inlineOnUpload: file => this.uploadImage(file), blockOnUpload: file => this.uploadImage(file), proxyDomURL: href => this.imageDisplay(href) },
+      } });
+      // Crepe serializes alt text as a numeric resize ratio by default. Keep
+      // standard Markdown alt/title independently from presentation-only size.
+      this.crepe.editor.config(ctx => ctx.update(imageBlockSchema.key, original => context => {
+        const schema = original(context);
+        return { ...schema, attrs: { ...schema.attrs, alt: { default: '', validate: 'string' } },
+          parseMarkdown: { ...schema.parseMarkdown, runner: (state, node, type) => { state.addNode(type, { src: node.url as string, alt: (node.alt as string | null) ?? '', caption: (node.title as string | null) ?? '', ratio: 1 }); } },
+          toMarkdown: { ...schema.toMarkdown, runner: (state, node) => { state.openNode('paragraph'); state.addNode('image', undefined, undefined, { url: node.attrs['src'], alt: node.attrs['alt'], title: node.attrs['caption'] || null }); state.closeNode(); } },
+        };
+      }));
+      // Override Crepe's parallel/default uploader: every image goes through the
+      // same bounded host-backed callbacks, with no blob/base64 source fallback.
+      this.crepe.editor.config(ctx => ctx.update(uploadConfig.key, previous => ({ ...previous, uploader: async (files, schema) => {
+        const nodes = [], type = schema.nodes['image-block'] ?? schema.nodes['image'];
+        if (!type || this.locked || this.failed) return [];
+        try { for (const file of Array.from(files)) { if (!file.type.startsWith('image/')) continue; const src = await this.uploadImage(file); const node = type.createAndFill({ src }); if (node) nodes.push(node); } return nodes; }
+        catch (error) { this.assetError(error); return []; }
+      } })));
       this.crepe.setReadonly(true); // no editable interval while create() awaits plugins
       await this.crepe.editor.remove(history); // native TextDocument is the sole undo authority
       this.observer = await observeScratchMarkdown(this.crepe.editor, () => this.state!.snapshot.markdown, result => {
@@ -204,6 +240,75 @@ export class ScratchEditorPane {
       if (!this.failed) { this.observer.activate(); this.toggle.disabled = false; }
     } catch { this.fail('Scratchpad could not be initialized. Original source is unchanged. Open this file in the text editor.'); }
   }
+  private assetError(error: unknown): void {
+    this.status.textContent = error instanceof Error ? error.message : 'Image or link could not be inserted.';
+    this.status.setAttribute('role', 'alert');
+  }
+  private assetRequest(action: 'pick-link' | 'pick-image' | 'resolve-image', href?: string): Promise<{ href: string; displayUrl: string }> {
+    return this.requestAsset({ type: 'asset-request', paneSessionId: this.options.paneSessionId, requestId: `asset_${++this.assetSequence}`, action, ...(action === 'resolve-image' ? { href: href ?? '' } : {}) } as ScratchEditorToHost);
+  }
+  private requestAsset(message: ScratchEditorToHost): Promise<{ href: string; displayUrl: string }> {
+    if (message.type !== 'asset-request' || this.disposed || this.assetRequests.size >= 8 || !parseScratchEditorMessage(message)) return Promise.reject(new Error('Image action is unavailable or exceeds its limits.'));
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { this.assetRequests.delete(message.requestId); reject(new Error('Image action timed out; no reference was inserted.')); }, 30_000);
+      this.assetRequests.set(message.requestId, { resolve, reject, timer });
+      try { this.options.post(message); } catch { clearTimeout(timer); this.assetRequests.delete(message.requestId); reject(new Error('Image request could not be delivered.')); }
+    });
+  }
+  private async imageDisplay(href: string): Promise<string> {
+    if (/^data:image\/(png|jpeg|gif|webp);base64,/.test(href)) return href;
+    if (!href) return '';
+    const existing = this.displayedImages.get(href); if (existing) return existing;
+    const loading = this.displayQueue.then(async () => {
+      try { return (await this.assetRequest('resolve-image', href)).displayUrl; }
+      catch (error) { this.displayedImages.delete(href); this.assetError(error); return ''; }
+    });
+    this.displayQueue = loading;
+    if (this.displayedImages.size >= 128) this.displayedImages.delete(this.displayedImages.keys().next().value!);
+    this.displayedImages.set(href, loading); return loading;
+  }
+  private async uploadImage(file: File): Promise<string> {
+    if (this.locked || this.failed || !this.state || !this.crepe || file.size < 1 || file.size > 10_485_760 || !['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(file.type)) throw new Error('Choose a PNG, JPEG, GIF or WebP image of at most 10 MiB while editing.');
+    const doc = this.crepe.editor.action(ctx => ctx.get(editorViewCtx).state.doc), sequence = this.state.draftSeq;
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      let binary = ''; for (let start = 0; start < bytes.length; start += 8192) binary += String.fromCharCode(...bytes.subarray(start, start + 8192));
+      const result = await this.requestAsset({ type: 'asset-request', paneSessionId: this.options.paneSessionId, requestId: `asset_${++this.assetSequence}`, action: 'upload-image', name: file.name || 'pasted-image', mediaType: file.type as 'image/png', dataBase64: btoa(binary) });
+      if (!result.href || this.disposed || this.locked || this.failed || this.state.conflicted || this.state.draftSeq !== sequence || this.crepe.editor.action(ctx => ctx.get(editorViewCtx).state.doc !== doc)) throw new Error('Scratchpad changed while uploading; retry inserting the image.');
+      return result.href;
+    } catch (error) { this.assetError(error); throw error; }
+  }
+  private async pickAsset(action: 'pick-link' | 'pick-image'): Promise<void> {
+    if (!this.crepe || this.locked || this.failed || !this.state) return;
+    const view = this.crepe.editor.action(ctx => ctx.get(editorViewCtx)), doc = view.state.doc, selection = view.state.selection;
+    const result = await this.assetRequest(action);
+    if (!result.href) return; // user cancelled
+    if (this.disposed || this.locked || this.failed || this.state.conflicted || view.state.doc !== doc) throw new Error('Scratchpad changed while choosing a file; retry.');
+    const tr = view.state.tr.setSelection(selection);
+    if (action === 'pick-image') {
+      const type = view.state.schema.nodes['image-block'] ?? view.state.schema.nodes['image'];
+      if (!type) throw new Error('Image authoring is unavailable.');
+      view.dispatch(tr.replaceSelectionWith(type.create({ src: result.href })).scrollIntoView());
+    } else {
+      const link = view.state.schema.marks['link']; if (!link) throw new Error('Link authoring is unavailable.');
+      const label = doc.textBetween(selection.from, selection.to, '\n\n') || result.href;
+      view.dispatch(tr.replaceSelectionWith(view.state.schema.text(label, [link.create({ href: result.href })]), false).scrollIntoView());
+    }
+  }
+  private readonly pasteUrl = (event: ClipboardEvent): void => {
+    if (!this.crepe || this.locked || this.failed || event.clipboardData?.files.length) return;
+    const text = event.clipboardData?.getData('text/plain') ?? '';
+    if (!/^https?:\/\/[^\s]+$/i.test(text)) return;
+    const view = this.crepe.editor.action(ctx => ctx.get(editorViewCtx));
+    if (view.state.selection.$from.parent.type.spec.code || (event.target instanceof Element && event.target.closest('.cm-editor'))) return;
+    try {
+      const url = new URL(text); if (!['http:', 'https:'].includes(url.protocol)) return;
+      const link = view.state.schema.marks['link']; if (!link) return;
+      event.preventDefault(); event.stopPropagation();
+      const selection = view.state.selection, label = view.state.doc.textBetween(selection.from, selection.to, '\n\n') || text;
+      view.dispatch(view.state.tr.replaceSelectionWith(view.state.schema.text(label, [link.create({ href: text })]), false).scrollIntoView());
+    } catch (error) { this.assetError(error); }
+  };
   private captureSelection(): ScratchSelectionSend | undefined {
     const selected = this.selected, state = this.state;
     if (!selected || !state || !this.crepe || this.failed || this.pendingSelection) return;
@@ -265,6 +370,8 @@ export class ScratchEditorPane {
   };
   async dispose(): Promise<void> {
     this.disposed = true; clearTimeout(this.selectionTimer); document.removeEventListener('selectionchange', this.selectionChanged);
+    for (const pending of this.assetRequests.values()) { clearTimeout(pending.timer); pending.reject(new Error('Scratchpad pane closed.')); } this.assetRequests.clear();
+    this.root.removeEventListener('paste', this.pasteUrl, true);
     this.root.removeEventListener('keydown', this.keydown, true); this.root.removeEventListener('scroll', this.hideSend, true);
     await this.initialization; this.observer?.deactivate(); if (this.crepe) await this.crepe.destroy();
     this.root.replaceChildren();

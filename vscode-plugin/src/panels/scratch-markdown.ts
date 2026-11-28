@@ -90,6 +90,7 @@ export function checkScratchMarkdown<Document>(source: string, codec: ScratchMar
     const parsed = codec.parse(source);
     const serialized = codec.serialize(parsed);
     if (scratchUtf8Bytes(serialized) > SCRATCH_NOTE_BYTES) return refuse('Serialized note exceeds the rich editor size limit.');
+    if (!scratchSourceCodec.equivalent(scratchSourceCodec.parse(source), scratchSourceCodec.parse(serialized))) return refuse('Markdown semantics changed during serialization. Use the text editor to edit it.');
     if (!codec.equivalent(parsed, codec.parse(serialized))) return refuse('Markdown structure changed during serialization.');
     const after = inspectScratchSyntax(serialized);
     if (after.unsupported.length || JSON.stringify(before.fingerprints) !== JSON.stringify(after.fingerprints)) {

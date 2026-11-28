@@ -11,6 +11,7 @@ const draft = { ...session, type: 'draft', draftSeq: 1, editId: 'edit_1', baseVe
 
 test('scratch editor protocol accepts every declared variant and rejects extra keys across channels', () => {
   const incoming = [
+    { ...session, type: 'asset-request', requestId: 'r2', action: 'resolve-image', href: 'assets/local.png' },
     { ...session, type: 'editor-ready' }, draft, { ...draft, parentEditId: 'edit_0' },
     { ...session, type: 'send-selection', requestId: 'send_1', draftSeq: 0, docVersion: 1, selectedText: 'one\n\ntwo' },
     { ...session, type: 'lock', locked: true },

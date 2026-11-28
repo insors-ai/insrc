@@ -93,3 +93,12 @@ test('scratch Markdown corpus uses real Milkdown in Chrome and preserves source 
     }
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+
+test('scratch Markdown independently rejects a self-consistent codec that erases image alt semantics', () => {
+  const source = '![Keep this alt](assets/example.png)\n';
+  const lossy = { ...scratchSourceCodec, serialize: () => '![1.00](assets/example.png)\n', equivalent: () => true };
+  const result = checkScratchMarkdown(source, lossy);
+  assert.equal(result.allowed, false); assert.equal(result.source, source);
+  if (!result.allowed) assert.match(result.reason, /semantics/);
+});

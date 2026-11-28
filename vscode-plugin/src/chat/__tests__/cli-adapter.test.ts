@@ -36,6 +36,7 @@ import {
   VIBE_TEXT_TURN,
   VIBE_TOOL_TURN,
   VIBE_NATIVE_EFFECT_TURN,
+  VIBE_LIVE_CAPTURED_MCP_EFFECT_ROW,
   type FakeProcScript,
 } from './fixtures.js';
 
@@ -853,6 +854,19 @@ test('vibe: s3/t2 — a native top-level "effect" row (direct-spawn, no worker b
   assert.equal(results[0]!.isError, undefined, 'a completed effect is not an error');
   assert.equal(results[1]!.output, 'denied', 'the state.reason precedence fallback when outputText/output are absent');
   assert.equal(results[1]!.isError, true, 'a failed effect status surfaces as isError');
+});
+
+test('vibe: s3/t2 — ac4 LIVE naming parity: a tool-activity row captured verbatim from the installed vibe 3.1.4 binary decodes with the real mcp_insrc.insrc_schema identity', async () => {
+  const { deps } = depsFor({ lines: [VIBE_LIVE_CAPTURED_MCP_EFFECT_ROW] }, ['vibe']);
+  const events = await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' })));
+  const call = events.find((e) => e.kind === 'tool-call') as { tool: string; callId?: string; mcp?: { server: string; name: string } };
+  assert.equal(call.tool, 'mcp_insrc.insrc_schema', 'the real, live-captured streamed tool name');
+  assert.deepEqual(call.mcp, { server: 'insrc', name: 'insrc_schema' }, 'VibeMcpNaming.fromStreamedName resolves the live binary\'s own naming convention correctly');
+  assert.equal(call.callId, 'typescript:5:MA2uE5wPb:0:tool:0', 'the real (non-uuid-shaped) toolCallId from the live binary, confirming no id-format assumption');
+  const result = events.find((e) => e.kind === 'tool-result') as { output: string; callId?: string; isError?: boolean };
+  assert.equal(result.callId, 'typescript:5:MA2uE5wPb:0:tool:0');
+  assert.ok(result.output.includes('validTools'), 'the real outputText from the live binary\'s own response');
+  assert.equal(result.isError, undefined, 'the live row\'s status was completed');
 });
 
 test('vibe: s3/t2 — parseVibeMcpTool delegates to VibeMcpNaming.fromStreamedName, not an independent parser (ac4)', () => {

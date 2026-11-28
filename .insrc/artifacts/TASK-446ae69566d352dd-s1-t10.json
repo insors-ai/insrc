@@ -22,7 +22,7 @@
           "entityId": "PLAN-446ae69566d352dd-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 2"
+          "fragment": "revision 3"
         },
         {
           "entityId": "TASK-446ae69566d352dd-s1-t9",
@@ -33,11 +33,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "8d58a0af4651a279e325df04643456fa32405aa224ed78138fb16c0cd88c1776",
-        "at": "2026-11-26T07:28:17.864Z",
+        "number": 2,
+        "contentHash": "9e94514831f70ebb7af2f3cc6fb0688d4056e7e019ae482d03a5810f78eb3652",
+        "at": "2026-11-28T05:24:48.127Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -55,16 +55,16 @@
         "at": "2026-11-26T07:28:17.867Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Record native runtime qualification and S4 handoff evidence",
-    "summary": "Run the completed runtime/installed-consumer qualification harness in isolated UTM macOS and OrbStack Linux homes, and a genuine Windows runner when available. Record exact platform/runtime/asset/actor evidence and unsupported routes; hand the actual resolver contract back to S4 after the corrective BUILD passes all required gates.",
+    "summary": "Record actual macOS/Linux runtime and installed-consumer qualification, current scoped regression and exact source/actor evidence. Reuse retained UTM macOS proof only with recorded production-source equivalence; retain fresh current-source OrbStack Linux evidence. Windows native qualification remains deferred and unqualified. Hand the resolver foundation back to S4 only after current validation and human BUILD approval.",
     "size": "M",
     "order": 10,
     "acceptanceChecks": [
-      "Actual UTM macOS and OrbStack Linux runtime-first-acquisition/native-build/offline-reuse/installed-consumer checks are distinguished from fixtures and host emulation; host v2/Ollama remain untouched.",
-      "Windows qualification requires actual native ACL/path/header/library/loaded-DLL-safe-publication evidence, not Linux/macOS execution or metadata extraction. Missing infrastructure remains explicitly unavailable and the target cannot be enabled/published. An unavailable native subject remains unsatisfied; recording an availability diagnostic is not a passing native test or a waiver of required BUILD acceptance.",
+      "Actual UTM macOS and OrbStack Linux runtime-first-acquisition/native-build/offline-reuse/installed-consumer checks are distinguished from fixtures and host emulation; host v2/Ollama remain untouched. Retained native evidence is reusable only with exact relevant source/build-policy equivalence, pinned runtime/platform identity and verified actor closure; retain its original execution source pin.",
+      "Current foundation completion covers macOS/Linux. The original native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication subject is deferred, not passed and not a current T10 gate. Windows requires genuine native ACL/path/header/library/loaded-DLL-safe-publication evidence before future enablement; POSIX execution, cross-archive metadata or an availability diagnostic cannot qualify it. ISSUE-cab5701fbefab736 remains its separate process-ownership prerequisite; Windows target publication/enablement stays disabled.",
       "Qualification is for the runtime foundation and existing installed-consumer boundaries; no end-to-end S4/S5 daemon activation proof is fabricated or introduced as a cyclic prerequisite.",
       "No source changes are made during this evidence-only task. Any required correction returns to its owning task and reruns appropriate tests/regression; user BUILD approval is requested only after all required validation/task accounting/tracker gates are satisfied."
     ],
@@ -76,10 +76,6 @@
       {
         "level": "live",
         "name": "OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke"
-      },
-      {
-        "level": "live",
-        "name": "native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication"
       },
       {
         "level": "live",

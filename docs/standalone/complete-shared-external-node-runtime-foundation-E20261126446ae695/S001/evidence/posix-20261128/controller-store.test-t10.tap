@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: OS lock excludes another writer and releases on owned fixture self exit
+ok 1 - OS lock excludes another writer and releases on owned fixture self exit
+  ---
+  duration_ms: 890.706916
+  type: 'test'
+  ...
+# Subtest: atomic replacement crash points preserve one valid snapshot
+ok 2 - atomic replacement crash points preserve one valid snapshot
+  ---
+  duration_ms: 423.6715
+  type: 'test'
+  ...
+# Subtest: controller inspection and revision failures never silently enroll or overwrite
+ok 3 - controller inspection and revision failures never silently enroll or overwrite
+  ---
+  duration_ms: 20.891542
+  type: 'test'
+  ...
+# Subtest: controller rejects lock replacement and unsafe records or control roots
+ok 4 - controller rejects lock replacement and unsafe records or control roots
+  ---
+  duration_ms: 2.227542
+  type: 'test'
+  ...
+# Subtest: native publication remains gated without exact target runtime and live qualification
+ok 5 - native publication remains gated without exact target runtime and live qualification
+  ---
+  duration_ms: 2.674208
+  type: 'test'
+  ...
+# Subtest: native publisher denies unqualified output before publishing target artifacts
+ok 6 - native publisher denies unqualified output before publishing target artifacts
+  ---
+  duration_ms: 65.844708
+  type: 'test'
+  ...
+# Subtest: candidate publication is exclusive and requires retained location and lock
+ok 7 - candidate publication is exclusive and requires retained location and lock
+  ---
+  duration_ms: 18.684292
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1760.500459

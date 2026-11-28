@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 20,
-        "contentHash": "92dd7f0a454ea08a7fdf321e9c710a92a4a656f4047f07e1aae3dd0be003e03b",
-        "at": "2026-11-27T10:41:47.145Z",
+        "number": 21,
+        "contentHash": "3416bf89f07e5722f8925f58de155afa5ba5731fb772be459aef027ffb85130d",
+        "at": "2026-11-28T05:30:09.088Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "446ae69566d352dd",
     "storyId": "s1",
     "createdAt": "2026-11-26T07:40:02.075Z",
-    "updatedAt": "2026-11-27T10:41:47.118Z",
+    "updatedAt": "2026-11-28T05:30:09.056Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-26T06:29:10.586Z",
     "epicSlug": "complete-shared-external-node-runtime-foundation",
-    "revision": 20
+    "revision": 21
   },
   "body": {
     "tasks": [
@@ -1438,6 +1438,123 @@
         ],
         "files": [],
         "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      },
+      {
+        "taskId": "t10",
+        "commit": "9afcc4c63",
+        "ranAt": "2026-11-28T05:30:09.056Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "UTM-macOS-fresh-live-acquisition-offline-reuse-and-isolated-installed-consumer-smoke",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Retained actual UTM source2fca011a69ec3b0ce5e9e53e9074928baec02495: approved budget Story S001/evidence/t6-native-result.json, t6-supervisor.json and t6-audit.json; foundation S001/evidence/posix-20261128/macos-equivalence.json proves only separately validated controller tests differ from current production source.11/9/25 closed groups; live Node22.22.1/npm10.9.4, same-inode zero-network reuse and real installed native consumers; no daemon activation or release enablement."
+            }
+          },
+          {
+            "name": "OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Foundation S001/evidence/posix-20261128/linux-native-result.json, linux-supervisor.json, linux-audit.json and linux-raw-metadata.json: actual OrbStack Ubuntu22.04.5/glibc2.35 ARM64 source0938af2dcbc631960d64946fa3cd6a446b3aafef; live Node22.22.1/npm10.9.4, same-inode zero-network reuse,55202-file app-only payload/native consumers/fresh manager;11/9/25 matching zero-exit closed groups, no actors/leases. Current production paths unchanged; source pin retained."
+            }
+          },
+          {
+            "name": "unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests",
+            "level": "live",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-policy.test.ts",
+                "title": "runtime policy pins all six official distribution identities without enabling targets",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/controller-store.test.ts",
+                "title": "native publication remains gated without exact target runtime and live qualification",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/controller-store.test.ts",
+                "title": "native publisher denies unqualified output before publishing target artifacts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/controller-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1807,
+            "titles": [
+              {
+                "title": "OS lock excludes another writer and releases on owned fixture self exit",
+                "result": "pass"
+              },
+              {
+                "title": "atomic replacement crash points preserve one valid snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "controller inspection and revision failures never silently enroll or overwrite",
+                "result": "pass"
+              },
+              {
+                "title": "controller rejects lock replacement and unsafe records or control roots",
+                "result": "pass"
+              },
+              {
+                "title": "native publication remains gated without exact target runtime and live qualification",
+                "result": "pass"
+              },
+              {
+                "title": "native publisher denies unqualified output before publishing target artifacts",
+                "result": "pass"
+              },
+              {
+                "title": "candidate publication is exclusive and requires retained location and lock",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/runtime-policy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4728,
+            "titles": [
+              {
+                "title": "runtime policy pins all six official distribution identities without enabling targets",
+                "result": "pass"
+              },
+              {
+                "title": "runtime layout binds complete identity and rejects unsafe aliases without filesystem allocation",
+                "result": "pass"
+              },
+              {
+                "title": "runtime metadata has fixed finite bounds and locale independent inventory serialization",
+                "result": "pass"
+              },
+              {
+                "title": "official profile metadata reproduces all pinned assets without target execution or extraction",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
       }
     ]
   },

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 81 pass, 0 fail, 0 skipped, 0 not found; 6 reported by the builder and not run by the gate.
+**Totals:** 84 pass, 0 fail, 0 skipped, 0 not found; 8 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -351,3 +351,30 @@ Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalon
 **smoke: final-scoped-installer-publisher-bootstrap-dev-dependencies-terminal-regression**
 
 Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t9.md#current-source-final-scoped-regression-and-independent-post-run-audit-pass; canonicalRoot=/private/tmp/.insrc/installer-validation-f607312b8; run=71b814b1-1d39-422d-9ccd-aa5108d3b5f0; source=a27375313b4518d0520c8f5c51ee9bdd80b3da5f; 57files/275PASS/0fail-cancel-skip-todo/incomplete=false; 66 matching closed groups, inner+outer strict confirmed cleanup; readonly post-run exact-coverage/fingerprint/closure audit PASS without rebuild; registered-repo input fingerprint equals isolated tested input a1f8d6dd56a77b5ae8555c6884f2df498ebc97cb99ed274dd9e50afb805577d6; original output not claimed tested; exact raw logs archived .insrc/tmp/runtime-foundation-t9-final-71b814b1.tar.gz SHA256 5212707abaa0542004770c5483109bf68a320e7bf29d93c84eb812806ec7f756; machine summary .insrc/tmp/runtime-foundation-t9-final-71b814b1.json
+
+## t10
+
+Run at 2026-11-28T05:30:09.056Z on commit `9afcc4c63`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+
+**live: UTM-macOS-fresh-live-acquisition-offline-reuse-and-isolated-installed-consumer-smoke**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: Retained actual UTM source2fca011a69ec3b0ce5e9e53e9074928baec02495: approved budget Story S001/evidence/t6-native-result.json, t6-supervisor.json and t6-audit.json; foundation S001/evidence/posix-20261128/macos-equivalence.json proves only separately validated controller tests differ from current production source.11/9/25 closed groups; live Node22.22.1/npm10.9.4, same-inode zero-network reuse and real installed native consumers; no daemon activation or release enablement.
+
+**live: OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: Foundation S001/evidence/posix-20261128/linux-native-result.json, linux-supervisor.json, linux-audit.json and linux-raw-metadata.json: actual OrbStack Ubuntu22.04.5/glibc2.35 ARM64 source0938af2dcbc631960d64946fa3cd6a446b3aafef; live Node22.22.1/npm10.9.4, same-inode zero-network reuse,55202-file app-only payload/native consumers/fresh manager;11/9/25 matching zero-exit closed groups, no actors/leases. Current production paths unchanged; source pin retained.
+
+**live: unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | runtime policy pins all six official distribution identities without enabling targets | `src/installer/__tests__/runtime-policy.test.ts` |
+| pass | native publication remains gated without exact target runtime and live qualification | `src/installer/__tests__/controller-store.test.ts` |
+| pass | native publisher denies unqualified output before publishing target artifacts | `src/installer/__tests__/controller-store.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/installer/__tests__/controller-store.test.ts` | 0 | 7 | 1.8 s |  |
+| `src/installer/__tests__/runtime-policy.test.ts` | 0 | 4 | 4.7 s |  |

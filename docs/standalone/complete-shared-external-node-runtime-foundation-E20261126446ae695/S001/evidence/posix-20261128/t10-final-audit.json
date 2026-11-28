@@ -1,0 +1,20 @@
+{
+  "status": "pass",
+  "allTenTasksValidated": true,
+  "currentBuildRevision": 21,
+  "currentBuildHumanApprovalPending": true,
+  "typecheckMs": 13169,
+  "freshGateCases": 11,
+  "mappedGuardCases": 3,
+  "reportedActualNativeResults": 2,
+  "windows": "deferred-unqualified-not-enabled",
+  "sourceAndPayloadPinsPreserved": true,
+  "productionSourceUnchangedSince": "0938af2dcbc631960d64946fa3cd6a446b3aafef",
+  "scope": "Runtime foundation and installed-consumer boundary; no S4 activation or release qualification claim",
+  "temporaryBuildSettingsRestored": true,
+  "restoredSettings": {
+    "typecheckCommand": null,
+    "testCommand": null,
+    "resultFormat": null
+  }
+}

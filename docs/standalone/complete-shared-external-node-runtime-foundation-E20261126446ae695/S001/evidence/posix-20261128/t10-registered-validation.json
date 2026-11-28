@@ -1,0 +1,177 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "t10",
+    "passed": true,
+    "checks": [
+      {
+        "check": "Actual UTM macOS and OrbStack Linux runtime-first-acquisition/native-build/offline-reuse/installed-consumer checks are distinguished from fixtures and host emulation; host v2/Ollama remain untouched. Retained native evidence is reusable only with exact relevant source/build-policy equivalence, pinned runtime/platform identity and verified actor closure; retain its original execution source pin.",
+        "satisfied": true,
+        "evidence": "Verified retained macOS t6 report/supervisor/audit hashes and Linux report/supervisor hashes; all 29 retained Linux raw-record hashes match. Reports pin actual UTM/OrbStack ARM64 platforms, Node 22.22.1/npm 10.9.4, original source commits, live acquisition, zero-network same-inode reuse and installed native consumers. Both audits record 11/9/25 closed groups, released leases and no actors. Git comparison confirms only two separately validated controller test files differ from the macOS execution source; no production/build-policy differences exist from the Linux source. Qualification uses isolated homes and records no Ollama installation/start."
+      },
+      {
+        "check": "Current foundation completion covers macOS/Linux. The original native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication subject is deferred, not passed and not a current T10 gate. Windows requires genuine native ACL/path/header/library/loaded-DLL-safe-publication evidence before future enablement; POSIX execution, cross-archive metadata or an availability diagnostic cannot qualify it. ISSUE-cab5701fbefab736 remains its separate process-ownership prerequisite; Windows target publication/enablement stays disabled.",
+        "satisfied": true,
+        "evidence": "LLD and PLAN retain Windows as explicitly deferred and unqualified under ISSUE-cab5701fbefab736. Current T10 mappings contain the two POSIX live subjects and unavailable-target exclusion. Inspected policy tests reject all six targets without qualification, reject mismatched runtime/addon evidence, and verify unqualified publication creates no destination. The daemon reports these cases passed; cross-archive metadata is not credited as native qualification."
+      },
+      {
+        "check": "Qualification is for the runtime foundation and existing installed-consumer boundaries; no end-to-end S4/S5 daemon activation proof is fabricated or introduced as a cyclic prerequisite.",
+        "satisfied": true,
+        "evidence": "Both native reports state daemonActivationTested:false, releaseEnablement:false and controllerPhase:preparing. The qualifier exercises installed native libraries and a fresh manager with empty PATH. Handoff documentation explicitly excludes S4 lifecycle, S5 hooks and IDE behavior."
+      },
+      {
+        "check": "No source changes are made during this evidence-only task. Any required correction returns to its owning task and reruns appropriate tests/regression; user BUILD approval is requested only after all required validation/task accounting/tracker gates are satisfied.",
+        "satisfied": true,
+        "evidence": "T10 commits change evidence, documentation and workflow records; production source and build policy remain unchanged. Controller corrections belong to a separate maintenance Story with six affected checks and typecheck recorded. Regression reconciliation preserves historical source pins and explicitly says testsRerun:false. Final handoff leaves human BUILD approval pending, records the tracker attachment failure, and requires validation/accounting gates before approval or S4 resumption."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "Native evidence, source equivalence, closure records and mapped guard tests substantiate T10; Windows and S4 handoff remain explicitly gated.",
+    "testsPassed": true,
+    "typecheckClean": true,
+    "evidence": {
+      "typecheck": {
+        "ok": true,
+        "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node node_modules/typescript/bin/tsc --noEmit",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 13169,
+        "outputTail": ""
+      },
+      "tests": {
+        "ok": true,
+        "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-PPpxGm/report.tap src/installer/__tests__/controller-store.test.ts\n/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-zqal5E/report.tap src/installer/__tests__/runtime-policy.test.ts",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 6535,
+        "outputTail": "TAP version 13\n# Subtest: runtime policy pins all six official distribution identities without enabling targets\nok 1 - runtime policy pins all six official distribution identities without enabling targets\n  ---\n  duration_ms: 1.313625\n  type: 'test'\n  ...\n# Subtest: runtime layout binds complete identity and rejects unsafe aliases without filesystem allocation\nok 2 - runtime layout binds complete identity and rejects unsafe aliases without filesystem allocation\n  ---\n  duration_ms: 1.340625\n  type: 'test'\n  ...\n# Subtest: runtime metadata has fixed finite bounds and locale independent inventory serialization\nok 3 - runtime metadata has fixed finite bounds and locale independent inventory serialization\n  ---\n  duration_ms: 0.194583\n  type: 'test'\n  ...\n# Subtest: official profile metadata reproduces all pinned assets without target execution or extraction\nok 4 - official profile metadata reproduces all pinned assets without target execution or extraction\n  ---\n  duration_ms: 4432.996667\n  type: 'test'\n  ...\n1..4\n# tests 4\n# suites 0\n# pass 4\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 4686.204\n",
+        "files": [
+          {
+            "file": "src/installer/__tests__/controller-store.test.ts",
+            "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-PPpxGm/report.tap src/installer/__tests__/controller-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1807,
+            "titles": [
+              {
+                "title": "OS lock excludes another writer and releases on owned fixture self exit",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "atomic replacement crash points preserve one valid snapshot",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "controller inspection and revision failures never silently enroll or overwrite",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "controller rejects lock replacement and unsafe records or control roots",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "native publication remains gated without exact target runtime and live qualification",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "native publisher denies unqualified output before publishing target artifacts",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "candidate publication is exclusive and requires retained location and lock",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_installer___tests___controller-store.test.ts.1795843804158.95620.tap"
+          },
+          {
+            "file": "src/installer/__tests__/runtime-policy.test.ts",
+            "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node --import tsx --test --test-force-exit --test-concurrency=1 --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-zqal5E/report.tap src/installer/__tests__/runtime-policy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4728,
+            "titles": [
+              {
+                "title": "runtime policy pins all six official distribution identities without enabling targets",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "runtime layout binds complete identity and rejects unsafe aliases without filesystem allocation",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "runtime metadata has fixed finite bounds and locale independent inventory serialization",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "official profile metadata reproduces all pinned assets without target execution or extraction",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_installer___tests___runtime-policy.test.ts.1795843808932.95620.tap"
+          }
+        ],
+        "namedTests": [
+          {
+            "name": "UTM-macOS-fresh-live-acquisition-offline-reuse-and-isolated-installed-consumer-smoke",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Retained actual UTM source2fca011a69ec3b0ce5e9e53e9074928baec02495: approved budget Story S001/evidence/t6-native-result.json, t6-supervisor.json and t6-audit.json; foundation S001/evidence/posix-20261128/macos-equivalence.json proves only separately validated controller tests differ from current production source.11/9/25 closed groups; live Node22.22.1/npm10.9.4, same-inode zero-network reuse and real installed native consumers; no daemon activation or release enablement."
+            }
+          },
+          {
+            "name": "OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Foundation S001/evidence/posix-20261128/linux-native-result.json, linux-supervisor.json, linux-audit.json and linux-raw-metadata.json: actual OrbStack Ubuntu22.04.5/glibc2.35 ARM64 source0938af2dcbc631960d64946fa3cd6a446b3aafef; live Node22.22.1/npm10.9.4, same-inode zero-network reuse,55202-file app-only payload/native consumers/fresh manager;11/9/25 matching zero-exit closed groups, no actors/leases. Current production paths unchanged; source pin retained."
+            }
+          },
+          {
+            "name": "unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests",
+            "level": "live",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-policy.test.ts",
+                "title": "runtime policy pins all six official distribution identities without enabling targets",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/controller-store.test.ts",
+                "title": "native publication remains gated without exact target runtime and live qualification",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/controller-store.test.ts",
+                "title": "native publisher denies unqualified output before publishing target artifacts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ]
+      },
+      "testRecord": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/TESTS.md"
+    }
+  },
+  "passed": true
+}

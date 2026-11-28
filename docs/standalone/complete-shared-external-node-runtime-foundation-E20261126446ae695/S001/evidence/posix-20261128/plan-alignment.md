@@ -6,4 +6,4 @@ The complete registered plan workflow published pending PLAN-446ae69566d352dd-s1
 
 Current native proof, source-equivalence records and earlier scoped regression remain available. The raw29-record Linux export and all45 closed group proofs were rechecked; production/build paths remain unchanged from tested0938af2d. No native rerun, full suite, daemon action, Windows execution or settings mutation was needed to align this plan. The plan's tracker-readiness notice still reports the known missing-Define-route issue; it is not a claim that a new GitHub issue exists.
 
-PLAN3 awaits human approval before registered T10 admission/validation against the new scope. Final foundation BUILD approval and S4 handoff are not claimed.
+At publication PLAN3 awaited human approval. It was subsequently approved at2026-11-28T05:24:45.550Z and registered T10 admission/validation passed; see t10-registered-validation.json. Final foundation BUILD approval and S4 handoff remain pending.

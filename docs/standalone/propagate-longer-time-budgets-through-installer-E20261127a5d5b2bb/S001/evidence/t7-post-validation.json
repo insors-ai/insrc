@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-11-28T03:55:49.873Z",
+  "status": "pass",
+  "testSource": "b06fb951d955e707408c246011a4c61aa1bd6ee0",
+  "evidenceCommit": "eb47d35282fd0ef16c5e431fbae35a103a445386",
+  "buildInputChangesSinceTestSource": [],
+  "inputFingerprint": "7a8bdfaad0804d9b23618fed8fcfa347e4c526820e18e7ce050600f402c3562a",
+  "outputFingerprint": "3cbf44afd3293f0d9f63dd424b1317064a1e93aab24b5a1176a456a29277a379",
+  "activeLeaseAbsent": true,
+  "acceptedTasks": 7,
+  "settingsRestored": true,
+  "rebuiltAfterCanonical": false
+}

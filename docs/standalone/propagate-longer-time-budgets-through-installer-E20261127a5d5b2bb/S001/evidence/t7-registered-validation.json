@@ -1,0 +1,68 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "t7",
+    "passed": true,
+    "checks": [
+      {
+        "check": "Every required LLD test subject maps to recorded task evidence; canonical current-source selection has no failures/incomplete/unexpected omissions.",
+        "satisfied": true,
+        "evidence": "LLD trace and final smoke audit cover all 16 subjects. Raw results and TAP confirm exact coverage of 62 canonical files, including all 59 installer files: 284 passed with zero failures, cancellations, skips or todos. Controller TAP covers all five files and 22 passing cases."
+      },
+      {
+        "check": "Independent audit proves exact selected coverage, unchanged pinned inputs/outputs, all owned command admission/close/disposal pairs, no remaining actors/leases and strict positive cleanup.",
+        "satisfied": true,
+        "evidence": "Independently recomputed input/output fingerprints match both pinned hashes. Retained raw evidence matches workspace bytes. Verified unique matching admission/close/disposal identities for 71 canonical and 48 controller commands; cleanup is confirmed, noninterrupted owned-groups with empty error arrays. Actor directories are empty and checkout lease is absent."
+      },
+      {
+        "check": "Old275-test pass and Linux native proof remain historical; source changes after final run invalidate current regression until affected checks and final audit are repeated as justified.",
+        "satisfied": true,
+        "evidence": "Current evidence uses the complete 284-test rerun rather than historical passes. Native-source delta contains only two controller test files, covered by the current controller checks. Current input/output hashes remain unchanged; t7.md explicitly requires preserving them and excludes current Linux qualification."
+      },
+      {
+        "check": "All required native and regression gates are satisfied before story completion/final human BUILD approval; foundation/S4 and Windows remain separate gated work.",
+        "satisfied": true,
+        "evidence": "T6 native result and supervisor both report pass, with bytes matching audit hashes. T6 records accepted validation and positive native closure before final regression. Story approval remains pending; foundation, S4, Windows and release enablement are explicitly excluded and remain gated."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "Verified current-source regression, required smoke evidence, fingerprints and positive closure; t7 changes record scoped validation without changing production code.",
+    "testsPassed": true,
+    "typecheckClean": true,
+    "evidence": {
+      "typecheck": {
+        "ok": true,
+        "command": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node node_modules/typescript/bin/tsc --noEmit",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 13573,
+        "outputTail": ""
+      },
+      "tests": {
+        "ok": true,
+        "command": "",
+        "exitCode": null,
+        "timedOut": false,
+        "durationMs": 0,
+        "outputTail": "",
+        "note": "the gate ran no test: every named test of this Task was reported by the builder",
+        "files": [],
+        "namedTests": [
+          {
+            "name": "current-budget-correction-surrounding-and-final-scoped-regression-have-confirmed-cleanup",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t7.md and t7-regression-audit.json; byte-checked raw t7-results.json, t7-prepared.json, t7-cleanup.json, t7-child-{admissions,results,disposals}.jsonl, controller TAP and both payload smoke TAPs. Current canonical cf21df73-c037-44c3-979e-8c4681fa9da6 completed exit0:284/284 across62 exact files, plus22/22 across5 serial direct controller files. All71 current canonical and48 controller groups have matched unique admission/close/disposal evidence, confirmed noninterrupted owned-groups cleanup, empty errors, no actors/current checkout lease. Input7a8bdfaad0804d9b23618fed8fcfa347e4c526820e18e7ce050600f402c3562a and output3cbf44afd3293f0d9f63dd424b1317064a1e93aab24b5a1176a456a29277a379 still match after daemon restart without rebuilding. Native T6 accepted separately; normal-budget failed attempt9054 remains explicitly nonpassing with all48 groups closed. Historical blocked isolate d7a67629 is not cleared or credited."
+            }
+          }
+        ]
+      },
+      "testRecord": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/TESTS.md"
+    }
+  },
+  "passed": true
+}

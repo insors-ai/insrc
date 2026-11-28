@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 24 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 24 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -195,3 +195,13 @@ the gate ran no test: every named test of this Task was reported by the builder
 **live: fresh-UTM-macOS-slow-vm-profile-completes-native-foundation-and-confirmed-closure**
 
 Reported by the builder, not run by the gate: **pass**. Evidence: Commit 9c805a8bd; docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t6.md, t6-audit.json, t6-native-result.json, t6-supervisor.json, t6-actual-budgets.json and t6-retired-vm-closure.json. Actual run eac466ab-18ee-431e-a09e-252206144f1e, worker 46bae4d3-1541-4374-bc8a-577f9912b817, finished 2026-11-27T19:33:53.812Z; source/worker input fingerprint 8a7b77214a67430f3793bee26fe8982eefa8451757d92c6a43ef51ddff530668. Exact source2fca011a6. All owned-group cleanup confirmed and leases released.
+
+## t7
+
+Run at 2026-11-28T03:51:26.770Z on commit `eb47d3528`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: current-budget-correction-surrounding-and-final-scoped-regression-have-confirmed-cleanup**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t7.md and t7-regression-audit.json; byte-checked raw t7-results.json, t7-prepared.json, t7-cleanup.json, t7-child-{admissions,results,disposals}.jsonl, controller TAP and both payload smoke TAPs. Current canonical cf21df73-c037-44c3-979e-8c4681fa9da6 completed exit0:284/284 across62 exact files, plus22/22 across5 serial direct controller files. All71 current canonical and48 controller groups have matched unique admission/close/disposal evidence, confirmed noninterrupted owned-groups cleanup, empty errors, no actors/current checkout lease. Input7a8bdfaad0804d9b23618fed8fcfa347e4c526820e18e7ce050600f402c3562a and output3cbf44afd3293f0d9f63dd424b1317064a1e93aab24b5a1176a456a29277a379 still match after daemon restart without rebuilding. Native T6 accepted separately; normal-budget failed attempt9054 remains explicitly nonpassing with all48 groups closed. Historical blocked isolate d7a67629 is not cleared or credited.

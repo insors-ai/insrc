@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 12,
-        "contentHash": "010f16b7d3e635d5886db00bc67de296c91ff1e5d70104d62064fe3b282e0eba",
-        "at": "2026-11-27T19:55:55.659Z",
+        "number": 13,
+        "contentHash": "3274734db9c3715475c09494a9720971e559ced2dfff175565c7cd6ecb0a3f25",
+        "at": "2026-11-28T03:54:02.113Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "a5d5b2bb021655d0",
     "storyId": "s1",
-    "revision": 12,
-    "updatedAt": "2026-11-27T19:54:57.983Z",
+    "revision": 13,
+    "updatedAt": "2026-11-28T03:51:26.770Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "propagate-longer-time-budgets-through-installer"
@@ -60,9 +60,13 @@
       {
         "id": "t6",
         "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
       }
     ],
-    "summary": "Actual fresh UTM macOS slow-vm qualification passed on committed source 2fca011a69ec3b0ce5e9e53e9074928baec02495. Independent audit verifies live official Node acquisition, zero-network offline reuse, private Node22.22.1/npm10.9.4/native payload consumers and all 11 preflight, 9 outer and 25 worker command-group closures. Retired failed guest attempt remains retained unchanged after independently observed whole-guest shutdown; final scoped regression remains pending. No host daemon/Ollama mutation, release enablement or current Linux/Windows qualification is claimed.",
+    "summary": "Implemented a fixed opt-in slow-vm timing policy across coordinator, manager, worker, Git, runtime I/O, resource drains and CI/operator containment while preserving normal numeric defaults, exact integrity, wire formats and ownership proof. Repeated drains share a cumulative ceiling and independently reobserve closure. Tasks1–6 are accepted, including actual fresh UTM Node22.22.1/npm10.9.4 live acquisition, zero-network reuse and native-consumer qualification with independent parent/worker closure. Final current-source scoped regression passed306 tests across67 files:284 tests in62 canonical files plus22 tests in5 direct serial controller files, with zero failures/cancellations/skips/todo. Independent audit verifies exact coverage, all16 LLD subjects, unchanged source/output fingerprints and all71 canonical plus48 controller command-group closures. The first normal-cap attempt remains failed/incomplete with verified cleanup; the full rerun used declared40-minute file/4-hour run bounds and repeated all62 canonical files. Approved separate ISSUE-e1aed06b860a76cb reconciled two stale controller test files; production inputs are otherwise identical to the UTM source. Evidence committed in eb47d3528; test source b06fb951d955e707408c246011a4c61aa1bd6ee0 remains byte-identical. Earlier isolated stale controller attempt remains blocked and untouched outside current main-checkout runs. No host daemon/Ollama update or activation, release enablement, current Linux/Windows qualification or foundation/S4 completion is claimed.",
     "testRecord": {
       "md": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/TESTS.md"
     },
@@ -72,311 +76,528 @@
           "file": "copy-assets.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/qualification-time-budgets.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/qualification-time-budgets.d.mts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/qualification-time-budgets.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t1.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t2.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "scripts/test-harness/context.d.mts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "scripts/test-harness/context.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "scripts/test-harness/process.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-source-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-toolchain-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-toolchain.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/installed-dev-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/qualification-scopes.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/dev-git.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-manager-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/qualification-manager.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t3.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/qualification-runtime-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/qualification-runtime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/download.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/runtime-acquire.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/runtime-archive.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/runtime-metadata.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t4.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/qualification-worker-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/qualification-worker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/dev-delivery.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/dev-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": ".github/workflows/ci.yml"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t5.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "docs/testing.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/qualification-containment-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/qualification-containment.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "scripts/qualification-containment.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "scripts/qualify-runtime-foundation.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/qualification-installed.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t6-prerequisite.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t6.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t6-actual-budgets.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t6-audit.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t6-native-result.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t6-retired-vm-closure.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
       },
       {
         "target": {
           "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t6-supervisor.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-27T19:54:57.983Z"
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/EPIC-a5d5b2bb021655d0.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/EPIC-a5d5b2bb021655d0.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-a5d5b2bb021655d0.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-a5d5b2bb021655d0.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-a5d5b2bb021655d0-s1-t1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-a5d5b2bb021655d0-s1-t2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-a5d5b2bb021655d0-s1-t3.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-a5d5b2bb021655d0-s1-t4.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-a5d5b2bb021655d0-s1-t5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-a5d5b2bb021655d0-s1-t6.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-a5d5b2bb021655d0-s1-t7.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-a5d5b2bb021655d0-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-a5d5b2bb021655d0-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/component-dependency.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t7-canonical-result.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t7-child-admissions.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t7-child-disposals.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t7-child-results.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t7-cleanup.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t7-controller.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t7-dev-complete-payload.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t7-foundation-payload.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t7-lld-subject-trace.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t7-normal-budget-failure.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t7-prepared.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t7-regression-audit.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t7-results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t7-selection.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t7.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/sequence-diagram.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-28T03:51:26.770Z"
       }
     ],
-    "commit": "9c805a8bd"
+    "commit": "eb47d3528"
   },
   "citations": []
 }

@@ -1,0 +1,14 @@
+{
+  "restored": true,
+  "at": "2026-11-28T03:54:43.391Z",
+  "keys": [
+    "typecheckCommand",
+    "testCommand",
+    "resultFormat"
+  ],
+  "values": {
+    "typecheckCommand": null,
+    "testCommand": null,
+    "resultFormat": null
+  }
+}

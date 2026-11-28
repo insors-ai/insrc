@@ -407,12 +407,13 @@ interface FakeScratchStore extends ScratchStore {
 }
 const fakeStore = (): FakeScratchStore => {
   const s: FakeScratchStore = {
+    resolveScratch: async id => ({ ref: { repo: 'insrc:scratchpads:home', stableId: id }, filePath: `/scratch/${id}` }), updateScratch: async () => {},
     calls: [], failList: false, failCreate: false, failDelete: false, created: [], deleted: [],
     entries: [{ id: '20260113-090000-late.md', name: '20260113-090000-late', mtime: 400, size: 1 }],
     listScratches: async (limit?: number) => {
       s.calls.push(`list:${limit ?? 'all'}`);
       if (s.failList) throw new Error('EACCES: permission denied');
-      return s.entries.slice(0, limit);
+      return limit === undefined ? s.entries.slice() : s.entries.slice(0, limit);
     },
     createScratch: async (title: string) => {
       s.calls.push(`create:${title}`);
@@ -435,15 +436,13 @@ const fakeStore = (): FakeScratchStore => {
 interface FakePanels extends ScratchPanels {
   readonly calls: string[];
 }
-const fakePanels = (): FakePanels => {
+const fakePanels = (store?: FakeScratchStore): FakePanels => {
   const p: FakePanels = {
     calls: [],
-    openBrowse: async () => { p.calls.push('openBrowse'); return undefined; },
+    openBrowse: async () => { p.calls.push('openBrowse'); return { setHtml: () => {}, reveal: () => {}, onMessage: () => {}, onDidDispose: () => {}, postMessage: async () => true, dispose: () => {} }; },
     openDocument: async (id: string) => { p.calls.push(`openDocument:${id}`); return undefined; },
     refreshBrowse: async () => { p.calls.push('refreshBrowse'); },
-    closeDocumentIfShowing: (id: string) => { p.calls.push(`closeDocumentIfShowing:${id}`); },
-    invalidateId: (id: string) => { p.calls.push(`invalidateId:${id}`); },
-    showingId: undefined,
+    deleteDocument: async (id: string) => { p.calls.push(`deleteDocument:${id}`); await store?.deleteScratch(id); return 'deleted'; },
     dispose: () => { p.calls.push('dispose'); },
   };
   return p;
@@ -456,7 +455,7 @@ interface FakeChat extends ScratchChatSeam {
   isDisposed: boolean;
   /** When true, ready() stays pending until releaseReady() — tests control the handshake. */
   gateReady: boolean;
-  private release?: () => void;
+  release?: (() => void) | undefined;
 }
 const fakeChat = (): FakeChat => {
   const c: FakeChat = {
@@ -475,44 +474,18 @@ const fakeChat = (): FakeChat => {
 /** Flush the microtask queue so fire-and-forget async handlers settle. */
 const flush = async (): Promise<void> => { for (let i = 0; i < 20; i++) await Promise.resolve(); };
 
-test('extension-chat-wiring.test.ts: extension.ts constructs createScratchStore with root join(PATHS.insrc, \'scratches\') (ac1)', () => {
-  const src = read(EXT);
-  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
-  assert.ok(block, 'the chatEnabled block is present');
-  const b = block![1]!;
-  // The store is constructed NEXT TO the attachment store (the ac1 adjacency), inside the gate.
-  assert.match(b, /createAttachmentStore\(\{\s*root:\s*join\(PATHS\.insrc,\s*'chat-attachments'\),\s*logger:\s*panelLog\s*\}\);\s*\n([\s\S]*?)createScratchStore\(\{\s*root:\s*join\(PATHS\.insrc,\s*'scratches'\),\s*logger:\s*panelLog\s*\}\)/, 'createScratchStore({ root: join(PATHS.insrc, \'scratches\'), logger: panelLog }) sits right after createAttachmentStore, with fs omitted');
-  assert.match(b, /createScratchHost\(\{[\s\S]*?store:\s*scratchStore,[\s\S]*?panels:\s*scratchPanels,[\s\S]*?promptTitle:/, 'the vscode-free scratch host is constructed over the store, panels and the injected input boundary');
-  assert.match(b, /promptTitle:\s*\(\)\s*=>\s*Promise\.resolve\(vscode\.window\.showInputBox\(/, 'the scratch-new title comes from the showInputBox boundary, not a direct call inside the handler');
-  assert.match(b, /scratchpads:\s*\{\s*enabled:\s*true\s*\}/, 'the chat host gets the scratchpads seam enabled');
-  assert.match(b, /createScratchPanels\(\{[\s\S]*?panels:\s*scratchPanelFactory,[\s\S]*?genNonce:\s*makeNonce,[\s\S]*?setPanelTitle:/, 'the panels controller gets the title-capable factory, nonce source and setPanelTitle adapter');
-  assert.match(b, /onSendToChat:\s*\(text\)\s*=>\s*scratchHost\.onMessage\(\{\s*type:\s*'send-to-chat',\s*text\s*\}\)/, 'the document view send-to-chat routes through the shared scratch host');
-  // Story 01ac1e4b6a6c9c2f/s1 t4: the document channel's save/dirty posts route to the
-  // scratch host's DOCUMENT route — the chat-channel SCRATCH_INTENT_TYPES interception
-  // cannot see document-panel messages, so they go straight to onDocMessage.
-  assert.match(b, /onScratchSave:\s*\(id,\s*gen,\s*text\)\s*=>\s*scratchHost\.onDocMessage\(\{\s*type:\s*'scratch-save',\s*id,\s*gen,\s*text\s*\}\)/, 'the document view scratch-save routes through the scratch host document route');
-  assert.match(b, /onScratchDirty:\s*\(id,\s*gen,\s*dirty\)\s*=>\s*scratchHost\.onDocMessage\(\{\s*type:\s*'scratch-dirty',\s*id,\s*gen,\s*dirty\s*\}\)/, 'the document view scratch-dirty routes through the scratch host document route');
-  // The scratch-host module itself is vscode-free.
-  const host = read(join(HERE, '..', 'scratch-host.ts'));
-  assert.doesNotMatch(host, /from ['"]vscode['"]/, 'scratch-host.ts imports nothing from vscode');
-  // ISSUE-3183af2a: the scratch panel factory's postMessage adapter no longer swallows a
-  // dropped post — a false delivery result or a rejection is logged via panelLog, and the
-  // delivery promise is RETURNED so the panels controller's wrap() can log at its boundary too.
-  assert.match(b, /return panel\.webview\.postMessage\(message\)\.then\(\s*\(delivered\)/, 'the scratch factory checks the postMessage delivery result and returns the promise');
-  assert.match(b, /delivered === false\)\s*panelLog\.warn\(/, 'an undelivered post (webview not ready / disposed) is logged, not silent');
-  assert.match(b, /\(\)\s*=>\s*\{\s*\n?\s*panelLog\.warn\([\s\S]*?return false;/, 'a rejected post (disposed panel) is logged and resolves false, not silent');
-  // The controller's own wrap() logs drops through the injected logger (behavioral test in
-  // scratch-panel.test.ts); here we pin the source wiring so a regression is caught.
-  const sp = read(join(HERE, '..', '..', 'panels', 'scratch-panels.ts'));
-  assert.match(sp, /return Promise\.resolve\(panel\.postMessage\(m\)\)\.then\(/, 'wrap() consumes the delivery promise');
-  assert.match(sp, /delivered === false\)\s*log\.warn\(/, 'wrap() logs a false delivery via the injected logger');
-  assert.match(sp, /\(\)\s*=>\s*\{\s*\n?\s*log\.warn\(/, 'wrap() logs a rejection via the injected logger');
-  assert.match(sp, /catch \(err\) \{\s*\n?\s*log\.warn\([\s\S]*?threw synchronously/, 'wrap() contains and logs a synchronous throw');
+test('extension scratch wiring binds native editor browse host and one scoped save refresh', () => {
+  const source = read(EXT);
+  assert.match(source, /createScratchStore\(\{ root: join\(PATHS.insrc, 'scratches'\)/);
+  assert.match(source, /panels: scratchPanelFactory, store: scratchStore, editor: scratchEditor/);
+  assert.match(source, /promptTitle: \(\) => Promise.resolve\(vscode.window.showInputBox/);
+  assert.match(source, /sendScratchSelection = \(text, assertCurrent\) => scratchHost.sendSelectionToChat/);
+  assert.equal(source.match(/workspace\.onDidSaveTextDocument\(/g)?.length, 1);
 });
 
 test('extension-chat-wiring.test.ts: scratch-new title acquisition end-to-end — prompt cancelled -> no create + unchanged list; prompt answered -> create + list refresh + document open', async () => {
   const store = fakeStore();
-  const panels = fakePanels();
+  const panels = fakePanels(store);
   const chat = fakeChat();
   let promptAnswer: string | undefined = undefined;
   const host = createScratchHost({ store, panels, chat, promptTitle: async () => promptAnswer, logger: { warn: () => {} } });
@@ -553,7 +526,7 @@ test('extension-chat-wiring.test.ts: scratch-new title acquisition end-to-end �
 
 test('extension-chat-wiring.test.ts: scratch-new with a FAILING create still re-sends the list but WITH the error field (the menu must not look healthy after a failed create)', async () => {
   const store = fakeStore();
-  const panels = fakePanels();
+  const panels = fakePanels(store);
   const chat = fakeChat();
   const host = createScratchHost({ store, panels, chat, promptTitle: async () => 'Broken Pad', logger: { warn: () => {} } });
   store.failCreate = true; // createScratch rejects; the subsequent listScratches succeeds
@@ -578,26 +551,25 @@ test('extension-chat-wiring.test.ts: scratch-new with a FAILING create still re-
 
 test('extension-chat-wiring.test.ts: ISSUE-3183af2a defect 1 — a FAILING browse refresh does NOT skip opening the new document; a failed open is logged, not silent', async () => {
   const store = fakeStore();
-  const panels = fakePanels();
+  const panels = fakePanels(store);
   const chat = fakeChat();
   const warns: string[] = [];
   const host = createScratchHost({ store, panels, chat, promptTitle: async () => 'My Pad', logger: { warn: (m) => { warns.push(m); } } });
   // refreshBrowse rejects: the create still opens its document — opening is the point of the intent.
   const origRefresh = panels.refreshBrowse;
   panels.refreshBrowse = async () => { panels.calls.push('refreshBrowse'); throw new Error('browse refresh exploded'); };
-  // openDocument fails (panel factory error): returns undefined.
-  panels.openDocument = async (id: string) => { panels.calls.push(`openDocument:${id}`); return undefined; };
+  panels.openDocument = async (id: string) => { panels.calls.push(`openDocument:${id}`); throw new Error('renderer failed'); };
   host.onMessage({ type: 'scratch-new' });
   await flush();
   assert.deepEqual(store.created, ['My Pad'], 'the scratchpad was created');
   assert.deepEqual(panels.calls, ['refreshBrowse', 'openDocument:My Pad.md'], 'the document open is attempted even though the browse refresh failed');
-  assert.ok(warns.some((w) => /browse refresh failed after create/.test(w)), 'the refresh failure is logged');
-  assert.ok(warns.some((w) => /created My Pad\.md but its document panel did not open/.test(w)), 'the failed open is visible in the log instead of silent');
+  assert.ok(warns.some((w) => /refresh failed after create/.test(w)), 'the refresh failure is logged');
+  assert.ok(warns.some((w) => /Created My Pad\.md, but opening failed/.test(w)), 'the failed open is visible in the log instead of silent');
   assert.equal(chat.posted.filter((m) => m.type === 'scratch-list').length, 1, 'the list is still re-sent');
   // Recovery: refreshBrowse succeeds again, openDocument returns a handle -> no warnings at all.
   chat.posted.length = 0; panels.calls.length = 0; warns.length = 0;
   panels.refreshBrowse = origRefresh;
-  panels.openDocument = async (id: string) => { panels.calls.push(`openDocument:${id}`); return { id } as never; };
+  panels.openDocument = async (id: string) => { panels.calls.push(`openDocument:${id}`); return; };
   host.onMessage({ type: 'scratch-new' });
   await flush();
   assert.deepEqual(panels.calls, ['refreshBrowse', 'openDocument:My Pad.md']);
@@ -607,14 +579,14 @@ test('extension-chat-wiring.test.ts: ISSUE-3183af2a defect 1 — a FAILING brows
 
 test('extension-chat-wiring.test.ts: scratch-delete with a FAILING delete still re-sends the list but WITH the delete error field; the panels are still closed/refreshed; a later successful delete clears it (t7 delete-failure surfacing)', async () => {
   const store = fakeStore();
-  const panels = fakePanels();
+  const panels = fakePanels(store);
   const chat = fakeChat();
   const host = createScratchHost({ store, panels, chat, promptTitle: async () => undefined, logger: { warn: () => {} } });
   store.failDelete = true; // deleteScratch rejects; the subsequent listScratches succeeds
   host.onMessage({ type: 'scratch-delete', id: '20260113-090000-late.md' });
   await flush();
   assert.deepEqual(store.deleted, [], 'nothing was actually deleted');
-  assert.deepEqual(panels.calls, ['invalidateId:20260113-090000-late.md', 'closeDocumentIfShowing:20260113-090000-late.md', 'refreshBrowse'], 'the delete still invalidates, closes and refreshes the panels');
+  assert.deepEqual(panels.calls, ['deleteDocument:20260113-090000-late.md'], 'the delete still invalidates, closes and refreshes the panels');
   const lists = chat.posted.filter((m) => m.type === 'scratch-list');
   assert.equal(lists.length, 1, 'the list is still re-sent after a failed delete');
   const list = lists[0] as { entries: ScratchEntry[]; error?: string };
@@ -639,7 +611,7 @@ test('extension-chat-wiring.test.ts: scratch-list error field renders the unavai
   assert.ok(block, 'the chatEnabled block is present');
   assert.match(block![1]!, /SCRATCH_INTENT_TYPES\.has\(p\.type\)\)\s*scratchOnMessage\(p as WebviewToHost\)/, 'the wrapped chat channel routes the six intents to the scratch host before the chat listener');
   const store = fakeStore();
-  const panels = fakePanels();
+  const panels = fakePanels(store);
   const chat = fakeChat();
   const host = createScratchHost({ store, panels, chat, promptTitle: async () => undefined });
   // Store failure: the scratch-list push carries entries: [] + the unavailable error field.
@@ -670,8 +642,7 @@ test('extension-chat-wiring.test.ts: scratch-list error field renders the unavai
   assert.ok(store.calls.includes('list:5'), 'scratch-open-menu -> top-5 list');
   assert.ok(panels.calls.includes('openDocument:a.md'), 'scratch-open -> document panel');
   assert.deepEqual(store.deleted, ['b.md'], 'scratch-delete -> store delete');
-  assert.ok(panels.calls.includes('invalidateId:b.md'), 'scratch-delete invalidates pending opens of the id');
-  assert.ok(panels.calls.includes('closeDocumentIfShowing:b.md'), 'scratch-delete closes the document panel if it shows the id');
+  assert.ok(panels.calls.includes('deleteDocument:b.md'), 'scratch-delete delegates to native lifecycle');
   assert.ok(panels.calls.includes('refreshBrowse'), 'scratch-delete refreshes the browse table');
   assert.ok(panels.calls.includes('openBrowse'), 'scratch-browse -> browse panel');
   assert.equal(chat.posted.filter((m) => m.type === 'insert-into-input').length, 1, 'send-to-chat -> insert-into-input push');
@@ -754,7 +725,7 @@ test('extension-chat-wiring.test.ts: scratch-list error field renders the unavai
       made.push(h);
       return h;
     };
-    const panels = createScratchPanels({ panels: factory, store: fakeStore(), logger, genNonce: () => 'n' });
+    const panels = createScratchPanels({ editor: { openDocument: async () => {}, deleteDocument: async () => 'cancelled' }, panels: factory, store: fakeStore(), logger, genNonce: () => 'n' });
     const first = await panels.openBrowse();
     assert.ok(first !== undefined, 'the first browse opens');
     assert.equal(made.length, 1);
@@ -774,7 +745,7 @@ test('extension-chat-wiring.test.ts: scratch-list error field renders the unavai
 
 test('extension-chat-wiring.test.ts: send-to-chat reveals the chat panel, awaits the ready handshake, then pushes insert-into-input capped at 65,536 UTF-8 bytes; disposed chat drops silently', async () => {
   const store = fakeStore();
-  const panels = fakePanels();
+  const panels = fakePanels(store);
   const chat = fakeChat();
   const host = createScratchHost({ store, panels, chat, promptTitle: async () => undefined });
   // Reveal + ready ordering: with a gated ready, open() is called BEFORE ready() resolves,
@@ -819,36 +790,4 @@ test('extension-chat-wiring.test.ts: send-to-chat reveals the chat panel, awaits
   const hostSrc = read(join(HERE, '..', 'scratch-host.ts'));
   assert.match(hostSrc, /deps\.chat\.open\(\);[\s\S]*?await deps\.chat\.ready\(\);\s*\n\s*if \(deps\.chat\.disposed\(\)\) return;/, 'the host opens the chat, awaits ready, THEN checks disposed (a closed chat is opened first)');
   assert.match(hostSrc, /type:\s*'insert-into-input',\s*text:\s*capUtf8\(text\)/, 'the push is capped via the shared capUtf8');
-});
-
-// ---- Story 01ac1e4b6a6c9c2f/s1 t4: document-channel save wiring pins ----
-
-test("extension-chat-wiring.test.ts regex pins: textarea element, save button, 'scratch-save'/'scratch-saved' strings, replySaved, selectionStart present in the built sources and panel wiring; onScratchSave wiring pinned", () => {
-  const src = read(EXT);
-  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
-  assert.ok(block, 'the chatEnabled block is present');
-  const b = block![1]!;
-  // onScratchSave / onScratchDirty route to the scratch host's document channel.
-  assert.match(b, /onScratchSave:\s*\(id,\s*gen,\s*text\)\s*=>\s*scratchHost\.onDocMessage\(\{\s*type:\s*'scratch-save',\s*id,\s*gen,\s*text\s*\}\)/, 'onScratchSave routes scratch-save to onDocMessage');
-  assert.match(b, /onScratchDirty:\s*\(id,\s*gen,\s*dirty\)\s*=>\s*scratchHost\.onDocMessage\(\{\s*type:\s*'scratch-dirty',\s*id,\s*gen,\s*dirty\s*\}\)/, 'onScratchDirty routes scratch-dirty to onDocMessage');
-  // The document panel's static body carries the textarea + save button.
-  const sp = read(join(HERE, '..', '..', 'panels', 'scratch-panels.ts'));
-  assert.match(sp, /<textarea id="insrc-scratchdoc"/, 'the document body is a textarea element');
-  assert.match(sp, /id="insrc-savescratch"[^>]*hidden/, 'the save button exists and starts hidden');
-  // The document channel carries scratch-save / scratch-dirty webview->host and scratch-saved host->webview.
-  assert.ok(sp.includes("'scratch-save'"), 'scratch-save present in the panels source');
-  assert.ok(sp.includes("'scratch-dirty'"), 'scratch-dirty present in the panels source');
-  assert.ok(sp.includes("'scratch-saved'"), 'scratch-saved present in the panels source');
-  // replySaved is the host->webview reply seam; selectionStart is the textarea selection API.
-  assert.match(sp, /replySaved\(gen:\s*number,\s*msg:\s*ScratchDocHostToWebview\)/, 'replySaved(gen, msg) seam present');
-  assert.ok(sp.includes('doc.selectionStart') && sp.includes('doc.selectionEnd'), 'selectionStart/End present in the bootstrap');
-  // The scratch host routes scratch-save: updateScratch + replySaved + refreshBrowse + list re-push.
-  const host = read(join(HERE, '..', 'scratch-host.ts'));
-  assert.match(host, /onDocMessage/, 'the host exposes the document-channel route');
-  assert.match(host, /deps\.store\.updateScratch\(msg\.id,\s*msg\.text\)/, 'scratch-save persists via store.updateScratch(id, text)');
-  assert.match(host, /deps\.panels\.replySaved\(gen,\s*\{\s*type:\s*'scratch-saved',\s*id:\s*msg\.id,\s*gen,\s*ok,/, 'the save is answered via replySaved with the same gen');
-  assert.match(host, /await \(deps\.refresh \? deps\.refresh\(\) : deps\.panels\.refreshBrowse\(\)\)/, 'the shared refresh boundary refreshes browse after a save');
-  assert.match(host, /void sendScratchList\(\)/, 'the chat scratch-list is re-pushed after a save');
-  // The chat-channel interception stays chat-only: SCRATCH_INTENT_TYPES has no document types.
-  assert.match(host, /'send-to-chat',\s*\n\]\)/, 'SCRATCH_INTENT_TYPES still ends at the six chat intents (no document types)');
 });

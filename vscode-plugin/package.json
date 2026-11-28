@@ -198,6 +198,12 @@
             "minimum": 1000,
             "markdownDescription": "How long (in milliseconds) a new chat message waits for the session's previous CLI process to exit before that process is stopped. Only one CLI process works on a chat session at a time, in any window. Default 600000 (10 minutes).",
             "scope": "machine"
+          },
+          "insrc.scratchpads.richEditor": {
+            "type": "boolean",
+            "default": true,
+            "scope": "window",
+            "description": "Open scratchpads in the rich Markdown editor. When disabled, opens the same file in the text editor with a notice."
           }
         }
       },

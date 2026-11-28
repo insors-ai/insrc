@@ -661,6 +661,7 @@ export function activate(context: vscode.ExtensionContext): void {
       api: vscode, extensionPath: context.extensionPath, store: scratchStore,
       sendSelection: (text, assertCurrent) => sendScratchSelection(text, assertCurrent),
       refresh: () => refreshScratchpads(),
+      richEditor: () => vscode.workspace.getConfiguration().get<boolean>('insrc.scratchpads.richEditor') !== false,
       recovery: new ScratchRecoveryStore(join(context.globalStorageUri.fsPath, 'scratchpad-recovery')),
       preference: new ScratchLockPreference(context.globalState),
       warn: message => { panelLog.warn(message); void Promise.resolve(vscode.window.showWarningMessage(message)).catch(() => panelLog.warn('Scratchpad warning could not be displayed.')); },
@@ -1002,13 +1003,8 @@ export function activate(context: vscode.ExtensionContext): void {
       turnLockTimeoutMs: () =>
         Math.max(1000, vscode.workspace.getConfiguration().get<number>('insrc.chat.turnLockTimeoutMs') ?? DEFAULT_TURN_LOCK_TIMEOUT_MS),
     });
-    // Story E202611134642d49a:S001 t7: the scratchpad feature's extension-host wiring. The
-    // panels controller owns the two scratch viewTypes (browse-all table + single document);
-    // the vscode-free router (scratch-host.ts) owns the six intents over injected boundaries.
-    // Both live inside the chat gate because every entry point is the chat panel's scratchpad
-    // button; nothing is registered outside `if (chatEnabled)`.
-    // The panels factory keeps the raw WebviewPanel in its closure so setPanelTitle can set
-    // the real tab title (the stock PanelHandle has no title op — the controller injects one).
+    // Browse is the only scratchpad webview panel factory. Documents use the
+    // native custom editor registered above; the host retains the six intents.
     const scratchPanelFactory = ({ viewType, title }: { readonly viewType: string; readonly title: string }): PanelHandle => {
       const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true });
       const handle: PanelHandle = {
@@ -1041,8 +1037,6 @@ export function activate(context: vscode.ExtensionContext): void {
         },
         dispose: () => panel.dispose(),
       };
-      // Stash the raw panel on the handle so the title adapter below can reach it.
-      (handle as PanelHandle & { __rawPanel?: unknown }).__rawPanel = panel;
       return handle;
     };
     const chatSeam: ScratchChatSeam = {
@@ -1055,23 +1049,8 @@ export function activate(context: vscode.ExtensionContext): void {
       },
     };
     const scratchPanels = createScratchPanels({
-      deleteDocument: id => scratchEditor.deleteDocument(id),
-      panels: scratchPanelFactory,
-      store: scratchStore,
-      logger: panelLog,
-      genNonce: makeNonce,
-      setPanelTitle: (panel, title) => {
-        const raw = (panel as PanelHandle & { __rawPanel?: vscode.WebviewPanel }).__rawPanel;
-        if (raw !== undefined) raw.title = title;
-      },
-      // A document view's Send-to-chat: routed by the shared scratch host (reveal chat, await
-      // the ready handshake, push the capped insert-into-input; disposed chat drops silently).
-      onSendToChat: (text) => scratchHost.onMessage({ type: 'send-to-chat', text }),
-      // A document view's save/dirty posts arrive on the DOCUMENT channel (not the chat
-      // channel the SCRATCH_INTENT_TYPES interception sees), so they route straight to the
-      // scratch host's document route — same seam shape as onSendToChat.
-      onScratchSave: (id, gen, text) => scratchHost.onDocMessage({ type: 'scratch-save', id, gen, text }),
-      onScratchDirty: (id, gen, dirty) => scratchHost.onDocMessage({ type: 'scratch-dirty', id, gen, dirty }),
+      panels: scratchPanelFactory, store: scratchStore, editor: scratchEditor,
+      logger: panelLog, genNonce: makeNonce,
     });
     context.subscriptions.push({ dispose: () => scratchPanels.dispose() });
     // The six scratchpad webview->host intents arrive on the CHAT panel's channel; the wrapped

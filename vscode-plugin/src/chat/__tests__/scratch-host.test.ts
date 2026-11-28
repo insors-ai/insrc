@@ -1,138 +1,24 @@
-/**
- * Story 01ac1e4b6a6c9c2f/s1 t4 — the document-channel scratch-save route in
- * createScratchHost.onDocMessage (chat/scratch-host.ts), driven over fakes:
- *   ok:        store.updateScratch called with exact args -> replySaved(gen, ok:true)
- *              posted to the document panel + refreshBrowse + scratch-list re-pushed
- *   failure:   store throws -> replySaved ok:false with error + log.warn; browse/list still refresh
- *   malformed: non-string id/text or non-number gen -> dropped with warn, no store call, no reply
- * plus the scratch-dirty validation pass-through.
- */
-
 import test from 'node:test';
-import { createScratchChatTarget } from '../scratch-chat-target.js';
 import assert from 'node:assert/strict';
-
-import { createScratchHost, SCRATCH_DOC_INTENT_TYPES } from '../scratch-host.js';
+import { createScratchHost, SCRATCH_INTENT_TYPES } from '../scratch-host.js';
+import { createScratchChatTarget } from '../scratch-chat-target.js';
 import type { ScratchChatSeam } from '../scratch-host.js';
 import type { ScratchStore, ScratchEntry } from '../scratch-store.js';
-import type { ScratchDocHostToWebview, ScratchPanels } from '../../panels/scratch-panels.js';
+import type { ScratchPanels } from '../../panels/scratch-panels.js';
 import type { HostToWebview } from '../protocol.js';
-
-interface FakeStore extends ScratchStore {
-  readonly calls: string[];
-  failUpdate: boolean;
-  updated: Array<{ id: string; text: string }>;
-}
-const fakeStore = (): FakeStore => {
-  const s: FakeStore = {
-    calls: [], failUpdate: false, updated: [],
-    listScratches: async (limit?: number) => {
-      s.calls.push(`list:${limit ?? 'all'}`);
-      const e: ScratchEntry = { id: 'pad.md', name: 'pad', mtime: 500, size: 1 };
-      return limit === undefined ? [e] : [e].slice(0, limit);
-    },
-    createScratch: async (title: string) => ({ id: `${title}.md`, name: title, mtime: 1, size: 0 }),
-    readScratch: async (id: string) => ({ entry: { id, name: id, mtime: 0, size: 0 }, content: 'body' }),
-    deleteScratch: async (id: string) => { s.calls.push(`delete:${id}`); },
-    updateScratch: async (id: string, text: string) => {
-      s.calls.push(`update:${id}`);
-      if (s.failUpdate) throw new Error('EACCES: permission denied');
-      s.updated.push({ id, text });
-    },
-  };
-  return s;
+const fakeStore = (): ScratchStore & { calls: string[] } => {
+  const calls: string[] = []; const entry: ScratchEntry = { id: 'pad.md', name: 'pad', mtime: 1, size: 0 };
+  return { calls, resolveScratch: async id => ({ ref: { repo: 'insrc:scratchpads:home', stableId: id }, filePath: `/scratch/${id}` }),
+    listScratches: async () => { calls.push('list'); return [entry]; },
+    createScratch: async title => { calls.push(`create:${title}`); return { ...entry, id: `${title}.md` }; },
+    readScratch: async () => ({ entry, content: 'body' }), deleteScratch: async id => { calls.push(`delete:${id}`); }, updateScratch: async () => {}, };
 };
-
-interface FakePanels extends ScratchPanels {
-  readonly calls: string[];
-  readonly saved: Array<{ gen: number; msg: ScratchDocHostToWebview }>;
-}
-const fakePanels = (): FakePanels => {
-  const p: FakePanels = {
-    calls: [], saved: [],
-    openBrowse: async () => { p.calls.push('openBrowse'); return undefined; },
-    openDocument: async (id: string) => { p.calls.push(`openDocument:${id}`); return undefined; },
-    refreshBrowse: async () => { p.calls.push('refreshBrowse'); },
-    replySaved: (gen: number, msg: ScratchDocHostToWebview) => { p.saved.push({ gen, msg }); },
-    closeDocumentIfShowing: (id: string) => { p.calls.push(`closeDocumentIfShowing:${id}`); },
-    invalidateId: (id: string) => { p.calls.push(`invalidateId:${id}`); },
-    showingId: undefined,
-    dispose: () => { p.calls.push('dispose'); },
-  };
-  return p;
+const fakePanels = (): ScratchPanels & { calls: string[] } => {
+  const calls: string[] = []; return { calls, openBrowse: async () => { calls.push('browse'); return undefined; }, openDocument: async id => { calls.push(`openDocument:${id}`); }, deleteDocument: async id => { calls.push(`deleteDocument:${id}`); return 'cancelled'; }, refreshBrowse: async () => { calls.push('refresh'); }, dispose: () => {} };
 };
-
-const fakeChat = (): ScratchChatSeam & { posted: HostToWebview[] } => {
-  const posted: HostToWebview[] = [];
-  return { posted, open: () => {}, ready: () => Promise.resolve(), disposed: () => false, post: (m) => { posted.push(m); } };
-};
-
-/** Flush the microtask queue so the fire-and-forget save handler settles. */
-const flush = async (): Promise<void> => { for (let i = 0; i < 30; i++) await Promise.resolve(); };
-
-const makeHost = (store: FakeStore, panels: FakePanels, chat: ReturnType<typeof fakeChat>, warns: string[]) =>
-  createScratchHost({ store, panels, chat, promptTitle: async () => undefined, logger: { warn: (m) => { warns.push(m); } } });
-
-test("scratch-host.test.ts (NEW): 'scratch-save' {id,gen,text} → store.updateScratch called with exact args → replySaved(gen, {type:'scratch-saved', id, gen, ok:true, ...}) posted to the document panel + refreshBrowse + scratch-list re-pushed; store failure → ok:false with error and log.warn; malformed (non-string id/text, non-number gen) dropped with warn", async () => {
-  // SCRATCH_DOC_INTENT_TYPES covers the document channel's two intents.
-  assert.ok(SCRATCH_DOC_INTENT_TYPES.has('scratch-save'));
-  assert.ok(SCRATCH_DOC_INTENT_TYPES.has('scratch-dirty'));
-  assert.equal(SCRATCH_DOC_INTENT_TYPES.size, 2);
-
-  // ---- ok path ----
-  {
-    const store = fakeStore(); const panels = fakePanels(); const chat = fakeChat(); const warns: string[] = [];
-    const host = makeHost(store, panels, chat, warns);
-    host.onDocMessage({ type: 'scratch-save', id: 'pad.md', gen: 7, text: 'edited body' });
-    await flush();
-    assert.deepEqual(store.updated, [{ id: 'pad.md', text: 'edited body' }], 'store.updateScratch called with exact (id, text)');
-    assert.deepEqual(panels.saved, [{ gen: 7, msg: { type: 'scratch-saved', id: 'pad.md', gen: 7, ok: true } }], 'replySaved posted the ok reply with the same gen');
-    assert.ok(panels.calls.includes('refreshBrowse'), 'browse refreshed after the save');
-    assert.ok(chat.posted.some((m) => m.type === 'scratch-list'), 'the chat scratch-list was re-pushed so the menu mtime refreshes');
-    assert.equal(warns.length, 0, 'no warnings on the ok path');
-  }
-
-  // ---- store failure path ----
-  {
-    const store = fakeStore(); store.failUpdate = true;
-    const panels = fakePanels(); const chat = fakeChat(); const warns: string[] = [];
-    const host = makeHost(store, panels, chat, warns);
-    host.onDocMessage({ type: 'scratch-save', id: 'pad.md', gen: 3, text: 'x' });
-    await flush();
-    assert.equal(store.updated.length, 0, 'the failed update recorded nothing');
-    assert.deepEqual(panels.saved, [{ gen: 3, msg: { type: 'scratch-saved', id: 'pad.md', gen: 3, ok: false, error: 'Error: EACCES: permission denied' } }], 'replySaved posted ok:false with the error string');
-    assert.ok(warns.some((w) => w.includes('save failed') && w.includes('pad.md')), 'the failure was logged');
-    assert.ok(panels.calls.includes('refreshBrowse'), 'browse still refreshed on failure');
-    assert.ok(chat.posted.some((m) => m.type === 'scratch-list'), 'the chat list still re-pushed on failure');
-  }
-
-  // ---- malformed drops ----
-  {
-    const store = fakeStore(); const panels = fakePanels(); const chat = fakeChat(); const warns: string[] = [];
-    const host = makeHost(store, panels, chat, warns);
-    host.onDocMessage({ type: 'scratch-save', id: 42 as never, gen: 1, text: 'x' });
-    host.onDocMessage({ type: 'scratch-save', id: 'pad.md', gen: 1, text: 7 as never });
-    host.onDocMessage({ type: 'scratch-save', id: 'pad.md', gen: 'seven' as never, text: 'x' });
-    host.onDocMessage({ type: 'scratch-save', id: 'pad.md', gen: Number.NaN, text: 'x' });
-    await flush();
-    assert.equal(store.calls.filter((c) => c.startsWith('update:')).length, 0, 'no store call for any malformed save');
-    assert.equal(panels.saved.length, 0, 'no reply for any malformed save');
-    assert.equal(warns.filter((w) => w.includes('scratch-save')).length, 4, 'all four malformed saves warned + dropped');
-
-    // scratch-dirty: valid shape accepted (no persist), malformed warned.
-    host.onDocMessage({ type: 'scratch-dirty', id: 'pad.md', gen: 2, dirty: true });
-    host.onDocMessage({ type: 'scratch-dirty', id: 'pad.md', gen: 2, dirty: 'yes' as never });
-    await flush();
-    assert.equal(warns.filter((w) => w.includes('scratch-dirty')).length, 1, 'malformed scratch-dirty warned');
-    assert.equal(store.calls.filter((c) => c.startsWith('update:')).length, 0, 'scratch-dirty never persists');
-
-    // unknown type on the doc channel warned + dropped.
-    host.onDocMessage({ type: 'bogus' as never });
-    await flush();
-    assert.equal(warns.filter((w) => w.includes('unknown type')).length, 1, 'unknown document-channel type warned + dropped');
-  }
-});
-
+const fakeChat = (): ScratchChatSeam & { posted: HostToWebview[] } => { const posted: HostToWebview[] = []; return { posted, open: () => {}, ready: async () => {}, disposed: () => false, post: message => { posted.push(message); } }; };
+const flush = async () => { for (let turn = 0; turn < 40; turn++) await Promise.resolve(); };
+const makeHost = (store: ReturnType<typeof fakeStore>, panels: ReturnType<typeof fakePanels>, chat: ReturnType<typeof fakeChat>, warnings: string[]) => createScratchHost({ store, panels, chat, promptTitle: async () => undefined, logger: { warn: message => warnings.push(message) } });
 
 test('scratch checked selection route preserves paragraphs caps UTF-8 and only inserts after exact chat readiness', async () => {
   const chat = fakeChat(), posted: HostToWebview[] = []; let opens = 0, checks = 0;
@@ -186,4 +72,23 @@ test('scratch creation uses the shared refresh boundary without suppressing open
   const host = createScratchHost({ store: fakeStore(), panels, chat, promptTitle: async () => 'New pad', refresh: async () => { refreshed++; throw new Error('refresh refused'); }, logger: { warn: message => warnings.push(message) } });
   host.onMessage({ type: 'scratch-new' }); await flush();
   assert.equal(refreshed, 1); assert.ok(panels.calls.includes('openDocument:New pad.md')); assert.ok(warnings.some(message => message.includes('refresh')));
+});
+
+
+test('scratch host distinguishes created but open failed from create failure and catches all intent boundaries', async () => {
+  const store = fakeStore(), panels = fakePanels(), chat = fakeChat(), warnings: string[] = [];
+  panels.openDocument = async () => { throw new Error('renderer failed'); };
+  const host = createScratchHost({ store, panels, chat, promptTitle: async () => 'New', logger: { warn: message => warnings.push(message) } });
+  host.onMessage({ type: 'scratch-new' }); await flush();
+  assert.ok(store.calls.includes('create:New'));
+  const created = chat.posted.find(message => message.type === 'scratch-list');
+  assert.ok(created?.type === 'scratch-list'); assert.match(created.error ?? '', /Created New.md.*could not be opened/); assert.doesNotMatch(created.error ?? '', /create failed:/);
+  chat.posted.length = 0; store.createScratch = async () => { throw new Error('disk full'); };
+  host.onMessage({ type: 'scratch-new' }); await flush();
+  assert.match((chat.posted[0] as { error: string }).error, /create failed:.*disk full/);
+  panels.openBrowse = async () => { throw new Error('browse failed'); }; panels.deleteDocument = async () => { throw new Error('close refused'); };
+  for (const message of [{ type: 'scratch-open', id: 'pad.md' }, { type: 'scratch-browse' }, { type: 'scratch-delete', id: 'pad.md' }] as const) host.onMessage(message);
+  await flush(); assert.ok(warnings.some(message => message.includes('renderer failed'))); assert.ok(warnings.some(message => message.includes('browse failed'))); assert.ok(warnings.some(message => message.includes('close refused')));
+  assert.deepEqual([...SCRATCH_INTENT_TYPES].sort(), ['scratch-browse', 'scratch-delete', 'scratch-new', 'scratch-open', 'scratch-open-menu', 'send-to-chat']);
+  assert.equal(store.calls.some(call => call.startsWith('delete:')), false, 'host cannot bypass native guarded deletion');
 });

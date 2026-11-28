@@ -93,7 +93,7 @@ async function run(): Promise<unknown> {
       const waiting = action.disabled;
       await current.pane.receive({ type: 'selection-result', paneSessionId: capture.paneSessionId, requestId: capture.requestId, sent: false, message: 'Source changed; reselect and retry.' });
       const retained = current.root.querySelector<HTMLTextAreaElement>('.scratch-retained-selection')!;
-      selectionChecks.push({ method, before: before.filter(m => m.type !== 'lock'), sent, focusedByTab, waiting, disabledAfterFailure: action.disabled, retained: retained.value, retainedVisible: !retained.hidden, status: current.root.querySelector('[role=alert]')?.textContent, drafts: drafts(current.sent) });
+      selectionChecks.push({ method, before: before.filter(m => m.type !== 'lock' && m.type !== 'editor-initialized'), sent, focusedByTab, waiting, disabledAfterFailure: action.disabled, retained: retained.value, retainedVisible: !retained.hidden, status: current.root.querySelector('[role=alert]')?.textContent, drafts: drafts(current.sent) });
     }
     const deleting = await create('deletion');
     if (deleting.pane['crepe']!.readonly) deleting.root.querySelector<HTMLButtonElement>('nav button')!.click();

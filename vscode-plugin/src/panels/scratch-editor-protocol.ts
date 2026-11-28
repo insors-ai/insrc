@@ -43,6 +43,7 @@ export function sameScratchDraft(left: ScratchDraftProposal, right: ScratchDraft
 }
 export type ScratchEditorToHost =
   | (Session & { readonly type: 'editor-ready' })
+  | (Session & { readonly type: 'editor-initialized'; readonly success: boolean; readonly message: string })
   | (Session & { readonly type: 'delete-ready'; readonly requestId: string; readonly docVersion: number; readonly draftSeq: number; readonly clean: boolean })
   | (Session & { readonly type: 'open-text' })
   | (Session & { readonly type: 'focus-ready'; readonly requestId: string; readonly docVersion: number; readonly draftSeq: number; readonly focused: boolean })
@@ -103,6 +104,7 @@ export function parseScratchEditorMessage(value: unknown): ScratchEditorToHost |
   let valid = false;
   switch (m.type) {
     case 'editor-ready': case 'open-text': valid = sessionKeys(m, []); break;
+    case 'editor-initialized': valid = sessionKeys(m, ['success', 'message']) && typeof m.success === 'boolean' && text(m.message, 4096); break;
     case 'delete-ready': valid = sessionKeys(m, ['requestId', 'docVersion', 'draftSeq', 'clean']) && token(m.requestId) && version(m.docVersion) && count(m.draftSeq) && typeof m.clean === 'boolean'; break;
     case 'focus-ready': valid = sessionKeys(m, ['requestId', 'docVersion', 'draftSeq', 'focused']) && token(m.requestId) && version(m.docVersion) && count(m.draftSeq) && typeof m.focused === 'boolean'; break;
     case 'draft':

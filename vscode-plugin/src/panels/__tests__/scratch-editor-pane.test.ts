@@ -22,7 +22,7 @@ test('scratch pane uses actual Crepe remembered locks and click-only locked sele
     const match = result.stdout.match(/<pre id="scratch-result">([\s\S]*?)<\/pre>/); assert.ok(match, result.stdout.slice(-3500));
     const data = JSON.parse(match[1]!.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&'));
     assert.deepEqual(data.deleteHandshake, { frozen: true, wrongRelease: true, released: false, rememberedBeforeDelete: false, rememberedAfterDelete: false, messages: [{ type: 'delete-ready', paneSessionId: 'deletion', requestId: 'delete_request', docVersion: 1, draftSeq: 0, clean: true }] });
-    assert.deepEqual(data.initial, { readonly: true, editable: 'false', messages: [] });
+    assert.deepEqual(data.initial, { readonly: true, editable: 'false', messages: [{ type: 'editor-initialized', paneSessionId: 'first', success: true, message: '' }] });
     assert.deepEqual(data.selected, { visible: true, sends: 0, drafts: 0, label: 'Send selection to chat' });
     assert.equal(data.lockedControls.length, 4);
     assert.deepEqual(data.ownedImage, { count: 1, rawInputs: 0, resizeControls: 0 });

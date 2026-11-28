@@ -156,11 +156,12 @@ export class ScratchEditorPane {
       this.inbound.push(msg); return this.initialization;
     }
     if (!this.state) {
-      if (msg.type !== 'document-state') { if (msg.type === 'conflict') this.fail(msg.message); return; }
+      if (msg.type !== 'document-state') { if (msg.type === 'conflict') { this.fail(msg.message); this.post({ type: 'editor-initialized', paneSessionId: this.options.paneSessionId, success: false, message: msg.message }); } return; }
       this.state = new ScratchRendererState(this.options.paneSessionId, msg, draft => this.post(draft));
       this.setLocked(msg.locked);
       this.initialization = this.initialize(msg.markdown);
       await this.initialization; this.initialization = undefined;
+      this.post({ type: 'editor-initialized', paneSessionId: this.options.paneSessionId, success: !this.failed, message: this.failed ? this.status.textContent ?? 'Scratchpad initialization failed.' : '' });
       for (const pending of this.inbound.splice(0)) await this.receive(pending);
       return;
     }

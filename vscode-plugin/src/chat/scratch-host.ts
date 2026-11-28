@@ -13,7 +13,7 @@
 
 import type { ScratchEntry, ScratchStore } from './scratch-store.js';
 import type { HostToWebview, WebviewToHost } from './protocol.js';
-import { capUtf8, type ScratchDocWebviewToHost, type ScratchPanels } from '../panels/scratch-panels.js';
+import { capUtf8, type ScratchPanels } from '../panels/scratch-panels.js';
 import type { ScratchChatTarget } from './scratch-chat-target.js';
 
 /** The six scratchpad webview->host intents the chat channel routes here. */
@@ -24,14 +24,6 @@ export const SCRATCH_INTENT_TYPES: ReadonlySet<string> = new Set([
   'scratch-delete',
   'scratch-browse',
   'send-to-chat',
-]);
-
-/** The document-panel channel's intents (Story 01ac1e4b6a6c9c2f/s1 t2/t4): these arrive on
- * the scratchpad DOCUMENT webview's own onMessage, NOT the chat channel, so the chat-side
- * SCRATCH_INTENT_TYPES interception cannot see them — extension.ts routes them straight here. */
-export const SCRATCH_DOC_INTENT_TYPES: ReadonlySet<string> = new Set<ScratchDocWebviewToHost['type']>([
-  'scratch-save',
-  'scratch-dirty',
 ]);
 
 /** Acquire the new scratchpad's title (VS Code's input box; undefined on cancel). */
@@ -66,9 +58,7 @@ export interface ScratchHost {
   sendSelectionToChat(text: string, assertCurrent: () => void): Promise<void>;
   /** Handle one webview->host message; non-scratch types and malformed fields are ignored. */
   onMessage(msg: WebviewToHost): void;
-  /** Handle one DOCUMENT-channel message from the scratchpad document webview
-   * (scratch-save / scratch-dirty — these never arrive on the chat channel). */
-  onDocMessage(msg: ScratchDocWebviewToHost): void;
+
 }
 
 /** The recent-list cap for the chat status-bar menu (top 5 by mtime). */
@@ -91,7 +81,8 @@ export function createScratchHost(deps: ScratchHostDeps): ScratchHost {
     } catch (err) {
       error = `scratchpads unavailable: ${String(err)}`;
     }
-    deps.chat.post({ type: 'scratch-list', entries, ...(error !== undefined ? { error } : {}) });
+    try { deps.chat.post({ type: 'scratch-list', entries, ...(error !== undefined ? { error } : {}) }); }
+    catch (failure) { log.warn(`Scratchpad list could not be delivered: ${String(failure)}`); }
   };
 
   /** Reveal the chat, await the ready handshake, then push the capped insert; disposed drops silently. */
@@ -129,69 +120,32 @@ export function createScratchHost(deps: ScratchHostDeps): ScratchHost {
         void sendScratchList();
         return;
       case 'scratch-new':
-        void (async (): Promise<void> => {
-          // Titleless intent: the host acquires the title via the injected prompt. A cancelled,
-          // non-string or blank-trimmed prompt creates nothing and re-sends the UNCHANGED list.
-          const raw = await deps.promptTitle();
-          if (typeof raw !== 'string') {
-            if (raw !== undefined) log.warn('[scratches] dropped malformed scratch-new: non-string title');
-            void sendScratchList();
-            return;
-          }
-          const title = raw;
-          if (title.trim() === '') {
-            void sendScratchList();
-            return;
-          }
-          try {
-            const entry = await deps.store.createScratch(title.trim());
-            // Opening the new document is the POINT of this intent: a browse-tab
-            // refresh failure must not skip it, and a failed open must be visible
-            // in the log instead of silently looking like nothing happened.
-            try {
-              await (deps.refresh ? deps.refresh() : deps.panels.refreshBrowse());
-            } catch (err) {
-              log.warn(`[scratches] browse refresh failed after create: ${String(err)}`);
-            }
-            const opened = await deps.panels.openDocument(entry.id);
-            if (opened === undefined) log.warn(`[scratches] created ${entry.id} but its document panel did not open`);
-            if (!deps.refresh) void sendScratchList();
-          } catch (err) {
-            // The create failed: re-send the list WITH the error so the menu surfaces
-            // the failure instead of silently looking unchanged/healthy.
-            log.warn(`[scratches] create failed: ${String(err)}`);
-            void sendScratchList(`create failed: ${String(err)}`);
-          }
-        })();
+        void (async () => {
+          let title: string | undefined;
+          try { title = await deps.promptTitle(); } catch (failure) { log.warn(`Scratchpad title prompt failed: ${String(failure)}`); await sendScratchList('Could not ask for a scratchpad title.'); return; }
+          if (typeof title !== 'string' || !title.trim()) { await sendScratchList(); return; }
+          let entry: ScratchEntry;
+          try { entry = await deps.store.createScratch(title.trim()); }
+          catch (failure) { log.warn(`Scratchpad create failed: ${String(failure)}`); await sendScratchList(`create failed: ${String(failure)}`); return; }
+          try { await (deps.refresh ? deps.refresh() : deps.panels.refreshBrowse()); }
+          catch (failure) { log.warn(`Scratchpad refresh failed after create: ${String(failure)}`); }
+          try { await deps.panels.openDocument(entry.id); }
+          catch (failure) { log.warn(`Created ${entry.id}, but opening failed: ${String(failure)}`); await sendScratchList(`Created ${entry.id}, but it could not be opened: ${String(failure)}`); return; }
+          if (!deps.refresh) await sendScratchList();
+        })().catch(failure => log.warn(`Scratchpad creation notification failed: ${String(failure)}`));
         return;
       case 'scratch-open':
         if (typeof msg.id !== 'string') { log.warn('[scratches] dropped malformed scratch-open: non-string id'); return; }
-        void deps.panels.openDocument(msg.id);
+        void deps.panels.openDocument(msg.id).catch(failure => { log.warn(`Scratchpad open failed: ${String(failure)}`); void sendScratchList(`open failed: ${String(failure)}`); });
         return;
       case 'scratch-delete':
         if (typeof msg.id !== 'string') { log.warn('[scratches] dropped malformed scratch-delete: non-string id'); return; }
-        if (deps.panels.deleteDocument) {
-          void deps.panels.deleteDocument(msg.id).catch(failure => { log.warn(`Scratchpad deletion failed: ${String(failure)}`); void sendScratchList(`delete failed: ${String(failure)}`); });
-          return;
-        }
-        void (async (): Promise<void> => {
-          deps.panels.invalidateId(msg.id);
-          let deleteError: string | undefined;
-          try {
-            await deps.store.deleteScratch(msg.id);
-          } catch (err) {
-            // A failed delete must not look like success: carry the error into the
-            // re-sent list so the menu says what happened.
-            deleteError = `delete failed: ${String(err)}`;
-            log.warn(`[scratches] delete failed for ${msg.id}: ${String(err)}`);
-          }
-          deps.panels.closeDocumentIfShowing(msg.id);
-          await (deps.refresh ? deps.refresh() : deps.panels.refreshBrowse());
-          void sendScratchList(deleteError);
-        })();
+        void deps.panels.deleteDocument(msg.id).then(async result => {
+          if (result === 'deleted' && !deps.refresh) { try { await deps.panels.refreshBrowse(); } catch (failure) { log.warn(`Scratchpad refresh failed after delete: ${String(failure)}`); } await sendScratchList(); }
+        }).catch(failure => { log.warn(`Scratchpad deletion failed: ${String(failure)}`); void sendScratchList(`delete failed: ${String(failure)}`); });
         return;
       case 'scratch-browse':
-        void deps.panels.openBrowse();
+        void deps.panels.openBrowse().then(opened => { if (!opened) return sendScratchList('Scratchpad browse could not be opened.'); }).catch(failure => { log.warn(`Scratchpad browse failed: ${String(failure)}`); void sendScratchList(`browse failed: ${String(failure)}`); });
         return;
       case 'send-to-chat':
         if (typeof msg.text !== 'string') { log.warn('[scratches] dropped malformed send-to-chat: non-string text'); return; }
@@ -202,60 +156,5 @@ export function createScratchHost(deps: ScratchHostDeps): ScratchHost {
     }
   };
 
-  /** Document-channel route (Story 01ac1e4b6a6c9c2f/s1 t4). The document webview's
-   * 'scratch-save' is validated (string id/text, finite number gen — anything else is
-   * warned + dropped), persisted via store.updateScratch, and answered through
-   * panels.replySaved with the SAME gen so the webview's gen-guard accepts it; the
-   * browse table and the chat menu list both refresh so the mtime shows the save.
-   * 'scratch-dirty' carries no payload to persist — it is accepted (and ignored beyond
-   * validation) so a malformed one is still surfaced in the log. */
-  const onDocMessage = (msg: ScratchDocWebviewToHost): void => {
-    if (msg === null || typeof msg !== 'object' || !SCRATCH_DOC_INTENT_TYPES.has(msg.type)) {
-      log.warn('[scratches] dropped malformed document message: unknown type');
-      return;
-    }
-    switch (msg.type) {
-      case 'scratch-dirty': {
-        if (typeof msg.id !== 'string' || typeof msg.dirty !== 'boolean' || typeof msg.gen !== 'number' || !Number.isFinite(msg.gen)) {
-          log.warn('[scratches] dropped malformed scratch-dirty: non-string id, non-boolean dirty or non-number gen');
-          return;
-        }
-        return; // dirty state rides the panel title host-side; nothing to persist
-      }
-      case 'scratch-save': {
-        if (typeof msg.id !== 'string' || typeof msg.text !== 'string' || typeof msg.gen !== 'number' || !Number.isFinite(msg.gen)) {
-          log.warn('[scratches] dropped malformed scratch-save: non-string id/text or non-number gen');
-          return;
-        }
-        const gen = Math.floor(msg.gen);
-        void (async (): Promise<void> => {
-          let ok = true;
-          let error: string | undefined;
-          try {
-            await deps.store.updateScratch(msg.id, msg.text);
-          } catch (err) {
-            ok = false;
-            error = String(err);
-            log.warn(`[scratches] save failed for ${msg.id}: ${String(err)}`);
-          }
-          // Answer through the live-generation guard so a stale page load's save reply
-          // is dropped by replySaved instead of reaching a superseded webview.
-          deps.panels.replySaved(gen, { type: 'scratch-saved', id: msg.id, gen, ok, ...(error !== undefined ? { error } : {}) });
-          // Refresh the browse table and the chat menu list even on failure so the
-          // mtime/state stays truthful (a failed save leaves the file unchanged).
-          try {
-            await (deps.refresh ? deps.refresh() : deps.panels.refreshBrowse());
-          } catch (err) {
-            log.warn(`[scratches] browse refresh failed after save: ${String(err)}`);
-          }
-          void sendScratchList();
-        })();
-        return;
-      }
-      default:
-        return;
-    }
-  };
-
-  return { refreshList: () => sendScratchList(), onMessage, onDocMessage, sendSelectionToChat: (text, assertCurrent) => sendToChat(text, assertCurrent) };
+  return { refreshList: () => sendScratchList(), onMessage, sendSelectionToChat: (text, assertCurrent) => sendToChat(text, assertCurrent) };
 }

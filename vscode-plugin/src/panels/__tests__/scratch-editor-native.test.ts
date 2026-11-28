@@ -38,45 +38,55 @@ async function harness() {
   let validateGate: ReturnType<typeof deferred> | undefined, validating = false;
   const resolveOriginal = store.resolveScratch;
   store.resolveScratch = async id => { const result = await resolveOriginal(id); const pending = validateGate; validateGate = undefined; if (pending) { validating = true; await pending.promise; validating = false; } return result; };
+  let fallbackChoice: string | undefined; const fallbackNotices: string[][] = [];
+  let paneAttached = false, initSuccess = true, holdInit = false, richEditor = true; const initializedSessions = new Set<string>();
   let focusMode: 'ok' | 'denied' | 'wrong-version' = 'ok';
   let provider!: VSCode.CustomTextEditorProvider, active = true, gate: ReturnType<typeof deferred> | undefined, dropped: string | undefined, applies = 0, saves = 0;
   const messages: ScratchHostToEditor[] = [], warnings: string[] = [], commands: { name: string; args: unknown[] }[] = [];
   const doc = { uri, version: 1, isDirty: false, isClosed: false, text: '# Before\n', getText() { return this.text; }, positionAt: (offset: number) => ({ line: 0, character: offset }),
     save: async () => { const waits: PromiseLike<unknown>[] = []; willSave.fire({ document: doc, waitUntil: p => { waits.push(p); } }); await Promise.all(waits); await writeFile(resolved.filePath, doc.text); doc.isDirty = false; saves++; return true; } };
   let activeTab = { input: new CustomTab(uri) };
-  const groups = [{ tabs: [{ input: activeTab.input as CustomTab | TextTab, get isDirty() { return doc.isDirty; } }] }];
+  const groups = [{ viewColumn: 1, tabs: [{ input: activeTab.input as CustomTab | TextTab, get isDirty() { return doc.isDirty; } }] }];
   const closedTabs: string[] = []; let closeRefused = false, closeGate: ReturnType<typeof deferred> | undefined;
   let deletionMode: 'ok' | 'pending' | 'wrong-version' = 'ok', refreshed = 0, failRefresh = false;
-  const panel = { get active() { return active; }, visible: true, title: 'Scratchpad', reveal: () => { active = true; }, dispose: () => disposed.fire(), onDidDispose: disposed.listen,
+  const panel = { viewColumn: 1, get active() { return active; }, visible: true, title: 'Scratchpad', reveal: () => { active = true; }, dispose: () => { paneAttached = false; disposed.fire(); }, onDidDispose: disposed.listen,
     webview: { html: '', options: {}, cspSource: "'self' https://*.vscode-cdn.net", asWebviewUri: (_u: Uri) => ({ toString: () => 'https://file.vscode-resource.vscode-cdn.net/editor.js' }), onDidReceiveMessage: incoming.listen,
-      postMessage: async (m: ScratchHostToEditor) => { if (m.type === dropped) return false; messages.push(m); if (m.type === 'delete-prepare') setImmediate(() => incoming.fire({ type: 'delete-ready', paneSessionId: m.paneSessionId, requestId: m.requestId, docVersion: doc.version - (deletionMode === 'wrong-version' ? 1 : 0), draftSeq: messages.filter(message => message.type === 'apply-ack').at(-1)?.draftSeq ?? 0, clean: deletionMode !== 'pending' })); if (m.type === 'focus-request') setImmediate(() => incoming.fire({ type: 'focus-ready', paneSessionId: m.paneSessionId, requestId: m.requestId, docVersion: m.docVersion + (focusMode === 'wrong-version' ? 1 : 0), draftSeq: m.draftSeq, focused: focusMode !== 'denied' })); return true; } } };
+      postMessage: async (m: ScratchHostToEditor) => { if (m.type === dropped) return false; messages.push(m); if (m.type === 'document-state' && !initializedSessions.has(m.paneSessionId)) { initializedSessions.add(m.paneSessionId); if (!holdInit) setImmediate(() => incoming.fire({ type: 'editor-initialized', paneSessionId: m.paneSessionId, success: initSuccess, message: initSuccess ? '' : 'fixture renderer failed' })); } if (m.type === 'delete-prepare') setImmediate(() => incoming.fire({ type: 'delete-ready', paneSessionId: m.paneSessionId, requestId: m.requestId, docVersion: doc.version - (deletionMode === 'wrong-version' ? 1 : 0), draftSeq: messages.filter(message => message.type === 'apply-ack').at(-1)?.draftSeq ?? 0, clean: deletionMode !== 'pending' })); if (m.type === 'focus-request') setImmediate(() => incoming.fire({ type: 'focus-ready', paneSessionId: m.paneSessionId, requestId: m.requestId, docVersion: m.docVersion + (focusMode === 'wrong-version' ? 1 : 0), draftSeq: m.draftSeq, focused: focusMode !== 'denied' })); return true; } } };
   const api = { Uri, Range, WorkspaceEdit: Edit, TabInputCustom: CustomTab, TabInputText: TextTab,
-    window: { registerCustomEditorProvider: (_type: string, p: VSCode.CustomTextEditorProvider, options: { supportsMultipleEditorsPerDocument: boolean }) => { assert.equal(options.supportsMultipleEditorsPerDocument, true); provider = p; return { dispose: () => {} }; }, tabGroups: { all: groups, activeTabGroup: { get activeTab() { return activeTab; } }, close: async (tabs: { input: CustomTab | TextTab }[]) => {
+    window: { registerCustomEditorProvider: (_type: string, p: VSCode.CustomTextEditorProvider, options: { supportsMultipleEditorsPerDocument: boolean }) => { assert.equal(options.supportsMultipleEditorsPerDocument, true); provider = p; return { dispose: () => {} }; }, tabGroups: { all: groups, activeTabGroup: { viewColumn: 1, get activeTab() { return activeTab; } }, close: async (tabs: { input: CustomTab | TextTab }[]) => {
         const waiting = closeGate; closeGate = undefined; if (waiting) await waiting.promise;
         if (closeRefused) return false;
         for (const group of groups) group.tabs = group.tabs.filter(tab => { if (!tabs.includes(tab)) return true; closedTabs.push(tab.input.uri.toString()); return false; });
         if (!groups.some(group => group.tabs.some(tab => tab.input.uri.toString() === uri.toString()))) { panel.dispose(); doc.isClosed = true; closed.fire(doc); }
         return true;
-      } }, showOpenDialog: async () => undefined, showWarningMessage: async () => undefined },
-    commands: { executeCommand: async (name: string, ...args: unknown[]) => { commands.push({ name, args }); if (name === 'undo' || name === 'redo') { assert.equal(args.length, 0); doc.text = name === 'undo' ? '# Before\n' : '# Draft\n'; doc.version++; doc.isDirty = true; changed.fire({ document: doc }); } } },
+      } }, showOpenDialog: async () => undefined, showWarningMessage: async (message: string, ...choices: string[]) => { fallbackNotices.push([message, ...choices]); return fallbackChoice; } },
+    commands: { executeCommand: async (name: string, ...args: unknown[]) => { commands.push({ name, args }); if (name === 'vscode.openWith' && args[1] === SCRATCH_EDITOR_VIEW_TYPE && !paneAttached) {
+      doc.isClosed = false; activeTab = { input: new CustomTab(uri) };
+      if (!groups[0]!.tabs.some(tab => tab.input.uri.toString() === uri.toString())) groups[0]!.tabs.push({ input: activeTab.input, get isDirty() { return doc.isDirty; } });
+      await provider.resolveCustomTextEditor(doc as unknown as VSCode.TextDocument, panel as unknown as VSCode.WebviewPanel, { isCancellationRequested: false }); paneAttached = true;
+      const session = panel.webview.html.match(/data-pane-session="([^"]+)"/)![1]!; incoming.fire({ type: 'editor-ready', paneSessionId: session });
+    } if (name === 'undo' || name === 'redo') { assert.equal(args.length, 0); doc.text = name === 'undo' ? '# Before\n' : '# Draft\n'; doc.version++; doc.isDirty = true; changed.fire({ document: doc }); } } },
     workspace: { get textDocuments() { return doc.isClosed ? [] : [doc]; }, getWorkspaceFolder: () => undefined, onDidChangeTextDocument: changed.listen, onWillSaveTextDocument: willSave.listen, onDidCloseTextDocument: closed.listen,
       applyEdit: async (edit: Edit) => { applies++; const pending = gate; gate = undefined; if (pending) await pending.promise; const change = edit.edits[0]!; assert.equal(change.uri, uri); doc.text = doc.text.slice(0, change.range.start.character) + change.text + doc.text.slice(change.range.end.character); doc.version++; doc.isDirty = true; changed.fire({ document: doc }); return true; } },
   } as unknown as typeof VSCode;
   let sendSelection: (text: string, assertCurrent: () => void) => Promise<void> = async () => { throw new Error('Chat unavailable'); };
   const recovery = new ScratchRecoveryStore(join(dir, 'recovery'));
-  const host = registerScratchEditor({ refresh: async () => { refreshed++; if (failRefresh) throw new Error('refresh unavailable'); }, api, store, extensionPath: dir, recovery, sendSelection: (text, assertCurrent) => sendSelection(text, assertCurrent), preference: new ScratchLockPreference({ get: <T>() => false as T, update: async () => {} }), warn: m => warnings.push(m) });
-  const open = async () => { await provider.resolveCustomTextEditor(doc as unknown as VSCode.TextDocument, panel as unknown as VSCode.WebviewPanel, { isCancellationRequested: false }); const id = panel.webview.html.match(/data-pane-session="([^"]+)"/)![1]!; incoming.fire({ type: 'editor-ready', paneSessionId: id }); await until(() => messages.some(m => m.type === 'document-state')); return id; };
+  const host = registerScratchEditor({ richEditor: () => richEditor, refresh: async () => { refreshed++; if (failRefresh) throw new Error('refresh unavailable'); }, api, store, extensionPath: dir, recovery, sendSelection: (text, assertCurrent) => sendSelection(text, assertCurrent), preference: new ScratchLockPreference({ get: <T>() => false as T, update: async () => {} }), warn: m => warnings.push(m) });
+  const open = async () => { await provider.resolveCustomTextEditor(doc as unknown as VSCode.TextDocument, panel as unknown as VSCode.WebviewPanel, { isCancellationRequested: false }); paneAttached = true; const id = panel.webview.html.match(/data-pane-session="([^"]+)"/)![1]!; incoming.fire({ type: 'editor-ready', paneSessionId: id }); await until(() => messages.some(m => m.type === 'document-state')); return id; };
   return { dir, host, doc, panel, provider: () => provider, api, changed, willSave, closed, incoming, disposed, messages, warnings, commands, recovery, uri, entry, resolved, open,
     send: (id: string, m: object) => incoming.fire({ ...m, paneSessionId: id }),
     block: () => { gate = deferred(); return gate; },
     blockValidation: () => { validateGate = deferred(); return validateGate; }, get validating() { return validating; },
     closedTabs, groups, store,
     get refreshed() { return refreshed; },
+    fallbackNotices, setFallbackChoice: (choice: string) => { fallbackChoice = choice; },
+    setInitialization: (success: boolean, hold = false) => { initSuccess = success; holdInit = hold; },
+    setRichEditor: (enabled: boolean) => { richEditor = enabled; },
     setRefreshFailure: () => { failRefresh = true; },
     setDeleteMode: (mode: typeof deletionMode) => { deletionMode = mode; },
     refuseClose: () => { closeRefused = true; },
     blockClose: () => { closeGate = deferred(); return closeGate; },
-    addTab: (target: Uri, group = 1) => { while (groups.length <= group) groups.push({ tabs: [] }); groups[group]!.tabs.push({ input: new TextTab(target), get isDirty() { return target.toString() === uri.toString() && doc.isDirty; } }); },
+    addTab: (target: Uri, group = 1) => { while (groups.length <= group) groups.push({ viewColumn: groups.length + 1, tabs: [] }); groups[group]!.tabs.push({ input: new TextTab(target), get isDirty() { return target.toString() === uri.toString() && doc.isDirty; } }); },
     routeSelection: (route: typeof sendSelection) => { sendSelection = route; },
     setFocusMode: (value: typeof focusMode) => { focusMode = value; },
     setDropped: (value: string) => { dropped = value; }, setActive: (value: boolean) => { active = value; },
@@ -303,4 +313,56 @@ test('scratch save refresh admission is exact URI scoped and activation owns one
   assert.equal(source.match(/workspace\.onDidSaveTextDocument\(/g)?.length, 1);
   assert.match(source, /context\.subscriptions\.push\(vscode\.workspace\.onDidSaveTextDocument/);
   assert.match(source, /scratchEditor\.accepts\(document\.uri\)/);
+}));
+
+test('scratch native open awaits renderer initialization and reports failed or disposed initialization without changing the file', async () => {
+  await fixture(async h => {
+    h.setInitialization(true, true); let finished = false;
+    const opening = h.host.openDocument(h.entry.id).then(() => { finished = true; });
+    await until(() => h.messages.some(m => m.type === 'document-state')); await new Promise(resolve => setTimeout(resolve, 40)); assert.equal(finished, false);
+    const state = h.messages.find(m => m.type === 'document-state')!;
+    h.send(state.paneSessionId, { type: 'editor-initialized', success: true, message: '' }); await opening;
+    assert.equal(await readFile(h.resolved.filePath, 'utf8'), '# Before\n');
+  });
+  await fixture(async h => {
+    h.setInitialization(false); await assert.rejects(h.host.openDocument(h.entry.id), /fixture renderer failed/);
+    assert.equal(await readFile(h.resolved.filePath, 'utf8'), '# Before\n');
+  });
+  await fixture(async h => {
+    h.setInitialization(true, true); const opening = h.host.openDocument(h.entry.id), refused = assert.rejects(opening, /disposed/);
+    await until(() => h.messages.some(m => m.type === 'document-state')); await h.host.dispose(); await refused;
+    assert.equal(h.incoming.size, 0);
+  });
+});
+test('scratch rich-editor off path explicitly opens the same native file in the text editor', async () => fixture(async h => {
+  h.setRichEditor(false); await h.host.openDocument(h.entry.id);
+  const command = h.commands.find(command => command.name === 'vscode.openWith'); assert.ok(command);
+  assert.equal((command.args[0] as Uri).toString(), h.uri.toString()); assert.equal(command.args[1], 'default');
+  assert.ok(h.warnings.some(message => message.includes('disabled'))); assert.equal(h.incoming.size, 0);
+  assert.equal(await readFile(h.resolved.filePath, 'utf8'), '# Before\n');
+}));
+
+
+test('scratch initialization failure offers explicit same-file text fallback and never auto-opens it', async () => {
+  await fixture(async h => {
+    h.setInitialization(false); await assert.rejects(h.host.openDocument(h.entry.id), /fixture renderer failed/);
+    assert.ok(h.fallbackNotices.some(notice => notice.includes('Open in text editor')));
+    assert.equal(h.commands.some(command => command.args[1] === 'default'), false);
+  });
+  await fixture(async h => {
+    h.setInitialization(false); h.setFallbackChoice('Open in text editor');
+    await assert.rejects(h.host.openDocument(h.entry.id), /fixture renderer failed/);
+    await until(() => h.commands.some(command => command.args[1] === 'default'));
+    const fallback = h.commands.find(command => command.args[1] === 'default')!;
+    assert.equal((fallback.args[0] as Uri).toString(), h.uri.toString());
+    assert.equal(await readFile(h.resolved.filePath, 'utf8'), '# Before\n');
+  });
+});
+
+test('scratch native duplicate deletion requests share one close unlink and refresh operation', async () => fixture(async h => {
+  await h.open(); const gate = h.blockClose();
+  const first = h.host.deleteDocument(h.entry.id), second = h.host.deleteDocument(h.entry.id);
+  await until(() => h.messages.some(message => message.type === 'delete-prepare')); gate.resolve();
+  assert.deepEqual(await Promise.all([first, second]), ['deleted', 'deleted']);
+  assert.equal(h.refreshed, 1); assert.equal(h.closedTabs.length, 1);
 }));

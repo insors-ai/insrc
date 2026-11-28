@@ -97,6 +97,7 @@ declare module 'vscode' {
 
   /** A live webview panel (S004 sc9): create/reveal/dispose + its webview body. */
   export interface WebviewPanel extends Disposable {
+    readonly viewColumn: ViewColumn | undefined;
     readonly webview: Webview;
     readonly active: boolean;
     readonly visible: boolean;

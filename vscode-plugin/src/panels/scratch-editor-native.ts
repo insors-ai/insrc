@@ -23,6 +23,7 @@ export interface ScratchNativeDeps {
   readonly preference: ScratchLockPreference;
   readonly store: ScratchStore;
   readonly warn: (message: string) => void;
+  readonly richEditor?: (() => boolean) | undefined;
   readonly refresh?: () => Promise<void>;
   readonly sendSelection?: (text: string, assertCurrent: () => void) => Promise<void>;
 }
@@ -31,6 +32,8 @@ interface Pane {
   readonly panel: VSCode.WebviewPanel;
   locked: boolean;
   ready: boolean;
+  initialized: boolean;
+  initFailure?: string | undefined;
   disposed: boolean;
   readonly listeners: VSCode.Disposable[];
   deletion?: { readonly requestId: string; readonly settle: (ready: boolean) => void };
@@ -54,6 +57,7 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
   const documents = new Map<string, DocumentEntry>();
   let stopped = false;
   const deleting = new Set<string>();
+  const opening = new Set<(error: Error) => void>();
   const deleteJobs = new Map<string, Promise<'deleted' | 'cancelled'>>();
   async function validate(uri: VSCode.Uri): Promise<void> {
     if (uri.scheme !== 'file') throw new Error('Only existing scratchpad files can use this editor.');
@@ -143,6 +147,11 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
       await recover(entry, pane); return;
     }
     if (!pane.ready) throw new Error('Scratchpad is not ready.');
+    if (message.type === 'editor-initialized') {
+      pane.initialized = message.success;
+      pane.initFailure = message.success ? undefined : message.message || 'Scratchpad initialization failed.';
+      return;
+    }
     if (message.type === 'delete-ready') {
       const pending = pane.deletion;
       if (pending?.requestId === message.requestId) pending.settle(message.clean && message.docVersion === entry.controller.snapshot.version && message.draftSeq === entry.controller.latestSequence(pane.id));
@@ -338,10 +347,54 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
     if (entry) entry.commands = command.then(() => {}, () => {});
     const result = command.finally(() => { deleteJobs.delete(id); }); deleteJobs.set(id, result); return result;
   }
+  function awaitEditor(key: string, column: VSCode.ViewColumn): Promise<void> {
+    let cancel!: (error: Error) => void;
+    const promise = new Promise<void>((resolve, reject) => {
+      let finished = false, target: Pane | undefined;
+      const finish = (error?: Error): void => { if (finished) return; finished = true; clearTimeout(deadline); clearInterval(poll); opening.delete(cancel); if (error) reject(error); else resolve(); };
+      cancel = error => finish(error);
+      const check = (): void => {
+        if (stopped) { finish(new Error('Scratchpad editor was disposed while opening.')); return; }
+        target ??= [...(documents.get(key)?.panes.values() ?? [])].find(candidate => !candidate.disposed && candidate.panel.viewColumn === column);
+        if (target?.disposed) finish(new Error('Scratchpad pane closed while opening.'));
+        else if (target?.initFailure) finish(new Error(target.initFailure));
+        else if (target?.initialized) finish();
+      };
+      const deadline = setTimeout(() => finish(new Error('Scratchpad editor did not initialize; the file is retained.')), 15_000);
+      const poll = setInterval(check, 25); opening.add(cancel); check();
+    });
+    return promise;
+  }
   async function openDocument(id: string): Promise<void> {
     const resolved = await store.resolveScratch(id), uri = api.Uri.file(resolved.filePath);
     if (stopped || deleting.has(uri.toString())) throw new Error('Scratchpad editor is disposed or the file is being deleted.');
-    await api.commands.executeCommand('vscode.openWith', uri, SCRATCH_EDITOR_VIEW_TYPE);
+    if (deps.richEditor?.() === false) {
+      warn('Rich scratchpad editing is disabled. Opening this file in the text editor.');
+      await api.commands.executeCommand('vscode.openWith', uri, 'default'); return;
+    }
+    try {
+      const shows = (group: VSCode.TabGroup): boolean => group.tabs.some(tab => tab.input instanceof api.TabInputCustom && tab.input.viewType === SCRATCH_EDITOR_VIEW_TYPE && tab.input.uri.toString() === uri.toString());
+      const before = new Set(api.window.tabGroups.all.filter(shows).map(group => group.viewColumn));
+      // Let VS Code choose placement, including its locked-group behavior.
+      await api.commands.executeCommand('vscode.openWith', uri, SCRATCH_EDITOR_VIEW_TYPE);
+      const groups = api.window.tabGroups.all.filter(shows), fresh = groups.filter(group => !before.has(group.viewColumn));
+      const active = api.window.tabGroups.activeTabGroup, input = active.activeTab?.input;
+      const activeMatches = input instanceof api.TabInputCustom && input.viewType === SCRATCH_EDITOR_VIEW_TYPE && input.uri.toString() === uri.toString();
+      const target = fresh.length === 1 ? fresh[0] : activeMatches ? active : groups.length === 1 ? groups[0] : undefined;
+      if (!target) throw new Error('Could not confirm the scratchpad editor target; the file is retained.');
+      await awaitEditor(uri.toString(), target.viewColumn);
+    } catch (failure) {
+      if (!stopped) {
+        try {
+          void Promise.resolve(api.window.showWarningMessage('The rich scratchpad editor could not open. The file is retained.', 'Open in text editor')).then(async choice => {
+            if (choice !== 'Open in text editor' || stopped || deleting.has(uri.toString())) return;
+            await validate(uri);
+            if (!stopped && !deleting.has(uri.toString())) await api.commands.executeCommand('vscode.openWith', uri, 'default');
+          }).catch(() => warn('The scratchpad text fallback could not be opened.'));
+        } catch { warn('The scratchpad fallback notice could not be shown.'); }
+      }
+      throw failure;
+    }
   }
   const provider: VSCode.CustomTextEditorProvider = {
     resolveCustomTextEditor: async (document, panel, token) => {
@@ -352,7 +405,7 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
       // Do not attach listeners or publish a new entry after that boundary.
       if (stopped || deleting.has(document.uri.toString()) || token.isCancellationRequested || document.isClosed) throw new Error('Scratchpad opening was cancelled.');
       const entry = entryFor(document);
-      const pane: Pane = { id: randomUUID(), panel, locked: preference.initial(), ready: false, disposed: false, listeners: [] };
+      const pane: Pane = { id: randomUUID(), panel, locked: preference.initial(), ready: false, initialized: false, disposed: false, listeners: [] };
       entry.panes.set(pane.id, pane);
       const assets = api.Uri.file(join(deps.extensionPath, 'out', 'scratch-editor'));
       panel.webview.options = { enableScripts: true, localResourceRoots: [assets, api.Uri.file(join(dirname(document.uri.fsPath), 'assets'))] };
@@ -378,6 +431,6 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
   return {
     openDocument, deleteDocument,
     accepts: async uri => { try { await validate(uri); return true; } catch { return false; } },
-    dispose: async () => { stopped = true; for (const listener of listeners) listener.dispose(); for (const entry of [...documents.values()]) await closeEntry(entry); },
+    dispose: async () => { stopped = true; for (const cancel of [...opening]) cancel(new Error('Scratchpad editor was disposed while opening.')); for (const listener of listeners) listener.dispose(); for (const entry of [...documents.values()]) await closeEntry(entry); },
   };
 }

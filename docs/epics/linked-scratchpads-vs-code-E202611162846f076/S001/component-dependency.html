@@ -85,34 +85,32 @@ margin:0;box-sizing:border-box;min-height:100vh;padding-top:56px;background:var(
 <table class="ref">
 <tr><th>Work item</th><td>STORY-2846f076fd5f785f-s1</td></tr>
 <tr><th>Source doc</th><td><a href="./LLD.md">LLD-2846f076fd5f785f-s1</a></td></tr>
-<tr><th>Date</th><td>2026-11-28 00:12</td></tr>
+<tr><th>Date</th><td>2026-11-28 13:38</td></tr>
 <tr><th>User</th><td>Subho Ghosh</td></tr>
 </table>
 </header>
-<section class="blk narr"><h2>Narrative</h2><p class="context">Story S001 of Epic linked-scratchpads-vs-code · Single-pane Milkdown Markdown editor — Pads provide rendered Markdown and rich inline editing in one editor tab, with lock/pencil controls and a Send icon on text selection; only clicking Send inserts into the chat composer.</p><p>The existing scratch controller owns actions and identity. Proposed private editor modules communicate through a validated bridge; activation alone binds VS Code APIs. Many panes share one document queue. No daemon storage or sibling story features are introduced.</p></section>
+<section class="blk narr"><h2>Narrative</h2><p class="context">Story S001 of Epic linked-scratchpads-vs-code · Single-pane Milkdown Markdown editor — Pads provide rendered Markdown and rich inline editing in one editor tab, with lock/pencil controls and a Send icon on text selection; only clicking Send inserts into the chat composer.</p><p>Each pane owns scheduling/codec execution; native service owns independent host admission and per-document queues. Workers have no file/chat/command capability; production configured-codec parity and CSP loading are early gates. [[c61]] [[c62]]</p></section>
 <section class="blk"><h2>View</h2><div class="vp-wrap">
 <div class="iv-bar"><span>Drag to pan · scroll to zoom · double-click to zoom in</span><span class="sp"></span><button id="zout" title="Zoom out" aria-label="zoom out">−</button><span class="zl" id="zl">100%</span><button id="zin" title="Zoom in" aria-label="zoom in">+</button><button id="zfit" title="Fit to view (overview)" aria-label="fit to view">Fit</button><button id="z100" title="Actual size" aria-label="actual size">1:1</button><button id="iv-export" title="Export SVG" aria-label="export svg">⇩</button><button id="iv-srcbtn" title="Show diagram source" aria-label="show diagram source">src</button></div>
 <div class="iv-err" id="iv-err" role="alert"></div>
 <div class="vp iv-vp" id="vp"><div class="stage iv-stage insrc-viewer-diagram" id="stage"><pre class="mermaid">flowchart LR
-  activation[&quot;Extension activation&lt;br/&gt;&lt;small&gt;extension.ts&lt;/small&gt;&quot;]
-  panels[&quot;Scratch panels&lt;br/&gt;&lt;small&gt;scratch-panels.ts&lt;/small&gt;&quot;]
-  store[&quot;Scratch store + sc1&lt;br/&gt;&lt;small&gt;scratch-store.ts&lt;/small&gt;&quot;]
-  controller[&quot;Proposed document controller&quot;]
-  renderer[&quot;Proposed Milkdown webview&quot;]
-  document[&quot;VS Code TextDocument&quot;]
-  chat[&quot;Scratch chat host&lt;br/&gt;&lt;small&gt;scratch-host.ts&lt;/small&gt;&quot;]
-  activation --&gt;|&quot;register/inject host APIs&quot;| controller
-  panels --&gt;|&quot;resolve/guard/delete&quot;| store
-  panels --&gt;|&quot;open/delete coordination&quot;| controller
-  controller --&gt;|&quot;versioned snapshots and acknowledgements&quot;| renderer
-  renderer --&gt;|&quot;validated drafts and click-only Send&quot;| controller
-  controller --&gt;|&quot;minimal edits / lifecycle&quot;| document
-  controller --&gt;|&quot;insert selection / refresh after save&quot;| chat</pre></div></div>
+  pane[&quot;Pane/idle observer&lt;br/&gt;&lt;small&gt;scratch-editor-webview.ts&lt;/small&gt;&quot;]
+  codec[&quot;Configured codec worker (proposed)&quot;]
+  shared[&quot;Configured codec extraction (proposed)&lt;br/&gt;&lt;small&gt;scratch-markdown-milkdown.ts&lt;/small&gt;&quot;]
+  native[&quot;Native service&lt;br/&gt;&lt;small&gt;scratch-editor-native.ts&lt;/small&gt;&quot;]
+  controller[&quot;Document controller&lt;br/&gt;&lt;small&gt;scratch-editor-provider.ts&lt;/small&gt;&quot;]
+  host[&quot;Host executor (proposed)&quot;]
+  pane --&gt;|&quot;owns one; bounded latest job&quot;| codec
+  codec --&gt;|&quot;same configured codec&quot;| shared
+  pane --&gt;|&quot;closed staging/authorization bridge&quot;| controller
+  native --&gt;|&quot;owns one per URI&quot;| controller
+  native --&gt;|&quot;owns bounded executor&quot;| host
+  controller --&gt;|&quot;independent exact-base admission&quot;| host</pre></div></div>
 
 <pre class="iv-src" id="iv-src"></pre>
 </div></section>
-<section class="blk desc"><h2>Description</h2><h3>Components</h3><p class="lead">7 components, 7 dependencies. An arrow points from a component to what it depends on.</p><table class="dt"><thead><tr><th>Component</th><th>Path</th><th>Depends on</th><th>Description</th></tr></thead><tbody><tr><td>Extension activation</td><td>vscode-plugin/src/extension.ts</td><td>Proposed document controller</td><td>Registers editor/provider and host lifecycle bindings.</td></tr><tr><td>Scratch panels</td><td>vscode-plugin/src/panels/scratch-panels.ts</td><td>Scratch store + sc1, Proposed document controller</td><td>Browse, open and unified safe asynchronous deletion.</td></tr><tr><td>Scratch store + sc1</td><td>vscode-plugin/src/chat/scratch-store.ts</td><td class="missing">—</td><td>Guarded operations and proposed deterministic resolver.</td></tr><tr><td>Proposed document controller</td><td class="missing">—</td><td>Proposed Milkdown webview, VS Code TextDocument, Scratch chat host</td><td>New scratch-editor-provider.ts: shared queue, recovery and validation; injected host seams.</td></tr><tr><td>Proposed Milkdown webview</td><td class="missing">—</td><td>Proposed document controller</td><td>New scratch-editor-webview.ts: locally bundled Crepe, mode and Send tooltip.</td></tr><tr><td>VS Code TextDocument</td><td class="missing">—</td><td class="missing">—</td><td>One canonical document, native save/conflict/undo lifecycle.</td></tr><tr><td>Scratch chat host</td><td>vscode-plugin/src/chat/scratch-host.ts</td><td class="missing">—</td><td>Bounded insertion and menu refresh.</td></tr></tbody></table></section>
-<footer class="ft"><span>Generated by insrc · companion of LLD-2846f076fd5f785f-s1</span><span>2026-11-28 00:12</span></footer>
+<section class="blk desc"><h2>Description</h2><h3>Components</h3><p class="lead">6 components, 6 dependencies. An arrow points from a component to what it depends on.</p><table class="dt"><thead><tr><th>Component</th><th>Path</th><th>Depends on</th><th>Description</th></tr></thead><tbody><tr><td>Pane/idle observer</td><td>vscode-plugin/src/panels/scratch-editor-webview.ts</td><td>Configured codec worker (proposed), Document controller</td><td>One timer and bounded codec executor per pane; immediate staging.</td></tr><tr><td>Configured codec worker (proposed)</td><td class="missing">—</td><td>Configured codec extraction (proposed)</td><td>New private fixed locally bundled browser worker; document is data only.</td></tr><tr><td>Configured codec extraction (proposed)</td><td>vscode-plugin/src/panels/scratch-markdown-milkdown.ts</td><td class="missing">—</td><td>Factor exact live schema/serializer and comparator-compatible fingerprint.</td></tr><tr><td>Native service</td><td>vscode-plugin/src/panels/scratch-editor-native.ts</td><td>Document controller, Host executor (proposed)</td><td>Owns host executor and URI controllers.</td></tr><tr><td>Document controller</td><td>vscode-plugin/src/panels/scratch-editor-provider.ts</td><td>Host executor (proposed)</td><td>One durable staging/application lane per URI/window.</td></tr><tr><td>Host executor (proposed)</td><td class="missing">—</td><td class="missing">—</td><td>Independent background grammar/fidelity admission; bounded owned lifetime.</td></tr></tbody></table></section>
+<footer class="ft"><span>Generated by insrc · companion of LLD-2846f076fd5f785f-s1</span><span>2026-11-28 13:38</span></footer>
 </div>
 <script>(function(JM,Ag){typeof exports=="object"&&typeof module<"u"?module.exports=Ag():typeof define=="function"&&define.amd?define(Ag):(JM=typeof globalThis<"u"?globalThis:JM||self,JM.mermaid=Ag())})(this,function(){var FWe,RWe;"use strict";function JM(i){for(var s=[],u=1;u<arguments.length;u++)s[u-1]=arguments[u];var d=Array.from(typeof i=="string"?[i]:i);d[d.length-1]=d[d.length-1].replace(/\r?\n([\t ]*)$/,"");var p=d.reduce(function(y,T){var _=T.match(/\n([\t ]+|(?!\s).)/g);return _?y.concat(_.map(function(A){var P,R;return(R=(P=A.match(/[\t ]/g))===null||P===void 0?void 0:P.length)!==null&&R!==void 0?R:0})):y},[]);if(p.length){var v=new RegExp(`
 [	 ]{`+Math.min.apply(Math,p)+"}","g");d=d.map(function(y){return y.replace(v,`

@@ -262,6 +262,10 @@ export interface VibeAdapterDeps {
 	/** Test-only: overrides the binary-identity stat lookup paired with `resolveCommandPath`
 	 *  above (a DIFFERENT shape than the directory-check `statSync` above it). */
 	readonly identityStatSync?: ((path: string) => { readonly size: number; readonly mtimeMs: number }) | undefined;
+	/** Test-only: overrides the live-confirmed `--enabled-tools` denial-wording pattern
+	 *  (production reads `INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING` instead -- see
+	 *  `structuralDenialWording`). */
+	readonly structuralDenialWordingForTests?: RegExp | undefined;
 }
 
 function record(value: unknown): Record<string, unknown> | undefined {
@@ -522,33 +526,43 @@ function observedDisallowedCompletedCall(events: readonly VibeTurnEvent[], allow
  *  hold at all. */
 const STRUCTURAL_DENIAL_PROBE_TOOL = 'file_system.read_file';
 
-/** Output/error text patterns that indicate an ORDINARY operational failure (a missing file,
- *  a bad path, ...) rather than anything about the `--enabled-tools` restriction itself --
- *  review r3 finding 1's own reproduction: changing ONLY the blocked-tool fixture's result
- *  text to "file not found" still passed as a confirmed denial, because status `'failed'`
- *  alone (cancelled/skipped collapse to the same `!ok`, with no discrimination of WHY) was
- *  treated as sufficient. This sandbox cannot live-verify the installed CLI's own actual
- *  wording for a genuine `--enabled-tools` denial (the same disclosed connector-registration
- *  gap already in this packet), so this is a narrow, defensible exclusion -- a mundane
- *  filesystem-shaped failure is excluded as evidence either way, rather than guessing what a
- *  real policy-denial message says. A true fix needs a live-confirmed denial wording to
- *  match against; flagged as a disclosed, narrowed-not-solved gap. */
-const ORDINARY_OPERATIONAL_FAILURE = /ENOENT|no such file|file not found|cannot find|does not exist|not a directory|is a directory/i;
+/** Round r3's own fix excluded KNOWN ordinary-operational-failure wording (ENOENT, "file not
+ *  found", ...) from counting as a denial. Review r4 finding 1 reproduced the same class of
+ *  bug again with a DIFFERENT generic failure ("operation timed out") that the exclusion
+ *  list did not happen to name -- proving an exclusion-list approach is structurally unsound:
+ *  the space of non-denial failure wording is unbounded, so no finite list of exclusions can
+ *  ever close it. The only sound fix is to flip the polarity entirely -- require POSITIVE
+ *  evidence the failure actually IS the `--enabled-tools` restriction, from a wording this
+ *  installation's operator has LIVE-CONFIRMED against the real installed binary, rather than
+ *  guessing (in either direction) what the real wording looks like. This sandbox cannot
+ *  live-verify that wording itself (the same disclosed connector-registration gap already in
+ *  this packet), so by design there is NO default pattern: with nothing configured, this
+ *  check can never confirm a denial, which keeps qualification `'unavailable'` -- the
+ *  correct, safe default per the review's own wording ("keep qualification unavailable when
+ *  the installed CLI cannot supply that evidence"), not a guess that might again prove
+ *  wrong a third time. */
+function structuralDenialWording(deps: VibeAdapterDeps): RegExp | undefined {
+	if (deps.structuralDenialWordingForTests !== undefined) return deps.structuralDenialWordingForTests;
+	const configured = process.env['INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING'];
+	return configured !== undefined && configured.length > 0 ? new RegExp(configured, 'i') : undefined;
+}
 
-/** True when the journal shows `toolName` was actually attempted and FAILED in a way that
- *  could plausibly be the `--enabled-tools` restriction itself, not a mundane operational
- *  error (review r3 finding 1) -- only a `'failed'` status counts (never `'cancelled'`/
- *  `'skipped'`, both more ambiguous about whether the restriction ever engaged at all), and
- *  its own output/error text must not match a known ordinary-failure shape. Absence of any
+/** True when the journal shows `toolName` was actually attempted and FAILED with output text
+ *  matching `wording` -- a pattern an operator has LIVE-CONFIRMED is this installation's own
+ *  real `--enabled-tools` denial message (review r4 finding 1; see `structuralDenialWording`).
+ *  `wording === undefined` (nothing configured) means this can never return true -- fail
+ *  closed, not guessed. Only a `'failed'` status counts (never `'cancelled'`/`'skipped'`,
+ *  both more ambiguous about whether the restriction ever engaged at all). Absence of any
  *  attempt at all is STILL not a pass either: it proves nothing either way, so callers must
  *  treat "not confirmed denied" as "not yet proven", never as "presumed fine" (review r2
  *  finding 2). */
-function hasConfirmedDeniedCall(events: readonly VibeTurnEvent[], toolName: string): boolean {
+function hasConfirmedDeniedCall(events: readonly VibeTurnEvent[], toolName: string, wording: RegExp | undefined): boolean {
+	if (wording === undefined) return false;
 	const callNamesById = new Map<string, string>();
 	for (const event of events) if (event.kind === 'tool-call') callNamesById.set(event.toolCallId, event.toolName);
 	return events.some(event =>
 		event.kind === 'tool-result' && event.status === 'failed' && callNamesById.get(event.toolCallId) === toolName
-		&& !ORDINARY_OPERATIONAL_FAILURE.test(event.output));
+		&& wording.test(event.output));
 }
 
 /** Asks the probe for THREE things, not two (review finding 2): the config-reported
@@ -606,6 +620,7 @@ async function runQualificationSuite(
 	deps: ResolvedVibeAdapterDeps,
 	descriptorKey: string,
 	maxAllowRetries: number,
+	denialWording: RegExp | undefined,
 ): Promise<QualificationOutcome> {
 	const required = VIBE_INSRC_ANALYSIS_TOOL_IDS.map(id => `connector_insrc_${id}`);
 	const allowedNames = allowedCallNameForms();
@@ -652,7 +667,7 @@ async function runQualificationSuite(
 		// tool actually COMPLETING is already caught above as a hard bypass; this additionally
 		// requires it be CONFIRMED DENIED -- "never attempted" is not a pass either, since that
 		// proves nothing about whether the restriction would have held.
-		if (!hasConfirmedDeniedCall(probe.events, STRUCTURAL_DENIAL_PROBE_TOOL)) {
+		if (!hasConfirmedDeniedCall(probe.events, STRUCTURAL_DENIAL_PROBE_TOOL, denialWording)) {
 			lastReason = `structural denial probe: ${STRUCTURAL_DENIAL_PROBE_TOOL} was not observed as a denied call (attempt ${String(attempt)}/${String(maxAllowRetries)})`;
 			continue;
 		}
@@ -739,7 +754,7 @@ export async function qualifyReadOnlyCapability(
 		// The probe dispatches with the SAME resolved path the hash above was computed
 		// against (review finding 3) -- never the bare command, which a concurrent PATH
 		// change could resolve to a different binary by the time of the actual spawn.
-		run = runQualificationSuite(context, { ...resolved, command: resolvedCommand }, descriptorKey, maxAllowRetries)
+		run = runQualificationSuite(context, { ...resolved, command: resolvedCommand }, descriptorKey, maxAllowRetries, structuralDenialWording(deps))
 			.then(outcome => {
 				if (outcome.cacheable) readOnlyQualificationCache.set(descriptorKey, outcome.capability);
 				return outcome.capability;

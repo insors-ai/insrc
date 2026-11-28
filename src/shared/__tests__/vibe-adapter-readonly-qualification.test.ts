@@ -44,6 +44,10 @@ const TOOL_CALL_LINE = (toolCallId: string, toolName: string): string =>
 const DENIED_TOOL_CALL_LINE = (toolCallId: string, toolName: string): string =>
 	JSON.stringify({ type: 'effect', toolCallId, detail: { toolName, input: {} }, state: { status: 'failed', outputText: 'denied: tool not enabled' } });
 
+// A test-only stand-in for an operator's own live-confirmed denial wording (review r4
+// finding 1 -- production supplies no default pattern at all; see structuralDenialWording).
+const DENIAL_WORDING = /denied|not enabled/i;
+
 // Satisfies both the allow-side proof (the two required tools) AND the structural denial
 // proof (review r2 finding 2): `file_system.read_file`, outside the allowlist, denied.
 function bothToolsCompletedJournal(): string {
@@ -67,6 +71,7 @@ function scriptedDeps(command: string, stdoutLines: string, exportJsonText: stri
 		command,
 		resolveCommandPath: (cmd) => cmd,
 		identityStatSync: () => ({ size: 1, mtimeMs: 1 }),
+		structuralDenialWordingForTests: DENIAL_WORDING,
 		spawn: () => {
 			const { child, stdout, emitter } = fakeChild();
 			queueMicrotask(() => {
@@ -90,6 +95,7 @@ function multiAttemptDeps(command: string, attempts: readonly { readonly stdoutL
 		command,
 		resolveCommandPath: (cmd) => cmd,
 		identityStatSync: () => ({ size: 1, mtimeMs: 1 }),
+		structuralDenialWordingForTests: DENIAL_WORDING,
 		spawn: () => {
 			const attempt = attempts[Math.min(count, attempts.length - 1)] as { readonly stdoutLines: string; readonly exportJsonText: string | undefined };
 			count += 1;
@@ -298,7 +304,7 @@ process.exit(0);
 	// the regression this test actually targets is the SCRIPT's own directory, not that.
 	const nodeDir = dirname(process.execPath);
 	const context: VibeAdapterContext = { cwd: dir, env: { PATH: `${dir}:${nodeDir}:/usr/bin:/bin` }, processGroup: 'adapter-owned' };
-	const result = await qualifyReadOnlyCapability(context, { command: scriptName }, 1);
+	const result = await qualifyReadOnlyCapability(context, { command: scriptName, structuralDenialWordingForTests: DENIAL_WORDING }, 1);
 	assert.equal(result.status, 'qualified');
 });
 
@@ -326,7 +332,7 @@ process.exit(0);
 	// resolve (and spawn) relative to `dir` for this to qualify at all.
 	assert.notEqual(process.cwd(), dir);
 	const context: VibeAdapterContext = { cwd: dir, processGroup: 'adapter-owned' };
-	const result = await qualifyReadOnlyCapability(context, { command: `./${scriptName}` }, 1);
+	const result = await qualifyReadOnlyCapability(context, { command: `./${scriptName}`, structuralDenialWordingForTests: DENIAL_WORDING }, 1);
 	assert.equal(result.status, 'qualified');
 });
 
@@ -362,6 +368,7 @@ test("a caller's own short deadline never poisons the shared result for a differ
 		command: 'vibe-shared-race',
 		resolveCommandPath: (cmd) => cmd,
 		identityStatSync: () => ({ size: 1, mtimeMs: 1 }),
+		structuralDenialWordingForTests: DENIAL_WORDING,
 		spawn: () => {
 			spawnCount += 1;
 			const { child, stdout, emitter } = fakeChild();
@@ -444,6 +451,48 @@ test("an ordinary operational failure (e.g. a missing file) does NOT count as a 
 	assert.equal(deps.spawnCount(), 2, "an ordinary-looking failure is ambient-flakiness-retried, same as never having attempted the probe at all");
 });
 
+test("a DIFFERENT generic failure wording (\"operation timed out\") not covered by any exclusion list also does NOT count as a denial (review r4 finding 1)", async () => {
+	_readOnlyQualificationCacheForTests().clear();
+	const required = ['connector_insrc_insrc_analyze', 'connector_insrc_insrc_analyze_step'];
+	// The reviewer's own round-4 reproduction: an exclusion-list approach (round 3's own
+	// fix) is unsound no matter how many patterns it names, since the space of non-denial
+	// failure wording is unbounded. This wording was never on any exclusion list, and the
+	// fix (requiring POSITIVE, operator-configured wording) must still reject it.
+	const timeoutFailureJournal = [
+		TOOL_CALL_LINE('c1', 'connector_insrc_insrc_analyze'),
+		TOOL_CALL_LINE('c2', 'connector_insrc_insrc_analyze_step'),
+		DENIED_TOOL_CALL_LINE('c3', 'file_system.read_file').replace('denied: tool not enabled', 'operation timed out'),
+	].join('\n') + '\n';
+	const deps = multiAttemptDeps('vibe-timeout-failure', [{ stdoutLines: timeoutFailureJournal, exportJsonText: exportJson(required) }]);
+	const result = await qualifyReadOnlyCapability(baseContext(realDir()), deps, 2);
+	assert.equal(result.status, 'unavailable', 'a timeout establishes no restriction on tool reachability and must never count as a confirmed denial');
+	assert.match(result.reason ?? '', /structural denial probe: file_system\.read_file was not observed as a denied call/);
+});
+
+test('with NO denial wording configured at all (the real production default), qualification can never succeed via the structural denial probe, even when the journal shows a genuinely well-formed denial (review r4 finding 1, fail-closed default)', async () => {
+	_readOnlyQualificationCacheForTests().clear();
+	const required = ['connector_insrc_insrc_analyze', 'connector_insrc_insrc_analyze_step'];
+	const deps: VibeAdapterDeps = {
+		command: 'vibe-no-wording-configured',
+		resolveCommandPath: (cmd) => cmd,
+		identityStatSync: () => ({ size: 1, mtimeMs: 1 }),
+		// No structuralDenialWordingForTests at all, and INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING
+		// is not set in this test run -- this is the real, unconfigured production default.
+		spawn: () => {
+			const { child, stdout, emitter } = fakeChild();
+			queueMicrotask(() => { stdout.write(bothToolsCompletedJournal()); stdout.end(); emitter.emit('exit', 0, null); });
+			return child;
+		},
+		mkdtemp: async () => realDir(),
+		readFile: async () => exportJson(required),
+		rm: async () => undefined,
+	};
+	assert.equal(process.env['INSRC_VIBE_ENABLED_TOOLS_DENIAL_WORDING'], undefined, 'this test assumes the real production default: nothing configured');
+	const result = await qualifyReadOnlyCapability(baseContext(realDir()), deps, 1);
+	assert.equal(result.status, 'unavailable', 'with no verified denial wording configured, qualification must fail closed by design, never guess');
+	assert.match(result.reason ?? '', /structural denial probe: file_system\.read_file was not observed as a denied call/);
+});
+
 test('a transient qualification failure (e.g. a missing export on one run) is never cached durably -- a LATER, separate call starts a fresh run and can still succeed (review r3 finding 2)', async () => {
 	_readOnlyQualificationCacheForTests().clear();
 	const required = ['connector_insrc_insrc_analyze', 'connector_insrc_insrc_analyze_step'];
@@ -491,6 +540,6 @@ process.exit(0);
 	assert.notEqual(process.cwd(), dir);
 	const nodeDir = dirname(process.execPath);
 	const context: VibeAdapterContext = { cwd: dir, env: { PATH: `bin:${nodeDir}:/usr/bin:/bin` }, processGroup: 'adapter-owned' };
-	const result = await qualifyReadOnlyCapability(context, { command: scriptName }, 1);
+	const result = await qualifyReadOnlyCapability(context, { command: scriptName, structuralDenialWordingForTests: DENIAL_WORDING }, 1);
 	assert.equal(result.status, 'qualified');
 });

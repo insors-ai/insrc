@@ -9,23 +9,28 @@
 **HLD effective hash:** `6a3ff5cbf2ff...`
 **Tracker:** [insors-ai/insrc#194](https://github.com/insors-ai/insrc/issues/194)
 
-S001 keeps the existing single Milkdown pane and 1 MiB Markdown file contract, but removes full-document validation from typing. Edits render immediately and stage recoverable drafts; a 300 ms typing gap validates only the latest generation in background execution before native application. Explicit Save/Send and native lifecycle actions flush their captured generation, while stale work cannot overwrite newer typing.
+S001 now renders a full 1MiB note in75-79ms on both native reference hosts, but its serial fidelity path still misses the1s acknowledgement target. This revision overlaps independent read-only checks after the unchanged300ms gap and adopts only fully checked immutable candidate proofs on exact canonical confirmation. Native application still requires current configured-codec authorization, independent host success and a final native version/digest match; all prior one-pane, recovery and action behavior remains. Performance is unqualified until the original native gate passes.
 
 ## Contents
 
-1. [HLD context](#1-hld-context)
-2. [Contract details](#2-contract-details)
-3. [Data model changes](#3-data-model-changes)
-4. [Diagrams](#4-diagrams)
-5. [Interaction with shared contracts](#5-interaction-with-shared-contracts)
-6. [Error paths](#6-error-paths)
-7. [Test strategy](#7-test-strategy)
-8. [Migration](#8-migration)
-9. [Alternatives considered](#9-alternatives-considered)
-10. [UX](#10-ux)
-11. [References](#11-references)
+1. [Epic impact analysis](#1-epic-impact-analysis)
+2. [HLD context](#2-hld-context)
+3. [Contract details](#3-contract-details)
+4. [Data model changes](#4-data-model-changes)
+5. [Diagrams](#5-diagrams)
+6. [Interaction with shared contracts](#6-interaction-with-shared-contracts)
+7. [Error paths](#7-error-paths)
+8. [Test strategy](#8-test-strategy)
+9. [Migration](#9-migration)
+10. [Alternatives considered](#10-alternatives-considered)
+11. [UX](#11-ux)
+12. [References](#12-references)
 
-## 1. HLD context
+## 1. Epic impact analysis
+
+**Does not apply**: First Story; no other approved BUILD to analyse.
+
+## 2. HLD context
 
 > See **HLD-2846f076fd5f785f** § 2. Framework summary
 
@@ -43,11 +48,11 @@ S001 keeps the existing single Milkdown pane and 1 MiB Markdown file contract, b
 - `s9`: The promote-to-draft action's brainstorm/ISSUE routing and idempotent-retry handling are private to s9; no story is downstream of s9 in the Epic's graph.
 - `s10`: The tag-filter UI and starter-template catalog are private to s10; it extends sc3's list read-model with the tags field but no story is downstream of s10 in the Epic's graph.
 
-## 2. Contract details
+## 3. Contract details
 
 **Surface level:** internal-shared
 
-### 2.1 `ScratchpadRef`
+### 3.1 `ScratchpadRef`
 
 ```typescript
 interface ScratchpadRef { readonly repo: string; readonly stableId: string; }
@@ -61,19 +66,18 @@ interface ScratchpadRef { readonly repo: string; readonly stableId: string; }
 **Postconditions:**
 - sc1 identity, ownership and consumers are unchanged.
 
-### 2.2 `observeScratchMarkdown`
+### 3.2 `observeScratchMarkdown`
 
 ```typescript
-observeScratchMarkdown(editor: Editor, source: () => ScratchSnapshot, onDraft: (draft: ScratchObservedDraft) => void, options: ScratchIdleValidationOptions): Promise<{ activate(): void; flush(reason: 'save' | 'send' | 'undo' | 'redo' | 'lock' | 'native-save'): Promise<{ draftSeq: number }>; deactivate(): void }>
+observeScratchMarkdown(editor: Editor, options: ScratchObservationOptions & { prepare(sequence: number, base: ScratchSnapshot): void }, onDraft: (draft: ScratchObservedDraft) => void): Promise<{ activate(): void; deactivate(): void; refresh(): void; expedite(sequence: number): boolean }>
 ```
 
 **Parameters:**
-- `editor: Editor` — Live configured Milkdown editor; native TextDocument remains canonical.
-- `source: () => ScratchSnapshot` — Exact currently acknowledged source/version/digest.
-- `onDraft: (draft: ScratchObservedDraft) => void` — Report completed validation/refusal only for its captured generation.
-- `options: ScratchIdleValidationOptions` — Proposed injected stage/validator boundary and fixed 300 ms idle clock; private, not a user-facing configuration.
+- `editor: Editor` — Existing live Milkdown editor.
+- `options: ScratchObservationOptions & { prepare(sequence: number, base: ScratchSnapshot): void }` — Existing source/stage/eligible/validator/failed callbacks plus required proposed prepare callback at the same exact idle/expedite dispatch. It posts identity-only host validation intent for that staged sequence/base; no host apply authority.
+- `onDraft: (draft: ScratchObservedDraft) => void` — Existing configured proposal/refusal result callback, still current-generation gated.
 
-**Returns:** `ScratchIdleObserver` — Owned timer/job lifetime and captured-generation flush barrier.
+**Returns:** `Promise<{ activate(): void; deactivate(): void; refresh(): void; expedite(sequence: number): boolean }>` — Keep implemented observer lifecycle and exact-sequence expedite. Existing ScratchActionFlush/pane owns capture and waits for canonical acknowledgement; observer does not add a second flush owner.
 
 **Errors:**
 - `ValidationUnavailable` when Background executor fails, times out or cannot reproduce the configured codec; retain draft and refuse application.
@@ -89,11 +93,13 @@ observeScratchMarkdown(editor: Editor, source: () => ScratchSnapshot, onDraft: (
 - A result is usable only for its exact pane session, worker epoch, draft sequence and base version/digest. Superseded results are ignored; the newest draft gets its own idle pass.
 - Explicit flush cancels the timer and waits for validation plus canonical acknowledgement of the captured generation. Newer typing is retained and does not silently extend or replace that action's capture.
 - Deactivation cancels timers/jobs and rejects pending flushes without deleting recovery or cancelling already accepted host work.
+- After the same trailing gap, start configured validation and send one closed validate-draft intent for the already-staged exact generation; explicit captured actions expedite both checks. No validation is performed during continuous normal typing.
+- The identity-only validate-draft message names paneSessionId,draftSeq,editId,baseVersion,baseDigest; the host resolves the immutable staged bytes rather than trusting a second payload. It confers no apply authority.
 
-### 2.3 `ScratchRendererState`
+### 3.3 `ScratchRendererState`
 
 ```typescript
-class ScratchRendererState { stage(markdown: string): number; authorize(draftSeq: number, baseVersion: number, baseDigest: string): void; refuse(draftSeq: number, reason: string): void; receive(message: unknown): ScratchViewUpdate; }
+class ScratchRendererState { stage(markdown: string): number; authorize(draftSeq: number, baseVersion: number, baseDigest: string): boolean; refuse(draftSeq: number, reason: string): void; receive(message: unknown): ScratchViewUpdate; }
 ```
 
 **Returns:** `ScratchRendererState` — Proposed split between local pending validation, authorization, canonical acknowledgement and true conflict.
@@ -112,10 +118,10 @@ class ScratchRendererState { stage(markdown: string): number; authorize(draftSeq
 - A base changed by a confirmed own parent requires fresh admission against the new exact base; unrelated changes freeze and retain the competing draft.
 - Status distinguishes waiting for typing gap, validating, waiting for host, applied and conflict. Neither receipt nor apply-ack claims disk save.
 
-### 2.4 `ScratchDocumentController`
+### 3.4 `ScratchDocumentController`
 
 ```typescript
-class ScratchDocumentController { receive(paneSessionId: string, draft: ScratchDraftProposal): Promise<void>; waitForSequence(paneSessionId: string, draftSeq: number): Promise<ScratchSnapshot>; flush(): Promise<void>; documentChanged(): void; dispose(): Promise<void>; }
+class ScratchDocumentController { receive(paneSessionId: string, draft: ScratchDraftProposal): Promise<void>; validate(paneSessionId: string, draftSeq: number, editId: string, baseVersion: number, baseDigest: string): Promise<void>; waitForSequence(paneSessionId: string, draftSeq: number): Promise<ScratchSnapshot>; flush(): Promise<void>; documentChanged(): void; dispose(): Promise<void>; }
 ```
 
 **Returns:** `ScratchDocumentController` — Existing one-per-document native apply lane, with recoverable staging separated from validated application.
@@ -127,6 +133,7 @@ class ScratchDocumentController { receive(paneSessionId: string, draft: ScratchD
 **Preconditions:**
 - Retain all URI, session, sequence, duplicate, UTF-8 and encoded-byte checks.
 - Recovery-only staging performs bounds/identity/storage checks, not full fidelity admission.
+- A validate intent matches the newest durably staged draft in this live pane, including exact editId/sequence/base; the native source/version/digest still matches. Reject absent, mismatched, superseded, cross-pane or disposed identities.
 
 **Postconditions:**
 - Persist recovery before receipt. Keep received-but-unapplied text through idle waits, worker failure, pane disposal and restart.
@@ -135,8 +142,11 @@ class ScratchDocumentController { receive(paneSessionId: string, draft: ScratchD
 - Only one canonical apply runs per document. Already accepted applies may finish; stale validation cannot initiate a new apply.
 - Clear recovery only after successful acknowledgement delivery to an attached pane; retain unconfirmed data otherwise.
 - Pending state includes staged drafts awaiting authorization. Deletion cancels on that state rather than waiting indefinitely or authorizing it.
+- validate is read-only proof preparation, outside the canonical apply lane. Keep at most one active/latest queued host job per document and one prepared exact-generation result; do not block staging behind full verification.
+- apply:true from the current configured-success generation joins the exact independent host result. If missing, start/join that same bounded read-only check; never bypass it or accept a renderer proof as a host proof. Only both successes plus unchanged native source immediately before WorkspaceEdit permit apply.
+- A newer stage invalidates any not-yet-accepted older prepared apply/result, including a running result. One native apply already accepted may finish under existing semantics; never overwrite newer renderer text or auto-authorize its descendant.
 
-### 2.5 `registerScratchEditor`
+### 3.5 `registerScratchEditor`
 
 ```typescript
 registerScratchEditor(deps: ScratchNativeDeps): { openDocument(id: string): Promise<void>; deleteDocument(id: string): Promise<'deleted' | 'cancelled'>; accepts(uri: VSCode.Uri): Promise<boolean>; dispose(): Promise<void>; }
@@ -160,9 +170,30 @@ registerScratchEditor(deps: ScratchNativeDeps): { openDocument(id: string): Prom
 - All completed browse/create/error, lock, local asset/CSP, native undo and source-fidelity behaviors remain required; no legacy document channel returns.
 - One document controller per URI per window owns canonical application. Pane owns timer/codec worker; native service owns host grammar executor. Each executor has at most one running job plus latest queued work, and cannot write files or invoke commands directly.
 
-## 3. Data model changes
+### 3.6 `ScratchMarkdownVerifier`
 
-### 3.1 `ScratchRendererState` — invariant-change
+```typescript
+class ScratchMarkdownVerifier<Document> { invalidate(): void; job(source: string, key: string): { readonly validation: ScratchMarkdownValidationJob<Document>; retainBase(): void }; }
+```
+
+**Returns:** `Executor-local validation/proof state` — Preserve current parser/check implementation; add private fully checked candidate adoption machinery without exporting AST or application authority.
+
+**Errors:**
+- `ProofMismatch` when Candidate bytes, native canonical version/digest, codec version, executor epoch or current invalidation token do not match.
+
+**Preconditions:**
+- An allowed job completed every existing independent source, candidate, serialization, semantics, raw fingerprints, protected spans, EOL and intent check required by its executor.
+- The candidate proof is immutable source/inventory only, not parser AST, renderer document or raw allowed boolean.
+
+**Postconditions:**
+- Retain at most one current immutable base proof plus one bounded candidate handoff record associated with the active/latest generation. Canonical confirmation atomically replaces the old base with that exact candidate under the actual observed new version:digest and exact bytes.
+- Each executor adopts only its own completed fully checked candidate. Adoption is an optimization of source rechecking, never authorization to apply or skip fresh candidate/intent/unchanged-span checks.
+- Reconcile matching own canonical changes with a successful candidate before unconditional invalidation. Unrelated bytes/version change, missing/timed-out/failed proof, epoch or codec replacement, conflict, reload/disposal invalidates the handoff and falls back to full source verification. A changed version/digest alone cannot transplant a proof; exact canonical bytes and identity confirmation are required.
+- An invalidation revision blocks active jobs from repopulating a cleared cache; no stale completed result may adopt later.
+
+## 4. Data model changes
+
+### 4.1 `ScratchRendererState` — invariant-change
 
 Add explicit staged/waiting-idle/validating/authorized/applied/conflict distinctions. Pending admission is not a conflict. Track latest immutable intent and exact base, keep one apply in flight, never auto-authorize newer unvalidated typing.
 
@@ -170,7 +201,7 @@ Add explicit staged/waiting-idle/validating/authorized/applied/conflict distinct
 - `vscode-plugin/src/panels/scratch-editor-webview.ts`
 - `vscode-plugin/src/panels/__tests__/fixtures/scratch-editor-state-browser.ts`
 
-### 3.2 `ScratchDraftProposal` — invariant-change
+### 4.2 `ScratchDraftProposal` — invariant-change
 
 Existing bounded draft identity is staged with apply:false and later authorized for the same content/sequence. Durable receipt does not authorize native application. Atomically migrate all producer/parser/controller/test consumers; no permissive arbitrary-command fields.
 
@@ -179,7 +210,7 @@ Existing bounded draft identity is staged with apply:false and later authorized 
 - `vscode-plugin/src/panels/scratch-editor-provider.ts`
 - `vscode-plugin/src/panels/scratch-editor-native.ts`
 
-### 3.3 `IdleValidationJob` — new
+### 4.3 `IdleValidationJob` — new
 
 Proposed private immutable job keyed by executor epoch, pane session, draftSeq, base version/digest and configured-codec identity, carrying bounded source references/draft and an actual-document intent fingerprint. Fingerprint semantics match the existing document comparator, including its sole heading-id exception. A parsed copy of the draft cannot serve as its own expected intent. A failed or superseded job never mutates the TextDocument.
 
@@ -187,7 +218,7 @@ Proposed private immutable job keyed by executor epoch, pane session, draftSeq, 
 - `vscode-plugin/src/panels/scratch-markdown-milkdown.ts`
 - `vscode-plugin/src/panels/scratch-editor-webview.ts`
 
-### 3.4 `Background validation lifetime` — new
+### 4.4 `Background validation lifetime` — new
 
 New private executor modules are proposed, not current APIs. Keep 1 MiB text and 2 MiB ordinary message limits. Base transfer and candidate jobs use separate bounded messages; do not combine several full snapshots into an oversized message. Worker has no native file/chat/command access. Browser worker is a single local bundled script loaded from trusted fixed code via blob/data-compatible VS Code loading; document content is data only. Retain connect-src 'none', add only the required worker-src policy, terminate/revoke on disposal. Worker codec parity/CSP/native loading are an early qualification gate. Host grammar worker is extension-owned and independently verifies source admission.
 
@@ -195,18 +226,35 @@ New private executor modules are proposed, not current APIs. Keep 1 MiB text and
 - `vscode-plugin/src/panels/scratch-editor-native.ts`
 - `vscode-plugin/src/panels/scratch-editor-webview.ts`
 
-## 4. Diagrams
+### 4.5 `ScratchDraftProposal` — invariant-change
+
+Closed identity-only validate-draft intent references one already staged immutable recovery draft. One pane owns many successive generations; document controller owns one active/latest host job and at most one prepared current proof. Configured and host checks run concurrently after the same gap, join by exact pane/epoch/sequence/edit/base identity, and neither receipt nor prepared host proof authorizes native mutation. No persistent DB/entity relationship or sc1 change.
+
+**Call sites:**
+- `vscode-plugin/src/panels/scratch-editor-provider.ts`
+- `vscode-plugin/src/panels/scratch-editor-native.ts`
+- `vscode-plugin/src/panels/scratch-editor-webview.ts`
+
+### 4.6 `ScratchMarkdownVerifier` — invariant-change
+
+Executor owns one current verified immutable base and at most one fully checked candidate handoff; no AST. Only exact canonical bytes and actual version/digest confirmation in the same codec/epoch adopts the candidate as next base. Replacement is atomic; unrelated change clears it. Worker proof ownership never crosses executors.
+
+**Call sites:**
+- `vscode-plugin/src/panels/scratch-markdown.ts`
+- `vscode-plugin/src/panels/scratch-validation-engine.ts`
+
+## 5. Diagrams
 
 - [Sequence diagram](./sequence-diagram.html)
 - [Component dependencies](./component-dependency.html)
 
-## 5. Interaction with shared contracts
+## 6. Interaction with shared contracts
 
 | Contract | Role | How |
 | :--- | :--- | :--- |
 | `sc1` | implements | Unchanged home scope and validated basename identity; no persisted s7 identity, repo inference, backlinks, ranking, search, attachments or other adjacent-story work. |
 
-## 6. Error paths
+## 7. Error paths
 
 **Error cases**
 
@@ -234,6 +282,22 @@ New private executor modules are proposed, not current APIs. Keep 1 MiB text and
   - Detection: Existing URI/session/bounds/asset checks reject or exact-URI dirty/pending/recovery inspection fails.
   - Response: Retain existing guarded refusal, explicit same-file fallback, failed-upload no-reference insertion, clean-close failure reopening and refresh behavior.
   - User impact: Original, drafts and unrelated tabs remain intact.
+- **Validation intent has no durably staged matching draft** (recoverable)
+  - Detection: Closed identity validation cannot find the same live pane/sequence/edit/base bytes, or persistence is not complete.
+  - Response: Keep at most one pending latest intent awaiting its matching durable stage; reject mismatch/supersession. Never validate arbitrary unstaged bytes or create native permission.
+  - User impact: Draft remains recoverable; action waits boundedly or reports failure.
+- **One concurrent executor refuses, fails or returns an obsolete identity** (recoverable)
+  - Detection: Exact generation/base/epoch/codec comparison fails or either result is refused/error/timeout.
+  - Response: Do not apply. Ignore stale outcomes without freezing newer input; a current refusal/failure retains the visible and durable draft and fails captured actions explicitly. Cancel or retire the obsolete peer work without adding an unbounded queue.
+  - User impact: Typing continues; canonical document is not overwritten.
+- **Canonical confirmation does not match a fully checked candidate** (recoverable)
+  - Detection: Exact candidate bytes and accepted generation provenance fail to match the actual observed native source/version/digest, or invalidation revision/worker epoch changed.
+  - Response: Invalidate candidate/base reuse and run complete source verification. Never infer apply authority from a matching digest or prepared proof alone. Own document-state arriving before apply-ack may hold a bounded untrusted handoff, but may adopt only after exact accepted-identity canonical confirmation; an unrelated change clears it.
+  - User impact: Possible slower next validation, no fidelity loss or unsafe application.
+- **Revised architecture still exceeds original full-bound latency target** (recoverable)
+  - Detection: All ordinary native samples and latest burst/resumed acknowledgements are timed on the original clocks; original150msmedian/1000msp95 gates fail on either required host.
+  - Response: Keep t15 and BUILD failed, preserve every sample/failure and seek another tracked design decision. Do not reduce bounds, omit slow edits, reinterpret receipt as ack or weaken checks.
+  - User impact: No false completed-build claim.
 
 **Edge cases**
 
@@ -245,6 +309,10 @@ New private executor modules are proposed, not current APIs. Keep 1 MiB text and
 | Selection-only, initialization or host echo | No draft, timer reset, validation or file write. |
 | Close/reload/delete during pending admission | Disposal cancels timers/jobs/waiters; recovery persists and accepted apply finishes safely. Delete cancels when pending rather than authorizing or hanging. |
 | Multiple panes, locked selection, Unicode and CRLF | Preserve existing per-pane selection/lock and host queue, UTF8 bounds, EOL fidelity and click-only bounded composer insertion. |
+| Prepared host success arrives before renderer authorization, or authorization arrives before host success | Join only the same current staged generation/base; either arrival alone is read-only. Joining cannot stall durable staging or unrelated panes. |
+| Already accepted canonical apply finishes while newer typing is staged | Keep existing accepted-apply semantics; acknowledgement updates base but never replaces newer visible text or authorizes it. Adopt an exact successful accepted candidate only under that canonical identity; freshly validate newer typing against the new base. |
+| Newer stage arrives during configured or host work; many panes request verification | No max-wait during continuous typing. Each executor remains one active/latest queued job; global document host queue coalesces fairly without per-pane unbounded workers. Superseded waiters settle explicitly and cannot reopen native apply. |
+| Save/Send/Undo/Redo/lock or native autosave captures pending work | Expedite both exact captured checks; all existing current-only action failure, one-second best-effort native Save, lock-confirmation and preference rollback semantics remain. Do not silently recapture later typing. |
 
 **Invariants to preserve**
 
@@ -252,20 +320,20 @@ New private executor modules are proposed, not current APIs. Keep 1 MiB text and
 - s1 source/usage bundle and completed t1–t14 evidence ground browse/new/delete, all six chat intents and refresh; no legacy channel returns. [[c3]]
 - s1 measured-evidence and source bundle ground explicit bounded selected-text insertion with no submit, one pane, local CSP assets, fidelity and recovery. Performance remains unaccepted until original full-bound budgets pass. [[c17]]
 
-## 7. Test strategy
+## 8. Test strategy
 
-**Test framework:** `Existing node:test/assert, browser production Milkdown fixtures and real VS Code native-host coordinator suites. Prior t1–t14 evidence exists; new idle/background behavior is proposed and has not yet passed validation.`
+**Test framework:** `Existing node:test/assert, actual packaged Milkdown/Blob workers, independent Node host worker, and private-display real VSCode native coordinator suites. t16-t21 are passed history; QUALIFICATION.json records current render pass and canonical-ack failure. This proposed concurrent/proof-adoption revision has no implementation or performance qualification yet.`
 
 **Test levels**
 
 - **unit** — Exercise host contract decisions and existing invariants.
-  - Subjects: `Deterministic identity, URI/type/symlink refusal, note/image/message bounds and no-op-on-open guards.`, `One-in-flight/queued-descendant behavior, duplicate/stale/cross-pane messages, self echo versus external change and late acknowledgements.`, `Dirty/recovery/cancelled/failed deletion, created-but-open-failed reporting, save refresh/disposal and bounded composer insertion.`, `Deterministic fake clock: 300ms trailing gap, continuous typing no validation, explicit flush bypasses delay, stale epoch/sequence/base discarded, exact captured action sequence and cancellation; pending is not conflict and acknowledgement never auto-authorizes newer typing.`, `Independent host background admission retains every fidelity assertion; verified immutable-base cache invalidation and one running/latest queued bound; timeout/failure/reentrancy cannot hang Save/delete/disposal.`
+  - Subjects: `Deterministic identity, URI/type/symlink refusal, note/image/message bounds and no-op-on-open guards.`, `One-in-flight/queued-descendant behavior, duplicate/stale/cross-pane messages, self echo versus external change and late acknowledgements.`, `Dirty/recovery/cancelled/failed deletion, created-but-open-failed reporting, save refresh/disposal and bounded composer insertion.`, `Deterministic fake clock: 300ms trailing gap, continuous typing no validation, explicit flush bypasses delay, stale epoch/sequence/base discarded, exact captured action sequence and cancellation; pending is not conflict and acknowledgement never auto-authorizes newer typing.`, `Independent host background admission retains every fidelity assertion; verified immutable-base cache invalidation and one running/latest queued bound; timeout/failure/reentrancy cannot hang Save/delete/disposal.`, `Concurrent join permutations: host-before-configured, configured-before-host, stage durability pending, missing intent/proof, stale/cross-pane/session/epoch/seq/edit/base results, rejected peer, timeout/disposal, newer typing and native source changes. Assert no native application until both exact proofs and current authorization.`, `Verified candidate adoption hits on exact canonical confirmation and misses on byte/version/digest/codec/epoch mismatch, stale invalidation token, unrelated source, refused check, forged proof or replay. Assert all previous semantic/raw/EOL/intent checks remain; only executor-local deeply immutable source/inventory persists.`, `Document-state before apply-ack, accepted older apply with newer staged input, cancellation while joining, explicit action flush and source conflicts preserve current-only application and one active/latest queued memory bound.`
   - Fixtures: `Existing fakeScratchFs/panel/chat seams extended with deterministic document queue and tab operations.`
 - **integration** — Prove production wiring and actual library behavior together.
-  - Subjects: `Published 7.23.0 local bundle under production CSP, setReadonly/mode preference and independent Send tooltip with keyboard focus preservation.`, `Remove Milkdown history provider/commands/keymap; bind host-targeted undo/redo, drain and broadcast without loops.`, `Parse/serialize/edit corpus: headings, tight/loose lists, tables, links/images, escaping, front matter, HTML/comments, Unicode, CRLF, fenced code/diagrams and literal custom links. Assert original unchanged on open and no unknown-content loss on supported edits.`, `Asset onUpload/proxyDomURL keeps portable relative source paths; failures never insert transient/broken URLs.`, `Static/typecheck migration: no legacy document protocol/method consumers; six chat intents remain.`, `Early gate: factor exactly the live configured schema/serializer into a pure worker-compatible module; prove production codec and actual-document fingerprint parity over the entire supported/refusal corpus. Worker loading under actual packaged CSP with connect-src none, no dynamic imports or document-controlled code.`, `Prove appendTransaction performs no full validation and at most one serialization; real browser typing resumes during a deliberately delayed validator without render blocking. Stage recovery immediately, apply only current admitted generation; stale results and old acknowledgements never replace latest text.`
+  - Subjects: `Published 7.23.0 local bundle under production CSP, setReadonly/mode preference and independent Send tooltip with keyboard focus preservation.`, `Remove Milkdown history provider/commands/keymap; bind host-targeted undo/redo, drain and broadcast without loops.`, `Parse/serialize/edit corpus: headings, tight/loose lists, tables, links/images, escaping, front matter, HTML/comments, Unicode, CRLF, fenced code/diagrams and literal custom links. Assert original unchanged on open and no unknown-content loss on supported edits.`, `Asset onUpload/proxyDomURL keeps portable relative source paths; failures never insert transient/broken URLs.`, `Static/typecheck migration: no legacy document protocol/method consumers; six chat intents remain.`, `Early gate: factor exactly the live configured schema/serializer into a pure worker-compatible module; prove production codec and actual-document fingerprint parity over the entire supported/refusal corpus. Worker loading under actual packaged CSP with connect-src none, no dynamic imports or document-controlled code.`, `Prove appendTransaction performs no full validation and at most one serialization; real browser typing resumes during a deliberately delayed validator without render blocking. Stage recovery immediately, apply only current admitted generation; stale results and old acknowledgements never replace latest text.`, `Real configured and host workers execute concurrently after the same gap (controlled independent barriers, not merely mocked resolved promises); no full validation during continuous input and no result alone mutates canonical text. Parse/cache counters prove fully checked candidate adoption avoids source rechecks without skipping fresh candidate, intent or unchanged-span checks.`, `Direct tracked QUALIFICATION.json completeness test accounts for all tasks/ac1-ac4, every native sample and superseded edit, versions/bounds/clocks and failed budget honesty. Historical t15 failures remain alongside refreshed task mappings.`
   - Fixtures: `Pinned library package and a browser runner; exact real-note fixtures plus adversarial/unsupported syntax cases.`
 - **live** — Required VS Code qualification; do not substitute fake evidence or mark skipped checks passed.
-  - Subjects: `Real .md open/edit/save/dirty/undo/redo/revert, native autosave and external edits in same and second windows.`, `Close/reload while draft receipt/apply/ack is delayed; prove recovery without false saved state or draft loss.`, `Multiple groups/panes, remembered lock, locked selection, select->click Send with chat closed/ready/disposed, and no automatic submission.`, `Real image paste/drop, URL paste, workspace link/image insertion, CSP/offline operation and error paths.`, `Budget: 1 MiB UTF-8 note and boundaries; responsiveness target <=150 ms median keystroke-to-render and <=1 s p95 host acknowledgement on a recorded reference host, with a smaller supported bound or explicit design revision if unmet.`, `Repeat full 1MiB 20-trusted-edit qualification on recorded floor/current VS Code private display. Preserve <=150ms median keystroke-to-render and <=1s p95 host ack targets; ordinary latest-burst clock starts at final content edit and includes the 300ms idle delay. Explicit flush starts at action. Report superseded edits separately, no missing slow acknowledgements hidden.`, `Add sustained typing, bursts, resumed typing during long validation, Save/Send/Undo/Redo/lock/native autosave while pending and process interruption before idle/result/ack. Measure rendering, staging and job/application separately; immediate serialization or intent capture that still misses render budget blocks acceptance.`, `Re-run affected existing authoring/lifecycle/recovery/corpus/packaging mapping; no skip, reduced note bound or revised latency clock counts as success.`
+  - Subjects: `Real .md open/edit/save/dirty/undo/redo/revert, native autosave and external edits in same and second windows.`, `Close/reload while draft receipt/apply/ack is delayed; prove recovery without false saved state or draft loss.`, `Multiple groups/panes, remembered lock, locked selection, select->click Send with chat closed/ready/disposed, and no automatic submission.`, `Real image paste/drop, URL paste, workspace link/image insertion, CSP/offline operation and error paths.`, `Budget: 1 MiB UTF-8 note and boundaries; responsiveness target <=150 ms median keystroke-to-render and <=1 s p95 host acknowledgement on a recorded reference host, with a smaller supported bound or explicit design revision if unmet.`, `Repeat full 1MiB 20-trusted-edit qualification on recorded floor/current VS Code private display. Preserve <=150ms median keystroke-to-render and <=1s p95 host ack targets; ordinary latest-burst clock starts at final content edit and includes the 300ms idle delay. Explicit flush starts at action. Report superseded edits separately, no missing slow acknowledgements hidden.`, `Add sustained typing, bursts, resumed typing during long validation, Save/Send/Undo/Redo/lock/native autosave while pending and process interruption before idle/result/ack. Measure rendering, staging and job/application separately; immediate serialization or intent capture that still misses render budget blocks acceptance.`, `Re-run affected existing authoring/lifecycle/recovery/corpus/packaging mapping; no skip, reduced note bound or revised latency clock counts as success.`, `Re-run original 1MiB 20 ordinary trusted edits plus12sustained/5burst/2resumed/1explicitSave on each supported-floor/current native host. Preserve <=150msmedian render and <=1sp95canonical ack including300msgap; latest burst/resumed results also meet1s. Include cold first job and all slow/missing results, report superseded edits without claiming their missing ack is success.`, `Repeat all t21 native save/undo/revert/autosave, rich authoring/explicitSend, lock/preference failure, multipane/cross-window and six process-interruption phases after scheduling/proof changes. Missing/skipped required evidence blocks BUILD.`
   - Fixtures: `Real VS Code host at the supported engine floor and current 1.146.0 where available; capture versions and unavailable coverage honestly.`, `Disposable note/asset roots and second window; never destructive probes on user notes.`
 
 **Acceptance mapping**
@@ -277,52 +345,52 @@ New private executor modules are proposed, not current APIs. Keep 1 MiB text and
 | `ac3` | `Migration/typecheck: retired textarea/save channel absent; store and existing .md format remain.`, `Corpus/browser/live: zero writes on open and refused unsafe serialization preserves original/draft.` |
 | `ac4` | `Browser/live: non-empty selection reveals Send; mouse and keyboard click capture exact text, cap and insert once without submit; locked, stale, cross-pane and disposed-chat cases.` |
 
-## 8. Migration
+## 9. Migration
 
-**State before:** s1 analyze bundle Existing scratch editor pipeline and reuse plus measured-evidence bundle: S001 t1–t14 built and validated, single Milkdown pane already replaces legacy textarea. Full validation runs synchronously inside appendTransaction and t15 failed at 4150.45ms median render /8240.20ms p95 ack for 1MiB. Existing LLD5/PLAN2 approved; BUILD draft with failed t15. This revision supersedes synchronous scheduling only, preserves completed functional scope.
+**State before:** s1 context bundles Native qualification reuse and Current validation/native canonical boundaries, plus committed QUALIFICATION.json, show implemented and passed t16-t21, retained single pane/current-only durable staging, and full-bound render75-79ms versus failed canonical p95ack2.43-2.52s. Existing serial checks and own-revision cache invalidation remain in production; this revision is proposed only.
 
-**State after:** Immediate rendered/recovery-staged edits, 300ms trailing-gap background validation, independent background host admission and exact-generation action barriers; same canonical .md, one pane, original bounds/budgets and all completed behavior.
+**State after:** Same one-pane .md/native lifecycle and all original bounds/checks; bounded configured and host checks overlap after the same gap, with exact canonical adoption of executor-local fully checked candidate source proofs. Native mutation still joins both current successes and exact native guards. Completion remains conditional on unchanged native latency and regression gates.
 
-**Zero downtime:** yes — **Data rewrite:** no
+**Zero downtime:** no — **Data rewrite:** no
 
 **Steps**
 
-1. After human approval revise PLAN, record outstanding t15 correction and preserve prior task evidence. Qualify shared configured codec/intent parity and real CSP-compatible bundled worker before replacing observation. — ↩ rollbackable
-2. Split recovery staging/pending from admission/refusal; atomically update producer, closed parser, renderer state, controller and action consumers. Add bounded executors, exact-generation identities, verified-base caching and cancellation. — ↩ rollbackable
-3. Replace synchronous observer validation with immediate bounded staging and 300ms idle dispatch; route explicit actions through captured-generation flush. Preserve native Save best effort, lock barrier, deletion cancellation and disposal recovery. — ↩ rollbackable
-4. Validate focused deterministic/browser cases, full corpus and native lifecycle/authoring/recovery/CSP regressions, then full 1MiB performance including continuous/resumed typing. Failed or unavailable mandatory evidence blocks completion. Present BUILD only after gates pass. — ↩ rollbackable
+1. After fresh human LLD approval, revise PLAN with tracked proof-adoption and concurrent-join tasks plus requalification dependencies; preserve t1-t21 history and failed t15. No implementation starts under the old plan. — ↩ rollbackable
+2. Implement and qualify executor-local immutable candidate handoff/adoption with exact canonical confirmation and invalidation. Keep complete source verification as fallback and prove every original fidelity assertion remains. — ↩ rollbackable
+3. Implement closed exact-stage validation-intent and concurrent independent host preparation/join without putting staging behind validation or granting apply authority. Update both bridge consumers atomically in the same extension package; qualify races and captured actions. — ↩ rollbackable
+4. Requalify packaged CSP/corpus, affected task mappings and floor/current native lifecycle/authoring/interruption; then rerun original full-bound latency. BUILD stays failed on any required skip/missing/failure. Preserve prior measurements. — ↩ rollbackable
 
-**Backward compat:** No file rewrite, bound reduction or shared sc1/API/identity change. Existing documents/recovery retained. Private protocol participants migrate together with fresh pane session epochs so stale worker results cannot cross reload. Keep current richEditor setting and explicit same-file fallback; no legacy editor channel restoration. Rollback code cannot discard pending records or mislabel them saved.
+**Backward compat:** sc1 and all daemon/public IPC contracts are unchanged; canonical .md files and apply:false recovery records remain readable. Private bridge/worker protocol changes ship atomically with host and renderer; reject unknown or mismatched protocol/epoch rather than allowing an old pane to bypass checks. Reloading falls back to full verification; no recovery record implicitly resumes or authorizes validation/application.
 
-## 9. Alternatives considered
+## 10. Alternatives considered
 
-### 9.1 a1: Idle timer on the renderer thread
+### 10.1 a1: Preserve serial validation and adopt exact verified candidates
 
-Coalesce edits until a 300 ms gap, then perform the existing full validation on the renderer thread.
+Reuse successful candidate source proofs after canonical confirmation, keeping serial verification.
 
-Keep the existing one-pane controller and add one trailing-edge timer. Lightweight draft capture runs per transaction; timer expiry runs current fidelity admission. Explicit commands flush. This is the smallest scheduling change, but the measured full pass still blocks resumed typing and cannot honestly meet the existing render target during validation.
+Extend existing immutable verifier cache lifetime across an exact own canonical acknowledgement. Reuse only fully checked candidate inventory at matching canonical bytes/version/digest in the same codec epoch; retain independent host checks and the existing serialized configured-then-host contract.
 
-**Rejected because:** Smallest code change, but fails the performance part of ac1.
+**Rejected because:** Small cache-only change does not remove serial warm checks.
 
-### 9.2 a2: Idle-coalesced background admission — **CHOSEN**
+### 10.2 a2: Concurrent independent validation with exact canonical proof adoption — **CHOSEN**
 
-Render and retain drafts immediately; validate only the latest idle generation in background execution before authorizing native application.
+Start both bounded read-only checks after the gap and join their exact-current results before native application.
 
-Reuse the existing draft/controller/recovery boundary, adding a non-conflicting pending-validation state and explicit generation-bound admission/flush. A 300 ms trailing-edge gap starts full fidelity verification outside the input thread; newer typing supersedes its result. Cache only fully verified immutable bases keyed by exact source/version/digest and codec version, and share a parse within a validation job without dropping checks. Background configured-codec validation must use the same factored schema/serializer as the live editor and pass the full corpus. Host admission remains independently verified and runs once per admitted generation. Preserve 1 MiB/2 MiB bounds, explicit native application, recovery receipts and source/session checks. Worker packaging and codec equivalence are qualification gates, not assumed existing capabilities.
+Reuse the existing pane scheduler, two independent executors, durable staging and canonical controller. Add a closed bounded validation-intent operation for an already staged exact generation; it can compute host proof but never authorizes apply. Only current apply:true authorization plus successful exact-base host proof permits canonical mutation. Each executor may adopt its own fully checked immutable candidate inventory as next-base proof only upon exact canonical bytes/version/digest confirmation; no cross-executor proof, mutable AST, renderer assertion or receipt becomes native authority.
 
-### 9.3 a3: Validation only on explicit Save
+### 10.3 a3: Concurrent checks without next-base reuse
 
-Keep local editing fast and defer all validation until an explicit Save.
+Overlap independent passes while invalidating every proof on each canonical revision.
 
-Retain local drafts and validate only on Save, with no idle canonical application. Keep existing source identity and UI. This removes per-keystroke validation but leaves native document synchronization and autosave dependent on an explicit action rather than the requested typing gap.
+Add the same bounded read-only validation-intent/join while retaining unconditional cache invalidation after own canonical changes. Keep all source checks cold for each edit and require both exact successful checks before application.
 
-**Rejected because:** Weakens ac1 and complicates ac4 despite simple local typing.
+**Rejected because:** Cold configured check alone exceeds the target before host latency.
 
-## 10. UX
+## 11. UX
 
 - [UX mock](./ux-mock.html)
 
-## 11. References
+## 12. References
 
 - **[[c2]]** `code` `vscode-plugin/src/chat/scratch-store.ts` — "Flat ~/.insrc/scratches/*.md store, basename IDs, guarded read/write."
 - **[[c3]]** `code` `vscode-plugin/src/panels/scratch-panels.ts` — "Historical legacy baseline; current browse preserved, document textarea/save removed by t11."
@@ -341,6 +409,9 @@ Retain local drafts and validate only on Save, with no idle canonical applicatio
 - **[[c62]]** `doc` `https://code.visualstudio.com/api/extension-guides/webview#using-web-workers` — "Workers need blob/data loading and a single bundled script, without importScripts/dynamic import. Production qualification required."
 - **[[c63]]** `doc` `/tmp/.insrc/scratchpad-t15-performance-full.json` — "20 edits,1MiB:4150.45ms median render,8240.20ms p95 ack; acceptance fails."
 - **[[c64]]** `prior-artifact` `docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/BUILD.md` — "t1–t14 validated, t15 failed; no completed BUILD acceptance."
+- **[[c65]]** `prior-artifact` `docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/QUALIFICATION.json` — "40 native samples each on1.141.0/1.146.0; render78.7/75.3ms passes, canonical p95ack2516.5/2429.8ms fails. t16-t21 passed; no completed BUILD."
+- **[[c66]]** `step-output` `s4 contract.detail; s5 error.paths; s6 test.strategy` — "Proposed bounded concurrent independent checks, exact-current join and executor-local canonical candidate proof adoption; unchanged checks/bounds/clocks; unqualified until original native gate passes."
+- **[[c67]]** `code` `vscode-plugin/src/panels/scratch-markdown.ts` — "Current job checks source and candidate; verified(source) returns frozen source/inventory only. Proposed adoption must reuse only that complete executor-local proof, never AST or native authority."
 
 ## Citations
 
@@ -361,3 +432,6 @@ Retain local drafts and validate only on Save, with no idle canonical applicatio
 - **[[c62]]** `doc` `https://code.visualstudio.com/api/extension-guides/webview#using-web-workers` — "Workers need blob/data loading and a single bundled script, without importScripts/dynamic import. Production qualification required."
 - **[[c63]]** `doc` `/tmp/.insrc/scratchpad-t15-performance-full.json` — "20 edits,1MiB:4150.45ms median render,8240.20ms p95 ack; acceptance fails."
 - **[[c64]]** `prior-artifact` `docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/BUILD.md` — "t1–t14 validated, t15 failed; no completed BUILD acceptance."
+- **[[c65]]** `prior-artifact` `docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/QUALIFICATION.json` — "40 native samples each on1.141.0/1.146.0; render78.7/75.3ms passes, canonical p95ack2516.5/2429.8ms fails. t16-t21 passed; no completed BUILD."
+- **[[c66]]** `step-output` `s4 contract.detail; s5 error.paths; s6 test.strategy` — "Proposed bounded concurrent independent checks, exact-current join and executor-local canonical candidate proof adoption; unchanged checks/bounds/clocks; unqualified until original native gate passes."
+- **[[c67]]** `code` `vscode-plugin/src/panels/scratch-markdown.ts` — "Current job checks source and candidate; verified(source) returns frozen source/inventory only. Proposed adoption must reuse only that complete executor-local proof, never AST or native authority."

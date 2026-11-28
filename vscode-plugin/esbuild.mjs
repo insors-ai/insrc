@@ -5,7 +5,6 @@
  * carries no `../../src` and no node_modules:
  *   - src/extension.ts   -> out/extension.js   (the `main`, S001)
  *   - src/uninstall.ts   -> out/uninstall.js   (the `vscode:uninstall` hook, S005)
- *   - src/vibe-session-worker.ts -> out/vibe-session-worker.js (durable Vibe output)
  *
  * The cross-package `../../src/shared/ipc-client.js` is INLINED (k5: only the
  * thin socket client — node:net + pure types + paths — travels; no daemon
@@ -35,7 +34,6 @@ export async function bundle(outdir) {
   await build({
     entryPoints: {
       extension: join(here, 'src/extension.ts'), uninstall: join(here, 'src/uninstall.ts'),
-      'vibe-session-worker': join(here, 'src/vibe-session-worker.ts'),
       'scratch-validation-host-worker': join(here, 'src/panels/scratch-validation-host-worker.ts'),
     },
     bundle: true,
@@ -86,5 +84,5 @@ export async function bundleScratchEditor(outdir) {
 // Run as a script (`node esbuild.mjs`) -> bundle into ./out.
 if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === process.argv[1]) {
   await bundle(join(here, 'out'));
-  console.log('bundled -> out/extension.js, out/uninstall.js and out/vibe-session-worker.js (CJS)');
+  console.log('bundled -> out/extension.js and out/uninstall.js (CJS)');
 }

@@ -49,7 +49,7 @@ export class ScratchValidationClient {
     if (this.closed || !scratchValidationRequestFits(request)) return Promise.reject(new Error('Validation unavailable or draft exceeds its bounds.'));
     return new Promise((resolve, reject) => {
       this.queued?.reject(new Error('Validation superseded by newer typing.'));
-      this.queued = { id: ++this.sequence, request, resolve, reject };
+      this.queued = { id: ++this.sequence, request: { ...request }, resolve, reject };
       this.pump();
     });
   }

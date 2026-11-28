@@ -1,4 +1,5 @@
 import { editorViewCtx } from '@milkdown/kit/core';
+import { Schema, Fragment } from '@milkdown/kit/prose/model';
 import { createScratchCrepe } from '../../scratch-editor-webview.js';
 import { scratchMilkdownCodec, SCRATCH_HOST_TRANSACTION } from '../../scratch-markdown-milkdown.js';
 import { scratchCodecProof, scratchIntentDigest } from '../../scratch-markdown-codec.js';
@@ -27,6 +28,16 @@ async function run(): Promise<unknown> {
   try {
     const live = editor.editor.action(scratchMilkdownCodec);
     const view = editor.editor.action(ctx => ctx.get(editorViewCtx));
+    const original = live.parse('# Heading\n\nText **bold**.\n');
+    const foreignSchema = new Schema({ nodes: original.type.schema.spec.nodes, marks: original.type.schema.spec.marks });
+    const foreign = foreignSchema.nodeFromJSON(original.toJSON());
+    const foreignChildren = original.type.create(original.attrs, foreign.content);
+    const heading = original.firstChild!;
+    const changedHeadingId = original.copy(Fragment.fromArray([heading.type.create({ ...heading.attrs, id: 'other-anchor' }, heading.content, heading.marks), original.lastChild!]));
+    const changedLevel = original.copy(Fragment.fromArray([heading.type.create({ ...heading.attrs, level: 2 }, heading.content, heading.marks), original.lastChild!]));
+    let foreignIntentRefused = 0;
+    for (const invalid of [foreign, foreignChildren]) { try { await scratchIntentDigest(invalid, view.state.schema); } catch { foreignIntentRefused++; } }
+    const comparator = { foreignSchema: live.equivalent(original, foreign), foreignChildren: live.equivalent(original, foreignChildren), headingId: live.equivalent(original, changedHeadingId), changedLevel: live.equivalent(original, changedLevel), foreignIntentRefused };
     const rows = [];
     for (const source of [...supportedScratchMarkdown, ...unsupportedScratchMarkdown, '![Exact alt](assets/image.png "caption")\n', '$x$\n\n$$\ny = 2\n$$\n', 'Entities: &copy; &NotEqualTilde; &notit; &semi; &#x1F600;\n']) {
       view.dispatch(view.state.tr.replaceWith(0, view.state.doc.content.size, live.parse(source).content).setMeta(SCRATCH_HOST_TRANSACTION, true));
@@ -34,7 +45,7 @@ async function run(): Promise<unknown> {
       view.dispatch(view.state.tr.insert(view.state.doc.content.size, paragraph));
       const actual = view.state.doc;
       const draft = live.serialize(actual);
-      const expectedIntent = await scratchIntentDigest(actual);
+      const expectedIntent = await scratchIntentDigest(actual, view.state.schema);
       const result = await worker.run({ source, draft, expectedIntent, baseKey: '1:' + 'a'.repeat(64), qualification: true });
       const proof = await scratchCodecProof(live, source, actual);
       const expected = checkScratchMarkdownEdit(source, draft, live, actual);
@@ -44,7 +55,7 @@ async function run(): Promise<unknown> {
         admission: result.allowed === expected.allowed });
     }
     const wrongIntent = await worker.run({ source: 'Safe\n', draft: 'Safe\n', expectedIntent: '0'.repeat(64), baseKey: '1:' + 'a'.repeat(64) });
-    result = { rows, wrongIntent: wrongIntent.allowed, violations, lifecycle };
+    result = { rows, wrongIntent: wrongIntent.allowed, violations, lifecycle, comparator };
   } finally { worker.dispose(); await editor.destroy(); }
   let rejectedAfterDispose = false;
   try { await worker.run({ source: 'Safe\n', draft: 'Safe\n', expectedIntent: '0'.repeat(64), baseKey: '1:a' }); } catch { rejectedAfterDispose = true; }

@@ -27,7 +27,8 @@ test('scratch worker bounds startup timeout cancellation epoch and queued data t
   receive({ type: 'ready', epoch, codecVersion: SCRATCH_CODEC_VERSION });
   assert.equal(messages.length, 3); assert.equal(messages[1]!['type'], 'base'); assert.equal(messages[1]!['draft'], undefined); assert.equal(messages[2]!['source'], undefined);
   const replaced = client.run(request); const rejected = assert.rejects(replaced, /superseded/);
-  const latest = client.run({ ...request, draft: 'Newest\n' }); await rejected;
+  const captured = { ...request, draft: 'Newest\n' };
+  const latest = client.run(captured); captured.draft = 'Mutated after capture\n'; await rejected;
   receive({ type: 'result', epoch: 'wrong', requestId: 1, baseKey: request.baseKey, allowed: true }); assert.equal(messages.length, 3);
   receive({ type: 'result', epoch, requestId: 1, baseKey: request.baseKey, allowed: true }); assert.equal((await first).allowed, true); assert.equal(messages.length, 5);
   assert.equal(messages[4]!['draft'], 'Newest\n');
@@ -66,11 +67,12 @@ test('scratch exact configured codec and real blob worker agree under packaged C
       .replaceAll('vscode-webview://fixture', origin);
     assert.match(html, /connect-src 'none'; worker-src blob:/); await writeFile(join(dir, 'index.html'), html);
     child = runInProcessGroup(chrome, ['--headless=new', '--no-sandbox', '--disable-gpu', '--disable-background-networking', '--no-first-run', `--user-data-dir=${join(dir, 'profile')}`, origin], { signal: abort.signal, timeoutMs: 60_000 });
-    const data = await Promise.race([evidence, new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('Worker parity/CSP evidence timed out')), 50_000); }), child.then(r => { throw new Error('Chrome closed before worker evidence: ' + r.stderr.slice(-2000)); })]) as { error?: string; rows: { schema: boolean; serializer: boolean; admission: boolean; intent: boolean }[]; wrongIntent: boolean; violations: string[]; lifecycle: { created: number; terminated: number; urlsCreated: number; urlsRevoked: number }; rejectedAfterDispose: boolean };
+    const data = await Promise.race([evidence, new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('Worker parity/CSP evidence timed out')), 50_000); }), child.then(r => { throw new Error('Chrome closed before worker evidence: ' + r.stderr.slice(-2000)); })]) as { error?: string; rows: { schema: boolean; serializer: boolean; admission: boolean; intent: boolean }[]; wrongIntent: boolean; violations: string[]; lifecycle: { created: number; terminated: number; urlsCreated: number; urlsRevoked: number }; rejectedAfterDispose: boolean; comparator: { foreignSchema: boolean; foreignChildren: boolean; headingId: boolean; changedLevel: boolean; foreignIntentRefused: number } };
     assert.equal(data.error, undefined, JSON.stringify(data));
     assert.equal(data.rows.length, 21); for (const row of data.rows) assert.deepEqual(row, { schema: true, serializer: true, admission: true, intent: true });
     assert.equal(data.wrongIntent, false); assert.deepEqual(data.violations, []);
     assert.deepEqual(data.lifecycle, { created: 1, terminated: 1, urlsCreated: 1, urlsRevoked: 1 }); assert.equal(data.rejectedAfterDispose, true);
+    assert.deepEqual(data.comparator, { foreignSchema: false, foreignChildren: false, headingId: true, changedLevel: false, foreignIntentRefused: 2 });
   } finally { clearTimeout(timer); abort.abort(); if (child) await child; await new Promise<void>(resolve => server.close(() => resolve())); await rm(dir, { recursive: true, force: true }); }
 });
 

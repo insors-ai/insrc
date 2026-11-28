@@ -7,7 +7,7 @@ import { schema as commonmarkSchema, remarkAddOrderInListPlugin, remarkInlineLin
 import { schema as gfmSchema, remarkGFMPlugin } from '@milkdown/kit/preset/gfm';
 import { imageBlockSchema, remarkImageBlockPlugin } from '@milkdown/kit/component/image-block';
 import { latex } from '@milkdown/crepe/feature/latex';
-import type { Node as ProseNode } from '@milkdown/kit/prose/model';
+import type { Node as ProseNode, Schema } from '@milkdown/kit/prose/model';
 import type { ScratchMarkdownCodec } from './scratch-markdown.js';
 import type { ScratchCodecProof } from './scratch-validation-client.js';
 
@@ -42,8 +42,9 @@ export function configureScratchSchema(ctx: Ctx): void {
 
 /** Exact comparison semantics of the live transaction, including its sole
  * presentation exception. JSON is data, never evaluated as worker code. */
-export function scratchDocumentIntent(document: ProseNode): string {
+export function scratchDocumentIntent(document: ProseNode, expectedSchema: Schema): string {
   const value = (node: ProseNode): unknown => {
+    if (node.type !== expectedSchema.nodes[node.type.name]) throw new Error('Document belongs to a different configured schema.');
     const attrs = { ...node.attrs }; if (node.type.name === 'heading') delete attrs['id'];
     const content: unknown[] = []; node.forEach(child => content.push(value(child)));
     return [node.type.name, attrs, node.text ?? null, node.marks.map(mark => mark.toJSON()), content];
@@ -56,22 +57,41 @@ async function digestText(text: string): Promise<string> {
   const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
   return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
 }
-export const scratchIntentDigest = (document: ProseNode): Promise<string> => digestText(scratchDocumentIntent(document));
+/** The caller supplies the owning editor/codec schema, not a candidate-derived
+ * substitute. Foreign NodeTypes are refused before their names cross a thread. */
+export const scratchIntentDigest = async (document: ProseNode, expectedSchema: Schema): Promise<string> => digestText(scratchDocumentIntent(document, expectedSchema));
+
+/** In-process equivalence retains ProseMirror NodeType identity. Names are
+ * sufficient only for transport fingerprints bound to a qualified codec. */
+function sameScratchDocument(left: ProseNode, right: ProseNode): boolean {
+  const pending: [ProseNode, ProseNode][] = [[left, right]];
+  while (pending.length) {
+    const [a, b] = pending.pop()!;
+    if (a.type !== b.type || a.text !== b.text || a.childCount !== b.childCount) return false;
+    const aa = { ...a.attrs }, ba = { ...b.attrs };
+    if (a.type.name === 'heading') { delete aa['id']; delete ba['id']; }
+    if (JSON.stringify(aa) !== JSON.stringify(ba) || JSON.stringify(a.marks.map(m => m.toJSON())) !== JSON.stringify(b.marks.map(m => m.toJSON()))) return false;
+    for (let i = 0; i < a.childCount; i++) pending.push([a.child(i), b.child(i)]);
+  }
+  return true;
+}
 
 /** Qualification hashes come from the actual executing codec, including for
  * refused sources. No document or serialized note is returned to the caller. */
 export async function scratchCodecProof(codec: ScratchMarkdownCodec<ProseNode>, source: string, actualDraft: ProseNode): Promise<ScratchCodecProof> {
-  const shape = (types: Record<string, { spec: { attrs?: unknown; content?: unknown; group?: unknown } }>): unknown => Object.entries(types).map(([name, type]) => [name, type.spec.attrs, type.spec.content, type.spec.group]);
-  const model = actualDraft.type.schema;
+  // Include every declarative flag/default/DOM rule. Callback semantics are
+  // compared through the actual parsing and serialization corpus below.
+  const shape = (types: Record<string, { spec: object }>): unknown => Object.entries(types).map(([name, type]) => [name, JSON.stringify(type.spec, (_key, value: unknown) => typeof value === 'function' ? undefined : value)]);
   const parsedSource = codec.parse(source);
+  const model = parsedSource.type.schema;
   return { schema: await digestText(JSON.stringify([shape(model.nodes), shape(model.marks)])),
-    sourceIntent: await scratchIntentDigest(parsedSource), sourceSerialized: await digestText(codec.serialize(parsedSource)),
-    draftIntent: await scratchIntentDigest(actualDraft), draftSerialized: await digestText(codec.serialize(actualDraft)) };
+    sourceIntent: await scratchIntentDigest(parsedSource, model), sourceSerialized: await digestText(codec.serialize(parsedSource)),
+    draftIntent: await scratchIntentDigest(actualDraft, model), draftSerialized: await digestText(codec.serialize(actualDraft)) };
 }
 
 export function scratchConfiguredCodec(ctx: Ctx): ScratchMarkdownCodec<ProseNode> {
   return { parse: ctx.get(parserCtx), serialize: ctx.get(serializerCtx),
-    equivalent: (left, right) => left.eq(right) || scratchDocumentIntent(left) === scratchDocumentIntent(right) };
+    equivalent: (left, right) => left.eq(right) || sameScratchDocument(left, right) };
 }
 
 export async function createScratchBackgroundCodec(): Promise<ScratchMarkdownCodec<ProseNode>> {

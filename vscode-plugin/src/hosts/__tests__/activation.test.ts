@@ -19,8 +19,10 @@ test('extension.ts constructs the AiHostRegistry (HostSpecs + real HostEnv/HostF
   assert.match(entry, /vscode\.env\.uriScheme/, 'binds the real uriScheme into HostEnv');
   assert.match(entry, /defaultHostFileSystem/, 'uses the real node:fs HostFileSystem');
   assert.match(entry, /registerHostCommands\(\{\s*commands,\s*consent,\s*status,\s*registry\s*\}\)/, 'wires the durable command with the s1 surfaces');
-  // launch target resolved from the SAME daemon home S002 installs (reuse, not a new path).
-  assert.match(entry, /join\(paths\.daemonRoot, 'scripts', 'insrc-mcp'\)/, 'resolves the launch target from the S002 daemon home');
+  // Launch target resolved via the selected MCP root (owned-runtime routing), falling back to
+  // the SAME daemon home S002 installs (reuse, not a new path), and only when it exists.
+  assert.match(entry, /join\(await selectedMcpRoot\(paths\) \?\? paths\.daemonRoot, 'scripts', 'insrc-mcp'\)/, 'resolves the launch target from the selected MCP root, falling back to the S002 daemon home');
+  assert.match(entry, /existsSync\(target\) \? target : undefined/, 'the host launches only when the target exists');
 });
 
 test('the activation-time host-wire step runs through the guarded runOnboarding sequence (S005 coalescing) and only fires when present hosts exist', () => {

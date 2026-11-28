@@ -1,0 +1,11 @@
+# PLAN4 realignment checkpoint
+
+The user explicitly approved LLD8 and its two choices: manual-only recovery without product-enforced locking/all-consumer proof, and corrected POSIX read-only runtime plus writable SDK isolation. Both choices are resolved through registered insrc_workflow_step; registered insrc_workflow_approve approved LLD8 with no skipped artifacts. The approval commit/push succeeded. Tracker push/document attachment still failed on the known ISSUE-route missingDefine/unboundStory condition; no binding is fabricated.
+
+PLAN4 is a new draft awaiting its own human approval. Original10task IDs/order/dependencies remain, accepted6bootstrap code fixes are retained, and all32current LLD subjects map exactly once across task coverage. There are59logical named task tests, not59files/runs. Every32review entry maps to original owner tasks; no per-finding issues/tasks are created.
+
+Shared test-owned cleanup is introduced inT2 before protected fixtures need it, adopted by each changed owner and inventoried/awaited comprehensively inT9. Delivery proof plumbing is established inT6; T7forms parent-process evidence after qualified closed-worker/source checks, andT8consumes it at existing destructive boundaries without wire flags or repeated full verification. No new service/lifecycle handshake, recovery command, public IPC or field migration.
+
+Run surrounding tests for each changed owner, then T9current full scoped regression afterT1–T8, and T10actual UTMmacOS/OrbStackLinux qualification including native root-publication/cleanup and Linuxdash cancellation. T10makes no source edits. Retain old source pins as historical; the small Mac native primitive probe is not fullruntime/Linux/VM proof. No per-task humanapproval; final Story BUILD approval follows all tasks/evidence/upstream/accounting gates.
+
+A300sMCP transport timeout must not trigger a duplicate validator while the original daemon request may still run; recover its exact source-bound ledger and positive closure first. Keep currenthostv2/Ollama, unknown custom installs and blocked isolates untouched. Windows remains deferred. This checkpoint contains no production edits or test runs. Static LLD body question text is historical; canonical meta.questionResolutions records both resolved owner choices without changing approved LLD8bodyhash.

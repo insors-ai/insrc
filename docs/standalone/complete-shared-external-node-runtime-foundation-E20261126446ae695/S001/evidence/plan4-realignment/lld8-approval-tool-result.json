@@ -1,0 +1,44 @@
+{
+  "approved": [
+    {
+      "path": "/Users/subhagho/work/projects/insors/insrc/.insrc/artifacts/LLD-446ae69566d352dd-s1.json",
+      "result": {
+        "workflow": "design.story",
+        "path": "/Users/subhagho/work/projects/insors/insrc/.insrc/artifacts/LLD-446ae69566d352dd-s1.json",
+        "approvedAt": "2026-11-28T09:30:23.139Z"
+      }
+    }
+  ],
+  "skipped": [],
+  "codeReview": [],
+  "followOn": [
+    {
+      "kind": "tracker-push",
+      "artifactPath": "/Users/subhagho/work/projects/insors/insrc/.insrc/artifacts/LLD-446ae69566d352dd-s1.json",
+      "ok": false,
+      "tracker": {
+        "status": "failed",
+        "reason": "cannot read parent Define: Define artifact not found at /Users/subhagho/work/projects/insors/insrc/.insrc/artifacts/DEF-446ae69566d352dd.json. The work item 446ae69566d352dd is an ISSUE-anchored bugfix (ISSUE-446ae69566d352dd.json) — it has no Define or HLD by design; its route runs through the issue stage and a Story LLD."
+      },
+      "note": "cannot read parent Define: Define artifact not found at /Users/subhagho/work/projects/insors/insrc/.insrc/artifacts/DEF-446ae69566d352dd.json. The work item 446ae69566d352dd is an ISSUE-anchored bugfix (ISSUE-446ae69566d352dd.json) — it has no Define or HLD by design; its route runs through the issue stage and a Story LLD."
+    },
+    {
+      "kind": "artifact-commit",
+      "artifactPath": "/Users/subhagho/work/projects/insors/insrc/.insrc/artifacts/LLD-446ae69566d352dd-s1.json",
+      "ok": true,
+      "commit": {
+        "committed": true,
+        "pushed": true
+      }
+    },
+    {
+      "kind": "document-attach",
+      "artifactPath": "/Users/subhagho/work/projects/insors/insrc/.insrc/artifacts/LLD-446ae69566d352dd-s1.json",
+      "ok": false,
+      "attach": {
+        "error": "the story is not bound to an issue yet"
+      },
+      "note": "the story is not bound to an issue yet"
+    }
+  ]
+}

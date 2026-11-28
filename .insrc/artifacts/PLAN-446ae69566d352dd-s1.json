@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1795843111102-vv7q28",
+    "runId": "wf-1795858302699-fx09yu",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-28T05:21:12.984Z",
+    "createdAt": "2026-11-28T09:42:37.523Z",
     "epicCreatedAt": "2026-11-26T06:29:10.586Z",
     "standalone": true,
     "attribution": {
@@ -16,67 +16,60 @@
         }
       ]
     },
-    "elapsedMs": 161485,
+    "elapsedMs": 654431,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "446ae69566d352dd",
     "epicSlug": "complete-shared-external-node-runtime-foundation",
     "storyId": "s1",
-    "lldRunId": "wf-1795842093934-khcxyv",
-    "lldEffectiveHash": "651db0de5fcfd5f95299763656d6893dfd90f8b686e7f106008ac48b24eff5ef",
+    "lldRunId": "wf-1795857414341-or9fli",
+    "lldEffectiveHash": "e3d0af7b8c396a21eb5a1a143227d7c55c6983455bb60a314991fbbd3840be9f",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "bc431d58c2101d54ad1403ae2615b842a048c5c539e62099d975b901a7eceb58",
-        "at": "2026-11-28T05:21:13.103Z",
+        "number": 4,
+        "contentHash": "2687f591aa014b89aaadc3e1fd786a62e99f471199dd14bbf4a5e391d419e7ee",
+        "at": "2026-11-28T09:42:37.659Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
           "properties": {}
         }
       },
-      "signoffs": [],
-      "approval": {
-        "revision": 3,
-        "by": {
-          "id": "insrc:approval",
-          "kind": "system",
-          "properties": {}
-        },
-        "at": "2026-11-28T05:24:45.550Z"
-      }
+      "signoffs": []
     },
     "envelope": {
-      "description": "",
-      "references": [],
       "attachments": []
     },
-    "revision": 3,
-    "rangeBase": "5a868ec45fc1a2846d3092d52f78bc01ed70d11c"
+    "revision": 4
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Retain the implemented shared external Node foundation, bootstrap handoff and application-only bundle/dev consumers, with the existing ten-task ordering and accepted T1–T9 work unchanged. The final evidence task now requires actual macOS/Linux native qualification, current scoped regression evidence and unqualified-target exclusion before foundation BUILD approval and S4 handoff. The original Windows native subject is deferred and remains required before future Windows enablement; it is never credited from POSIX results or metadata. Retained evidence keeps exact source pins and is reused only with recorded relevant source and closure equivalence."
+      "prose": "Apply the approved manual-review corrections within the existing ten-task runtime foundation, retaining its identifiers, dependency order and six accepted bootstrap fixes. Rework the owning verifier/publication, delivery, dev and consumer boundaries for protected runtimes, isolated writable build inputs, once-per-operation application integrity and precise failure behavior; introduce shared owned-fixture cleanup before protected tests need it. Run surrounding checks for each changed task, then current full scoped regression and actual macOS/Linux qualification, including Linux dash cancellation, before the final human Story BUILD approval. Windows remains deferred; hostv2/Ollama, unknown custom installations and blocked isolates remain untouched."
     },
     "tasks": [
       {
         "id": "t1",
-        "title": "Pin deterministic runtime profiles and integrity metadata",
-        "summary": "Extend the existing private policy with deterministic distribution profiles, official archive byte counts and independently derived Node/inventory hashes. Include pinned official Windows header/library inputs when needed, without executing foreign binaries or enabling unqualified targets. Define bounded runtime receipt/inventory/result types and canonical layout without changing public contracts.",
+        "title": "Retain pinned profiles and separate production deadline policy",
+        "summary": "Retain independently pinned official Node/npm/header profiles and public identities. Correct installer production budget imports/context so ordinary manager/terminal/resolver/delivery work uses fixed deadlines regardless of the ambient qualification selector, while trusted qualification retains its approved bounded slow-VM policy. Define the approved internal source/published/root-only verification lane types without changing official inventory bytes or enabling targets.",
         "size": "M",
         "order": 1,
         "dependsOn": [],
         "acceptanceChecks": [
           "All six declared os/arch policy identities retain Node22.22.1/npm10.9.4/header22.22.1 consistency; profile metadata is derived from verified official archive/assets and reproducible, not copied from an installed receipt.",
           "Completion64KiB, inventory16MiB,32768 entries,128MiB/file,1GiB expanded,256MiB/compressed asset,600s network and120s verification bounds are explicit and tested.",
-          "RuntimeIdentity/ReleaseManifest/IPC fields remain unchanged; metadata computation alone neither executes target code nor enables a native target."
+          "RuntimeIdentity/ReleaseManifest/IPC fields remain unchanged; metadata computation alone neither executes target code nor enables a native target.",
+          "Keep original archive/profile/inventory/completion bytes, hashes and public fields unchanged; POSIX mode protection is a verifier/publication rule, not regenerated official content or a new runtime identity/layout.",
+          "Ordinary production entrypoint import and runtime/download deadline behavior are unchanged for unset, normal, slow-vm and invalid INSRC_QUALIFICATION_PROFILE; remove indirect production import-time selector failure as well as direct runtime-metadata/download coupling.",
+          "Only explicit trusted qualification invocation installs bounded process-local context before relevant modules load; preserve approved normal/slow-VM harness propagation without exposing a wire/receipt/ambient-env override or changing unrelated completed harness contracts.",
+          "Exercise normal manager/terminal/resolver import and relevant action paths with every selector case, including transitive budget imports; qualification-only invalid selectors retain their typed diagnostic. Actual native execution/publication eligibility is release-owned and separate from six-target profile metadata; deferred Windows and unqualified arch/baseline combinations cannot self-enable."
         ],
         "derivedFrom": [
           "c1",
-          "c9"
+          "c11",
+          "c12"
         ],
         "tests": [
           {
@@ -86,13 +79,17 @@
           {
             "level": "unit",
             "name": "runtime-profile-metadata-is-reproducible-from-pinned-official-assets-without-target-execution"
+          },
+          {
+            "level": "unit",
+            "name": "ordinary-runtime-deadlines-ignore-qualification-env-and-trusted-qualifier-remains-bounded"
           }
         ]
       },
       {
         "id": "t2",
-        "title": "Implement the read-only verified runtime resolver",
-        "summary": "Replace the unused privateRuntimePaths constructor with the approved async resolver, implemented through the proposed runtime-store module. Verify explicit home/full identity, protected canonical root, independent policy-bound inventory and exact Node/npm/header file set, with no allocation or application imports.",
+        "title": "Enforce strict runtime modes and introduce owned fixture cleanup",
+        "summary": "Extend the existing read-only resolver/content verifier with the approved three lanes and exact manual/unfinished/unsupported diagnostics. Strengthen independent negative fixtures. Introduce the single test-owned asynchronous cleanup helper now, with resolver-fixture adoption, so later publication tasks can safely dispose sealed homes without a circular test dependency.",
         "size": "M",
         "order": 2,
         "dependsOn": [
@@ -102,12 +99,17 @@
           "Direct calls return frozen canonical absolute runtime paths only for the exact verified identity; tampered files/metadata, extra files, bad target/baseline, links and unsafe roots fail closed.",
           "A self-consistent rewritten receipt/inventory cannot replace the independently pinned expected inventory hash.",
           "Resolver imports no application paths/DB/provider/source builder and performs no network, mkdir, controller lock, selection or application/Ollama traversal.",
-          "Task-local fixtures prove this API; production consumer wiring is assessed in t8, not required prematurely for t2 validation."
+          "Task-local fixtures prove this API; production consumer wiring is assessed in t8, not required prematurely for t2 validation.",
+          "Default canonical resolution accepts only exact published root/directories0500, metadata0400, files pinnedmode&~0222 with zero write bits and exact execute intent. Source-stage checks original modes; permission-transition accepts only root0700/0500 with every descendant protected. No arbitrary mixed subtree or old-home adoption, allocation or launch paths from a weak verifier flag.",
+          "Use the exact LLD8 §4.3 runtime-invalid manual recovery, root-only unfinished and unsupported-development-layout messages. Manual text advises safely quoted root-only chmod, preservation/move and delete nothing, and explicitly disclaims product locking/all-consumer proof. Test spaces/Unicode/apostrophes and preservation; do not implement an operator move/recovery command.",
+          "For every rejection mutation, establish a positive baseline beforehand, assert its precise expected code/message and prove restoration succeeds; no bare rejects or shared broken fixture false positives. Protected-fixture mutation helpers may deliberately alter only their captured isolated homes.",
+          "Implement the proposed shared _owned-runtime-home.ts test helper using captured mkdtemp dev/inode/UID, retained child/resource closure and bounded nofollow checks. Restore directory ownerwrite only within that root after positive closure; never follow a link to chmod its target, mutate SDK/global/blocked roots or erase uncertain evidence. All adopting callers await cleanup, including allocation failure/after/finally. Prove cleanup/retention/refusal cases independently.",
+          "Introduce the owned-home helper without turning raw/shared mutable SDK caches into cleanup targets. Resolver fixtures can seed the strict protected form independently before T4 is implemented; fixture APIs with asynchronous disposal are awaited by every changed caller."
         ],
         "derivedFrom": [
-          "c1",
           "c2",
-          "c9"
+          "c11",
+          "c12"
         ],
         "tests": [
           {
@@ -133,13 +135,29 @@
           {
             "level": "unit",
             "name": "runtime-caps-and-cancellation-are-finite-and-do-not-trigger-app-or-Ollama-hashing"
+          },
+          {
+            "level": "unit",
+            "name": "runtime-rejection-matrix-proves-positive-baseline-and-exact-diagnostic-for-each-mutation"
+          },
+          {
+            "level": "unit",
+            "name": "posix-runtime-protection-preserves-pinned-inventory-and-rejects-write-bits-or-execute-drift"
+          },
+          {
+            "level": "unit",
+            "name": "runtime-manual-unfinished-and-development-layout-diagnostics-preserve-entries-with-safe-path-guidance"
+          },
+          {
+            "level": "integration",
+            "name": "shared-runtime-fixture-cleanup-restores-owned-directory-write-after-positive-closure"
           }
         ]
       },
       {
         "id": "t3",
-        "title": "Acquire and safely stage the official runtime",
-        "summary": "Implement bounded live official runtime/header/library download, digest verification and safe deterministic extraction in the proposed acquisition module. Produce only owned validated stages; close actors before cleanup and reuse the read-only verifier/profile rules without application payload access.",
+        "title": "Preserve mutable source acquisition and closed-stage cleanup",
+        "summary": "Keep bounded official acquisition/extraction as mutable source stages with the approved source-mode checks. Integrate deadline policy and cleanup of positively closed owned stages, including permission restoration only for protected staging directories when discard is authorized. No publication/selection or arbitrary canonical repair belongs here.",
         "size": "M",
         "order": 3,
         "dependsOn": [
@@ -149,12 +167,15 @@
         "acceptanceChecks": [
           "Official assets are HTTPS/status/redirect/size/hash/deadline checked before extraction or target-code execution; POSIX and Windows profile extraction rejects unsafe/colliding/special entries and missing exact npm/header/library inputs.",
           "Cancellation and download/extraction failure close network/parser resources before removing only the owned stage; uncertain closure retains evidence and fails.",
-          "Stage verification covers the fixed runtime limits and exact independent inventory digest; no runtime/release publication, selection or daemon lifecycle occurs in this staging task."
+          "Stage verification covers the fixed runtime limits and exact independent inventory digest; no runtime/release publication, selection or daemon lifecycle occurs in this staging task.",
+          "Extracted source stages retain original pinned file modes,0700directories/0600metadata and exact independent inventory. Explicitly use source-stage verification rather than weakening canonical resolution.",
+          "Use T1's approved runtime/qualifier policy at the existing acquisition/decoder/resource-drain boundaries; invalid ambient profile does not affect normal acquisition, and trusted slow-VM qualification stays bounded.",
+          "Adopt/await the T2 test cleanup helper in acquisition/publishing fixture roots and failure hooks. Production discard may restore directory ownerwrite only in its positively closed original stage capability; uncertain actors/stages or canonical entries remain retained."
         ],
         "derivedFrom": [
-          "c1",
           "c3",
-          "c9"
+          "c11",
+          "c12"
         ],
         "tests": [
           {
@@ -173,8 +194,8 @@
       },
       {
         "id": "t4",
-        "title": "Publish and reuse runtime entries under controller ownership",
-        "summary": "Add immutable durable runtime publication and verified reuse through the existing native operation.lock and original controller capability. Keep executing helper/runtime/DLL paths outside the publication tree and preserve conflicting entries for explicit recovery.",
+        "title": "Publish protected runtimes and finalize only root-write crash states",
+        "summary": "Correct existing controller publication under the original native lock: validate mutable source, protect descendants while root remains0700, native no-replace cross-parent publish, then root0500/fsync/strict verification before success. Add exact root-only crash finalization and typed uncertainty without conversion of old development homes.",
         "size": "M",
         "order": 4,
         "dependsOn": [
@@ -183,15 +204,20 @@
         ],
         "acceptanceChecks": [
           "Fresh publication is exclusive and durable under the original live controller lock, with canonical completion/inventory; matching verified entries are reused before network.",
-          "Concurrent/stale/lost owners cannot publish; incompatible/incomplete immutable destinations are never overwritten or silently repaired.",
+          "Concurrent/stale/lost owners cannot publish; conflicting/corrupt/unsupported incomplete destinations are never overwritten or byte-repaired. Only the approved exact root-only permission-finalization state can be completed under current original-owner/closure requirements.",
           "Execution and publication stages are distinct, including Windows node.exe/loaded DLL constraints; final-runtime or application cleanup never deletes retained shared runtimes.",
-          "No new manager action, lock transfer, PID/kill controller, S4 lifecycle peer or S5 migration implementation is introduced."
+          "No new manager action, lock transfer, PID/kill controller, S4 lifecycle peer or S5 migration implementation is introduced.",
+          "Immediately before the actual native publishDirectory call, the verified candidate root is0700 and every descendant/file/metadata is protected. Keep the same live controller capability; publish the same inode across install/ and runtimes/ parents without replacing an existing destination.",
+          "After publication and before returning any launch result, chmod only published root0500, fsync root and required source/destination namespace parents, then strict-verify exact protected content/modes and positive resource closure under that same lock.",
+          "A later controller may finalize only the exact canonical root0700/otherwise-protected, independently hash-verified state. No network, byte rewrite, descendant-mode repair or entry replacement; old unsealed/mixed development layouts are rejected for isolated rebuild, corruption remains untouched.",
+          "Use real native official-profile publication fixtures on enabled POSIX targets, with prepublication root assertion, same-inode/protected-descendant proof and injection after rename/after rootchmod-before-durability. Launch refuses unfinished states and no success precedes final fsync/verification.",
+          "Classify failures after possible publication/durability/closure as resource-close-uncertain with retained evidence; wrap non-ENOENT canonical lstat errors in actionable InstallerError codes. Never clean canonical or uncertain paths by inference.",
+          "Adopt/await T2 cleanup helper throughout runtime-install/publication fixtures; test both closed protected-stage discard and uncertain-stage retention. The retained small macOS primitive probe is supporting evidence, not this task's full-runtime/native acceptance."
         ],
         "derivedFrom": [
-          "c3",
           "c4",
-          "c9",
-          "c10"
+          "c11",
+          "c12"
         ],
         "tests": [
           {
@@ -205,13 +231,25 @@
           {
             "level": "integration",
             "name": "runtime-publication-stage-is-not-running-node-or-loaded-native-library"
+          },
+          {
+            "level": "integration",
+            "name": "posix-runtime-root-only-interrupted-publication-recovery-and-closed-stage-discard"
+          },
+          {
+            "level": "integration",
+            "name": "native-runtime-publication-keeps-root-writable-until-rename-and-finishes-root-seal"
+          },
+          {
+            "level": "integration",
+            "name": "runtime-postpublication-uncertainty-and-canonical-stat-errors-are-coded-and-retained"
           }
         ]
       },
       {
         "id": "t5",
-        "title": "Unify terminal bootstrap verification and runtime handoff",
-        "summary": "Adapt both shared terminal templates, renderer and publication helper to the same verified external store. Authenticate cached/fresh Node and control bytes before execution, publish under the existing lock, wait for exact helper exit, then invoke the canonical runtime manager with fresh ordinary admission.",
+        "title": "Preserve accepted bootstrap fixes and finish path/test corrections",
+        "summary": "Retain all six manually accepted bootstrap fixes and the real production publication/signal handler. Apply R2-4 honest foreign-size case naming and R2-5 one normalized work value, then adapt bootstrap fixtures/consumers to protected publication and common owned-home cleanup.",
         "size": "M",
         "order": 5,
         "dependsOn": [
@@ -224,13 +262,16 @@
           "Manual and IDE-generated POSIX/PowerShell scripts use fixed independent Node/control digests and need no host Node; matching verified cached runtime/control can work offline while missing prerequisites fail clearly.",
           "The exact publication-helper child exits before the final manager starts/acquires a fresh lock; no inherited lock/session/source flag, PID heuristic or successful install claim substitutes for admission.",
           "Paths with spaces/Unicode/apostrophes, interruption, concurrent bootstrap and Windows nonmoving execution-stage behavior are covered by surrounding fixtures.",
-          "Terminal owns prompts/I/O and existing same-terminal TUI semantics; no IDE adapter redesign or current host daemon operation is performed."
+          "Terminal owns prompts/I/O and existing same-terminal TUI semantics; no IDE adapter redesign or current host daemon operation is performed.",
+          "Preserve home separator normalization, deferred real INT/TERM/HUP/exact child exit, immediate canonical Node/bootstrap/native hashes, required target/baseline and cached-control tamper cases at2f6bcaea7. Do not revert the production terminalMain delegation or claim fixture manager/TUI as lifecycle proof.",
+          "Normalize the bootstrap work path once before containment/leaf extraction; use that canonical value in every later path/transport operation. Label the foreign archive row as pinned-size rejection, with target identity/digest coverage credited to its actual tests.",
+          "Rendered bootstrap operates with T4 protected publication/root-only finalization; exact helper exit still precedes fresh manager ownership. No kill/forwarding redesign; document/test group-delivery behavior and retain the shell-PID/pre-fork latency limitation.",
+          "Adopt/await common cleanup in bootstrap/control-source fixture failure/after/finally paths. Preserve uncertain resources and read-only stage/canonical boundary. PowerShell parity remains source-only while Windows native execution is deferred."
         ],
         "derivedFrom": [
-          "c4",
-          "c7",
-          "c9",
-          "c10"
+          "c5",
+          "c11",
+          "c12"
         ],
         "tests": [
           {
@@ -252,14 +293,18 @@
           {
             "level": "integration",
             "name": "bootstrap-verified-cached-runtime-control-offline-with-host-node-trap-and-quoted-paths"
+          },
+          {
+            "level": "integration",
+            "name": "bootstrap-work-normalized-once-and-foreign-archive-case-is-pinned-size-only"
           }
         ]
       },
       {
         "id": "t6",
-        "title": "Publish and validate application-only bundle format",
-        "summary": "Advance private ReleaseDescriptor to format2 without runtimeArchive and adapt bundle inventory, ZIP validation and publisher assembly/probes together. Preserve public manifest1, exact source/target/digests and native qualification while separating runtime acquisition inputs from all app/IDE payload collection.",
-        "size": "M",
+        "title": "Restore bundle activation integrity and precise publisher boundaries",
+        "summary": "Retain application-only descriptor2/public manifest1 and external runtime probes. Produce operation-scoped full bundle integrity evidence from fresh preparation or one recovered verification, strengthen source/collector diagnostics and target publication guards, and make transport fixtures fail closed.",
+        "size": "L",
         "order": 6,
         "dependsOn": [
           "t1",
@@ -271,13 +316,20 @@
           "New bundle/publisher receipts and accepted descriptor hashing consistently use private format2; old embedded descriptor1 is rejected diagnostically without reinterpretation or adoption.",
           "Bundle validation no longer requires tools/node or a runtime archive and still validates the exact production app/native closure and archive safety.",
           "Provenance/allowlisted collection rejects ordinary or renamed Node/Ollama distribution/archive contributions; native .node application dependencies remain legitimate.",
-          "Publisher runtime probes and candidate preparation obtain the shared verified external runtime; no release-local/PATH fallback or full app/Ollama reconciliation is added."
+          "Publisher runtime probes and candidate preparation obtain the shared verified external runtime; no release-local/PATH fallback or full app/Ollama reconciliation is added.",
+          "Bundle preparation/recovery performs one full independent application inventory/content/tree check before activation use; expose only process-local candidate/operation-bound evidence for T8 consumption, with cancellation/failure/new-operation invalidation. No serialized trusted flag or repeated full scan from bounded launch/status paths.",
+          "Test truncated non-control modules/native addons after preparation followed by a new recovery operation, and count full scans for repeated verification within one operation. New/reopened operation cannot inherit an old preparation proof.",
+          "Keep publisher guarantees exactly scoped to allowed real roots/exact generated files, excluded inputs, blocked paths and known pinned byte hashes; reject renamed excluded sources inside a tree actually collected. Do not add broad per-file license/vendor-JS hash denial or claim universal provenance.",
+          "Read every collected file through captured traversal/open identity with no-follow recheck, including single-link files. Fix stale collectProductionPayload call signature and meaningful renamed-input fixture placement.",
+          "Enforce an explicit release-owned Windows execution/publication exclusion independent of self-declared NativeQualification, while preserving foreign archive metadata computation. Remove or default-false explicitly gate the deferred manual Windows CI job; do not run it.",
+          "Keep existing manifest-invalid/source-incompatible format contracts and make legacy-runtime-format diagnosis precise/actionable in exact messages and tests; do not silently reinterpret legacy receipts or introduce a contradictory code guarantee.",
+          "All bundle fixture transports reject unknown URLs instead of reaching real HTTPS; seed/route only explicit known runtime inputs. Adopt/await the common owned-home cleanup and retain native/source qualification boundaries.",
+          "Define the compatible private producer/operation-context evidence plumbing in this task so T7/T8 can consume it in dependency order. Missing/untrusted context performs fresh verification or refuses reuse; deep-cloned/serialized candidate data cannot grant proof reuse. Do not require unbuilt lifecycle peers for producer tests."
         ],
         "derivedFrom": [
-          "c2",
-          "c5",
-          "c7",
-          "c9"
+          "c6",
+          "c11",
+          "c12"
         ],
         "tests": [
           {
@@ -291,14 +343,30 @@
           {
             "level": "integration",
             "name": "bundle-publisher-probes-use-shared-external-runtime-without-tools-node-copy"
+          },
+          {
+            "level": "integration",
+            "name": "application-integrity-once-per-operation-and-full-recovery-before-activation"
+          },
+          {
+            "level": "integration",
+            "name": "publisher-single-link-collection-rechecks-captured-identity-and-renamed-exclusion-is-visited"
+          },
+          {
+            "level": "integration",
+            "name": "release-owned-target-exclusion-and-default-off-Windows-CI-cannot-self-qualify"
+          },
+          {
+            "level": "integration",
+            "name": "bundle-fixture-unknown-URL-is-refused-without-real-network"
           }
         ]
       },
       {
         "id": "t7",
-        "title": "Prepare dev candidates with the shared external runtime",
-        "summary": "Advance private dev receipts/recipe to application-only semantics and adapt source offers, toolchain, worker staging, verification and immutable publication. Consume the same resolved Node/npm/header/library distribution instead of copying tools/node into dev releases.",
-        "size": "M",
+        "title": "Isolate writable dev SDK inputs and scope dev integrity proof",
+        "summary": "Keep canonical executing Node and approved closed source-worker/build proof while copying writable npm/node-gyp/header/library inputs into the owned build workspace. Apply operation-local dev payload verification and protected-runtime reuse, then tighten dev diagnostic fixtures.",
+        "size": "L",
         "order": 7,
         "dependsOn": [
           "t1",
@@ -311,13 +379,18 @@
           "Dev receipt2/new recipe, durable offers, canonical hashes and all readers agree; old embedded receipts/offers fail with an explicit compatibility diagnostic.",
           "Dev payloads omit Node/Ollama distributions/archives and preserve exact accepted source, native output closure, closed-worker proof and no duplicate writer.",
           "Dev build commands/owned npm aliases use resolved absolute private Node/npm/header/library paths; existing CUDA skip-if-unset and hostile environment isolation remain.",
-          "Prepared candidate open/verify does not acquire/build a runtime implicitly or adopt an arbitrary runtimeDirectory; cross-mode runtime reuse is proven at the shared foundation boundary."
+          "Prepared candidate open/verify does not acquire/build a runtime implicitly or adopt an arbitrary runtimeDirectory; cross-mode runtime reuse is proven at the shared foundation boundary.",
+          "Create one verified writable SDK copy per positively owned build workspace, preserving pinned source provenance and execute intent. npm/npx/node-gyp/nodedir/headers/library aliases point to that copy; Node execution stays the exact canonical protected Node. No global store/config mutation or arbitrary runtimeDirectory trust.",
+          "Lifecycle writes adjacent to npm/headers succeed only in the isolated copy; canonical bytes/tree remain exact and ordinary direct canonical writes fail. Preserve CUDA skip only if unset, including empty/custom values; keep registry/auth delegation and source input/worker closure contracts.",
+          "Use fresh runtime proof only within the same process/home/full identity/operation. Each new worker verifies/binds independently; reuse existing resolved objects within that worker instead of repeated full-tree checks. SDK cleanup waits for actors/resources to close.",
+          "Dev preparation yields operation-scoped full app integrity evidence; recovered/new operation fully verifies once before destructive use, with the same invalidation rules as bundle. No app/Ollama scan added to bounded receipt/control launch.",
+          "Tighten corrupt-toolchain assertions to exact diagnostics with positive baselines, preserve recipe2/offer identity and precise legacy diagnosis, and adopt/await common cleanup in dev/source/worker fixture homes.",
+          "Form the manager/parent's process-local preparation evidence only after existing qualified worker/source/build/positive-close checks; never serialize a JS proof or trust a worker flag. Keep necessary inventory generation distinct from independent full verification and count the latter explicitly, with no repeated full verification for one operation."
         ],
         "derivedFrom": [
-          "c2",
-          "c3",
-          "c6",
-          "c9"
+          "c7",
+          "c11",
+          "c12"
         ],
         "tests": [
           {
@@ -331,14 +404,26 @@
           {
             "level": "integration",
             "name": "dev-candidate-open-has-no-implicit-runtime-acquisition-or-foreign-directory-trust"
+          },
+          {
+            "level": "integration",
+            "name": "application-integrity-once-per-operation-and-full-recovery-before-activation"
+          },
+          {
+            "level": "integration",
+            "name": "writable-dev-SDK-isolation-and-manual-runtime-recovery-guidance"
+          },
+          {
+            "level": "integration",
+            "name": "dev-toolchain-corruption-checks-have-positive-baselines-and-exact-diagnostics"
           }
         ]
       },
       {
         "id": "t8",
-        "title": "Bind installed consumers to the verified external runtime",
-        "summary": "Wire manager/terminal entry, TUI/Retry launch selection, production peer dependency readiness and both delivery modes to real shared resolution/acquisition. Remove process/release-directory guesses and duplicate trust paths, while keeping lifecycle and migration ports under their existing owners. The future Windows bridge process and its runtime-selection/execution coverage remain owned by main-epic S7; this task exposes the shared foundation for that consumer.",
-        "size": "M",
+        "title": "Consume operation integrity and bind installed/service processes",
+        "summary": "Wire the bundle/dev producer evidence into existing manager destructive boundaries and consume verified runtime objects within each process. Fix service-worker binding/pre-admission checks, bounded readiness and predecessor diagnostics while retaining current dependency consent/Retry/TUI behavior.",
+        "size": "L",
         "order": 8,
         "dependsOn": [
           "t2",
@@ -351,16 +436,18 @@
           "Every existing installed consumer owned by this correction selects the canonical resolved executable from explicit location+manifest identity, verifies actual process.execPath where required, and has no tools/node/PATH/runtimeDirectory trust fallback. S4 daemon boot consumes the real exposed resolver later; no S4 production consumer is required prematurely here. Future S7 bridge-process runtime selection/execution is not a current T8 consumer or a prerequisite to validating this task.",
           "Both delivery preparations acquire only under original controller ownership before lifecycle disruption; installed start/status/receipt resolution never downloads/builds source or traverses full app/Ollama payloads.",
           "S3 runtime readiness uses verified external paths, preserving Ollama consent/retention, agent recommendations, install-only Retry and terminal TUI flow.",
-          "S4 boot/lease/shutdown/wrapper and S5 hooks remain consumers, not new implementations; separate manager action-specific peer gating is excluded and missing production peers still fail truthfully."
+          "S4 boot/lease/shutdown/wrapper and S5 hooks remain consumers, not new implementations; separate manager action-specific peer gating is excluded and missing production peers still fail truthfully.",
+          "Manager consumes full application proof before quiesce/migration/activation for install/upgrade/recovery and reuses it only within the same operation. Start/status/readiness/TUI control checks remain bounded; recovering or a new operation revalidates once, with proof bound to exact home/candidate identity, not a persisted receipt/wire flag.",
+          "The --ollama-service-worker branch resolves and binds the explicit runtime before control work; workers independently validate their own executable, while same-process consumers reuse an already resolved result. No global durable runtime cache or skipped child verification.",
+          "Resolve/validate required parent runtime before service frame/admission creation and readiness timing, with failure leaving no admitted attempt. Remove duplicate same-process supervisor resolution; preserve bounded worker readiness/ownership/closure and existing service protocol, consent/retention/agent recommendations/install-onlyRetry. Do not add lifecycle/recovery actions or change public IPC.",
+          "Distinguish a proven owned but legacy/missing/corrupt predecessor from an unknown/unowned launcher with a specific actionable diagnostic. Never falsely label proven ownership as unrelated, overwrite unknown bytes, bypass runtime binding or claim successful TUI handoff on failure.",
+          "Fix remaining terminal-install bare/dead assertions and exact service/launcher diagnostics; adopt/await common cleanup across installed/manager/terminal/dependency/service fixtures, retaining failure evidence and source-bound capabilities.",
+          "Avoid double resolution when the terminal service branch delegates to executeOllamaServiceWorker: pass and validate the same process-local home/full-identity-bound result. Parent resolution precedes durable frame/admission/readiness; each actual child still performs its own one-time binding. Keep existing service admission/protocol semantics and test delayed/failed resolution before admission without adding a handshake or public field."
         ],
         "derivedFrom": [
-          "c2",
-          "c3",
-          "c5",
-          "c6",
-          "c7",
-          "c9",
-          "c10"
+          "c8",
+          "c11",
+          "c12"
         ],
         "tests": [
           {
@@ -374,14 +461,30 @@
           {
             "level": "integration",
             "name": "installed-consumer-process-executable-and-manifest-identity-bound-to-real-resolver"
+          },
+          {
+            "level": "integration",
+            "name": "application-integrity-once-per-operation-and-full-recovery-before-activation"
+          },
+          {
+            "level": "integration",
+            "name": "ollama-worker-runtime-binding-and-pre-admission-resolution-are-once-per-process"
+          },
+          {
+            "level": "integration",
+            "name": "owned-unresolvable-launcher-predecessor-has-distinct-actionable-diagnostic"
+          },
+          {
+            "level": "integration",
+            "name": "terminal-negative-assertions-use-exact-diagnostics-without-dead-branches"
           }
         ]
       },
       {
         "id": "t9",
-        "title": "Complete integrated coverage and run the scoped regression",
-        "summary": "Finish cross-mode/consumer/regression fixtures and validation-only native harness setup, maintain structured design companions if relationships change, and run the complete scoped installer regression after all source tasks are built. Preserve final human BUILD approval after validation rather than per-task approvals.",
-        "size": "M",
+        "title": "Reconcile all review coverage and run the full scoped regression",
+        "summary": "Complete cross-consumer/fixture/qualifier integration after T1–T8 corrections. Reconcile every review item and all32LLDsubjects, run the current full scoped installer/publisher/bootstrap/dev/dependency/terminal regression, and prepare current-source native qualification scripts without treating old evidence as new.",
+        "size": "L",
         "order": 9,
         "dependsOn": [
           "t1",
@@ -397,12 +500,19 @@
           "All25 LLD subjects and ac1–ac6 have explicit owner mapping. All non-native surrounding/integrated regression evidence passes with canonical Node22 coordinator and confirmed actor cleanup after the last implementation task is built. Actual native evidence belongs to t10 and is neither required prematurely nor claimed by t9.",
           "Surrounding S2/S3/terminal/bridge/public-contract tests preserve source closure, consent/Retry/TUI and no full app/Ollama status/readiness rehash; no test fixture certifies a real unavailable lifecycle/migration peer.",
           "Generated ER retains one runtime ->0..N releases, sequence retains exact helper-exit/fresh-manager ownership ordering, and component/import boundaries match implementation. Source and render checks distinguish unavailable evidence.",
-          "Final regression/source checks pass before completion; tracker/build admission failures are reported rather than bypassed with fabricated Define/issue bindings or raw workflow edits."
+          "Final regression/source checks pass before completion; tracker/build admission failures are reported rather than bypassed with fabricated Define/issue bindings or raw workflow edits.",
+          "Verify adoption and awaited cleanup across every runtime-publishing/copying fixture and allocation-error/after/finally/wrapper path, including native qualifier homes. Inventory actual creation/copy/publication call sites; no raw force-rm escape for sealed owned roots, no global/shared/blocked-root mutation.",
+          "Complete qualifier/probe source changes here before evidence-onlyT10: actual helper staged executable comparison, current source pin/digests, protected publication/cleanup and real Linux dash signal checks. Preserve trusted slow-VM budgets for USB/VM operations and ordinary production constants.",
+          "Run the full scoped foundation regression only after T1–T8 corrections pass their surrounding checks; use the canonical owned coordinator and appropriate direct controller selections, record exact current source/platform/runtime/TAP/actor disposal. Do not relabel prior306cases/old native reports or the small primitive probe as this execution.",
+          "Reconcile all32 current LLD subjects, owner choices, round1/T1–T6/round2/R3 findings and code-vs-design dispositions; each closed item has meaningful exact evidence. Manual recovery follow-up is tracked for pre-general-release consideration, not a new implemented action or an extra per-finding issue.",
+          "All tasks require registered validation and commit/source attribution. A300sMCP response timeout never triggers a duplicate while the original daemon validation may run; inspect its exact source-bound ledger/closure result first. No task/actor completion is inferred from age/PID. Preserve blocked isolate d7a67629 unchanged.",
+          "No per-task human approval is requested. Final Story BUILD approval follows all task checks, current full regression, T10 qualification and applicable upstream/accounting/signoff gates; no automatic review endpoint or fabricated tracker binding.",
+          "Large retained tasks are executed as bounded owner-local code/test batches, preserving task IDs and dependencies; do not split by finding or rewrite unrelated completed prerequisites. The canonical fixture inventory includes indirect copy/prepare/publication wrappers and all async cleanup awaits, with explicit retained uncertainty rather than silent temporary-root leaks."
         ],
         "derivedFrom": [
-          "c8",
           "c9",
-          "c10"
+          "c11",
+          "c12"
         ],
         "tests": [
           {
@@ -428,13 +538,21 @@
           {
             "level": "smoke",
             "name": "final-scoped-installer-publisher-bootstrap-dev-dependencies-terminal-regression"
+          },
+          {
+            "level": "integration",
+            "name": "shared-runtime-fixture-cleanup-restores-owned-directory-write-after-positive-closure"
+          },
+          {
+            "level": "smoke",
+            "name": "review-dispositions-and-current-evidence-reconcile-all32LLDsubjects-without-historical-rerun-claims"
           }
         ]
       },
       {
         "id": "t10",
-        "title": "Record native runtime qualification and S4 handoff evidence",
-        "summary": "Record actual macOS/Linux runtime and installed-consumer qualification, current scoped regression and exact source/actor evidence. Reuse retained UTM macOS proof only with recorded production-source equivalence; retain fresh current-source OrbStack Linux evidence. Windows native qualification remains deferred and unqualified. Hand the resolver foundation back to S4 only after current validation and human BUILD approval.",
+        "title": "Requalify current macOS/Linux foundation and record S4 handoff",
+        "summary": "Keep evidence-only T10 ownership, but require current-source actual UTMmacOS and OrbStackLinux qualification after all corrections, including protected publication/reuse/cleanup and Linuxdash cancellation. Preserve historical source pins and Windows deferral; hand off only the runtime foundation after final human BUILD approval.",
         "size": "M",
         "order": 10,
         "dependsOn": [
@@ -444,12 +562,17 @@
           "Actual UTM macOS and OrbStack Linux runtime-first-acquisition/native-build/offline-reuse/installed-consumer checks are distinguished from fixtures and host emulation; host v2/Ollama remain untouched. Retained native evidence is reusable only with exact relevant source/build-policy equivalence, pinned runtime/platform identity and verified actor closure; retain its original execution source pin.",
           "Current foundation completion covers macOS/Linux. The original native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication subject is deferred, not passed and not a current T10 gate. Windows requires genuine native ACL/path/header/library/loaded-DLL-safe-publication evidence before future enablement; POSIX execution, cross-archive metadata or an availability diagnostic cannot qualify it. ISSUE-cab5701fbefab736 remains its separate process-ownership prerequisite; Windows target publication/enablement stays disabled.",
           "Qualification is for the runtime foundation and existing installed-consumer boundaries; no end-to-end S4/S5 daemon activation proof is fabricated or introduced as a cyclic prerequisite.",
-          "No source changes are made during this evidence-only task. Any required correction returns to its owning task and reruns appropriate tests/regression; user BUILD approval is requested only after all required validation/task accounting/tracker gates are satisfied."
+          "No source changes are made during this evidence-only task. Any required correction returns to its owning task and reruns appropriate tests/regression; user BUILD approval is requested only after all required validation/task accounting/tracker gates are satisfied.",
+          "Use ordinary-user isolated UTMmacOS/OrbStackLinux homes and the explicitly selected trusted slow-VM profile. Prove live official runtime acquisition, exact Node22.22.1/npm10.9.4/header/native toolchain, actual root0700native publication/root0500finalization, protected direct-write denial, same-inode zero-request offline reuse, isolated writable SDK/native build and installed consumer binding with positive actor/resource closure.",
+          "Run real foreground-group SIGINT/SIGTERM/SIGHUP bootstrap cleanup under Linux/bin/sh=dash at the current source; the old macOS bash-in-POSIX-mode run is not a substitute. Retain shell-only/pre-fork cancellation-latency limits and source-only PowerShell evidence.",
+          "Fresh proofs keep exact execution source/build policy/runtime/platform and original timestamps, raw report/digest/export/probe/disposal records. Reuse evidence only with recorded relevant source/policy equivalence and positive closure; prior native/bootstrap/full regression results retain their historical source pins, not current qualification labels.",
+          "Keep current hostv2/Ollama and all blocked/uncertain real isolates untouched; do not activate the daemon, install Ollama or enable/publish a release as part of foundation qualification. Windows/x64/bridge/lifecycle/migration gates remain deferred/separately owned, never passed from metadata or POSIX availability checks.",
+          "No production, test or qualifier source edits in T10: any correction returns to its owning task for validation and appropriate regression before native rerun. Request human BUILD approval only after current required evidence and all task/integrity/upstream/team gates pass."
         ],
         "derivedFrom": [
-          "c8",
-          "c9",
-          "c10"
+          "c10",
+          "c11",
+          "c12"
         ],
         "tests": [
           {
@@ -527,6 +650,25 @@
         ]
       },
       {
+        "lldStrategyItem": "runtime-rejection-matrix-proves-positive-baseline-and-exact-diagnostic-for-each-mutation",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "ordinary-runtime-deadlines-ignore-qualification-env-and-trusted-qualifier-remains-bounded",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "posix-runtime-protection-preserves-pinned-inventory-and-rejects-write-bits-or-execute-drift",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
         "lldStrategyItem": "bootstrap-no-host-node-verifies-archive-and-executable-before-execution",
         "coveredByTaskIds": [
           "t3",
@@ -585,6 +727,42 @@
         ]
       },
       {
+        "lldStrategyItem": "application-integrity-once-per-operation-and-full-recovery-before-activation",
+        "coveredByTaskIds": [
+          "t6",
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "writable-dev-SDK-isolation-and-manual-runtime-recovery-guidance",
+        "coveredByTaskIds": [
+          "t2",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "posix-runtime-root-only-interrupted-publication-recovery-and-closed-stage-discard",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "native-runtime-publication-keeps-root-writable-until-rename-and-finishes-root-seal",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "shared-runtime-fixture-cleanup-restores-owned-directory-write-after-positive-closure",
+        "coveredByTaskIds": [
+          "t2",
+          "t9"
+        ]
+      },
+      {
         "lldStrategyItem": "S3-Ollama-consent-retention-agent-recommendations-and-install-only-Retry-preserved",
         "coveredByTaskIds": [
           "t8",
@@ -632,72 +810,86 @@
     ],
     "epicImpact": {
       "applies": false,
-      "reason": "Standalone foundation prerequisite, no sibling Story build in this unit.",
+      "reason": "Standalone foundation work item; no sibling built Story in this unit.",
       "storiesCovered": [],
-      "findings": "Preserve completed budget/controller prerequisites and the foundation's accepted implementation. Main epic lifecycle and later integration remain outside this acceptance revision.",
-      "sources": []
+      "findings": "Preserve approved budget/controller prerequisites, accepted foundation work and main-epicS4/S5/S7 ownership. Revalidate changed owners and current proofs; no lifecycle/release completion inferred.",
+      "sources": [
+        "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md"
+      ]
     }
   },
   "citations": [
     {
       "id": "c1",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes",
-      "quotedText": "Approved revision5 retains revision4 §4.1–4.2: independently pinned official distribution profiles, metadata/types, canonical runtime store and fixed finite bounds; public runtime/manifest contracts unchanged."
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#41-private-runtime-policy-and-resolvedprivateruntime",
+      "quotedText": "Approved private policy/original official bytes and full identity; §4.2fixed ordinary budgets plus explicit trusted qualifier context, no ambient selector override."
     },
     {
       "id": "c2",
       "kind": "prior-artifact",
       "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#3-contract-details",
-      "quotedText": "§3.2–3.3: privateRuntimePaths is the verified async read-only resolver; exact runtime integrity and explicit home, no allocation/acquisition/application imports or arbitrary runtimeDirectory trust."
+      "quotedText": "§3.2/§3.5read-only resolver and source/published/root-only lanes; exact error guidance, positive independent fixture matrix and §4.7owned-test-home cleanup."
     },
     {
       "id": "c3",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes",
-      "quotedText": "§4.3: live official bounded download/safe stage; controller-owned immutable publication, exact verified reuse and closed actors, using original native operation.lock ownership."
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#43-runtime-acquisition-and-bootstrap-handoff",
+      "quotedText": "Bounded official mutable source acquisition and closed original-owner stage handling; protected-stage discard only within owned capability."
     },
     {
       "id": "c4",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#3-contract-details",
-      "quotedText": "§3.4/§4.3: shared POSIX/PowerShell bootstrap verifies Node/control bytes before execution, publishes a nonexecuting stage, observes exact helper exit before fresh manager admission, including Windows loaded DLL constraints."
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#43-runtime-acquisition-and-bootstrap-handoff",
+      "quotedText": "Root0700through actual native cross-parent publication, then same-lock root0500/fsync/strict verification before paths; only exact root-write crash finalization, no broad conversion."
     },
     {
       "id": "c5",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes",
-      "quotedText": "§4.4: private descriptor2/application-only inventory and publisher/probe adaptation; reject embedded formats and runtime byte contributions while preserving public manifest1 and native closure/qualification."
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#34-renderinstallerbootstrap",
+      "quotedText": "Accepted bootstrap authentication/real child exit/same-terminal semantics; preserve signal limits and complete canonical-work/foreign-size case corrections."
     },
     {
       "id": "c6",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes",
-      "quotedText": "§4.4–4.5: dev receipt2/new recipe and canonical offers/readers with shared external Node/npm/header/library; retain accepted source, worker closure and owned native build environment."
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#44-application-only-bundle-descriptor-and-dev-receipt",
+      "quotedText": "Application-only bundle/publisher known-source/content boundary, single-link identity recheck, formatdiagnostics and target exclusion; §4.5once-per-operation full application proof."
     },
     {
       "id": "c7",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes",
-      "quotedText": "§4.5: existing manager/terminal/TUI/Retry/bootstrap/dependency readiness and delivery/publisher consumers use the real shared foundation; future S7 bridge process/runtime execution remains with S7. No installed source build or release-local/PATH fallback."
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#45-installed-launch-and-preparation-binding",
+      "quotedText": "Owned writable dev SDK from verified protected source; canonical executing Node, closed source/build workers and process-local operation proof; no wire trust flag."
     },
     {
       "id": "c8",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#7-test-strategy",
-      "quotedText": "Approved revision5 §7:21 unchanged non-live subjects plus actual UTM macOS, OrbStack Linux and unqualified-target exclusion (24 current subjects), mapped to ac1–ac6. The original Windows native subject is explicitly deferred and remains required before future Windows enablement. Source-pinned evidence reuse requires relevant production/build-policy equivalence and closure proof."
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#45-installed-launch-and-preparation-binding",
+      "quotedText": "Existing manager/terminal/TUI/Retry/service consumers reuse verified runtime within process, bind new processes and place required parent resolution before service admission/readiness; bounded launch/status."
     },
     {
       "id": "c9",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#6-error-paths",
-      "quotedText": "§6/§8: fail closed on corrupt runtime/legacy format/ownership/closure; preserve consent/install-only Retry, same-terminal TUI, current host daemon and immutable entries; unavailable native evidence is not a pass. User requires final story BUILD approval after all tasks."
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#7-test-strategy",
+      "quotedText": "32current subjects, exact ac1–ac6mapping, real producer/consumer and diagnostic fixtures, shared awaited owned-home cleanup, final scoped regression and truthful evidence."
     },
     {
       "id": "c10",
       "kind": "prior-artifact",
-      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#4-data-model-changes",
-      "quotedText": "§4.6 and diagrams: standalone ISSUE correction with external epic compatibility references only; S4 boot/control/lease/wrapper, S5 hooks and action-specific peer gating stay with their existing owners. Runtime-to-release cardinality and helper handoff sources retained. Future Windows bridge implementation and execution coverage remain with S7."
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/LLD.md#8-migration",
+      "quotedText": "Current macOS/Linux actual qualification, root publication/cleanup and Linuxdash cancellation; original native Windows subject deferred, no hostv2/Ollama/blocked-isolate operations or S4/S5/S7scope."
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/manual-review-20261128/disposition-status.json",
+      "quotedText": "Round1–3 review dispositions and accepted6codefixes; remaining implementation/design items are traced to their original owners. Owner choices resolved in LLD8metadata by the user's explicit approval."
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/plan4-realignment/plan3-baseline.json",
+      "quotedText": "Exact approved PLAN3baseline captures all10existing task IDs/order/dependencies and historical accepted work; corrective PLAN4changes scope/tests without new per-finding tasks or issues."
     }
   ]
 }

@@ -10,182 +10,293 @@
       "id": "1",
       "status": "resolved",
       "scope": "bootstrap",
-      "evidence": "bootstrap-batch/README.md"
+      "evidence": "bootstrap-batch/README.md",
+      "plan4Owners": [
+        "t5"
+      ]
     },
     {
       "id": "2",
       "status": "resolved",
       "scope": "bootstrap",
-      "evidence": "bootstrap-batch/README.md"
+      "evidence": "bootstrap-batch/README.md",
+      "plan4Owners": [
+        "t5"
+      ]
     },
     {
       "id": "3",
       "status": "resolved",
       "scope": "bootstrap",
-      "evidence": "bootstrap-batch/README.md"
+      "evidence": "bootstrap-batch/README.md",
+      "plan4Owners": [
+        "t5"
+      ]
     },
     {
       "id": "4",
-      "status": "design-revision8-pending-owner-decision-and-human-approval",
+      "status": "approved-design-awaiting-implementation",
       "scope": "design/integrity",
-      "evidence": "../../LLD.md"
+      "evidence": "../../LLD.md",
+      "plan4Owners": [
+        "t6",
+        "t7",
+        "t8"
+      ]
     },
     {
       "id": "5",
-      "status": "design-revision8-pending-owner-decision-and-human-approval",
+      "status": "approved-design-awaiting-implementation",
       "scope": "design/integrity",
-      "evidence": "../../LLD.md"
+      "evidence": "../../LLD.md",
+      "plan4Owners": [
+        "t2",
+        "t3",
+        "t4",
+        "t7"
+      ]
     },
     {
       "id": "6",
-      "status": "design-revision8-pending-owner-decision-and-human-approval",
+      "status": "approved-design-awaiting-implementation",
       "scope": "design/integrity",
-      "evidence": "../../LLD.md"
+      "evidence": "../../LLD.md",
+      "plan4Owners": [
+        "t6"
+      ]
     },
     {
       "id": "7",
       "status": "pending",
-      "scope": "runtime/consumer"
+      "scope": "runtime/consumer",
+      "plan4Owners": [
+        "t8"
+      ]
     },
     {
       "id": "8",
-      "status": "design-revision8-pending-owner-decision-and-human-approval",
+      "status": "approved-design-awaiting-implementation",
       "scope": "runtime/consumer",
-      "evidence": "../../LLD.md"
+      "evidence": "../../LLD.md",
+      "plan4Owners": [
+        "t1"
+      ]
     },
     {
       "id": "9",
       "status": "pending",
-      "scope": "runtime/consumer"
+      "scope": "runtime/consumer",
+      "plan4Owners": [
+        "t7",
+        "t8"
+      ]
     },
     {
       "id": "10",
       "status": "pending",
-      "scope": "runtime/consumer"
+      "scope": "runtime/consumer",
+      "plan4Owners": [
+        "t8"
+      ]
     },
     {
       "id": "11",
       "status": "pending",
-      "scope": "runtime/consumer"
+      "scope": "runtime/consumer",
+      "plan4Owners": [
+        "t4"
+      ]
     },
     {
       "id": "12",
       "status": "pending",
-      "scope": "target/CI"
+      "scope": "target/CI",
+      "plan4Owners": [
+        "t1",
+        "t3",
+        "t6",
+        "t10"
+      ]
     },
     {
       "id": "13",
       "status": "pending",
-      "scope": "runtime/consumer"
+      "scope": "runtime/consumer",
+      "plan4Owners": [
+        "t6",
+        "t7",
+        "t9"
+      ]
     },
     {
       "id": "14",
       "status": "resolved",
       "scope": "bootstrap",
-      "evidence": "bootstrap-batch/README.md"
+      "evidence": "bootstrap-batch/README.md",
+      "plan4Owners": [
+        "t5"
+      ]
     },
     {
       "id": "15",
       "status": "pending",
-      "scope": "target/CI"
+      "scope": "target/CI",
+      "plan4Owners": [
+        "t6"
+      ]
     },
     {
       "id": "16",
       "status": "pending",
-      "scope": "collector"
+      "scope": "collector",
+      "plan4Owners": [
+        "t6"
+      ]
     },
     {
       "id": "17",
-      "status": "design-revision8-pending-owner-decision-and-human-approval",
+      "status": "approved-design-awaiting-implementation",
       "scope": "bootstrap",
-      "evidence": "../../LLD.md"
+      "evidence": "../../LLD.md",
+      "plan4Owners": [
+        "t5"
+      ]
     },
     {
       "id": "T1",
       "status": "pending",
-      "scope": "tests"
+      "scope": "tests",
+      "plan4Owners": [
+        "t2"
+      ]
     },
     {
       "id": "T2",
       "status": "resolved",
       "scope": "tests",
-      "evidence": "bootstrap-batch/README.md"
+      "evidence": "bootstrap-batch/README.md",
+      "plan4Owners": [
+        "t5"
+      ]
     },
     {
       "id": "T3",
       "status": "pending",
-      "scope": "tests"
+      "scope": "tests",
+      "plan4Owners": [
+        "t6",
+        "t9"
+      ]
     },
     {
       "id": "T4",
       "status": "partially-implemented",
       "scope": "tests",
-      "note": "Bootstrap table diagnostics tightened; terminal/dev-toolchain assertions remain pending"
+      "note": "Bootstrap table diagnostics tightened; terminal/dev-toolchain assertions remain pending",
+      "plan4Owners": [
+        "t5",
+        "t7",
+        "t8"
+      ]
     },
     {
       "id": "T5",
       "status": "resolved",
       "scope": "tests",
-      "evidence": "bootstrap-batch/README.md"
+      "evidence": "bootstrap-batch/README.md",
+      "plan4Owners": [
+        "t5"
+      ]
     },
     {
       "id": "T6",
       "status": "pending",
-      "scope": "tests"
+      "scope": "tests",
+      "plan4Owners": [
+        "t6"
+      ]
     },
     {
       "id": "R2-1",
       "severity": "MED",
       "kind": "design",
-      "status": "reviewer-accepted-design-pending-owner-choice",
+      "status": "owner-approved-manual-guidance-implementation-pending",
       "scope": "manual recovery wording and exact diagnostic",
-      "evidence": "REVIEW-FEEDBACK-ROUND3.md"
+      "evidence": "REVIEW-FEEDBACK-ROUND3.md",
+      "plan4Owners": [
+        "t2",
+        "t7",
+        "t9"
+      ]
     },
     {
       "id": "R2-2",
       "severity": "LOW-MED",
       "kind": "advisory-owner-decision",
-      "status": "read-only-proposal-pending-compatibility-and-owner-choice",
+      "status": "owner-approved-read-only-SDK-implementation-pending",
       "scope": "POSIX write protection versus SDK-only accepted accidental-write risk",
-      "evidence": "../../LLD.md"
+      "evidence": "../../LLD.md",
+      "plan4Owners": [
+        "t2",
+        "t3",
+        "t4",
+        "t7"
+      ]
     },
     {
       "id": "R2-3",
       "severity": "LOW",
       "kind": "documentation",
-      "status": "reviewer-accepted-documentation-design",
+      "status": "reviewer-and-owner-approved-documentation-design",
       "scope": "Shell-only/pre-fork signal latency; no prompt-cancellation promise",
-      "evidence": "REVIEW-FEEDBACK-ROUND3.md"
+      "evidence": "REVIEW-FEEDBACK-ROUND3.md",
+      "plan4Owners": [
+        "t5",
+        "t10"
+      ]
     },
     {
       "id": "R2-4",
       "severity": "LOW",
       "kind": "test",
       "status": "pending-existing-t5-plan-realignment",
-      "scope": "Rename foreign-archive pinned-size case honestly; no code change yet"
+      "scope": "Rename foreign-archive pinned-size case honestly; no code change yet",
+      "plan4Owners": [
+        "t5"
+      ]
     },
     {
       "id": "R2-5",
       "severity": "LOW",
       "kind": "nit",
       "status": "pending-existing-t5-plan-realignment",
-      "scope": "Normalize work once and use canonical value downstream; no code change yet"
+      "scope": "Normalize work once and use canonical value downstream; no code change yet",
+      "plan4Owners": [
+        "t5"
+      ]
     },
     {
       "id": "R3-1",
       "severity": "MED",
       "kind": "design",
-      "status": "corrected-in-lld8-pending-owner-choice-and-build",
+      "status": "approved-design-awaiting-build",
       "scope": "Root0700until native rename; root0500/fsync/strict check before success; native fixture/root-only crash tests planned",
-      "evidence": "../../LLD.md"
+      "evidence": "../../LLD.md",
+      "plan4Owners": [
+        "t4",
+        "t10"
+      ]
     },
     {
       "id": "R3-2",
       "severity": "LOW-MED",
       "kind": "guidance",
-      "status": "corrected-in-lld8-pending-owner-choice-and-diagnostic-build",
+      "status": "approved-design-awaiting-build",
       "scope": "Exact root-only safely quoted chmod guidance before preservation/move; delete nothing; no product enforcement",
-      "evidence": "../../LLD.md"
+      "evidence": "../../LLD.md",
+      "plan4Owners": [
+        "t2"
+      ]
     },
     {
       "id": "R3-3",
@@ -193,15 +304,30 @@
       "kind": "population-audit",
       "status": "bounded-official-release-evidence-recorded-and-design-narrowed",
       "scope": "One observed legacy release/defaultmain has no shared-store reader; rebuild known unpublished homes, unknowncustombuilds excluded",
-      "evidence": "round3/release-audit/summary.json"
+      "evidence": "round3/release-audit/summary.json",
+      "plan4Owners": [
+        "t4",
+        "t9"
+      ]
     },
     {
       "id": "R3-4",
       "severity": "LOW",
       "kind": "test-design",
-      "status": "shared-helper-planned-in-lld8-not-implemented",
+      "status": "approved-test-design-awaiting-implementation",
       "scope": "One owned-root async cleanup helper adopted/awaited by all runtime-publishing fixtures after positive closure",
-      "evidence": "../../LLD.md"
+      "evidence": "../../LLD.md",
+      "plan4Owners": [
+        "t2",
+        "t3",
+        "t4",
+        "t5",
+        "t6",
+        "t7",
+        "t8",
+        "t9",
+        "t10"
+      ]
     }
   ],
   "round2": {
@@ -232,5 +358,15 @@
       "qccba6370"
     ],
     "deferredFollowup": "Record consideration of a control-owned recovery command in this existing issue before general release; no new implementation scope approved."
+  },
+  "approvalCheckpoint": {
+    "approvedLld": 8,
+    "planDraft": 4,
+    "ownerChoicesResolved": true,
+    "ownerResolutionSource": ".insrc/artifacts/LLD-446ae69566d352dd-s1.json meta.questionResolutions",
+    "scope": "manual-only recovery guidance and corrected POSIX read-only runtime plus writable SDK isolation",
+    "humanApprovedInChat": true,
+    "codeImplementationStarted": false,
+    "trackerFollowOn": "Known ISSUE-route missingDEF/unboundStory failure; local approval/commit/push succeeded."
   }
 }

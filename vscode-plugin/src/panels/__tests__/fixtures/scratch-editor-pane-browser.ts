@@ -64,7 +64,14 @@ async function run(): Promise<unknown> {
     const oversized = await create('oversized');
     await oversized.pane.receive({ type: 'conflict', paneSessionId: 'oversized', draftSeq: 0, message: 'Document exceeds rich editor transport limits; original source is retained. Use the text editor.' });
     const limit = { readonly: oversized.pane['crepe']!.readonly, alert: oversized.root.querySelector('[role=alert]')?.textContent, drafts: drafts(oversized.sent) };
-    return { initial, selected, clicked, lockedControls, remembered, siblings, lateAck, host, unsupported, fallback, limit };
+    const code = await create('code', '```typescript\nconst value = 1;\n```\n');
+    code.root.querySelector<HTMLButtonElement>('nav button')!.click(); await tick();
+    const nested = code.root.querySelector('.milkdown-code-block-placeholder code') ?? code.root.querySelector('.milkdown-code-block')!;
+    if (!nested) throw new Error('Actual code-block view is absent');
+    let childKeys = 0; nested.addEventListener('keydown', () => { childKeys++; });
+    for (const [key, shiftKey] of [['z', false], ['z', true], ['s', false]] as const) nested.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey: true, shiftKey, bubbles: true, cancelable: true }));
+    const shortcuts = { childKeys, actions: code.sent.filter(m => m.type === 'undo' || m.type === 'redo' || m.type === 'save').map(m => m.type), drafts: drafts(code.sent) };
+    return { initial, selected, clicked, lockedControls, remembered, siblings, lateAck, host, unsupported, fallback, limit, shortcuts };
   } finally { for (const { pane } of all) await pane.dispose(); }
 }
 void run().then(result => { const pre = document.createElement('pre'); pre.id = 'scratch-result'; pre.textContent = JSON.stringify(result); document.body.append(pre); })

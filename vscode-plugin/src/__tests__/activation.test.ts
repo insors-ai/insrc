@@ -85,13 +85,13 @@ test('the extension package is scaffolded (package.json + tsconfig + activate/de
   const pkg = JSON.parse(readFileSync(join(PKG, '..', 'package.json'), 'utf8'));
   assert.equal(pkg.main, './out/extension.js');
   assert.ok(pkg.engines?.vscode, 'declares an engines.vscode range');
-  assert.deepEqual(pkg.activationEvents, ['onStartupFinished']);
+  assert.deepEqual(pkg.activationEvents, ['onStartupFinished', 'onCustomEditor:insrc.scratchpad.editor']);
   // Marketplace listing metadata is delivered by Story S006 (publish scaffolding).
   assert.equal(typeof pkg.publisher, 'string', 'S006 added the Marketplace publisher');
 
   const entry = readFileSync(join(PKG, 'extension.ts'), 'utf8');
   assert.match(entry, /export function activate\(/);
-  assert.match(entry, /export function deactivate\(/);
+  assert.match(entry, /export (?:async )?function deactivate\(/);
 });
 
 test('only extension.ts imports vscode, and it reaches the daemon only via the shared ipc-client (k2/k5)', () => {

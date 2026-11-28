@@ -88,6 +88,9 @@ declare module 'vscode' {
   /** The webview body of a panel (S004 sc9): set `html`, and the host↔webview bridge. */
   export interface Webview {
     html: string;
+    readonly cspSource: string;
+    options: { enableScripts?: boolean; localResourceRoots?: readonly Uri[] };
+    asWebviewUri(localResource: Uri): Uri;
     postMessage(message: unknown): PromiseLike<boolean>;
     onDidReceiveMessage(listener: (message: unknown) => unknown): Disposable;
   }
@@ -110,6 +113,7 @@ declare module 'vscode' {
   /** A tab in an editor group; `input` identifies what it shows (chat group lock). */
   export interface Tab {
     readonly input: unknown;
+    readonly isDirty: boolean;
   }
 
   export interface TabGroup {
@@ -127,6 +131,28 @@ declare module 'vscode' {
     readonly all: readonly TabGroup[];
     onDidChangeTabs(listener: (e: unknown) => unknown): Disposable;
     onDidChangeTabGroups(listener: (e: unknown) => unknown): Disposable;
+    close(tabs: Tab | readonly Tab[], preserveFocus?: boolean): Thenable<boolean>;
+  }
+  export class TabInputText { readonly uri: Uri; }
+  export class TabInputCustom { readonly uri: Uri; readonly viewType: string; }
+  export interface TextDocument {
+    readonly uri: Uri;
+    readonly version: number;
+    readonly isDirty: boolean;
+    readonly isClosed: boolean;
+    getText(range?: Range): string;
+    positionAt(offset: number): Position;
+    save(): Thenable<boolean>;
+  }
+  export class WorkspaceEdit { replace(uri: Uri, range: Range, newText: string): void; }
+  export interface TextDocumentChangeEvent { readonly document: TextDocument; }
+  export interface TextDocumentWillSaveEvent {
+    readonly document: TextDocument;
+    waitUntil(thenable: Thenable<readonly unknown[]>): void;
+  }
+  export interface CancellationToken { readonly isCancellationRequested: boolean; }
+  export interface CustomTextEditorProvider {
+    resolveCustomTextEditor(document: TextDocument, panel: WebviewPanel, token: CancellationToken): Thenable<void> | void;
   }
 
   /**
@@ -139,6 +165,7 @@ declare module 'vscode' {
   }
 
   export namespace window {
+    export function registerCustomEditorProvider(viewType: string, provider: CustomTextEditorProvider, options?: { supportsMultipleEditorsPerDocument?: boolean; webviewOptions?: { retainContextWhenHidden?: boolean } }): Disposable;
     /** Current text editor, absent when only a webview is active. */
     export const activeTextEditor: { readonly document: { readonly uri: Uri } } | undefined;
     /** The editor tab model across all groups (chat group lock). */
@@ -231,6 +258,13 @@ declare module 'vscode' {
   }
 
   export namespace workspace {
+    export const textDocuments: readonly TextDocument[];
+    export function applyEdit(edit: WorkspaceEdit): Thenable<boolean>;
+    export function onDidChangeTextDocument(listener: (event: TextDocumentChangeEvent) => unknown): Disposable;
+    export function onWillSaveTextDocument(listener: (event: TextDocumentWillSaveEvent) => unknown): Disposable;
+    export function onDidSaveTextDocument(listener: (document: TextDocument) => unknown): Disposable;
+    export function onDidCloseTextDocument(listener: (document: TextDocument) => unknown): Disposable;
+    export function openTextDocument(uri: Uri): Thenable<TextDocument>;
     /** The open workspace folders, or undefined when no folder is open (S004). */
     export const workspaceFolders: readonly WorkspaceFolder[] | undefined;
     /** The workspace folder containing a resource, including nested roots. */
@@ -273,6 +307,8 @@ declare module 'vscode' {
   }
 
   export interface ExtensionContext {
+    readonly extensionUri: Uri;
+    readonly globalStorageUri: Uri;
     readonly subscriptions: { dispose(): unknown }[];
     /** Absolute path of the directory the extension is installed in. */
     readonly extensionPath: string;

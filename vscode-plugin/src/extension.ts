@@ -62,6 +62,9 @@ import { createChatPanelHost, CHAT_PANEL_TITLE, CHAT_VIEW_TYPE, DEFAULT_TURN_LOC
 import { createScratchStore } from './chat/scratch-store.js';
 import { createScratchHost, SCRATCH_INTENT_TYPES, type ScratchChatSeam } from './chat/scratch-host.js';
 import { createScratchPanels } from './panels/scratch-panels.js';
+import { registerScratchEditor } from './panels/scratch-editor-native.js';
+import { ScratchRecoveryStore } from './panels/scratch-editor-recovery.js';
+import { ScratchLockPreference } from './panels/scratch-editor-lock.js';
 import type { HostToWebview, WebviewToHost } from './chat/protocol.js';
 import { makeNonce } from './panels/html.js';
 import { createFileSessionLocks, defaultIsAlive, defaultProcessStartTime } from './chat/session-lock.js';
@@ -109,6 +112,8 @@ const LAST_SEEN_PLUGIN_VERSION_KEY = 'insrc.daemonSelfUpdate.lastSeenPluginVersi
  */
 /** Session output files untouched this long, of sessions no longer in the store, are swept at start. */
 const CHAT_OUTPUT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+/** Deactivation awaits accepted scratchpad receipts/edits before host shutdown. */
+let closeScratchEditor: (() => Promise<void>) | undefined;
 
 export function activate(context: vscode.ExtensionContext): void {
   const statusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
@@ -648,6 +653,16 @@ export function activate(context: vscode.ExtensionContext): void {
     // (fs omitted -> the node default applies; no daemon IPC). Built next to the other chat
     // stores; the host router + panels controller are wired after chatHost below.
     const scratchStore = createScratchStore({ root: join(PATHS.insrc, 'scratches'), logger: panelLog });
+    const scratchEditor = registerScratchEditor({
+      api: vscode, extensionPath: context.extensionPath, store: scratchStore,
+      recovery: new ScratchRecoveryStore(join(context.globalStorageUri.fsPath, 'scratchpad-recovery')),
+      preference: new ScratchLockPreference(context.globalState),
+      warn: message => { panelLog.warn(message); void Promise.resolve(vscode.window.showWarningMessage(message)).catch(() => panelLog.warn('Scratchpad warning could not be displayed.')); },
+    });
+    let scratchShutdown: Promise<void> | undefined;
+    const closeEditor = (): Promise<void> => scratchShutdown ??= scratchEditor.dispose();
+    closeScratchEditor = closeEditor;
+    context.subscriptions.push({ dispose: () => { void closeEditor().catch(() => panelLog.warn('Scratchpad editor disposal failed; pending recovery is retained.')); } });
     const chatSessionsRoot = join(PATHS.insrc, 'chat-sessions');
     const migratedChats = migrateChatSessionsFromMemento({ memento: context.globalState, root: chatSessionsRoot, logger: panelLog });
     const chatStore = createFileChatSessionStore({
@@ -1181,10 +1196,9 @@ export function activate(context: vscode.ExtensionContext): void {
   })();
 }
 
-/**
- * Deactivation is a no-op: every Disposable the extension created is registered
- * in `context.subscriptions`, which VS Code disposes automatically on deactivate.
- */
-export function deactivate(): void {
-  /* nothing to do — subscriptions are auto-disposed by the host */
+/** Ordinary subscriptions are auto-disposed; accepted scratchpad recovery work
+ * must finish while the extension host is still alive. */
+export async function deactivate(): Promise<void> {
+  const close = closeScratchEditor; closeScratchEditor = undefined;
+  await close?.();
 }

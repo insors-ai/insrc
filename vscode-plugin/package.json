@@ -28,7 +28,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onCustomEditor:insrc.scratchpad.editor"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -951,6 +952,18 @@
             ]
           }
         }
+      }
+    ],
+    "customEditors": [
+      {
+        "viewType": "insrc.scratchpad.editor",
+        "displayName": "insrc Scratchpad",
+        "selector": [
+          {
+            "filenamePattern": "**/.insrc/scratches/*.md"
+          }
+        ],
+        "priority": "option"
       }
     ]
   },

@@ -30,7 +30,7 @@ export function minimalScratchEdit(before: string, after: string, baseVersion: n
 
 interface Pane {
   readonly id: string;
-  readonly post: (message: ScratchHostToEditor) => void;
+  readonly post: (message: ScratchHostToEditor) => void | boolean | PromiseLike<void | boolean>;
   locked: boolean;
   attached: boolean;
   latest?: ScratchDraftProposal | undefined;
@@ -53,15 +53,16 @@ export class ScratchDocumentController {
 
   constructor(private readonly deps: ScratchDocumentControllerDeps) { this.known = this.read(); }
   private read(): ScratchSnapshot { const value = this.deps.read(); return { ...value, digest: scratchDigest(value.markdown) }; }
-  private post(pane: Pane, message: ScratchHostToEditor): boolean {
+  private async post(pane: Pane, message: ScratchHostToEditor): Promise<boolean> {
     if (!pane.attached) return false;
     if (!parseScratchHostMessage(message)) {
       this.frozen = true; pane.failure = 'Document exceeds rich editor transport limits; original source is retained. Use the text editor.';
-      try { pane.post({ type: 'conflict', paneSessionId: pane.id, draftSeq: pane.latest?.draftSeq ?? 0, message: pane.failure }); }
+      try { await pane.post({ type: 'conflict', paneSessionId: pane.id, draftSeq: pane.latest?.draftSeq ?? 0, message: pane.failure }); }
       catch { this.deps.warn('Scratchpad limit notice could not be delivered.'); }
       this.notify(); return false;
     }
-    try { pane.post(message); } catch { this.deps.warn('Scratchpad message delivery failed; recovery data is retained.'); this.notify(); return false; }
+    try { if (await pane.post(message) === false) { this.deps.warn('Scratchpad message was not delivered; recovery data is retained.'); this.notify(); return false; } }
+    catch { this.deps.warn('Scratchpad message delivery failed; recovery data is retained.'); this.notify(); return false; }
     this.notify(); return true;
   }
   private notify(): void { for (const check of this.waiters) check(); }
@@ -131,7 +132,7 @@ export class ScratchDocumentController {
       if (this.pendingReceipts.get(pane) === entry) this.pendingReceipts.delete(pane);
       const draft = entry.draft;
       await this.deps.retainDraft(draft);
-      if (!this.post(pane, { type: 'receipt', paneSessionId: id, draftSeq: draft.draftSeq, editId: draft.editId }) && pane.attached) {
+      if (!await this.post(pane, { type: 'receipt', paneSessionId: id, draftSeq: draft.draftSeq, editId: draft.editId }) && pane.attached) {
         this.conflict(pane, draft.draftSeq, 'Draft receipt could not be delivered; draft retained.'); return;
       }
       if (this.frozen || pane.locked) { this.conflict(pane, draft.draftSeq, 'Source changed or pane is locked; draft retained.'); return; }
@@ -174,7 +175,7 @@ export class ScratchDocumentController {
         }
         pane.appliedSeq = draft.draftSeq;
         pane.ack = { editId: draft.editId, baseVersion: base.version, baseDigest: base.digest, snapshot: applied, request: draft };
-        if (!this.post(pane, { type: 'apply-ack', paneSessionId: pane.id, draftSeq: draft.draftSeq, editId: draft.editId, ...applied }) && pane.attached) {
+        if (!await this.post(pane, { type: 'apply-ack', paneSessionId: pane.id, draftSeq: draft.draftSeq, editId: draft.editId, ...applied }) && pane.attached) {
           await this.deps.retainDraft(pane.latest ?? draft);
           this.conflict(pane, draft.draftSeq, 'Edit applied but acknowledgement could not be delivered; draft retained.');
         }
@@ -217,6 +218,7 @@ export class ScratchDocumentController {
     }
   }
   appliedSequence(id: string): number { return this.panes.get(id)?.appliedSeq ?? 0; }
+  latestSequence(id: string): number { return this.panes.get(id)?.latest?.draftSeq ?? 0; }
   /** Save/Send barriers wait for the captured sequence, including a later
    * promotion arriving asynchronously after an acknowledgement was delivered. */
   waitForSequence(id: string, sequence: number, timeoutMs = 10_000): Promise<ScratchSnapshot> {

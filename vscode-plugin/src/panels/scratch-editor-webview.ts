@@ -67,7 +67,7 @@ export class ScratchEditorPane {
     this.send.addEventListener('pointerdown', e => e.preventDefault()); // retain native selection until explicit click
     root.append(this.toolbar, this.status, this.editorRoot, this.send);
     document.addEventListener('selectionchange', this.selectionChanged);
-    root.addEventListener('keydown', this.keydown);
+    root.addEventListener('keydown', this.keydown, true);
     root.addEventListener('scroll', this.hideSend, true);
     this.toggle.disabled = true;
   }
@@ -114,6 +114,19 @@ export class ScratchEditorPane {
     }
     const result = this.state.receive(msg);
     if (result.conflict) { this.fail(result.conflict); return; }
+    if (msg.type === 'focus-request') {
+      if (!this.failed && this.crepe) this.crepe.editor.action(ctx => ctx.get(editorViewCtx).focus());
+      // VS Code 1.146's preload relays webview focus on a 250 ms poll. Wait
+      // through that bookkeeping interval before acknowledging focus; an
+      // inner-frame focus event alone can leave another native editor active.
+      // A timer also works when an occluded view does not paint frames.
+      await new Promise(resolve => setTimeout(resolve, 350));
+      const focused = !this.failed && !this.disposed && !this.state.hasPending && !this.state.conflicted &&
+        this.state.snapshot.version === msg.docVersion && this.state.draftSeq === msg.draftSeq &&
+        document.hasFocus() && this.editorRoot.contains(document.activeElement);
+      this.post({ type: 'focus-ready', paneSessionId: this.options.paneSessionId, requestId: msg.requestId, docVersion: msg.docVersion, draftSeq: msg.draftSeq, focused });
+      return;
+    }
     if (msg.type === 'document-state') this.setLocked(msg.locked);
     if (msg.type === 'action-error') { this.status.textContent = msg.message; return; }
     if (msg.type === 'recovery') {
@@ -183,7 +196,7 @@ export class ScratchEditorPane {
   };
   async dispose(): Promise<void> {
     this.disposed = true; document.removeEventListener('selectionchange', this.selectionChanged);
-    this.root.removeEventListener('keydown', this.keydown); this.root.removeEventListener('scroll', this.hideSend, true);
+    this.root.removeEventListener('keydown', this.keydown, true); this.root.removeEventListener('scroll', this.hideSend, true);
     await this.initialization; this.observer?.deactivate(); if (this.crepe) await this.crepe.destroy();
     this.root.replaceChildren();
   }

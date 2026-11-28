@@ -10,8 +10,8 @@ export interface ScratchEditorAssets {
 
 export function scratchEditorHtml(assets: ScratchEditorAssets, nonce: string, paneSessionId?: string): string {
   if (paneSessionId !== undefined && !/^[A-Za-z0-9_-]{1,128}$/.test(paneSessionId)) throw new Error('Invalid scratchpad editor session');
-  if (!/^[A-Za-z0-9_-]+$/.test(nonce) ||
-      !/^(?:vscode-webview:\/\/[A-Za-z0-9-]+|https:\/\/\*\.vscode-cdn\.net)$/.test(assets.cspSource)) {
+  if (!/^[A-Za-z0-9_+\/-]+={0,2}$/.test(nonce) ||
+      !/^(?:vscode-webview:\/\/[A-Za-z0-9-]+|(?:'self' )?https:\/\/\*\.vscode-cdn\.net)$/.test(assets.cspSource)) {
     throw new Error('Invalid scratchpad webview resource policy');
   }
   for (const uri of [assets.script, assets.style]) {

@@ -1284,9 +1284,14 @@ test('vibe: s3/t9+t10 — integration: detach/reattach producing identical class
       const adapter = createProviderRegistry({ isInstalled: () => true, spawn: nodeSpawner, sessionOutput }).get('vibe');
       let liveDispatchState: string | undefined;
       let cursor: TurnCursor | undefined;
+      // vibeFinalize (and so onVibeOutcome) is driven by proc.exit directly, independent of
+      // whether this generator is still being consumed -- it still fires after the detach below.
+      let resolveLiveOutcome!: (o: string) => void;
+      const liveOutcomePromise = new Promise<string>((res) => { resolveLiveOutcome = res; });
       const stream = adapter.run(REQ({ provider: 'vibe', prompt: 'DETACH STOPREASON', cwd }), {
         sessionId: 'sess-reattach',
         onDispatchState: (s) => { liveDispatchState = s; },
+        onVibeOutcome: (o) => resolveLiveOutcome(o),
         onSpawn: (p) => { cursor = p.cursor; }, // available at spawn, before any line is processed
       });
       for await (const ev of stream) {
@@ -1297,12 +1302,16 @@ test('vibe: s3/t9+t10 — integration: detach/reattach producing identical class
       // Release the fixture so its still-running process (detached from this abandoned reader)
       // finishes and exits on its own, independent of the generator above.
       writeFileSync(join(cwd, 'release'), '');
-      // Reattach: resume() follows the SAME segment from the cursor the detached reader had.
+      // The live observer's own classification (observed despite having detached before the
+      // turn finished) and the reattached reader's classification, compared DIRECTLY against
+      // each other -- not each against a separately hardcoded constant.
+      const liveOutcome = await liveOutcomePromise;
+      assert.equal(liveOutcome, 'replay-unsafe', 'STOPREASON in the prompt drove the fixture to write a real stop_reason');
       const resumed = await collect(adapter.resume({ cursor: cursor!, pid: undefined, startedAt: null }));
       const resumedDone = resumed.find((e) => e.kind === 'done') as { ok: boolean; replayUnsafe?: true } | undefined;
       assert.ok(resumedDone !== undefined, 'resume() now classifies from the marker instead of reporting "ended without a result"');
-      assert.equal(resumedDone?.ok, false);
-      assert.equal(resumedDone?.replayUnsafe, true, 'STOPREASON in the prompt drove the fixture to write a real stop_reason');
+      assert.equal(resumedDone?.replayUnsafe === true, liveOutcome !== 'ok', 'the reattached reader\'s replay-safety verdict matches the live observer\'s own outcome exactly');
+      assert.equal(resumedDone?.ok, liveOutcome === 'ok');
       // The durable marker carries the identical classification both the live observer and the
       // reattached reader saw -- they can never disagree, all three read from the one endTurn call.
       const marker = await waitForTurnEndMarker(join(root, 'sess-reattach.ndjson'));

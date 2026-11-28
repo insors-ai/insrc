@@ -1,0 +1,2588 @@
+{
+  "story": "2846f076fd5f785f/s1",
+  "recordedAt": "2026-11-28T12:19:35.387578+00:00",
+  "complete": false,
+  "tasks": [
+    {
+      "id": "t1",
+      "validated": true,
+      "testEvidence": "2026-11-27T19:15:48.238Z"
+    },
+    {
+      "id": "t2",
+      "validated": true,
+      "testEvidence": "2026-11-27T19:30:12.054Z"
+    },
+    {
+      "id": "t3",
+      "validated": true,
+      "testEvidence": "2026-11-27T19:55:15.727Z"
+    },
+    {
+      "id": "t4",
+      "validated": true,
+      "testEvidence": "2026-11-27T20:25:50.719Z"
+    },
+    {
+      "id": "t5",
+      "validated": true,
+      "testEvidence": "2026-11-27T20:37:42.605Z"
+    },
+    {
+      "id": "t6",
+      "validated": true,
+      "testEvidence": "2026-11-27T20:49:43.845Z"
+    },
+    {
+      "id": "t7",
+      "validated": true,
+      "testEvidence": "2026-11-28T06:54:51.288Z"
+    },
+    {
+      "id": "t8",
+      "validated": true,
+      "testEvidence": "2026-11-28T04:29:32.000Z"
+    },
+    {
+      "id": "t9",
+      "validated": true,
+      "testEvidence": "2026-11-28T04:59:29.246Z"
+    },
+    {
+      "id": "t10",
+      "validated": true,
+      "testEvidence": "2026-11-28T05:45:10.789Z"
+    },
+    {
+      "id": "t11",
+      "validated": true,
+      "testEvidence": "2026-11-28T05:42:46.569Z"
+    },
+    {
+      "id": "t12",
+      "validated": true,
+      "testEvidence": "2026-11-28T05:51:24.215Z"
+    },
+    {
+      "id": "t13",
+      "validated": true,
+      "testEvidence": "2026-11-28T06:20:36.581Z"
+    },
+    {
+      "id": "t14",
+      "validated": true,
+      "testEvidence": "2026-11-28T06:37:49.319Z"
+    },
+    {
+      "id": "t15",
+      "validated": false,
+      "testEvidence": "2026-11-28T07:06:36.721Z"
+    },
+    {
+      "id": "t16",
+      "validated": true,
+      "testEvidence": "2026-11-28T09:37:38.308Z"
+    },
+    {
+      "id": "t17",
+      "validated": true,
+      "testEvidence": "2026-11-28T10:01:55.451Z"
+    },
+    {
+      "id": "t18",
+      "validated": true,
+      "testEvidence": "2026-11-28T10:31:40.890Z"
+    },
+    {
+      "id": "t19",
+      "validated": true,
+      "testEvidence": "2026-11-28T10:47:24.999Z"
+    },
+    {
+      "id": "t20",
+      "validated": true,
+      "testEvidence": "2026-11-28T11:22:32.805Z"
+    },
+    {
+      "id": "t21",
+      "validated": true,
+      "testEvidence": "2026-11-28T12:01:21.640Z"
+    }
+  ],
+  "performance": {
+    "requiredNoteBytes": 1048576,
+    "requiredMessageBytes": 2097152,
+    "targets": {
+      "medianRenderMs": 150,
+      "p95AckMs": 1000
+    },
+    "productionBoundsUnchanged": true,
+    "measurements": {
+      "full": {
+        "path": "/tmp/.insrc/scratchpad-t15-performance-full.json",
+        "retainedRoot": "/tmp/insrc-scratch-host-NkhMtH",
+        "bytes": 1048576,
+        "samples": 20,
+        "medianRenderMs": 4150.450000047684,
+        "p95AckMs": 8240.200000047684,
+        "passedBudget": false,
+        "hardware": {
+          "date": "2026-11-28T06:48:17.740Z",
+          "cpu": "AMD Ryzen 9 8940HX with Radeon Graphics",
+          "logicalCpus": 32,
+          "availableParallelism": 32,
+          "totalmem": 65501937664,
+          "freemem": 30217203712,
+          "loadavg": [
+            1.73,
+            2.02,
+            2.29
+          ],
+          "os": "linux",
+          "release": "7.0.0-43-generic",
+          "vscode": "1.146.0",
+          "electron": "43.8.6",
+          "node": "v24.22.1",
+          "display": ":2",
+          "privateDisplay": true
+        }
+      },
+      "64k": {
+        "path": "/tmp/.insrc/scratchpad-t15-performance-64k.json",
+        "retainedRoot": "/tmp/insrc-scratch-host-1hdizC",
+        "bytes": 65536,
+        "samples": 10,
+        "medianRenderMs": 200.3499999642372,
+        "p95AckMs": 555.4000000953674,
+        "passedBudget": false,
+        "hardware": {
+          "date": "2026-11-28T06:51:07.540Z",
+          "cpu": "AMD Ryzen 9 8940HX with Radeon Graphics",
+          "logicalCpus": 32,
+          "availableParallelism": 32,
+          "totalmem": 65501937664,
+          "freemem": 29818789888,
+          "loadavg": [
+            3.86,
+            2.81,
+            2.55
+          ],
+          "os": "linux",
+          "release": "7.0.0-43-generic",
+          "vscode": "1.146.0",
+          "electron": "43.8.6",
+          "node": "v24.22.1",
+          "display": ":2",
+          "privateDisplay": true
+        }
+      },
+      "32k": {
+        "path": "/tmp/.insrc/scratchpad-t15-performance-32k.json",
+        "retainedRoot": "/tmp/insrc-scratch-host-aji7RN",
+        "bytes": 32768,
+        "samples": 10,
+        "medianRenderMs": 109.80000001192093,
+        "p95AckMs": 303.5,
+        "passedBudget": true,
+        "hardware": {
+          "date": "2026-11-28T06:51:17.322Z",
+          "cpu": "AMD Ryzen 9 8940HX with Radeon Graphics",
+          "logicalCpus": 32,
+          "availableParallelism": 32,
+          "totalmem": 65501937664,
+          "freemem": 29770993664,
+          "loadavg": [
+            3.65,
+            2.8,
+            2.55
+          ],
+          "os": "linux",
+          "release": "7.0.0-43-generic",
+          "vscode": "1.146.0",
+          "electron": "43.8.6",
+          "node": "v24.22.1",
+          "display": ":2",
+          "privateDisplay": true
+        }
+      }
+    },
+    "parserProfile": "/tmp/.insrc/scratchpad-t15-parser-profile.json",
+    "candidateCaution": "32 KiB is a diagnostic result for the recorded single-paragraph shape, not an approved or generally qualified new support bound.",
+    "idleCorrection": {
+      "current": {
+        "path": "/tmp/.insrc/scratchpad-t15-idle-current.json",
+        "coordinatorRun": "321df57e-e0ec-4d56-a970-26c216ad559f",
+        "retainedRoot": "/tmp/insrc-scratch-host-8nQZoS",
+        "bytes": 1048576,
+        "samples": 40,
+        "ordinarySamples": 20,
+        "medianRenderMs": 75.29999995231628,
+        "p95AckMs": 2429.7999999523163,
+        "medianReceiptMs": 93.8999999165535,
+        "groups": [
+          {
+            "group": "sustained",
+            "latestSequence": 32,
+            "latestAckMs": 1417,
+            "actionAckMs": null,
+            "superseded": [
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31
+            ]
+          },
+          {
+            "group": "burst",
+            "latestSequence": 37,
+            "latestAckMs": 1394.2000000476837,
+            "actionAckMs": null,
+            "superseded": [
+              33,
+              34,
+              35,
+              36
+            ]
+          },
+          {
+            "group": "resumed",
+            "latestSequence": 39,
+            "latestAckMs": 2252,
+            "actionAckMs": null,
+            "superseded": [
+              38
+            ]
+          },
+          {
+            "group": "explicit-save",
+            "latestSequence": 40,
+            "latestAckMs": 1151.2999999523163,
+            "actionAckMs": 1030.2000000476837,
+            "superseded": []
+          }
+        ],
+        "renderPassed": true,
+        "ackPassed": false,
+        "hardware": {
+          "date": "2026-11-28T12:10:58.874Z",
+          "cpu": "AMD Ryzen 9 8940HX with Radeon Graphics",
+          "logicalCpus": 32,
+          "availableParallelism": 32,
+          "totalmem": 65501937664,
+          "freemem": 26337353728,
+          "loadavg": [
+            21.59,
+            14,
+            9.87
+          ],
+          "os": "linux",
+          "release": "7.0.0-43-generic",
+          "vscode": "1.146.0",
+          "electron": "43.8.6",
+          "node": "v24.22.1",
+          "display": ":2",
+          "privateDisplay": true
+        },
+        "passedBudget": false
+      },
+      "floor": {
+        "path": "/tmp/.insrc/scratchpad-t15-idle-floor.json",
+        "coordinatorRun": "1bfb8da8-9919-48a8-a3b9-064f3b28f944",
+        "retainedRoot": "/tmp/insrc-scratch-host-A0TSF5",
+        "bytes": 1048576,
+        "samples": 40,
+        "ordinarySamples": 20,
+        "medianRenderMs": 78.69999998807907,
+        "p95AckMs": 2516.5,
+        "medianReceiptMs": 102.05000001192093,
+        "groups": [
+          {
+            "group": "sustained",
+            "latestSequence": 32,
+            "latestAckMs": 1445.3000000715256,
+            "actionAckMs": null,
+            "superseded": [
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31
+            ]
+          },
+          {
+            "group": "burst",
+            "latestSequence": 37,
+            "latestAckMs": 1399.2000000476837,
+            "actionAckMs": null,
+            "superseded": [
+              33,
+              34,
+              35,
+              36
+            ]
+          },
+          {
+            "group": "resumed",
+            "latestSequence": 39,
+            "latestAckMs": 2208.2999999523163,
+            "actionAckMs": null,
+            "superseded": [
+              38
+            ]
+          },
+          {
+            "group": "explicit-save",
+            "latestSequence": 40,
+            "latestAckMs": 1133.7000000476837,
+            "actionAckMs": 1009.6000000238419,
+            "superseded": []
+          }
+        ],
+        "renderPassed": true,
+        "ackPassed": false,
+        "hardware": {
+          "date": "2026-11-28T12:13:03.106Z",
+          "cpu": "AMD Ryzen 9 8940HX with Radeon Graphics",
+          "logicalCpus": 32,
+          "availableParallelism": 32,
+          "totalmem": 65501937664,
+          "freemem": 22765371392,
+          "loadavg": [
+            32.17,
+            17.64,
+            11.53
+          ],
+          "os": "linux",
+          "release": "7.0.0-43-generic",
+          "vscode": "1.141.0",
+          "electron": "43.7.7",
+          "node": "v24.21.0",
+          "display": ":2",
+          "privateDisplay": true
+        },
+        "passedBudget": false
+      }
+    },
+    "rawIdleQualification": {
+      "floor": {
+        "passed": false,
+        "hardware": {
+          "date": "2026-11-28T12:13:03.106Z",
+          "cpu": "AMD Ryzen 9 8940HX with Radeon Graphics",
+          "logicalCpus": 32,
+          "availableParallelism": 32,
+          "totalmem": 65501937664,
+          "freemem": 22765371392,
+          "loadavg": [
+            32.17,
+            17.64,
+            11.53
+          ],
+          "os": "linux",
+          "release": "7.0.0-43-generic",
+          "vscode": "1.141.0",
+          "electron": "43.7.7",
+          "node": "v24.21.0",
+          "display": ":2",
+          "privateDisplay": true
+        },
+        "bytes": 1048576,
+        "noteBound": 1048576,
+        "messageBound": 2097152,
+        "warnings": [],
+        "probe": {
+          "phase": "idle",
+          "baseEditor": "6d87163c6c4ff83aa1fdf5b9eed98b85df8d73a938138e053349f22cd4dea137",
+          "baseWorker": "6d9ff50b5de38822cf589404d557ba6067893300c6c3362b68580d99412e4d9a",
+          "instrumentedEditor": "19da84db48899f369ba8308ddf4e0f68b6bc8e740de933994495af4e39458c41",
+          "instrumentedWorker": "6d9ff50b5de38822cf589404d557ba6067893300c6c3362b68580d99412e4d9a",
+          "instrumentation": "Observes native input and worker transfer only; original timer and worker bytes unchanged.",
+          "observedEditor": "7d07eb13bcd97cd7b69b83f2b0268c1dda32debd1b2a039f9d6643dea063aa5b",
+          "observationOnly": true
+        },
+        "openMs": 2146.311134,
+        "sourcePath": "/tmp/insrc-scratch-host-A0TSF5/scratches/20261128-174303-performance-reference.md",
+        "samples": [
+          {
+            "id": 1,
+            "group": "ordinary",
+            "started": 1931.1000000238419,
+            "renderMs": 110.70000004768372,
+            "receiptMs": 131.89999997615814,
+            "ackMs": 2584.899999976158,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 2,
+            "group": "ordinary",
+            "started": 4542.100000023842,
+            "renderMs": 87.60000002384186,
+            "receiptMs": 110.60000002384186,
+            "ackMs": 2447.600000023842,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 3,
+            "group": "ordinary",
+            "started": 7006.399999976158,
+            "renderMs": 95.70000004768372,
+            "receiptMs": 115.80000007152557,
+            "ackMs": 2516.5,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 4,
+            "group": "ordinary",
+            "started": 9538.300000071526,
+            "renderMs": 86.29999995231628,
+            "receiptMs": 108.79999995231628,
+            "ackMs": 2491.899999976158,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 5,
+            "group": "ordinary",
+            "started": 12067.700000047684,
+            "renderMs": 90.60000002384186,
+            "receiptMs": 108.89999997615814,
+            "ackMs": 2368.2999999523163,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 6,
+            "group": "ordinary",
+            "started": 14460.5,
+            "renderMs": 82.60000002384186,
+            "receiptMs": 102.20000004768372,
+            "ackMs": 2404.5,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 7,
+            "group": "ordinary",
+            "started": 16888.600000023842,
+            "renderMs": 78.89999997615814,
+            "receiptMs": 96.70000004768372,
+            "ackMs": 2336.7000000476837,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 8,
+            "group": "ordinary",
+            "started": 19239.5,
+            "renderMs": 82,
+            "receiptMs": 104.20000004768372,
+            "ackMs": 2356.100000023842,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 9,
+            "group": "ordinary",
+            "started": 21627.100000023842,
+            "renderMs": 78.29999995231628,
+            "receiptMs": 96.29999995231628,
+            "ackMs": 2382.600000023842,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 10,
+            "group": "ordinary",
+            "started": 24030.700000047684,
+            "renderMs": 75.19999992847443,
+            "receiptMs": 92.10000002384186,
+            "ackMs": 2365.600000023842,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 11,
+            "group": "ordinary",
+            "started": 26422.800000071526,
+            "renderMs": 78,
+            "receiptMs": 94.5,
+            "ackMs": 2355.5,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 12,
+            "group": "ordinary",
+            "started": 28802.300000071526,
+            "renderMs": 76.89999997615814,
+            "receiptMs": 96.19999992847443,
+            "ackMs": 2345.0999999046326,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 13,
+            "group": "ordinary",
+            "started": 31172.200000047684,
+            "renderMs": 77.60000002384186,
+            "receiptMs": 101.89999997615814,
+            "ackMs": 2314.5,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 14,
+            "group": "ordinary",
+            "started": 33499.60000002384,
+            "renderMs": 78.5,
+            "receiptMs": 101.60000002384186,
+            "ackMs": 2367.100000023842,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 15,
+            "group": "ordinary",
+            "started": 35888.700000047684,
+            "renderMs": 76,
+            "receiptMs": 93.10000002384186,
+            "ackMs": 2333.5,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 16,
+            "group": "ordinary",
+            "started": 38239,
+            "renderMs": 79.5,
+            "receiptMs": 103.80000007152557,
+            "ackMs": 2328.100000023842,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 17,
+            "group": "ordinary",
+            "started": 40587.39999997616,
+            "renderMs": 75.20000004768372,
+            "receiptMs": 92.10000002384186,
+            "ackMs": 2338.2000000476837,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 18,
+            "group": "ordinary",
+            "started": 42938.700000047684,
+            "renderMs": 78.29999995231628,
+            "receiptMs": 102.29999995231628,
+            "ackMs": 2296.2999999523163,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 19,
+            "group": "ordinary",
+            "started": 45256.700000047684,
+            "renderMs": 75.19999992847443,
+            "receiptMs": 99.19999992847443,
+            "ackMs": 2347.5,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 20,
+            "group": "ordinary",
+            "started": 47617,
+            "renderMs": 82.39999997615814,
+            "receiptMs": 102.80000007152557,
+            "ackMs": 2304.5,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 21,
+            "group": "sustained",
+            "started": 49937,
+            "renderMs": 76.30000007152557,
+            "receiptMs": 96.60000002384186,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 22,
+            "group": "sustained",
+            "started": 50053.60000002384,
+            "renderMs": 75,
+            "receiptMs": 99.70000004768372,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 23,
+            "group": "sustained",
+            "started": 50158.700000047684,
+            "renderMs": 74.29999995231628,
+            "receiptMs": 106.89999997615814,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 24,
+            "group": "sustained",
+            "started": 50270.300000071526,
+            "renderMs": 76.69999992847443,
+            "receiptMs": 106.19999992847443,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 25,
+            "group": "sustained",
+            "started": 50384.300000071526,
+            "renderMs": 80.59999990463257,
+            "receiptMs": 105,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 26,
+            "group": "sustained",
+            "started": 50494.200000047684,
+            "renderMs": 83.5,
+            "receiptMs": 113.60000002384186,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 27,
+            "group": "sustained",
+            "started": 50621.60000002384,
+            "renderMs": 78.10000002384186,
+            "receiptMs": 105.89999997615814,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 28,
+            "group": "sustained",
+            "started": 50732.89999997616,
+            "renderMs": 78.40000009536743,
+            "receiptMs": 103.80000007152557,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 29,
+            "group": "sustained",
+            "started": 50842,
+            "renderMs": 75.20000004768372,
+            "receiptMs": 100.70000004768372,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 30,
+            "group": "sustained",
+            "started": 50948.60000002384,
+            "renderMs": 80.29999995231628,
+            "receiptMs": 108.60000002384186,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 31,
+            "group": "sustained",
+            "started": 51062.5,
+            "renderMs": 82.70000004768372,
+            "receiptMs": 114.10000002384186,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 32,
+            "group": "sustained",
+            "started": 51196.5,
+            "renderMs": 78.39999997615814,
+            "receiptMs": 107,
+            "ackMs": 1445.3000000715256,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 33,
+            "group": "burst",
+            "started": 52674.200000047684,
+            "renderMs": 76.69999992847443,
+            "receiptMs": 93.39999997615814,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 34,
+            "group": "burst",
+            "started": 52775.700000047684,
+            "renderMs": 77.10000002384186,
+            "receiptMs": 103.79999995231628,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 35,
+            "group": "burst",
+            "started": 52881.10000002384,
+            "renderMs": 80.20000004768372,
+            "receiptMs": 107,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 36,
+            "group": "burst",
+            "started": 52991.800000071526,
+            "renderMs": 73.09999990463257,
+            "receiptMs": 100.69999992847443,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 37,
+            "group": "burst",
+            "started": 53096.89999997616,
+            "renderMs": 75.10000002384186,
+            "receiptMs": 99.40000009536743,
+            "ackMs": 1399.2000000476837,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 38,
+            "group": "resumed",
+            "started": 54516.300000071526,
+            "renderMs": 78.5,
+            "receiptMs": 97.29999995231628,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 39,
+            "group": "resumed",
+            "started": 54925.300000071526,
+            "renderMs": 83.79999995231628,
+            "receiptMs": 107.09999990463257,
+            "ackMs": 2208.2999999523163,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 1
+          },
+          {
+            "id": 40,
+            "group": "explicit-save",
+            "started": 57157.89999997616,
+            "renderMs": 80.90000009536743,
+            "receiptMs": 99.5,
+            "ackMs": 1133.7000000476837,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0,
+            "actionAt": 57282,
+            "actionAckMs": 1009.6000000238419
+          }
+        ],
+        "worker": {
+          "active": 0,
+          "events": [
+            {
+              "kind": "start",
+              "at": 2358.7000000476837,
+              "requestId": 1
+            },
+            {
+              "kind": "result",
+              "at": 3720.600000023842,
+              "requestId": 1,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 4949.5,
+              "requestId": 2
+            },
+            {
+              "kind": "result",
+              "at": 6262.200000047684,
+              "requestId": 2,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 7419.200000047684,
+              "requestId": 3
+            },
+            {
+              "kind": "result",
+              "at": 8754.5,
+              "requestId": 3,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 9942.100000023842,
+              "requestId": 4
+            },
+            {
+              "kind": "result",
+              "at": 11254.600000023842,
+              "requestId": 4,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 12473.300000071526,
+              "requestId": 5
+            },
+            {
+              "kind": "result",
+              "at": 13699.899999976158,
+              "requestId": 5,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 14859.800000071526,
+              "requestId": 6
+            },
+            {
+              "kind": "result",
+              "at": 16135.600000023842,
+              "requestId": 6,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 17283.700000047684,
+              "requestId": 7
+            },
+            {
+              "kind": "result",
+              "at": 18502,
+              "requestId": 7,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 19642.700000047684,
+              "requestId": 8
+            },
+            {
+              "kind": "result",
+              "at": 20895.700000047684,
+              "requestId": 8,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 22023.200000047684,
+              "requestId": 9
+            },
+            {
+              "kind": "result",
+              "at": 23270.399999976158,
+              "requestId": 9,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 24422.600000023842,
+              "requestId": 10
+            },
+            {
+              "kind": "result",
+              "at": 25681.399999976158,
+              "requestId": 10,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 26817,
+              "requestId": 11
+            },
+            {
+              "kind": "result",
+              "at": 28062.899999976158,
+              "requestId": 11,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 29194.399999976158,
+              "requestId": 12
+            },
+            {
+              "kind": "result",
+              "at": 30434.899999976158,
+              "requestId": 12,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 31566.800000071526,
+              "requestId": 13
+            },
+            {
+              "kind": "result",
+              "at": 32779.700000047684,
+              "requestId": 13,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 33895.800000071526,
+              "requestId": 14
+            },
+            {
+              "kind": "result",
+              "at": 35110.5,
+              "requestId": 14,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 36280.89999997616,
+              "requestId": 15
+            },
+            {
+              "kind": "result",
+              "at": 37485.800000071526,
+              "requestId": 15,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 38634.5,
+              "requestId": 16
+            },
+            {
+              "kind": "result",
+              "at": 39902.200000047684,
+              "requestId": 16,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 40979.5,
+              "requestId": 17
+            },
+            {
+              "kind": "result",
+              "at": 42207.700000047684,
+              "requestId": 17,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 43333.300000071526,
+              "requestId": 18
+            },
+            {
+              "kind": "result",
+              "at": 44528.10000002384,
+              "requestId": 18,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 45648.300000071526,
+              "requestId": 19
+            },
+            {
+              "kind": "result",
+              "at": 46857.300000071526,
+              "requestId": 19,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 48017.300000071526,
+              "requestId": 20
+            },
+            {
+              "kind": "result",
+              "at": 49207.200000047684,
+              "requestId": 20,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 51593,
+              "requestId": 21
+            },
+            {
+              "kind": "result",
+              "at": 52253,
+              "requestId": 21,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 53487.800000071526,
+              "requestId": 22
+            },
+            {
+              "kind": "result",
+              "at": 54104.5,
+              "requestId": 22,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 54910.300000071526,
+              "requestId": 23
+            },
+            {
+              "kind": "result",
+              "at": 56100.200000047684,
+              "requestId": 23,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 56119.60000002384,
+              "requestId": 24
+            },
+            {
+              "kind": "result",
+              "at": 56751.60000002384,
+              "requestId": 24,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 57311.200000047684,
+              "requestId": 25
+            },
+            {
+              "kind": "result",
+              "at": 57913.700000047684,
+              "requestId": 25,
+              "allowed": true
+            }
+          ]
+        },
+        "budgetMet": false,
+        "groups": [
+          {
+            "group": "sustained",
+            "latestSequence": 32,
+            "latestAckMs": 1445.3000000715256,
+            "superseded": [
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31
+            ],
+            "allSamples": [
+              {
+                "id": 21,
+                "group": "sustained",
+                "started": 49937,
+                "renderMs": 76.30000007152557,
+                "receiptMs": 96.60000002384186,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 22,
+                "group": "sustained",
+                "started": 50053.60000002384,
+                "renderMs": 75,
+                "receiptMs": 99.70000004768372,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 23,
+                "group": "sustained",
+                "started": 50158.700000047684,
+                "renderMs": 74.29999995231628,
+                "receiptMs": 106.89999997615814,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 24,
+                "group": "sustained",
+                "started": 50270.300000071526,
+                "renderMs": 76.69999992847443,
+                "receiptMs": 106.19999992847443,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 25,
+                "group": "sustained",
+                "started": 50384.300000071526,
+                "renderMs": 80.59999990463257,
+                "receiptMs": 105,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 26,
+                "group": "sustained",
+                "started": 50494.200000047684,
+                "renderMs": 83.5,
+                "receiptMs": 113.60000002384186,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 27,
+                "group": "sustained",
+                "started": 50621.60000002384,
+                "renderMs": 78.10000002384186,
+                "receiptMs": 105.89999997615814,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 28,
+                "group": "sustained",
+                "started": 50732.89999997616,
+                "renderMs": 78.40000009536743,
+                "receiptMs": 103.80000007152557,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 29,
+                "group": "sustained",
+                "started": 50842,
+                "renderMs": 75.20000004768372,
+                "receiptMs": 100.70000004768372,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 30,
+                "group": "sustained",
+                "started": 50948.60000002384,
+                "renderMs": 80.29999995231628,
+                "receiptMs": 108.60000002384186,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 31,
+                "group": "sustained",
+                "started": 51062.5,
+                "renderMs": 82.70000004768372,
+                "receiptMs": 114.10000002384186,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 32,
+                "group": "sustained",
+                "started": 51196.5,
+                "renderMs": 78.39999997615814,
+                "receiptMs": 107,
+                "ackMs": 1445.3000000715256,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              }
+            ]
+          },
+          {
+            "group": "burst",
+            "latestSequence": 37,
+            "latestAckMs": 1399.2000000476837,
+            "superseded": [
+              33,
+              34,
+              35,
+              36
+            ],
+            "allSamples": [
+              {
+                "id": 33,
+                "group": "burst",
+                "started": 52674.200000047684,
+                "renderMs": 76.69999992847443,
+                "receiptMs": 93.39999997615814,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 34,
+                "group": "burst",
+                "started": 52775.700000047684,
+                "renderMs": 77.10000002384186,
+                "receiptMs": 103.79999995231628,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 35,
+                "group": "burst",
+                "started": 52881.10000002384,
+                "renderMs": 80.20000004768372,
+                "receiptMs": 107,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 36,
+                "group": "burst",
+                "started": 52991.800000071526,
+                "renderMs": 73.09999990463257,
+                "receiptMs": 100.69999992847443,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 37,
+                "group": "burst",
+                "started": 53096.89999997616,
+                "renderMs": 75.10000002384186,
+                "receiptMs": 99.40000009536743,
+                "ackMs": 1399.2000000476837,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              }
+            ]
+          },
+          {
+            "group": "resumed",
+            "latestSequence": 39,
+            "latestAckMs": 2208.2999999523163,
+            "superseded": [
+              38
+            ],
+            "allSamples": [
+              {
+                "id": 38,
+                "group": "resumed",
+                "started": 54516.300000071526,
+                "renderMs": 78.5,
+                "receiptMs": 97.29999995231628,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 39,
+                "group": "resumed",
+                "started": 54925.300000071526,
+                "renderMs": 83.79999995231628,
+                "receiptMs": 107.09999990463257,
+                "ackMs": 2208.2999999523163,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 1
+              }
+            ]
+          },
+          {
+            "group": "explicit-save",
+            "latestSequence": 40,
+            "latestAckMs": 1133.7000000476837,
+            "actionAckMs": 1009.6000000238419,
+            "superseded": [],
+            "allSamples": [
+              {
+                "id": 40,
+                "group": "explicit-save",
+                "started": 57157.89999997616,
+                "renderMs": 80.90000009536743,
+                "receiptMs": 99.5,
+                "ackMs": 1133.7000000476837,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0,
+                "actionAt": 57282,
+                "actionAckMs": 1009.6000000238419
+              }
+            ]
+          }
+        ],
+        "medianRenderMs": 78.69999998807907,
+        "p95AckMs": 2516.5,
+        "targets": {
+          "medianRenderMs": 150,
+          "p95AckMs": 1000
+        },
+        "noteSizeRetained": true,
+        "noInitializationWrite": true,
+        "method": "Trusted native beforeinput to first ProseMirror DOM mutation requestAnimationFrame; same renderer clock to exact host apply-ack. Ordinary and latest-burst clocks include 300ms gap. All superseded edits retained with null acknowledgements; explicit action clock starts at trusted Save keydown.",
+        "error": "AssertionError [ERR_ASSERTION]: Performance budget failed: median render 78.7ms; p95 ack 2516.5ms",
+        "stack": "AssertionError [ERR_ASSERTION]: Performance budget failed: median render 78.7ms; p95 ack 2516.5ms\n\tat Object.run (/tmp/insrc-scratch-host-A0TSF5/extension/out/fixture.cjs:2406:27)",
+        "retainedRoot": "/tmp/insrc-scratch-host-A0TSF5",
+        "intentionalRestartCrash": false,
+        "commandTrace": [],
+        "exitCode": 1,
+        "timedOut": false,
+        "output": "e security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.\n(Use `exe --trace-deprecation ...` to show where the warning was created)\n\nExtension 'github.copilot-chat' appears in product.json but enables LESS API proposals than the extension wants.\npackage.json (LOSES): agentSessionsWorkspace\nagentsWindowConfiguration\nchatDebug\nchatHooks\nenvIsConnectionMetered\nextensionsAny\nnewSymbolNamesProvider\ninteractive\ncodeActionAI\nactiveComment\ncommentReveal\ncontribCommentThreadAdditionalMenu\ncontribCommentsViewThreadMenus\ncontribChatEditorInlineGutterMenu\ndocumentFiltersExclusive\nembeddings\nfindTextInFiles\nfindTextInFiles2\nlanguageModelToolSupportsModel\nfindFiles2\ntextSearchProvider\nterminalDataWriteEvent\nterminalExecuteCommandEvent\nterminalSelection\nterminalQuickFixProvider\nmappedEditsProvider\naiRelatedInformation\naiSettingsSearch\nchatParticipantAdditions\ndefaultChatParticipant\ncontribSourceControlInputBoxMenu\nauthLearnMore\nauthIssuers\ntestObserver\naiTextSearchProvider\nchatParticipantPrivate\nchatProvider\ncontribDebugCreateConfiguration\nchatReferenceDiagnostic\ntextSearchProvider2\nchatReferenceBinaryData\nlanguageModelSystem\nlanguageModelCapabilities\nlanguageModelPricing\ninlineCompletionsAdditions\nchatStatusItem\nchatInputNotification\ntaskProblemMatcherStatus\ncontribLanguageModelToolSets\ntextDocumentChangeReason\nresolvers\ntaskExecutionTerminal\ndataChannels\nlanguageModelThinkingPart\nchatSessionsProvider\ndevDeviceId\ncontribEditorContentMenu\nchatPromptFiles\nmcpServerDefinitions\ntabInputMultiDiff\nworkspaceTrust\nenvironmentPower\nterminalTitle\ntoolInvocationApproveCombination\nchatSessionCustomizationProvider\nproduct.json (WINS): agentSessionsWorkspace\nagentsWindowConfiguration\ninteractive\nterminalDataWriteEvent\nterminalExecuteCommandEvent\nterminalSelection\nterminalQuickFixProvider\nchatParticipantAdditions\ndefaultChatParticipant\nembeddings\nchatProvider\nmappedEditsProvider\naiRelatedInformation\naiSettingsSearch\ncodeActionAI\nfindTextInFiles\nfindTextInFiles2\ntextSearchProvider\ntextSearchProvider2\nactiveComment\ncommentReveal\ncontribSourceControlInputBoxMenu\ncontribCommentEditorActionsMenu\ncontribCommentThreadAdditionalMenu\ncontribCommentsViewThreadMenus\ncontribChatEditorInlineGutterMenu\nextensionAffinity\nnewSymbolNamesProvider\nfindFiles2\nchatReferenceDiagnostic\nextensionsAny\nauthLearnMore\ntestObserver\naiTextSearchProvider\ndocumentFiltersExclusive\nchatParticipantPrivate\ncontribDebugCreateConfiguration\ninlineCompletionsAdditions\nchatReferenceBinaryData\nlanguageModelSystem\nlanguageModelCapabilities\nlanguageModelThinkingPart\nlanguageModelToolSupportsModel\nchatStatusItem\ntaskProblemMatcherStatus\ncontribLanguageModelToolSets\ntextDocumentChangeReason\nresolvers\ntaskExecutionTerminal\ndataChannels\nchatSessionsProvider\nchatSessionCustomizationProvider\ndevDeviceId\ncontribEditorContentMenu\ntokenInformation\ntoolInvocationApproveCombination\nchatPromptFiles\nmcpServerDefinitions\ntabInputMultiDiff\nworkspaceTrust\nchatHooks\nchatDebug\nenvIsConnectionMetered\nenvironmentPower\nterminalTitle\nlanguageModelPricing\nchatInputNotification\nDELTA: authIssuers\nProceeding with EXTRA proposals (authIssuers) because extension is in development mode. Still, this EXTENSION WILL BE BROKEN unless product.json is updated.\n\u001b[91m[main 2026-11-28T12:13:03.253Z]\u001b[0m [AgentHost:stderr] [copilot-sdk] CopilotClient.stop graceful stdio exit complete. Elapsed=8ms\n\nUnknown channel: agentHostClientByokLm\nUnknown channel: agentHostClientProxy\nUnknown channel: agentHostClientProxy\n(node:314957) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.\n(Use `exe --trace-deprecation ...` to show where the warning was created)\nAssertionError [ERR_ASSERTION]: Performance budget failed: median render 78.7ms; p95 ack 2516.5ms\n\tat Object.run (/tmp/insrc-scratch-host-A0TSF5/extension/out/fixture.cjs:2406:27)\n"
+      },
+      "current": {
+        "passed": false,
+        "hardware": {
+          "date": "2026-11-28T12:10:58.874Z",
+          "cpu": "AMD Ryzen 9 8940HX with Radeon Graphics",
+          "logicalCpus": 32,
+          "availableParallelism": 32,
+          "totalmem": 65501937664,
+          "freemem": 26337353728,
+          "loadavg": [
+            21.59,
+            14,
+            9.87
+          ],
+          "os": "linux",
+          "release": "7.0.0-43-generic",
+          "vscode": "1.146.0",
+          "electron": "43.8.6",
+          "node": "v24.22.1",
+          "display": ":2",
+          "privateDisplay": true
+        },
+        "bytes": 1048576,
+        "noteBound": 1048576,
+        "messageBound": 2097152,
+        "warnings": [],
+        "probe": {
+          "phase": "idle",
+          "baseEditor": "6d87163c6c4ff83aa1fdf5b9eed98b85df8d73a938138e053349f22cd4dea137",
+          "baseWorker": "6d9ff50b5de38822cf589404d557ba6067893300c6c3362b68580d99412e4d9a",
+          "instrumentedEditor": "19da84db48899f369ba8308ddf4e0f68b6bc8e740de933994495af4e39458c41",
+          "instrumentedWorker": "6d9ff50b5de38822cf589404d557ba6067893300c6c3362b68580d99412e4d9a",
+          "instrumentation": "Observes native input and worker transfer only; original timer and worker bytes unchanged.",
+          "observedEditor": "7d07eb13bcd97cd7b69b83f2b0268c1dda32debd1b2a039f9d6643dea063aa5b",
+          "observationOnly": true
+        },
+        "openMs": 2032.0208900000002,
+        "sourcePath": "/tmp/insrc-scratch-host-8nQZoS/scratches/20261128-174058-performance-reference.md",
+        "samples": [
+          {
+            "id": 1,
+            "group": "ordinary",
+            "started": 1844.8999999761581,
+            "renderMs": 93.29999995231628,
+            "receiptMs": 112,
+            "ackMs": 2534,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 2,
+            "group": "ordinary",
+            "started": 4400.599999904633,
+            "renderMs": 85.5,
+            "receiptMs": 104.5,
+            "ackMs": 2363.5,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 3,
+            "group": "ordinary",
+            "started": 6788,
+            "renderMs": 96.29999995231628,
+            "receiptMs": 114,
+            "ackMs": 2381.7999999523163,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 4,
+            "group": "ordinary",
+            "started": 9183.799999952316,
+            "renderMs": 78.10000002384186,
+            "receiptMs": 94.79999995231628,
+            "ackMs": 2365.899999976158,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 5,
+            "group": "ordinary",
+            "started": 11583.5,
+            "renderMs": 75.09999990463257,
+            "receiptMs": 93.59999990463257,
+            "ackMs": 2347.5,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 6,
+            "group": "ordinary",
+            "started": 13952,
+            "renderMs": 74.89999997615814,
+            "receiptMs": 94.09999990463257,
+            "ackMs": 2348.1999999284744,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 7,
+            "group": "ordinary",
+            "started": 16331.399999976158,
+            "renderMs": 76.69999992847443,
+            "receiptMs": 93.69999992847443,
+            "ackMs": 2317.100000023842,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 8,
+            "group": "ordinary",
+            "started": 18672.299999952316,
+            "renderMs": 80,
+            "receiptMs": 99.79999995231628,
+            "ackMs": 2429.7999999523163,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 9,
+            "group": "ordinary",
+            "started": 21136.399999976158,
+            "renderMs": 74.29999995231628,
+            "receiptMs": 93.5,
+            "ackMs": 2331.600000023842,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 10,
+            "group": "ordinary",
+            "started": 23484.5,
+            "renderMs": 75.5,
+            "receiptMs": 95.59999990463257,
+            "ackMs": 2308.6999999284744,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 11,
+            "group": "ordinary",
+            "started": 25821.799999952316,
+            "renderMs": 72.5,
+            "receiptMs": 91.89999997615814,
+            "ackMs": 2328.600000023842,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 12,
+            "group": "ordinary",
+            "started": 28163.799999952316,
+            "renderMs": 77.60000002384186,
+            "receiptMs": 94.5,
+            "ackMs": 2310.7000000476837,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 13,
+            "group": "ordinary",
+            "started": 30506.099999904633,
+            "renderMs": 71.30000007152557,
+            "receiptMs": 88.30000007152557,
+            "ackMs": 2278.100000023842,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 14,
+            "group": "ordinary",
+            "started": 32795.89999997616,
+            "renderMs": 76.29999995231628,
+            "receiptMs": 95.60000002384186,
+            "ackMs": 2256.2999999523163,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 15,
+            "group": "ordinary",
+            "started": 35084.39999997616,
+            "renderMs": 71.10000002384186,
+            "receiptMs": 92.29999995231628,
+            "ackMs": 2344.5,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 16,
+            "group": "ordinary",
+            "started": 37451.59999990463,
+            "renderMs": 77.10000002384186,
+            "receiptMs": 97.30000007152557,
+            "ackMs": 2297.600000023842,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 17,
+            "group": "ordinary",
+            "started": 39799.299999952316,
+            "renderMs": 72.20000004768372,
+            "receiptMs": 90.79999995231628,
+            "ackMs": 2297.600000023842,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 18,
+            "group": "ordinary",
+            "started": 42116.299999952316,
+            "renderMs": 74.39999997615814,
+            "receiptMs": 93.60000002384186,
+            "ackMs": 2336,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 19,
+            "group": "ordinary",
+            "started": 44485.299999952316,
+            "renderMs": 72.70000004768372,
+            "receiptMs": 89.70000004768372,
+            "ackMs": 2282,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 20,
+            "group": "ordinary",
+            "started": 46780.199999928474,
+            "renderMs": 73.80000007152557,
+            "receiptMs": 90.30000007152557,
+            "ackMs": 2340.7000000476837,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 21,
+            "group": "sustained",
+            "started": 49156.59999990463,
+            "renderMs": 71.90000009536743,
+            "receiptMs": 99.90000009536743,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 22,
+            "group": "sustained",
+            "started": 49263.39999997616,
+            "renderMs": 75.89999997615814,
+            "receiptMs": 102.69999992847443,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 23,
+            "group": "sustained",
+            "started": 49372.89999997616,
+            "renderMs": 75.5,
+            "receiptMs": 98.69999992847443,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 24,
+            "group": "sustained",
+            "started": 49477.199999928474,
+            "renderMs": 74.20000004768372,
+            "receiptMs": 107.30000007152557,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 25,
+            "group": "sustained",
+            "started": 49592.59999990463,
+            "renderMs": 71.5,
+            "receiptMs": 96.5,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 26,
+            "group": "sustained",
+            "started": 49694.5,
+            "renderMs": 74.09999990463257,
+            "receiptMs": 98.59999990463257,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 27,
+            "group": "sustained",
+            "started": 49798.799999952316,
+            "renderMs": 74.20000004768372,
+            "receiptMs": 115.29999995231628,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 28,
+            "group": "sustained",
+            "started": 49919,
+            "renderMs": 78.19999992847443,
+            "receiptMs": 99.89999997615814,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 29,
+            "group": "sustained",
+            "started": 50033.699999928474,
+            "renderMs": 72.30000007152557,
+            "receiptMs": 96.39999997615814,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 30,
+            "group": "sustained",
+            "started": 50135.39999997616,
+            "renderMs": 73.79999995231628,
+            "receiptMs": 103.39999997615814,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 31,
+            "group": "sustained",
+            "started": 50244.09999990463,
+            "renderMs": 73.40000009536743,
+            "receiptMs": 98.10000002384186,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 32,
+            "group": "sustained",
+            "started": 50348.299999952316,
+            "renderMs": 75.70000004768372,
+            "receiptMs": 104.60000002384186,
+            "ackMs": 1417,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 33,
+            "group": "burst",
+            "started": 51790.39999997616,
+            "renderMs": 75.39999997615814,
+            "receiptMs": 94.29999995231628,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 34,
+            "group": "burst",
+            "started": 51891.59999990463,
+            "renderMs": 76.10000002384186,
+            "receiptMs": 102.60000002384186,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 35,
+            "group": "burst",
+            "started": 51998.199999928474,
+            "renderMs": 80.60000002384186,
+            "receiptMs": 110.20000004768372,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 36,
+            "group": "burst",
+            "started": 52117.5,
+            "renderMs": 80.39999997615814,
+            "receiptMs": 103.5,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 37,
+            "group": "burst",
+            "started": 52225.699999928474,
+            "renderMs": 75.89999997615814,
+            "receiptMs": 99.70000004768372,
+            "ackMs": 1394.2000000476837,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 38,
+            "group": "resumed",
+            "started": 53633.39999997616,
+            "renderMs": 76,
+            "receiptMs": 107.10000002384186,
+            "ackMs": null,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0
+          },
+          {
+            "id": 39,
+            "group": "resumed",
+            "started": 54062,
+            "renderMs": 82.5,
+            "receiptMs": 105.89999997615814,
+            "ackMs": 2252,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 1
+          },
+          {
+            "id": 40,
+            "group": "explicit-save",
+            "started": 56335,
+            "renderMs": 77,
+            "receiptMs": 95,
+            "ackMs": 1151.2999999523163,
+            "trusted": true,
+            "requested": true,
+            "workerActiveAtInput": 0,
+            "actionAt": 56456.09999990463,
+            "actionAckMs": 1030.2000000476837
+          }
+        ],
+        "worker": {
+          "active": 0,
+          "events": [
+            {
+              "kind": "start",
+              "at": 2256.7999999523163,
+              "requestId": 1
+            },
+            {
+              "kind": "result",
+              "at": 3550.1999999284744,
+              "requestId": 1,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 4803.599999904633,
+              "requestId": 2
+            },
+            {
+              "kind": "result",
+              "at": 6023,
+              "requestId": 2,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 7201.899999976158,
+              "requestId": 3
+            },
+            {
+              "kind": "result",
+              "at": 8442.099999904633,
+              "requestId": 3,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 9579.399999976158,
+              "requestId": 4
+            },
+            {
+              "kind": "result",
+              "at": 10810.299999952316,
+              "requestId": 4,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 11976,
+              "requestId": 5
+            },
+            {
+              "kind": "result",
+              "at": 13217,
+              "requestId": 5,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 14344.5,
+              "requestId": 6
+            },
+            {
+              "kind": "result",
+              "at": 15576.199999928474,
+              "requestId": 6,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 16724.799999952316,
+              "requestId": 7
+            },
+            {
+              "kind": "result",
+              "at": 17949.399999976158,
+              "requestId": 7,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 19069.299999952316,
+              "requestId": 8
+            },
+            {
+              "kind": "result",
+              "at": 20318.399999976158,
+              "requestId": 8,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 21527.299999952316,
+              "requestId": 9
+            },
+            {
+              "kind": "result",
+              "at": 22776.799999952316,
+              "requestId": 9,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 23879.099999904633,
+              "requestId": 10
+            },
+            {
+              "kind": "result",
+              "at": 25118.299999952316,
+              "requestId": 10,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 26211.199999928474,
+              "requestId": 11
+            },
+            {
+              "kind": "result",
+              "at": 27458,
+              "requestId": 11,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 28559.199999928474,
+              "requestId": 12
+            },
+            {
+              "kind": "result",
+              "at": 29787.099999904633,
+              "requestId": 12,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 30894.299999952316,
+              "requestId": 13
+            },
+            {
+              "kind": "result",
+              "at": 32089.199999928474,
+              "requestId": 13,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 33190.299999952316,
+              "requestId": 14
+            },
+            {
+              "kind": "result",
+              "at": 34399.89999997616,
+              "requestId": 14,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 35473.09999990463,
+              "requestId": 15
+            },
+            {
+              "kind": "result",
+              "at": 36694.799999952316,
+              "requestId": 15,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 37845.89999997616,
+              "requestId": 16
+            },
+            {
+              "kind": "result",
+              "at": 39074.5,
+              "requestId": 16,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 40189.199999928474,
+              "requestId": 17
+            },
+            {
+              "kind": "result",
+              "at": 41408.39999997616,
+              "requestId": 17,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 42509.199999928474,
+              "requestId": 18
+            },
+            {
+              "kind": "result",
+              "at": 43746.799999952316,
+              "requestId": 18,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 44874.09999990463,
+              "requestId": 19
+            },
+            {
+              "kind": "result",
+              "at": 46065.699999928474,
+              "requestId": 19,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 47171.299999952316,
+              "requestId": 20
+            },
+            {
+              "kind": "result",
+              "at": 48420.5,
+              "requestId": 20,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 50740.09999990463,
+              "requestId": 21
+            },
+            {
+              "kind": "result",
+              "at": 51370,
+              "requestId": 21,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 52617.699999928474,
+              "requestId": 22
+            },
+            {
+              "kind": "result",
+              "at": 53235.5,
+              "requestId": 22,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 54029.39999997616,
+              "requestId": 23
+            },
+            {
+              "kind": "result",
+              "at": 55267.299999952316,
+              "requestId": 23,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 55288.5,
+              "requestId": 24
+            },
+            {
+              "kind": "result",
+              "at": 55915.39999997616,
+              "requestId": 24,
+              "allowed": true
+            },
+            {
+              "kind": "start",
+              "at": 56491.5,
+              "requestId": 25
+            },
+            {
+              "kind": "result",
+              "at": 57099.39999997616,
+              "requestId": 25,
+              "allowed": true
+            }
+          ]
+        },
+        "budgetMet": false,
+        "groups": [
+          {
+            "group": "sustained",
+            "latestSequence": 32,
+            "latestAckMs": 1417,
+            "superseded": [
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31
+            ],
+            "allSamples": [
+              {
+                "id": 21,
+                "group": "sustained",
+                "started": 49156.59999990463,
+                "renderMs": 71.90000009536743,
+                "receiptMs": 99.90000009536743,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 22,
+                "group": "sustained",
+                "started": 49263.39999997616,
+                "renderMs": 75.89999997615814,
+                "receiptMs": 102.69999992847443,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 23,
+                "group": "sustained",
+                "started": 49372.89999997616,
+                "renderMs": 75.5,
+                "receiptMs": 98.69999992847443,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 24,
+                "group": "sustained",
+                "started": 49477.199999928474,
+                "renderMs": 74.20000004768372,
+                "receiptMs": 107.30000007152557,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 25,
+                "group": "sustained",
+                "started": 49592.59999990463,
+                "renderMs": 71.5,
+                "receiptMs": 96.5,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 26,
+                "group": "sustained",
+                "started": 49694.5,
+                "renderMs": 74.09999990463257,
+                "receiptMs": 98.59999990463257,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 27,
+                "group": "sustained",
+                "started": 49798.799999952316,
+                "renderMs": 74.20000004768372,
+                "receiptMs": 115.29999995231628,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 28,
+                "group": "sustained",
+                "started": 49919,
+                "renderMs": 78.19999992847443,
+                "receiptMs": 99.89999997615814,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 29,
+                "group": "sustained",
+                "started": 50033.699999928474,
+                "renderMs": 72.30000007152557,
+                "receiptMs": 96.39999997615814,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 30,
+                "group": "sustained",
+                "started": 50135.39999997616,
+                "renderMs": 73.79999995231628,
+                "receiptMs": 103.39999997615814,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 31,
+                "group": "sustained",
+                "started": 50244.09999990463,
+                "renderMs": 73.40000009536743,
+                "receiptMs": 98.10000002384186,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 32,
+                "group": "sustained",
+                "started": 50348.299999952316,
+                "renderMs": 75.70000004768372,
+                "receiptMs": 104.60000002384186,
+                "ackMs": 1417,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              }
+            ]
+          },
+          {
+            "group": "burst",
+            "latestSequence": 37,
+            "latestAckMs": 1394.2000000476837,
+            "superseded": [
+              33,
+              34,
+              35,
+              36
+            ],
+            "allSamples": [
+              {
+                "id": 33,
+                "group": "burst",
+                "started": 51790.39999997616,
+                "renderMs": 75.39999997615814,
+                "receiptMs": 94.29999995231628,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 34,
+                "group": "burst",
+                "started": 51891.59999990463,
+                "renderMs": 76.10000002384186,
+                "receiptMs": 102.60000002384186,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 35,
+                "group": "burst",
+                "started": 51998.199999928474,
+                "renderMs": 80.60000002384186,
+                "receiptMs": 110.20000004768372,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 36,
+                "group": "burst",
+                "started": 52117.5,
+                "renderMs": 80.39999997615814,
+                "receiptMs": 103.5,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 37,
+                "group": "burst",
+                "started": 52225.699999928474,
+                "renderMs": 75.89999997615814,
+                "receiptMs": 99.70000004768372,
+                "ackMs": 1394.2000000476837,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              }
+            ]
+          },
+          {
+            "group": "resumed",
+            "latestSequence": 39,
+            "latestAckMs": 2252,
+            "superseded": [
+              38
+            ],
+            "allSamples": [
+              {
+                "id": 38,
+                "group": "resumed",
+                "started": 53633.39999997616,
+                "renderMs": 76,
+                "receiptMs": 107.10000002384186,
+                "ackMs": null,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0
+              },
+              {
+                "id": 39,
+                "group": "resumed",
+                "started": 54062,
+                "renderMs": 82.5,
+                "receiptMs": 105.89999997615814,
+                "ackMs": 2252,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 1
+              }
+            ]
+          },
+          {
+            "group": "explicit-save",
+            "latestSequence": 40,
+            "latestAckMs": 1151.2999999523163,
+            "actionAckMs": 1030.2000000476837,
+            "superseded": [],
+            "allSamples": [
+              {
+                "id": 40,
+                "group": "explicit-save",
+                "started": 56335,
+                "renderMs": 77,
+                "receiptMs": 95,
+                "ackMs": 1151.2999999523163,
+                "trusted": true,
+                "requested": true,
+                "workerActiveAtInput": 0,
+                "actionAt": 56456.09999990463,
+                "actionAckMs": 1030.2000000476837
+              }
+            ]
+          }
+        ],
+        "medianRenderMs": 75.29999995231628,
+        "p95AckMs": 2429.7999999523163,
+        "targets": {
+          "medianRenderMs": 150,
+          "p95AckMs": 1000
+        },
+        "noteSizeRetained": true,
+        "noInitializationWrite": true,
+        "method": "Trusted native beforeinput to first ProseMirror DOM mutation requestAnimationFrame; same renderer clock to exact host apply-ack. Ordinary and latest-burst clocks include 300ms gap. All superseded edits retained with null acknowledgements; explicit action clock starts at trusted Save keydown.",
+        "error": "AssertionError [ERR_ASSERTION]: Performance budget failed: median render 75.3ms; p95 ack 2429.8ms",
+        "stack": "AssertionError [ERR_ASSERTION]: Performance budget failed: median render 75.3ms; p95 ack 2429.8ms\n\tat Object.run (/tmp/insrc-scratch-host-8nQZoS/extension/out/fixture.cjs:2406:27)",
+        "retainedRoot": "/tmp/insrc-scratch-host-8nQZoS",
+        "intentionalRestartCrash": false,
+        "commandTrace": [],
+        "exitCode": 1,
+        "timedOut": false,
+        "output": "' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n(node:279597) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.\n(Use `exe --trace-deprecation ...` to show where the warning was created)\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\n[AgentHostCustomizationMarketplace] Unable to load session-bound SDK installation receipts { name: 'Error' }\nAssertionError [ERR_ASSERTION]: Performance budget failed: median render 75.3ms; p95 ack 2429.8ms\n\tat Object.run (/tmp/insrc-scratch-host-8nQZoS/extension/out/fixture.cjs:2406:27)\n\u001b[91m[main 2026-11-28T12:11:56.847Z]\u001b[0m [AgentHost:stderr] [copilot-sdk] CopilotClient.stop graceful stdio exit complete. Elapsed=8ms\n\n"
+      }
+    }
+  },
+  "packaging": {
+    "passed": true,
+    "archive": "/tmp/.insrc/insrc-0.5.24-scratchpad-s001.vsix",
+    "sha256": "b62a5a1ae717a2b0dd87dbedd0081700158ac8877765a7a8d4dc3c720d9ffce1",
+    "bytes": 4362580,
+    "coordinator": "43f300aa-7a56-442e-a314-2eaff2cbf182",
+    "verified": [
+      "actual production contribution metadata and runtime files",
+      "browser JS/CSS present in written VSIX archive",
+      "CJS package and activation/uninstall entry points retained",
+      "raw node_modules/tests/TypeScript excluded",
+      "no external CSS/assets or bundled library AI providers",
+      "scratch-only option association; no Markdown-wide default takeover"
+    ],
+    "currentRequalification": {
+      "archive": "/tmp/.insrc/scratchpad-t21-current.vsix",
+      "sha256": "2320d8a6731bae85d620361a3e7900359107771fe8e056eb741b5daa320a4e7c",
+      "bytes": 2881774,
+      "coordinator": "3b3eb417-da79-4da1-b827-7286dc165689",
+      "testResult": "pass",
+      "productionChangesSincePackaging": "None; later changes are test fixtures and evidence documents only."
+    }
+  },
+  "acceptance": {
+    "ac1": {
+      "status": "blocked",
+      "reason": "Idle/background correction passes rendering at full bound and native functionality/recovery requalification; original canonical acknowledgement performance still fails on both required hosts.",
+      "evidence": [
+        "/tmp/.insrc/scratchpad-t21-qualification.json",
+        "/tmp/.insrc/scratchpad-t15-idle-current.json",
+        "/tmp/.insrc/scratchpad-t15-idle-floor.json"
+      ]
+    },
+    "ac2": {
+      "status": "verified",
+      "evidence": [
+        "t6",
+        "t12",
+        "t14",
+        "/tmp/.insrc/scratchpad-t14-qualification.json"
+      ],
+      "currentRequalification": "/tmp/.insrc/scratchpad-t21-qualification.json"
+    },
+    "ac3": {
+      "status": "verified",
+      "evidence": [
+        "t1",
+        "t3",
+        "t11",
+        "t12",
+        "43f300aa-7a56-442e-a314-2eaff2cbf182"
+      ],
+      "currentRequalification": "/tmp/.insrc/scratchpad-t21-qualification.json"
+    },
+    "ac4": {
+      "status": "verified",
+      "evidence": [
+        "t8",
+        "t12",
+        "t14",
+        "/tmp/.insrc/scratchpad-t14-qualification.json"
+      ],
+      "currentRequalification": "/tmp/.insrc/scratchpad-t21-qualification.json"
+    }
+  },
+  "decisionRequested": {
+    "recommended": "Retain full 1MiB support and original render/ack budgets; revise the validation critical path while retaining independent fidelity checks and exact-current application gates. Requires tracked design/plan approval before further implementation.",
+    "measuredBlocker": "Sequential configured validation plus independent host admission exceeds 1s even though input rendering and durable staging are responsive.",
+    "approvedDesignChanged": false
+  },
+  "limits": [
+    "Native qualification covers Linux X11, VS Code 1.141.0/1.146.0; other platforms are not claimed",
+    "Performance probe records one full-bound paragraph shape and trusted input; a smaller-bound result is not a general certification"
+  ],
+  "workflow": {
+    "buildApproved": false,
+    "task15ChangesCommitted": false,
+    "finalBuildApprovalNotRequested": true,
+    "lastTask15Gate": {
+      "passed": false,
+      "performance": "failed original 1s canonical acknowledgement budget",
+      "packaging": "passed",
+      "evidenceCompletenessTest": "missing in first idle-correction gate; adding direct tracked-report completeness test"
+    },
+    "buildRecord": "docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/BUILD.md",
+    "testRecord": "docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/TESTS.md",
+    "pendingTask15Files": [
+      "vscode-plugin/src/panels/__tests__/fixtures/scratch-editor-performance-host.ts",
+      "vscode-plugin/src/panels/__tests__/scratch-editor-performance-live.test.ts"
+    ]
+  },
+  "existingTaskMappingRefresh": "docs/epics/linked-scratchpads-vs-code-E202611162846f076/S001/IDLE-VALIDATION-QUALIFICATION.json"
+}

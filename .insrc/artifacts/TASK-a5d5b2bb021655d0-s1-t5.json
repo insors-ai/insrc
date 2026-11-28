@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-848918fb-0ddf-4221-b8b0-7d8dccbb9118",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-27T14:30:02.105Z",
+    "epicCreatedAt": "2026-11-27T13:29:55.493Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a5d5b2bb021655d0",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Wire qualification cancellation, evidence and containing budgets",
+      "parent": {
+        "entityId": "STORY-a5d5b2bb021655d0-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a5d5b2bb021655d0-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-a5d5b2bb021655d0-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a5d5b2bb021655d0-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a5d5b2bb021655d0-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "51f1c3395cfe33ae416dd0ed9487325086439c74766840e2db0995bbe27e90d6",
+        "at": "2026-11-27T14:30:02.105Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T14:30:02.108Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire qualification cancellation, evidence and containing budgets",
+    "summary": "Update scripts/qualify-runtime-foundation.mjs to select outer role before allocation, record profile/resolved role caps at evidence start and connect outer work expiry to its AbortController across independent/in-process preparation. Update runtime-foundation-only .github/workflows/ci.yml profile selection and containment240min normal/360min slow; retain backend20min behavior. Add proposed scripts/qualification-containment.mjs with focused proposed scripts/__tests__/qualification-containment.test.ts for shared finite admission checks, and document the local detached supervisor envelope in docs/testing.md. Bound setup/preflight and refuse native admission with insufficient remaining allowance. Do not dispatch Windows job.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Invalid selector fails before fresh home/lease allocation; evidence records selected role values without certifying success.",
+      "Outer expiry and explicit cancellation reach independently owned worker/in-process packaging, with cascading bounded cleanup; timers/listeners dispose on all exits.",
+      "Hosted slow profile fits360min: preflight work<=40min plus setup/drain<=5min; native5h plus cascade<=7min; remaining diagnostic headroom. Admission refuses insufficient remaining time.",
+      "Normal runtime-foundation job contains existing2h native budget; backend workflow behavior is unchanged. Local supervisor covers selected5h work plus drain/diagnostics, with no hidden60/90/120min wrapper.",
+      "Use owned coordinator for preflight; selected-test run/file caps are reconciled with enclosing allowance; Windows ownership prerequisite remains separate, no native dispatch.",
+      "After t2-t4 wiring, prove actual installed/bundled consumers receive copied policy bytes and preserve import boundaries; avoid a generic supervisor framework."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "outer-deadline-cancels-independent-in-process-preparation"
+      },
+      {
+        "level": "unit",
+        "name": "ci-and-operator-containment-admit-only-sufficient-native-work-and-cleanup-headroom"
+      },
+      {
+        "level": "integration",
+        "name": "copied-policy-asset-has-source-bytes-and-loads-from-installed-control"
+      },
+      {
+        "level": "integration",
+        "name": "qualification-profile-reaches-manager-worker-private-npm-and-runtime-helpers"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

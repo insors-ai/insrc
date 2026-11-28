@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ded26926-ce14-4886-bf1f-cedfd8053cac",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-27T14:30:02.109Z",
+    "epicCreatedAt": "2026-11-27T13:29:55.493Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a5d5b2bb021655d0",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Validate the slow profile on the UTM macOS guest",
+      "parent": {
+        "entityId": "STORY-a5d5b2bb021655d0-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a5d5b2bb021655d0-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-a5d5b2bb021655d0-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1a642e8924115ef7aca31bb6791512b1fa52ab5176cf109d5c09f2fd758d8463",
+        "at": "2026-11-27T14:30:02.109Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T14:30:02.111Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Validate the slow profile on the UTM macOS guest",
+    "summary": "After all implementation surrounding checks pass, use a committed built source in the existing ordinary-user UTM macOS guest. First establish qualified retired-worker closure/reconciliation through existing proof; retain iq-wZetTc stage, checkpoint and lease untouched while proof is absent. Once admitted, use a fresh home and retained detached supervisor under slow-vm for live official Node acquisition, offline reuse, private npm/build/payload/native consumers. Record exact source, OS/runtime, budget roles, stages and independent parent/worker closure in this story's evidence. Do not claim historical Linux or fixture Windows evidence as current native proof.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Retired worker closure prerequisite is positively satisfied before a new qualification; PID/age/closed child commands alone do not suffice. If absent, record blocked with retained evidence and do not retry.",
+      "Fresh UTM run uses INSRC_QUALIFICATION_PROFILE=slow-vm and sufficient supervisor allowance, with Node22 and matching npm; CUDA skip is set only if absent.",
+      "Live acquisition, offline zero-network reuse, private build/payload/native consumer probes complete successfully with matching identity and full independent parent/worker closure.",
+      "No release enablement or host daemon/Ollama mutation; failed/missing native evidence remains unsatisfied. Feedback corrections go through affected task checks before completion.",
+      "Evidence explicitly distinguishes blocked admission, failed actual qualification and passing actual qualification; no native work overlaps canonical final regression. An unfulfilled prerequisite cannot mark t6 or story complete."
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "fresh-UTM-macOS-slow-vm-profile-completes-native-foundation-and-confirmed-closure"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

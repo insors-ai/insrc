@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e5331879-90c4-47be-93c7-6aa463d4e5e6",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-27T14:30:02.102Z",
+    "epicCreatedAt": "2026-11-27T13:29:55.493Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a5d5b2bb021655d0",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Bound worker launch by remaining parent time and cleanup reserve",
+      "parent": {
+        "entityId": "STORY-a5d5b2bb021655d0-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a5d5b2bb021655d0-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-a5d5b2bb021655d0-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a5d5b2bb021655d0-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "1163e08ccafae7d64031de2831561124e485b6416e5018a57e71d84396159646",
+        "at": "2026-11-27T16:16:20.966Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T14:30:02.103Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Bound worker launch by remaining parent time and cleanup reserve",
+    "summary": "Update src/installer/dev-delivery.ts ownedScope and src/installer/dev-worker.ts to use manager/worker roles and canonical inherited profile. Capture monotonic parent expiry at admission and pass the LLD local-only deadline option. Immediately after runtime verification, before scope.start, cap selected/explicit worker allowance by parent remaining minus reserve; fail before spawn when exhausted. Preserve existing cancel frames, DevWorkerLaunch JSON and finalization proof. Verify private toolchain env in src/installer/dev-toolchain.ts without unrelated refactoring. Explicitly include scripts/test-harness/process.mjs in this task: capture one monotonic soft/hard cleanup deadline at the first drain of each retained scope and reuse only its remaining allowance across nested/repeated/final drains. Independently reobserve actual closure on every call; never cache a successful proof or alter ownership/disposal/journal/lease semantics. Extend the existing parent reserve fixture for repeated-drain exhaustion and run surrounding scripts/__tests__/test-harness.test.ts and scripts/__tests__/test-harness-coordinator.test.ts checks.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Barrier-controlled runtime setup consumes parent allowance; child clock is computed after setup and never resets parent time.",
+      "No positive remaining allowance yields source-build-failed before spawn; short explicit budgetMs remains a cap.",
+      "Worker/manager use selected role values and manager120s reserve contains worker30s drain/final evidence; early cancellation remains immediate.",
+      "Actual result, worker lease closure and parent command disposal remain required; wire/controller/receipt schemas unchanged; missing proof stays preparation-uncertain.",
+      "Each retained processScope has one cumulative cleanupMs ceiling across nested launch/build and final owner drains, under both profiles. Repeated uncertain drains cannot schedule a new allowance; every call independently checks current actual closure and errors. Numeric normal defaults, cooperative cancellation, ownership/disposal journals and uncertainty/lease retention remain unchanged; surrounding coordinator/process regressions pass."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "child-budget-is-parent-remaining-minus-reserve-after-runtime-setup"
+      },
+      {
+        "level": "integration",
+        "name": "parent-cooperative-reserve-covers-worker-drain-and-final-evidence"
+      },
+      {
+        "level": "integration",
+        "name": "qualification-profile-reaches-manager-worker-private-npm-and-runtime-helpers"
+      },
+      {
+        "level": "integration",
+        "name": "profile-never-waives-positive-resource-or-process-closure"
+      },
+      {
+        "level": "integration",
+        "name": "normal-runtime-identity-inventory-worker-wire-and-controller-schema-remain-unchanged"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

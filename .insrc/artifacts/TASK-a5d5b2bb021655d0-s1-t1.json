@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-940a23fe-d803-4c9f-add6-684dd2850e2c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-27T14:30:02.092Z",
+    "epicCreatedAt": "2026-11-27T13:29:55.493Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a5d5b2bb021655d0",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add and publish the fixed qualification budget policy",
+      "parent": {
+        "entityId": "STORY-a5d5b2bb021655d0-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a5d5b2bb021655d0-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6931188f799986af29e87535547d0738442ea7163354ee43560296574470a10e",
+        "at": "2026-11-27T14:30:02.092Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T14:30:02.094Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add and publish the fixed qualification budget policy",
+    "summary": "Add proposed src/installer/qualification-time-budgets.mjs and src/installer/qualification-time-budgets.d.mts. Select normal/slow-vm once at import, deeply freeze role values, validate the enum before admission, and preserve every normal numeric value. Update copy-assets.mjs to copy and byte-verify the MJS beside compiled consumers; exercise installed and bundled imports through existing payload publication. No application/source-builder dependencies in the policy.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Absent/normal and slow-vm snapshots match the LLD role table exactly; slow-vm includes 40min commands,4h worker/manager,2h qualification build/file,5h qualification run,120s manager cleanup and5min outer cleanup.",
+      "Unknown/empty/whitespace/numeric selectors fail with qualification-profile-invalid before work; policy cannot change after import or mutation.",
+      "Copied out policy matches source bytes and imports independently; repeat actual installed/bundled consumer integration in t5 once all consumers are wired. Preserve runtime identity/wire/payload provenance rules."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "qualification-profile-selects-frozen-normal-and-slow-vm-role-budgets"
+      },
+      {
+        "level": "unit",
+        "name": "invalid-profile-fails-before-any-filesystem-or-worker-admission"
+      },
+      {
+        "level": "unit",
+        "name": "profile-snapshot-cannot-change-after-module-import"
+      },
+      {
+        "level": "integration",
+        "name": "copied-policy-asset-has-source-bytes-and-loads-from-installed-control"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

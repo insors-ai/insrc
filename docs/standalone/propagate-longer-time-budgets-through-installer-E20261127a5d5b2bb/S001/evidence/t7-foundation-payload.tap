@@ -1,0 +1,19 @@
+TAP version 13
+# Subtest: assemble actual complete foundation payload only after all entrypoints exist
+ok 1 - assemble actual complete foundation payload only after all entrypoints exist
+  ---
+  duration_ms: 392291.245042
+  type: 'test'
+  ...
+# Payload fixture evidence: /var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-foundation-payload-33Ji2e
+# {"stage":"starting","elapsedMs":0}\\n{"stage":"control-bundles-complete","elapsedMs":294}\\n{"stage":"publisher-runtime-prepared","elapsedMs":29008}\\n{"stage":"application-files-collected","elapsedMs":48131}\\n{"stage":"release-assembled","elapsedMs":73812}\\n{"stage":"consumer-extraction-complete","elapsedMs":361347}\\n{"stage":"native-probe-complete","elapsedMs":368940}\\n
+# {"publication":"fixture","files":55082,"payloadBytes":484208819,"consumerExtraction":"passed","nativeProbe":"passed","managerAndTerminalBundled":true,"runtimeOutsidePayload":true,"descriptorFormat":2}
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 392427.749333

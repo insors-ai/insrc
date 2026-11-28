@@ -1,0 +1,382 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 12,
+        "contentHash": "010f16b7d3e635d5886db00bc67de296c91ff1e5d70104d62064fe3b282e0eba",
+        "at": "2026-11-27T19:55:55.659Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-4d2bfec6-e6f6-4395-97ed-92ec88614938",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-27T14:35:22.914Z",
+    "epicCreatedAt": "2026-11-27T13:29:55.493Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a5d5b2bb021655d0",
+    "storyId": "s1",
+    "revision": 12,
+    "updatedAt": "2026-11-27T19:54:57.983Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "propagate-longer-time-budgets-through-installer"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ],
+    "summary": "Actual fresh UTM macOS slow-vm qualification passed on committed source 2fca011a69ec3b0ce5e9e53e9074928baec02495. Independent audit verifies live official Node acquisition, zero-network offline reuse, private Node22.22.1/npm10.9.4/native payload consumers and all 11 preflight, 9 outer and 25 worker command-group closures. Retired failed guest attempt remains retained unchanged after independently observed whole-guest shutdown; final scoped regression remains pending. No host daemon/Ollama mutation, release enablement or current Linux/Windows qualification is claimed.",
+    "testRecord": {
+      "md": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "copy-assets.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/qualification-time-budgets.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/qualification-time-budgets.d.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/qualification-time-budgets.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t1.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t2.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "scripts/test-harness/context.d.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "scripts/test-harness/context.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "scripts/test-harness/process.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-source-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-toolchain-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-toolchain.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/installed-dev-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/qualification-scopes.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/dev-git.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-manager-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/qualification-manager.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t3.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/qualification-runtime-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/qualification-runtime.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/download.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/runtime-acquire.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/runtime-archive.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/runtime-metadata.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t4.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/qualification-worker-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/qualification-worker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/dev-delivery.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/dev-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": ".github/workflows/ci.yml"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t5.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "docs/testing.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/qualification-containment-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/qualification-containment.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "scripts/qualification-containment.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "scripts/qualify-runtime-foundation.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/qualification-installed.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t6-prerequisite.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t6.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t6-actual-budgets.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t6-audit.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t6-native-result.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t6-retired-vm-closure.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t6-supervisor.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T19:54:57.983Z"
+      }
+    ],
+    "commit": "9c805a8bd"
+  },
+  "citations": []
+}

@@ -38,6 +38,24 @@ Override positive millisecond budgets with `--build-ms=`, `--file-ms=`,
 with an explicit recorded override. The earlier audit's sixty-second limit
 is not a correctness requirement.
 
+The complete installer selection includes durable payload packaging and recovery
+matrices with many isolated private-runtime fixtures. These files can exceed the
+ordinary ten-minute cap. Record larger coordinator allowances before starting
+this selection:
+
+```sh
+npm test -- --concurrency=2 --build-ms=2400000 --file-ms=2400000 --run-ms=14400000 --cleanup-ms=30000 \
+  'src/installer/__tests__/*.test.ts' \
+  src/shared/__tests__/installation-home.test.ts \
+  scripts/__tests__/qualification-containment.test.ts \
+  scripts/__tests__/forbidden-spawn-scan.test.ts
+```
+
+Run the controller integration files separately with the direct Node 22 command
+under [Testing the coordinator itself](#testing-the-coordinator-itself). The
+allowances above apply to this checkout coordinator; process-policy defaults and
+intentional short negative-test clocks retain their existing values.
+
 For an explicitly slow USB-backed VM, select the fixed profile **before** Node
 starts. Absent or `normal` keeps the numeric defaults above. Empty, unknown,
 whitespace and numeric selectors fail before admission; explicit short test

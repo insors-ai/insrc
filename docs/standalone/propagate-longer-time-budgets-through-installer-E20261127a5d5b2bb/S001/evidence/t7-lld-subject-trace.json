@@ -1,0 +1,374 @@
+[
+  {
+    "subject": "qualification-profile-selects-frozen-normal-and-slow-vm-role-budgets",
+    "evidence": [
+      {
+        "task": "t1",
+        "taskTestsPassed": true,
+        "commit": "ae1b93f79",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+            "title": "qualification-profile-selects-frozen-normal-and-slow-vm-role-budgets",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      }
+    ],
+    "finalSubjectPending": false
+  },
+  {
+    "subject": "invalid-profile-fails-before-any-filesystem-or-worker-admission",
+    "evidence": [
+      {
+        "task": "t1",
+        "taskTestsPassed": true,
+        "commit": "ae1b93f79",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+            "title": "invalid-profile-fails-before-any-filesystem-or-worker-admission",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      }
+    ],
+    "finalSubjectPending": false
+  },
+  {
+    "subject": "explicit-short-scope-overrides-remain-exact-under-slow-vm",
+    "evidence": [
+      {
+        "task": "t2",
+        "taskTestsPassed": true,
+        "commit": "a7f3eab9c",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/qualification-scopes.test.ts",
+            "title": "explicit-short-scope-overrides-remain-exact-under-slow-vm",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      }
+    ],
+    "finalSubjectPending": false
+  },
+  {
+    "subject": "profile-snapshot-cannot-change-after-module-import",
+    "evidence": [
+      {
+        "task": "t1",
+        "taskTestsPassed": true,
+        "commit": "ae1b93f79",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+            "title": "profile-snapshot-cannot-change-after-module-import",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      }
+    ],
+    "finalSubjectPending": false
+  },
+  {
+    "subject": "qualification-profile-reaches-manager-worker-private-npm-and-runtime-helpers",
+    "evidence": [
+      {
+        "task": "t2",
+        "taskTestsPassed": true,
+        "commit": "a7f3eab9c",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/dev-toolchain.test.ts",
+            "title": "qualification-profile-reaches-manager-worker-private-npm-and-runtime-helpers",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/qualification-manager.test.ts",
+            "title": "slow-profile-reaches-real-manager-worker-and-private-npm",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      },
+      {
+        "task": "t4",
+        "taskTestsPassed": true,
+        "commit": "3fdfaa0d7",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/qualification-manager.test.ts",
+            "title": "slow-profile-reaches-real-manager-worker-and-private-npm",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      },
+      {
+        "task": "t5",
+        "taskTestsPassed": true,
+        "commit": "39bdade3d",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/qualification-manager.test.ts",
+            "title": "slow-profile-reaches-real-manager-worker-and-private-npm",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      }
+    ],
+    "finalSubjectPending": false
+  },
+  {
+    "subject": "child-budget-is-parent-remaining-minus-reserve-after-runtime-setup",
+    "evidence": [
+      {
+        "task": "t4",
+        "taskTestsPassed": true,
+        "commit": "3fdfaa0d7",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/qualification-worker.test.ts",
+            "title": "child-budget-is-parent-remaining-minus-reserve-after-runtime-setup",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      }
+    ],
+    "finalSubjectPending": false
+  },
+  {
+    "subject": "parent-cooperative-reserve-covers-worker-drain-and-final-evidence",
+    "evidence": [
+      {
+        "task": "t4",
+        "taskTestsPassed": true,
+        "commit": "3fdfaa0d7",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/qualification-worker.test.ts",
+            "title": "parent-cooperative-reserve-covers-worker-drain-and-final-evidence",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      }
+    ],
+    "finalSubjectPending": false
+  },
+  {
+    "subject": "outer-deadline-cancels-independent-in-process-preparation",
+    "evidence": [
+      {
+        "task": "t5",
+        "taskTestsPassed": true,
+        "commit": "39bdade3d",
+        "cases": [
+          {
+            "file": "scripts/__tests__/qualification-containment.test.ts",
+            "title": "outer-deadline-cancels-independent-in-process-preparation",
+            "result": "pass"
+          },
+          {
+            "file": "scripts/__tests__/qualification-containment.test.ts",
+            "title": "qualification-invalid-profile-refuses-before-root-or-lease-allocation",
+            "result": "pass"
+          },
+          {
+            "file": "scripts/__tests__/qualification-containment.test.ts",
+            "title": "qualification-evidence-records-selected-caps-before-resource-copy-without-success-claim",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      }
+    ],
+    "finalSubjectPending": false
+  },
+  {
+    "subject": "omitted-child-profile-is-canonicalized-and-conflicting-profile-rejected",
+    "evidence": [
+      {
+        "task": "t2",
+        "taskTestsPassed": true,
+        "commit": "a7f3eab9c",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/qualification-scopes.test.ts",
+            "title": "omitted-child-profile-is-canonicalized-and-conflicting-profile-rejected",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      }
+    ],
+    "finalSubjectPending": false
+  },
+  {
+    "subject": "slow-vm-runtime-download-verification-and-decoder-drain-have-no-hidden-normal-cap",
+    "evidence": [
+      {
+        "task": "t3",
+        "taskTestsPassed": true,
+        "commit": "09c276593",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/qualification-runtime.test.ts",
+            "title": "slow-vm-runtime-download-verification-and-decoder-drain-have-no-hidden-normal-cap",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      }
+    ],
+    "finalSubjectPending": false
+  },
+  {
+    "subject": "copied-policy-asset-has-source-bytes-and-loads-from-installed-control",
+    "evidence": [
+      {
+        "task": "t1",
+        "taskTestsPassed": true,
+        "commit": "ae1b93f79",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+            "title": "copied-policy-asset-has-source-bytes-and-loads-from-installed-control",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      },
+      {
+        "task": "t5",
+        "taskTestsPassed": true,
+        "commit": "39bdade3d",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/qualification-installed.test.ts",
+            "title": "copied-policy-asset-has-source-bytes-and-loads-from-installed-control",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      }
+    ],
+    "finalSubjectPending": false
+  },
+  {
+    "subject": "normal-runtime-identity-inventory-worker-wire-and-controller-schema-remain-unchanged",
+    "evidence": [
+      {
+        "task": "t3",
+        "taskTestsPassed": true,
+        "commit": "09c276593",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/qualification-runtime.test.ts",
+            "title": "normal-runtime-identity-inventory-worker-wire-and-controller-schema-remain-unchanged",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      },
+      {
+        "task": "t4",
+        "taskTestsPassed": true,
+        "commit": "3fdfaa0d7",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/qualification-runtime.test.ts",
+            "title": "normal-runtime-identity-inventory-worker-wire-and-controller-schema-remain-unchanged",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      }
+    ],
+    "finalSubjectPending": false
+  },
+  {
+    "subject": "profile-never-waives-positive-resource-or-process-closure",
+    "evidence": [
+      {
+        "task": "t3",
+        "taskTestsPassed": true,
+        "commit": "09c276593",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/qualification-runtime.test.ts",
+            "title": "profile-never-waives-positive-resource-or-process-closure",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      },
+      {
+        "task": "t4",
+        "taskTestsPassed": true,
+        "commit": "3fdfaa0d7",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/qualification-worker.test.ts",
+            "title": "closed-worker-without-final-proof-cannot-produce-prepared-result",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/qualification-runtime.test.ts",
+            "title": "profile-never-waives-positive-resource-or-process-closure",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      }
+    ],
+    "finalSubjectPending": false
+  },
+  {
+    "subject": "ci-and-operator-containment-admit-only-sufficient-native-work-and-cleanup-headroom",
+    "evidence": [
+      {
+        "task": "t5",
+        "taskTestsPassed": true,
+        "commit": "39bdade3d",
+        "cases": [
+          {
+            "file": "scripts/__tests__/qualification-containment.test.ts",
+            "title": "ci-and-operator-containment-admit-only-sufficient-native-work-and-cleanup-headroom",
+            "result": "pass"
+          }
+        ],
+        "reported": null
+      }
+    ],
+    "finalSubjectPending": false
+  },
+  {
+    "subject": "current-budget-correction-surrounding-and-final-scoped-regression-have-confirmed-cleanup",
+    "evidence": [],
+    "finalSubjectPending": true
+  },
+  {
+    "subject": "fresh-UTM-macOS-slow-vm-profile-completes-native-foundation-and-confirmed-closure",
+    "evidence": [
+      {
+        "task": "t6",
+        "taskTestsPassed": true,
+        "commit": "9c805a8bd",
+        "cases": [],
+        "reported": {
+          "result": "pass",
+          "evidence": "Commit 9c805a8bd; docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t6.md, t6-audit.json, t6-native-result.json, t6-supervisor.json, t6-actual-budgets.json and t6-retired-vm-closure.json. Actual run eac466ab-18ee-431e-a09e-252206144f1e, worker 46bae4d3-1541-4374-bc8a-577f9912b817, finished 2026-11-27T19:33:53.812Z; source/worker input fingerprint 8a7b77214a67430f3793bee26fe8982eefa8451757d92c6a43ef51ddff530668. Exact source2fca011a6. All owned-group cleanup confirmed and leases released."
+        }
+      }
+    ],
+    "finalSubjectPending": false
+  }
+]

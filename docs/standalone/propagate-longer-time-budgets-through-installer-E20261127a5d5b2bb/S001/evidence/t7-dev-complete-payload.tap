@@ -1,0 +1,17 @@
+TAP version 13
+# Subtest: dev-complete-payload-native-probe-and-fresh-installed-manager-inspect
+ok 1 - dev-complete-payload-native-probe-and-fresh-installed-manager-inspect
+  ---
+  duration_ms: 592508.916792
+  type: 'test'
+  ...
+# {"kind":"local-dev-native-smoke","mode":"dev","sourceCommit":"b06fb951d955e707408c246011a4c61aa1bd6ee0","acceptedCommit":"b06fb951d955e707408c246011a4c61aa1bd6ee0","releaseId":"dev-12f07e8fbf9ea6b2be6489415d945020f93a71ae9cfed4ba","nodeVersion":"v22.22.1","npmVersion":"10.9.4","cuda":"skip","files":55082,"payloadBytes":1742770671,"nativeProbe":"passed","freshManagerInspect":"passed","target":{"os":"darwin","arch":"arm64","baseline":"fixture"},"qualification":"Local native/fixture evidence only; no VM, Windows, IDE or live migration qualification","confirmedClosed":true}
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 592685.481875

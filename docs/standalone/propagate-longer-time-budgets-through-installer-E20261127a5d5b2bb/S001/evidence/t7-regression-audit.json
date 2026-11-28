@@ -1,0 +1,230 @@
+{
+  "status": "pass",
+  "checkedAt": "2026-11-27T22:45:53.002Z",
+  "source": "b06fb951d955e707408c246011a4c61aa1bd6ee0",
+  "runtime": "v22.22.1",
+  "sourceDeltaSinceNative": [
+    "scripts/__tests__/test-harness-commands.test.ts",
+    "scripts/__tests__/test-harness-consumers.test.ts"
+  ],
+  "selectedFiles": [
+    "src/installer/__tests__/application-payload.test.ts",
+    "src/installer/__tests__/bootstrap-control.test.ts",
+    "src/installer/__tests__/bootstrap.test.ts",
+    "src/installer/__tests__/bridge-protocol.test.ts",
+    "src/installer/__tests__/bundle-recovery.test.ts",
+    "src/installer/__tests__/bundle.test.ts",
+    "src/installer/__tests__/contracts.test.ts",
+    "src/installer/__tests__/controller-store.test.ts",
+    "src/installer/__tests__/daemon-data-lease.test.ts",
+    "src/installer/__tests__/dependencies.test.ts",
+    "src/installer/__tests__/dependency-integration.test.ts",
+    "src/installer/__tests__/dependency-policy.test.ts",
+    "src/installer/__tests__/dev-complete-payload.test.ts",
+    "src/installer/__tests__/dev-git.test.ts",
+    "src/installer/__tests__/dev-manager.test.ts",
+    "src/installer/__tests__/dev-metadata.test.ts",
+    "src/installer/__tests__/dev-payload.test.ts",
+    "src/installer/__tests__/dev-recovery.test.ts",
+    "src/installer/__tests__/dev-runtime.test.ts",
+    "src/installer/__tests__/dev-toolchain.test.ts",
+    "src/installer/__tests__/dev-worker.test.ts",
+    "src/installer/__tests__/foundation-payload.test.ts",
+    "src/installer/__tests__/install-retry.test.ts",
+    "src/installer/__tests__/installed-dev.test.ts",
+    "src/installer/__tests__/installed-status.test.ts",
+    "src/installer/__tests__/lifecycle-evidence.test.ts",
+    "src/installer/__tests__/live-admission.test.ts",
+    "src/installer/__tests__/location.test.ts",
+    "src/installer/__tests__/manager.test.ts",
+    "src/installer/__tests__/ollama-archive-matrix.test.ts",
+    "src/installer/__tests__/ollama-archive.test.ts",
+    "src/installer/__tests__/ollama-catalog.test.ts",
+    "src/installer/__tests__/ollama-prepare.test.ts",
+    "src/installer/__tests__/ollama-production-worker.test.ts",
+    "src/installer/__tests__/ollama-qualification.test.ts",
+    "src/installer/__tests__/ollama-read-sentinel.test.ts",
+    "src/installer/__tests__/ollama-recovery.test.ts",
+    "src/installer/__tests__/ollama-service-snapshot.test.ts",
+    "src/installer/__tests__/ollama-service.test.ts",
+    "src/installer/__tests__/ollama-signals.test.ts",
+    "src/installer/__tests__/ollama-tar.test.ts",
+    "src/installer/__tests__/ollama-validation.test.ts",
+    "src/installer/__tests__/ollama-zip-boundaries.test.ts",
+    "src/installer/__tests__/operation-control.test.ts",
+    "src/installer/__tests__/payload-source-links.test.ts",
+    "src/installer/__tests__/production-peers.test.ts",
+    "src/installer/__tests__/publisher.test.ts",
+    "src/installer/__tests__/qualification-installed.test.ts",
+    "src/installer/__tests__/qualification-manager.test.ts",
+    "src/installer/__tests__/qualification-runtime.test.ts",
+    "src/installer/__tests__/qualification-scopes.test.ts",
+    "src/installer/__tests__/qualification-time-budgets.test.ts",
+    "src/installer/__tests__/qualification-worker.test.ts",
+    "src/installer/__tests__/runtime-acquire.test.ts",
+    "src/installer/__tests__/runtime-install.test.ts",
+    "src/installer/__tests__/runtime-policy.test.ts",
+    "src/installer/__tests__/runtime-store.test.ts",
+    "src/installer/__tests__/terminal-abort.test.ts",
+    "src/installer/__tests__/terminal-install.test.ts",
+    "src/shared/__tests__/installation-home.test.ts",
+    "scripts/__tests__/qualification-containment.test.ts",
+    "scripts/__tests__/test-harness-commands.test.ts",
+    "scripts/__tests__/test-harness-consumers.test.ts",
+    "scripts/__tests__/test-harness-coordinator.test.ts",
+    "scripts/__tests__/test-harness-probes.test.ts",
+    "scripts/__tests__/test-harness.test.ts",
+    "scripts/__tests__/forbidden-spawn-scan.test.ts"
+  ],
+  "canonicalCounts": {
+    "tests": 284,
+    "pass": 284,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "controllerCounts": {
+    "tests": 22,
+    "pass": 22,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "lldSubjects": 16,
+  "lldSubjectTraceSha256": "d103d486f20487120e25f5ec8b6be13cc7394d0be3a99aad82d3fe6da7ee8563",
+  "lldFinalSubject": {
+    "name": "current-budget-correction-surrounding-and-final-scoped-regression-have-confirmed-cleanup",
+    "result": "pass",
+    "evidence": "This post-run audit; registration is separate from the pre-final subject trace."
+  },
+  "inputFingerprint": "7a8bdfaad0804d9b23618fed8fcfa347e4c526820e18e7ce050600f402c3562a",
+  "outputFingerprint": "3cbf44afd3293f0d9f63dd424b1317064a1e93aab24b5a1176a456a29277a379",
+  "canonical": {
+    "runId": "cf21df73-c037-44c3-979e-8c4681fa9da6",
+    "workspace": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/cf21df73-c037-44c3-979e-8c4681fa9da6",
+    "commands": 71,
+    "cleanup": {
+      "confirmedClosed": true,
+      "interrupted": false,
+      "cancellationErrors": [],
+      "evidenceErrors": [],
+      "childCloseJournal": "child-results.jsonl",
+      "closureMode": "owned-groups"
+    },
+    "journalSha256": {
+      "child-admissions.jsonl": "d4172be44b32506791edcc41f8543fd92ccd235f142980925f7fa0a1c9584c8f",
+      "child-results.jsonl": "1c548ee8808c10d9a908421a86500707ef08f18959d3802f023df2c006604fd3",
+      "child-disposals.jsonl": "0e148cf5d22337e0b8063c9740f1fc3a5167f5c6168c0d638732238b2c44c6f9"
+    }
+  },
+  "controllerRuns": [
+    {
+      "runId": "4dcd0a1a-d418-4b41-a37d-d92c0daa5198",
+      "workspace": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/4dcd0a1a-d418-4b41-a37d-d92c0daa5198",
+      "commands": 0,
+      "cleanup": {
+        "confirmedClosed": true,
+        "interrupted": false,
+        "cancellationErrors": [],
+        "evidenceErrors": [],
+        "childCloseJournal": "child-results.jsonl",
+        "closureMode": "owned-groups"
+      },
+      "journalSha256": {
+        "child-admissions.jsonl": null,
+        "child-results.jsonl": null,
+        "child-disposals.jsonl": null
+      }
+    },
+    {
+      "runId": "60a1d2f1-faf6-42a4-bd29-c62efa705a88",
+      "workspace": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/60a1d2f1-faf6-42a4-bd29-c62efa705a88",
+      "commands": 18,
+      "cleanup": {
+        "confirmedClosed": true,
+        "interrupted": false,
+        "cancellationErrors": [],
+        "evidenceErrors": [],
+        "childCloseJournal": "child-results.jsonl",
+        "closureMode": "owned-groups"
+      },
+      "journalSha256": {
+        "child-admissions.jsonl": "2de621a2328be13cf378e0793895f7ca41cf1602e166e29c7db6905d547bc08d",
+        "child-results.jsonl": "1ca22fc2bc1f826cb3430841cb20f14ed329d307e9b0e38aa3d31016a7e7bdbc",
+        "child-disposals.jsonl": "57ef012b97b83d359ff6a6518d1eb17db1f521412f7ed3231d194f9aa91bc01d"
+      }
+    },
+    {
+      "runId": "91329da6-03ec-4bf6-9385-2413afd8bf95",
+      "workspace": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/91329da6-03ec-4bf6-9385-2413afd8bf95",
+      "commands": 11,
+      "cleanup": {
+        "confirmedClosed": true,
+        "interrupted": false,
+        "cancellationErrors": [],
+        "evidenceErrors": [],
+        "childCloseJournal": "child-results.jsonl",
+        "closureMode": "owned-groups"
+      },
+      "journalSha256": {
+        "child-admissions.jsonl": "a2a0401fa69333b4f340155d87176b38431af4d362f9b4909d9ec1abfc190f65",
+        "child-results.jsonl": "4f0da5f982ffba9390a37e5e4b3b7828df8d643b7181642a7f5ecb06fa2ad2dc",
+        "child-disposals.jsonl": "1015fbc2716f15a465ea3033908422ec80a29931ecb0dbc27185c003c21dd7a0"
+      }
+    },
+    {
+      "runId": "fc7813b9-7e77-403b-b60f-80ac5db0325e",
+      "workspace": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/fc7813b9-7e77-403b-b60f-80ac5db0325e",
+      "commands": 19,
+      "cleanup": {
+        "confirmedClosed": true,
+        "interrupted": false,
+        "cancellationErrors": [],
+        "evidenceErrors": [],
+        "childCloseJournal": "child-results.jsonl",
+        "closureMode": "owned-groups"
+      },
+      "journalSha256": {
+        "child-admissions.jsonl": "d50ce7f84afe9b5d8c02ce02ca871c93a231a88c64bc0d9b8b48fa2520724b94",
+        "child-results.jsonl": "dbdc213244042f3b0aa3b65ad5f8386c52e3511db0f1680c96474f1a0a7748ec",
+        "child-disposals.jsonl": "2d8a135253f8c8afc2d4492dcfbdcd747fe4eb7cd27249f64418392048ab4a27"
+      }
+    }
+  ],
+  "controllerLogSha256": "9f0062a8928669b439e8dab2eef6be21babbcd42270ea7f98ea0d6fc79ca0dd2",
+  "canonicalReportSha256": "39fa5d0fb10dfb028ef9e960259b129e978477bd4e75cc5e665bfc6de0cf60a5",
+  "selectionSha256": "d4e93cc68978eccf2f64dc8abea988718d7246af6f3c9e96f36e9a0764b68273",
+  "rebuiltAfterCanonical": false,
+  "limits": "Current final main-checkout regression only. Earlier interrupted stale isolate d7a67629 remains blocked and retained; no closure claimed for it. UTM native source2fca011a6 has identical production inputs; later changes are two controller tests and tracking/evidence only. Current Linux/Windows native proof and S4 lifecycle remain separate unsatisfied gates.",
+  "retainedFailedRuns": [
+    {
+      "status": "failed-incomplete-not-passing-evidence",
+      "runId": "9054f3cc-503f-43a3-adf0-f28a27ada6bf",
+      "workspace": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/9054f3cc-503f-43a3-adf0-f28a27ada6bf",
+      "commands": 48,
+      "cleanup": {
+        "confirmedClosed": true,
+        "interrupted": false,
+        "cancellationErrors": [],
+        "evidenceErrors": [],
+        "childCloseJournal": "child-results.jsonl",
+        "closureMode": "owned-groups"
+      },
+      "journalSha256": {
+        "child-admissions.jsonl": "f4332ef554653b0adb131a252778c9f1668f7bcb9aa707723db08c7d51e7f6e6",
+        "child-results.jsonl": "ea4bcf2a6cf1cdb6d8b465a6899c9bbab76fc7a86bbc4045d51bfd5dc6025086",
+        "child-disposals.jsonl": "654cd621e5b02f09e2aa6f14bd4017f82b4400549ab66b92cf6c5df27340abaa"
+      }
+    }
+  ],
+  "budgets": {
+    "buildMs": 2400000,
+    "fileMs": 2400000,
+    "runMs": 14400000,
+    "cleanupMs": 30000
+  },
+  "requestedConcurrency": 2,
+  "effectiveConcurrency": 2
+}

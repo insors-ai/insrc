@@ -1,0 +1,33 @@
+{
+  "status": "failed-incomplete-normal-file-budget",
+  "checkedAt": "2026-11-27T21:22:15.372462+00:00",
+  "runId": "9054f3cc-503f-43a3-adf0-f28a27ada6bf",
+  "completedFiles": 39,
+  "passingFiles": 38,
+  "failedFile": {
+    "file": "src/installer/__tests__/ollama-recovery.test.ts",
+    "childId": "e611c0b3-8274-44fe-92af-3da6b039e3ff",
+    "log": ".insrc/tmp/test-harness/runs/9054f3cc-503f-43a3-adf0-f28a27ada6bf/38-src_installer___tests___ollama-recovery.test.ts.log",
+    "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/9054f3cc-503f-43a3-adf0-f28a27ada6bf/child-results.jsonl",
+    "code": null,
+    "signal": null,
+    "timedOut": true,
+    "coverageIncomplete": true,
+    "coverage": {
+      "status": "unavailable",
+      "counts": {}
+    }
+  },
+  "closedCommandGroups": 48,
+  "cleanup": {
+    "confirmedClosed": true,
+    "interrupted": false,
+    "cancellationErrors": [],
+    "evidenceErrors": [],
+    "childCloseJournal": "child-results.jsonl",
+    "closureMode": "owned-groups"
+  },
+  "sourceUnchanged": true,
+  "notPassingEvidence": true,
+  "reason": "Operator selected normal600000ms file cap for expanded recovery file with many private-runtime fixtures; rerun uses explicit finite top-level coordinator caps, not a product-policy change."
+}

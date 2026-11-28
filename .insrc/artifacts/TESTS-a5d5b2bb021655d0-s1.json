@@ -1,0 +1,603 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 12,
+        "contentHash": "3a8463a117a5f00a2a0d627991a387817777365758a6f481029e5d81dcce1d0c",
+        "at": "2026-11-27T19:54:58.036Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "a5d5b2bb021655d0",
+    "storyId": "s1",
+    "createdAt": "2026-11-27T14:35:22.914Z",
+    "updatedAt": "2026-11-27T19:54:57.983Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-27T13:29:55.493Z",
+    "epicSlug": "propagate-longer-time-budgets-through-installer",
+    "revision": 12
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "ae1b93f79",
+        "ranAt": "2026-11-27T14:38:00.812Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "qualification-profile-selects-frozen-normal-and-slow-vm-role-budgets",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+                "title": "qualification-profile-selects-frozen-normal-and-slow-vm-role-budgets",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "invalid-profile-fails-before-any-filesystem-or-worker-admission",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+                "title": "invalid-profile-fails-before-any-filesystem-or-worker-admission",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "profile-snapshot-cannot-change-after-module-import",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+                "title": "profile-snapshot-cannot-change-after-module-import",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "copied-policy-asset-has-source-bytes-and-loads-from-installed-control",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+                "title": "copied-policy-asset-has-source-bytes-and-loads-from-installed-control",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/qualification-time-budgets.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1241,
+            "titles": [
+              {
+                "title": "qualification-profile-selects-frozen-normal-and-slow-vm-role-budgets",
+                "result": "pass"
+              },
+              {
+                "title": "invalid-profile-fails-before-any-filesystem-or-worker-admission",
+                "result": "pass"
+              },
+              {
+                "title": "profile-snapshot-cannot-change-after-module-import",
+                "result": "pass"
+              },
+              {
+                "title": "copied-policy-asset-has-source-bytes-and-loads-from-installed-control",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "a7f3eab9c",
+        "ranAt": "2026-11-27T15:08:07.341Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "explicit-short-scope-overrides-remain-exact-under-slow-vm",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/qualification-scopes.test.ts",
+                "title": "explicit-short-scope-overrides-remain-exact-under-slow-vm",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "omitted-child-profile-is-canonicalized-and-conflicting-profile-rejected",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/qualification-scopes.test.ts",
+                "title": "omitted-child-profile-is-canonicalized-and-conflicting-profile-rejected",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "qualification-profile-reaches-manager-worker-private-npm-and-runtime-helpers",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-toolchain.test.ts",
+                "title": "qualification-profile-reaches-manager-worker-private-npm-and-runtime-helpers",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-manager.test.ts",
+                "title": "slow-profile-reaches-real-manager-worker-and-private-npm",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "normal-coordinator-and-git-role-caps-remain-exact",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/qualification-scopes.test.ts",
+                "title": "normal-coordinator-and-git-role-caps-remain-exact",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/dev-toolchain.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 212993,
+            "titles": [
+              {
+                "title": "dev-private-node-and-explicit-npm-cli-work-with-no-host-npm-wrapper",
+                "result": "pass"
+              },
+              {
+                "title": "qualification-profile-reaches-manager-worker-private-npm-and-runtime-helpers",
+                "result": "pass"
+              },
+              {
+                "title": "dev-build-children-ignore-host-node-npm-and-preserve-explicit-cuda-setting",
+                "result": "pass"
+              },
+              {
+                "title": "native Python imports leave the private Node npm distribution unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "missing-or-mismatched-private-toolchain-headers-and-prerequisites-refuse-without-elevation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/qualification-manager.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 38784,
+            "titles": [
+              {
+                "title": "slow-profile-reaches-real-manager-worker-and-private-npm",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/qualification-scopes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4840,
+            "titles": [
+              {
+                "title": "explicit-short-scope-overrides-remain-exact-under-slow-vm",
+                "result": "pass"
+              },
+              {
+                "title": "omitted-child-profile-is-canonicalized-and-conflicting-profile-rejected",
+                "result": "pass"
+              },
+              {
+                "title": "normal-coordinator-and-git-role-caps-remain-exact",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "09c276593",
+        "ranAt": "2026-11-27T15:27:44.497Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "slow-vm-runtime-download-verification-and-decoder-drain-have-no-hidden-normal-cap",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/qualification-runtime.test.ts",
+                "title": "slow-vm-runtime-download-verification-and-decoder-drain-have-no-hidden-normal-cap",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "profile-never-waives-positive-resource-or-process-closure",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/qualification-runtime.test.ts",
+                "title": "profile-never-waives-positive-resource-or-process-closure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "normal-runtime-identity-inventory-worker-wire-and-controller-schema-remain-unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/qualification-runtime.test.ts",
+                "title": "normal-runtime-identity-inventory-worker-wire-and-controller-schema-remain-unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/qualification-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5294,
+            "titles": [
+              {
+                "title": "slow-vm-runtime-download-verification-and-decoder-drain-have-no-hidden-normal-cap",
+                "result": "pass"
+              },
+              {
+                "title": "profile-never-waives-positive-resource-or-process-closure",
+                "result": "pass"
+              },
+              {
+                "title": "normal-runtime-identity-inventory-worker-wire-and-controller-schema-remain-unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "3fdfaa0d7",
+        "ranAt": "2026-11-27T16:20:58.772Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "child-budget-is-parent-remaining-minus-reserve-after-runtime-setup",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/qualification-worker.test.ts",
+                "title": "child-budget-is-parent-remaining-minus-reserve-after-runtime-setup",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "parent-cooperative-reserve-covers-worker-drain-and-final-evidence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/qualification-worker.test.ts",
+                "title": "parent-cooperative-reserve-covers-worker-drain-and-final-evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "qualification-profile-reaches-manager-worker-private-npm-and-runtime-helpers",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/qualification-manager.test.ts",
+                "title": "slow-profile-reaches-real-manager-worker-and-private-npm",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "profile-never-waives-positive-resource-or-process-closure",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/qualification-worker.test.ts",
+                "title": "closed-worker-without-final-proof-cannot-produce-prepared-result",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/qualification-runtime.test.ts",
+                "title": "profile-never-waives-positive-resource-or-process-closure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "normal-runtime-identity-inventory-worker-wire-and-controller-schema-remain-unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/qualification-runtime.test.ts",
+                "title": "normal-runtime-identity-inventory-worker-wire-and-controller-schema-remain-unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/qualification-manager.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 40265,
+            "titles": [
+              {
+                "title": "slow-profile-reaches-real-manager-worker-and-private-npm",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/qualification-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5311,
+            "titles": [
+              {
+                "title": "slow-vm-runtime-download-verification-and-decoder-drain-have-no-hidden-normal-cap",
+                "result": "pass"
+              },
+              {
+                "title": "profile-never-waives-positive-resource-or-process-closure",
+                "result": "pass"
+              },
+              {
+                "title": "normal-runtime-identity-inventory-worker-wire-and-controller-schema-remain-unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/qualification-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 48885,
+            "titles": [
+              {
+                "title": "child-budget-is-parent-remaining-minus-reserve-after-runtime-setup",
+                "result": "pass"
+              },
+              {
+                "title": "parent-cooperative-reserve-covers-worker-drain-and-final-evidence",
+                "result": "pass"
+              },
+              {
+                "title": "closed-worker-without-final-proof-cannot-produce-prepared-result",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "39bdade3d",
+        "ranAt": "2026-11-27T16:50:20.312Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "outer-deadline-cancels-independent-in-process-preparation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/qualification-containment.test.ts",
+                "title": "outer-deadline-cancels-independent-in-process-preparation",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/qualification-containment.test.ts",
+                "title": "qualification-invalid-profile-refuses-before-root-or-lease-allocation",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/qualification-containment.test.ts",
+                "title": "qualification-evidence-records-selected-caps-before-resource-copy-without-success-claim",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ci-and-operator-containment-admit-only-sufficient-native-work-and-cleanup-headroom",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/qualification-containment.test.ts",
+                "title": "ci-and-operator-containment-admit-only-sufficient-native-work-and-cleanup-headroom",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "copied-policy-asset-has-source-bytes-and-loads-from-installed-control",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/qualification-installed.test.ts",
+                "title": "copied-policy-asset-has-source-bytes-and-loads-from-installed-control",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "qualification-profile-reaches-manager-worker-private-npm-and-runtime-helpers",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/qualification-manager.test.ts",
+                "title": "slow-profile-reaches-real-manager-worker-and-private-npm",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/qualification-containment.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5812,
+            "titles": [
+              {
+                "title": "outer-deadline-cancels-independent-in-process-preparation",
+                "result": "pass"
+              },
+              {
+                "title": "ci-and-operator-containment-admit-only-sufficient-native-work-and-cleanup-headroom",
+                "result": "pass"
+              },
+              {
+                "title": "qualification-invalid-profile-refuses-before-root-or-lease-allocation",
+                "result": "pass"
+              },
+              {
+                "title": "qualification-evidence-records-selected-caps-before-resource-copy-without-success-claim",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/qualification-installed.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 72758,
+            "titles": [
+              {
+                "title": "copied-policy-asset-has-source-bytes-and-loads-from-installed-control",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/qualification-manager.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 39339,
+            "titles": [
+              {
+                "title": "slow-profile-reaches-real-manager-worker-and-private-npm",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "9c805a8bd",
+        "ranAt": "2026-11-27T19:54:57.983Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "fresh-UTM-macOS-slow-vm-profile-completes-native-foundation-and-confirmed-closure",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Commit 9c805a8bd; docs/standalone/propagate-longer-time-budgets-through-installer-E20261127a5d5b2bb/S001/evidence/t6.md, t6-audit.json, t6-native-result.json, t6-supervisor.json, t6-actual-budgets.json and t6-retired-vm-closure.json. Actual run eac466ab-18ee-431e-a09e-252206144f1e, worker 46bae4d3-1541-4374-bc8a-577f9912b817, finished 2026-11-27T19:33:53.812Z; source/worker input fingerprint 8a7b77214a67430f3793bee26fe8982eefa8451757d92c6a43ef51ddff530668. Exact source2fca011a6. All owned-group cleanup confirmed and leases released."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  },
+  "citations": []
+}

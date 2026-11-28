@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1270c1b5-75e0-4b4e-acb5-7970933ce95d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-27T14:30:02.113Z",
+    "epicCreatedAt": "2026-11-27T13:29:55.493Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a5d5b2bb021655d0",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Complete current-source scoped regression and story validation",
+      "parent": {
+        "entityId": "STORY-a5d5b2bb021655d0-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a5d5b2bb021655d0-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-a5d5b2bb021655d0-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4bb8b5751be0e828f1a863fbb8155f97189dfe2a0bdcfceb4616e0eab7d8c91d",
+        "at": "2026-11-27T14:30:02.113Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T14:30:02.115Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Complete current-source scoped regression and story validation",
+    "summary": "After all implementation tasks and native feedback corrections, run one canonical Node22 regression over all installer tests plus installation-home/build/scanner/coordinator consumers using a fixed enumerated selection. Perform independent post-run exact coverage, source/input/output fingerprints and positive command/resource closure audit on the same output without rebuilding. Record per-task checks, native evidence limitations and source identity; submit story BUILD validation only after required tasks pass. No unrelated backend sweep or per-task human approval.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Every required LLD test subject maps to recorded task evidence; canonical current-source selection has no failures/incomplete/unexpected omissions.",
+      "Independent audit proves exact selected coverage, unchanged pinned inputs/outputs, all owned command admission/close/disposal pairs, no remaining actors/leases and strict positive cleanup.",
+      "Old275-test pass and Linux native proof remain historical; source changes after final run invalidate current regression until affected checks and final audit are repeated as justified.",
+      "All required native and regression gates are satisfied before story completion/final human BUILD approval; foundation/S4 and Windows remain separate gated work."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "current-budget-correction-surrounding-and-final-scoped-regression-have-confirmed-cleanup"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

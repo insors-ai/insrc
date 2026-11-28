@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4c9e5204-86f7-48fd-bd6e-661170756ea9",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-27T14:30:02.098Z",
+    "epicCreatedAt": "2026-11-27T13:29:55.493Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a5d5b2bb021655d0",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Apply selected budgets to runtime acquisition and resource closure",
+      "parent": {
+        "entityId": "STORY-a5d5b2bb021655d0-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a5d5b2bb021655d0-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-a5d5b2bb021655d0-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d50f4bd5992a5c95a49ce133a969fe422bdb091ff667e7a14060357c16b4d31a",
+        "at": "2026-11-27T14:30:02.098Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-27T14:30:02.100Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Apply selected budgets to runtime acquisition and resource closure",
+    "summary": "Update timing fields only in src/installer/runtime-metadata.ts and existing src/installer/runtime-acquire.ts, src/installer/runtime-store.ts, src/installer/controller-store.ts, src/installer/bootstrap-foundation.ts, src/installer/runtime-archive.ts and src/installer/download.ts consumers. Cover deadline wrappers, ZIP decoder drains and enclosing resource guards. Keep src/installer/owned-file.ts successful-close semantics; it has no standalone close timer. Audit actual related callers for hidden normal caps without redesigning resource ownership.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "slow-vm acquisition/download/extraction40min, read-only verification/publication8min and existing resource/decoder drains30s reach actual helper timers; normal600s/120s/5s remain.",
+      "downloadBoundedAsset retains its owner's signal; no redundant shorter hidden acquisition cap or invented synchronous-close timeout.",
+      "RUNTIME_LIMITS shape, structural byte/count caps, independent integrity pins, headers/npm binding, durable writes and actual resource closure remain unchanged.",
+      "Accelerated cancellation/uncertainty tests confirm expiry never authorizes stage removal or successful publication."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "slow-vm-runtime-download-verification-and-decoder-drain-have-no-hidden-normal-cap"
+      },
+      {
+        "level": "integration",
+        "name": "profile-never-waives-positive-resource-or-process-closure"
+      },
+      {
+        "level": "integration",
+        "name": "normal-runtime-identity-inventory-worker-wire-and-controller-schema-remain-unchanged"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

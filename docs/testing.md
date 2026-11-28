@@ -121,3 +121,17 @@ and the scope of validation actually performed.
 ## Shared search fixtures
 
 Live-store search tests isolate HOME before importing application modules. Shared grep refuses the live data/lock as direct roots; roots containing either resolved protected target use the guarded Node walker. These searches report Node ignore/size semantics even when ripgrep is installed. Other roots use ripgrep without ambient config or symlink following. See [Batch 03 evidence](plans/live-store-search-fix-2026-11-20.md) for the read-exclusion controls and remaining fixture failures.
+
+
+### Scratchpad native qualification
+
+Automated scratchpad keyboard tests require a private X11 display (for example,
+Xvfb), with `DISPLAY` set to that server and `INSRC_NATIVE_PRIVATE_DISPLAY=1`.
+Do not point automated input at the user's active desktop: unrelated physical
+keystrokes can enter the test note and invalidate its undo history. Run native
+files serially (`--concurrency=1`). Set `INSRC_NATIVE_VSCODE_TESTS=1` for the
+keyboard lifecycle probe and `INSRC_NATIVE_LIFECYCLE_TESTS=1` for the multipane,
+second-process conflict and recovery/restart matrix. `INSRC_CODE_BIN` selects
+the supported-floor or current VS Code binary; `INSRC_NATIVE_EVIDENCE` retains
+its result. Human-operated focus qualification remains available through
+`INSRC_NATIVE_MANUAL_FOCUS=1` and does not require the private-display assertion.

@@ -103,7 +103,7 @@ test('scratch recovery disposal finishes accepted edits and retains unapplied te
     await h.c.receive('pane', draft()); await until(() => h.edits === 1);
     h.c.removePane('pane'); const disposed = h.c.dispose(); gate.resolve(); await disposed;
     assert.equal(h.document.markdown, refuseApply ? initial : '# Draft\n');
-    assert.equal((await store.list(uri)).length, refuseApply ? 1 : 0);
+    assert.equal((await store.list(uri)).length, 1, 'Unconfirmed closed-pane drafts survive whether or not the native edit applied');
   }
 }));
 
@@ -148,4 +148,16 @@ test('scratch recovery serializes concurrent revision publication across store i
   const expected = (await a.list(uri))[0]!;
   await Promise.all([a.discard(expected), b.retain(uri, draft(3, '# Survives\n'))]);
   assert.deepEqual((await b.list(uri)).map(r => r.draft.draftSeq), [3]);
+}));
+
+
+test('scratch recovery remains durable throughout a delayed acknowledgement and survives pane disposal', async () => fixture(async (root, uri) => {
+  const store = new ScratchRecoveryStore(root), gate = deferred(); let entered = false;
+  const h = controller(store, uri); h.c.removePane('pane');
+  h.c.addPane('pane', async message => { if (message.type === 'apply-ack') { entered = true; await gate.promise; return false; } return true; }, false);
+  await h.c.receive('pane', draft()); await until(() => entered);
+  assert.equal((await store.list(uri))[0]?.draft.markdown, '# Draft\n');
+  h.c.removePane('pane'); const disposing = h.c.dispose(); gate.resolve(); await disposing;
+  assert.equal(h.document.markdown, '# Draft\n');
+  assert.equal((await store.list(uri))[0]?.draft.markdown, '# Draft\n');
 }));

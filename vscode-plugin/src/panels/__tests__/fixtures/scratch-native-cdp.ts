@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 /** Development-test instrumentation for this run's isolated Electron window. */
-export async function focusNativeScratchEditor(port: number, _title: string, options: { action?: 'save' | 'undo' | 'redo'; expectedText?: string } = {}): Promise<{ text: string; editable: string }> {
+export async function focusNativeScratchEditor(port: number, _title: string, options: { action?: 'save' | 'undo' | 'redo'; expectedText?: string; insertText?: string } = {}): Promise<{ text: string; editable: string }> {
   const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json() as { type: string; webSocketDebuggerUrl?: string }[];
   const target = targets.find(t => t.type === 'page' && t.webSocketDebuggerUrl);
   if (!target?.webSocketDebuggerUrl) throw new Error('No isolated VS Code page target');
@@ -46,6 +46,7 @@ export async function focusNativeScratchEditor(port: number, _title: string, opt
             await call('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode: virtual, nativeVirtualKeyCode: virtual, modifiers }, context.sessionId);
             await call('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: virtual, nativeVirtualKeyCode: virtual, modifiers }, context.sessionId);
           }
+          if (options.insertText !== undefined) await call('Input.insertText', { text: options.insertText }, context.sessionId);
           return { text: value.text, editable: value.editable };
         }
       }

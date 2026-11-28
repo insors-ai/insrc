@@ -115,7 +115,7 @@ test('scratch queue does not apply without persisted receipt and lets accepted w
   const h = harness(); h.controller.addPane('a', () => {}, false); const gate = h.block();
   await h.controller.receive('a', h.draft(1, '# Accepted\n')); await until(() => h.edits.length === 1);
   h.controller.removePane('a'); gate.resolve(); await h.controller.dispose();
-  assert.equal(h.document.markdown, '# Accepted\n'); assert.equal(h.recovery.size, 0);
+  assert.equal(h.document.markdown, '# Accepted\n'); assert.equal(h.recovery.get('a')?.markdown, '# Accepted\n', 'Closed transport cannot confirm the applied draft');
 });
 
 test('scratch queue captured-sequence barrier waits across asynchronous ack and promotion delivery', async () => {

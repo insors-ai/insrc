@@ -121,7 +121,7 @@ test('scratch native adapter rejects unrelated URIs and disposes listeners witho
   const id = await h.open(), gate = h.block(); h.send(id, draft); await until(() => h.applies === 1);
   h.panel.dispose(); const done = h.host.dispose(); gate.resolve(); await done;
   assert.equal(h.doc.text, '# Draft\n'); assert.equal(h.changed.size, 0); assert.equal(h.willSave.size, 0); assert.equal(h.closed.size, 0); assert.equal(h.incoming.size, 0);
-  assert.deepEqual(await h.recovery.list(h.uri.toString()), []);
+  assert.equal((await h.recovery.list(h.uri.toString()))[0]?.draft.markdown, '# Draft\n', 'Closed pane has no acknowledgement');
 }));
 
 test('scratch native save hook drains pending source and idle external changes broadcast without edits', async () => fixture(async h => {

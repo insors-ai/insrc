@@ -9,6 +9,7 @@ import { createServer } from 'node:net';
 import { runInProcessGroup } from '../../../../src/shared/process-group.js';
 
 test('scratch native VS Code qualification exercises TextDocument save undo redo autosave and broadcasts', { skip: process.env['INSRC_NATIVE_VSCODE_TESTS'] !== '1', timeout: process.env['INSRC_NATIVE_MANUAL_FOCUS'] === '1' ? 660_000 : 180_000 }, async () => {
+  assert.ok(process.env['INSRC_NATIVE_PRIVATE_DISPLAY'] === '1' || process.env['INSRC_NATIVE_MANUAL_FOCUS'] === '1', 'Automated native input requires an explicitly private display');
   assert.ok(process.env['DISPLAY'] || process.platform !== 'linux', 'Native VS Code qualification requires a display.');
   const dir = await mkdtemp(join(tmpdir(), 'insrc-native-vscode-'));
   const extension = join(dir, 'extension'), data = join(dir, 'profile'), evidenceRoot = join(dir, 'evidence'), out = join(extension, 'out');

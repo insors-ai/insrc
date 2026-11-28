@@ -169,7 +169,6 @@ export class ScratchDocumentController {
         const applied = this.read();
         if (this.frozen || applied.markdown !== draft.markdown || applied.version !== base.version + (base.markdown === draft.markdown ? 0 : 1)) throw new Error('Document changed while applying');
         this.known = applied;
-        await this.deps.draftApplied(draft);
         const confirmed = this.read();
         if (this.frozen || confirmed.version !== applied.version || confirmed.digest !== applied.digest) {
           await this.deps.retainDraft(pane.latest ?? draft);
@@ -177,9 +176,19 @@ export class ScratchDocumentController {
         }
         pane.appliedSeq = draft.draftSeq;
         pane.ack = { editId: draft.editId, baseVersion: base.version, baseDigest: base.digest, snapshot: applied, request: draft };
-        if (!await this.post(pane, { type: 'apply-ack', paneSessionId: pane.id, draftSeq: draft.draftSeq, editId: draft.editId, ...applied }) && pane.attached) {
+        const delivered = await this.post(pane, { type: 'apply-ack', paneSessionId: pane.id, draftSeq: draft.draftSeq, editId: draft.editId, ...applied });
+        // Keep the durable draft throughout asynchronous acknowledgement. A
+        // closed pane cannot confirm receipt, even when the native edit applied.
+        if (!delivered || !pane.attached) {
           await this.deps.retainDraft(pane.latest ?? draft);
           this.conflict(pane, draft.draftSeq, 'Edit applied but acknowledgement could not be delivered; draft retained.');
+        } else {
+          await this.deps.draftApplied(draft);
+          const afterClear = this.read();
+          if (this.frozen || afterClear.version !== applied.version || afterClear.digest !== applied.digest) {
+            await this.deps.retainDraft(pane.latest ?? draft);
+            throw new Error('Document changed while confirming acknowledgement');
+          }
         }
         for (const other of this.panes.values()) if (other !== pane) this.post(other, { type: 'document-state', paneSessionId: other.id, ...applied, locked: other.locked });
       } catch {

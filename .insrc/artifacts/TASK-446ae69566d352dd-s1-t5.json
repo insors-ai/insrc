@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6dc548ac-b871-48af-8175-c37ab548dc84",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-26T07:28:17.842Z",
+    "epicCreatedAt": "2026-11-26T06:29:10.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "446ae69566d352dd",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Unify terminal bootstrap verification and runtime handoff",
+      "parent": {
+        "entityId": "STORY-446ae69566d352dd-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-446ae69566d352dd-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2f8156ee4257705e2625b1d6b7e604b03af2ec925b78d2eda5cdcd66a30d7b06",
+        "at": "2026-11-26T07:28:17.843Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T07:28:17.845Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Unify terminal bootstrap verification and runtime handoff",
+    "summary": "Adapt both shared terminal templates, renderer and publication helper to the same verified external store. Authenticate cached/fresh Node and control bytes before execution, publish under the existing lock, wait for exact helper exit, then invoke the canonical runtime manager with fresh ordinary admission.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Manual and IDE-generated POSIX/PowerShell scripts use fixed independent Node/control digests and need no host Node; matching verified cached runtime/control can work offline while missing prerequisites fail clearly.",
+      "The exact publication-helper child exits before the final manager starts/acquires a fresh lock; no inherited lock/session/source flag, PID heuristic or successful install claim substitutes for admission.",
+      "Paths with spaces/Unicode/apostrophes, interruption, concurrent bootstrap and Windows nonmoving execution-stage behavior are covered by surrounding fixtures.",
+      "Terminal owns prompts/I/O and existing same-terminal TUI semantics; no IDE adapter redesign or current host daemon operation is performed."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "bootstrap-no-host-node-verifies-archive-and-executable-before-execution"
+      },
+      {
+        "level": "integration",
+        "name": "bootstrap-native-operation-lock-exclusive-publication-exact-helper-exit-then-fresh-manager-lock"
+      },
+      {
+        "level": "integration",
+        "name": "bootstrap-publication-stage-distinct-from-running-node-and-loaded-native-library"
+      },
+      {
+        "level": "integration",
+        "name": "runtime-stage-cancellation-conflict-and-uncertain-closure-retain-safe-state"
+      },
+      {
+        "level": "integration",
+        "name": "bootstrap-verified-cached-runtime-control-offline-with-host-node-trap-and-quoted-paths"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

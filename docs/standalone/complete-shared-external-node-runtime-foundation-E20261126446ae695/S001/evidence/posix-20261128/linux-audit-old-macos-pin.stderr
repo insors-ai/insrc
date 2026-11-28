@@ -1,0 +1,20 @@
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+
++ 'd4b23c32ef648cd1974e4a7ffbd8be4a6c5498965c50403c57b0c6b2ca7f0dec'
+- '8a7b77214a67430f3793bee26fe8982eefa8451757d92c6a43ef51ddff530668'
+
+    at file:///home/insrctest/insrc-foundation-posix-ops-20261128-r2/audit.mjs:17:8 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'd4b23c32ef648cd1974e4a7ffbd8be4a6c5498965c50403c57b0c6b2ca7f0dec',
+  expected: '8a7b77214a67430f3793bee26fe8982eefa8451757d92c6a43ef51ddff530668',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.22.1

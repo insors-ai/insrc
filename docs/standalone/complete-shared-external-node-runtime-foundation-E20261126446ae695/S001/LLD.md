@@ -1,14 +1,14 @@
 <!-- insrc:artifact LLD-446ae69566d352dd-s1 -->
 
-# LLD: STORY-446ae69566d352dd-s1 — Complete the shared external Node runtime foundation
+# LLD: STORY-446ae69566d352dd-s1 — Revise only the acceptance scope of standalone runtime foundation ISSUE-446ae69566d352dd / LLD-446ae69566d352dd-s1 for the user's explicit direction: keep Windows aside for now and focus on macOS/Linux. Preserve implementation contracts, ten-task ownership, existing accepted work and actual evidence. POSIX foundation completion/S4 handoff must require genuine macOS and Linux proofs; Windows native qualification remains deferred under ISSUE-cab5701fbefab736, disabled/unqualified, never marked passed and never enabled by POSIX results. Keep all fail-closed integrity/ownership and per-target gates. This is a bounded revision of this existing approved bugfix design, not a new feature. Existing approved macOS UTM budget proof and scoped regression may be reused only with exact production source equivalence; Linux proof is being refreshed.
 
 ## Summary
 
 **Epic:** `complete-shared-external-node-runtime-foundation`
-**HLD base run:** `wf-1795698455782-c8hya3`
-**HLD effective hash:** `d909d44a83e9...`
+**HLD base run:** `wf-1795842093934-khcxyv`
+**HLD effective hash:** `651db0de5fcf...`
 
-Bundle and dev installations will share one verified Node distribution stored independently of application releases. A read-only resolver binds every installed launch to the manifest runtime identity; bootstrap and preparation acquire missing runtimes through the existing controller lock. Application and IDE payloads contain no Node or Ollama distributions or archives. This correction supplies S4's runtime prerequisite without implementing daemon lifecycle or migration behavior.
+Bundle and dev installations will share one verified Node distribution stored independently of application releases. A read-only resolver binds every installed launch to the manifest runtime identity; bootstrap and preparation acquire missing runtimes through the existing controller lock. Application and IDE payloads contain no Node or Ollama distributions or archives. This correction supplies S4's runtime prerequisite without implementing daemon lifecycle or migration behavior. Current acceptance and S4 handoff cover macOS/Linux only, following the user's explicit Windows deferral. Windows technical contracts stay documented, but its native qualification, ownership prerequisite and target enablement remain deferred and cannot be credited from POSIX evidence.
 
 ## Contents
 
@@ -25,7 +25,7 @@ Bundle and dev installations will share one verified Node distribution stored in
 
 ## 1. Epic impact analysis
 
-**Does not apply**: Standalone corrective story; external main-epic references retain their existing owners.
+**Does not apply**: Standalone prerequisite; retain main epic boundary without claiming lifecycle completion.
 
 ## 2. HLD context
 
@@ -256,6 +256,7 @@ This ISSUE is standalone and has no formal parent shared-contract entries. Exter
 | Dev builds invoking npm/npx and native header/library tools | Exact resolved private Node/npm/header paths and existing owned aliases/environment remain; CUDA skip default only if unset, user value preserved; no ambient npm/node/toolchain fallback. |
 | Cancellation before/after durable runtime publication | Before publish remove only owned closed stage; after atomic publication preserve verified reusable runtime while ordinary install result may be cancelled. No TUI launch after failed/cancelled install. |
 | Status/readiness and repeated grant checks | No acquisition, source build or full application/Ollama payload rehash; runtime integrity is bounded and verified at process/launch trust boundary, not rescanned by each status/control message. |
+| The user explicitly defers Windows and asks to continue macOS/Linux acceptance. | Require actual macOS/Linux foundation proofs and current scoped regression for this handoff. Keep the Windows native subject deferred under ISSUE-cab5701fbefab736, never pass it from an availability diagnostic or POSIX result, and leave Windows enablement disabled. |
 
 **Invariants to preserve**
 
@@ -268,7 +269,7 @@ This ISSUE is standalone and has no formal parent shared-contract entries. Exter
 
 ## 7. Test strategy
 
-**Test framework:** `Existing node:test TypeScript suites run by the repository's canonical npm test coordinator under Node22.22.1 with tsx; extend src/installer/__tests__/bootstrap.test.ts, src/installer/__tests__/bundle.test.ts, src/installer/__tests__/publisher.test.ts and the named dev/terminal surrounding suites. Per user instruction run only surrounding tests per task, then the full scoped installer regression after every task is built. Native qualifications are recorded separately with exact platform/runtime/actor cleanup evidence; do not claim unavailable Windows/VM evidence. Local ac1–ac6 respectively name the approved issue's runtime-integrity, external-delivery, consumer-binding, safe-publication/reuse, preserved-behavior and native-evidence groups (the issue-* ids scored in s3). The current consumer integration subject covers existing owned consumers only. Execute the actual publisher probe and real Retry entry, including truthful missing-production-peer failures; do not fabricate successful lifecycle or bridge evidence. Main-epic S7 owns the future Windows bridge process and its runtime-selection/execution tests, as already defined by S001 LLD section3.9 and S007 LLD section3.4. Its eventual implementation must consume the same shared resolver; none of the native Windows/VM obligations in this correction is waived.`
+**Test framework:** `Existing node:test TypeScript suites run by the repository's canonical npm test coordinator under Node22.22.1 with tsx; extend src/installer/__tests__/bootstrap.test.ts, src/installer/__tests__/bundle.test.ts, src/installer/__tests__/publisher.test.ts and the named dev/terminal surrounding suites. Per user instruction run only surrounding tests per task, then the full scoped installer regression after every task is built. Native qualifications are recorded separately with exact platform/runtime/actor cleanup evidence; do not claim unavailable Windows/VM evidence. Local ac1–ac6 respectively name the approved issue's runtime-integrity, external-delivery, consumer-binding, safe-publication/reuse, preserved-behavior and native-evidence groups (the issue-* ids scored in s3). The current consumer integration subject covers existing owned consumers only. Execute the actual publisher probe and real Retry entry, including truthful missing-production-peer failures; do not fabricate successful lifecycle or bridge evidence. Main-epic S7 owns the future Windows bridge process and its runtime-selection/execution tests, as already defined by S001 LLD section3.9 and S007 LLD section3.4. Its eventual implementation must consume the same shared resolver; the Windows native subject is retained as deferred work and is required before future Windows enablement, outside the current macOS/Linux foundation completion gate. User direction on 2026-11-28 limits current ac6 and T10 completion to macOS/Linux live subjects plus unavailable-target exclusion. The original subject native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication is deferred under ISSUE-cab5701fbefab736, not passed or deleted from future Windows qualification. Preserve the prior 21 non-live subjects and existing accepted T1–T9 implementation; active subjects total24 plus one deferred Windows subject. Reuse retained native/regression proof only when exact relevant production/build-input equivalence and closure/source pins are established; otherwise rerun affected qualification. Controller-only review changes require their affected checks and accurate historical source labelling.`
 
 **Test levels**
 
@@ -284,9 +285,9 @@ This ISSUE is standalone and has no formal parent shared-contract entries. Exter
 - **smoke** — Preserve surrounding installer behavior and avoid repeating the prior expensive reconciliation.
   - Subjects: `S3-Ollama-consent-retention-agent-recommendations-and-install-only-Retry-preserved`, `terminal-install-success-ready-lock-release-same-terminal-TUI-and-failure-no-TUI-preserved`, `status-readiness-and-control-checks-do-not-scan-full-app-Ollama-payload`, `final-scoped-installer-publisher-bootstrap-dev-dependencies-terminal-regression`
   - Fixtures: `Existing S2/S3/terminal fixtures updated to external runtime; real surrounding test selectors, no fake lifecycle/migration production peers.`
-- **live** — Record actual native qualification separately from fixtures before enabling/publishing a target.
-  - Subjects: `UTM-macOS-fresh-live-acquisition-offline-reuse-and-isolated-installed-consumer-smoke`, `OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke`, `native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication`, `unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests`
-  - Fixtures: `Isolated UTM macOS and OrbStack Linux VM homes; genuine Windows runner/VM when available. Preserve host v2 daemon/Ollama. Missing infrastructure is reported unavailable, not pass; native qualification gates remain.`
+- **live** — Require actual macOS/Linux native qualification for current foundation acceptance and S4 handoff; retain explicit unqualified-target guards. Windows native execution is deferred, never credited.
+  - Subjects: `UTM-macOS-fresh-live-acquisition-offline-reuse-and-isolated-installed-consumer-smoke`, `OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke`, `unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests`
+  - Fixtures: `Isolated UTM macOS and OrbStack Linux VM homes, ordinary users, verified Node22.22.1 and exact source/actor records. Preserve host v2 daemon/Ollama. Windows remains deferred and unqualified under ISSUE-cab5701fbefab736; genuine Windows evidence is required before future Windows enablement.`
 
 **Acceptance mapping**
 
@@ -297,13 +298,13 @@ This ISSUE is standalone and has no formal parent shared-contract entries. Exter
 | `ac3` | `bundle-dev-manager-terminal-TUI-Retry-and-publisher-probes-use-shared-resolver`, `resolver-import-boundary-excludes-application-paths-storage-provider-and-source-build`, `private-dev-node-npm-headers-native-env-and-worker-source-closure-preserved` |
 | `ac4` | `bootstrap-no-host-node-verifies-archive-and-executable-before-execution`, `bootstrap-native-operation-lock-exclusive-publication-exact-helper-exit-then-fresh-manager-lock`, `bootstrap-publication-stage-distinct-from-running-node-and-loaded-native-library`, `runtime-stage-cancellation-conflict-and-uncertain-closure-retain-safe-state`, `resolver-does-no-mkdir-download-lock-selection-db-or-provider-work` |
 | `ac5` | `legacy-embedded-runtime-formats-rejected-without-adoption`, `S3-Ollama-consent-retention-agent-recommendations-and-install-only-Retry-preserved`, `terminal-install-success-ready-lock-release-same-terminal-TUI-and-failure-no-TUI-preserved`, `status-readiness-and-control-checks-do-not-scan-full-app-Ollama-payload`, `final-scoped-installer-publisher-bootstrap-dev-dependencies-terminal-regression` |
-| `ac6` | `UTM-macOS-fresh-live-acquisition-offline-reuse-and-isolated-installed-consumer-smoke`, `OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke`, `native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication`, `unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests` |
+| `ac6` | `UTM-macOS-fresh-live-acquisition-offline-reuse-and-isolated-installed-consumer-smoke`, `OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke`, `unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests` |
 
 ## 8. Migration
 
-**State before:** Completed bounded s1 context bundles (c1,c2,c5) show bundle/dev validation, installed launchers and publisher retaining tools/node plus runtime archive payloads, while runtime-policy has only a path constructor. Existing completed epic S1/S2 artifacts are preserved. Host v2 is outside this transition.
+**State before:** Completed bounded s1 context bundles (c1,c2,c5) show bundle/dev validation, installed launchers and publisher retaining tools/node plus runtime archive payloads, while runtime-policy has only a path constructor. Existing completed epic S1/S2 artifacts are preserved. Host v2 is outside this transition. This bounded revision changes acceptance timing only; the existing revision4 format-migration design is retained, with no new data migration executed.
 
-**State after:** New application-only descriptor2/dev receipt2 and independent verified runtime store are used together by new rewrite installations. Public manifest/identity/IPC stay unchanged; old embedded-runtime private formats are identified and rejected, never automatically converted.
+**State after:** New application-only descriptor2/dev receipt2 and independent verified runtime store are used together by new rewrite installations. Public manifest/identity/IPC stay unchanged; old embedded-runtime private formats are identified and rejected, never automatically converted. Current completion qualifies macOS/Linux; Windows qualification remains deferred and its target disabled.
 
 **Zero downtime:** no — **Data rewrite:** no
 
@@ -318,19 +319,19 @@ This ISSUE is standalone and has no formal parent shared-contract entries. Exter
 
 ## 9. Alternatives considered
 
-### 9.1 a1: Resolve RuntimeIdentity directly in one protected external store — **CHOSEN**
+### 9.1 a1: Preserve runtime contracts and stage platform acceptance — **CHOSEN**
 
-One shared resolver maps the unchanged RuntimeIdentity to a verified immutable distribution; application receipts contain identity only.
+Complete genuine macOS/Linux foundation qualification now; defer Windows native execution and enablement.
 
-Retain public RuntimeIdentity and ReleaseManifest. A runtime-owned completion receipt and bounded inventory live beside the external distribution under the installation home. Read-only resolution checks policy, target, canonical containment and receipt/inventory/file integrity; acquisition alone may publish through the existing controller lock. Bundle/dev receipts describe application bytes and reference manifest.runtime. All consumer modes use that same resolution result, without per-release runtime pointers.
+Retain the existing revision4 runtime/data/ownership design and all target-specific proof requirements. Limit the current completion gate and S4 handoff to the macOS/Linux native subjects plus explicit unqualified-target guards. Keep Windows native subjects documented as deferred under the existing Windows ownership prerequisite, with no passing result or target enablement inferred. Reuse the current qualifier; introduce no new contract or helper.
 
-### 9.2 a2: External store with per-release runtime reference receipt
+### 9.2 a2: Separate per-platform foundation work items
 
-Keep one external distribution but add a digest-bound runtime pointer beside every application release.
+Split remaining acceptance into separate platform-specific tracked foundation stories.
 
-Use the same unchanged public identity, protected external store, controller-owned publication and shared verifier as a1. Add a private runtime-reference record in each bundle/dev receipt identifying the external root and completion receipt digest. Consumers cross-check this extra record with manifest.runtime and the canonical installation-home store before launch. Neither application mode includes Node/Ollama bytes.
+Retain identical runtime contracts but create separate macOS, Linux and Windows foundation acceptance stories with independent review/approval accounting. Preserve all existing evidence and leave Windows execution deferred. This changes tracking structure without adding runtime capability.
 
-**Rejected because:** Also feasible, but adds release-pointer format and reconciliation work while all mandatory verification remains.
+**Rejected because:** Technically valid but adds tracking churn without required capability.
 
 ## 10. References
 
@@ -349,3 +350,4 @@ Use the same unchanged public identity, protected external store, controller-own
 - **[[c13]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/LLD.md#3-data-model-changes` — "Section3.9: s1 defines schemas; s7 implements Windows transport. Existing bridge implementation ownership is external to this standalone correction."
 - **[[c14]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S007/LLD.md#3-data-model-changes` — "Section3.4 owns the Windows bridge transport process and its runtime launch, handshake and correlated IPC behavior."
 - **[[c15]]** `doc` `docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t8.md#registered-gate-and-execution-coverage-correction` — "T8 implementation checks and mapped cases pass, but required bridge execution is absent because the process belongs to unbuilt S7. Actual publisher probe and Retry entry execute; no successful product"
+- **[[c16]]** `stakeholder` `User instruction in chat, 2026-11-28` — "keep widnows aside for now, focus on macos/linux. continue"

@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9fa2e2d1-2bfb-4b1a-b12a-261e1a663f64",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-26T07:28:17.830Z",
+    "epicCreatedAt": "2026-11-26T06:29:10.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "446ae69566d352dd",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Pin deterministic runtime profiles and integrity metadata",
+      "parent": {
+        "entityId": "STORY-446ae69566d352dd-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-446ae69566d352dd-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bb02b6622ae77fcbc2cc8d8eb50ebb1dcd72e69142e550d739b2b652f4979aec",
+        "at": "2026-11-26T07:28:17.831Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T07:28:17.832Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Pin deterministic runtime profiles and integrity metadata",
+    "summary": "Extend the existing private policy with deterministic distribution profiles, official archive byte counts and independently derived Node/inventory hashes. Include pinned official Windows header/library inputs when needed, without executing foreign binaries or enabling unqualified targets. Define bounded runtime receipt/inventory/result types and canonical layout without changing public contracts.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "All six declared os/arch policy identities retain Node22.22.1/npm10.9.4/header22.22.1 consistency; profile metadata is derived from verified official archive/assets and reproducible, not copied from an installed receipt.",
+      "Completion64KiB, inventory16MiB,32768 entries,128MiB/file,1GiB expanded,256MiB/compressed asset,600s network and120s verification bounds are explicit and tested.",
+      "RuntimeIdentity/ReleaseManifest/IPC fields remain unchanged; metadata computation alone neither executes target code nor enables a native target."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "runtime-policy-exact-identity-target-baseline-profile-and-pinned-inventory"
+      },
+      {
+        "level": "unit",
+        "name": "runtime-profile-metadata-is-reproducible-from-pinned-official-assets-without-target-execution"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

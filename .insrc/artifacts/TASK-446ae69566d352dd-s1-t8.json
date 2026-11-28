@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c3fb4853-b91a-4f90-adc3-c2d99538439e",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-26T07:28:17.854Z",
+    "epicCreatedAt": "2026-11-26T06:29:10.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "446ae69566d352dd",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Bind installed consumers to the verified external runtime",
+      "parent": {
+        "entityId": "STORY-446ae69566d352dd-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-446ae69566d352dd-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "ce8eb24df8f2627294018f7ccfacf6aa53e3f034b5f76e39e3ac9628d2a218c6",
+        "at": "2026-11-26T14:15:40.978Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T07:28:17.857Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Bind installed consumers to the verified external runtime",
+    "summary": "Wire manager/terminal entry, TUI/Retry launch selection, production peer dependency readiness and both delivery modes to real shared resolution/acquisition. Remove process/release-directory guesses and duplicate trust paths, while keeping lifecycle and migration ports under their existing owners. The future Windows bridge process and its runtime-selection/execution coverage remain owned by main-epic S7; this task exposes the shared foundation for that consumer.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Every existing installed consumer owned by this correction selects the canonical resolved executable from explicit location+manifest identity, verifies actual process.execPath where required, and has no tools/node/PATH/runtimeDirectory trust fallback. S4 daemon boot consumes the real exposed resolver later; no S4 production consumer is required prematurely here. Future S7 bridge-process runtime selection/execution is not a current T8 consumer or a prerequisite to validating this task.",
+      "Both delivery preparations acquire only under original controller ownership before lifecycle disruption; installed start/status/receipt resolution never downloads/builds source or traverses full app/Ollama payloads.",
+      "S3 runtime readiness uses verified external paths, preserving Ollama consent/retention, agent recommendations, install-only Retry and terminal TUI flow.",
+      "S4 boot/lease/shutdown/wrapper and S5 hooks remain consumers, not new implementations; separate manager action-specific peer gating is excluded and missing production peers still fail truthfully."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "bundle-dev-manager-terminal-TUI-Retry-and-publisher-probes-use-shared-resolver"
+      },
+      {
+        "level": "integration",
+        "name": "status-readiness-and-control-checks-do-not-scan-full-app-Ollama-payload"
+      },
+      {
+        "level": "integration",
+        "name": "installed-consumer-process-executable-and-manifest-identity-bound-to-real-resolver"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

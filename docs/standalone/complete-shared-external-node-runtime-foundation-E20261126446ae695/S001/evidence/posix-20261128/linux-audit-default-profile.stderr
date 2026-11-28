@@ -1,0 +1,127 @@
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
+
+  {
+    coordinator: {
++     buildMs: 2400000,
++     cleanupMs: 30000,
++     fileMs: 2400000,
++     runMs: 14400000
+-     buildMs: 600000,
+-     cleanupMs: 5000,
+-     fileMs: 600000,
+-     runMs: 5400000
+    },
+    git: {
++     buildMs: 2400000,
++     cleanupMs: 30000,
++     fileMs: 120000,
++     runMs: 180000
+-     buildMs: 600000,
+-     cleanupMs: 5000,
+-     fileMs: 30000,
+-     runMs: 40000
+    },
+    manager: {
++     buildMs: 2400000,
++     cleanupMs: 120000,
++     fileMs: 2400000,
++     runMs: 14400000
+-     buildMs: 600000,
+-     cleanupMs: 5000,
+-     fileMs: 600000,
+-     runMs: 5400000
+    },
++   profile: 'slow-vm',
+-   profile: 'normal',
+    qualification: {
++     buildMs: 7200000,
++     cleanupMs: 300000,
++     fileMs: 7200000,
++     runMs: 18000000
+-     buildMs: 3600000,
+-     cleanupMs: 5000,
+-     fileMs: 3600000,
+-     runMs: 7200000
+    },
+    runtime: {
++     acquisitionMs: 2400000,
++     resourceDrainMs: 30000,
++     verificationMs: 480000
+-     acquisitionMs: 600000,
+-     resourceDrainMs: 5000,
+-     verificationMs: 120000
+    }
+  }
+
+    at file:///home/insrctest/insrc-foundation-posix-ops-20261128-r2/audit.mjs:13:8 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: {
+    profile: 'slow-vm',
+    coordinator: {
+      buildMs: 2400000,
+      fileMs: 2400000,
+      runMs: 14400000,
+      cleanupMs: 30000
+    },
+    manager: {
+      buildMs: 2400000,
+      fileMs: 2400000,
+      runMs: 14400000,
+      cleanupMs: 120000
+    },
+    qualification: {
+      buildMs: 7200000,
+      fileMs: 7200000,
+      runMs: 18000000,
+      cleanupMs: 300000
+    },
+    git: {
+      buildMs: 2400000,
+      fileMs: 120000,
+      runMs: 180000,
+      cleanupMs: 30000
+    },
+    runtime: {
+      acquisitionMs: 2400000,
+      verificationMs: 480000,
+      resourceDrainMs: 30000
+    }
+  },
+  expected: {
+    profile: 'normal',
+    coordinator: {
+      buildMs: 600000,
+      fileMs: 600000,
+      runMs: 5400000,
+      cleanupMs: 5000
+    },
+    manager: {
+      buildMs: 600000,
+      fileMs: 600000,
+      runMs: 5400000,
+      cleanupMs: 5000
+    },
+    qualification: {
+      buildMs: 3600000,
+      fileMs: 3600000,
+      runMs: 7200000,
+      cleanupMs: 5000
+    },
+    git: { buildMs: 600000, fileMs: 30000, runMs: 40000, cleanupMs: 5000 },
+    runtime: {
+      acquisitionMs: 600000,
+      verificationMs: 120000,
+      resourceDrainMs: 5000
+    }
+  },
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.22.1

@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4c11f53b-71c3-4978-8497-c72971aa2482",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-26T07:28:17.834Z",
+    "epicCreatedAt": "2026-11-26T06:29:10.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "446ae69566d352dd",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement the read-only verified runtime resolver",
+      "parent": {
+        "entityId": "STORY-446ae69566d352dd-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-446ae69566d352dd-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9b3c9b3892d4c6aa271a4fa7c211f1d3ccab5ec89c029193aa095ecc238ba1c9",
+        "at": "2026-11-26T07:28:17.834Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T07:28:17.835Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement the read-only verified runtime resolver",
+    "summary": "Replace the unused privateRuntimePaths constructor with the approved async resolver, implemented through the proposed runtime-store module. Verify explicit home/full identity, protected canonical root, independent policy-bound inventory and exact Node/npm/header file set, with no allocation or application imports.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Direct calls return frozen canonical absolute runtime paths only for the exact verified identity; tampered files/metadata, extra files, bad target/baseline, links and unsafe roots fail closed.",
+      "A self-consistent rewritten receipt/inventory cannot replace the independently pinned expected inventory hash.",
+      "Resolver imports no application paths/DB/provider/source builder and performs no network, mkdir, controller lock, selection or application/Ollama traversal.",
+      "Task-local fixtures prove this API; production consumer wiring is assessed in t8, not required prematurely for t2 validation."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "resolver-import-boundary-excludes-application-paths-storage-provider-and-source-build"
+      },
+      {
+        "level": "unit",
+        "name": "resolver-returns-canonical-node-npm-headers-and-win-library-from-exact-identity"
+      },
+      {
+        "level": "unit",
+        "name": "resolver-rejects-missing-corrupt-extra-files-wrong-mode-target-digest-npm-headers-inventory-receipt"
+      },
+      {
+        "level": "unit",
+        "name": "rewritten-self-consistent-local-runtime-metadata-cannot-replace-policy-inventory-digest"
+      },
+      {
+        "level": "unit",
+        "name": "resolver-does-no-mkdir-download-lock-selection-db-or-provider-work"
+      },
+      {
+        "level": "unit",
+        "name": "runtime-caps-and-cancellation-are-finite-and-do-not-trigger-app-or-Ollama-hashing"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

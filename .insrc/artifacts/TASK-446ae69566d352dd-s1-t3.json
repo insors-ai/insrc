@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6024d2f5-825c-4d68-a579-147a81c2e97d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-26T07:28:17.836Z",
+    "epicCreatedAt": "2026-11-26T06:29:10.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "446ae69566d352dd",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Acquire and safely stage the official runtime",
+      "parent": {
+        "entityId": "STORY-446ae69566d352dd-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-446ae69566d352dd-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2c8078023e5d2dc5489d2d4b74b936a560ca0e4b528c65622e7266f833ba11b4",
+        "at": "2026-11-26T07:28:17.836Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T07:28:17.838Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Acquire and safely stage the official runtime",
+    "summary": "Implement bounded live official runtime/header/library download, digest verification and safe deterministic extraction in the proposed acquisition module. Produce only owned validated stages; close actors before cleanup and reuse the read-only verifier/profile rules without application payload access.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Official assets are HTTPS/status/redirect/size/hash/deadline checked before extraction or target-code execution; POSIX and Windows profile extraction rejects unsafe/colliding/special entries and missing exact npm/header/library inputs.",
+      "Cancellation and download/extraction failure close network/parser resources before removing only the owned stage; uncertain closure retains evidence and fails.",
+      "Stage verification covers the fixed runtime limits and exact independent inventory digest; no runtime/release publication, selection or daemon lifecycle occurs in this staging task."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "runtime-acquisition-checks-official-HTTPS-byte-hash-deadline-before-safe-extraction"
+      },
+      {
+        "level": "integration",
+        "name": "runtime-stage-cancellation-closes-owned-network-parser-actors-before-cleanup"
+      },
+      {
+        "level": "integration",
+        "name": "runtime-profile-rejects-unsafe-archive-collisions-links-and-missing-header-library-inputs"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-98c09105-5c41-4ed9-b977-2f480906ae82",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-26T07:28:17.850Z",
+    "epicCreatedAt": "2026-11-26T06:29:10.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "446ae69566d352dd",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Prepare dev candidates with the shared external runtime",
+      "parent": {
+        "entityId": "STORY-446ae69566d352dd-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-446ae69566d352dd-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5783b82da5d55259e7cd073ae67e1a19c1a8c3658b3f8a1dc0df33fb83e8defc",
+        "at": "2026-11-26T07:28:17.850Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T07:28:17.852Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Prepare dev candidates with the shared external runtime",
+    "summary": "Advance private dev receipts/recipe to application-only semantics and adapt source offers, toolchain, worker staging, verification and immutable publication. Consume the same resolved Node/npm/header/library distribution instead of copying tools/node into dev releases.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Dev receipt2/new recipe, durable offers, canonical hashes and all readers agree; old embedded receipts/offers fail with an explicit compatibility diagnostic.",
+      "Dev payloads omit Node/Ollama distributions/archives and preserve exact accepted source, native output closure, closed-worker proof and no duplicate writer.",
+      "Dev build commands/owned npm aliases use resolved absolute private Node/npm/header/library paths; existing CUDA skip-if-unset and hostile environment isolation remain.",
+      "Prepared candidate open/verify does not acquire/build a runtime implicitly or adopt an arbitrary runtimeDirectory; cross-mode runtime reuse is proven at the shared foundation boundary."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "private-dev-node-npm-headers-native-env-and-worker-source-closure-preserved"
+      },
+      {
+        "level": "integration",
+        "name": "dev-receipt2-recipe-offer-compatibility-and-application-only-payload"
+      },
+      {
+        "level": "integration",
+        "name": "dev-candidate-open-has-no-implicit-runtime-acquisition-or-foreign-directory-trust"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

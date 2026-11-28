@@ -1,0 +1,1445 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 20,
+        "contentHash": "92dd7f0a454ea08a7fdf321e9c710a92a4a656f4047f07e1aae3dd0be003e03b",
+        "at": "2026-11-27T10:41:47.145Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "446ae69566d352dd",
+    "storyId": "s1",
+    "createdAt": "2026-11-26T07:40:02.075Z",
+    "updatedAt": "2026-11-27T10:41:47.118Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-26T06:29:10.586Z",
+    "epicSlug": "complete-shared-external-node-runtime-foundation",
+    "revision": 20
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "b7c3a40b8",
+        "ranAt": "2026-11-26T07:40:02.075Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "runtime-policy-exact-identity-target-baseline-profile-and-pinned-inventory",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-policy.test.ts",
+                "title": "runtime policy pins all six official distribution identities without enabling targets",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-policy.test.ts",
+                "title": "runtime layout binds complete identity and rejects unsafe aliases without filesystem allocation",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-policy.test.ts",
+                "title": "runtime metadata has fixed finite bounds and locale independent inventory serialization",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runtime-profile-metadata-is-reproducible-from-pinned-official-assets-without-target-execution",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-policy.test.ts",
+                "title": "official profile metadata reproduces all pinned assets without target execution or extraction",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/runtime-policy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3589,
+            "titles": [
+              {
+                "title": "runtime policy pins all six official distribution identities without enabling targets",
+                "result": "pass"
+              },
+              {
+                "title": "runtime layout binds complete identity and rejects unsafe aliases without filesystem allocation",
+                "result": "pass"
+              },
+              {
+                "title": "runtime metadata has fixed finite bounds and locale independent inventory serialization",
+                "result": "pass"
+              },
+              {
+                "title": "official profile metadata reproduces all pinned assets without target execution or extraction",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "390d4790a",
+        "ranAt": "2026-11-26T07:52:29.153Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "resolver-import-boundary-excludes-application-paths-storage-provider-and-source-build",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "resolver import graph stays within installer-only read primitives",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "resolver-returns-canonical-node-npm-headers-and-win-library-from-exact-identity",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "resolver returns frozen canonical Node npm headers and platform library for the exact identity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "resolver-rejects-missing-corrupt-extra-files-wrong-mode-target-digest-npm-headers-inventory-receipt",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "resolver rejects corrupt receipts inventories files modes targets aliases and extra members",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "rewritten-self-consistent-local-runtime-metadata-cannot-replace-policy-inventory-digest",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "rewritten self consistent receipt and inventory cannot replace independent pinned hashes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "resolver-does-no-mkdir-download-lock-selection-db-or-provider-work",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "resolver performs only runtime reads without downloads allocation locks or application traversal",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runtime-caps-and-cancellation-are-finite-and-do-not-trigger-app-or-Ollama-hashing",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-store.test.ts",
+                "title": "resolver bounds metadata and stops at cancellation without scanning application or Ollama data",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/runtime-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13685,
+            "titles": [
+              {
+                "title": "resolver import graph stays within installer-only read primitives",
+                "result": "pass"
+              },
+              {
+                "title": "resolver returns frozen canonical Node npm headers and platform library for the exact identity",
+                "result": "pass"
+              },
+              {
+                "title": "resolver rejects corrupt receipts inventories files modes targets aliases and extra members",
+                "result": "pass"
+              },
+              {
+                "title": "rewritten self consistent receipt and inventory cannot replace independent pinned hashes",
+                "result": "pass"
+              },
+              {
+                "title": "resolver performs only runtime reads without downloads allocation locks or application traversal",
+                "result": "pass"
+              },
+              {
+                "title": "resolver bounds metadata and stops at cancellation without scanning application or Ollama data",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "f5e9f2afe",
+        "ranAt": "2026-11-27T10:41:47.118Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "runtime-acquisition-checks-official-HTTPS-byte-hash-deadline-before-safe-extraction",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-acquire.test.ts",
+                "title": "runtime staging authenticates official assets and leaves only an owned unselected candidate",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-acquire.test.ts",
+                "title": "runtime download rejects HTTP redirects sizes and digest failures before extracting code",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-acquire.test.ts",
+                "title": "Windows archive profiles require exact separate headers and architecture libraries",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-acquire.test.ts",
+                "title": "runtime download deadline expires before extraction and closes input before cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-acquire.test.ts",
+                "title": "runtime acquisition deadline during extraction closes output before owned cleanup",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runtime-stage-cancellation-closes-owned-network-parser-actors-before-cleanup",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-acquire.test.ts",
+                "title": "runtime cancellation waits for output closure before owned stage cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-acquire.test.ts",
+                "title": "runtime download cancellation waits for the actual input stream close before cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-acquire.test.ts",
+                "title": "unresponsive runtime transport returns bounded uncertainty and retains its stage",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-acquire.test.ts",
+                "title": "runtime close uncertainty retains the stage even when cancellation also occurs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runtime-profile-rejects-unsafe-archive-collisions-links-and-missing-header-library-inputs",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-acquire.test.ts",
+                "title": "runtime gzip and ZIP parsers reject unsafe collisions links special entries and incomplete profiles",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-acquire.test.ts",
+                "title": "Windows archive profiles require exact separate headers and architecture libraries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/runtime-acquire.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 76251,
+            "titles": [
+              {
+                "title": "runtime staging authenticates official assets and leaves only an owned unselected candidate",
+                "result": "pass"
+              },
+              {
+                "title": "runtime download rejects HTTP redirects sizes and digest failures before extracting code",
+                "result": "pass"
+              },
+              {
+                "title": "runtime download deadline expires before extraction and closes input before cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "runtime acquisition deadline during extraction closes output before owned cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "runtime cancellation waits for output closure before owned stage cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "runtime download cancellation waits for the actual input stream close before cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "unresponsive runtime transport returns bounded uncertainty and retains its stage",
+                "result": "pass"
+              },
+              {
+                "title": "runtime close uncertainty retains the stage even when cancellation also occurs",
+                "result": "pass"
+              },
+              {
+                "title": "Windows archive profiles require exact separate headers and architecture libraries",
+                "result": "pass"
+              },
+              {
+                "title": "runtime gzip and ZIP parsers reject unsafe collisions links special entries and incomplete profiles",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "a58c68c40",
+        "ranAt": "2026-11-26T08:51:02.449Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "runtime-native-lock-exclusive-durable-no-replace-publication-and-offline-entry-reuse",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-install.test.ts",
+                "title": "runtime publication uses the native exclusive lock durable namespace and verified offline reuse",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-install.test.ts",
+                "title": "runtime publication never overwrites an incomplete destination and retains its stage",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runtime-publication-rejects-stale-owner-and-conflicting-incomplete-entry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-install.test.ts",
+                "title": "runtime publication rejects stale original owners and forged or tampered stages",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-install.test.ts",
+                "title": "runtime publication never overwrites an incomplete destination and retains its stage",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-install.test.ts",
+                "title": "runtime publication verifies staged bytes and cannot publish a modified executable",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-install.test.ts",
+                "title": "runtime publication retains verifier close uncertainty and refuses later discard",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/controller-store.test.ts",
+                "title": "controller rejects lock replacement and unsafe records or control roots",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runtime-publication-stage-is-not-running-node-or-loaded-native-library",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/runtime-install.test.ts",
+                "title": "runtime publication stage is distinct from running Node and the loaded native library",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/controller-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 961,
+            "titles": [
+              {
+                "title": "OS lock excludes another writer and releases on owned fixture self exit",
+                "result": "pass"
+              },
+              {
+                "title": "atomic replacement crash points preserve one valid snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "controller inspection and revision failures never silently enroll or overwrite",
+                "result": "pass"
+              },
+              {
+                "title": "controller rejects lock replacement and unsafe records or control roots",
+                "result": "pass"
+              },
+              {
+                "title": "native publication remains gated without exact target runtime and live qualification",
+                "result": "pass"
+              },
+              {
+                "title": "native publisher denies unqualified output before publishing target artifacts",
+                "result": "pass"
+              },
+              {
+                "title": "candidate publication is exclusive and requires retained location and lock",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 129018,
+            "titles": [
+              {
+                "title": "runtime publication uses the native exclusive lock durable namespace and verified offline reuse",
+                "result": "pass"
+              },
+              {
+                "title": "runtime publication never overwrites an incomplete destination and retains its stage",
+                "result": "pass"
+              },
+              {
+                "title": "runtime publication rejects stale original owners and forged or tampered stages",
+                "result": "pass"
+              },
+              {
+                "title": "runtime publication verifies staged bytes and cannot publish a modified executable",
+                "result": "pass"
+              },
+              {
+                "title": "runtime publication stage is distinct from running Node and the loaded native library",
+                "result": "pass"
+              },
+              {
+                "title": "runtime publication retains verifier close uncertainty and refuses later discard",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "d2e7ec94b",
+        "ranAt": "2026-11-26T09:31:04.839Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "bootstrap-no-host-node-verifies-archive-and-executable-before-execution",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "bootstrap authenticates archive executable and control bytes before running code and diagnoses prerequisites",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "bootstrap-native-operation-lock-exclusive-publication-exact-helper-exit-then-fresh-manager-lock",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "concurrent terminal bootstraps keep one native owner and publish one immutable foundation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "bootstrap-publication-stage-distinct-from-running-node-and-loaded-native-library",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-install.test.ts",
+                "title": "runtime publication stage is distinct from running Node and the loaded native library",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runtime-stage-cancellation-conflict-and-uncertain-closure-retain-safe-state",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "bootstrap preserves incomplete immutable entries and lock conflicts without installation",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "bootstrap cancellation closes its publication child before cleanup and never launches the manager",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "concurrent terminal bootstraps keep one native owner and publish one immutable foundation",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bootstrap-control.test.ts",
+                "title": "bootstrap control close uncertainty is bounded and retains the only owned publication stage",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bootstrap-control.test.ts",
+                "title": "bootstrap control late cancellation during positive close cannot report successful reuse",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/runtime-install.test.ts",
+                "title": "runtime publication retains verifier close uncertainty and refuses later discard",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "bootstrap-verified-cached-runtime-control-offline-with-host-node-trap-and-quoted-paths",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "bootstrap reuses verified cached runtime and control offline with quoted Unicode paths",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "POSIX terminal I O and fixture TUI use the canonical runtime after helper exit",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/bootstrap-control.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5643,
+            "titles": [
+              {
+                "title": "bootstrap control publication copies exact bytes and reuses only a verified immutable directory",
+                "result": "pass"
+              },
+              {
+                "title": "bootstrap control verification rejects extra members and unsafe private ancestors",
+                "result": "pass"
+              },
+              {
+                "title": "bootstrap control close uncertainty is bounded and retains the only owned publication stage",
+                "result": "pass"
+              },
+              {
+                "title": "bootstrap control late cancellation during positive close cannot report successful reuse",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 183025,
+            "titles": [
+              {
+                "title": "bootstrap authenticates archive executable and control bytes before running code and diagnoses prerequisites",
+                "result": "pass"
+              },
+              {
+                "title": "bootstrap uses real native publication exact helper exit and a fresh manager lock without host Node",
+                "result": "pass"
+              },
+              {
+                "title": "bootstrap reuses verified cached runtime and control offline with quoted Unicode paths",
+                "result": "pass"
+              },
+              {
+                "title": "bootstrap preserves incomplete immutable entries and lock conflicts without installation",
+                "result": "pass"
+              },
+              {
+                "title": "bootstrap cancellation closes its publication child before cleanup and never launches the manager",
+                "result": "pass"
+              },
+              {
+                "title": "concurrent terminal bootstraps keep one native owner and publish one immutable foundation",
+                "result": "pass"
+              },
+              {
+                "title": "POSIX terminal I O and fixture TUI use the canonical runtime after helper exit",
+                "result": "pass"
+              },
+              {
+                "title": "private runtime and PowerShell source preserve pinned policy nonmoving execution and fresh admission",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 152117,
+            "titles": [
+              {
+                "title": "runtime publication uses the native exclusive lock durable namespace and verified offline reuse",
+                "result": "pass"
+              },
+              {
+                "title": "runtime publication never overwrites an incomplete destination and retains its stage",
+                "result": "pass"
+              },
+              {
+                "title": "runtime publication rejects stale original owners and forged or tampered stages",
+                "result": "pass"
+              },
+              {
+                "title": "runtime publication verifies staged bytes and cannot publish a modified executable",
+                "result": "pass"
+              },
+              {
+                "title": "runtime publication stage is distinct from running Node and the loaded native library",
+                "result": "pass"
+              },
+              {
+                "title": "runtime publication retains verifier close uncertainty and refuses later discard",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "41954c71d",
+        "ranAt": "2026-11-26T23:37:45.573Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "bundle-descriptor2-application-only-public-manifest1-and-legacy-descriptor-diagnostic",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/bundle.test.ts",
+                "title": "bundle descriptor2 and installed receipts preserve public manifest1 and reject embedded format1",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bundle.test.ts",
+                "title": "hostile ZIP corpus cannot escape staging or exceed bounded extraction",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bundle.test.ts",
+                "title": "download digest target runtime cancellation and retry preserve incumbent",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "publisher-app-and-IDE-inventory-exclude-Node-Ollama-distributions-and-archives-including-renamed-contributions",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/application-payload.test.ts",
+                "title": "app-only inventory rejects ordinary and renamed pinned Node Ollama archives executables and build inputs",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/application-payload.test.ts",
+                "title": "app-only inventory permits native application dependencies and runtime policy metadata",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/publisher.test.ts",
+                "title": "publisher format2 binds app-only inventory public manifest1 source and exact external runtime identity",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/publisher.test.ts",
+                "title": "publisher rejects a real pinned Node archive even when renamed as an application resource",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/publisher.test.ts",
+                "title": "publisher source provenance excludes renamed runtime inputs and preserves native dependency contributions",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/publisher.test.ts",
+                "title": "published manual and both IDE installer script assets have exact byte parity",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/payload-source-links.test.ts",
+                "title": "payload collector snapshots complete internal native build hardlink pairs without mutating source",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/payload-source-links.test.ts",
+                "title": "payload collector rejects unaccounted hardlink aliases inside or outside the source root",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/payload-source-links.test.ts",
+                "title": "payload collector does not count repeated directory symlink paths as distinct inode aliases",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/payload-source-links.test.ts",
+                "title": "payload collector rejects alias or content changes after collecting the complete hardlink group",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "bundle-publisher-probes-use-shared-external-runtime-without-tools-node-copy",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/foundation-payload.test.ts",
+                "title": "assemble actual complete foundation payload only after all entrypoints exist",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/application-payload.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 520,
+            "titles": [
+              {
+                "title": "app-only inventory rejects ordinary and renamed pinned Node Ollama archives executables and build inputs",
+                "result": "pass"
+              },
+              {
+                "title": "app-only inventory permits native application dependencies and runtime policy metadata",
+                "result": "pass"
+              },
+              {
+                "title": "enabled Ollama policy assets share the application exclusion metadata without changing qualification",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/bundle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 83521,
+            "titles": [
+              {
+                "title": "hostile ZIP corpus cannot escape staging or exceed bounded extraction",
+                "result": "pass"
+              },
+              {
+                "title": "download digest target runtime cancellation and retry preserve incumbent",
+                "result": "pass"
+              },
+              {
+                "title": "release discovery rejects insecure redirects and never falls back to dev",
+                "result": "pass"
+              },
+              {
+                "title": "inventory bound reserves the archive inventory entry",
+                "result": "pass"
+              },
+              {
+                "title": "bundle descriptor2 and installed receipts preserve public manifest1 and reject embedded format1",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/foundation-payload.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 346088,
+            "titles": [
+              {
+                "title": "assemble actual complete foundation payload only after all entrypoints exist",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/payload-source-links.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 651,
+            "titles": [
+              {
+                "title": "payload collector snapshots complete internal native build hardlink pairs without mutating source",
+                "result": "pass"
+              },
+              {
+                "title": "payload collector rejects unaccounted hardlink aliases inside or outside the source root",
+                "result": "pass"
+              },
+              {
+                "title": "payload collector does not count repeated directory symlink paths as distinct inode aliases",
+                "result": "pass"
+              },
+              {
+                "title": "payload collector rejects alias or content changes after collecting the complete hardlink group",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/publisher.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2946,
+            "titles": [
+              {
+                "title": "publisher format2 binds app-only inventory public manifest1 source and exact external runtime identity",
+                "result": "pass"
+              },
+              {
+                "title": "publisher rejects a real pinned Node archive even when renamed as an application resource",
+                "result": "pass"
+              },
+              {
+                "title": "publisher source provenance excludes renamed runtime inputs and preserves native dependency contributions",
+                "result": "pass"
+              },
+              {
+                "title": "production payload closure rejects missing entrypoints and escaping workspace links",
+                "result": "pass"
+              },
+              {
+                "title": "bundled manager excludes DB indexer model imports and consumer npm build",
+                "result": "pass"
+              },
+              {
+                "title": "published manual and both IDE installer script assets have exact byte parity",
+                "result": "pass"
+              },
+              {
+                "title": "real bundler produces one dependency-minimal control fixture under owned build scope",
+                "result": "pass"
+              },
+              {
+                "title": "publisher rejects uncommitted compiler inputs despite unchanged source revision",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "402d1db8c",
+        "ranAt": "2026-11-26T15:21:56.575Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "private-dev-node-npm-headers-native-env-and-worker-source-closure-preserved",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-toolchain.test.ts",
+                "title": "dev-private-node-and-explicit-npm-cli-work-with-no-host-npm-wrapper",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-toolchain.test.ts",
+                "title": "dev-build-children-ignore-host-node-npm-and-preserve-explicit-cuda-setting",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-toolchain.test.ts",
+                "title": "missing-or-mismatched-private-toolchain-headers-and-prerequisites-refuse-without-elevation",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-payload.test.ts",
+                "title": "npm-build-fetch-and-native-probe-failure-preserve-incumbent",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-payload.test.ts",
+                "title": "dev payload flushes its directory tree before prepared and fails closed on fsync error",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-metadata.test.ts",
+                "title": "preparation protocol binds paths source nonce run and bounded complete results",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-toolchain.test.ts",
+                "title": "native Python imports leave the private Node npm distribution unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "dev-receipt2-recipe-offer-compatibility-and-application-only-payload",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-metadata.test.ts",
+                "title": "dev receipt2 and recipe reject legacy embedded formats without changing public manifest1",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-metadata.test.ts",
+                "title": "dev-receipt-binds-final-manifest-inventory-and-contained-checkout-without-self-hash",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-payload.test.ts",
+                "title": "staged-dev-payload-requires-all-control-application-assets-and-external-runtime-and-clean-worker-result",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-payload.test.ts",
+                "title": "immutable-dev-payload-tamper-or-existing-id-conflict-refuses-before-shutdown",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-manager.test.ts",
+                "title": "durable legacy dev offer recovery preserves compatibility diagnostics without preparation or shutdown",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "dev-candidate-open-has-no-implicit-runtime-acquisition-or-foreign-directory-trust",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-runtime.test.ts",
+                "title": "dev candidate opening reuses the bundle runtime read-only and rejects missing runtime or foreign process",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/dev-manager.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 188979,
+            "titles": [
+              {
+                "title": "dev-manager-separates-accepted-source-offer-from-final-artifact-and-publishes-once",
+                "result": "pass"
+              },
+              {
+                "title": "offer-moves-before-acceptance-is-stale-after-acceptance-remains-pinned",
+                "result": "pass"
+              },
+              {
+                "title": "dev-open-verify-and-fresh-manager-reopen-never-fetch-or-build",
+                "result": "pass"
+              },
+              {
+                "title": "bundle-offer-receipt-and-required-sibling-admission-regressions-preserved",
+                "result": "pass"
+              },
+              {
+                "title": "manager checkpoint rejects source mutation after durable acceptance",
+                "result": "pass"
+              },
+              {
+                "title": "durable legacy dev offer recovery preserves compatibility diagnostics without preparation or shutdown",
+                "result": "pass"
+              },
+              {
+                "title": "bundled manager metadata does not start source preparation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/dev-metadata.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 732,
+            "titles": [
+              {
+                "title": "dev-source-offer-binds-repo-branch-commit-target-runtime-recipe-without-payload-hash",
+                "result": "pass"
+              },
+              {
+                "title": "dev-receipt-binds-final-manifest-inventory-and-contained-checkout-without-self-hash",
+                "result": "pass"
+              },
+              {
+                "title": "dev receipt2 and recipe reject legacy embedded formats without changing public manifest1",
+                "result": "pass"
+              },
+              {
+                "title": "invalid-option-like-ref-source-and-ambiguous-receipts-rejected",
+                "result": "pass"
+              },
+              {
+                "title": "preparation protocol binds paths source nonce run and bounded complete results",
+                "result": "pass"
+              },
+              {
+                "title": "commit migration metadata preserves order and rejects malformed or duplicate hooks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/dev-payload.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 143158,
+            "titles": [
+              {
+                "title": "staged-dev-payload-requires-all-control-application-assets-and-external-runtime-and-clean-worker-result",
+                "result": "pass"
+              },
+              {
+                "title": "npm-build-fetch-and-native-probe-failure-preserve-incumbent",
+                "result": "pass"
+              },
+              {
+                "title": "immutable-dev-payload-tamper-or-existing-id-conflict-refuses-before-shutdown",
+                "result": "pass"
+              },
+              {
+                "title": "dev payload flushes its directory tree before prepared and fails closed on fsync error",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/dev-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 33883,
+            "titles": [
+              {
+                "title": "dev candidate opening reuses the bundle runtime read-only and rejects missing runtime or foreign process",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/dev-toolchain.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 209151,
+            "titles": [
+              {
+                "title": "dev-private-node-and-explicit-npm-cli-work-with-no-host-npm-wrapper",
+                "result": "pass"
+              },
+              {
+                "title": "dev-build-children-ignore-host-node-npm-and-preserve-explicit-cuda-setting",
+                "result": "pass"
+              },
+              {
+                "title": "native Python imports leave the private Node npm distribution unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "missing-or-mismatched-private-toolchain-headers-and-prerequisites-refuse-without-elevation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "7e4100147",
+        "ranAt": "2026-11-26T19:21:41.423Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "bundle-dev-manager-terminal-TUI-Retry-and-publisher-probes-use-shared-resolver",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/installed-dev.test.ts",
+                "title": "dev-common-handoff-selects-candidate-bootstrap-runtime-and-retains-mode",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/production-peers.test.ts",
+                "title": "published-control-payload-includes-real-dependency-adapter-without-application-boot-imports",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "status-readiness-and-control-checks-do-not-scan-full-app-Ollama-payload",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-runtime.test.ts",
+                "title": "dev candidate opening reuses the bundle runtime read-only and rejects missing runtime or foreign process",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/installed-status.test.ts",
+                "title": "prepared Ollama inspection reads completion records without walking or opening payload contents",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-service-snapshot.test.ts",
+                "title": "legal service fact publication during reconciliation preserves causal consistency and rejects persistent contradictions",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/ollama-service-snapshot.test.ts",
+                "title": "exit published during reconciliation rechecks surviving and closed endpoints before recording the terminal result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "installed-consumer-process-executable-and-manifest-identity-bound-to-real-resolver",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/installed-dev.test.ts",
+                "title": "dev-open-verify-and-fresh-manager-reopen-never-fetch-or-build",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/installed-dev.test.ts",
+                "title": "bundle-offer-receipt-and-required-sibling-admission-regressions-preserved",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/dev-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 31388,
+            "titles": [
+              {
+                "title": "dev candidate opening reuses the bundle runtime read-only and rejects missing runtime or foreign process",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/installed-dev.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 105043,
+            "titles": [
+              {
+                "title": "dev-open-verify-and-fresh-manager-reopen-never-fetch-or-build",
+                "result": "pass"
+              },
+              {
+                "title": "dev-common-handoff-selects-candidate-bootstrap-runtime-and-retains-mode",
+                "result": "pass"
+              },
+              {
+                "title": "bundle-offer-receipt-and-required-sibling-admission-regressions-preserved",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/installed-status.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 25609,
+            "titles": [
+              {
+                "title": "prepared Ollama inspection reads completion records without walking or opening payload contents",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/ollama-service-snapshot.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 102221,
+            "titles": [
+              {
+                "title": "legal service fact publication during reconciliation preserves causal consistency and rejects persistent contradictions",
+                "result": "pass"
+              },
+              {
+                "title": "exit published during reconciliation rechecks surviving and closed endpoints before recording the terminal result",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/production-peers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 85396,
+            "titles": [
+              {
+                "title": "production-dependencies-compose-with-real-delivery-and-no-fake-s4-s5",
+                "result": "pass"
+              },
+              {
+                "title": "published-control-payload-includes-real-dependency-adapter-without-application-boot-imports",
+                "result": "pass"
+              },
+              {
+                "title": "both-control-entrypoints-use-identical-installation-bound-dependency-policy",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "888dfe714",
+        "ranAt": "2026-11-27T10:09:12.054Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "descriptor2-and-dev-receipt2-application-only-with-public-manifest1-unchanged",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t9.md#current-source-final-scoped-regression-and-independent-post-run-audit-pass; canonicalRoot=/private/tmp/.insrc/installer-validation-f607312b8; run=71b814b1-1d39-422d-9ccd-aa5108d3b5f0; source=a27375313b4518d0520c8f5c51ee9bdd80b3da5f; 57files/275PASS/0fail-cancel-skip-todo/incomplete=false; 66 matching closed groups, inner+outer strict confirmed cleanup; readonly post-run exact-coverage/fingerprint/closure audit PASS without rebuild; registered-repo input fingerprint equals isolated tested input a1f8d6dd56a77b5ae8555c6884f2df498ebc97cb99ed274dd9e50afb805577d6; original output not claimed tested; exact raw logs archived .insrc/tmp/runtime-foundation-t9-final-71b814b1.tar.gz SHA256 5212707abaa0542004770c5483109bf68a320e7bf29d93c84eb812806ec7f756; machine summary .insrc/tmp/runtime-foundation-t9-final-71b814b1.json"
+            }
+          },
+          {
+            "name": "legacy-embedded-runtime-formats-rejected-without-adoption",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t9.md#current-source-final-scoped-regression-and-independent-post-run-audit-pass; canonicalRoot=/private/tmp/.insrc/installer-validation-f607312b8; run=71b814b1-1d39-422d-9ccd-aa5108d3b5f0; source=a27375313b4518d0520c8f5c51ee9bdd80b3da5f; 57files/275PASS/0fail-cancel-skip-todo/incomplete=false; 66 matching closed groups, inner+outer strict confirmed cleanup; readonly post-run exact-coverage/fingerprint/closure audit PASS without rebuild; registered-repo input fingerprint equals isolated tested input a1f8d6dd56a77b5ae8555c6884f2df498ebc97cb99ed274dd9e50afb805577d6; original output not claimed tested; exact raw logs archived .insrc/tmp/runtime-foundation-t9-final-71b814b1.tar.gz SHA256 5212707abaa0542004770c5483109bf68a320e7bf29d93c84eb812806ec7f756; machine summary .insrc/tmp/runtime-foundation-t9-final-71b814b1.json"
+            }
+          },
+          {
+            "name": "verified-runtime-and-control-reuse-offline-across-bundle-and-dev",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t9.md#current-source-final-scoped-regression-and-independent-post-run-audit-pass; canonicalRoot=/private/tmp/.insrc/installer-validation-f607312b8; run=71b814b1-1d39-422d-9ccd-aa5108d3b5f0; source=a27375313b4518d0520c8f5c51ee9bdd80b3da5f; 57files/275PASS/0fail-cancel-skip-todo/incomplete=false; 66 matching closed groups, inner+outer strict confirmed cleanup; readonly post-run exact-coverage/fingerprint/closure audit PASS without rebuild; registered-repo input fingerprint equals isolated tested input a1f8d6dd56a77b5ae8555c6884f2df498ebc97cb99ed274dd9e50afb805577d6; original output not claimed tested; exact raw logs archived .insrc/tmp/runtime-foundation-t9-final-71b814b1.tar.gz SHA256 5212707abaa0542004770c5483109bf68a320e7bf29d93c84eb812806ec7f756; machine summary .insrc/tmp/runtime-foundation-t9-final-71b814b1.json"
+            }
+          },
+          {
+            "name": "S3-Ollama-consent-retention-agent-recommendations-and-install-only-Retry-preserved",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t9.md#current-source-final-scoped-regression-and-independent-post-run-audit-pass; canonicalRoot=/private/tmp/.insrc/installer-validation-f607312b8; run=71b814b1-1d39-422d-9ccd-aa5108d3b5f0; source=a27375313b4518d0520c8f5c51ee9bdd80b3da5f; 57files/275PASS/0fail-cancel-skip-todo/incomplete=false; 66 matching closed groups, inner+outer strict confirmed cleanup; readonly post-run exact-coverage/fingerprint/closure audit PASS without rebuild; registered-repo input fingerprint equals isolated tested input a1f8d6dd56a77b5ae8555c6884f2df498ebc97cb99ed274dd9e50afb805577d6; original output not claimed tested; exact raw logs archived .insrc/tmp/runtime-foundation-t9-final-71b814b1.tar.gz SHA256 5212707abaa0542004770c5483109bf68a320e7bf29d93c84eb812806ec7f756; machine summary .insrc/tmp/runtime-foundation-t9-final-71b814b1.json"
+            }
+          },
+          {
+            "name": "terminal-install-success-ready-lock-release-same-terminal-TUI-and-failure-no-TUI-preserved",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t9.md#current-source-final-scoped-regression-and-independent-post-run-audit-pass; canonicalRoot=/private/tmp/.insrc/installer-validation-f607312b8; run=71b814b1-1d39-422d-9ccd-aa5108d3b5f0; source=a27375313b4518d0520c8f5c51ee9bdd80b3da5f; 57files/275PASS/0fail-cancel-skip-todo/incomplete=false; 66 matching closed groups, inner+outer strict confirmed cleanup; readonly post-run exact-coverage/fingerprint/closure audit PASS without rebuild; registered-repo input fingerprint equals isolated tested input a1f8d6dd56a77b5ae8555c6884f2df498ebc97cb99ed274dd9e50afb805577d6; original output not claimed tested; exact raw logs archived .insrc/tmp/runtime-foundation-t9-final-71b814b1.tar.gz SHA256 5212707abaa0542004770c5483109bf68a320e7bf29d93c84eb812806ec7f756; machine summary .insrc/tmp/runtime-foundation-t9-final-71b814b1.json"
+            }
+          },
+          {
+            "name": "final-scoped-installer-publisher-bootstrap-dev-dependencies-terminal-regression",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t9.md#current-source-final-scoped-regression-and-independent-post-run-audit-pass; canonicalRoot=/private/tmp/.insrc/installer-validation-f607312b8; run=71b814b1-1d39-422d-9ccd-aa5108d3b5f0; source=a27375313b4518d0520c8f5c51ee9bdd80b3da5f; 57files/275PASS/0fail-cancel-skip-todo/incomplete=false; 66 matching closed groups, inner+outer strict confirmed cleanup; readonly post-run exact-coverage/fingerprint/closure audit PASS without rebuild; registered-repo input fingerprint equals isolated tested input a1f8d6dd56a77b5ae8555c6884f2df498ebc97cb99ed274dd9e50afb805577d6; original output not claimed tested; exact raw logs archived .insrc/tmp/runtime-foundation-t9-final-71b814b1.tar.gz SHA256 5212707abaa0542004770c5483109bf68a320e7bf29d93c84eb812806ec7f756; machine summary .insrc/tmp/runtime-foundation-t9-final-71b814b1.json"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  },
+  "citations": []
+}

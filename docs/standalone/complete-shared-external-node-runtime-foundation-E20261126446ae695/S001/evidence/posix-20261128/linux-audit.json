@@ -1,0 +1,148 @@
+{
+  "observedAt": "2026-11-28T05:14:13.088Z",
+  "status": "pass",
+  "sourceCommit": "0938af2dcbc631960d64946fa3cd6a446b3aafef",
+  "profile": "slow-vm",
+  "reportSha256": "54c742fb401d0979571794c18a4d51cfa03a2c2c3ebdbd5f0dd5c3dfc0d61aff",
+  "supervisorSha256": "8fa3dd90347e789184e1c9c00fb43ed59b6becda7319aab93900a969a3b59c21",
+  "sourceFingerprint": "d4b23c32ef648cd1974e4a7ffbd8be4a6c5498965c50403c57b0c6b2ca7f0dec",
+  "build": {
+    "runId": "46e6677a-9050-429c-b700-b13a3298cabf",
+    "admittedCommands": 11,
+    "confirmedClosed": true,
+    "leaseReleased": true,
+    "noActors": true,
+    "cleanupSha256": "be29394ff88331e4d57dfde300b2591e06fa1f73a2f71be66f3cdf0bb092b582",
+    "admissionsSha256": "3f7a4a1f9489128752f8b74f8ccdcbfe20c58c8fcd2c46881dd0204015a3856b",
+    "closesSha256": "2a23d93507e4380b66071a39e1091f0a6941f5968384e5a9f6e7d2568d314a84",
+    "disposalsSha256": "87b7bc4116c88fa13177085ead4b28aeb8fca2f3b60036f62c36597f86b8272d"
+  },
+  "parent": {
+    "runId": "0c3e6702-984b-4f0e-83f3-8cb814786609",
+    "admittedCommands": 9,
+    "confirmedClosed": true,
+    "leaseReleased": true,
+    "noActors": true,
+    "cleanupSha256": "be29394ff88331e4d57dfde300b2591e06fa1f73a2f71be66f3cdf0bb092b582",
+    "admissionsSha256": "50ea3688dd7af31687d20855bfc3ee60f450131cfc278f263b049b76e1cfb862",
+    "closesSha256": "01654441ab4a4e548817bcd585ddd0682ec48a0cc34370de07e5701f4a4711e2",
+    "disposalsSha256": "01179a5b8c4d88bf22ec67c782fc947e8d5c5f18b1e89bf2a26e892b5652325b"
+  },
+  "worker": {
+    "runId": "8446d2ef-6259-4198-b612-ce58fc9f7133",
+    "admittedCommands": 25,
+    "confirmedClosed": true,
+    "leaseReleased": true,
+    "noActors": true,
+    "cleanupSha256": "be29394ff88331e4d57dfde300b2591e06fa1f73a2f71be66f3cdf0bb092b582",
+    "admissionsSha256": "6f5d2644a9ac393861ec80cdd2ef4c44350102678a7591fd60ee37245e50ffc3",
+    "closesSha256": "47aced81b14e79fb193f29303ed000ec304f0c6b1995d12408c63d7288007629",
+    "disposalsSha256": "6297d68d4465cf3ca7cdee78c831756fc3576b484bb72a2a6387174a6c12f80e"
+  },
+  "workerResult": {
+    "path": "/home/insrctest/iq-vhi0Vc/h/dev/checkouts/3c3de7ce-1495-4635-9af1-6da9b2f1817b/.insrc/tmp/dev-preparation/result.json",
+    "sha256": "dd37b1f6a17263b6555ba374884f7c69f5926fe3f3583125eee36e52bb64eaf5",
+    "outcome": "prepared",
+    "inputFingerprint": "d4b23c32ef648cd1974e4a7ffbd8be4a6c5498965c50403c57b0c6b2ca7f0dec",
+    "outputFingerprint": "906e7e72c113f6fa3cee866a63663ca243c60918242c2a20871a4f698aa7e006"
+  },
+  "receipt": {
+    "path": "/home/insrctest/iq-vhi0Vc/h/releases/dev-5e103d3136910b7f86c62325642d9d2327c1b606d72fa205/.dev-release.json",
+    "sha256": "10693322009cc6972d5d1bc7ca5e2c9a7c478901d20781fc7fe14999d52f37a3",
+    "inventorySha256": "f1a2fc485df66f2644e1b8bf5581a34eec48e5b7e0fec022066bef91f7a378b4",
+    "files": 55202,
+    "payloadBytes": 2226555042
+  },
+  "runtime": {
+    "identity": {
+      "version": "22.22.1",
+      "target": {
+        "os": "linux",
+        "arch": "arm64",
+        "baseline": "ubuntu22.04-glibc2.35-orbstack-arm64"
+      },
+      "sha256": "1d1690e9aba47e887a275abc6d8f7317e571a0700deaef493f768377e99155f5",
+      "relativeExecutable": "bin/node"
+    },
+    "directory": "/home/insrctest/iq-vhi0Vc/h/runtimes/22.22.1/linux-arm64-ubuntu22.04-glibc2.35-orbstack-arm64/1d1690e9aba47e887a275abc6d8f7317e571a0700deaef493f768377e99155f5/distribution",
+    "executable": "/home/insrctest/iq-vhi0Vc/h/runtimes/22.22.1/linux-arm64-ubuntu22.04-glibc2.35-orbstack-arm64/1d1690e9aba47e887a275abc6d8f7317e571a0700deaef493f768377e99155f5/distribution/bin/node",
+    "inventorySha256": "d3189509e38e1436f269b1a781568e9e37eca85acb2203e01728f747f4c097af",
+    "liveFirstAcquisition": true,
+    "offlineNetworkRequests": 0,
+    "sameExecutableInode": true,
+    "bindingProbeLog": "/home/insrctest/iq-vhi0Vc/.insrc/tmp/test-harness/runs/0c3e6702-984b-4f0e-83f3-8cb814786609/child-ec8539a0-8b0e-450c-a010-01e1029cefea.log",
+    "npmVersion": "10.9.4",
+    "publicationOutsideRunningNodeAndLoadedControl": true
+  },
+  "nativeProbe": {
+    "version": "v22.22.1",
+    "executable": "/home/insrctest/iq-vhi0Vc/h/runtimes/22.22.1/linux-arm64-ubuntu22.04-glibc2.35-orbstack-arm64/1d1690e9aba47e887a275abc6d8f7317e571a0700deaef493f768377e99155f5/distribution/bin/node",
+    "sharedObjects": [
+      "linux-vdso.so.1",
+      "/lib/aarch64-linux-gnu/libdl.so.2",
+      "/lib/aarch64-linux-gnu/libstdc++.so.6",
+      "/lib/aarch64-linux-gnu/libm.so.6",
+      "/lib/aarch64-linux-gnu/libgcc_s.so.1",
+      "/lib/aarch64-linux-gnu/libpthread.so.0",
+      "/lib/aarch64-linux-gnu/libc.so.6",
+      "/lib/ld-linux-aarch64.so.1",
+      "/home/insrctest/iq-vhi0Vc/h/releases/dev-5e103d3136910b7f86c62325642d9d2327c1b606d72fa205/node_modules/msgpackr-extract/build/Release/extract.node",
+      "/home/insrctest/iq-vhi0Vc/h/releases/dev-5e103d3136910b7f86c62325642d9d2327c1b606d72fa205/node_modules/@lmdb/lmdb-linux-arm64/node.napi.glibc.node",
+      "/home/insrctest/iq-vhi0Vc/h/releases/dev-5e103d3136910b7f86c62325642d9d2327c1b606d72fa205/node_modules/@lancedb/lancedb-linux-arm64-gnu/lancedb.linux-arm64-gnu.node",
+      "/home/insrctest/iq-vhi0Vc/h/releases/dev-5e103d3136910b7f86c62325642d9d2327c1b606d72fa205/node_modules/@duckdb/node-bindings-linux-arm64/duckdb.node",
+      "/home/insrctest/iq-vhi0Vc/h/releases/dev-5e103d3136910b7f86c62325642d9d2327c1b606d72fa205/node_modules/@duckdb/node-bindings-linux-arm64/libduckdb.so",
+      "/home/insrctest/iq-vhi0Vc/h/releases/dev-5e103d3136910b7f86c62325642d9d2327c1b606d72fa205/node_modules/tree-sitter/build/Release/tree_sitter_runtime_binding.node",
+      "/home/insrctest/iq-vhi0Vc/h/releases/dev-5e103d3136910b7f86c62325642d9d2327c1b606d72fa205/node_modules/onnxruntime-node/bin/napi-v3/linux/arm64/onnxruntime_binding.node",
+      "/home/insrctest/iq-vhi0Vc/h/releases/dev-5e103d3136910b7f86c62325642d9d2327c1b606d72fa205/node_modules/onnxruntime-node/bin/napi-v3/linux/arm64/libonnxruntime.so.1",
+      "/lib/aarch64-linux-gnu/librt.so.1",
+      "/home/insrctest/iq-vhi0Vc/h/releases/dev-5e103d3136910b7f86c62325642d9d2327c1b606d72fa205/node_modules/@parcel/watcher-linux-arm64-glibc/watcher.node",
+      "/home/insrctest/iq-vhi0Vc/h/releases/dev-5e103d3136910b7f86c62325642d9d2327c1b606d72fa205/native/control.node"
+    ]
+  },
+  "freshManager": {
+    "protocolVersion": 1,
+    "operationId": "fresh-inspect",
+    "kind": "result",
+    "state": {
+      "operationId": "fresh-inspect",
+      "phase": "preparing",
+      "message": "{\"installationId\":\"native-qualification\",\"operationId\":\"native-preparation\",\"revision\":0}"
+    },
+    "retryable": false
+  },
+  "timeBudgets": {
+    "profile": "slow-vm",
+    "coordinator": {
+      "buildMs": 2400000,
+      "fileMs": 2400000,
+      "runMs": 14400000,
+      "cleanupMs": 30000
+    },
+    "manager": {
+      "buildMs": 2400000,
+      "fileMs": 2400000,
+      "runMs": 14400000,
+      "cleanupMs": 120000
+    },
+    "qualification": {
+      "buildMs": 7200000,
+      "fileMs": 7200000,
+      "runMs": 18000000,
+      "cleanupMs": 300000
+    },
+    "git": {
+      "buildMs": 2400000,
+      "fileMs": 120000,
+      "runMs": 180000,
+      "cleanupMs": 30000
+    },
+    "runtime": {
+      "acquisitionMs": 2400000,
+      "verificationMs": 480000,
+      "resourceDrainMs": 30000
+    }
+  },
+  "releaseEnablement": false,
+  "payloadContentsRehashed": false,
+  "payloadIntegrityEvidence": "Actual qualifier verified complete payload inventory before native consumers; audit verifies retained inventory digest and worker/source/output proof without another full payload scan."
+}

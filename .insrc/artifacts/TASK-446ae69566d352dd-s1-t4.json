@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6b4cd882-8f26-4b1a-a819-53bcbddfbdc0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-26T07:28:17.839Z",
+    "epicCreatedAt": "2026-11-26T06:29:10.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "446ae69566d352dd",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Publish and reuse runtime entries under controller ownership",
+      "parent": {
+        "entityId": "STORY-446ae69566d352dd-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-446ae69566d352dd-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3ead01f664cb8b9a8bf75f637ec32e06e92e8d3da0bb9057a0e46bb2425fa7c9",
+        "at": "2026-11-26T07:28:17.839Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T07:28:17.841Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Publish and reuse runtime entries under controller ownership",
+    "summary": "Add immutable durable runtime publication and verified reuse through the existing native operation.lock and original controller capability. Keep executing helper/runtime/DLL paths outside the publication tree and preserve conflicting entries for explicit recovery.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Fresh publication is exclusive and durable under the original live controller lock, with canonical completion/inventory; matching verified entries are reused before network.",
+      "Concurrent/stale/lost owners cannot publish; incompatible/incomplete immutable destinations are never overwritten or silently repaired.",
+      "Execution and publication stages are distinct, including Windows node.exe/loaded DLL constraints; final-runtime or application cleanup never deletes retained shared runtimes.",
+      "No new manager action, lock transfer, PID/kill controller, S4 lifecycle peer or S5 migration implementation is introduced."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "runtime-native-lock-exclusive-durable-no-replace-publication-and-offline-entry-reuse"
+      },
+      {
+        "level": "integration",
+        "name": "runtime-publication-rejects-stale-owner-and-conflicting-incomplete-entry"
+      },
+      {
+        "level": "integration",
+        "name": "runtime-publication-stage-is-not-running-node-or-loaded-native-library"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

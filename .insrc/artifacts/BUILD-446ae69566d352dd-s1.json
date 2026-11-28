@@ -1,0 +1,863 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 20,
+        "contentHash": "bb6bc31941be3d723b1ecea7a32b81df4f8ce9b81ae8534b8a97a0281987ec45",
+        "at": "2026-11-27T10:42:48.516Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-96a85771-f5cf-4505-b799-c3d1b578822b",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-26T07:40:02.075Z",
+    "epicCreatedAt": "2026-11-26T06:29:10.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "446ae69566d352dd",
+    "storyId": "s1",
+    "revision": 20,
+    "updatedAt": "2026-11-27T10:41:47.118Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "complete-shared-external-node-runtime-foundation"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      }
+    ],
+    "summary": "Corrected native UTM extraction timeout under Task3: durable extraction now shares the existing bounded600s acquisition signal, while read-only verification remains120s. All22 surrounding runtime acquisition/publication/store cases pass with strict12-group closure; official integrity, durability, cancellation and uncertainty checks remain intact. Native rerun and updated final scoped regression remain pending; no whole-story approval claimed.",
+    "testRecord": {
+      "md": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t1.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "scripts/generate-runtime-profiles.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/runtime-policy.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/runtime-metadata.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/runtime-policy.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/runtime-policy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t2.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/_runtime-profile-fixture.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/runtime-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/runtime-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t3.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/runtime-acquire.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/ollama-tar.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/runtime-acquire.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/runtime-archive.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/tar-primitives.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t4.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/runtime-install.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/controller-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/runtime-install.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t5.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "scripts/bootstrap-publish.cjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "scripts/install.ps1"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "scripts/install.sh"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "scripts/package-installer.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "scripts/render-installer-bootstrap.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/bootstrap-bundle-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/bootstrap-control.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/bootstrap.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/bootstrap-control.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/bootstrap-foundation.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/terminal-entry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t6.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "scripts/installer-payload.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/application-payload.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/bundle-recovery.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/bundle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/foundation-payload-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/foundation-payload.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/publisher.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/application-payload.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/bundle-delivery.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/bundle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/distribution-artifacts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/download.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/manager.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/ollama-catalog.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/release-descriptor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/safe-zip.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t7.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/_dev-runtime-fixture.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-complete-payload-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-git-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-manager-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-manager-peers-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-manager.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-metadata.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-payload-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-payload.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-runtime.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-source-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-toolchain-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-toolchain.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-worker-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-worker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/installed-dev-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/dev-delivery.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/dev-git.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/dev-payload.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/dev-toolchain.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/dev-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/dev.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/production-peers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t8.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "scripts/qualify-ollama.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/_installed-control-fixture.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/_ollama-fixture.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dependencies.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/installed-status.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/ollama-inspect-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/ollama-prepare.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/ollama-production-worker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/ollama-service-worker-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/ollama-service.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/ollama-signal-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/ollama-signals.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/production-peers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/terminal-install.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/dependencies.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/installed-control.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/installed-launcher.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/installed-receipt.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/manager-entry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/ollama-prepare.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/ollama-service-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/ollama-service.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/runtime-binding.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/terminal-install.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/runtime-foundation-native-qualification.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/installer-s2-qualification.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "scripts/qualify-runtime-foundation.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t9.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": ".github/workflows/ci.yml"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-complete-payload.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dependency-integration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/ollama-validation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/ollama-service-snapshot.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t10.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/payload-source-links.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/complete-shared-external-node-runtime-foundation-E20261126446ae695/S001/evidence/t10-linux.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/dev-git.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-27T10:41:47.118Z"
+      }
+    ],
+    "commit": "f5e9f2afe"
+  },
+  "citations": []
+}

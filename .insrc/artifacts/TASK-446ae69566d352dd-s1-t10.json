@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-16a7f4dd-fc22-4da4-9688-71c440983b3f",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-26T07:28:17.864Z",
+    "epicCreatedAt": "2026-11-26T06:29:10.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "446ae69566d352dd",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Record native runtime qualification and S4 handoff evidence",
+      "parent": {
+        "entityId": "STORY-446ae69566d352dd-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-446ae69566d352dd-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8d58a0af4651a279e325df04643456fa32405aa224ed78138fb16c0cd88c1776",
+        "at": "2026-11-26T07:28:17.864Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T07:28:17.867Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Record native runtime qualification and S4 handoff evidence",
+    "summary": "Run the completed runtime/installed-consumer qualification harness in isolated UTM macOS and OrbStack Linux homes, and a genuine Windows runner when available. Record exact platform/runtime/asset/actor evidence and unsupported routes; hand the actual resolver contract back to S4 after the corrective BUILD passes all required gates.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "Actual UTM macOS and OrbStack Linux runtime-first-acquisition/native-build/offline-reuse/installed-consumer checks are distinguished from fixtures and host emulation; host v2/Ollama remain untouched.",
+      "Windows qualification requires actual native ACL/path/header/library/loaded-DLL-safe-publication evidence, not Linux/macOS execution or metadata extraction. Missing infrastructure remains explicitly unavailable and the target cannot be enabled/published. An unavailable native subject remains unsatisfied; recording an availability diagnostic is not a passing native test or a waiver of required BUILD acceptance.",
+      "Qualification is for the runtime foundation and existing installed-consumer boundaries; no end-to-end S4/S5 daemon activation proof is fabricated or introduced as a cyclic prerequisite.",
+      "No source changes are made during this evidence-only task. Any required correction returns to its owning task and reruns appropriate tests/regression; user BUILD approval is requested only after all required validation/task accounting/tracker gates are satisfied."
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "UTM-macOS-fresh-live-acquisition-offline-reuse-and-isolated-installed-consumer-smoke"
+      },
+      {
+        "level": "live",
+        "name": "OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke"
+      },
+      {
+        "level": "live",
+        "name": "native-Windows-first-install-reuse-named-path-ACL-header-library-and-loaded-DLL-safe-publication"
+      },
+      {
+        "level": "live",
+        "name": "unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

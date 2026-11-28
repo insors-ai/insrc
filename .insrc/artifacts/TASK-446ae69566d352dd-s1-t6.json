@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5261577c-a9ca-4e68-a308-f04b176c54dd",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-26T07:28:17.847Z",
+    "epicCreatedAt": "2026-11-26T06:29:10.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "446ae69566d352dd",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Publish and validate application-only bundle format",
+      "parent": {
+        "entityId": "STORY-446ae69566d352dd-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-446ae69566d352dd-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-446ae69566d352dd-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "acb468d9cbda4d5037639df8ad06c29aa002bee5c21ded121a04c314cb2ed51d",
+        "at": "2026-11-26T07:28:17.847Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T07:28:17.848Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Publish and validate application-only bundle format",
+    "summary": "Advance private ReleaseDescriptor to format2 without runtimeArchive and adapt bundle inventory, ZIP validation and publisher assembly/probes together. Preserve public manifest1, exact source/target/digests and native qualification while separating runtime acquisition inputs from all app/IDE payload collection.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "New bundle/publisher receipts and accepted descriptor hashing consistently use private format2; old embedded descriptor1 is rejected diagnostically without reinterpretation or adoption.",
+      "Bundle validation no longer requires tools/node or a runtime archive and still validates the exact production app/native closure and archive safety.",
+      "Provenance/allowlisted collection rejects ordinary or renamed Node/Ollama distribution/archive contributions; native .node application dependencies remain legitimate.",
+      "Publisher runtime probes and candidate preparation obtain the shared verified external runtime; no release-local/PATH fallback or full app/Ollama reconciliation is added."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "bundle-descriptor2-application-only-public-manifest1-and-legacy-descriptor-diagnostic"
+      },
+      {
+        "level": "integration",
+        "name": "publisher-app-and-IDE-inventory-exclude-Node-Ollama-distributions-and-archives-including-renamed-contributions"
+      },
+      {
+        "level": "integration",
+        "name": "bundle-publisher-probes-use-shared-external-runtime-without-tools-node-copy"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

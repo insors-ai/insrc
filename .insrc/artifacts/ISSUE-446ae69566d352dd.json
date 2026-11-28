@@ -1,0 +1,139 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795674474522-wvv6yd",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-26T06:29:10.586Z",
+    "epicCreatedAt": "2026-11-26T06:29:10.586Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 76061,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "446ae69566d352dd",
+    "epicSlug": "complete-shared-external-node-runtime-foundation",
+    "standalone": true,
+    "magnitude": "sized",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "05af5dc4ec94cfac38181409ed50393bf177205c545c98f228ed7ce389b43240",
+        "at": "2026-11-26T06:29:10.605Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-26T06:49:25.522Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "446ae69566d352dd",
+      "slug": "EPIC-446ae69566d352dd"
+    },
+    "tracker": {
+      "adapter": "github",
+      "epicStatus": "open",
+      "storyStatus": {
+        "s1": "open"
+      },
+      "lastSyncedAt": "2026-11-27T16:16:45.923Z"
+    }
+  },
+  "body": {
+    "title": "Complete the shared external Node runtime foundation",
+    "reproduction": "On branch installer, inspect the installed manager and TUI/retry launchers: they select <release>/tools/node, and the manager rejects execution under a different path (c2,c3). Prepare a bundle or dev candidate containing application files only, with the pinned Node distribution installed separately under the installation home: bundle/dev validation still requires embedded tools/node and the bundle descriptor also requires runtime archive bytes (c4–c7). The publisher likewise adds both the expanded runtime and its archive to the application payload (c8). This conflicts with HLD7's live separate Node acquisition and blocks S4 task #298 from consuming a real verified external-runtime resolver (c9,c10). These are source-grounded failure conditions; no fresh host installation or native platform qualification is claimed.",
+    "rootCause": "The runtime policy provides official archive identity and a privateRuntimePaths constructor, but the constructor does not acquire or verify an installed runtime and has no callers found by the bounded analyzer or supplemental text search (c1,c11). Installed consumers, bundle inventory/archive validation, dev payload validation and publisher probes instead retain release-local tools/node assumptions (c2–c8). The completed S1/S2 implementation therefore does not provide the shared external-runtime foundation required by the updated HLD. The analyzer reports incomplete graph coverage (31 ignored relationships); direct source reads supplement the named findings and no complete call graph is asserted (c11).",
+    "fixIntent": "Implement one shared external Node foundation for bundle and dev delivery: acquire the pinned official runtime live, safely publish and verify its private immutable installation, reuse matching verified runtimes, and make installed manager/daemon/TUI/retry and publisher/dev consumers resolve that identity consistently. Remove Node/Ollama distributions and archive bytes from application and IDE payloads. Adapt private receipt/descriptor compatibility explicitly while preserving public RuntimeIdentity/ReleaseManifest and IPC contracts, pinned Node/npm/header/target/digest checks, one manager controller, terminal-owned installation and same-terminal TUI (c9,c10). Missing, corrupt or unqualified runtimes must fail closed without PATH or release-local fallback; avoid repeated full application/Ollama payload hashing. Preserve S3 consent, retained Ollama and install-only Retry behavior. S4 continues to own boot/control/lease/wrapper and S5 hook execution; the separate action-specific manager peer-gating gap is excluded (c9,c10). Validate surrounding tests per task and final scoped regression after all tasks; real platform qualification remains separate. Do not modify the current installed host daemon. Keep completed S1/S2 ledger content intact; their attempted design back-flow was refused because the S1 artifact is completed (c12)."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/installer/runtime-policy.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/installer/manager-entry.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/installer/installed-launcher.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/installer/bundle.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/installer/safe-zip.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/installer/dev-payload.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/installer/dev-worker.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "scripts/package-installer.mjs"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S004/PLAN.md"
+    },
+    {
+      "id": "c11",
+      "kind": "analyze-bundle",
+      "ref": "Completed bounded installer foundation analyzer run, 2026-11-26",
+      "quotedText": "Existing runtime-policy exposes official archive metadata and pure privateRuntimePaths, not a verified installed-runtime resolver."
+    },
+    {
+      "id": "c12",
+      "kind": "step-output",
+      "ref": "S1 design.story synthesize refusal, 2026-11-26",
+      "quotedText": "the content of a completed artifact cannot change; reopen it first"
+    }
+  ]
+}

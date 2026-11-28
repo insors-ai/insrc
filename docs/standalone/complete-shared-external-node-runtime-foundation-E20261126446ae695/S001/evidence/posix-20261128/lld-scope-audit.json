@@ -1,0 +1,21 @@
+{
+  "artifact": "LLD-446ae69566d352dd-s1",
+  "revision": 5,
+  "unchangedTechnicalFields": [
+    "contractDetails",
+    "dataModelChanges",
+    "interactionWithShared",
+    "erDefinition",
+    "sequenceDefinition",
+    "componentDependencyDefinition"
+  ],
+  "nonLiveSubjectsPreserved": 21,
+  "currentNativeSubjects": [
+    "UTM-macOS-fresh-live-acquisition-offline-reuse-and-isolated-installed-consumer-smoke",
+    "OrbStack-Linux-fresh-live-acquisition-native-build-and-offline-reuse-smoke",
+    "unsupported-or-unavailable-target-is-not-enabled-by-cross-archive-metadata-or-foreign-tests"
+  ],
+  "deferredWindowsSubjectRetainedInProse": true,
+  "sourceInspectionOnlyForCompanions": true,
+  "visualRenderingNotPerformed": true
+}

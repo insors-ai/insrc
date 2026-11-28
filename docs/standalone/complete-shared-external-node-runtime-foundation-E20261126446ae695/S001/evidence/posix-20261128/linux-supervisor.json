@@ -1,0 +1,102 @@
+{
+  "status": "pass",
+  "stage": "complete",
+  "sourceCommit": "0938af2dcbc631960d64946fa3cd6a446b3aafef",
+  "root": "/home/insrctest/insrc-foundation-source-f86ece9c7/checkout",
+  "ops": "/home/insrctest/insrc-foundation-posix-ops-20261128-r2",
+  "pid": 665,
+  "startedAt": "2026-11-28T05:04:57.906Z",
+  "runtime": {
+    "executable": "/home/insrctest/.insrc-s3/runtimes/node-v22.22.1-linux-arm64/bin/node",
+    "version": "v22.22.1",
+    "headers": "/home/insrctest/.insrc-s3/runtimes/node-v22.22.1-linux-arm64/include/node"
+  },
+  "uid": 501,
+  "profile": "slow-vm",
+  "timeBudgets": {
+    "profile": "slow-vm",
+    "coordinator": {
+      "buildMs": 2400000,
+      "fileMs": 2400000,
+      "runMs": 14400000,
+      "cleanupMs": 30000
+    },
+    "manager": {
+      "buildMs": 2400000,
+      "fileMs": 2400000,
+      "runMs": 14400000,
+      "cleanupMs": 120000
+    },
+    "qualification": {
+      "buildMs": 7200000,
+      "fileMs": 7200000,
+      "runMs": 18000000,
+      "cleanupMs": 300000
+    },
+    "git": {
+      "buildMs": 2400000,
+      "fileMs": 120000,
+      "runMs": 180000,
+      "cleanupMs": 30000
+    },
+    "runtime": {
+      "acquisitionMs": 2400000,
+      "verificationMs": 480000,
+      "resourceDrainMs": 30000
+    }
+  },
+  "containing": {
+    "jobMs": 21600000,
+    "preflightMs": 2400000,
+    "setupAndDrainMs": 300000,
+    "diagnosticsMs": 480000,
+    "nativeMs": 18420000,
+    "supervisorMs": 18900000
+  },
+  "windows": "deferred-unqualified-not-enabled",
+  "dependencyReuse": {
+    "sourceCommit": "0938af2dcbc631960d64946fa3cd6a446b3aafef",
+    "priorCommit": "41954c71d41173b67a62662e978115d34fde4023",
+    "developmentDependencyReuse": "Unchanged dependency manifests; canonical rebuild required; no reuse into fresh native home",
+    "uid": 501,
+    "node": "/home/insrctest/.insrc-s3/runtimes/node-v22.22.1-linux-arm64/bin/node",
+    "version": "v22.22.1",
+    "qualification": false
+  },
+  "buildRunId": "46e6677a-9050-429c-b700-b13a3298cabf",
+  "buildWorkspace": "/home/insrctest/insrc-foundation-source-f86ece9c7/checkout/.insrc/tmp/test-harness/runs/46e6677a-9050-429c-b700-b13a3298cabf",
+  "inputFingerprint": "d4b23c32ef648cd1974e4a7ffbd8be4a6c5498965c50403c57b0c6b2ca7f0dec",
+  "prepared": {
+    "runId": "46e6677a-9050-429c-b700-b13a3298cabf",
+    "canonicalRoot": "/home/insrctest/insrc-foundation-source-f86ece9c7/checkout",
+    "runtimeExecutable": "/home/insrctest/.insrc-s3/runtimes/node-v22.22.1-linux-arm64/bin/node",
+    "buildExitCode": 0,
+    "completedAt": "2026-11-28T05:05:28.677Z",
+    "inputFingerprint": "d4b23c32ef648cd1974e4a7ffbd8be4a6c5498965c50403c57b0c6b2ca7f0dec",
+    "outputFingerprint": "906e7e72c113f6fa3cee866a63663ca243c60918242c2a20871a4f698aa7e006",
+    "requiredArtifacts": [
+      "out/daemon/index.js",
+      "out/bin/insrc-mcp.js",
+      "out/shared/daemon-run-files.js",
+      "out/cli/services/daemon.js",
+      "out/daemon/server.js",
+      "out/shared/daemon-process.js",
+      "out/installer/native/control.node"
+    ]
+  },
+  "buildCleanup": {
+    "confirmedClosed": true,
+    "interrupted": false,
+    "cancellationErrors": [],
+    "evidenceErrors": [],
+    "childCloseJournal": "child-results.jsonl",
+    "closureMode": "owned-groups"
+  },
+  "nativeHeadroom": {
+    "remainingMs": 21569089,
+    "requiredMs": 18900000
+  },
+  "nativeStartedAt": "2026-11-28T05:05:28.818Z",
+  "resultFile": "/home/insrctest/iq-vhi0Vc/result.json",
+  "finishedAt": "2026-11-28T05:13:09.828Z"
+}

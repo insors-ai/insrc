@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import {createHash} from 'node:crypto';
+import {devWorkerPaths} from '/home/insrctest/insrc-foundation-source-f86ece9c7/checkout/out/installer/dev-worker.js';
+const ops='/home/insrctest/insrc-foundation-posix-ops-20261128-r2',root='/home/insrctest/iq-vhi0Vc';
+const read=p=>JSON.parse(fs.readFileSync(p,'utf8'));
+const complete=read(ops+'/complete.json'),report=read(root+'/result.json'),checkpointPath=root+'/h/install/operations/native-preparation/dev-preparation.json',checkpoint=read(checkpointPath),worker=devWorkerPaths(root+'/h',checkpoint);
+const paths=[...['source-readiness.json','launch.json','progress.json','complete.json','supervise.mjs','audit.mjs'].map(n=>ops+'/'+n),root+'/result.json',checkpointPath,worker.identity,worker.closure,worker.result,report.runtime.bindingProbeLog,report.application.nativeProbeLog,report.application.freshManagerLog,root+'/h/releases/'+report.application.releaseId+'/.dev-release.json'];
+for(const workspace of [complete.buildWorkspace,root+'/.insrc/tmp/test-harness/runs/'+report.runId,worker.workspace])for(const name of ['cleanup.json','child-admissions.jsonl','child-results.jsonl','child-disposals.jsonl'])paths.push(workspace+'/'+name);
+for(const file of [complete.buildWorkspace+'/prepared.json',worker.workspace+'/prepared.json'])if(fs.existsSync(file))paths.push(file);
+const files=[...new Set(paths)].map(path=>{const bytes=fs.readFileSync(path);return {path,sha256:createHash('sha256').update(bytes).digest('hex'),text:bytes.toString('utf8')};});
+process.stdout.write(JSON.stringify({schemaVersion:1,status:'pass',sourceCommit:report.sourceCommit,kind:'native-runtime-foundation-raw-metadata',files},null,2)+'\n');

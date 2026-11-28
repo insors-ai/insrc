@@ -1364,11 +1364,31 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       pendingByTurn.delete(turnId);
     };
     proc.exit.then(forget, forget);
+    // s3/t7+t9: computed ONCE (memoized -- every awaiter gets the same settled value, no
+    // re-read), after the process has truly exited so a write still in flight is never read
+    // as absent/malformed. Reports onVibeOutcome, removes the export directory, THEN resolves
+    // to the outcome -- so an awaiter never sees the directory still present after this settles.
+    const vibeFinalize: Promise<VibeOutcome> | undefined = isVibeDirectSpawn && vibeOutputDir !== undefined
+      ? proc.exit.catch(() => {}).then(async () => {
+          const evidence = await readExitEvidence(join(vibeOutputDir, 'export.json'), deps.readVibeExportFile ?? ((p) => readFileAsync(p, 'utf8')));
+          const outcome = classifyVibeOutcome(evidence);
+          try { opts?.onVibeOutcome?.(outcome); } catch { /* caller's own bug; cleanup still runs */ }
+          await rmAsync(vibeOutputDir, { recursive: true, force: true }).catch(() => {});
+          return outcome;
+        })
+      : undefined;
     if (segment !== undefined && sessionOutput !== undefined && sessionId !== undefined) {
       // Close the turn's segment after the process's real exit (not at its answer). If this host is
       // gone by then, the next beginTurn closes it instead.
-      const close = (e: { code: number | null; signal: string | null }): void => {
-        void sessionOutput.endTurn(sessionId, turnId, e).catch((err: unknown) => log.warn(`[chat:${mapper.id}] could not close the output segment of ${turnId}: ${String(err)}`));
+      const close = async (e: { code: number | null; signal: string | null }): Promise<void> => {
+        // s3/t9: the final dispatchState (settled by now -- the stdout-reading loop that drives
+        // its 'accepted' transition completes before the process's own exit, same as the exit
+        // code read elsewhere in this function already assumes) and the computed vibeOutcome,
+        // threaded onto the SAME endTurn call site every provider already uses. A non-vibe turn
+        // never computes vibeFinalize, so its TurnExit is byte-identical to before.
+        const vibeOutcome = vibeFinalize !== undefined ? await vibeFinalize.catch(() => undefined) : undefined;
+        const exit: TurnExit = { ...e, ...(isVibeDirectSpawn ? { vibeDispatchState, vibeOutcome } : {}) };
+        void sessionOutput.endTurn(sessionId, turnId, exit).catch((err: unknown) => log.warn(`[chat:${mapper.id}] could not close the output segment of ${turnId}: ${String(err)}`));
       };
       proc.exit.then(close, () => close({ code: null, signal: null }));
     }
@@ -1559,24 +1579,11 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         proc.kill('SIGTERM');
         pendingByTurn.delete(turnId);
       }
-      // s3/t7: on every exit path (clean, error, or an abandoned/killed turn) -- fire-and-forget
-      // (never awaited here) so a turn left running in the background after detach (the
-      // `!terminal && output !== undefined` case just above) does not block this generator's
-      // return; it still finalizes once the process actually exits, whenever that is. Reads
-      // export.json ONLY after the process has truly exited, so a write still in flight is
-      // never read as absent/malformed.
-      if (isVibeDirectSpawn && vibeOutputDir !== undefined) {
-        const outputDir = vibeOutputDir;
-        void proc.exit.catch(() => {}).then(async () => {
-          try {
-            const evidence = await readExitEvidence(join(outputDir, 'export.json'), deps.readVibeExportFile ?? ((p) => readFileAsync(p, 'utf8')));
-            // A throwing onVibeOutcome (caller bug) must never skip the directory removal below.
-            try { opts?.onVibeOutcome?.(classifyVibeOutcome(evidence)); } catch { /* caller's own bug; cleanup still runs */ }
-          } finally {
-            await rmAsync(outputDir, { recursive: true, force: true }).catch(() => {});
-          }
-        });
-      }
+      // s3/t7: vibeFinalize (constructed unconditionally above, right after spawn) already
+      // reads export.json, reports onVibeOutcome and removes the directory on its own --
+      // self-driving via its own .then chain, never needing to be awaited here. This runs on
+      // every exit path (clean, error, or an abandoned/killed turn left running in the
+      // background after detach) without blocking this generator's return.
     }
   }
 

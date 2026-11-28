@@ -1221,6 +1221,71 @@ test('vibe: s3/t7 — the export directory is removed on every exit path, includ
   }
 });
 
+/** close()'s own write is asynchronous (it awaits vibeFinalize's export.json read before calling
+ *  endTurn) and is never awaited by run()'s own return -- collect() can resolve before the
+ *  marker lands. Poll for it instead of reading immediately. */
+async function waitForTurnEndMarker(file: string): Promise<Record<string, unknown>> {
+  await waitFor(() => existsSync(file) && readFileSync(file, 'utf8').split('\n').some((l) => parseMarker(l)?.kind === 'turn-end'));
+  const lines = readFileSync(file, 'utf8').split('\n').filter(Boolean);
+  return lines.map(parseMarker).find((m) => m?.kind === 'turn-end') as Record<string, unknown>;
+}
+
+test("vibe: s3/t9 — unit: endTurn constructing the turn-end marker with the new fields present for vibe and absent for claude/codex", async () => {
+  // A real sessionOutput (not the fake spawner's own concerns -- those are independent deps)
+  // so the actual written marker line can be read back off disk.
+  {
+    const root = mkdtempSync(join(tmpdir(), 'insrc-s3t9-vibe-'));
+    try {
+      const { deps } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
+      const withExport: AdapterDeps = { ...deps, sessionOutput: createSessionOutput({ root, pollMs: 5 }), readVibeExportFile: async () => JSON.stringify({ outcome: 'finished' }) };
+      await collect(createProviderRegistry(withExport).get('vibe').run(REQ({ provider: 'vibe' }), { sessionId: 'sess-vibe' }));
+      const marker = await waitForTurnEndMarker(join(root, 'sess-vibe.ndjson'));
+      assert.equal(marker['vibeDispatchState'], 'accepted', "VIBE_TEXT_TURN's sessionId row drives dispatchState to accepted before exit");
+      assert.equal(marker['vibeOutcome'], 'ok');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
+  // claude: the new fields are absent (not even present as undefined keys) on its marker.
+  {
+    const root = mkdtempSync(join(tmpdir(), 'insrc-s3t9-claude-'));
+    try {
+      const { deps } = depsFor({ lines: CLAUDE_TEXT_TURN }, ['claude']);
+      const withOutput: AdapterDeps = { ...deps, sessionOutput: createSessionOutput({ root, pollMs: 5 }) };
+      await collect(createProviderRegistry(withOutput).get('claude').run(REQ({ provider: 'claude' }), { sessionId: 'sess-claude' }));
+      const marker = await waitForTurnEndMarker(join(root, 'sess-claude.ndjson'));
+      assert.ok(!('vibeDispatchState' in marker), 'claude never computes or writes this field');
+      assert.ok(!('vibeOutcome' in marker), 'claude never computes or writes this field');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
+});
+
+test('vibe: s3/t9 — integration: detach/reattach producing identical classification', async () => {
+  // t10 (a later Task) adds the follower's own CONSUMPTION of these marker fields on reattach;
+  // this Task proves the value a reattach reader will find on disk is identical to the one
+  // computed live -- the two can never disagree, since both come from this one endTurn call.
+  let liveOutcome: string | undefined;
+  const root = mkdtempSync(join(tmpdir(), 'insrc-s3t9-reattach-'));
+  try {
+    const { deps } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
+    const withExport: AdapterDeps = { ...deps, sessionOutput: createSessionOutput({ root, pollMs: 5 }), readVibeExportFile: async () => JSON.stringify({ stop_reason: 'max_turns' }) };
+    await collect(createProviderRegistry(withExport).get('vibe').run(REQ({ provider: 'vibe' }), {
+      sessionId: 'sess-reattach',
+      onVibeOutcome: (o) => { liveOutcome = o; },
+    }));
+    assert.equal(liveOutcome, 'replay-unsafe');
+    // "On reattach": re-read the same durable marker a follower would, independently of the
+    // live run above -- it carries the identical value, never a second, possibly-different one.
+    const marker = await waitForTurnEndMarker(join(root, 'sess-reattach.ndjson'));
+    assert.equal(marker['vibeOutcome'], liveOutcome, 'identical classification, live vs. the durable record a reattach reads');
+    assert.equal(marker['vibeDispatchState'], 'accepted');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('ProviderRegistry.available lists vibe alongside claude/codex when installed', () => {
   const { deps } = depsFor({ lines: [] }, ['claude', 'codex', 'vibe']);
   const reg = createProviderRegistry(deps);

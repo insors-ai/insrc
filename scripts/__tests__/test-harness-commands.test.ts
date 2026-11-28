@@ -81,12 +81,12 @@ test('Native refusal and saved-mode controls remain enforced', { timeout: 120000
 	const run = { ...base, environment: () => ({ ...base.environment(), INSRC_BUILD_CONFIRM_CLOSURE: '1' }) };
 	const result = await withRun(run, scope => runHarness(ROOT, selection, {
 		ownedRun: run, ownedScope: scope,
-		testArgs: (file: string) => ['--import', 'tsx', '--test', '--test-force-exit', '--test-reporter=tap', ...selection.testFlags, file],
+		testArgs: (file: string) => ['--import', 'tsx', '--test', '--test-force-exit', '--test-concurrency=1', '--test-reporter=tap', ...selection.testFlags, file],
 	}));
 	assert.equal(result.code, 0, JSON.stringify(result));
 	assert.equal(result.results.length, 2);
 	for (const file of result.results) {
-		assert.equal(file.code, 0, file.log); assert.equal(file.coverageIncomplete, false);
+		assert.equal(file.code, 0, file.log); assert.equal(file.coverage.status, 'reported');
 		assert.equal(file.coverage.counts.pass, 1); assert.equal(file.coverage.counts.fail, 0);
 		assert.equal(file.coverage.counts.cancelled, 0);
 	}

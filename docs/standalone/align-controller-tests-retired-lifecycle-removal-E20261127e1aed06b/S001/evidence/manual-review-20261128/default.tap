@@ -1,0 +1,129 @@
+TAP version 13
+# (node:28003) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# [04:28:41] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "postgres"
+#     [35mfamily[39m: "rdbms"
+# [04:28:41] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cockroachdb"
+#     [35mfamily[39m: "rdbms"
+# [04:28:41] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mysql"
+#     [35mfamily[39m: "rdbms"
+# [04:28:41] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mariadb"
+#     [35mfamily[39m: "rdbms"
+# [04:28:41] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "sqlite"
+#     [35mfamily[39m: "rdbms"
+# [04:28:42] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mssql"
+#     [35mfamily[39m: "rdbms"
+# [04:28:42] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "oracle"
+#     [35mfamily[39m: "rdbms"
+# [04:28:42] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "clickhouse"
+#     [35mfamily[39m: "rdbms"
+# [04:28:42] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "redis"
+#     [35mfamily[39m: "kv"
+# [04:28:42] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "valkey"
+#     [35mfamily[39m: "kv"
+# [04:28:42] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "keydb"
+#     [35mfamily[39m: "kv"
+# [04:28:42] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mongodb"
+#     [35mfamily[39m: "kv"
+# [04:28:42] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cassandra"
+#     [35mfamily[39m: "kv"
+# [04:28:42] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "nats"
+#     [35mfamily[39m: "kv"
+# [04:28:42] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "dynamodb"
+#     [35mfamily[39m: "kv"
+# [04:28:43] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "etcd"
+#     [35mfamily[39m: "kv"
+# [04:28:43] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "memcached"
+#     [35mfamily[39m: "kv"
+# [04:28:43] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "csv"
+#     [35mfamily[39m: "file"
+# [04:28:43] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "tsv"
+#     [35mfamily[39m: "file"
+# [04:28:43] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "jsonl"
+#     [35mfamily[39m: "file"
+# [04:28:43] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "ndjson"
+#     [35mfamily[39m: "file"
+# [04:28:43] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "json"
+#     [35mfamily[39m: "file"
+# [04:28:43] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "parquet"
+#     [35mfamily[39m: "file"
+# [04:28:43] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "arrow"
+#     [35mfamily[39m: "file"
+# [04:28:43] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "feather"
+#     [35mfamily[39m: "file"
+# [04:28:43] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "avro"
+#     [35mfamily[39m: "file"
+# [04:28:43] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "bson"
+#     [35mfamily[39m: "file"
+# [04:28:43] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "fixed-width"
+#     [35mfamily[39m: "file"
+# [04:28:43] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "xlsx"
+#     [35mfamily[39m: "file"
+# [04:28:43] [32mINFO[39m: [36m[db-policy-saved] saved-positive-marker[39m
+#     [35mmodule[39m: "db-policy-saved"
+# Subtest: CM-S3-DRIVER-LOGS: owner context is immutable lazy quiet and remains quiet after authority expiry
+ok 1 - CM-S3-DRIVER-LOGS: owner context is immutable lazy quiet and remains quiet after authority expiry
+  ---
+  duration_ms: 7.219459
+  type: 'test'
+  ...
+# HANDLE_DIAGNOSTIC {"delay":3000,"resources":["PipeWrap","PipeWrap","MessagePort"],"handles":[{"type":"WORKER","stack":["    at Worker.emitInitNative (node:internal/async_hooks:206:43)","    at new Worker (node:internal/worker:217:21)","    at createWorker (/Users/subhagho/work/projects/insors/insrc/node_modules/thread-stream/index.js:72:18)","    at new ThreadStream (/Users/subhagho/work/projects/insors/insrc/node_modules/thread-stream/index.js:253:19)","    at buildStream (/Users/subhagho/work/projects/insors/insrc/node_modules/pino/lib/transport.js:137:18)","    at transport (/Users/subhagho/work/projects/insors/insrc/node_modules/pino/lib/transport.js:252:10)","    at normalizeArgs (/Users/subhagho/work/projects/insors/insrc/node_modules/pino/lib/tools.js:349:16)","    at pino (/Users/subhagho/work/projects/insors/insrc/node_modules/pino/pino.js:91:28)"]},{"type":"MESSAGEPORT","stack":["    at MessagePort.emitInitNative (node:internal/async_hooks:206:43)","    at new Worker (node:internal/worker:261:9)","    at createWorker (/Users/subhagho/work/projects/insors/insrc/node_modules/thread-stream/index.js:72:18)","    at new ThreadStream (/Users/subhagho/work/projects/insors/insrc/node_modules/thread-stream/index.js:253:19)","    at buildStream (/Users/subhagho/work/projects/insors/insrc/node_modules/pino/lib/transport.js:137:18)","    at transport (/Users/subhagho/work/projects/insors/insrc/node_modules/pino/lib/transport.js:252:10)","    at normalizeArgs (/Users/subhagho/work/projects/insors/insrc/node_modules/pino/lib/tools.js:349:16)","    at pino (/Users/subhagho/work/projects/insors/insrc/node_modules/pino/pino.js:91:28)"]}],"libuv":[{"type":"async","is_active":true,"is_referenced":false},{"type":"async","is_active":true,"is_referenced":false},{"type":"timer","is_active":false,"is_referenced":false},{"type":"check","is_active":true,"is_referenced":false},{"type":"idle","is_active":false,"is_referenced":true},{"type":"prepare","is_active":true,"is_referenced":false},{"type":"check","is_active":true,"is_referenced":false},{"type":"async","is_active":true,"is_referenced":true},{"type":"pipe","is_active":false,"is_referenced":true},{"type":"pipe","is_active":false,"is_referenced":true},{"type":"async","is_active":true,"is_referenced":false},{"type":"async","is_active":true,"is_referenced":false},{"type":"async","is_active":true,"is_referenced":false},{"type":"async","is_active":true,"is_referenced":false},{"type":"timer","is_active":true,"is_referenced":false},{"type":"async","is_active":true,"is_referenced":false},{"type":"async","is_active":true,"is_referenced":false},{"type":"async","is_active":true,"is_referenced":true},{"type":"timer","is_active":true,"is_referenced":false},{"type":"timer","is_active":true,"is_referenced":false},{"type":"loop","is_active":true}]}
+# HANDLE_DIAGNOSTIC {"delay":10000,"resources":["PipeWrap","PipeWrap","MessagePort"],"handles":[{"type":"WORKER","stack":["    at Worker.emitInitNative (node:internal/async_hooks:206:43)","    at new Worker (node:internal/worker:217:21)","    at createWorker (/Users/subhagho/work/projects/insors/insrc/node_modules/thread-stream/index.js:72:18)","    at new ThreadStream (/Users/subhagho/work/projects/insors/insrc/node_modules/thread-stream/index.js:253:19)","    at buildStream (/Users/subhagho/work/projects/insors/insrc/node_modules/pino/lib/transport.js:137:18)","    at transport (/Users/subhagho/work/projects/insors/insrc/node_modules/pino/lib/transport.js:252:10)","    at normalizeArgs (/Users/subhagho/work/projects/insors/insrc/node_modules/pino/lib/tools.js:349:16)","    at pino (/Users/subhagho/work/projects/insors/insrc/node_modules/pino/pino.js:91:28)"]},{"type":"MESSAGEPORT","stack":["    at MessagePort.emitInitNative (node:internal/async_hooks:206:43)","    at new Worker (node:internal/worker:261:9)","    at createWorker (/Users/subhagho/work/projects/insors/insrc/node_modules/thread-stream/index.js:72:18)","    at new ThreadStream (/Users/subhagho/work/projects/insors/insrc/node_modules/thread-stream/index.js:253:19)","    at buildStream (/Users/subhagho/work/projects/insors/insrc/node_modules/pino/lib/transport.js:137:18)","    at transport (/Users/subhagho/work/projects/insors/insrc/node_modules/pino/lib/transport.js:252:10)","    at normalizeArgs (/Users/subhagho/work/projects/insors/insrc/node_modules/pino/lib/tools.js:349:16)","    at pino (/Users/subhagho/work/projects/insors/insrc/node_modules/pino/pino.js:91:28)"]}],"libuv":[{"type":"async","is_active":true,"is_referenced":false},{"type":"async","is_active":true,"is_referenced":false},{"type":"timer","is_active":false,"is_referenced":false},{"type":"check","is_active":true,"is_referenced":false},{"type":"idle","is_active":false,"is_referenced":true},{"type":"prepare","is_active":true,"is_referenced":false},{"type":"check","is_active":true,"is_referenced":false},{"type":"async","is_active":true,"is_referenced":true},{"type":"pipe","is_active":false,"is_referenced":true},{"type":"pipe","is_active":false,"is_referenced":true},{"type":"async","is_active":true,"is_referenced":false},{"type":"async","is_active":true,"is_referenced":false},{"type":"async","is_active":true,"is_referenced":false},{"type":"async","is_active":true,"is_referenced":false},{"type":"async","is_active":true,"is_referenced":false},{"type":"async","is_active":true,"is_referenced":false},{"type":"async","is_active":true,"is_referenced":true},{"type":"timer","is_active":true,"is_referenced":false},{"type":"timer","is_active":true,"is_referenced":false},{"type":"timer","is_active":true,"is_referenced":false},{"type":"loop","is_active":true}]}

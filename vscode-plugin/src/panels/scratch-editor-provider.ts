@@ -165,8 +165,7 @@ export class ScratchDocumentController {
         if (this.frozen || pane.failure) { this.conflict(pane, draft.draftSeq, 'Conflicting source; recovery draft retained.'); continue; }
         const base = this.read(), ack = pane.ack;
         const direct = base.version === draft.baseVersion && base.digest === draft.baseDigest;
-        const descendant = ack !== undefined && ack.editId === draft.parentEditId && ack.baseVersion === draft.baseVersion && ack.baseDigest === draft.baseDigest && ack.snapshot.version === base.version && ack.snapshot.digest === base.digest;
-        if (!direct && !descendant) { this.conflict(pane, draft.draftSeq, 'Stale source version; draft retained.'); continue; }
+        if (!direct) { this.conflict(pane, draft.draftSeq, 'Stale source version; draft retained.'); continue; }
         if (draft.parentEditId && ack?.editId !== draft.parentEditId) { this.conflict(pane, draft.draftSeq, 'Unacknowledged edit parent; draft retained.'); continue; }
         const admission = this.deps.admit(base.markdown, draft.markdown);
         if (!admission.allowed) { this.conflict(pane, draft.draftSeq, admission.reason ?? 'Unsafe Markdown; source and draft retained.'); continue; }

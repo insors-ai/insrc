@@ -60,10 +60,14 @@ test('scratch queue serializes minimal edits and coalesces acknowledged descenda
   const h = harness(); h.controller.addPane('a', () => {}, false);
   const gate = h.block();
   await h.controller.receive('a', h.draft(1, '# First\n')); await until(() => h.edits.length === 1);
-  await h.controller.receive('a', h.draft(2, '# Second\n', 'edit_1'));
-  await h.controller.receive('a', h.draft(3, '# Latest\n', 'edit_1'));
+  await h.controller.receive('a', { ...h.draft(2, '# Second\n', 'edit_1'), apply: false });
+  const latest = { ...h.draft(3, '# Latest\n', 'edit_1'), apply: false };
+  await h.controller.receive('a', latest);
   assert.equal(h.edits.length, 1); assert.equal(h.retained.at(-1)?.draftSeq, 3);
   gate.resolve(); await h.controller.flush();
+  assert.equal(h.document.markdown, '# First\n'); assert.equal(h.edits.length, 1, 'parent acknowledgement cannot authorize the latest staged child');
+  const acknowledged = h.controller.snapshot;
+  await h.controller.receive('a', { ...latest, apply: true, baseVersion: acknowledged.version, baseDigest: acknowledged.digest }); await h.controller.flush();
   assert.equal(h.document.markdown, '# Latest\n'); assert.equal(h.edits.length, 2); assert.equal(h.maxActive, 1);
   assert.equal(h.controller.appliedSequence('a'), 3);
   assert.deepEqual(h.edits[0], { baseVersion: 1, start: 2, end: 8, text: 'First' });
@@ -72,6 +76,15 @@ test('scratch queue serializes minimal edits and coalesces acknowledged descenda
     assert.equal(before!.slice(0, edit.start) + edit.text + before!.slice(edit.end), after);
     assert.ok(!/^[\uDC00-\uDFFF]|[\uD800-\uDBFF]$/.test(edit.text));
   }
+});
+
+test('scratch queue rejects new-sequence stale-base descendant authorization after its parent applies', async () => {
+  const h = harness(); h.controller.addPane('a', () => {}, false); const gate = h.block();
+  await h.controller.receive('a', h.draft(1, '# First\n')); await until(() => h.edits.length === 1);
+  await h.controller.receive('a', h.draft(2, '# Stale authorized child\n', 'edit_1'));
+  gate.resolve(); await h.controller.flush();
+  assert.equal(h.document.markdown, '# First\n'); assert.equal(h.edits.length, 1); assert.equal(h.controller.appliedSequence('a'), 1);
+  assert.equal(h.recovery.get('a')?.markdown, '# Stale authorized child\n');
 });
 
 test('scratch queue retains every newer draft while an old ack promotes only the latest snapshot', async () => {

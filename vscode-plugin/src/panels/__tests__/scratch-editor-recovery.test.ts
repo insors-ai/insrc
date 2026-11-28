@@ -134,8 +134,11 @@ test('scratch recovery rejects symlinks, corrupt and oversized records without d
 test('scratch recovery preserves the unscheduled parent needed to apply a coalesced descendant', async () => fixture(async (root, uri) => {
   const store = new ScratchRecoveryStore(root), h = controller(store, uri);
   const first = h.c.receive('pane', draft());
-  const second = h.c.receive('pane', { ...draft(2, '# Descendant\n'), parentEditId: 'edit_1' });
+  const staged = { ...draft(2, '# Descendant\n'), parentEditId: 'edit_1', apply: false };
+  const second = h.c.receive('pane', staged);
   await Promise.all([first, second]); await h.c.flush();
+  assert.equal(h.document.markdown, '# Draft\n'); assert.equal((await store.list(uri))[0]?.draft.apply, false);
+  await h.c.receive('pane', { ...staged, apply: true, baseVersion: h.c.snapshot.version, baseDigest: h.c.snapshot.digest }); await h.c.flush();
   assert.equal(h.document.markdown, '# Descendant\n'); assert.equal(h.c.appliedSequence('pane'), 2);
   assert.deepEqual(await store.list(uri), []);
 }));

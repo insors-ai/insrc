@@ -39,6 +39,9 @@ export interface ScratchSyntaxInventory {
 }
 
 export function inspectScratchSyntax(markdown: string): ScratchSyntaxInventory {
+  return inspectScratchTree(markdown, scratchSourceCodec.parse(markdown) as SyntaxNode);
+}
+function inspectScratchTree(markdown: string, tree: SyntaxNode): ScratchSyntaxInventory {
   const unsupported = new Set<string>();
   const fingerprints: string[] = [];
   const protectedSpans: { semantic: string; raw: string }[] = [];
@@ -49,7 +52,7 @@ export function inspectScratchSyntax(markdown: string): ScratchSyntaxInventory {
     fingerprints.push(`front-matter:${metadata[0]}`);
     protectedSpans.push({ semantic: 'front-matter', raw: metadata[0] });
   }
-  const pending: SyntaxNode[] = [grammar.parse(markdown) as SyntaxNode];
+  const pending: SyntaxNode[] = [tree];
   while (pending.length) {
     const node = pending.pop()!;
     if (!supported.has(node.type)) unsupported.add(node.type);
@@ -92,61 +95,117 @@ export function preserveScratchEol(source: string, serialized: string): string {
   return source.includes('\r\n') ? serialized.replace(/\r?\n/g, '\r\n') : serialized;
 }
 
-export function checkScratchMarkdown<Document>(source: string, codec: ScratchMarkdownCodec<Document>): ScratchMarkdownAdmission {
-  const refuse = (reason: string): ScratchMarkdownAdmission => ({ allowed: false, source, reason });
-  if (scratchUtf8Bytes(source) > SCRATCH_NOTE_BYTES) return refuse('Note exceeds the rich editor size limit.');
-  try {
-    if (/\r(?!\n)/.test(source) || (source.includes('\r\n') && /(?<!\r)\n/.test(source))) return refuse('Mixed line endings require the text editor; original content is retained.');
-    const before = inspectScratchSyntax(source);
-    if (before.unsupported.length) {
-      return refuse('This note contains markup without verified rich-editor preservation support. Use the text editor to edit it.');
-    }
-    const parsed = codec.parse(source);
-    const serialized = preserveScratchEol(source, codec.serialize(parsed));
-    if (scratchUtf8Bytes(serialized) > SCRATCH_NOTE_BYTES) return refuse('Serialized note exceeds the rich editor size limit.');
-    if (!scratchSourceCodec.equivalent(scratchSourceCodec.parse(source), scratchSourceCodec.parse(serialized))) return refuse('Markdown semantics changed during serialization. Use the text editor to edit it.');
-    if (!codec.equivalent(parsed, codec.parse(serialized))) return refuse('Markdown structure changed during serialization.');
-    const after = inspectScratchSyntax(serialized);
-    if (after.unsupported.length || JSON.stringify(before.fingerprints) !== JSON.stringify(after.fingerprints)) {
-      return refuse('Markdown source syntax changed during serialization. Use the text editor to edit it.');
-    }
-    return { allowed: true, source }; // never replace original source with serialized text on open
-  } catch {
-    return refuse('The rich editor cannot safely parse this note. Original content is retained.');
+/** A job owns its parse products; no tree is shared with an external caller.
+ * The independent source grammar is still checked even for a configured codec.
+ * Equal bytes share products within this job, never skip an assertion. */
+class ScratchMarkdownValidationJob<Document> {
+  private readonly admissions = new Map<string, ScratchMarkdownAdmission>();
+  private readonly documents = new Map<string, Document>();
+  private readonly trees = new Map<string, ReturnType<typeof grammar.parse>>();
+  private readonly inventories = new Map<string, ScratchSyntaxInventory>();
+  private readonly semantics = new Map<string, string>();
+  constructor(private readonly codec: ScratchMarkdownCodec<Document>, private readonly base?: VerifiedScratchBase) {}
+  private tree(source: string): ReturnType<typeof grammar.parse> {
+    let tree = this.trees.get(source);
+    if (!tree) { tree = scratchSourceCodec.parse(source); this.trees.set(source, tree); }
+    return tree;
+  }
+  parse(source: string): Document {
+    if (!this.documents.has(source)) this.documents.set(source,
+      this.codec === scratchSourceCodec ? this.tree(source) as unknown as Document : this.codec.parse(source));
+    return this.documents.get(source)!;
+  }
+  private inventory(source: string): ScratchSyntaxInventory {
+    let inventory = this.inventories.get(source);
+    if (!inventory) { inventory = inspectScratchTree(source, this.tree(source) as SyntaxNode); this.inventories.set(source, inventory); }
+    return inventory;
+  }
+  private semantic(source: string): string {
+    let semantic = this.semantics.get(source);
+    if (semantic === undefined) { semantic = JSON.stringify(this.tree(source), (key, value: unknown) => key === 'position' ? undefined : value); this.semantics.set(source, semantic); }
+    return semantic;
+  }
+  check(source: string): ScratchMarkdownAdmission {
+    const cached = this.admissions.get(source); if (cached) return cached;
+    const result = this.checkUncached(source); this.admissions.set(source, result); return result;
+  }
+  private checkUncached(source: string): ScratchMarkdownAdmission {
+    const refuse = (reason: string): ScratchMarkdownAdmission => ({ allowed: false, source, reason });
+    if (scratchUtf8Bytes(source) > SCRATCH_NOTE_BYTES) return refuse('Note exceeds the rich editor size limit.');
+    try {
+      if (/\r(?!\n)/.test(source) || (source.includes('\r\n') && /(?<!\r)\n/.test(source))) return refuse('Mixed line endings require the text editor; original content is retained.');
+      const before = this.inventory(source);
+      if (before.unsupported.length) return refuse('This note contains markup without verified rich-editor preservation support. Use the text editor to edit it.');
+      const parsed = this.parse(source);
+      const serialized = preserveScratchEol(source, this.codec.serialize(parsed));
+      if (scratchUtf8Bytes(serialized) > SCRATCH_NOTE_BYTES) return refuse('Serialized note exceeds the rich editor size limit.');
+      if (this.semantic(source) !== this.semantic(serialized)) return refuse('Markdown semantics changed during serialization. Use the text editor to edit it.');
+      if (!this.codec.equivalent(parsed, this.parse(serialized))) return refuse('Markdown structure changed during serialization.');
+      const after = this.inventory(serialized);
+      if (after.unsupported.length || JSON.stringify(before.fingerprints) !== JSON.stringify(after.fingerprints)) return refuse('Markdown source syntax changed during serialization. Use the text editor to edit it.');
+      return { allowed: true, source };
+    } catch { return refuse('The rich editor cannot safely parse this note. Original content is retained.'); }
+  }
+  edit(source: string, draft: string, expectedDocument: Document): ScratchMarkdownAdmission & { readonly draft: string } {
+    const base = this.base?.source === source ? { allowed: true as const, source } : this.check(source);
+    if (!base.allowed) return { ...base, draft };
+    const proposal = this.check(draft);
+    if (!proposal.allowed) return { allowed: false, source, draft, reason: proposal.reason };
+    try {
+      if (!this.codec.equivalent(expectedDocument, this.parse(draft))) return { allowed: false, source, draft, reason: 'The draft does not preserve the intended editor document.' };
+      const original = this.base?.source === source ? this.base.inventory.protectedSpans : this.inventory(source).protectedSpans;
+      const proposed = this.inventory(draft).protectedSpans;
+      const rawBySemantic = new Map<string, Set<string>>();
+      for (const span of proposed) {
+        let raw = rawBySemantic.get(span.semantic);
+        if (!raw) { raw = new Set(); rawBySemantic.set(span.semantic, raw); }
+        raw.add(span.raw);
+      }
+      for (const span of original) {
+        const matching = rawBySemantic.get(span.semantic);
+        if (matching && (matching.size !== 1 || !matching.has(span.raw))) return { allowed: false, source, draft, reason: 'Unchanged content has an unrelated raw source change.' };
+      }
+    } catch { return { allowed: false, source, draft, reason: 'The intended editor document could not be verified.' }; }
+    return { allowed: true, source, draft };
+  }
+  /** Only a fully checked source yields a cache record. No parser tree or
+   * mutable codec document escapes into the cache. */
+  verified(source: string): VerifiedScratchBase | undefined {
+    if (!this.check(source).allowed) return;
+    const inventory = this.inventory(source);
+    return Object.freeze({ source, inventory: Object.freeze({ unsupported: Object.freeze([...inventory.unsupported]),
+      fingerprints: Object.freeze([...inventory.fingerprints]), protectedSpans: Object.freeze(inventory.protectedSpans.map(span => Object.freeze({ ...span }))) }) });
+  }
+}
+interface VerifiedScratchBase { readonly source: string; readonly inventory: ScratchSyntaxInventory }
+/** A single verified immutable base, scoped to one codec/executor instance.
+ * The caller supplies the exact version/digest key; byte identity is mandatory
+ * too. Epoch replacement creates a new verifier, never transfers its cache. */
+export class ScratchMarkdownVerifier<Document> {
+  private base: { readonly key: string; readonly value: VerifiedScratchBase } | undefined;
+  private revision = 0;
+  constructor(private readonly codec: ScratchMarkdownCodec<Document>) {}
+  invalidate(): void { this.revision++; this.base = undefined; }
+  job(source: string, key: string): { readonly validation: ScratchMarkdownValidationJob<Document>; retainBase(): void } {
+    if (this.base && (this.base.key !== key || this.base.value.source !== source)) this.invalidate();
+    const revision = this.revision;
+    const validation = new ScratchMarkdownValidationJob(this.codec, this.base?.value);
+    return { validation, retainBase: () => {
+      if (revision !== this.revision || this.base) return;
+      const value = validation.verified(source);
+      if (value) this.base = { key, value };
+    } };
   }
 }
 
-/** Admission never changes either input; callers retain both on failure. An
- * intentional change to supported text/code is allowed; an unsafe base cannot
- * be laundered into a clean draft that silently drops its unsupported content. */
+export function checkScratchMarkdown<Document>(source: string, codec: ScratchMarkdownCodec<Document>): ScratchMarkdownAdmission {
+  return new ScratchMarkdownValidationJob(codec).check(source);
+}
+/** Retain source admission, independent semantics, configured structure, exact
+ * raw fingerprints and unchanged-span checks, sharing only job-local parses. */
 export function checkScratchMarkdownEdit<Document>(source: string, draft: string, codec: ScratchMarkdownCodec<Document>, expectedDocument: Document):
   ScratchMarkdownAdmission & { readonly draft: string } {
-  const base = checkScratchMarkdown(source, codec);
-  if (!base.allowed) return { ...base, draft };
-  const proposal = checkScratchMarkdown(draft, codec);
-  if (!proposal.allowed) return { allowed: false, source, draft, reason: proposal.reason };
-  try {
-    // Expected document comes from the transaction BEFORE serialization. Deriving
-    // it from draft would hide exactly the serializer loss being checked.
-    if (!codec.equivalent(expectedDocument, codec.parse(draft))) {
-      return { allowed: false, source, draft, reason: 'The draft does not preserve the intended editor document.' };
-    }
-    const original = inspectScratchSyntax(source).protectedSpans;
-    const proposed = inspectScratchSyntax(draft).protectedSpans;
-    const rawBySemantic = new Map<string, Set<string>>();
-    for (const span of proposed) {
-      let raw = rawBySemantic.get(span.semantic);
-      if (!raw) { raw = new Set(); rawBySemantic.set(span.semantic, raw); }
-      raw.add(span.raw);
-    }
-    for (const span of original) {
-      const matching = rawBySemantic.get(span.semantic);
-      if (matching && (matching.size !== 1 || !matching.has(span.raw))) {
-        return { allowed: false, source, draft, reason: 'Unchanged content has an unrelated raw source change.' };
-      }
-    }
-  } catch { return { allowed: false, source, draft, reason: 'The intended editor document could not be verified.' }; }
-  return { allowed: true, source, draft };
+  return new ScratchMarkdownValidationJob(codec).edit(source, draft, expectedDocument);
 }
 
 /** Only an explicit user document transaction may produce a proposal. Opening,

@@ -137,7 +137,9 @@ test('scratch recovery preserves the unscheduled parent needed to apply a coales
   const staged = { ...draft(2, '# Descendant\n'), parentEditId: 'edit_1', apply: false };
   const second = h.c.receive('pane', staged);
   await Promise.all([first, second]); await h.c.flush();
-  assert.equal(h.document.markdown, '# Draft\n'); assert.equal((await store.list(uri))[0]?.draft.apply, false);
+  assert.equal(h.document.markdown, initial, 'Superseded admission cannot begin a native edit');
+  assert.equal(h.edits, 0); assert.ok(h.messages.some(m => m.type === 'admission-superseded'));
+  assert.equal((await store.list(uri))[0]?.draft.apply, false);
   await h.c.receive('pane', { ...staged, apply: true, baseVersion: h.c.snapshot.version, baseDigest: h.c.snapshot.digest }); await h.c.flush();
   assert.equal(h.document.markdown, '# Descendant\n'); assert.equal(h.c.appliedSequence('pane'), 2);
   assert.deepEqual(await store.list(uri), []);

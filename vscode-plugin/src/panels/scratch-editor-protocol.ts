@@ -61,6 +61,7 @@ export type ScratchHostToEditor =
   | (Session & { readonly type: 'focus-request'; readonly requestId: string; readonly docVersion: number; readonly draftSeq: number })
   | (Session & Snapshot & { readonly type: 'document-state'; readonly locked: boolean })
   | (Session & { readonly type: 'receipt'; readonly draftSeq: number; readonly editId: string })
+  | (Session & { readonly type: 'admission-superseded'; readonly draftSeq: number; readonly editId: string; readonly baseVersion: number; readonly baseDigest: string })
   | (Session & Snapshot & { readonly type: 'apply-ack'; readonly draftSeq: number; readonly editId: string })
   | (Session & { readonly type: 'conflict'; readonly draftSeq: number; readonly message: string })
   | (Session & { readonly type: 'recovery'; readonly draftSeq: number; readonly markdown: string })
@@ -144,6 +145,7 @@ export function parseScratchHostMessage(value: unknown): ScratchHostToEditor | u
     case 'focus-request': valid = sessionKeys(m, ['requestId', 'docVersion', 'draftSeq']) && token(m.requestId) && version(m.docVersion) && count(m.draftSeq); break;
     case 'document-state': valid = sessionKeys(m, ['version', 'digest', 'markdown', 'locked']) && snapshot(m) && typeof m.locked === 'boolean'; break;
     case 'receipt': valid = sessionKeys(m, ['draftSeq', 'editId']) && count(m.draftSeq) && token(m.editId); break;
+    case 'admission-superseded': valid = sessionKeys(m, ['draftSeq', 'editId', 'baseVersion', 'baseDigest']) && count(m.draftSeq) && token(m.editId) && version(m.baseVersion) && digest(m.baseDigest); break;
     case 'apply-ack': valid = sessionKeys(m, ['draftSeq', 'editId', 'version', 'digest', 'markdown']) && count(m.draftSeq) && token(m.editId) && snapshot(m); break;
     case 'conflict': valid = sessionKeys(m, ['draftSeq', 'message']) && count(m.draftSeq) && text(m.message, 4096); break;
     case 'recovery': valid = sessionKeys(m, ['draftSeq', 'markdown']) && count(m.draftSeq) && text(m.markdown, SCRATCH_NOTE_BYTES); break;

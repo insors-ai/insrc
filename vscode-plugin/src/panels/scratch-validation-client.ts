@@ -95,6 +95,11 @@ export class ScratchValidationClient {
     this.closed = true; this.readyReject(new Error(message)); clearTimeout(this.timer); this.unlisten?.(); this.port.terminate();
     this.active?.reject(new Error(message)); this.queued?.reject(new Error(message)); this.active = undefined; this.queued = undefined;
   }
+  invalidateBase(): void {
+    if (this.closed || !this.started) return;
+    try { this.port.post({ type: 'invalidate', epoch: this.epoch }); }
+    catch { this.stop('Background validation invalidation failed; draft retained.'); }
+  }
   dispose(): void { this.stop('Background validation disposed; draft retained.'); }
 }
 

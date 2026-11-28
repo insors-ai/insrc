@@ -12,7 +12,7 @@ export interface ScratchDocumentControllerDeps {
   retainDraft(draft: ScratchDraftProposal): Promise<void>;
   /** Clear only this exact applied draft, never a newer recovery record. */
   draftApplied(draft: ScratchDraftProposal): Promise<void>;
-  admit(source: string, draft: string): { readonly allowed: boolean; readonly reason?: string };
+  admit(source: string, draft: string, base: ScratchSnapshot): { readonly allowed: boolean; readonly reason?: string | undefined } | Promise<{ readonly allowed: boolean; readonly reason?: string | undefined }>;
   warn(message: string): void;
 }
 export const scratchDigest = (text: string): string => createHash('sha256').update(text, 'utf8').digest('hex');
@@ -35,6 +35,7 @@ interface Pane {
   attached: boolean;
   latest?: ScratchDraftProposal | undefined;
   reportedBaseVersion?: number;
+  cancelledParent?: { readonly editId: string; readonly baseVersion: number; readonly baseDigest: string } | undefined;
   appliedSeq: number;
   failure?: string | undefined;
   ack?: { readonly editId: string; readonly baseVersion: number; readonly baseDigest: string; readonly snapshot: ScratchSnapshot; readonly request: ScratchDraftProposal } | undefined;
@@ -84,6 +85,11 @@ export class ScratchDocumentController {
     this.notify();
     if ((pane.latest?.draftSeq ?? 0) <= pane.appliedSeq && !this.jobs.some(job => job.pane === pane) && this.inFlight?.pane !== pane) this.panes.delete(id);
   }
+  validationUnavailable(): void {
+    if (this.disposed) return;
+    this.frozen = true;
+    for (const pane of this.panes.values()) this.conflict(pane, pane.latest?.draftSeq ?? 0, 'Background Markdown validation is unavailable; source and recovery drafts are retained. Reopen or use the text editor.');
+  }
   setLocked(id: string, locked: boolean): void { const pane = this.panes.get(id); if (pane?.attached) pane.locked = locked; }
   get hasPending(): boolean { return this.jobs.length > 0 || this.inFlight !== undefined || [...this.panes.values()].some(p => (p.latest?.draftSeq ?? 0) > p.appliedSeq); }
   get conflicted(): boolean { return this.frozen; }
@@ -114,7 +120,8 @@ export class ScratchDocumentController {
       const current = this.read();
       const direct = previous.baseVersion === draft.baseVersion && previous.baseDigest === draft.baseDigest &&
         current.version === draft.baseVersion && current.digest === draft.baseDigest && draft.parentEditId === previous.parentEditId &&
-        (draft.parentEditId === undefined || parent?.editId === draft.parentEditId);
+        (draft.parentEditId === undefined || parent?.editId === draft.parentEditId ||
+          pane.cancelledParent?.editId === draft.parentEditId && pane.cancelledParent.baseVersion === current.version && pane.cancelledParent.baseDigest === current.digest);
       const rebased = parent && originalBase && previous.parentEditId !== undefined && draft.parentEditId === previous.parentEditId &&
         parent.editId === previous.parentEditId && draft.baseVersion === parent.snapshot.version && draft.baseDigest === parent.snapshot.digest &&
         current.version === parent.snapshot.version && current.digest === parent.snapshot.digest;
@@ -166,9 +173,26 @@ export class ScratchDocumentController {
         const base = this.read(), ack = pane.ack;
         const direct = base.version === draft.baseVersion && base.digest === draft.baseDigest;
         if (!direct) { this.conflict(pane, draft.draftSeq, 'Stale source version; draft retained.'); continue; }
-        if (draft.parentEditId && ack?.editId !== draft.parentEditId) { this.conflict(pane, draft.draftSeq, 'Unacknowledged edit parent; draft retained.'); continue; }
-        const admission = this.deps.admit(base.markdown, draft.markdown);
+        if (draft.parentEditId && ack?.editId !== draft.parentEditId && !(pane.cancelledParent?.editId === draft.parentEditId && pane.cancelledParent.baseVersion === base.version && pane.cancelledParent.baseDigest === base.digest)) { this.conflict(pane, draft.draftSeq, 'Unacknowledged edit parent; draft retained.'); continue; }
+        let admission: Awaited<ReturnType<ScratchDocumentControllerDeps['admit']>>;
+        try { admission = await this.deps.admit(base.markdown, draft.markdown, base); }
+        catch (error) {
+          // An obsolete failure cannot freeze newer typing. A dead executor
+          // will reject the new generation visibly when it is submitted.
+          if (pane.latest?.draftSeq === draft.draftSeq) throw error;
+          admission = { allowed: false };
+        }
+        const current = this.read();
+        if (this.frozen || current.version !== base.version || current.digest !== base.digest) { this.conflict(pane, draft.draftSeq, 'Source changed during validation; draft retained.'); continue; }
+        if (pane.latest?.draftSeq !== draft.draftSeq) {
+          pane.cancelledParent = { editId: draft.editId, baseVersion: base.version, baseDigest: base.digest };
+          if (!await this.post(pane, { type: 'admission-superseded', paneSessionId: pane.id, draftSeq: draft.draftSeq, editId: draft.editId, baseVersion: base.version, baseDigest: base.digest }) && pane.attached) this.conflict(pane, draft.draftSeq, 'Validation cancellation could not be confirmed; draft retained.');
+          continue;
+        }
+        if (this.disposed || !pane.attached || pane.locked || pane.failure) { this.conflict(pane, draft.draftSeq, 'Pane closed or locked during validation; draft retained.'); continue; }
         if (!admission.allowed) { this.conflict(pane, draft.draftSeq, admission.reason ?? 'Unsafe Markdown; source and draft retained.'); continue; }
+        // No await between the exact source check above and entering the
+        // native apply lane. Accepted native application may finish afterward.
         this.inFlight = { pane, draft, base };
         if (base.markdown !== draft.markdown && !await this.deps.applyEdit(minimalScratchEdit(base.markdown, draft.markdown, base.version))) throw new Error('Native edit refused');
         const applied = this.read();
@@ -179,7 +203,7 @@ export class ScratchDocumentController {
           await this.deps.retainDraft(pane.latest ?? draft);
           throw new Error('Document changed before acknowledgement');
         }
-        pane.appliedSeq = draft.draftSeq;
+        pane.appliedSeq = draft.draftSeq; pane.cancelledParent = undefined;
         pane.ack = { editId: draft.editId, baseVersion: base.version, baseDigest: base.digest, snapshot: applied, request: draft };
         const delivered = await this.post(pane, { type: 'apply-ack', paneSessionId: pane.id, draftSeq: draft.draftSeq, editId: draft.editId, ...applied });
         // Keep the durable draft throughout asynchronous acknowledgement. A

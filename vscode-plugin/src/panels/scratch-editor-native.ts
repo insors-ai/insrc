@@ -11,7 +11,7 @@ import { ScratchRecoveryStore } from './scratch-editor-recovery.js';
 import { ScratchLockPreference } from './scratch-editor-lock.js';
 import { scratchEditorHtml } from './scratch-editor-html.js';
 import { makeNonce } from './html.js';
-import { checkScratchMarkdownEdit, scratchSourceCodec } from './scratch-markdown.js';
+import { createScratchHostValidator } from './scratch-validation-host.js';
 import { parseScratchEditorMessage, type ScratchHostToEditor, type ScratchSelectionSend } from './scratch-editor-protocol.js';
 
 import { readScratchImage, storeScratchImage, resolveScratchImage, scratchWorkspaceLink } from './scratch-editor-assets.js';
@@ -44,6 +44,7 @@ interface Pane {
 interface DocumentEntry {
   readonly document: VSCode.TextDocument;
   readonly controller: ScratchDocumentController;
+  readonly validator: ReturnType<typeof createScratchHostValidator>;
   readonly panes: Map<string, Pane>;
   commands: Promise<void>;
   closing?: Promise<void>;
@@ -82,6 +83,7 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
       if (existing.document !== document || existing.closing) throw new Error('Scratchpad is closing; retry opening after pending work finishes.');
       return existing;
     }
+    const validator = createScratchHostValidator(join(deps.extensionPath, 'out', 'scratch-validation-host-worker.js'));
     const controller = new ScratchDocumentController({
       read: () => ({ version: document.version, markdown: document.getText() }),
       applyEdit: async edit => {
@@ -94,10 +96,11 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
       },
       retainDraft: draft => recovery.retain(key, draft),
       draftApplied: async draft => { await recovery.clearApplied(key, draft); },
-      admit: (source, draft) => checkScratchMarkdownEdit(source, draft, scratchSourceCodec, scratchSourceCodec.parse(draft)),
+      admit: (source, draft, base) => validator.client.run({ source, draft, baseKey: `${base.version}:${base.digest}` }),
       warn,
     });
-    const entry: DocumentEntry = { document, controller, panes: new Map(), commands: Promise.resolve() };
+    void validator.client.ready.catch(() => controller.validationUnavailable());
+    const entry: DocumentEntry = { document, controller, validator, panes: new Map(), commands: Promise.resolve() };
     documents.set(key, entry); return entry;
   }
   async function drain(entry: DocumentEntry): Promise<void> {
@@ -282,7 +285,8 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
         pane.focus?.settle(false); pane.deletion?.settle(false);
         for (const listener of pane.listeners) listener.dispose();
       }
-      await entry.controller.dispose();
+      const closed = entry.validator.dispose(); void closed.catch(() => {});
+      await entry.controller.dispose(); await closed;
       const key = entry.document.uri.toString(); if (documents.get(key) === entry) documents.delete(key);
     })();
     return entry.closing;
@@ -425,7 +429,7 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
   };
   const listeners = [
     api.window.registerCustomEditorProvider(SCRATCH_EDITOR_VIEW_TYPE, provider, { supportsMultipleEditorsPerDocument: true, webviewOptions: { retainContextWhenHidden: true } }),
-    api.workspace.onDidChangeTextDocument(event => { const entry = documents.get(event.document.uri.toString()); if (entry?.document === event.document) entry.controller.documentChanged(); }),
+    api.workspace.onDidChangeTextDocument(event => { const entry = documents.get(event.document.uri.toString()); if (entry?.document === event.document) { entry.validator.client.invalidateBase(); entry.controller.documentChanged(); } }),
     api.workspace.onWillSaveTextDocument(event => {
       const entry = documents.get(event.document.uri.toString());
       if (entry && !entry.closing) event.waitUntil(drain(entry).then(() => [], () => { warn('Save may contain an earlier document version; pending draft remains recoverable.'); return []; }));

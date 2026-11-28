@@ -26,6 +26,7 @@ test('scratch editor protocol accepts every declared variant and rejects extra k
     { ...session, type: 'selection-result', requestId: 'send_1', sent: false, message: 'Retry Send.' },
     { ...session, ...state, type: 'document-state', locked: true },
     { ...session, type: 'receipt', draftSeq: 1, editId: 'edit_1' },
+    { ...session, type: 'admission-superseded', draftSeq: 1, editId: 'edit_1', baseVersion: 1, baseDigest: state.digest },
     { ...session, ...state, type: 'apply-ack', draftSeq: 1, editId: 'edit_1' },
     { ...session, type: 'conflict', draftSeq: 1, message: 'Stale draft retained.' },
     { ...session, type: 'recovery', draftSeq: 1, markdown: 'recover me' },

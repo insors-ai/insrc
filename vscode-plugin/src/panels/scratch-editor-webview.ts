@@ -172,7 +172,9 @@ export class ScratchEditorPane {
       for (const pending of this.inbound.splice(0)) await this.receive(pending);
       return;
     }
+    const oldBase = this.state.snapshot;
     const result = this.state.receive(msg);
+    if (oldBase.version !== this.state.snapshot.version || oldBase.digest !== this.state.snapshot.digest) this.validator?.invalidateBase();
     if (result.conflict) { this.fail(result.conflict); return; }
     if (result.revalidate) this.observer?.refresh();
     if (msg.type === 'focus-request') {

@@ -75,6 +75,14 @@ export class ScratchRendererState {
       this.canonical = msg; this.value = msg.markdown; this.admission = 'applied';
       return { replace: msg.markdown };
     }
+    if (msg.type === 'admission-superseded') {
+      if (!this.inFlight || this.sequence <= msg.draftSeq || msg.draftSeq !== this.inFlight.draftSeq || msg.editId !== this.inFlight.editId ||
+        msg.baseVersion !== this.canonical.version || msg.baseDigest !== this.canonical.digest ||
+        msg.baseVersion !== this.inFlight.baseVersion || msg.baseDigest !== this.inFlight.baseDigest) return {};
+      this.inFlight = undefined; // no native edit or acknowledgement is claimed
+      if (this.frozen) return {};
+      this.admission = 'waiting-idle'; return { revalidate: true };
+    }
     if (msg.type !== 'apply-ack' || msg.draftSeq <= this.acknowledged) return {};
     if (!this.inFlight || msg.editId !== this.inFlight.editId || msg.draftSeq !== this.inFlight.draftSeq ||
       msg.markdown !== this.inFlight.markdown || msg.version < this.canonical.version) {

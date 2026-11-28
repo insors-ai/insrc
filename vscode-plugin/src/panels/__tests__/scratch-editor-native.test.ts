@@ -1,3 +1,4 @@
+import { scratchHostWorkerBytes } from './fixtures/scratch-host-worker-bundle.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, writeFile, rm, mkdir } from 'node:fs/promises';
@@ -73,6 +74,7 @@ async function harness() {
   const recovery = new ScratchRecoveryStore(join(dir, 'recovery'));
   await mkdir(join(dir, 'out', 'scratch-editor'), { recursive: true });
   await writeFile(join(dir, 'out', 'scratch-editor', 'validator.js'), '/* trusted fixture asset */');
+  await writeFile(join(dir, 'out', 'scratch-validation-host-worker.js'), await scratchHostWorkerBytes());
   const host = registerScratchEditor({ richEditor: () => richEditor, refresh: async () => { refreshed++; if (failRefresh) throw new Error('refresh unavailable'); }, api, store, extensionPath: dir, recovery, sendSelection: (text, assertCurrent) => sendSelection(text, assertCurrent), preference: new ScratchLockPreference({ get: <T>() => false as T, update: async () => {} }), warn: m => warnings.push(m) });
   const open = async () => { await provider.resolveCustomTextEditor(doc as unknown as VSCode.TextDocument, panel as unknown as VSCode.WebviewPanel, { isCancellationRequested: false }); paneAttached = true; const id = panel.webview.html.match(/data-pane-session="([^"]+)"/)![1]!; incoming.fire({ type: 'editor-ready', paneSessionId: id }); await until(() => messages.some(m => m.type === 'document-state')); return id; };
   return { dir, host, doc, panel, provider: () => provider, api, changed, willSave, closed, incoming, disposed, messages, warnings, commands, recovery, uri, entry, resolved, open,

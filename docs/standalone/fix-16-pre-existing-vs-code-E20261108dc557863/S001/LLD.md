@@ -114,7 +114,7 @@ new IpcServer(forward: ForwardRequest, now?: () => number, socketPath?: string, 
 
 ## 3. Diagrams
 
-- [Sequence diagram](docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/sequence-diagram.html)
+- [Sequence diagram](./sequence-diagram.html)
 
 ## 4. Error paths
 

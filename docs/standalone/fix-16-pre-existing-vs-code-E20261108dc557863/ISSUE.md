@@ -1,4 +1,5 @@
 <!-- insrc:artifact ISSUE-dc557863fa52ecf5 -->
+**Tracker:** [insors-ai/insrc#103](https://github.com/insors-ai/insrc/issues/103)
 
 # Fix 16 pre-existing VS Code extension test failures
 
@@ -38,14 +39,3 @@ On Node 26.5.1, all 16 targeted cases failed with the same errors on pre-story c
 Confirm whether the VS Code Tracker controls and daemon approval prompter are still required. Restore their wiring and exercise the user-visible behavior if they are required. If they were intentionally removed or replaced, update the contract tests to cover the supported behavior. Update the approval IPC fixtures so they reach the approval exchange wherever that path remains supported.
 
 Resolve the current UX artifact IDs and keep all four render and truncation checks. Assert rendered role groups against the current taxonomy. Verify that the settings pull occurs after activation and that legacy migration follows it. Verify registry membership separately from Claude-to-Ollama routing. Keep all 16 cases covered by repaired or replacement tests, then rerun the full extension sweep and record the result.
-
-## Citations
-
-- **[[c1]]** `code` `vscode-plugin/src/panels/repo-config.ts`
-- **[[c2]]** `code` `src/daemon/server.ts`
-- **[[c3]]** `code` `vscode-plugin/src/chat/approval-subscribe.ts`
-- **[[c4]]** `code` `src/config/role-taxonomy.ts`
-- **[[c5]]** `code` `vscode-plugin/src/config/legacy-keys.ts`
-- **[[c6]]** `code` `vscode-plugin/src/chat/cli-adapter.ts`
-- **[[c7]]** `code` `vscode-plugin/src/chat/ollama-routing.ts`
-- **[[c8]]** `prior-artifact` `docs/standalone/allow-independent-turns-concurrent-vs-code-E20261108d8b2fe8e/S001/VS-CODE-SMOKE.md`

@@ -54,6 +54,18 @@
     "parentRef": {
       "epicHash": "dc557863fa52ecf5",
       "slug": "EPIC-dc557863fa52ecf5"
+    },
+    "tracker": {
+      "adapter": "github",
+      "labelsCreated": [
+        "epic:fix-16-pre-existing-vs-code"
+      ],
+      "issueRef": "insors-ai/insrc#103",
+      "epicStatus": "closed",
+      "storyStatus": {
+        "s1": "closed"
+      },
+      "lastSyncedAt": "2026-11-28T14:29:18.017Z"
     }
   },
   "body": {

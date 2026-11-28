@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: owned runtime cleanup restores directory write only after positive resource and child closure
+ok 1 - owned runtime cleanup restores directory write only after positive resource and child closure
+  ---
+  duration_ms: 71.367167
+  type: 'test'
+  ...
+# Subtest: owned runtime cleanup unlinks only declared fixture links without touching external targets
+ok 2 - owned runtime cleanup unlinks only declared fixture links without touching external targets
+  ---
+  duration_ms: 12.481667
+  type: 'test'
+  ...
+# Subtest: owned runtime cleanup retains a root with an undeclared symlink before chmod
+ok 3 - owned runtime cleanup retains a root with an undeclared symlink before chmod
+  ---
+  duration_ms: 1.948041
+  type: 'test'
+  ...
+# Retained uncertainty fixture: /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-owned-runtime-B9gouo
+# Subtest: owned runtime cleanup refuses replacement roots and never adopts a caller path
+ok 4 - owned runtime cleanup refuses replacement roots and never adopts a caller path
+  ---
+  duration_ms: 2.377084
+  type: 'test'
+  ...
+# Retained replaced roots: /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-owned-runtime-hkgn41; /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-owned-runtime-hkgn41-retained-original
+# Subtest: owned runtime cleanup retains failed resource closure and explicit uncertainty
+ok 5 - owned runtime cleanup retains failed resource closure and explicit uncertainty
+  ---
+  duration_ms: 3.70675
+  type: 'test'
+  ...
+# Retained failed-resource fixture: /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-owned-runtime-TuSByl
+# Retained explicit-retain fixture: /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-owned-runtime-mpUBuf
+# Subtest: owned runtime cleanup is awaited for a partially allocated protected fixture
+ok 6 - owned runtime cleanup is awaited for a partially allocated protected fixture
+  ---
+  duration_ms: 3.073084
+  type: 'test'
+  ...
+# Subtest: owned runtime cleanup retains unconfirmed resources after its bounded wait
+ok 7 - owned runtime cleanup retains unconfirmed resources after its bounded wait
+  ---
+  duration_ms: 5005.433167
+  type: 'test'
+  ...
+# Retained unconfirmed fixture: /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-owned-runtime-YUHbwH
+# Subtest: owned runtime cleanup bounds traversal before changing protected directory modes
+ok 8 - owned runtime cleanup bounds traversal before changing protected directory modes
+  ---
+  duration_ms: 45.227833
+  type: 'test'
+  ...
+# Retained bounded-tree fixture: /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-owned-runtime-Gz5DoW
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5323.73

@@ -193,9 +193,14 @@ export class ControllerStore {
     const before = lstatSync(stage.directory);
     const deadline = AbortSignal.timeout(RUNTIME_LIMITS.verificationMs);
     const verification = signal ? AbortSignal.any([deadline, signal]) : deadline;
+    let publicationAttempted = false;
+    const held = () => { assertRuntimeStage(stage, this); verification.throwIfAborted(); };
     try {
-      await closedRuntimeOperation(verifyRuntimeEntry(stage.directory, stage.identity, verification), verification);
+      await closedRuntimeOperation(verifyRuntimeEntry(stage.directory, stage.identity, verification, 'source-stage'), verification);
+      const { protectRuntimeDescendants } = await import('./runtime-protection.js');
+      await closedRuntimeOperation(protectRuntimeDescendants(stage.directory, held), verification);
       await closedRuntimeOperation(flushDirectoryTree(stage.directory, verification), verification);
+      await closedRuntimeOperation(verifyRuntimeEntry(stage.directory, stage.identity, verification, 'permission-transition'), verification);
       assertRuntimeStage(stage, this); verification.throwIfAborted();
       const after = lstatSync(stage.directory);
       if (before.dev !== after.dev || before.ino !== after.ino) throw new InstallerError('runtime-invalid', 'Runtime candidate root changed');
@@ -206,15 +211,44 @@ export class ControllerStore {
         if (!present(path)) { mkdirSync(path, { mode: 0o700 }); controlBinding().protect(path); }
         if (!controlBinding().safePath(path, true, true)) throw new InstallerError('permissions-invalid', 'Runtime publication parent is unsafe');
       }
-      this.assertHeld(); verification.throwIfAborted();
+      held();
+      if (process.platform !== 'win32' && (lstatSync(stage.directory).mode & 0o7777) !== 0o700) throw new InstallerError('runtime-invalid', 'Runtime candidate root must remain0700');
+      publicationAttempted = true;
       controlBinding().publishDirectory(this.#handle, stage.directory, destination);
-      // Namespace persistence is established before the runtime can be returned.
-      flushParents(dirname(destination), this.location.home); flushDirectory(stage.workDirectory);
+      await this.#finishRuntime(destination, stage.identity, verification, stage.workDirectory, held);
       return destination;
     } catch (cause) {
+      if (publicationAttempted && (cause as NodeJS.ErrnoException | undefined)?.code !== 'candidate-exists') {
+        retainUncertainRuntimeStage(stage, this);
+        throw new InstallerError('resource-close-uncertain', 'Runtime publication or durability is uncertain; retain canonical entry and stage', { cause });
+      }
       if (cause instanceof InstallerError && cause.code === 'resource-close-uncertain') retainUncertainRuntimeStage(stage, this);
       throw cause;
     }
+  }
+  /** Internal recovery of only an independently verified root-write window. */
+  async finalizeRuntime(identity: RuntimeIdentity, external?: AbortSignal): Promise<void> {
+    this.assertHeld();
+    const root = runtimeStorePaths(this.location.home, identity).root;
+    const deadline = AbortSignal.timeout(RUNTIME_LIMITS.verificationMs);
+    const signal = external ? AbortSignal.any([deadline, external]) : deadline;
+    const { verifyRuntimeEntry } = await import('./runtime-store.js');
+    const { closedRuntimeOperation } = await import('./runtime-acquire.js');
+    await closedRuntimeOperation(verifyRuntimeEntry(root, identity, signal, 'permission-transition'), signal);
+    this.assertHeld(); signal.throwIfAborted();
+    try { await this.#finishRuntime(root, identity, signal); }
+    catch (cause) { throw new InstallerError('resource-close-uncertain', 'Runtime finalization durability is uncertain; retain canonical entry', { cause }); }
+  }
+  async #finishRuntime(root: string, identity: RuntimeIdentity, signal: AbortSignal, source?: string, original?: () => void): Promise<void> {
+    const { sealRuntimeRoot } = await import('./runtime-protection.js');
+    const { verifyRuntimeEntry } = await import('./runtime-store.js');
+    const { closedRuntimeOperation } = await import('./runtime-acquire.js');
+    const held = () => { original?.(); this.assertHeld(); signal.throwIfAborted(); };
+    held();
+    await closedRuntimeOperation(sealRuntimeRoot(root, held), signal);
+    held(); flushDirectory(root); flushParents(dirname(root), this.location.home);
+    if (source) flushDirectory(source);
+    held(); await closedRuntimeOperation(verifyRuntimeEntry(root, identity, signal), signal); held();
   }
   /** Copies authenticated bytes into a fresh nonexecuting control stage. */
   async publishBootstrapControl(input: { bootstrap: Buffer; native: Buffer }, hashes: BootstrapHashes, signal?: AbortSignal): Promise<string> {

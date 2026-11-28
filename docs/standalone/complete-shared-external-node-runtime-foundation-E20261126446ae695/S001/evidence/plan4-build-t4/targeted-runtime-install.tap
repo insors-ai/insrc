@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: runtime install rejects old unsealed and mixed canonical layouts without repair or network
+ok 1 - runtime install rejects old unsealed and mixed canonical layouts without repair or network
+  ---
+  duration_ms: 27147.869625
+  type: 'test'
+  ...
+# Subtest: runtime publication retains postpublication root close uncertainty until its captured descriptor closes
+ok 2 - runtime publication retains postpublication root close uncertainty until its captured descriptor closes
+  ---
+  duration_ms: 55918.920458
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 83444.69325

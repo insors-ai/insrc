@@ -1,0 +1,103 @@
+TAP version 13
+# Subtest: runtime publication uses the native exclusive lock durable namespace and verified offline reuse
+ok 1 - runtime publication uses the native exclusive lock durable namespace and verified offline reuse
+  ---
+  duration_ms: 56713.875708
+  type: 'test'
+  ...
+# Subtest: runtime root-only interrupted native publication is retained and finalized offline by a later controller
+ok 2 - runtime root-only interrupted native publication is retained and finalized offline by a later controller
+  ---
+  duration_ms: 55703.72175
+  type: 'test'
+  ...
+# Subtest: runtime publication retains a root sealed before failing final durability and never reports success
+ok 3 - runtime publication retains a root sealed before failing final durability and never reports success
+  ---
+  duration_ms: 46771.739292
+  type: 'test'
+  ...
+# Subtest: runtime install rejects old unsealed and mixed canonical layouts without repair or network
+not ok 4 - runtime install rejects old unsealed and mixed canonical layouts without repair or network
+  ---
+  duration_ms: 26110.449
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/runtime-install.test.ts:1:9174'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      Comparison {
+        code: 'runtime-invalid',
+    +   message: `Shared Node runtime verification failed at "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/irp-JUN6EW/runtimes/22.22.1/darwin-arm64-native-v1/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2": Runtime path must be an owned regular non-link file or directory. This runtime is shared by all releases; no repair was attempted. Manual recovery only: stop all Insrc consumers of "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/irp-JUN6EW". Do not delete anything. If the runtime-entry root is not owner-writable, first restore owner write on that root only: chmod u+w '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/irp-JUN6EW/runtimes/22.22.1/darwin-arm64-native-v1/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2'. Preserve and move the entire entry outside the runtime store, then rerun the authenticated installer. This procedure is not protected by operation.lock; Insrc cannot confirm that every consumer has stopped. If unsure, leave the entry unchanged and request operator assistance.`
+    -   message: 'Shared Node runtime protection layout is unsupported at "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/irp-JUN6EW/runtimes/22.22.1/darwin-arm64-native-v1/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2". This unpublished development home must be rebuilt in a new isolated home; no conversion or repair was attempted.'
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    code: 'runtime-invalid'
+    message: 'Shared Node runtime protection layout is unsupported at "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/irp-JUN6EW/runtimes/22.22.1/darwin-arm64-native-v1/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2". This unpublished development home must be rebuilt in a new isolated home; no conversion or repair was attempted.'
+  actual:
+  error: `Shared Node runtime verification failed at "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/irp-JUN6EW/runtimes/22.22.1/darwin-arm64-native-v1/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2": Runtime path must be an owned regular non-link file or directory. This runtime is shared by all releases; no repair was attempted. Manual recovery only: stop all Insrc consumers of "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/irp-JUN6EW". Do not delete anything. If the runtime-entry root is not owner-writable, first restore owner write on that root only: chmod u+w '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/irp-JUN6EW/runtimes/22.22.1/darwin-arm64-native-v1/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2'. Preserve and move the entire entry outside the runtime store, then rerun the authenticated installer. This procedure is not protected by operation.lock; Insrc cannot confirm that every consumer has stopped. If unsure, leave the entry unchanged and request operator assistance.`
+  stack: |-
+    invalid (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-store.ts:17:54)
+    Module.resolveRuntimeStore (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-store.ts:201:11)
+    async ensurePrivateRuntime (/Users/subhagho/work/projects/insors/insrc/src/installer/runtime-install.ts:34:21)
+    async waitForActual (node:assert:644:5)
+    async Function.rejects (node:assert:767:25)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/runtime-install.test.ts:178:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/runtime-install.test.ts:178:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: runtime canonical stat failures are actionable coded errors and never trigger download or mutation
+ok 5 - runtime canonical stat failures are actionable coded errors and never trigger download or mutation
+  ---
+  duration_ms: 13.721625
+  type: 'test'
+  ...
+# Subtest: runtime publication never overwrites an incomplete destination and retains its stage
+ok 6 - runtime publication never overwrites an incomplete destination and retains its stage
+  ---
+  duration_ms: 54412.519375
+  type: 'test'
+  ...
+# Subtest: runtime publication rejects stale original owners and forged or tampered stages
+ok 7 - runtime publication rejects stale original owners and forged or tampered stages
+  ---
+  duration_ms: 24670.420666
+  type: 'test'
+  ...
+# Subtest: runtime publication verifies staged bytes and cannot publish a modified executable
+ok 8 - runtime publication verifies staged bytes and cannot publish a modified executable
+  ---
+  duration_ms: 25406.338625
+  type: 'test'
+  ...
+# Subtest: runtime publication stage is distinct from running Node and the loaded native library
+ok 9 - runtime publication stage is distinct from running Node and the loaded native library
+  ---
+  duration_ms: 56199.132542
+  type: 'test'
+  ...
+# Subtest: runtime publication retains verifier close uncertainty and refuses later discard
+ok 10 - runtime publication retains verifier close uncertainty and refuses later discard
+  ---
+  duration_ms: 30065.932875
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 9
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 376794.12425

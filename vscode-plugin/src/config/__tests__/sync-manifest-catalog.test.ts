@@ -69,6 +69,9 @@ test('sync-manifest-catalog.test.ts: the committed manifest is in sync, and the 
     tiers.properties['insrc.models.tiers.core.model']!['default'] = '';
     delete tiers.properties['insrc.models.tiers.cheap.effort'];
     section(stale, 'Models — shaper').properties['insrc.models.shaper.ollamaNumCtx'] = { type: 'number', default: 32768, scope: 'machine' };
+    // A catalog-backed key duplicated into a DIFFERENTLY titled section: the row's
+    // group section owns it, so the stray copy must be removed on repair.
+    section(stale, 'General').properties['insrc.models.tiers.core.model'] = { type: 'string', default: 'bogus', scope: 'machine' };
   });
   try {
     assert.equal(sync(copy, '--check').status, 1, 'a stale manifest fails --check');
@@ -163,7 +166,7 @@ test('sync-manifest-catalog.test.ts: duplicate per-role sections consolidate los
     const perRole = section(stale, PER_ROLE_TITLE);
     perRole['markdownDescription'] = 'canonical section note'; // section-level metadata on the FIRST
     const dup: Section = JSON.parse(JSON.stringify(perRole));
-    dup['markdownDescription'] = 'duplicate note'; // must be dropped — the first keeps its metadata
+    dup['order'] = 7; // DISTINCT section-level metadata the first lacks — must be preserved, not dropped
     dup.properties['insrc.chat.dupOnly'] = { type: 'boolean', default: true, scope: 'machine' }; // distinct chat-local key, merged in
     dup.properties['insrc.custom.local'] = { type: 'string', default: 'keep', scope: 'machine' }; // distinct NON-role local key, merged in and preserved
     const roleKey = Object.keys(perRole.properties).find((k) => k.startsWith('insrc.models.tasks.'))!;
@@ -178,14 +181,16 @@ test('sync-manifest-catalog.test.ts: duplicate per-role sections consolidate los
     const repaired = JSON.parse(readFileSync(a.copy, 'utf8')) as Manifest;
     const withTitle = repaired.contributes.configuration.filter((s) => s.title === PER_ROLE_TITLE);
     assert.equal(withTitle.length, 1, 'one canonical section survives');
-    assert.equal(withTitle[0]!['markdownDescription'], 'canonical section note', 'the FIRST section keeps its metadata');
+    assert.equal(withTitle[0]!['markdownDescription'], 'canonical section note', 'the FIRST section keeps its own metadata');
+    assert.equal(withTitle[0]!['order'], 7, 'the duplicate\'s distinct metadata is preserved, not dropped');
     assert.deepEqual(withTitle[0]!.properties['insrc.chat.dupOnly'], { type: 'boolean', default: true, scope: 'machine' }, 'the duplicate\'s distinct chat-local key is merged first-wins');
     assert.deepEqual(withTitle[0]!.properties['insrc.custom.local'], { type: 'string', default: 'keep', scope: 'machine' }, 'a merged NON-role local property survives everywhere');
     const expected = committed();
     section(expected, PER_ROLE_TITLE).properties['insrc.chat.dupOnly'] = { type: 'boolean', default: true, scope: 'machine' };
     section(expected, PER_ROLE_TITLE).properties['insrc.custom.local'] = { type: 'string', default: 'keep', scope: 'machine' };
     (section(expected, PER_ROLE_TITLE) as Section)['markdownDescription'] = 'canonical section note';
-    assert.deepEqual(repaired, expected, 'consolidation is lossless apart from the dropped duplicate metadata');
+    (section(expected, PER_ROLE_TITLE) as Section)['order'] = 7;
+    assert.deepEqual(repaired, expected, 'consolidation is lossless: metadata and distinct local keys all survive');
   } finally {
     rmSync(a.dir, { recursive: true, force: true });
   }
@@ -207,5 +212,22 @@ test('sync-manifest-catalog.test.ts: duplicate per-role sections consolidate los
     assert.equal(readFileSync(b.copy, 'utf8'), b.text, 'a refused conflict writes nothing');
   } finally {
     rmSync(b.dir, { recursive: true, force: true });
+  }
+
+  // Section-METADATA conflict refusal: both duplicate sections declare the same
+  // metadata field with different values — ambiguous, refused without writing.
+  const c = tempCopy((stale) => {
+    const perRole = section(stale, PER_ROLE_TITLE);
+    perRole['markdownDescription'] = 'first note';
+    stale.contributes.configuration.push({ title: PER_ROLE_TITLE, properties: {}, markdownDescription: 'second note' } as Section);
+  });
+  try {
+    const r = sync(c.copy);
+    assert.notEqual(r.status, 0, 'conflicting section metadata is refused');
+    assert.match(r.out, /sync-duplicate-conflict/, 'the diagnostic names the refusal');
+    assert.match(r.out, /markdownDescription/, 'the diagnostic names the conflicting metadata field');
+    assert.equal(readFileSync(c.copy, 'utf8'), c.text, 'a refused metadata conflict writes nothing');
+  } finally {
+    rmSync(c.dir, { recursive: true, force: true });
   }
 });

@@ -135,3 +135,10 @@ second-process conflict and recovery/restart matrix. `INSRC_CODE_BIN` selects
 the supported-floor or current VS Code binary; `INSRC_NATIVE_EVIDENCE` retains
 its result. Human-operated focus qualification remains available through
 `INSRC_NATIVE_MANUAL_FOCUS=1` and does not require the private-display assertion.
+
+The mandatory S001 lifecycle evidence includes process interruption *while*
+receipt, native apply, and acknowledgement are blocked, followed by a fresh-host
+recovery check for each phase. The test retains its entire fixture root (source,
+recovery records, profiles and full failure snapshots) on success and failure;
+the evidence JSON records that path. A missing opt-in or TAP skip is unavailable
+required coverage and blocks build acceptance; it is never qualification success.

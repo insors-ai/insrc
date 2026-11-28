@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 /** Development-test instrumentation for this run's isolated Electron window. */
-export async function focusNativeScratchEditor(port: number, _title: string, options: { action?: 'save' | 'undo' | 'redo'; expectedText?: string; insertText?: string } = {}): Promise<{ text: string; editable: string }> {
+export async function focusNativeScratchEditor(port: number, _title: string, options: { action?: 'save' | 'undo' | 'redo'; expectedText?: string; insertText?: string } = {}): Promise<{ text: string; editable: string; status: string }> {
   const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json() as { type: string; webSocketDebuggerUrl?: string }[];
   const target = targets.find(t => t.type === 'page' && t.webSocketDebuggerUrl);
   if (!target?.webSocketDebuggerUrl) throw new Error('No isolated VS Code page target');
@@ -26,7 +26,7 @@ export async function focusNativeScratchEditor(port: number, _title: string, opt
     let diagnostic: unknown = { contexts: contexts.length };
     for (let i = 0; i < 100; i++) {
       for (const context of [...contexts]) {
-        const probe = `(() => { const el = document.querySelector('.scratch-pane .ProseMirror[contenteditable="true"]'); if (!el) return null; const block = el.querySelector('h1,h2,h3,p,li') ?? el; const r = block.getBoundingClientRect(); return { text: el.textContent, editable: el.getAttribute('contenteditable'), x: r.x, y: r.y, width: r.width, height: r.height, scale: window.devicePixelRatio }; })()`;
+        const probe = `(() => { const el = document.querySelector('.scratch-pane .ProseMirror[contenteditable="true"]'); if (!el) return null; const block = el.querySelector('h1,h2,h3,p,li') ?? el; const r = block.getBoundingClientRect(); return { text: el.textContent, editable: el.getAttribute('contenteditable'), status: document.querySelector('.scratch-status')?.textContent ?? '', x: r.x, y: r.y, width: r.width, height: r.height, scale: window.devicePixelRatio }; })()`;
         const result = await call('Runtime.evaluate', { contextId: context.id, returnByValue: true, expression: probe }, context.sessionId).catch(() => undefined);
         const value = result?.result?.value;
         if (value) diagnostic = { value, context };
@@ -47,7 +47,7 @@ export async function focusNativeScratchEditor(port: number, _title: string, opt
             await call('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: virtual, nativeVirtualKeyCode: virtual, modifiers }, context.sessionId);
           }
           if (options.insertText !== undefined) await call('Input.insertText', { text: options.insertText }, context.sessionId);
-          return { text: value.text, editable: value.editable };
+          return { text: value.text, editable: value.editable, status: value.status };
         }
       }
       await new Promise(r => setTimeout(r, 50));

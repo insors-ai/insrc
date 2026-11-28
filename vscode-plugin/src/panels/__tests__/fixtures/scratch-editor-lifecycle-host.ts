@@ -6,7 +6,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { registerScratchEditor, SCRATCH_EDITOR_VIEW_TYPE } from '../../scratch-editor-native.js';
 import { createScratchStore } from '../../../chat/scratch-store.js';
-import { ScratchRecoveryStore } from '../../scratch-editor-recovery.js';
+import { ScratchRecoveryStore, SCRATCH_RECOVERY_BYTES } from '../../scratch-editor-recovery.js';
 import { ScratchLockPreference } from '../../scratch-editor-lock.js';
 import { focusNativeScratchEditor } from './scratch-native-cdp.js';
 import type { ScratchHostToEditor } from '../../scratch-editor-protocol.js';
@@ -18,7 +18,8 @@ export function activate() {}
 export async function run() {
   const root = process.env['INSRC_NATIVE_FIXTURE_ROOT']!, role = process.env['INSRC_NATIVE_ROLE']!, port = Number(process.env['INSRC_NATIVE_DEBUG_PORT']);
   const checks: Record<string, unknown> = {}, warnings: string[] = [];
-  const evidence = (passed: boolean, extra = {}) => writeFile(join(root, `${role}.json`), JSON.stringify({ passed, vscode: vscode.version, platform: process.platform, node: process.version, role, privateDisplay: process.env['INSRC_NATIVE_PRIVATE_DISPLAY'] === '1', display: process.env['DISPLAY'], checks, warnings, ...extra }, null, 2));
+  let completed = false;
+  const evidence = (passed: boolean, extra = {}) => { completed = passed; return writeFile(join(root, `${role}.json`), JSON.stringify({ passed, vscode: vscode.version, platform: process.platform, node: process.version, role, privateDisplay: process.env['INSRC_NATIVE_PRIVATE_DISPLAY'] === '1', display: process.env['DISPLAY'], checks, warnings, ...extra }, null, 2)); };
   const store = createScratchStore({ root: join(root, 'scratches') });
   const recovery = new ScratchRecoveryStore(join(root, 'recovery'));
   const panes = new Map<string, { panel: vscode.WebviewPanel; session: string }>();
@@ -45,6 +46,44 @@ export async function run() {
   const host = registerScratchEditor({ api, extensionPath: process.env['INSRC_NATIVE_FIXTURE_EXTENSION']!, store, recovery, preference: new ScratchLockPreference({ get: <T>() => false as T, update: async () => {} }), warn: m => warnings.push(m) });
   const text = async (uri: vscode.Uri, value: string) => { const doc = await vscode.workspace.openTextDocument(uri); const edit = new vscode.WorkspaceEdit(); edit.replace(uri, new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length)), value); assert.equal(await vscode.workspace.applyEdit(edit), true); return doc; };
   try {
+    if (role.startsWith('pending_')) {
+      const type = role.slice('pending_'.length) as 'receipt' | 'apply' | 'apply-ack';
+      assert.ok(['receipt', 'apply', 'apply-ack'].includes(type));
+      const item = await store.createScratch(`Crash during ${type}`, '# Original interrupted file\n');
+      const resolved = await store.resolveScratch(item.id), uri = vscode.Uri.file(resolved.filePath);
+      await host.openDocument(item.id);
+      const waiting = { type, gate: deferred(), hit: false }; delay = waiting;
+      const marker = `Interrupted_${type.replaceAll('-', '_')}`;
+      await focusNativeScratchEditor(port, item.id, { insertText: marker });
+      await until(() => waiting.hit, `Blocked live ${type} phase`);
+      const pending = await recovery.list(uri.toString());
+      assert.equal(pending.length, 1); assert.ok(pending[0]!.draft.markdown.includes(marker));
+      const record = JSON.stringify(pending[0]); assert.ok(Buffer.byteLength(record) <= SCRATCH_RECOVERY_BYTES);
+      const visible = await focusNativeScratchEditor(port, item.id, { expectedText: marker });
+      assert.match(visible.status, /Updating|pending|recover|retained|waiting/i); assert.doesNotMatch(visible.status, /saved/i);
+      assert.equal(await readFile(resolved.filePath, 'utf8'), '# Original interrupted file\n');
+      await writeFile(join(root, `${role}-manifest.json`), JSON.stringify({ id: item.id, marker, type, source: '# Original interrupted file\n', draft: pending[0]!.draft.markdown }));
+      const nativeDirty = (await vscode.workspace.openTextDocument(uri)).isDirty;
+      assert.equal(nativeDirty, type === 'apply-ack', 'Only the applied-but-unacknowledged stage changes the native dirty model');
+      checks['interruptedWhileBlocked'] = { type, released: false, hostDisposed: false, recordBytes: Buffer.byteLength(record), bound: SCRATCH_RECOVERY_BYTES, status: visible.status, nativeDirty, source: '# Original interrupted file\n', draft: pending[0]!.draft.markdown };
+      await evidence(true, { paused: true });
+      await writeFile(join(root, `${role}-ready-for-restart`), 'Crash while the live operation is still blocked');
+      await new Promise<void>(() => {}); // driver SIGKILL; no release, dispose or revert
+      throw new Error('Pending crash probe must never resume');
+    }
+    if (role.startsWith('verify_')) {
+      const pendingRole = `pending_${role.slice('verify_'.length)}`;
+      const item = JSON.parse(await readFile(join(root, `${pendingRole}-manifest.json`), 'utf8'));
+      const resolved = await store.resolveScratch(item.id), uri = vscode.Uri.file(resolved.filePath);
+      assert.equal(await readFile(resolved.filePath, 'utf8'), item.source);
+      const before = await recovery.list(uri.toString()); assert.equal(before.length, 1); assert.equal(before[0]!.draft.markdown, item.draft);
+      await host.openDocument(item.id);
+      await until(() => frames.some(f => f.type === 'recovery' && f.markdown === item.draft), 'Fresh process exposes interrupted draft');
+      assert.equal(await readFile(resolved.filePath, 'utf8'), item.source);
+      const doc = await vscode.workspace.openTextDocument(uri); assert.equal(doc.getText(), item.source); assert.equal(doc.isDirty, false);
+      checks['pendingCrashRecovery'] = { type: item.type, exactDraft: true, sourceUnchanged: true, noReplay: true, cleanCanonical: true, recordBytes: Buffer.byteLength(JSON.stringify(before[0])), bound: SCRATCH_RECOVERY_BYTES, source: item.source, draft: item.draft };
+      await evidence(true); return;
+    }
     if (role === 'peer') {
       const configPath = join(root, 'peer-config.json');
       await until(async () => readFile(configPath, 'utf8').then(() => true, () => false), 'Primary peer config');
@@ -142,13 +181,13 @@ export async function run() {
     }
     await writeFile(join(root, 'recovery-manifest.json'), JSON.stringify(manifest));
     await evidence(true);
-  } catch (error) { await evidence(false, { error: String(error), stack: error instanceof Error ? error.stack : undefined, frames: frames.slice(-20), documents: vscode.workspace.textDocuments.map(d => ({ uri: d.uri.toString(), dirty: d.isDirty, text: d.getText().slice(0,500) })) }); throw error; }
+  } catch (error) { await evidence(false, { error: String(error), stack: error instanceof Error ? error.stack : undefined, frames: frames.slice(-20), documents: vscode.workspace.textDocuments.map(d => ({ uri: d.uri.toString(), dirty: d.isDirty, text: d.getText() })) }); throw error; }
   finally {
     delay?.gate.resolve();
     await host.dispose();
     // Test-process shutdown must not wait on an unsaved-files dialog. Recovery
     // records have already been asserted; explicitly revert only fixture files.
-    for (const item of await store.listScratches()) {
+    for (const item of completed ? await store.listScratches() : []) {
       const resolved = await store.resolveScratch(item.id);
       const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(resolved.filePath));
       await vscode.window.showTextDocument(doc, { preview: false });

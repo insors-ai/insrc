@@ -36,10 +36,11 @@
  */
 import { onUtf8Data } from '../../../src/shared/utf8-stream.js';
 import { spawn as nodeChildSpawn, execFileSync } from 'node:child_process';
-import { closeSync, openSync } from 'node:fs';
+import { closeSync, mkdtempSync, openSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { ollamaClaudeEnv, type ChatOllamaTarget } from './ollama-routing.js';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import type { PermissionMode } from './protocol.js';
@@ -1287,13 +1288,20 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       }
       return;
     }
+    // s3/t4: the vibe direct-spawn route owns its own per-turn export directory (LLD 3.2/3.3
+    // precondition) -- a fresh one every turn, allocated here (after the abort recheck above,
+    // so an aborted turn never allocates one) and threaded into buildArgs's outputDir. Removing
+    // it on exit is a later Task in this Story (t7), once readExitEvidence needs to read it first.
+    const vibeOutputDir = mapper.id === 'vibe' && vibeCatalog === undefined
+      ? mkdtempSync(join(tmpdir(), 'insrc-vibe-turn-'))
+      : undefined;
     let proc: SpawnedProcess;
     try {
       proc = vibeCatalog !== undefined
         ? deps.spawn(process.execPath, [deps.vibeWorkerPath ?? fileURLToPath(new URL('./vibe-session-worker.js', import.meta.url)), '--owned-process-group'], {
           cwd: effectiveReq.cwd, output, gracefulLeader: true, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
         })
-        : deps.spawn(BINARY[mapper.id], mapper.buildArgs(effectiveReq), {
+        : deps.spawn(BINARY[mapper.id], mapper.buildArgs(effectiveReq, vibeOutputDir), {
           cwd: effectiveReq.cwd,
           ...(output !== undefined ? { output } : {}),
           ...(mapper.inputIsPrompt === true ? { closeInput: true } : {}),

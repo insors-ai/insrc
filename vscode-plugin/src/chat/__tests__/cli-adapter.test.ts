@@ -12,7 +12,7 @@ import { test } from 'node:test';
 import { execFileSync } from 'node:child_process';
 import { buildSync } from 'esbuild';
 import assert from 'node:assert/strict';
-import { appendFileSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { createSessionOutput, parseMarker } from '../session-output.js';
@@ -974,6 +974,66 @@ test('vibe: s3/t3 — integration: the prompt travels via stdin, not argv (carri
   const proc = spawner.procs[0]!;
   assert.deepEqual(proc.writes(), [prompt], 'the exact prompt text, written once, verbatim');
   assert.equal(proc.inputEnds(), 1, 'stdin is ended immediately after the write, not deferred to a terminal event');
+});
+
+test('vibe: s3/t4 — integration: export-directory lifecycle across success/signal/spawn-failure/abort paths', async () => {
+  const outputDirOf = (args: readonly string[]): string => {
+    const i = args.indexOf('--output-dir');
+    assert.ok(i !== -1, '--output-dir is always present for the vibe direct-spawn route');
+    return args[i + 1]!;
+  };
+  const createdDirs: string[] = [];
+
+  // success: a plain completed turn allocates a real, distinct directory.
+  {
+    const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
+    await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' })));
+    const dir = outputDirOf(spawner.calls[0]!.args);
+    assert.ok(statSync(dir).isDirectory(), 'mkdtemp actually created a real directory on disk');
+    createdDirs.push(dir);
+  }
+  // a second, independent turn gets its OWN directory -- never reused across turns.
+  {
+    const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
+    await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' })));
+    const dir = outputDirOf(spawner.calls[0]!.args);
+    assert.ok(statSync(dir).isDirectory());
+    assert.ok(!createdDirs.includes(dir), 'a distinct export directory per turn');
+    createdDirs.push(dir);
+  }
+  // signal: a turn killed mid-flight still had its directory allocated before spawn.
+  {
+    const { deps, spawner } = depsFor({ lines: [JSON.stringify({ type: 'reasoning' })], hangUntilKilled: true }, ['vibe']);
+    const adapter = createProviderRegistry(deps).get('vibe');
+    const events: TurnEvent[] = [];
+    for await (const ev of adapter.run(REQ({ provider: 'vibe' }))) {
+      events.push(ev);
+      if (ev.kind === 'status') adapter.cancel((ev as { turnId: string }).turnId);
+    }
+    assert.equal(events.at(-1)!.kind, 'done');
+    const dir = outputDirOf(spawner.calls[0]!.args);
+    assert.ok(statSync(dir).isDirectory());
+    createdDirs.push(dir);
+  }
+  // spawn-failure: the directory is allocated BEFORE the spawn attempt, so it still
+  // exists even though the spawn itself then throws (ENOENT).
+  {
+    const { deps, spawner } = depsFor({ lines: [], spawnErrorCode: 'ENOENT' }, ['vibe']);
+    const events = await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' })));
+    assert.equal(events.at(-1)!.kind, 'error');
+    const dir = outputDirOf(spawner.calls[0]!.args);
+    assert.ok(statSync(dir).isDirectory(), 'allocation happens before the spawn call, independent of its outcome');
+    createdDirs.push(dir);
+  }
+  // abort: shouldSpawn() false means the function returns before ever reaching spawn,
+  // so --output-dir never gets a chance to be requested -- no directory is allocated.
+  {
+    const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
+    await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' }), { shouldSpawn: () => false }));
+    assert.equal(spawner.calls.length, 0, 'the abort recheck returns before any spawn (and so before any allocation)');
+  }
+
+  for (const dir of createdDirs) rmSync(dir, { recursive: true, force: true });
 });
 
 test('ProviderRegistry.available lists vibe alongside claude/codex when installed', () => {

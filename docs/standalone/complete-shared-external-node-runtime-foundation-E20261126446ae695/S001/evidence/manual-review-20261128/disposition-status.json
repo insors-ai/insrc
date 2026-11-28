@@ -10,17 +10,17 @@
       "t2",
       "t3",
       "t4",
-      "t5"
+      "t5",
+      "t6"
     ],
     "currentTasksPending": [
-      "t6",
       "t7",
       "t8",
       "t9",
       "t10"
     ],
     "finalStoryBuildApproved": false,
-    "note": "Current T5 passed atf34f13bcd. Earlier BUILD rows for later tasks remain historical."
+    "note": "Current T6 passed at4e2026b1a (BUILD32/TESTS32,29 cases). Later BUILD rows remain historical until their current PLAN4 gates pass."
   },
   "nativeEvidence": "Prior macOS/Linux source equivalence becomes historical after production edits; affected regression/native qualification required before final BUILD approval",
   "findings": [
@@ -60,6 +60,13 @@
         "t6",
         "t7",
         "t8"
+      ],
+      "currentPlan4TaskGatesPassed": [
+        "t6"
+      ],
+      "remainingPlan4Owners": [
+        "t7",
+        "t8"
       ]
     },
     {
@@ -76,9 +83,9 @@
     },
     {
       "id": "6",
-      "status": "approved-design-awaiting-implementation",
+      "status": "resolved",
       "scope": "design/integrity",
-      "evidence": "../../LLD.md",
+      "evidence": "../plan4-build-t6/README.md",
       "plan4Owners": [
         "t6"
       ]
@@ -135,6 +142,14 @@
         "t3",
         "t6",
         "t10"
+      ],
+      "currentPlan4TaskGatesPassed": [
+        "t1",
+        "t3",
+        "t6"
+      ],
+      "remainingPlan4Owners": [
+        "t10"
       ]
     },
     {
@@ -143,6 +158,13 @@
       "scope": "runtime/consumer",
       "plan4Owners": [
         "t6",
+        "t7",
+        "t9"
+      ],
+      "currentPlan4TaskGatesPassed": [
+        "t6"
+      ],
+      "remainingPlan4Owners": [
         "t7",
         "t9"
       ]
@@ -158,19 +180,21 @@
     },
     {
       "id": "15",
-      "status": "pending",
+      "status": "resolved",
       "scope": "target/CI",
       "plan4Owners": [
         "t6"
-      ]
+      ],
+      "evidence": "../plan4-build-t6/README.md"
     },
     {
       "id": "16",
-      "status": "pending",
+      "status": "resolved",
       "scope": "collector",
       "plan4Owners": [
         "t6"
-      ]
+      ],
+      "evidence": "../plan4-build-t6/README.md"
     },
     {
       "id": "17",
@@ -206,6 +230,12 @@
       "plan4Owners": [
         "t6",
         "t9"
+      ],
+      "currentPlan4TaskGatesPassed": [
+        "t6"
+      ],
+      "remainingPlan4Owners": [
+        "t9"
       ]
     },
     {
@@ -230,11 +260,12 @@
     },
     {
       "id": "T6",
-      "status": "pending",
+      "status": "resolved",
       "scope": "tests",
       "plan4Owners": [
         "t6"
-      ]
+      ],
+      "evidence": "../plan4-build-t6/README.md"
     },
     {
       "id": "R2-1",
@@ -349,6 +380,19 @@
         "t8",
         "t9",
         "t10"
+      ],
+      "currentPlan4TaskGatesPassed": [
+        "t2",
+        "t3",
+        "t4",
+        "t5",
+        "t6"
+      ],
+      "remainingPlan4Owners": [
+        "t10",
+        "t7",
+        "t8",
+        "t9"
       ]
     }
   ],

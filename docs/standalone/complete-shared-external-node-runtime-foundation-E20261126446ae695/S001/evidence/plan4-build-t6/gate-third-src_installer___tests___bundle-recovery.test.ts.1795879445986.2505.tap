@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: fresh-bundle-peer-validates-durable-descriptor-without-resolve-map
+ok 1 - fresh-bundle-peer-validates-durable-descriptor-without-resolve-map
+  ---
+  duration_ms: 53754.447417
+  type: 'test'
+  ...
+# Subtest: private-release-offer-bound-supports-full-descriptors-without-widening-other-records
+ok 2 - private-release-offer-bound-supports-full-descriptors-without-widening-other-records
+  ---
+  duration_ms: 49.785833
+  type: 'test'
+  ...
+# Subtest: bundle-recovery-runtime-transport-refuses-unknown-URLs-before-opening-any-resource
+ok 3 - bundle-recovery-runtime-transport-refuses-unknown-URLs-before-opening-any-resource
+  ---
+  duration_ms: 12.116291
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 54029.266917

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 29,
-        "contentHash": "af52b5ed9478994f00878512359289c95c44a21cd5c99a46d299fc19f9de8130",
-        "at": "2026-11-28T12:24:09.256Z",
+        "number": 32,
+        "contentHash": "9d68b5311becccae5bb44c6280af48d3b8ebd55058258f1f958e91768abdc6c3",
+        "at": "2026-11-28T15:29:17.781Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "446ae69566d352dd",
     "storyId": "s1",
     "createdAt": "2026-11-26T07:40:02.075Z",
-    "updatedAt": "2026-11-28T12:24:08.956Z",
+    "updatedAt": "2026-11-28T15:29:17.761Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-26T06:29:10.586Z",
     "epicSlug": "complete-shared-external-node-runtime-foundation",
-    "revision": 29
+    "revision": 32
   },
   "body": {
     "tasks": [
@@ -1208,8 +1208,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "41954c71d",
-        "ranAt": "2026-11-26T23:37:45.573Z",
+        "commit": "4e2026b1a",
+        "ranAt": "2026-11-28T15:29:17.761Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1231,6 +1231,31 @@
                 "file": "src/installer/__tests__/bundle.test.ts",
                 "title": "download digest target runtime cancellation and retry preserve incumbent",
                 "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bundle.test.ts",
+                "title": "release discovery rejects insecure redirects and never falls back to dev",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bundle.test.ts",
+                "title": "inventory bound reserves the archive inventory entry",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/publisher.test.ts",
+                "title": "publisher format2 binds app-only inventory public manifest1 source and exact external runtime identity",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bundle-recovery.test.ts",
+                "title": "fresh-bundle-peer-validates-durable-descriptor-without-resolve-map",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bundle-recovery.test.ts",
+                "title": "private-release-offer-bound-supports-full-descriptors-without-widening-other-records",
+                "result": "pass"
               }
             ],
             "files": []
@@ -1251,8 +1276,8 @@
                 "result": "pass"
               },
               {
-                "file": "src/installer/__tests__/publisher.test.ts",
-                "title": "publisher format2 binds app-only inventory public manifest1 source and exact external runtime identity",
+                "file": "src/installer/__tests__/application-payload.test.ts",
+                "title": "enabled Ollama policy assets share the application exclusion metadata without changing qualification",
                 "result": "pass"
               },
               {
@@ -1268,6 +1293,70 @@
               {
                 "file": "src/installer/__tests__/publisher.test.ts",
                 "title": "published manual and both IDE installer script assets have exact byte parity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "bundle-publisher-probes-use-shared-external-runtime-without-tools-node-copy",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/publisher.test.ts",
+                "title": "publisher native probe executes the shared protected runtime outside the application payload",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/publisher.test.ts",
+                "title": "real bundler produces one dependency-minimal control fixture under owned build scope",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/publisher.test.ts",
+                "title": "bundled manager excludes DB indexer model imports and consumer npm build",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/publisher.test.ts",
+                "title": "publisher rejects uncommitted compiler inputs despite unchanged source revision",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "application-integrity-once-per-operation-and-full-recovery-before-activation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/bundle.test.ts",
+                "title": "application full integrity is bound to its operation candidate and closed producer inventory",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bundle.test.ts",
+                "title": "new recovery rejects truncated non-control modules and native addons and cancellation cannot reuse proof",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "publisher-single-link-collection-rechecks-captured-identity-and-renamed-exclusion-is-visited",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/publisher.test.ts",
+                "title": "publisher single-link reads reject replacement mutation and new symlinks after traversal",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/publisher.test.ts",
+                "title": "production payload closure rejects missing entrypoints and escaping workspace links",
                 "result": "pass"
               },
               {
@@ -1294,13 +1383,31 @@
             "files": []
           },
           {
-            "name": "bundle-publisher-probes-use-shared-external-runtime-without-tools-node-copy",
+            "name": "release-owned-target-exclusion-and-default-off-Windows-CI-cannot-self-qualify",
             "level": "integration",
             "source": "mapping",
             "cases": [
               {
-                "file": "src/installer/__tests__/foundation-payload.test.ts",
-                "title": "assemble actual complete foundation payload only after all entrypoints exist",
+                "file": "src/installer/__tests__/publisher.test.ts",
+                "title": "release-owned Windows exclusion cannot be overridden by qualification flags or manual CI scope",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "bundle-fixture-unknown-URL-is-refused-without-real-network",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/bundle.test.ts",
+                "title": "bundle fixture transports refuse unknown URLs without a real HTTPS fallback",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bundle-recovery.test.ts",
+                "title": "bundle-recovery-runtime-transport-refuses-unknown-URLs-before-opening-any-resource",
                 "result": "pass"
               }
             ],
@@ -1312,7 +1419,7 @@
             "file": "src/installer/__tests__/application-payload.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 520,
+            "durationMs": 255,
             "titles": [
               {
                 "title": "app-only inventory rejects ordinary and renamed pinned Node Ollama archives executables and build inputs",
@@ -1330,10 +1437,31 @@
             "otherFailures": []
           },
           {
+            "file": "src/installer/__tests__/bundle-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 54062,
+            "titles": [
+              {
+                "title": "fresh-bundle-peer-validates-durable-descriptor-without-resolve-map",
+                "result": "pass"
+              },
+              {
+                "title": "private-release-offer-bound-supports-full-descriptors-without-widening-other-records",
+                "result": "pass"
+              },
+              {
+                "title": "bundle-recovery-runtime-transport-refuses-unknown-URLs-before-opening-any-resource",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/installer/__tests__/bundle.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 83521,
+            "durationMs": 255353,
             "titles": [
               {
                 "title": "hostile ZIP corpus cannot escape staging or exceed bounded extraction",
@@ -1354,18 +1482,17 @@
               {
                 "title": "bundle descriptor2 and installed receipts preserve public manifest1 and reject embedded format1",
                 "result": "pass"
-              }
-            ],
-            "otherFailures": []
-          },
-          {
-            "file": "src/installer/__tests__/foundation-payload.test.ts",
-            "exitCode": 0,
-            "timedOut": false,
-            "durationMs": 346088,
-            "titles": [
+              },
               {
-                "title": "assemble actual complete foundation payload only after all entrypoints exist",
+                "title": "application full integrity is bound to its operation candidate and closed producer inventory",
+                "result": "pass"
+              },
+              {
+                "title": "new recovery rejects truncated non-control modules and native addons and cancellation cannot reuse proof",
+                "result": "pass"
+              },
+              {
+                "title": "bundle fixture transports refuse unknown URLs without a real HTTPS fallback",
                 "result": "pass"
               }
             ],
@@ -1375,7 +1502,7 @@
             "file": "src/installer/__tests__/payload-source-links.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 651,
+            "durationMs": 153,
             "titles": [
               {
                 "title": "payload collector snapshots complete internal native build hardlink pairs without mutating source",
@@ -1400,7 +1527,7 @@
             "file": "src/installer/__tests__/publisher.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2946,
+            "durationMs": 56169,
             "titles": [
               {
                 "title": "publisher format2 binds app-only inventory public manifest1 source and exact external runtime identity",
@@ -1432,6 +1559,18 @@
               },
               {
                 "title": "publisher rejects uncommitted compiler inputs despite unchanged source revision",
+                "result": "pass"
+              },
+              {
+                "title": "publisher single-link reads reject replacement mutation and new symlinks after traversal",
+                "result": "pass"
+              },
+              {
+                "title": "release-owned Windows exclusion cannot be overridden by qualification flags or manual CI scope",
+                "result": "pass"
+              },
+              {
+                "title": "publisher native probe executes the shared protected runtime outside the application payload",
                 "result": "pass"
               }
             ],

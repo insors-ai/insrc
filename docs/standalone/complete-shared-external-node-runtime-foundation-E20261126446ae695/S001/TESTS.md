@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 135 pass, 0 fail, 0 skipped, 0 not found; 8 reported by the builder and not run by the gate.
+**Totals:** 150 pass, 0 fail, 0 skipped, 0 not found; 8 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -302,7 +302,7 @@ Run at 2026-11-28T12:24:08.956Z on commit `f34f13bcd`. Tests check: **passed**. 
 
 ## t6
 
-Run at 2026-11-26T23:37:45.573Z on commit `41954c71d`. Tests check: **passed**. 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-28T15:29:17.761Z on commit `4e2026b1a`. Tests check: **passed**. 29 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: bundle-descriptor2-application-only-public-manifest1-and-legacy-descriptor-diagnostic**
 
@@ -311,6 +311,11 @@ Run at 2026-11-26T23:37:45.573Z on commit `41954c71d`. Tests check: **passed**. 
 | pass | bundle descriptor2 and installed receipts preserve public manifest1 and reject embedded format1 | `src/installer/__tests__/bundle.test.ts` |
 | pass | hostile ZIP corpus cannot escape staging or exceed bounded extraction | `src/installer/__tests__/bundle.test.ts` |
 | pass | download digest target runtime cancellation and retry preserve incumbent | `src/installer/__tests__/bundle.test.ts` |
+| pass | release discovery rejects insecure redirects and never falls back to dev | `src/installer/__tests__/bundle.test.ts` |
+| pass | inventory bound reserves the archive inventory entry | `src/installer/__tests__/bundle.test.ts` |
+| pass | publisher format2 binds app-only inventory public manifest1 source and exact external runtime identity | `src/installer/__tests__/publisher.test.ts` |
+| pass | fresh-bundle-peer-validates-durable-descriptor-without-resolve-map | `src/installer/__tests__/bundle-recovery.test.ts` |
+| pass | private-release-offer-bound-supports-full-descriptors-without-widening-other-records | `src/installer/__tests__/bundle-recovery.test.ts` |
 
 **integration: publisher-app-and-IDE-inventory-exclude-Node-Ollama-distributions-and-archives-including-renamed-contributions**
 
@@ -318,30 +323,60 @@ Run at 2026-11-26T23:37:45.573Z on commit `41954c71d`. Tests check: **passed**. 
 | :--- | :--- | :--- |
 | pass | app-only inventory rejects ordinary and renamed pinned Node Ollama archives executables and build inputs | `src/installer/__tests__/application-payload.test.ts` |
 | pass | app-only inventory permits native application dependencies and runtime policy metadata | `src/installer/__tests__/application-payload.test.ts` |
-| pass | publisher format2 binds app-only inventory public manifest1 source and exact external runtime identity | `src/installer/__tests__/publisher.test.ts` |
+| pass | enabled Ollama policy assets share the application exclusion metadata without changing qualification | `src/installer/__tests__/application-payload.test.ts` |
 | pass | publisher rejects a real pinned Node archive even when renamed as an application resource | `src/installer/__tests__/publisher.test.ts` |
 | pass | publisher source provenance excludes renamed runtime inputs and preserves native dependency contributions | `src/installer/__tests__/publisher.test.ts` |
 | pass | published manual and both IDE installer script assets have exact byte parity | `src/installer/__tests__/publisher.test.ts` |
-| pass | payload collector snapshots complete internal native build hardlink pairs without mutating source | `src/installer/__tests__/payload-source-links.test.ts` |
-| pass | payload collector rejects unaccounted hardlink aliases inside or outside the source root | `src/installer/__tests__/payload-source-links.test.ts` |
-| pass | payload collector does not count repeated directory symlink paths as distinct inode aliases | `src/installer/__tests__/payload-source-links.test.ts` |
-| pass | payload collector rejects alias or content changes after collecting the complete hardlink group | `src/installer/__tests__/payload-source-links.test.ts` |
 
 **integration: bundle-publisher-probes-use-shared-external-runtime-without-tools-node-copy**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
-| pass | assemble actual complete foundation payload only after all entrypoints exist | `src/installer/__tests__/foundation-payload.test.ts` |
+| pass | publisher native probe executes the shared protected runtime outside the application payload | `src/installer/__tests__/publisher.test.ts` |
+| pass | real bundler produces one dependency-minimal control fixture under owned build scope | `src/installer/__tests__/publisher.test.ts` |
+| pass | bundled manager excludes DB indexer model imports and consumer npm build | `src/installer/__tests__/publisher.test.ts` |
+| pass | publisher rejects uncommitted compiler inputs despite unchanged source revision | `src/installer/__tests__/publisher.test.ts` |
+
+**integration: application-integrity-once-per-operation-and-full-recovery-before-activation**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | application full integrity is bound to its operation candidate and closed producer inventory | `src/installer/__tests__/bundle.test.ts` |
+| pass | new recovery rejects truncated non-control modules and native addons and cancellation cannot reuse proof | `src/installer/__tests__/bundle.test.ts` |
+
+**integration: publisher-single-link-collection-rechecks-captured-identity-and-renamed-exclusion-is-visited**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | publisher single-link reads reject replacement mutation and new symlinks after traversal | `src/installer/__tests__/publisher.test.ts` |
+| pass | production payload closure rejects missing entrypoints and escaping workspace links | `src/installer/__tests__/publisher.test.ts` |
+| pass | payload collector snapshots complete internal native build hardlink pairs without mutating source | `src/installer/__tests__/payload-source-links.test.ts` |
+| pass | payload collector rejects unaccounted hardlink aliases inside or outside the source root | `src/installer/__tests__/payload-source-links.test.ts` |
+| pass | payload collector does not count repeated directory symlink paths as distinct inode aliases | `src/installer/__tests__/payload-source-links.test.ts` |
+| pass | payload collector rejects alias or content changes after collecting the complete hardlink group | `src/installer/__tests__/payload-source-links.test.ts` |
+
+**integration: release-owned-target-exclusion-and-default-off-Windows-CI-cannot-self-qualify**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | release-owned Windows exclusion cannot be overridden by qualification flags or manual CI scope | `src/installer/__tests__/publisher.test.ts` |
+
+**integration: bundle-fixture-unknown-URL-is-refused-without-real-network**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | bundle fixture transports refuse unknown URLs without a real HTTPS fallback | `src/installer/__tests__/bundle.test.ts` |
+| pass | bundle-recovery-runtime-transport-refuses-unknown-URLs-before-opening-any-resource | `src/installer/__tests__/bundle-recovery.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/installer/__tests__/application-payload.test.ts` | 0 | 3 | 0.5 s |  |
-| `src/installer/__tests__/bundle.test.ts` | 0 | 5 | 83.5 s |  |
-| `src/installer/__tests__/foundation-payload.test.ts` | 0 | 1 | 346.1 s |  |
-| `src/installer/__tests__/payload-source-links.test.ts` | 0 | 4 | 0.7 s |  |
-| `src/installer/__tests__/publisher.test.ts` | 0 | 8 | 2.9 s |  |
+| `src/installer/__tests__/application-payload.test.ts` | 0 | 3 | 0.3 s |  |
+| `src/installer/__tests__/bundle-recovery.test.ts` | 0 | 3 | 54.1 s |  |
+| `src/installer/__tests__/bundle.test.ts` | 0 | 8 | 255.4 s |  |
+| `src/installer/__tests__/payload-source-links.test.ts` | 0 | 4 | 0.2 s |  |
+| `src/installer/__tests__/publisher.test.ts` | 0 | 11 | 56.2 s |  |
 
 ## t7
 

@@ -53,6 +53,13 @@
         "choice": "Manual-only recovery guidance, without enforced locking or all-consumer shutdown proof; accept the disclosed concurrency risk, use the exact root-write/no-deletion diagnostic and retain the recovery-command follow-up for consideration before general release.",
         "rationale": "User explicitly approved LLD8 with manual-only recovery guidance and corrected read-only runtime plus writable SDK isolation in this turn.",
         "resolvedAt": "2026-11-28T09:29:45.905Z"
+      },
+      "qccba6370": {
+        "question": "R2-2 owner choice: use corrected POSIX read-only protection plus writable SDK isolation, or keep SDK isolation only and accept accidental canonical-write risk? Proposed default is read-only plus SDK, with candidate root0700through native rename and root0500/fsync/strict verification afterward. Observed official releases have no shared-store reader; old known unpublished development/qualification homes are rebuilt, not converted. Unknown custom installs are outside that audit guarantee; no hostv2 or field migration is authorized.",
+        "status": "resolved",
+        "choice": "Read-only protection plus SDK isolation",
+        "rationale": "User explicitly approved LLD8 with corrected read-only runtime protection and writable SDK isolation. Candidate root stays0700through native no-replace rename, then root0500/fsync/strict verification before success; only exact root-only crash finalization, rebuild known unpublished homes, no field/hostv2 migration.",
+        "resolvedAt": "2026-11-28T09:30:10.270Z"
       }
     }
   },

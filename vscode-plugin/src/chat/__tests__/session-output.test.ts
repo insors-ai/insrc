@@ -527,3 +527,49 @@ test('E202611031bd72813:S001 t5: registerCursor takes the session lock around it
   await so.remove('s1');
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("s3/t8: parseMarker's turn-end case extracting code, signal, unknown, vibeDispatchState and vibeOutcome", () => {
+  // A full real-exit marker (endTurn's own appendMarker call shape), all five fields present.
+  const full = parseMarker(JSON.stringify({
+    'insrc.marker': 'turn-end', turnId: 't1', code: 0, signal: null,
+    vibeDispatchState: 'accepted', vibeOutcome: 'ok',
+  }));
+  assert.deepEqual(full, { kind: 'turn-end', turnId: 't1', code: 0, signal: null, vibeDispatchState: 'accepted', vibeOutcome: 'ok' });
+
+  // The host-loss path's own shape (code:null, signal:null, unknown:true, no vibe fields).
+  const hostLoss = parseMarker(JSON.stringify({ 'insrc.marker': 'turn-end', turnId: 't2', code: null, signal: null, unknown: true }));
+  assert.deepEqual(hostLoss, { kind: 'turn-end', turnId: 't2', code: null, signal: null, unknown: true });
+
+  // A real killed-by-signal exit, no vibe fields (claude/codex never populate them).
+  const killed = parseMarker(JSON.stringify({ 'insrc.marker': 'turn-end', turnId: 't3', code: null, signal: 'SIGTERM' }));
+  assert.deepEqual(killed, { kind: 'turn-end', turnId: 't3', code: null, signal: 'SIGTERM' });
+
+  // An invalid vibeDispatchState/vibeOutcome value is dropped, never passed through unvalidated.
+  const invalid = parseMarker(JSON.stringify({ 'insrc.marker': 'turn-end', turnId: 't4', code: 0, signal: null, vibeDispatchState: 'bogus', vibeOutcome: 'bogus' }));
+  assert.deepEqual(invalid, { kind: 'turn-end', turnId: 't4', code: 0, signal: null });
+
+  // A turn-end marker line written BEFORE this Story's build (only turnId) still parses, every
+  // new field simply absent.
+  const legacy = parseMarker(JSON.stringify({ 'insrc.marker': 'turn-end', turnId: 't5' }));
+  assert.deepEqual(legacy, { kind: 'turn-end', turnId: 't5' });
+});
+
+test('s3/t8: endTurn threads TurnExit.vibeDispatchState/vibeOutcome through to the written marker when present, and omits them when absent (claude/codex)', async () => {
+  const dir = join(mkdtempSync(join(tmpdir(), 'out-t8-')), 'out');
+  const so = createSessionOutput({ root: dir, maxBytes: 1_000_000, pollMs: 5 });
+  await so.beginTurn('s1', 't1');
+  await so.endTurn('s1', 't1', { code: 0, signal: null, vibeDispatchState: 'accepted', vibeOutcome: 'ok' });
+  const lines = readFileSync(join(dir, 's1.ndjson'), 'utf8').split('\n').filter(Boolean);
+  const marker = lines.map(parseMarker).find((m) => m?.kind === 'turn-end');
+  assert.deepEqual(marker, { kind: 'turn-end', turnId: 't1', code: 0, signal: null, vibeDispatchState: 'accepted', vibeOutcome: 'ok' });
+
+  await so.beginTurn('s2', 't1');
+  await so.endTurn('s2', 't1', { code: 0, signal: null }); // claude/codex: no vibe fields at all
+  const lines2 = readFileSync(join(dir, 's2.ndjson'), 'utf8').split('\n').filter(Boolean);
+  const marker2 = lines2.map(parseMarker).find((m) => m?.kind === 'turn-end');
+  assert.deepEqual(marker2, { kind: 'turn-end', turnId: 't1', code: 0, signal: null });
+
+  await so.remove('s1');
+  await so.remove('s2');
+  rmSync(dir, { recursive: true, force: true });
+});

@@ -37,9 +37,18 @@ export interface TurnSegment {
   readonly cursor: SegmentCursor;
 }
 
+/** s3/t8: the vibe direct-spawn route's own dispatchState/outcome at turn end (mirroring
+ *  vibe-adapter.ts's VibeDispatchState and cli-adapter.ts's VibeOutcome, as plain literal
+ *  unions here -- this module stays provider-agnostic and must not import either). Absent
+ *  for claude/codex, which never populate or consult them. */
+export type TurnExitVibeDispatchState = 'not-sent' | 'possibly-sent' | 'accepted';
+export type TurnExitVibeOutcome = 'ok' | 'no-evidence' | 'replay-unsafe';
+
 export interface TurnExit {
   readonly code: number | null;
   readonly signal: string | null;
+  readonly vibeDispatchState?: TurnExitVibeDispatchState | undefined;
+  readonly vibeOutcome?: TurnExitVibeOutcome | undefined;
 }
 
 /** The fs surface the module uses. */
@@ -134,7 +143,21 @@ export const MARKER_KEY = 'insrc.marker';
 export type Marker =
   | { readonly kind: 'file'; readonly sessionId: string; readonly generation: number }
   | { readonly kind: 'turn-start'; readonly turnId: string }
-  | { readonly kind: 'turn-end'; readonly turnId: string };
+  | {
+      readonly kind: 'turn-end';
+      readonly turnId: string;
+      /** s3/t8: already written at every turn-end (the host-loss path writes code:null/
+       *  signal:null/unknown:true; a normal exit writes real code/signal) but previously
+       *  discarded by this parser -- now exposed, alongside the two new optional vibe fields. */
+      readonly code?: number | null | undefined;
+      readonly signal?: string | null | undefined;
+      readonly unknown?: true | undefined;
+      readonly vibeDispatchState?: TurnExitVibeDispatchState | undefined;
+      readonly vibeOutcome?: TurnExitVibeOutcome | undefined;
+    };
+
+const VIBE_DISPATCH_STATES: readonly TurnExitVibeDispatchState[] = ['not-sent', 'possibly-sent', 'accepted'];
+const VIBE_OUTCOMES: readonly TurnExitVibeOutcome[] = ['ok', 'no-evidence', 'replay-unsafe'];
 
 /** The marker a line carries, or undefined for a CLI line (only a top-level "insrc.marker" key counts). */
 export function parseMarker(line: string): Marker | undefined {
@@ -152,8 +175,23 @@ export function parseMarker(line: string): Marker | undefined {
       return typeof o['generation'] === 'number' ? { kind: 'file', sessionId: String(o['sessionId']), generation: o['generation'] } : undefined;
     case 'turn-start':
       return typeof o['turnId'] === 'string' ? { kind: 'turn-start', turnId: o['turnId'] } : undefined;
-    case 'turn-end':
-      return typeof o['turnId'] === 'string' ? { kind: 'turn-end', turnId: o['turnId'] } : undefined;
+    case 'turn-end': {
+      if (typeof o['turnId'] !== 'string') return undefined;
+      const code = typeof o['code'] === 'number' || o['code'] === null ? o['code'] : undefined;
+      const signal = typeof o['signal'] === 'string' || o['signal'] === null ? o['signal'] : undefined;
+      const unknown = o['unknown'] === true ? true : undefined;
+      const vibeDispatchState = VIBE_DISPATCH_STATES.includes(o['vibeDispatchState'] as TurnExitVibeDispatchState) ? (o['vibeDispatchState'] as TurnExitVibeDispatchState) : undefined;
+      const vibeOutcome = VIBE_OUTCOMES.includes(o['vibeOutcome'] as TurnExitVibeOutcome) ? (o['vibeOutcome'] as TurnExitVibeOutcome) : undefined;
+      return {
+        kind: 'turn-end',
+        turnId: o['turnId'],
+        ...(code !== undefined ? { code } : {}),
+        ...(signal !== undefined ? { signal } : {}),
+        ...(unknown !== undefined ? { unknown } : {}),
+        ...(vibeDispatchState !== undefined ? { vibeDispatchState } : {}),
+        ...(vibeOutcome !== undefined ? { vibeOutcome } : {}),
+      };
+    }
     default:
       return undefined;
   }
@@ -542,7 +580,11 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       const p = paths(sessionId);
       if ((await fs.size(p.current)) === undefined) return;
       if ((await openTurn(p.current)) !== turnId) return; // already closed, or not this turn's file any more
-      await appendMarker(p.current, { [MARKER_KEY]: 'turn-end', turnId, code: exit.code, signal: exit.signal });
+      await appendMarker(p.current, {
+        [MARKER_KEY]: 'turn-end', turnId, code: exit.code, signal: exit.signal,
+        ...(exit.vibeDispatchState !== undefined ? { vibeDispatchState: exit.vibeDispatchState } : {}),
+        ...(exit.vibeOutcome !== undefined ? { vibeOutcome: exit.vibeOutcome } : {}),
+      });
     },
 
     async *tail(cursor, opts) {

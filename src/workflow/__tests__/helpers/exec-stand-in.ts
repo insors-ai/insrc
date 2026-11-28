@@ -36,6 +36,9 @@ c.on('error', e => { process.stderr.write('stand-in: ' + e.message + '\\n'); pro
 
 let current: { dir: string; server: Server; savedPath: string | undefined } | undefined;
 
+/** Test-only: the stand-in server while installed (undefined after remove). */
+export function _standInServerForTests(): Server | undefined { return current?.server; }
+
 function remove(): void {
 	if (current === undefined) return;
 	const { dir, server, savedPath } = current;
@@ -75,7 +78,11 @@ export function installExecStandIn(fn?: ExecFake): void {
 		conn.on('error', () => undefined);
 	});
 	server.listen(sock);
-	server.unref();
+	// The server stays ref'd while installed (no unref): a test awaiting a gh/git call
+	// through the stand-in must keep the event loop alive, otherwise a parallel sweep can
+	// drain the loop under that pending promise and cancel the rest of the file
+	// ("Promise resolution is still pending but the event loop has already resolved").
+	// remove() closes the server, so a test that installs the stand-in always tears it down.
 	current = { dir, server, savedPath: process.env['PATH'] };
 	process.env['PATH'] = `${dir}:${process.env['PATH'] ?? ''}`;
 }

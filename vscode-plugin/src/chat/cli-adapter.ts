@@ -1540,6 +1540,19 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       // stdout closed without a terminal event: the process is ending; report how.
       const { code, signal } = await proc.exit;
       terminal = true;
+      if (isVibeDirectSpawn) {
+        // Review r1 (a5afdf302): the live-emitted done and a reattached reader's done must
+        // never disagree on replay safety. export.json's own stopReason (vibeFinalize) is the
+        // one authoritative completion signal for a vibe turn -- not exit code/signal
+        // heuristics built for claude/codex -- and proc.exit has already settled here, so
+        // vibeFinalize (driven by the same proc.exit) is either already resolved or resolves
+        // immediately. Use the SAME ok/replayUnsafe rule t10's readTurnEndMarker path uses
+        // (replayUnsafe whenever the outcome isn't 'ok') for every exit shape: clean, signal,
+        // nonzero exit or missing/malformed evidence.
+        const vibeOutcome = vibeFinalize !== undefined ? await vibeFinalize.catch(() => undefined) : undefined;
+        yield doneEvent(vibeOutcome === 'ok', undefined, vibeOutcome !== 'ok' ? true : undefined);
+        return;
+      }
       if (signal !== null) {
         // Killed (e.g. via cancel()) without a terminal event from the stream.
         yield doneEvent(false);
@@ -1867,12 +1880,23 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     // a different, non-vibeFinalize-aware call site); otherwise classify from the real written
     // vibeOutcome -- 'ok' is the only safe case, never inferred, never a flat unclassified error.
     if (mapper.id === 'vibe') {
-      const vibeTurnEndMarker = await sessionOutput.readTurnEndMarker(req.cursor);
+      // Review r1 (a5afdf302): a read failure here (e.g. the segment rolling away mid-read)
+      // must land in this function's own observation-failure handling, not escape uncaught --
+      // readTurnEndMarker already treats a gone segment as "nothing to classify from", so only
+      // a genuine read error (not file-not-found) can reach this catch.
+      const vibeTurnEndMarker = await sessionOutput.readTurnEndMarker(req.cursor).catch(() => undefined);
       if (vibeTurnEndMarker !== undefined) {
         const replayUnsafe = vibeTurnEndMarker.unknown === true || vibeTurnEndMarker.vibeOutcome !== 'ok';
         yield doneEvent(!replayUnsafe, undefined, replayUnsafe ? true : undefined);
         return;
       }
+      // The marker is the ONE authoritative completion signal for a vibe turn; a verified-dead
+      // pid proves nothing on its own -- close()'s own async chain (decodeSettled, vibeFinalize,
+      // the export read, the marker write) may simply still be in flight. Never report a
+      // confident terminal error from pid liveness alone here; always an observation failure,
+      // so the caller retries rather than treating an in-flight write as a confirmed failure.
+      yield { kind: 'error', turnId, message: 'the turn ended without a result', observationFailure: true };
+      return;
     }
     // E202611031bd72813:S001 t5: EOF without a terminal event — a plain terminal error ONLY when a
     // recorded pid is verified dead; alive OR ABSENT pid is an observation failure (an absent pid

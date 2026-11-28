@@ -346,6 +346,10 @@ export async function readExitEvidence(exportPath: string, readFile: (path: stri
 	if (obj === undefined) return undefined;
 	const stopReason = typeof obj['stop_reason'] === 'string' ? obj['stop_reason'] : undefined;
 	const outcome = typeof obj['outcome'] === 'string' ? obj['outcome'] : undefined;
+	// A parseable object with NEITHER recognized field (e.g. `{}`, or a truncated/partial
+	// write) is not a real export.json -- undefined (no-evidence) rather than a confirmed-but-
+	// absent stopReason, which classifyVibeOutcome would otherwise read as a fabricated 'ok'.
+	if (stopReason === undefined && outcome === undefined) return undefined;
 	const config = record(obj['config']);
 	const model = typeof config?.['active_model'] === 'string' && config['active_model'] !== '' ? config['active_model'] as string : undefined;
 	return { stopReason, outcome, effectiveSelection: model !== undefined ? { model, thinking: undefined } : undefined };

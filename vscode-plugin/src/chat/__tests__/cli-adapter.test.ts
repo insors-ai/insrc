@@ -51,6 +51,12 @@ function depsFor(script: FakeProcScript | FakeProcScript[], installed: ProviderI
     spawn: spawner.spawn,
     isInstalled: (id) => installed.includes(id),
     logger: { warn: (m) => warns.push(m), error: () => {} },
+    // Review r1 (a5afdf302): the live vibe EOF path now classifies its done event from the
+    // SAME export.json evidence a reattached reader uses -- the fake spawner never writes a
+    // real --output-dir file, so without this default every fake-spawner vibe test would
+    // read 'no-evidence' (replayUnsafe) instead of the clean success most of them intend. A
+    // test that cares about a different outcome overrides readVibeExportFile itself.
+    readVibeExportFile: async () => JSON.stringify({ outcome: 'finished' }),
   };
   return { deps, spawner, warns };
 }
@@ -982,12 +988,16 @@ test('vibe: s3/t4 — integration: export-directory lifecycle across success/sig
   };
   const createdDirs: string[] = [];
 
-  // success: a plain completed turn allocates a real, distinct directory.
+  // success: a plain completed turn allocates a real, distinct directory. Review r1
+  // (a5afdf302): the live EOF path now awaits vibeFinalize (which removes the directory)
+  // BEFORE yielding its done event, so by the time collect() returns the directory is
+  // already gone -- a stronger guarantee than the pre-r1 fire-and-forget cleanup, proven
+  // separately by the dedicated t7 cleanup test below.
   {
     const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' })));
     const dir = outputDirOf(spawner.calls[0]!.args);
-    assert.ok(statSync(dir).isDirectory(), 'mkdtemp actually created a real directory on disk');
+    assert.ok(!existsSync(dir), 'already removed by the time the live done event settles');
     createdDirs.push(dir);
   }
   // a second, independent turn gets its OWN directory -- never reused across turns.
@@ -995,11 +1005,11 @@ test('vibe: s3/t4 — integration: export-directory lifecycle across success/sig
     const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' })));
     const dir = outputDirOf(spawner.calls[0]!.args);
-    assert.ok(statSync(dir).isDirectory());
     assert.ok(!createdDirs.includes(dir), 'a distinct export directory per turn');
     createdDirs.push(dir);
   }
-  // signal: a turn killed mid-flight still had its directory allocated before spawn.
+  // signal: a turn killed mid-flight still had its directory allocated before spawn, and
+  // the same vibeFinalize-awaiting path removes it before the live done event settles.
   {
     const { deps, spawner } = depsFor({ lines: [JSON.stringify({ type: 'reasoning' })], hangUntilKilled: true }, ['vibe']);
     const adapter = createProviderRegistry(deps).get('vibe');
@@ -1010,7 +1020,7 @@ test('vibe: s3/t4 — integration: export-directory lifecycle across success/sig
     }
     assert.equal(events.at(-1)!.kind, 'done');
     const dir = outputDirOf(spawner.calls[0]!.args);
-    assert.ok(statSync(dir).isDirectory());
+    assert.ok(!existsSync(dir), 'already removed by the time the live done event settles');
     createdDirs.push(dir);
   }
   // spawn-failure: the directory is allocated BEFORE the spawn attempt, so it still
@@ -1117,6 +1127,12 @@ test("vibe: s3/t7 — unit: readExitEvidence-driven outcome classification: stop
   const withStopReason = await readExitEvidence('/x/export.json', async () => JSON.stringify({ stop_reason: 'max_turns' }));
   assert.equal(classifyVibeOutcome(withStopReason), 'replay-unsafe');
 
+  // Review r1 (a5afdf302): a parseable object with NEITHER recognized field (a truncated or
+  // partial write, not a real export.json) must be 'no-evidence', never a fabricated 'ok'.
+  const empty = await readExitEvidence('/x/export.json', async () => JSON.stringify({}));
+  assert.equal(empty, undefined);
+  assert.equal(classifyVibeOutcome(empty), 'no-evidence');
+
   // The pure classifier's own boundary, directly: never inferred from merely having decoded a
   // row -- an evidence object with no stopReason but an unrelated outcome string is still 'ok'.
   assert.equal(classifyVibeOutcome(undefined), 'no-evidence');
@@ -1187,10 +1203,13 @@ test("vibe: s3/t7 — integration: a fixture binary exiting cleanly with a stopR
     const outcomePromise = new Promise<string>((res) => { resolveOutcome = res; });
     const adapter = createProviderRegistry({ isInstalled: () => true, spawn: nodeSpawner }).get('vibe');
     const events = await collect(adapter.run(REQ({ provider: 'vibe', prompt: 'STOPREASON', cwd }), { onVibeOutcome: (o) => resolveOutcome(o) }));
-    const done = events.at(-1) as { kind: string; ok: boolean };
+    const done = events.at(-1) as { kind: string; ok: boolean; replayUnsafe?: true };
     assert.equal(done.kind, 'done');
-    assert.equal(done.ok, true, 'exit code 0 still synthesizes an ok:true done -- vibeOutcome is reported as a separate signal here; wiring it into the done/marker itself is a later Task (t9)');
     assert.equal(await outcomePromise, 'replay-unsafe', 'a real stop_reason overrides the clean exit code -- never inferred from exit code alone');
+    // Review r1 (a5afdf302): the LIVE done must carry the SAME replay-safety verdict a
+    // reattached reader would compute from the durable marker -- exit code 0 must not win.
+    assert.equal(done.ok, false, 'the live done must reflect vibeOutcome, not the clean exit code');
+    assert.equal(done.replayUnsafe, true);
   });
 });
 

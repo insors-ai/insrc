@@ -302,14 +302,19 @@ test('an abandoned Codex turn never calls endInput', async () => {
   } finally { spawner.procs[0]?.exitNow(); }
 });
 
-test('an abandoned Vibe turn never calls endInput', async () => {
+test('an abandoned Vibe turn calls endInput exactly once, at dispatch -- never again on detach', async () => {
+  // Review r1 (a5afdf302): s3/t3 wires the vibe direct-spawn route's prompt through stdin --
+  // one write, then end input IMMEDIATELY (vibe's bare -p reads stdin to EOF as the whole
+  // prompt; it cannot start before that), unlike claude/codex's own formatInput path, which
+  // stays open for a possible later decision write. That single, dispatch-time EOF is real and
+  // expected; abandoning the generator afterward must not call endInput a second time.
   const spawner = makeFakeSpawner({ hangUntilKilled: true, lines: VIBE_TEXT_TURN });
   const adapter = createProviderRegistry({ spawn: spawner.spawn, isInstalled: () => true }).get('vibe');
   try {
     for await (const event of adapter.run({ provider: 'vibe', cwd: '/tmp', prompt: 'hi' })) {
       if (event.kind === 'assistant-delta') break; // abandoned before any terminal event
     }
-    assert.equal(spawner.procs[0]!.inputEnds(), 0, 'a Vibe turn has no input to end');
+    assert.equal(spawner.procs[0]!.inputEnds(), 1, 'the one dispatch-time EOF, and no additional EOF on detach');
     assert.deepEqual(spawner.procs[0]!.signals(), ['SIGTERM']);
   } finally { spawner.procs[0]?.exitNow(); }
 });

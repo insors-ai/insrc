@@ -1055,7 +1055,12 @@ test("vibe: s3/t5 — unit: dispatchState transitions: 'not-sent' before spawn, 
     const events = await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' }), {
       onDispatchState: (s) => { states.push(s); if (s === 'possibly-sent') spawner.procs[0]!.failWrites(true); },
     }));
-    assert.equal(events.at(-1)!.kind, 'error', 'the write failure surfaces as a turn error');
+    // s3/t6: a write failure classified by dispatchState surfaces as done(ok:false,
+    // replayUnsafe:true), not a plain error event (see the s3/t6 test for the classification itself).
+    const last = events.at(-1) as { kind: string; ok?: boolean; replayUnsafe?: true };
+    assert.equal(last.kind, 'done');
+    assert.equal(last.ok, false);
+    assert.equal(last.replayUnsafe, true);
     assert.deepEqual(states, ['possibly-sent'], 'never advances to accepted, and is never reverted');
   }
   // mapLine captures sessionId, then THROWS later in the same call (a malformed content
@@ -1086,6 +1091,17 @@ test('vibe: s3/t5 — integration: a spawn failure before any child exists is de
   const events = await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' }), { onDispatchState: (s) => states.push(s) }));
   assert.equal(events.at(-1)!.kind, 'error');
   assert.deepEqual(states, [], 'no child ever existed, so dispatchState never left its not-sent default -- deterministically pre-dispatch-safe');
+});
+
+test('vibe: s3/t6 — integration: a stdin write/end failure AFTER spawn succeeds is classified replay-unsafe', async () => {
+  const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN, hangUntilKilled: true }, ['vibe']);
+  const events = await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' }), {
+    onDispatchState: (s) => { if (s === 'possibly-sent') spawner.procs[0]!.failWrites(true); },
+  }));
+  const last = events.at(-1) as { kind: string; ok?: boolean; replayUnsafe?: true };
+  assert.equal(last.kind, 'done', 'classified via dispatchState as done(ok:false, replayUnsafe:true), not a plain error event');
+  assert.equal(last.ok, false);
+  assert.equal(last.replayUnsafe, true, "dispatchState had already left 'not-sent' (spawn succeeded before the write), so the gate marks it replay-unsafe, never assumed pre-dispatch-safe");
 });
 
 test('ProviderRegistry.available lists vibe alongside claude/codex when installed', () => {

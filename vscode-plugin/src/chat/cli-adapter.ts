@@ -1510,6 +1510,13 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         terminal = true;
         proc.kill('SIGTERM');
         if (vibeCatalog !== undefined) yield doneEvent(false, failureMessage(mapper.id, err), true);
+        // s3/t6: the vibe direct-spawn route's stdin-write gate -- classify a write/end
+        // failure by the turn's OWN dispatchState (as it already stands at the moment of
+        // failure), never unconditionally one way or the other. In practice a write only
+        // ever happens after spawn succeeds, so this is 'possibly-sent' or 'accepted' here,
+        // never 'not-sent' -- replay-unsafe, exactly like vibe-adapter.ts's own classification
+        // of any failure once dispatchState has left 'not-sent'.
+        else if (isVibeDirectSpawn) yield doneEvent(false, failureMessage(mapper.id, err), vibeDispatchState !== 'not-sent' ? true : undefined);
         else yield { kind: 'error', turnId, message: failureMessage(mapper.id, err) };
       }
     } finally {

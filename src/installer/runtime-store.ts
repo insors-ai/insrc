@@ -12,7 +12,7 @@ import { closeOwnedFile } from './owned-file.js';
 import { parseInstaller } from './schemas.js';
 import { runtimePolicy, runtimeProfile, runtimeStorePaths } from './runtime-policy.js';
 import { RUNTIME_LIMITS, RUNTIME_PROFILE_VERSION, runtimeCompletionJson, runtimeInventoryJson } from './runtime-metadata.js';
-import type { ResolvedPrivateRuntime, RuntimeInventoryFile } from './runtime-metadata.js';
+import type { ResolvedPrivateRuntime, RuntimeInventoryFile, RuntimeProtection } from './runtime-metadata.js';
 
 const invalid = (message: string): InstallerError => new InstallerError('runtime-invalid', message);
 const digest = (bytes: Buffer): string => createHash('sha256').update(bytes).digest('hex');
@@ -33,9 +33,12 @@ async function admitted(path: string, directory: boolean, privateOwner: boolean,
 }
 /** Inspect the same open file before/after bounded reading; never reopen by a stream path. */
 async function readChecked(path: string, maximum: number, signal: AbortSignal,
-  expected?: RuntimeInventoryFile, capture = false): Promise<{ bytes?: Buffer; hash: string }> {
+  expected: RuntimeInventoryFile | undefined, capture: boolean, protection: RuntimeProtection): Promise<{ bytes?: Buffer; hash: string }> {
   const before = await admitted(path, false, !expected, signal);
-  if (before.size > maximum || (expected && (before.size !== expected.bytes || (process.platform !== 'win32' && (before.mode & 0o777) !== expected.mode)))) throw invalid('Runtime file size or mode differs');
+  const mode = expected ? (protection === 'source-stage' ? expected.mode : expected.mode & ~0o222)
+    : protection === 'source-stage' ? 0o600 : 0o400;
+  if (before.size > maximum || (expected && before.size !== expected.bytes)) throw invalid('Runtime file size differs');
+  if (process.platform !== 'win32' && (before.mode & 0o777) !== mode) throw invalid(`Runtime file mode differs from ${protection} protection`);
   const file = await open(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
   try {
     const initial = await file.stat(); if (!unchanged(before, initial)) throw invalid('Runtime file changed before reading');
@@ -76,23 +79,29 @@ export function verifyRuntimeInventory(bytes: Buffer, expected: ReturnType<typeo
 }
 
 /** Internal content check only: arbitrary stages never receive launch paths. */
-export async function verifyRuntimeEntry(root: string, identityInput: RuntimeIdentity, external?: AbortSignal): Promise<void> {
+export async function verifyRuntimeEntry(root: string, identityInput: RuntimeIdentity, external?: AbortSignal,
+  protection: RuntimeProtection = 'published'): Promise<void> {
   const deadline = AbortSignal.timeout(RUNTIME_LIMITS.verificationMs);
   const signal = external ? AbortSignal.any([deadline, external]) : deadline;
   signal.throwIfAborted();
   const identity = structuredClone(parseInstaller('runtime', identityInput)), target = identity.target;
+  if (!['published', 'source-stage', 'permission-transition'].includes(protection)) throw invalid('Unknown runtime verification protection lane');
   runtimeStorePaths(root, identity);
   if (target.os !== process.platform || target.arch !== process.arch) throw invalid('Runtime verification requires the native target');
   assertLocalControlRoot(root, target.os === 'win32' ? path => controlBinding().localVolume(path) : undefined);
   const initial = await admitted(root, true, true, signal), profile = runtimeProfile(target);
+  const directoryMode = protection === 'source-stage' ? 0o700 : 0o500;
+  const rootMode = initial.mode & 0o777;
+  if (target.os !== 'win32' && rootMode !== directoryMode
+    && !(protection === 'permission-transition' && rootMode === 0o700)) throw invalid(`Runtime root mode differs from ${protection} protection`);
   const paths = { root, directory: join(root, 'distribution'), completion: join(root, 'completion.json'), inventory: join(root, 'inventory.json') };
   const rootEntries = await readdir(paths.root); signal.throwIfAborted();
   if (rootEntries.sort().join(',') !== 'completion.json,distribution,inventory.json') throw invalid('Runtime entry membership differs');
-  const completion = (await readChecked(paths.completion, RUNTIME_LIMITS.completionBytes, signal)).bytes!;
+  const completion = (await readChecked(paths.completion, RUNTIME_LIMITS.completionBytes, signal, undefined, true, protection)).bytes!;
   const expectedCompletion = runtimeCompletionJson({ schemaVersion: 1, identity, profileVersion: RUNTIME_PROFILE_VERSION,
     inventorySha256: profile.inventorySha256, npmVersion: runtimePolicy.npmVersion, headersVersion: runtimePolicy.headersVersion });
   if (completion.toString('utf8') !== expectedCompletion) throw invalid('Runtime completion identity or canonical bytes differ');
-  const bytes = (await readChecked(paths.inventory, RUNTIME_LIMITS.inventoryBytes, signal)).bytes!;
+  const bytes = (await readChecked(paths.inventory, RUNTIME_LIMITS.inventoryBytes, signal, undefined, true, protection)).bytes!;
   const files = verifyRuntimeInventory(bytes, profile), pending = new Map(files.map(file => [file.path, file]));
   const directories = new Set(['']);
   for (const file of files) {
@@ -104,6 +113,7 @@ export async function verifyRuntimeEntry(root: string, identityInput: RuntimeIde
   let npmBytes: Buffer | undefined, headerBytes: Buffer | undefined, entries = 0;
   async function visit(directory: string, prefix = ''): Promise<void> {
     const initial = await admitted(directory, true, false, signal);
+    if (target.os !== 'win32' && (initial.mode & 0o777) !== directoryMode) throw invalid(`Runtime directory mode differs from ${protection} protection`);
     for (const name of await readdir(directory)) {
       signal.throwIfAborted(); if (++entries > RUNTIME_LIMITS.entries * 2) throw invalid('Runtime tree entry bound');
       const path = join(directory, name), relativePath = prefix ? `${prefix}/${name}` : name;
@@ -115,7 +125,7 @@ export async function verifyRuntimeEntry(root: string, identityInput: RuntimeIde
       const expected = pending.get(relativePath); if (!expected) throw invalid('Unexpected runtime file');
       const capture = relativePath === npm || relativePath === 'include/node/node_version.h';
       if (capture && expected.bytes > 128 * 1024) throw invalid('Runtime version metadata bound');
-      const data = await readChecked(path, RUNTIME_LIMITS.entryBytes, signal, expected, capture);
+      const data = await readChecked(path, RUNTIME_LIMITS.entryBytes, signal, expected, capture, protection);
       if (relativePath === npm) npmBytes = data.bytes;
       if (relativePath === 'include/node/node_version.h') headerBytes = data.bytes;
       pending.delete(relativePath);
@@ -137,12 +147,15 @@ export async function resolveRuntimeStore(locationInput: InstallationLocation, i
   const deadline = AbortSignal.timeout(RUNTIME_LIMITS.verificationMs);
   const signal = options.signal ? AbortSignal.any([deadline, options.signal]) : deadline;
   signal.throwIfAborted();
+  let canonical: { home: string; root: string } | undefined;
+  let diagnostic: string | undefined;
   try {
     const location = structuredClone(parseInstaller('location', locationInput));
     const identity = structuredClone(parseInstaller('runtime', identityInput)), target = identity.target;
     if (target.os !== process.platform || target.arch !== process.arch || location.home !== normalizeHome(location.home, target.os)
       || (target.os === 'win32') !== (location.daemonEndpoint.kind === 'named-pipe')) throw invalid('Runtime target or home is not canonical for this process');
     const paths = runtimeStorePaths(location.home, identity), profile = runtimeProfile(target);
+    canonical = { home: location.home, root: paths.root };
     assertLocalControlRoot(location.home, target.os === 'win32' ? path => controlBinding().localVolume(path) : undefined);
     const roots = new Map<string, Stats>();
     let current = paths.root;
@@ -151,7 +164,27 @@ export async function resolveRuntimeStore(locationInput: InstallationLocation, i
       if (current === location.home) break;
       const next = dirname(current); if (next === current) throw invalid('Runtime root escapes home'); current = next;
     }
-    await verifyRuntimeEntry(paths.root, identity, signal);
+    try { await verifyRuntimeEntry(paths.root, identity, signal); }
+    catch (cause) {
+      if (cause instanceof InstallerError && cause.code === 'resource-close-uncertain') throw cause;
+      signal.throwIfAborted();
+      // Classification returns diagnostics only. Neither weaker lane can grant
+      // canonical launch paths, mutate an entry, or acquire controller ownership.
+      if (target.os !== 'win32' && ((await lstat(paths.root)).mode & 0o777) === 0o700) {
+        for (const lane of ['permission-transition', 'source-stage'] as const) {
+          try { await verifyRuntimeEntry(paths.root, identity, signal, lane); }
+          catch (failure) {
+            if (failure instanceof InstallerError && failure.code === 'resource-close-uncertain') throw failure;
+            signal.throwIfAborted(); continue;
+          }
+          diagnostic = lane === 'permission-transition'
+            ? `Shared Node runtime publication is unfinished at "${paths.root}". Re-run the authenticated installer to verify and finish protecting the entry; no bytes will be replaced.`
+            : `Shared Node runtime protection layout is unsupported at "${paths.root}". This unpublished development home must be rebuilt in a new isolated home; no conversion or repair was attempted.`;
+          break;
+        }
+      }
+      throw cause;
+    }
     for (const [path, initial] of roots) if (!unchanged(initial, await admitted(path, true, true, signal))) throw invalid('Runtime root changed during verification');
     signal.throwIfAborted();
     Object.freeze(identity.target); Object.freeze(identity);
@@ -161,6 +194,10 @@ export async function resolveRuntimeStore(locationInput: InstallationLocation, i
   } catch (cause) {
     if (cause instanceof InstallerError && cause.code === 'resource-close-uncertain') throw cause;
     if (signal.aborted) throw signal.reason;
-    throw invalid(cause instanceof Error ? cause.message : 'Runtime verification failed');
+    if (diagnostic) throw invalid(diagnostic);
+    const reason = cause instanceof Error ? cause.message : 'Runtime verification failed';
+    if (!canonical) throw invalid(reason);
+    const quotedRoot = `'${canonical.root.replaceAll("'", "'\\''")}'`;
+    throw invalid(`Shared Node runtime verification failed at "${canonical.root}": ${reason}. This runtime is shared by all releases; no repair was attempted. Manual recovery only: stop all Insrc consumers of "${canonical.home}". Do not delete anything. If the runtime-entry root is not owner-writable, first restore owner write on that root only: chmod u+w ${quotedRoot}. Preserve and move the entire entry outside the runtime store, then rerun the authenticated installer. This procedure is not protected by operation.lock; Insrc cannot confirm that every consumer has stopped. If unsure, leave the entry unchanged and request operator assistance.`);
   }
 }

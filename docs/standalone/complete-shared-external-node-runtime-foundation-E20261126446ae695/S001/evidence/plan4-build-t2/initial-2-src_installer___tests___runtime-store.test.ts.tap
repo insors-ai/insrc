@@ -1,0 +1,108 @@
+TAP version 13
+# Subtest: resolver import graph stays within installer-only read primitives
+ok 1 - resolver import graph stays within installer-only read primitives
+  ---
+  duration_ms: 14.041125
+  type: 'test'
+  ...
+# Subtest: resolver returns frozen canonical Node npm headers and platform library for the exact identity
+ok 2 - resolver returns frozen canonical Node npm headers and platform library for the exact identity
+  ---
+  duration_ms: 5107.937166
+  type: 'test'
+  ...
+# Subtest: resolver rejects corrupt receipts inventories files modes targets aliases and extra members
+not ok 3 - resolver rejects corrupt receipts inventories files modes targets aliases and extra members
+  ---
+  duration_ms: 14652.819083
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/runtime-store.test.ts:1:7593'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /ENOENT.*completion\.json/. Input:
+    
+    `Shared Node runtime verification failed at "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ir Ω's-doJ6Hn/runtimes/22.22.1/darwin-arm64-native-v1/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2": Runtime entry membership differs. This runtime is shared by all releases; no repair was attempted. Manual recovery only: stop all Insrc consumers of "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ir Ω's-doJ6Hn". Do not delete anything. If the runtime-entry root is not owner-writable, first restore owner write on that root only: chmod u+w '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ir Ω'\\''s-doJ6Hn/runtimes/22.22.1/darwin-arm64-native-v1/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2'. Preserve and move the entire entry outside the runtime store, then rerun the authenticated installer. This procedure is not protected by operation.lock; Insrc cannot confirm that every consumer has stopped. If unsure, leave the entry unchanged and request operator assistance.`
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: `Shared Node runtime verification failed at "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ir Ω's-doJ6Hn/runtimes/22.22.1/darwin-arm64-native-v1/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2": Runtime entry membership differs. This runtime is shared by all releases; no repair was attempted. Manual recovery only: stop all Insrc consumers of "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ir Ω's-doJ6Hn". Do not delete anything. If the runtime-entry root is not owner-writable, first restore owner write on that root only: chmod u+w '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ir Ω'\\''s-doJ6Hn/runtimes/22.22.1/darwin-arm64-native-v1/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2'. Preserve and move the entire entry outside the runtime store, then rerun the authenticated installer. This procedure is not protected by operation.lock; Insrc cannot confirm that every consumer has stopped. If unsure, leave the entry unchanged and request operator assistance.`
+  operator: 'match'
+  stack: |-
+    Object.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/runtime-store.test.ts:98:21)
+    expectedException (node:assert:576:17)
+    expectsError (node:assert:701:21)
+    Function.rejects (node:assert:767:3)
+    async rejectedMutation (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/runtime-store.test.ts:94:5)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/runtime-store.test.ts:134:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: rewritten self consistent receipt and inventory cannot replace independent pinned hashes
+ok 4 - rewritten self consistent receipt and inventory cannot replace independent pinned hashes
+  ---
+  duration_ms: 7475.663084
+  type: 'test'
+  ...
+# Subtest: resolver performs only runtime reads without downloads allocation locks or application traversal
+ok 5 - resolver performs only runtime reads without downloads allocation locks or application traversal
+  ---
+  duration_ms: 3554.618042
+  type: 'test'
+  ...
+# Subtest: resolver bounds metadata and stops at cancellation without scanning application or Ollama data
+ok 6 - resolver bounds metadata and stops at cancellation without scanning application or Ollama data
+  ---
+  duration_ms: 12078.496583
+  type: 'test'
+  ...
+# Subtest: strict POSIX runtime protection preserves pinned bytes and rejects every write or execute mode drift
+not ok 7 - strict POSIX runtime protection preserves pinned bytes and rejects every write or execute mode drift
+  ---
+  duration_ms: 9044.036708
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/runtime-store.test.ts:1:14920'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + `Shared Node runtime verification failed at "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ir Ω's-NU7ArS/runtimes/22.22.1/darwin-arm64-native-v1/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2": Runtime path must be an owned regular non-link file or directory. This runtime is shared by all releases; no repair was attempted. Manual recovery only: stop all Insrc consumers of "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ir Ω's-NU7ArS". Do not delete anything. If the runtime-entry root is not owner-writable, first restore owner write on that root only: chmod u+w '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ir Ω'\\''s-NU7ArS/runtimes/22.22.1/darwin-arm64-native-v1/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2'. Preserve and move the entire entry outside the runtime store, then rerun the authenticated installer. This procedure is not protected by operation.lock; Insrc cannot confirm that every consumer has stopped. If unsure, leave the entry unchanged and request operator assistance.`
+    - `Shared Node runtime verification failed at "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ir Ω's-NU7ArS/runtimes/22.22.1/darwin-arm64-native-v1/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2": Runtime file mode differs from published protection. This runtime is shared by all releases; no repair was attempted. Manual recovery only: stop all Insrc consumers of "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ir Ω's-NU7ArS". Do not delete anything. If the runtime-entry root is not owner-writable, first restore owner write on that root only: chmod u+w '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ir Ω'\\''s-NU7ArS/runtimes/22.22.1/darwin-arm64-native-v1/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2'. Preserve and move the entire entry outside the runtime store, then rerun the authenticated installer. This procedure is not protected by operation.lock; Insrc cannot confirm that every consumer has stopped. If unsure, leave the entry unchanged and request operator assistance.`
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: `Shared Node runtime verification failed at "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ir Ω's-NU7ArS/runtimes/22.22.1/darwin-arm64-native-v1/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2": Runtime file mode differs from published protection. This runtime is shared by all releases; no repair was attempted. Manual recovery only: stop all Insrc consumers of "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ir Ω's-NU7ArS". Do not delete anything. If the runtime-entry root is not owner-writable, first restore owner write on that root only: chmod u+w '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ir Ω'\\''s-NU7ArS/runtimes/22.22.1/darwin-arm64-native-v1/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2'. Preserve and move the entire entry outside the runtime store, then rerun the authenticated installer. This procedure is not protected by operation.lock; Insrc cannot confirm that every consumer has stopped. If unsure, leave the entry unchanged and request operator assistance.`
+  actual: `Shared Node runtime verification failed at "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ir Ω's-NU7ArS/runtimes/22.22.1/darwin-arm64-native-v1/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2": Runtime path must be an owned regular non-link file or directory. This runtime is shared by all releases; no repair was attempted. Manual recovery only: stop all Insrc consumers of "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ir Ω's-NU7ArS". Do not delete anything. If the runtime-entry root is not owner-writable, first restore owner write on that root only: chmod u+w '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/ir Ω'\\''s-NU7ArS/runtimes/22.22.1/darwin-arm64-native-v1/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2'. Preserve and move the entire entry outside the runtime store, then rerun the authenticated installer. This procedure is not protected by operation.lock; Insrc cannot confirm that every consumer has stopped. If unsure, leave the entry unchanged and request operator assistance.`
+  operator: 'strictEqual'
+  stack: |-
+    Object.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/runtime-store.test.ts:97:46)
+    expectedException (node:assert:576:17)
+    expectsError (node:assert:701:21)
+    Function.rejects (node:assert:767:3)
+    async rejectedMutation (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/runtime-store.test.ts:94:5)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/installer/__tests__/runtime-store.test.ts:247:33)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: verifier lanes reject mixed layouts and never grant canonical paths from a weaker flag
+ok 8 - verifier lanes reject mixed layouts and never grant canonical paths from a weaker flag
+  ---
+  duration_ms: 25394.136666
+  type: 'test'
+  ...
+# Subtest: manual runtime diagnostics preserve corrupt entries and quote spaces Unicode and apostrophes safely
+ok 9 - manual runtime diagnostics preserve corrupt entries and quote spaces Unicode and apostrophes safely
+  ---
+  duration_ms: 5173.233834
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 7
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 83403.216

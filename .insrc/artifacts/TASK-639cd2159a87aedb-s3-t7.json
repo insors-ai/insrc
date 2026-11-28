@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fdf1ef83-145a-461f-96ea-80f9f115dbfd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T05:37:23.248Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Compute vibeOutcome from export.json on exit and clean up the export directory",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#355",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "8ad86ec76f82c813c2d1adef4932b8890f4e5c85e2670a1997678427e32875f1",
+        "at": "2026-11-28T05:37:23.248Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T05:37:23.249Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Compute vibeOutcome from export.json on exit and clean up the export directory",
+    "summary": "On process exit, read export.json via the now-exported readExitEvidence and classify vibeOutcome ('ok' | 'no-evidence' | 'replay-unsafe') from Vibe's real reported stopReason/outcome; remove the per-turn export directory (from t4) in a finally block on every exit path (clean exit, error, cancellation).",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "vibeOutcome is computed from export.json's real stopReason/outcome fields, never inferred from merely having decoded a row",
+      "the export directory is removed on every exit path, including an error or cancelled turn"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "readExitEvidence-driven outcome classification: stopReason undefined -> 'ok'; stopReason present -> 'replay-unsafe'; export.json missing/malformed -> 'no-evidence'"
+      },
+      {
+        "level": "integration",
+        "name": "a fixture binary exiting cleanly with no stopReason yields vibeOutcome 'ok', read identically live and on reattach"
+      },
+      {
+        "level": "integration",
+        "name": "a fixture binary exiting cleanly with a stopReason yields vibeOutcome 'replay-unsafe' despite exit code 0"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-74995608-5e9c-40b3-a5e4-38bd277f3dd3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T05:37:23.244Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Extend the stdin-write gate to the vibe mapper, classified by dispatchState",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#354",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "319f96a9ea81cc68c6b157f09457320faea45e34db50be82de9cbfd1e4f984a6",
+        "at": "2026-11-28T05:37:23.244Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T05:37:23.245Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extend the stdin-write gate to the vibe mapper, classified by dispatchState",
+    "summary": "Extend the existing stdin-write gate (currently scoped to other mapper ids) to cover mapper.id==='vibe'; classify a write/end failure using whatever dispatchState the turn already holds at that point, instead of treating it as unconditionally pre-dispatch-safe.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "a stdin write/end failure for a vibe turn is classified using the turn's own current dispatchState, never assumed pre-dispatch-safe"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "a stdin write/end failure AFTER spawn succeeds is classified replay-unsafe"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

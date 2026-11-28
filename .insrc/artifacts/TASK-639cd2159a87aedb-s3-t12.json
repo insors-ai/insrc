@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-db87a11b-58a7-4574-8d0a-214d929f67b0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T05:37:23.267Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Live-verify approval-flag effective equivalence and export.json's real field shape; gate cutover",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s3-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#360",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "c3217c66c35fefbfc1bc9fb80e8bd9b2e0c4cb3f39c034758ce24a38228bafea",
+        "at": "2026-11-28T05:37:23.267Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T05:37:23.269Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Live-verify approval-flag effective equivalence and export.json's real field shape; gate cutover",
+    "summary": "GATED (migration step 12, open question q11e93349 resolved as 'gate cutover at step 12'): live-verify that --approval-policy is effectively equivalent to the old --agent route before finalizing t11's route removal, and live-verify export.json's real field shape against what t7/t10 assume. Proceed with --approval-policy only if parity holds; otherwise keep --agent or record an explicit accepted deviation on the ledger before cutover.",
+    "size": "S",
+    "order": 12,
+    "acceptanceChecks": [
+      "the approval-flag live-verification result (parity holds, or an explicit accepted deviation) is recorded before this Task is considered complete",
+      "export.json's real field shape is confirmed live against what t7/t10 assume, with any mismatch corrected before cutover is considered final"
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "export.json's real field names match readExitEvidence's expectations"
+      },
+      {
+        "level": "live",
+        "name": "approval-flag effective-equivalence comparison, gating the migration's cutover"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

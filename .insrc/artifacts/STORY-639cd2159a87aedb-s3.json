@@ -18,19 +18,6 @@
         "relation": "derived-from"
       },
       "references": [],
-      "attachments": [
-        {
-          "target": {
-            "entityId": "PLAN-639cd2159a87aedb-s3",
-            "type": "PLAN",
-            "relation": "documents",
-            "fragment": "docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/S003/PLAN.md"
-          },
-          "revision": 1,
-          "at": "2026-11-28T05:41:26.710Z",
-          "externalId": "7234824143"
-        }
-      ],
       "binding": {
         "reference": {
           "entityId": "insors-ai/insrc#317",
@@ -48,10 +35,23 @@
             "at": "2026-11-27T08:30:16.823Z"
           }
         ]
-      }
+      },
+      "attachments": [
+        {
+          "target": {
+            "entityId": "PLAN-639cd2159a87aedb-s3",
+            "type": "PLAN",
+            "relation": "documents",
+            "fragment": "docs/epics/unify-vibe-one-plain-cli-adapter-E20261124639cd215/S003/PLAN.md"
+          },
+          "revision": 1,
+          "at": "2026-11-28T05:41:26.710Z",
+          "externalId": "7234824143"
+        }
+      ]
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "completed",
       "revision": {
         "number": 1,
         "contentHash": "7f67311f00c6101c952763f219208b46e606b381c765f6354708dffd623980a3",

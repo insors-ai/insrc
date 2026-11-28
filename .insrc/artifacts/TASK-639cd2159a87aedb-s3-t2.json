@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-603d62dc-f795-47e5-b2c2-f366ec8f77a3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T05:37:23.233Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Widen mapLine's row branches and delegate MCP tool-name parsing to VibeMcpNaming.fromStreamedName",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#350",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "8e06e187759ea8a315532e4bc0e171fdb7b9394f90574d11c9703af3f606ed0a",
+        "at": "2026-11-28T05:37:23.233Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T05:37:23.234Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Widen mapLine's row branches and delegate MCP tool-name parsing to VibeMcpNaming.fromStreamedName",
+    "summary": "Add the new top-level reasoning/effect row branches to mapLine and replace parseVibeMcpTool's body with a call to VibeMcpNaming.fromStreamedName (sc2), so the chat decodes MCP tool names the same way the shared adapter does.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "mapLine decodes the new reasoning/effect row shapes without breaking any existing native or legacy worker-bridged row decode path",
+      "parseVibeMcpTool resolves an MCP tool name via VibeMcpNaming.fromStreamedName, not a second independent parser"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "parseVibeMcpTool delegates to VibeMcpNaming.fromStreamedName"
+      },
+      {
+        "level": "live",
+        "name": "tool-activity naming parity against the installed vibe binary (carried from round 3)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

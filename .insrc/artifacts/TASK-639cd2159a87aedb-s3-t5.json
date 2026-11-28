@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b53a5d5e-3bc1-4dc7-a98a-f0109bb95b44",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T05:37:23.241Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Track dispatchState through its three transition points in run()'s vibe branch",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#353",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "bc05c0070e916e56271a49629c0035d755937f9700b38ce721e2ce724832df5b",
+        "at": "2026-11-28T05:37:23.241Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T05:37:23.242Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Track dispatchState through its three transition points in run()'s vibe branch",
+    "summary": "Track a local dispatchState mirroring vibe-adapter.ts's own model: 'not-sent' -> 'possibly-sent' immediately after spawn succeeds, before the stdin write -> 'accepted' once a session-identity row is decoded. Split from the original combined Task per s3 critique: this is the dispatchState half, built on t4's export-directory lifecycle.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "the local dispatchState transitions exactly match vibe-adapter.ts's own model at the same three points (pre-spawn, post-spawn-pre-stdin-write, post-session-identity-row)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "dispatchState transitions: 'not-sent' before spawn, 'possibly-sent' immediately after spawn succeeds, 'accepted' once a session-identity row is decoded; a subsequent stdin write/end failure does not revert it"
+      },
+      {
+        "level": "integration",
+        "name": "a spawn failure before any child exists is deterministic pre-dispatch-safe"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

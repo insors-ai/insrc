@@ -27,7 +27,7 @@
     "storyTitle": "VS Code chat runs Vibe through the shared adapter with streaming preserved",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 4,
         "contentHash": "aa52081abc7e9b57c49d9b21dc35c713da98db4fcaef062f2d06ee6ec162bc00",

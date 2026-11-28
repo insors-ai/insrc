@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-07c62bc0-7309-491a-8b48-20407248a001",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T05:37:23.255Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Pass the computed vibeDispatchState/vibeOutcome through to sessionOutput.endTurn for a vibe turn",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s3-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s3-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#357",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "9d7f2f7ec6dd9d05ee3ad6d94db62a447d0c8cfc441d0e04925ce3fed2a9263e",
+        "at": "2026-11-28T05:37:23.255Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T05:37:23.257Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Pass the computed vibeDispatchState/vibeOutcome through to sessionOutput.endTurn for a vibe turn",
+    "summary": "Wire run()'s vibe branch to pass the final dispatchState and the computed vibeOutcome through the existing sessionOutput.endTurn(sessionId, turnId, exit) call site, using TurnExit's two new optional fields from t8.",
+    "size": "S",
+    "order": 9,
+    "acceptanceChecks": [
+      "a completed vibe turn's endTurn call carries its real dispatchState and vibeOutcome on the TurnExit object",
+      "a non-vibe turn's endTurn call is unaffected (the new fields stay undefined)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "endTurn constructing the turn-end marker with the new fields present for vibe and absent for claude/codex"
+      },
+      {
+        "level": "integration",
+        "name": "detach/reattach producing identical classification"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

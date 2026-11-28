@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c62c09d2-57aa-42d1-883f-b1ea86b5f924",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T05:37:23.263Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Delete the vibeCatalog worker route and its now-superseded helpers",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s3-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s3-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s3-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s3-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s3-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#359",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "83aae31cb656c422706fdcdf47cfec6a8841f0c6f0d06044fb9b4bc11925f9ee",
+        "at": "2026-11-28T05:37:23.263Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T05:37:23.265Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Delete the vibeCatalog worker route and its now-superseded helpers",
+    "summary": "Delete the vibeCatalog branch in cli-adapter.ts and vibe-session-worker.ts/vibe-session-process.ts's runVibeChatJob/historyLines (the app-server-shaped route the direct-spawn mirroring in t4-t10 now fully supersedes); update esbuild.mjs's bundle entries and packaging.test.ts's assertions accordingly.",
+    "size": "L",
+    "order": 11,
+    "acceptanceChecks": [
+      "a new, durable repo-wide contract test (mirroring Story s1's t7 no-vibe-session-transport.test.ts convention) greps every production .ts file under src/ and vscode-plugin/src/ for vibeCatalog, vibe-session-worker.ts and vibe-session-process.ts's runVibeChatJob/historyLines, and fails if any production file still references them",
+      "esbuild.mjs and packaging.test.ts no longer name the deleted files/bundle entries, and the plugin still packages cleanly"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "no production file under src/ or vscode-plugin/src/ references vibeCatalog, vibe-session-worker.ts, or runVibeChatJob/historyLines"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

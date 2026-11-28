@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f7b45eef-78bd-4c15-9619-6852bf9fb8aa",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T05:37:23.229Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Export buildArgv and readExitEvidence from vibe-adapter.ts",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#349",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "66aa3111a90760f64e70fba030916721219460d7a83571ec2233c5971d78513d",
+        "at": "2026-11-28T05:37:23.230Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T05:37:23.231Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Export buildArgv and readExitEvidence from vibe-adapter.ts",
+    "summary": "Export buildArgv(request, outputDir) and readExitEvidence from src/shared/vibe-adapter.ts (both currently module-private), mirroring the existing export precedent other adapter primitives already use. No behavior change.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "buildArgv and readExitEvidence are exported from src/shared/vibe-adapter.ts with their existing signatures unchanged",
+      "a new, minimal test imports buildArgv and readExitEvidence directly from '../vibe-adapter.js' (not re-implemented or copy-pasted) and calls each once, proving the export surface is real and importable",
+      "every existing vibe-adapter.ts test still passes with no behavior change"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "buildArgv and readExitEvidence import directly from vibe-adapter.ts and are callable"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

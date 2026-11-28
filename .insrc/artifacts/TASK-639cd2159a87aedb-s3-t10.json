@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9a8f82ba-b02e-4a37-8ea9-97a97ba021e1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T05:37:23.259Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Extend the follower's EOF-without-terminal-row path to read the new marker fields for a vibe turn",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s3-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s3-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#358",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "8009be5483c66467fd7aae0ce360a69b525d02f89c1e90a2f31b6d32d90c39b3",
+        "at": "2026-11-28T05:37:23.259Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T05:37:23.261Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extend the follower's EOF-without-terminal-row path to read the new marker fields for a vibe turn",
+    "summary": "Extend the follower's existing EOF-without-terminal-row path to read the new dispatchState/outcome marker fields for mapper.id==='vibe' and surface replayUnsafe accordingly, instead of returning a flat, unclassified error; a host-loss synthesized unknown:true marker is always treated as replay-unsafe for a vibe turn.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "a follower reattaching after a vibe turn's clean completion classifies replay safety from the real written outcome, not a flat unclassified error",
+      "a follower reattaching after host loss (synthesized unknown:true marker) always classifies a vibe turn as replay-unsafe"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the follower's missing-result branch for mapper.id==='vibe'"
+      },
+      {
+        "level": "integration",
+        "name": "detach/reattach producing identical classification"
+      },
+      {
+        "level": "integration",
+        "name": "host-loss simulation read as replayUnsafe"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

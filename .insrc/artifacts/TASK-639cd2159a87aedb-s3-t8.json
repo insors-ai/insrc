@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-860cbf0d-20f3-46d2-aa6f-ee70221c0d90",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T05:37:23.251Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Widen TurnExit, Marker's turn-end variant, parseMarker and endTurn's marker construction",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#356",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "5e6e269261d75301a7da071225a6664708dafe5b4585852faa6298bdc3907a71",
+        "at": "2026-11-28T05:37:23.251Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T05:37:23.253Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Widen TurnExit, Marker's turn-end variant, parseMarker and endTurn's marker construction",
+    "summary": "Add two new OPTIONAL vibe-outcome fields (dispatchState, outcome) to TurnExit and Marker's turn-end variant; widen parseMarker's turn-end case to parse and return them; widen endTurn's appendMarker call to include them (alongside the previously-discarded code/signal fields, which are already written but not yet exposed).",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Marker's turn-end variant and parseMarker's turn-end case both carry the two new optional vibe fields plus the previously-written-but-undeclared code/signal fields",
+      "a turn-end marker line written before this Story's build still parses successfully with the new fields simply absent"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "parseMarker's turn-end case extracting code, signal, unknown, vibeDispatchState and vibeOutcome"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

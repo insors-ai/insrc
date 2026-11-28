@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a9f2f6ac-964c-4d72-bed3-3374cbb5c734",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-28T05:37:23.238Z",
+    "epicCreatedAt": "2026-11-24T12:53:27.196Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "639cd2159a87aedb",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Allocate and own a per-turn export directory in run()'s vibe branch",
+      "parent": {
+        "entityId": "STORY-639cd2159a87aedb-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-639cd2159a87aedb-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-639cd2159a87aedb-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#352",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "a7485442bcba64249e21cfd074e8c8bace831125c0c2b9525cf46f3e5b849b1e",
+        "at": "2026-11-28T05:37:23.238Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T05:37:23.240Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Allocate and own a per-turn export directory in run()'s vibe branch",
+    "summary": "In cli-adapter.ts's run() direct-spawn vibe branch, allocate a fresh per-turn export directory (mkdtemp) before spawn and wire it into buildArgs's outputDir parameter. Split from the original combined Task per s3 critique: this is the export-directory lifecycle half, independently testable from dispatchState tracking.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "the vibe branch allocates its own export directory via mkdtemp before spawn and passes it to buildArgs's outputDir parameter",
+      "a distinct export directory is allocated per turn, never reused across turns"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "export-directory lifecycle across success/signal/spawn-failure/abort paths"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

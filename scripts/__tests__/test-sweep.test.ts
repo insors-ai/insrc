@@ -22,6 +22,22 @@ import { promisify } from 'node:util';
 const execFileAsync = promisify(execFile);
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
+/**
+ * Spawn with the current (pinned) runtime's bin dir first on PATH: the harness runs
+ * this file with a cleaned environment whose PATH may resolve `npm`/`node` to a
+ * different Node major, which breaks the nested tsx invocation.
+ */
+const SPAWN_ENV = (() => {
+	const env = {
+		...process.env,
+		PATH: `${dirname(process.execPath)}:${process.env.PATH ?? ''}`,
+	};
+	// Under `node --test` this variable is set for the test file's process; a nested
+	// `node --test` inheriting it speaks IPC instead of printing TAP to stdout.
+	delete env.NODE_TEST_CONTEXT;
+	return env;
+})();
+
 /** The test:sweep script command from package.json (split into argv). */
 function sweepScriptArgv(): string[] {
 	const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as { scripts?: Record<string, string> };
@@ -43,7 +59,7 @@ test('npm run test:sweep terminates and reports every requested file', async () 
 		join('src', 'workflow', '__tests__', 'helpers', 'exec-stand-in.test.ts'),
 		join('src', 'workflow', '__tests__', 'anchor-folders.test.ts'),
 	];
-	const { stdout } = await execFileAsync('npm', ['run', 'test:sweep', '--', ...files], { cwd: ROOT, timeout: 120_000, maxBuffer: 16 * 1024 * 1024 });
+	const { stdout } = await execFileAsync('npm', ['run', 'test:sweep', '--', ...files], { cwd: ROOT, timeout: 120_000, maxBuffer: 16 * 1024 * 1024, env: SPAWN_ENV });
 	assert.match(stdout, /^# tests 2$/m, 'the sweep printed a TAP summary (it terminated)');
 	assert.match(stdout, /^# pass 2$/m, 'both requested files\' tests passed');
 	assert.match(stdout, /^# fail 0$/m);
@@ -63,7 +79,7 @@ test('a stuck file is failed at the per-test timeout and cannot block the sweep'
 		let stdout = '';
 		let code = 0;
 		try {
-			const out = await execFileAsync(argv[0]!, argv.slice(1), { cwd: ROOT, timeout: 60_000, maxBuffer: 16 * 1024 * 1024 });
+			const out = await execFileAsync(argv[0]!, argv.slice(1), { cwd: ROOT, timeout: 60_000, maxBuffer: 16 * 1024 * 1024, env: SPAWN_ENV });
 			stdout = out.stdout;
 		} catch (err) {
 			const e = err as { code?: number; stdout?: string };

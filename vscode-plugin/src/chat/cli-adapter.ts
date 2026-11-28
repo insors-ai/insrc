@@ -1327,6 +1327,18 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     // no child ever existed. A later stdin write/end failure never reverts it (t6 classifies by
     // whatever it already reached, not a fresh guess).
     let vibeDispatchState: VibeDispatchState = 'not-sent';
+    // s3/t9: vibeDispatchState's 'accepted' transition depends on this generator's OWN decode
+    // loop actually reaching that line, which only happens while a consumer keeps pulling
+    // events -- unlike `proc.exit` (a plain process-level event, independent of consumption).
+    // close() (below) must not read vibeDispatchState before the decode loop has genuinely
+    // settled it, or it can observe a stale 'possibly-sent' despite real session-identity
+    // output already having arrived. Resolved once, unconditionally, in this function's own
+    // `finally` below -- every normal/early-return/thrown exit reaches it. A genuinely
+    // abandoned (never-resumed) generator never reaches that finally; close() bounds its own
+    // wait rather than hanging forever on that case (an accepted, disclosed limitation --
+    // properly fixed by t10's re-decode-on-reattach, not this Task's own scope).
+    let resolveDecodeSettled!: () => void;
+    const decodeSettled = new Promise<void>((res) => { resolveDecodeSettled = res; });
     let proc: SpawnedProcess;
     try {
       proc = vibeCatalog !== undefined
@@ -1381,11 +1393,14 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       // Close the turn's segment after the process's real exit (not at its answer). If this host is
       // gone by then, the next beginTurn closes it instead.
       const close = async (e: { code: number | null; signal: string | null }): Promise<void> => {
-        // s3/t9: the final dispatchState (settled by now -- the stdout-reading loop that drives
-        // its 'accepted' transition completes before the process's own exit, same as the exit
-        // code read elsewhere in this function already assumes) and the computed vibeOutcome,
-        // threaded onto the SAME endTurn call site every provider already uses. A non-vibe turn
-        // never computes vibeFinalize, so its TurnExit is byte-identical to before.
+        // s3/t9: `proc.exit` (driving this handler) is a plain process-level event, independent
+        // of whether this generator's own decode loop has actually finished reading vibeDispatchState's
+        // last transition -- wait for decodeSettled first (bounded, so a genuinely abandoned
+        // generator that never reaches its own finally cannot hang this forever) before reading
+        // the final vibeDispatchState and the computed vibeOutcome, then thread both onto the SAME
+        // endTurn call site every provider already uses. A non-vibe turn never computes
+        // vibeFinalize, so its TurnExit is byte-identical to before.
+        if (isVibeDirectSpawn) await Promise.race([decodeSettled, new Promise<void>((r) => setTimeout(r, 2000))]);
         const vibeOutcome = vibeFinalize !== undefined ? await vibeFinalize.catch(() => undefined) : undefined;
         const exit: TurnExit = { ...e, ...(isVibeDirectSpawn ? { vibeDispatchState, vibeOutcome } : {}) };
         void sessionOutput.endTurn(sessionId, turnId, exit).catch((err: unknown) => log.warn(`[chat:${mapper.id}] could not close the output segment of ${turnId}: ${String(err)}`));
@@ -1564,6 +1579,9 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         else yield { kind: 'error', turnId, message: failureMessage(mapper.id, err) };
       }
     } finally {
+      // s3/t9: vibeDispatchState will not change again past this point -- see its own
+      // declaration comment above.
+      resolveDecodeSettled();
       // A correlated Claude turn waits for more input after its answer, so a reader that is
       // abandoned before the result must end the input: the CLI then finishes its in-flight work
       // (background tasks included) and exits, releasing the session's chat lock. Never earlier

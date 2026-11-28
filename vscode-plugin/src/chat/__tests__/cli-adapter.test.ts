@@ -20,7 +20,7 @@ import { defaultProcessStartTime } from '../session-lock.js';
 import { fileURLToPath } from 'node:url';
 import { createProviderRegistry, classifyPermissionDenial, classifyVibeOutcome, deriveChatTitle, nodeSpawner, parseVibeMcpTool, vibeMapper, writeReachedStdin } from '../cli-adapter.js';
 import { buildArgv, readExitEvidence, vibeMcpNaming } from '../../../../src/shared/vibe-adapter.js';
-import type { AdapterDeps, ProviderId, ProviderRegistry, StreamAdapter, TurnProcess, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
+import type { AdapterDeps, ProviderId, ProviderRegistry, StreamAdapter, TurnCursor, TurnProcess, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import {
   makeFakeSpawner,
@@ -1132,11 +1132,19 @@ test("vibe: s3/t7 — unit: readExitEvidence-driven outcome classification: stop
 // Whether it writes a stop_reason is driven by a marker in the prompt text itself, since the
 // real mkdtemp'd outputDir is unknown until run() allocates it.
 const VIBE_DIRECT_SPAWN_FIXTURE = String.raw`#!/usr/bin/env node
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const here = dirname(fileURLToPath(import.meta.url));
 let stdin = '';
 for await (const c of process.stdin) stdin += c;
 process.stdout.write(JSON.stringify({ type: 'message', role: 'assistant', sessionId: 'sess-fixture', content: [{ type: 'text', text: 'hi' }] }) + '\n');
+if (stdin.includes('DETACH')) {
+  // waits for the test to signal it has abandoned the reader and wants this process to finish.
+  await new Promise((resolve) => {
+    const iv = setInterval(() => { if (existsSync(join(here, 'release'))) { clearInterval(iv); resolve(undefined); } }, 10);
+  });
+}
 const args = process.argv.slice(2);
 const outputDir = args[args.indexOf('--output-dir') + 1];
 mkdirSync(outputDir, { recursive: true });
@@ -1246,16 +1254,16 @@ test("vibe: s3/t9 — unit: endTurn constructing the turn-end marker with the ne
       rmSync(root, { recursive: true, force: true });
     }
   }
-  // claude: the new fields are absent (not even present as undefined keys) on its marker.
-  {
-    const root = mkdtempSync(join(tmpdir(), 'insrc-s3t9-claude-'));
+  // claude AND codex: the new fields are absent (not even present as undefined keys).
+  for (const [provider, lines] of [['claude', CLAUDE_TEXT_TURN], ['codex', CODEX_TEXT_TURN]] as const) {
+    const root = mkdtempSync(join(tmpdir(), `insrc-s3t9-${provider}-`));
     try {
-      const { deps } = depsFor({ lines: CLAUDE_TEXT_TURN }, ['claude']);
+      const { deps } = depsFor({ lines }, [provider]);
       const withOutput: AdapterDeps = { ...deps, sessionOutput: createSessionOutput({ root, pollMs: 5 }) };
-      await collect(createProviderRegistry(withOutput).get('claude').run(REQ({ provider: 'claude' }), { sessionId: 'sess-claude' }));
-      const marker = await waitForTurnEndMarker(join(root, 'sess-claude.ndjson'));
-      assert.ok(!('vibeDispatchState' in marker), 'claude never computes or writes this field');
-      assert.ok(!('vibeOutcome' in marker), 'claude never computes or writes this field');
+      await collect(createProviderRegistry(withOutput).get(provider).run(REQ({ provider }), { sessionId: `sess-${provider}` }));
+      const marker = await waitForTurnEndMarker(join(root, `sess-${provider}.ndjson`));
+      assert.ok(!('vibeDispatchState' in marker), `${provider} never computes or writes this field`);
+      assert.ok(!('vibeOutcome' in marker), `${provider} never computes or writes this field`);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -1263,27 +1271,49 @@ test("vibe: s3/t9 — unit: endTurn constructing the turn-end marker with the ne
 });
 
 test('vibe: s3/t9 — integration: detach/reattach producing identical classification', async () => {
-  // t10 (a later Task) adds the follower's own CONSUMPTION of these marker fields on reattach;
-  // this Task proves the value a reattach reader will find on disk is identical to the one
-  // computed live -- the two can never disagree, since both come from this one endTurn call.
-  let liveOutcome: string | undefined;
-  const root = mkdtempSync(join(tmpdir(), 'insrc-s3t9-reattach-'));
-  try {
-    const { deps } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
-    const withExport: AdapterDeps = { ...deps, sessionOutput: createSessionOutput({ root, pollMs: 5 }), readVibeExportFile: async () => JSON.stringify({ stop_reason: 'max_turns' }) };
-    await collect(createProviderRegistry(withExport).get('vibe').run(REQ({ provider: 'vibe' }), {
-      sessionId: 'sess-reattach',
-      onVibeOutcome: (o) => { liveOutcome = o; },
-    }));
-    assert.equal(liveOutcome, 'replay-unsafe');
-    // "On reattach": re-read the same durable marker a follower would, independently of the
-    // live run above -- it carries the identical value, never a second, possibly-different one.
-    const marker = await waitForTurnEndMarker(join(root, 'sess-reattach.ndjson'));
-    assert.equal(marker['vibeOutcome'], liveOutcome, 'identical classification, live vs. the durable record a reattach reads');
-    assert.equal(marker['vibeDispatchState'], 'accepted');
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
+  // A genuine detach: the reader stops consuming run()'s own generator right after observing
+  // the session-identity row (dispatchState already 'accepted'), while the REAL fixture process
+  // keeps running (DETACH mode) until released below -- proving close() (driven independently by
+  // proc.exit, not by generator resumption) still finalizes correctly. resume()'s own EOF path
+  // does not yet read these marker fields for a vibe turn with no native terminal row (that
+  // consumption is t10's own scope -- without it, resume() reports "ended without a result" even
+  // though the turn genuinely completed; disclosed below, not fixed here). This Task proves the
+  // value a live observer saw and the one durably written to the marker -- which a reattach
+  // reader will consult once t10 lands -- are identical, since both originate from the one
+  // endTurn call.
+  await withVibeDirectSpawnFixture(async (cwd) => {
+    const root = mkdtempSync(join(tmpdir(), 'insrc-s3t9-reattach-'));
+    try {
+      const sessionOutput = createSessionOutput({ root, pollMs: 5 });
+      const adapter = createProviderRegistry({ isInstalled: () => true, spawn: nodeSpawner, sessionOutput }).get('vibe');
+      let liveDispatchState: string | undefined;
+      let cursor: TurnCursor | undefined;
+      const stream = adapter.run(REQ({ provider: 'vibe', prompt: 'DETACH STOPREASON', cwd }), {
+        sessionId: 'sess-reattach',
+        onDispatchState: (s) => { liveDispatchState = s; },
+        onSpawn: (p) => { cursor = p.cursor; }, // available at spawn, before any line is processed
+      });
+      for await (const ev of stream) {
+        if (ev.kind === 'assistant-delta') break; // abandon right after the session-identity row
+      }
+      assert.equal(liveDispatchState, 'accepted', 'abandoned only after the session-identity row was processed');
+      assert.ok(cursor !== undefined);
+      // Release the fixture so its still-running process (detached from this abandoned reader)
+      // finishes and exits on its own, independent of the generator above.
+      writeFileSync(join(cwd, 'release'), '');
+      // Reattach: resume() follows the SAME segment from the cursor the detached reader had.
+      const resumed = await collect(adapter.resume({ cursor: cursor!, pid: undefined, startedAt: null }));
+      const resumedError = resumed.find((e) => e.kind === 'error') as { message: string } | undefined;
+      assert.equal(resumedError?.message, 'the turn ended without a result', 'resume() does not yet consult the marker\'s vibe fields for a no-native-terminal-row vibe turn -- t10\'s own scope, not a regression introduced here');
+      // The durable marker (what t10's own follower will read instead of reporting the error
+      // above) carries the identical classification the live observer saw.
+      const marker = await waitForTurnEndMarker(join(root, 'sess-reattach.ndjson'));
+      assert.equal(marker['vibeDispatchState'], liveDispatchState);
+      assert.equal(marker['vibeOutcome'], 'replay-unsafe', 'STOPREASON in the prompt drove the fixture to write a real stop_reason');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });
 
 test('ProviderRegistry.available lists vibe alongside claude/codex when installed', () => {

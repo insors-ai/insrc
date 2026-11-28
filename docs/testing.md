@@ -113,7 +113,14 @@ node --import tsx --test --test-concurrency=1 'scripts/__tests__/test-harness*.t
 
 Independent source tests may also run directly. Use the coordinator for compiled
 or native consumers. Keep the actor/output controllers separate from a broad
-backend sweep. See the [failure audit](plans/failing-tests-2026-11-20.md),
+backend sweep.
+
+Bare glob sweeps (`npx tsx --test 'src/**/*.test.ts'`) have no per-test timeout, so a
+single stuck or very slow file can block the whole run indefinitely. Run bare sweeps
+through `npm run test:sweep -- '<globs>'`, which adds a finite `--test-timeout`
+(120 s): a straggler is then failed at the bound and reported, and every file still
+gets a result. The harness (`npm test --`) remains the owned sweep path for the gate:
+one bounded child per file, pinned runtime, `--test-force-exit`. See the [failure audit](plans/failing-tests-2026-11-20.md),
 [batch index](plans/test-remediation-batches-2026-11-20.md), and
 [Batch 01 evidence](plans/test-harness-build-2026-11-20.md) for remaining failures
 and the scope of validation actually performed.

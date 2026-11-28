@@ -69,6 +69,10 @@ async function run(): Promise<unknown> {
     let childKeys = 0; nested.addEventListener('keydown', () => { childKeys++; });
     for (const [key, shiftKey] of [['z', false], ['z', true], ['s', false]] as const) nested.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey: true, shiftKey, bubbles: true, cancelable: true }));
     const shortcuts = { childKeys, actions: code.sent.filter(m => m.type === 'undo' || m.type === 'redo' || m.type === 'save').map(m => m.type), drafts: drafts(code.sent) };
+    const lockedKeyStart = third.sent.length;
+    const lockedTarget = third.root.querySelector('.ProseMirror')!;
+    for (const key of ['z', 'y', 's']) lockedTarget.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey: true, bubbles: true, cancelable: true }));
+    const lockedShortcuts = third.sent.slice(lockedKeyStart).map(m => m.type);
     const selectionChecks = [];
     for (const method of ['pointer', 'Enter', ' '] as const) {
       const current = await create(`selection_${method === ' ' ? 'Space' : method}`, 'First **bold** paragraph.\n\nSecond 😀 paragraph.\n');
@@ -104,7 +108,7 @@ async function run(): Promise<unknown> {
     const wrongRelease = deleting.pane['crepe']!.readonly;
     await deleting.pane.receive({ type: 'delete-release', paneSessionId: 'deletion', requestId: 'delete_request' });
     const deleteHandshake = { frozen, wrongRelease, released: deleting.pane['crepe']!.readonly, rememberedBeforeDelete, rememberedAfterDelete: preference.initial(), messages: deleting.sent.slice(deleteMessages) };
-    return { deleteHandshake, initial, selected, clicked, lockedControls, ownedImage, remembered, siblings, lateAck, host, unsupported, fallback, limit, shortcuts, selectionChecks };
+    return { deleteHandshake, initial, selected, clicked, lockedControls, ownedImage, remembered, siblings, lateAck, host, unsupported, fallback, limit, shortcuts, lockedShortcuts, selectionChecks };
   } finally { for (const { pane } of all) await pane.dispose(); }
 }
 void run().then(result => { const pre = document.createElement('pre'); pre.id = 'scratch-result'; pre.textContent = JSON.stringify(result); document.body.append(pre); })

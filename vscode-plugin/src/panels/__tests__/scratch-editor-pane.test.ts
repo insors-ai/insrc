@@ -35,6 +35,7 @@ test('scratch pane uses actual Crepe remembered locks and click-only locked sele
     assert.match(data.host.markdown, /Host change/); assert.deepEqual(data.host.drafts, []);
     assert.equal(data.unsupported.fallback, true); assert.equal(data.unsupported.readonly, true); assert.ok(data.unsupported.alert); assert.deepEqual(data.unsupported.drafts, []);
     assert.deepEqual(data.fallback, { type: 'open-text', paneSessionId: 'unsupported' });
+    assert.deepEqual(data.lockedShortcuts, ['save']);
     assert.deepEqual(data.shortcuts, { childKeys: 0, actions: ['undo', 'redo', 'save'], drafts: [] });
     for (const selection of data.selectionChecks) {
       assert.deepEqual(selection.before, []); assert.deepEqual(selection.drafts, []);

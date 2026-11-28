@@ -432,6 +432,7 @@ export class ScratchEditorPane {
     const action = key === 's' ? 'save' : key === 'z' ? event.shiftKey ? 'redo' : 'undo' : key === 'y' ? 'redo' : undefined;
     if (!action) return;
     event.preventDefault(); event.stopPropagation();
+    if (this.deleting !== undefined || (action !== 'save' && (this.locked || this.state.conflicted))) return;
     this.post({ type: action, paneSessionId: this.options.paneSessionId, draftSeq: this.state.draftSeq, docVersion: this.state.snapshot.version });
   };
   async dispose(): Promise<void> {

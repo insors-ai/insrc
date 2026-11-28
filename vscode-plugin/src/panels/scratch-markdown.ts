@@ -54,8 +54,14 @@ export function inspectScratchSyntax(markdown: string): ScratchSyntaxInventory {
     const node = pending.pop()!;
     if (!supported.has(node.type)) unsupported.add(node.type);
     if (node.type === 'image' && /^(?:blob:|vscode-webview:|vscode-resource:|https:\/\/[^/]*\.vscode-cdn\.net(?:\/|$))/i.test(node.url ?? '')) unsupported.add('transient image URL');
-    if (node.type === 'text' && /\[\[[\s\S]*?\]\]|\[\^[^\]]+\]|\{\{[\s\S]*?\}\}|(?:^|\n)\s*:::/.test(node.value ?? '')) {
-      unsupported.add('custom literal syntax');
+    if (node.type === 'text') {
+      const text = node.value ?? '';
+      // Each delimiter is scanned once. Repeated unmatched openers must not
+      // trigger one suffix scan per opener on a maximum-size note.
+      const wiki = text.indexOf('[['), template = text.indexOf('{{'), footnote = text.indexOf('[^');
+      if ((wiki >= 0 && text.lastIndexOf(']]') >= wiki + 2) ||
+          (template >= 0 && text.lastIndexOf('}}') >= template + 2) ||
+          (footnote >= 0 && text.indexOf(']', footnote + 3) >= 0) || /(?:^|\n)[ \t]*:::/.test(text)) unsupported.add('custom literal syntax');
     }
     const customLink = (node.type === 'link' || node.type === 'image') &&
       /^[a-z][a-z0-9+.-]*:/i.test(node.url ?? '') && !/^(?:https?|mailto):/i.test(node.url ?? '');
@@ -80,16 +86,23 @@ export type ScratchMarkdownAdmission =
   | { readonly allowed: true; readonly source: string }
   | { readonly allowed: false; readonly source: string; readonly reason: string };
 
+/** VS Code applies replacement text using the TextDocument's EOL. Keep
+ * proposals and acknowledgements byte-identical for uniform CRLF documents. */
+function preserveScratchEol(source: string, serialized: string): string {
+  return source.includes('\r\n') ? serialized.replace(/\r?\n/g, '\r\n') : serialized;
+}
+
 export function checkScratchMarkdown<Document>(source: string, codec: ScratchMarkdownCodec<Document>): ScratchMarkdownAdmission {
   const refuse = (reason: string): ScratchMarkdownAdmission => ({ allowed: false, source, reason });
   if (scratchUtf8Bytes(source) > SCRATCH_NOTE_BYTES) return refuse('Note exceeds the rich editor size limit.');
   try {
+    if (/\r(?!\n)/.test(source) || (source.includes('\r\n') && /(?<!\r)\n/.test(source))) return refuse('Mixed line endings require the text editor; original content is retained.');
     const before = inspectScratchSyntax(source);
     if (before.unsupported.length) {
       return refuse('This note contains markup without verified rich-editor preservation support. Use the text editor to edit it.');
     }
     const parsed = codec.parse(source);
-    const serialized = codec.serialize(parsed);
+    const serialized = preserveScratchEol(source, codec.serialize(parsed));
     if (scratchUtf8Bytes(serialized) > SCRATCH_NOTE_BYTES) return refuse('Serialized note exceeds the rich editor size limit.');
     if (!scratchSourceCodec.equivalent(scratchSourceCodec.parse(source), scratchSourceCodec.parse(serialized))) return refuse('Markdown semantics changed during serialization. Use the text editor to edit it.');
     if (!codec.equivalent(parsed, codec.parse(serialized))) return refuse('Markdown structure changed during serialization.');
@@ -147,7 +160,7 @@ export function prepareScratchMarkdownTransaction<Document>(source: string, code
 } {
   if (transaction.origin !== 'user' || !transaction.docChanged) return { kind: 'unchanged', source };
   let draft: string;
-  try { draft = codec.serialize(transaction.document); }
+  try { draft = preserveScratchEol(source, codec.serialize(transaction.document)); }
   catch { return { kind: 'refused', source, draft: '', reason: 'Serialization failed; original source and editor document are retained.' }; }
   const result = checkScratchMarkdownEdit(source, draft, codec, transaction.document);
   return result.allowed ? { kind: 'proposal', source, draft } : { kind: 'refused', source, draft, reason: result.reason };

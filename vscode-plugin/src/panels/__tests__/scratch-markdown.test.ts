@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { build } from 'esbuild';
 import { runInProcessGroup } from '../../../../src/shared/process-group.js';
-import { checkScratchMarkdown, checkScratchMarkdownEdit, inspectScratchSyntax, scratchSourceCodec } from '../scratch-markdown.js';
+import { checkScratchMarkdown, checkScratchMarkdownEdit, inspectScratchSyntax, scratchSourceCodec, prepareScratchMarkdownTransaction } from '../scratch-markdown.js';
 import { SCRATCH_NOTE_BYTES } from '../scratch-editor-protocol.js';
 import { supportedScratchMarkdown, unsupportedScratchMarkdown } from './fixtures/scratch-markdown-corpus.js';
 
@@ -45,7 +45,8 @@ test('scratch Markdown refuses structural or raw syntax loss and keeps both sour
 test('scratch Markdown host grammar independently admits supported edits and refuses unsupported base laundering', () => {
   for (const source of supportedScratchMarkdown) {
     assert.equal(checkScratchMarkdown(source, scratchSourceCodec).allowed, true, source);
-    assert.equal(checkScratchMarkdownEdit(source, source + '\nAdded text.\n', scratchSourceCodec, scratchSourceCodec.parse(source + '\nAdded text.\n')).allowed, true, source);
+    const edited = source + (source.includes('\r\n') ? '\r\nAdded text.\r\n' : '\nAdded text.\n');
+    assert.equal(checkScratchMarkdownEdit(source, edited, scratchSourceCodec, scratchSourceCodec.parse(edited)).allowed, true, source);
   }
   for (const source of unsupportedScratchMarkdown) {
     const result = checkScratchMarkdownEdit(source, '# Removed unknown content\n', scratchSourceCodec, scratchSourceCodec.parse('# Removed unknown content\n'));
@@ -112,4 +113,30 @@ test('scratch Markdown refuses transient image URLs from any authoring route wit
     assert.equal(result.allowed, false); assert.equal(result.draft, draft); assert.equal(result.source, '# Stable\n');
     assert.equal(checkScratchMarkdownEdit(draft, '# Laundered\n', scratchSourceCodec, scratchSourceCodec.parse('# Laundered\n')).allowed, false);
   }
+});
+
+
+test('scratch Markdown keeps uniform CRLF proposals exact and refuses mixed EOL without changing source', () => {
+  const source = '# CRLF\r\n\r\n```txt\r\nkeep raw\r\n```\r\n';
+  const document = scratchSourceCodec.parse(source + '\r\nAdded.\r\n');
+  const result = prepareScratchMarkdownTransaction(source, scratchSourceCodec, { origin: 'user', docChanged: true, document });
+  assert.equal(result.kind, 'proposal');
+  if (result.kind !== 'proposal') throw new Error(JSON.stringify(result));
+  assert.equal(result.source, source); assert.match(result.draft, /Added/);
+  assert.equal(/(?<!\r)\n/.test(result.draft), false);
+  for (const mixed of ['# Mixed\r\n\nText\n', '# Lone CR\rText']) {
+    const refused = checkScratchMarkdown(mixed, scratchSourceCodec);
+    assert.equal(refused.allowed, false); assert.equal(refused.source, mixed);
+  }
+});
+
+test('scratch custom literal admission bounds unmatched delimiter scans at the full note limit', { timeout: 40000 }, () => {
+  const started = performance.now();
+  for (const opener of ['[[', '{{', '[^', '\n']) {
+    const source = opener.repeat(Math.floor(SCRATCH_NOTE_BYTES / opener.length));
+    const inventory = inspectScratchSyntax(source);
+    assert.equal(inventory.unsupported.includes('custom literal syntax'), false);
+  }
+  assert.ok(performance.now() - started < 30000, 'Maximum-size unmatched input remains bounded');
+  for (const source of ['[[target]]', '{{template}}', '[^note]', '\n  ::: directive']) assert.ok(inspectScratchSyntax(source).unsupported.includes('custom literal syntax'));
 });

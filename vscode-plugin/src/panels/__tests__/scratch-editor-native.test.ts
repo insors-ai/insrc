@@ -366,3 +366,20 @@ test('scratch native duplicate deletion requests share one close unlink and refr
   assert.deepEqual(await Promise.all([first, second]), ['deleted', 'deleted']);
   assert.equal(h.refreshed, 1); assert.equal(h.closedTabs.length, 1);
 }));
+
+
+test('scratch native locked panes refuse Undo Redo including a lock acquired during command drain', async () => fixture(async h => {
+  const id = await h.open();
+  h.send(id, { type: 'lock', locked: true });
+  for (const type of ['undo', 'redo']) h.send(id, { type, draftSeq: 0, docVersion: h.doc.version });
+  await until(() => h.messages.filter(m => m.type === 'action-error').length === 2);
+  assert.equal(h.commands.some(c => c.name === 'undo' || c.name === 'redo'), false);
+  h.send(id, { type: 'save', draftSeq: 0, docVersion: h.doc.version }); await until(() => h.saves === 1);
+  h.send(id, { type: 'lock', locked: false });
+  const gate = h.blockValidation();
+  h.send(id, { type: 'undo', draftSeq: 0, docVersion: h.doc.version }); await until(() => h.validating);
+  h.send(id, { type: 'lock', locked: true }); gate.resolve();
+  await until(() => h.messages.filter(m => m.type === 'action-error').length === 3);
+  assert.equal(h.commands.some(c => c.name === 'undo' || c.name === 'redo'), false);
+  assert.equal(h.doc.text, '# Before\n');
+}));

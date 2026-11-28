@@ -250,6 +250,7 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
     if (message.type !== 'save' && message.type !== 'undo' && message.type !== 'redo') throw new Error('This scratchpad action is not available yet.');
     const action = message;
     const command = entry.commands.catch(() => {}).then(async () => {
+      if (action.type !== 'save' && pane.locked) throw new Error('Unlock this scratchpad before Undo or Redo.');
       const initial = entry.controller.snapshot;
       if (action.docVersion !== initial.version && action.draftSeq <= entry.controller.appliedSequence(pane.id)) throw new Error('Source changed before the action; retry.');
       const confirmed = await entry.controller.waitForSequence(pane.id, action.draftSeq);
@@ -266,7 +267,7 @@ export function registerScratchEditor(deps: ScratchNativeDeps): {
         pane.panel.reveal(undefined, false);
         await api.commands.executeCommand('workbench.action.focusActiveEditorGroup');
         await focusForCommand(entry, pane, confirmed.version, action.draftSeq);
-        if (!targetActive(entry, pane) || entry.controller.snapshot.version !== confirmed.version) throw new Error('The intended document changed before undo/redo; retry.');
+        if (pane.locked || !targetActive(entry, pane) || entry.controller.snapshot.version !== confirmed.version) throw new Error('The intended document changed before undo/redo; retry.');
         await api.commands.executeCommand(action.type);
       }
     });

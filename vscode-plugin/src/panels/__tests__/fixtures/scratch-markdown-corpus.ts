@@ -5,6 +5,7 @@ export const supportedScratchMarkdown = [
   '| A | B |\n| - | - |\n| 1 | 2 |\n',
   '[link](https://example.test/a?b=c) and ![image](assets/a.png)\n',
   'Unicode: 😀 café 漢字\r\n\r\nEscaped \\*literal\\* and [link](file.md).\r\n',
+  '```txt\r\nkeep multiline\r\nsecond line\r\n```\r\n',
   '```ts\nconst value = "untouched";\n```\n',
   '```mermaid\ngraph TD\n  A --> B\n```\n',
   '[literal target](insrc://scratchpads/note.md#section)\n',

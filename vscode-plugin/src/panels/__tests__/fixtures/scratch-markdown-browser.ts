@@ -1,5 +1,5 @@
 import { createScratchCrepe } from '../../scratch-editor-webview.js';
-import { checkScratchMarkdown, checkScratchMarkdownEdit } from '../../scratch-markdown.js';
+import { checkScratchMarkdown, checkScratchMarkdownEdit, prepareScratchMarkdownTransaction } from '../../scratch-markdown.js';
 import { observeScratchMarkdown, scratchMilkdownCodec, type ScratchObservedDraft } from '../../scratch-markdown-milkdown.js';
 import { editorViewCtx } from '@milkdown/kit/core';
 import { Fragment } from '@milkdown/kit/prose/model';
@@ -30,7 +30,8 @@ async function examine(source: string): Promise<unknown> {
       const codec = scratchMilkdownCodec(ctx);
       const document = codec.parse(source);
       const expected = document.copy(document.content.append(Fragment.from(document.type.schema.node('paragraph', null, document.type.schema.text('Added text.')))));
-      const draft = codec.serialize(expected);
+      const prepared = prepareScratchMarkdownTransaction(source, codec, { origin: 'user', docChanged: true, document: expected });
+      const draft = prepared.kind === 'unchanged' ? source : prepared.draft;
       const codeSource = '```ts\nconst value = 1;\n```\n';
       const codeDocument = codec.parse(codeSource);
       const position = codeDocument.textContent.indexOf('1') + 1;

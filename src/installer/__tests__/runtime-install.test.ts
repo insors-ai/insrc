@@ -87,6 +87,12 @@ test('runtime publication uses the native exclusive lock durable namespace and v
       for (const path of [f.home, dirname(paths.root), paths.root, paths.directory]) assert.ok(synced.has(fs.lstatSync(path).ino), `durability: ${path}`);
     }
     const before = fs.lstatSync(paths.root);
+    if (process.platform !== 'win32') {
+      await assert.rejects(store.finalizeRuntime(identity), {
+        code: 'runtime-invalid', message: 'Runtime finalization requires the exact root0700 permission-transition state',
+      });
+      assert.equal(fs.lstatSync(paths.root).ctimeMs, before.ctimeMs, 'sealed reuse is not another permission transition');
+    }
     assert.deepEqual(await ensurePrivateRuntime(store, identity, { transport: noNetwork }), runtime);
     assert.equal(fs.lstatSync(paths.root).ino, before.ino);
     assert.deepEqual(fs.readdirSync(join(f.home, 'install')).filter(n => n.startsWith('runtime-stage-')), []);
@@ -163,6 +169,25 @@ test('runtime publication retains a root sealed before failing final durability 
     await assert.rejects(discardRuntimeStage(stage, store), { code: 'resource-close-uncertain' });
     t.mock.restoreAll(); syncBuiltinESMExports();
     await verifyRuntimeEntry(paths.root, identity);
+    const fsync = fs.fsyncSync;
+    t.mock.method(fs, 'fsyncSync', (fd: number) => {
+      if (fs.fstatSync(fd).ino === before.ino) throw Error('injected sealed-entry reuse durability failure');
+      return fsync(fd);
+    }); syncBuiltinESMExports();
+    await assert.rejects(ensurePrivateRuntime(store, identity, { transport: noNetwork }), {
+      code: 'resource-close-uncertain', message: 'Shared Node runtime namespace durability is uncertain; retain the canonical entry',
+    });
+    assert.equal(fs.lstatSync(paths.root).ino, before.ino); assert.ok(fs.existsSync(stage.workDirectory));
+    t.mock.restoreAll(); syncBuiltinESMExports(); store.close(); store = ControllerStore.acquire(f.location);
+    const synced = new Set<number>(), sealed = fs.lstatSync(paths.root);
+    t.mock.method(fs, 'fsyncSync', (fd: number) => { synced.add(fs.fstatSync(fd).ino); return fsync(fd); }); syncBuiltinESMExports();
+    assert.equal((await ensurePrivateRuntime(store, identity, { transport: noNetwork })).node, join(paths.directory, identity.relativeExecutable));
+    for (let path = paths.root; ; path = dirname(path)) {
+      assert.ok(synced.has(fs.lstatSync(path).ino), `recovered durability: ${path}`);
+      if (path === f.home) break;
+    }
+    assert.equal(fs.lstatSync(paths.root).ctimeMs, sealed.ctimeMs);
+    assert.equal(fs.lstatSync(paths.root).ino, before.ino);
   } finally { t.mock.restoreAll(); syncBuiltinESMExports(); store?.close(); await f.clean(); }
 });
 

@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: runtime publication uses the native exclusive lock durable namespace and verified offline reuse
+ok 1 - runtime publication uses the native exclusive lock durable namespace and verified offline reuse
+  ---
+  duration_ms: 55549.796334
+  type: 'test'
+  ...
+# Subtest: runtime root-only interrupted native publication is retained and finalized offline by a later controller
+ok 2 - runtime root-only interrupted native publication is retained and finalized offline by a later controller
+  ---
+  duration_ms: 56562.960291
+  type: 'test'
+  ...
+# Subtest: runtime publication retains a root sealed before failing final durability and never reports success
+ok 3 - runtime publication retains a root sealed before failing final durability and never reports success
+  ---
+  duration_ms: 54757.009792
+  type: 'test'
+  ...
+# Subtest: runtime install rejects old unsealed and mixed canonical layouts without repair or network
+ok 4 - runtime install rejects old unsealed and mixed canonical layouts without repair or network
+  ---
+  duration_ms: 25957.292583
+  type: 'test'
+  ...
+# Subtest: runtime publication retains postpublication root close uncertainty until its captured descriptor closes
+ok 5 - runtime publication retains postpublication root close uncertainty until its captured descriptor closes
+  ---
+  duration_ms: 51149.259625
+  type: 'test'
+  ...
+# Subtest: runtime canonical stat failures are actionable coded errors and never trigger download or mutation
+ok 6 - runtime canonical stat failures are actionable coded errors and never trigger download or mutation
+  ---
+  duration_ms: 3.13475
+  type: 'test'
+  ...
+# Subtest: runtime publication never overwrites an incomplete destination and retains its stage
+ok 7 - runtime publication never overwrites an incomplete destination and retains its stage
+  ---
+  duration_ms: 53476.539584
+  type: 'test'
+  ...
+# Subtest: runtime publication rejects stale original owners and forged or tampered stages
+ok 8 - runtime publication rejects stale original owners and forged or tampered stages
+  ---
+  duration_ms: 26667.810334
+  type: 'test'
+  ...
+# Subtest: runtime publication verifies staged bytes and cannot publish a modified executable
+ok 9 - runtime publication verifies staged bytes and cannot publish a modified executable
+  ---
+  duration_ms: 25902.024541
+  type: 'test'
+  ...
+# Subtest: runtime publication stage is distinct from running Node and the loaded native library
+ok 10 - runtime publication stage is distinct from running Node and the loaded native library
+  ---
+  duration_ms: 53431.176458
+  type: 'test'
+  ...
+# Subtest: runtime publication retains verifier close uncertainty and refuses later discard
+ok 11 - runtime publication retains verifier close uncertainty and refuses later discard
+  ---
+  duration_ms: 29188.320875
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 433068.128791

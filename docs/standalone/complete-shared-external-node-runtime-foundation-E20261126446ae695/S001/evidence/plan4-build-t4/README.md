@@ -47,3 +47,28 @@ Focused validation:
 No host daemon/Ollama operation, Windows native enablement, new lifecycle peer,
 lock transfer, automatic corrupt-entry conversion or broad regression is included.
 Current macOS/Linux VM qualification remains T10, after T9 scoped regression.
+
+The original registered call at commit45152f3bb exceeded the MCP300s response
+ceiling. Its test process continued (seven cases had passed when the client
+timed out); no duplicate validation was started. The captured profile is fixed
+for that run, and the prior three repository settings were restored and verified.
+The original run completed: BUILD27/TESTS27 passed at45152f3bb, all11 cases
+passed in433.14s. Its source-bound records and raw TAP are retained separately.
+
+Post-gate self-check found two narrow retry requirements to tighten before T4 is
+considered finished: reject root0500 at the finalization mutator, and reconfirm
+namespace durability on verified sealed-entry reuse (including after a previous
+root-chmod/flush failure). These are corrections within the existing T4 owner,
+not a new issue or design choice. New assertions require a sealed entry's ctime
+to stay unchanged and exercise failed then successful offline durability retry
+under a later controller, with canonical/staging evidence retained. Current
+corrected-source validation and a fresh registered gate remain pending.
+
+The retry-guard focused rune0ee8b48-1209-4ad2-9f46-48c2134e3add passed all3
+selected cases in180.57s, with build/typecheck, positive owned-group closure and
+no cleanup/evidence errors. It covers native publication plus sealed-root
+rejection, exact later-controller root-only recovery, and post-seal failed then
+successful namespace durability retry without mode/inode/ctime changes. Current
+corrected-source full registered validation is the remaining T4 gate.
+The isolated copy-mode probe explains the first fixture failure: cpSync created
+root/distribution0755 rather than0700; production verification correctly refused.

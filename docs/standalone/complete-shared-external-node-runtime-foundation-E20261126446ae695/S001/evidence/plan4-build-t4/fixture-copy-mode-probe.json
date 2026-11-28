@@ -1,0 +1,18 @@
+{
+  "runtime": "v22.22.1",
+  "purpose": "Explain the initial unsupported-layout fixture failure; this is not native runtime qualification",
+  "source": "Private captured temp home; source/distribution created with recursive mode0700 and completion.json mode0600",
+  "copy": "fs.cpSync(source, identityDerivedDestination, { recursive: true })",
+  "observedModes": {
+    "capturedHome": "0700",
+    "runtimes": "0700",
+    "versionParent": "0700",
+    "targetParent": "0700",
+    "destinationRoot": "0755",
+    "destinationDistribution": "0755",
+    "completionFile": "0600"
+  },
+  "result": "The initial copy did not represent the intended private unsealed layout. The verifier correctly rejected unsafe private-root modes before unsupported-layout classification.",
+  "correction": "Move the original closed source-stage inode into the isolated canonical test location, then positively verify exact source content/modes and every private ancestor before testing rejection.",
+  "cleanup": "Awaited the original ownedRuntimeHome capability after synchronous fixture I/O; no shared SDK/runtime or unrelated temp root was adopted."
+}

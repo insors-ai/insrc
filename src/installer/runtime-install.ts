@@ -8,6 +8,8 @@ import { privateRuntimePaths, runtimeStorePaths } from './runtime-policy.js';
 import { discardRuntimeStage, stageRuntime } from './runtime-acquire.js';
 import { parseInstaller } from './schemas.js';
 import { InstallerError } from './contracts.js';
+import { dirname } from 'node:path';
+import { flushDirectory, flushParents } from './durability.js';
 
 export async function ensurePrivateRuntime(store: ControllerStore, requested: RuntimeIdentity,
   options: { signal?: AbortSignal | undefined; transport?: DownloadTransport | undefined } = {}): Promise<ResolvedPrivateRuntime> {
@@ -32,7 +34,12 @@ export async function ensurePrivateRuntime(store: ControllerStore, requested: Ru
       }
     }
     const runtime = await privateRuntimePaths(store.location, identity, options);
-    store.assertHeld(); return runtime;
+    store.assertHeld(); options.signal?.throwIfAborted();
+    // A prior operation may have sealed the root but failed its namespace flush.
+    // Reconfirm durability without changing modes/bytes or adopting its stage.
+    try { flushDirectory(paths.root); flushParents(dirname(paths.root), store.location.home); }
+    catch (cause) { throw new InstallerError('resource-close-uncertain', 'Shared Node runtime namespace durability is uncertain; retain the canonical entry', { cause }); }
+    store.assertHeld(); options.signal?.throwIfAborted(); return runtime;
   }
   const stage = await stageRuntime(store, identity, options);
   // Any publication/durability uncertainty retains its stage and final entry.

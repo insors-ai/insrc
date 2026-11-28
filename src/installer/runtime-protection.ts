@@ -51,7 +51,7 @@ export async function protectRuntimeDescendants(root: string, held: () => void):
 export async function sealRuntimeRoot(root: string, held: () => void): Promise<void> {
   held(); if (process.platform === 'win32') return;
   const stat = await lstat(root); held();
-  if (!stat.isDirectory() || stat.isSymbolicLink() || stat.uid !== process.getuid?.() || ![0o700, 0o500].includes(stat.mode & 0o7777)) {
+  if (!stat.isDirectory() || stat.isSymbolicLink() || stat.uid !== process.getuid?.() || (stat.mode & 0o7777) !== 0o700) {
     throw new InstallerError('runtime-invalid', 'Runtime root is not an exact permission transition');
   }
   await mode(root, stat, 0o500, held);

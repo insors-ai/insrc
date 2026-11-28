@@ -1,9 +1,9 @@
 {
-  "base": "f13dba4bd",
+  "base": "45152f3bb",
   "files": {
-    "src/installer/controller-store.ts": "4b3756c9c19e94bc798748105e049629e79c8a047a81a847b7228bea4a8c4af3",
-    "src/installer/runtime-install.ts": "2e04572f1271b879e3af96c92f17d2ec1f641c6809222cc049d1a1a4540f223f",
-    "src/installer/runtime-protection.ts": "02910c2297e7e647688d73652c50637c1aa2320748ec82aab7d23e3c3ef4d7c9",
-    "src/installer/__tests__/runtime-install.test.ts": "5599d46a04606d74fd51b60e5123718f2fcf17904fabcc3889e0ed8c4c7b4829"
+    "src/installer/controller-store.ts": "96296be9c312992848d0e3f6df167c6afc29e669e149fb5a1228bb0a147242bf",
+    "src/installer/runtime-install.ts": "f90f720ad8b094ccea223eee74dd0d63afce7a3da8d05f98a859f3ddcb836b3f",
+    "src/installer/runtime-protection.ts": "77af975c5a9d3a342d79f4fc3ac529b92146d160a7f336be9e7dc76ecb2e291f",
+    "src/installer/__tests__/runtime-install.test.ts": "8968d41884421348166af6a895818c57f0d789de56f281bd230a9181404e3f01"
   }
 }

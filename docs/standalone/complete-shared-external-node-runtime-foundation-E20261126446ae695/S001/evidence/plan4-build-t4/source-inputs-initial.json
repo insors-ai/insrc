@@ -1,0 +1,9 @@
+{
+  "base": "f13dba4bd",
+  "files": {
+    "src/installer/controller-store.ts": "4b3756c9c19e94bc798748105e049629e79c8a047a81a847b7228bea4a8c4af3",
+    "src/installer/runtime-install.ts": "2e04572f1271b879e3af96c92f17d2ec1f641c6809222cc049d1a1a4540f223f",
+    "src/installer/runtime-protection.ts": "02910c2297e7e647688d73652c50637c1aa2320748ec82aab7d23e3c3ef4d7c9",
+    "src/installer/__tests__/runtime-install.test.ts": "5599d46a04606d74fd51b60e5123718f2fcf17904fabcc3889e0ed8c4c7b4829"
+  }
+}

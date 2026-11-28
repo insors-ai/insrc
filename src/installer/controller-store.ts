@@ -230,6 +230,9 @@ export class ControllerStore {
   async finalizeRuntime(identity: RuntimeIdentity, external?: AbortSignal): Promise<void> {
     this.assertHeld();
     const root = runtimeStorePaths(this.location.home, identity).root;
+    if (process.platform !== 'win32' && (lstatSync(root).mode & 0o7777) !== 0o700) {
+      throw new InstallerError('runtime-invalid', 'Runtime finalization requires the exact root0700 permission-transition state');
+    }
     const deadline = AbortSignal.timeout(RUNTIME_LIMITS.verificationMs);
     const signal = external ? AbortSignal.any([deadline, external]) : deadline;
     const { verifyRuntimeEntry } = await import('./runtime-store.js');

@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "tool call error: tool call failed for `insrc/insrc_build_step`\n\nCaused by:\n    timed out awaiting tools/call after 300s"
+    }
+  ],
+  "isError": true
+}

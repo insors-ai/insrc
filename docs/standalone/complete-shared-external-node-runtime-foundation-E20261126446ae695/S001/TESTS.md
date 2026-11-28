@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 122 pass, 0 fail, 0 skipped, 0 not found; 8 reported by the builder and not run by the gate.
+**Totals:** 132 pass, 0 fail, 0 skipped, 0 not found; 8 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -180,7 +180,7 @@ Run at 2026-11-28T11:16:33.816Z on commit `30ad3cc68`. Tests check: **passed**. 
 
 ## t4
 
-Run at 2026-11-26T08:51:02.449Z on commit `a58c68c40`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-28T11:39:32.514Z on commit `45152f3bb`. Tests check: **passed**. 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: runtime-native-lock-exclusive-durable-no-replace-publication-and-offline-entry-reuse**
 
@@ -193,11 +193,10 @@ Run at 2026-11-26T08:51:02.449Z on commit `a58c68c40`. Tests check: **passed**. 
 
 | Result | Test | File |
 | :--- | :--- | :--- |
-| pass | runtime publication rejects stale original owners and forged or tampered stages | `src/installer/__tests__/runtime-install.test.ts` |
+| pass | runtime install rejects old unsealed and mixed canonical layouts without repair or network | `src/installer/__tests__/runtime-install.test.ts` |
 | pass | runtime publication never overwrites an incomplete destination and retains its stage | `src/installer/__tests__/runtime-install.test.ts` |
+| pass | runtime publication rejects stale original owners and forged or tampered stages | `src/installer/__tests__/runtime-install.test.ts` |
 | pass | runtime publication verifies staged bytes and cannot publish a modified executable | `src/installer/__tests__/runtime-install.test.ts` |
-| pass | runtime publication retains verifier close uncertainty and refuses later discard | `src/installer/__tests__/runtime-install.test.ts` |
-| pass | controller rejects lock replacement and unsafe records or control roots | `src/installer/__tests__/controller-store.test.ts` |
 
 **integration: runtime-publication-stage-is-not-running-node-or-loaded-native-library**
 
@@ -205,12 +204,37 @@ Run at 2026-11-26T08:51:02.449Z on commit `a58c68c40`. Tests check: **passed**. 
 | :--- | :--- | :--- |
 | pass | runtime publication stage is distinct from running Node and the loaded native library | `src/installer/__tests__/runtime-install.test.ts` |
 
+**integration: posix-runtime-root-only-interrupted-publication-recovery-and-closed-stage-discard**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | runtime root-only interrupted native publication is retained and finalized offline by a later controller | `src/installer/__tests__/runtime-install.test.ts` |
+| pass | runtime install rejects old unsealed and mixed canonical layouts without repair or network | `src/installer/__tests__/runtime-install.test.ts` |
+| pass | runtime publication never overwrites an incomplete destination and retains its stage | `src/installer/__tests__/runtime-install.test.ts` |
+| pass | runtime publication retains verifier close uncertainty and refuses later discard | `src/installer/__tests__/runtime-install.test.ts` |
+
+**integration: native-runtime-publication-keeps-root-writable-until-rename-and-finishes-root-seal**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | runtime publication uses the native exclusive lock durable namespace and verified offline reuse | `src/installer/__tests__/runtime-install.test.ts` |
+| pass | runtime root-only interrupted native publication is retained and finalized offline by a later controller | `src/installer/__tests__/runtime-install.test.ts` |
+| pass | runtime publication retains a root sealed before failing final durability and never reports success | `src/installer/__tests__/runtime-install.test.ts` |
+
+**integration: runtime-postpublication-uncertainty-and-canonical-stat-errors-are-coded-and-retained**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | runtime publication retains a root sealed before failing final durability and never reports success | `src/installer/__tests__/runtime-install.test.ts` |
+| pass | runtime publication retains postpublication root close uncertainty until its captured descriptor closes | `src/installer/__tests__/runtime-install.test.ts` |
+| pass | runtime canonical stat failures are actionable coded errors and never trigger download or mutation | `src/installer/__tests__/runtime-install.test.ts` |
+| pass | runtime publication retains verifier close uncertainty and refuses later discard | `src/installer/__tests__/runtime-install.test.ts` |
+
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/installer/__tests__/controller-store.test.ts` | 0 | 7 | 1 s |  |
-| `src/installer/__tests__/runtime-install.test.ts` | 0 | 6 | 129 s |  |
+| `src/installer/__tests__/runtime-install.test.ts` | 0 | 11 | 433.1 s |  |
 
 ## t5
 

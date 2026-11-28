@@ -1,0 +1,47 @@
+{
+  "runId": "e0ee8b48-1209-4ad2-9f46-48c2134e3add",
+  "runtime": {
+    "executable": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node",
+    "version": "v22.22.1"
+  },
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 1200000,
+    "runMs": 5400000,
+    "cleanupMs": 5000
+  },
+  "selectedFiles": [
+    "src/installer/__tests__/runtime-install.test.ts"
+  ],
+  "requestedConcurrency": 1,
+  "effectiveConcurrency": 1,
+  "diagnosticFlags": [
+    "DEBUG"
+  ],
+  "liveTests": "unset",
+  "results": [
+    {
+      "file": "src/installer/__tests__/runtime-install.test.ts",
+      "childId": "5124154a-2754-411c-93b6-f5f9688495b7",
+      "log": ".insrc/tmp/test-harness/runs/e0ee8b48-1209-4ad2-9f46-48c2134e3add/0-src_installer___tests___runtime-install.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/e0ee8b48-1209-4ad2-9f46-48c2134e3add/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    }
+  ],
+  "cleanupPath": ".insrc/tmp/test-harness/runs/e0ee8b48-1209-4ad2-9f46-48c2134e3add/cleanup.json",
+  "incomplete": false
+}

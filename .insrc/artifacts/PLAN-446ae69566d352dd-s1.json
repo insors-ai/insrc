@@ -26,7 +26,7 @@
     "lldEffectiveHash": "e3d0af7b8c396a21eb5a1a143227d7c55c6983455bb60a314991fbbd3840be9f",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 4,
         "contentHash": "2687f591aa014b89aaadc3e1fd786a62e99f471199dd14bbf4a5e391d419e7ee",
@@ -37,12 +37,24 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 4,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-28T09:45:56.506Z"
+      }
     },
     "envelope": {
+      "description": "",
+      "references": [],
       "attachments": []
     },
-    "revision": 4
+    "revision": 4,
+    "rangeBase": "783d00fd3d7af3991659f7d23538f270a2985934"
   },
   "body": {
     "summary": {

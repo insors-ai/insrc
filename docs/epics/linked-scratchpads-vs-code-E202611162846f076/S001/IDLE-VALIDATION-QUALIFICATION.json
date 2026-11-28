@@ -1,0 +1,1272 @@
+{
+  "story": "2846f076fd5f785f/s1",
+  "ownerTask": "t21",
+  "recordedAt": "2026-11-28T11:59:00.867579+00:00",
+  "purpose": "Current requalification of the existing t1-t14 named-test mappings after idle-validation changes; TESTS historical rows and failures are intentionally retained. Each exact original case maps to a freshly passing current run and t21 gate case. Live named tests use new floor/current native evidence, never their historical passes.",
+  "sourceTestRecord": ".insrc/artifacts/TESTS-2846f076fd5f785f-s1.json",
+  "currentGateTestsPassed": true,
+  "tasks": [
+    {
+      "taskId": "t1",
+      "historicalCommit": "022a5ef68",
+      "historicalRunAt": "2026-11-27T19:15:48.238Z",
+      "historicalRecordPreserved": true,
+      "currentRequalificationCommit": "356d0b423",
+      "currentTests": [
+        {
+          "name": "Stable home/basename identity, refused paths and closed protocol bounds",
+          "level": "unit",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/chat/__tests__/scratch-store.test.ts",
+              "title": "scratch resolver returns stable home/basename identity without reading content or writing",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/chat/__tests__/scratch-store.test.ts",
+              "title": "scratch resolver refuses escaping ids, missing files, symlinks, directories and swapped inodes",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/chat/__tests__/scratch-store.test.ts",
+              "title": "scratch resolver uses no-follow on real files and preserves existing contents",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-protocol.test.ts",
+              "title": "scratch editor protocol accepts every declared variant and rejects extra keys across channels",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-protocol.test.ts",
+              "title": "scratch editor protocol rejects invalid sessions, ancestry, versions and malformed payloads",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-protocol.test.ts",
+              "title": "scratch editor protocol enforces UTF-8 note and encoded message bounds without truncation",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-protocol.test.ts",
+              "title": "scratch editor assets have a separate decoded image bound and reject malformed upload actions",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "t2",
+      "historicalCommit": "b0e9178b1",
+      "historicalRunAt": "2026-11-27T19:30:12.054Z",
+      "historicalRecordPreserved": true,
+      "currentRequalificationCommit": "356d0b423",
+      "currentTests": [
+        {
+          "name": "Pinned Milkdown browser JS/CSS, local CSP and VSIX assets",
+          "level": "integration",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-packaging.test.ts",
+              "title": "Milkdown lockfile pins one compatible dependency graph",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-packaging.test.ts",
+              "title": "scratch editor emits local browser JS/CSS alongside CJS and includes them in a real VSIX",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-packaging.test.ts",
+              "title": "scratch editor HTML permits local assets while blocking connections and untrusted policy input",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "t3",
+      "historicalCommit": "5672e23c2",
+      "historicalRunAt": "2026-11-27T19:55:15.727Z",
+      "historicalRecordPreserved": true,
+      "currentRequalificationCommit": "356d0b423",
+      "currentTests": [
+        {
+          "name": "Markdown corpus: zero writes on open, supported edit preservation and unsafe-edit refusal",
+          "level": "integration",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-markdown.test.ts",
+              "title": "scratch Markdown refuses structural or raw syntax loss and keeps both source and draft",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-markdown.test.ts",
+              "title": "scratch Markdown host grammar independently admits supported edits and refuses unsupported base laundering",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-markdown.test.ts",
+              "title": "scratch Markdown corpus uses real Milkdown in Chrome and preserves source on open, lock and selection",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-markdown.test.ts",
+              "title": "scratch Markdown host and browser modules pass their production TypeScript configurations",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "t4",
+      "historicalCommit": "15b859d68",
+      "historicalRunAt": "2026-11-27T20:25:50.719Z",
+      "historicalRecordPreserved": true,
+      "currentRequalificationCommit": "356d0b423",
+      "currentTests": [
+        {
+          "name": "Delayed apply/coalesced descendant/stale duplicate/self-echo queue matrix",
+          "level": "unit",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-queue.test.ts",
+              "title": "scratch queue serializes minimal edits and coalesces acknowledged descendants",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-queue.test.ts",
+              "title": "scratch queue retains every newer draft while an old ack promotes only the latest snapshot",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-queue.test.ts",
+              "title": "scratch queue rejects stale, cross-session and conflicting duplicate input without reapplying",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-queue.test.ts",
+              "title": "scratch queue external changes freeze pending edits and preserve both canonical and competing drafts",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-queue.test.ts",
+              "title": "scratch queue does not apply without persisted receipt and lets accepted work finish after pane disposal",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-queue.test.ts",
+              "title": "scratch queue captured-sequence barrier waits across asynchronous ack and promotion delivery",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-queue.test.ts",
+              "title": "scratch queue shares one apply lane across competing panes without overwriting either draft",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-queue.test.ts",
+              "title": "scratch queue reports an oversized external document without sending an oversized snapshot or writing",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-queue.test.ts",
+              "title": "scratch queue promotions preserve the reported parent and require its acknowledged base",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-queue.test.ts",
+              "title": "scratch queue cannot reuse a historical edit identity at a new sequence",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ]
+        },
+        {
+          "name": "Renderer older-ack/newer-draft preservation",
+          "level": "integration",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-state.test.ts",
+              "title": "scratch renderer preserves newer real Milkdown typing across older and duplicate acknowledgements",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-state.test.ts",
+              "title": "scratch synchronization modules pass host and browser production typechecks",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "t5",
+      "historicalCommit": "095edc8f8",
+      "historicalRunAt": "2026-11-27T20:37:42.605Z",
+      "historicalRecordPreserved": true,
+      "currentRequalificationCommit": "356d0b423",
+      "currentTests": [
+        {
+          "name": "Recovery persisted before receipt, failure/dispose/clear rules",
+          "level": "unit",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-recovery.test.ts",
+              "title": "scratch recovery persists durably before receipt and coalesces waiting drafts without false receipts",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-recovery.test.ts",
+              "title": "scratch recovery isolates origins and exact clearing never removes a newer revision",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-recovery.test.ts",
+              "title": "scratch recovery storage and transport failures never acknowledge unpersisted or falsely applied drafts",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-recovery.test.ts",
+              "title": "scratch recovery disposal finishes accepted edits and retains unapplied text after failure",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-recovery.test.ts",
+              "title": "scratch recovery rejects symlinks, corrupt and oversized records without deleting evidence",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-recovery.test.ts",
+              "title": "scratch recovery preserves the unscheduled parent needed to apply a coalesced descendant",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-recovery.test.ts",
+              "title": "scratch recovery serializes concurrent revision publication across store instances",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ]
+        },
+        {
+          "name": "Reload recovery preserves draft and canonical source",
+          "level": "integration",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-recovery.test.ts",
+              "title": "scratch recovery reload discovers pending text without modifying canonical source or replaying edits",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "t6",
+      "historicalCommit": "e3a069e9b",
+      "historicalRunAt": "2026-11-27T20:49:43.845Z",
+      "historicalRecordPreserved": true,
+      "currentRequalificationCommit": "356d0b423",
+      "currentTests": [
+        {
+          "name": "Actual Crepe remembered lock and locked-mode selection Send tooltip",
+          "level": "integration",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-pane.test.ts",
+              "title": "scratch pane uses actual Crepe remembered locks and click-only locked selection Send with source-safe failures",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-pane.test.ts",
+              "title": "scratch lock preference defaults safely and surfaces persistence failures without poisoning later changes",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-pane.test.ts",
+              "title": "scratch refused draft stays recovery-only after the older edit acknowledgement",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-state.test.ts",
+              "title": "scratch synchronization modules pass host and browser production typechecks",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "t7",
+      "historicalCommit": "2cc523828",
+      "historicalRunAt": "2026-11-28T06:54:51.288Z",
+      "historicalRecordPreserved": true,
+      "currentRequalificationCommit": "356d0b423",
+      "currentTests": [
+        {
+          "name": "Correct-target save/undo/redo drain and provider disposal",
+          "level": "unit",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native adapter drains captured save and routes undo redo to the exact active custom document",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native adapter awaits asynchronous receipt delivery and retains a dropped draft",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native adapter rejects unrelated URIs and disposes listeners without cancelling accepted work",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native save hook drains pending source and idle external changes broadcast without edits",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch editor HTML accepts the production nonce and only a bounded opaque pane session",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native adapter refuses commands when source changes during asynchronous validation",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native adapter requires a matching renderer focus acknowledgement before Undo",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-pane.test.ts",
+              "title": "scratch pane uses actual Crepe remembered locks and click-only locked selection Send with source-safe failures",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-state.test.ts",
+              "title": "scratch synchronization modules pass host and browser production typechecks",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/__tests__/activation.test.ts",
+              "title": "the extension package is scaffolded (package.json + tsconfig + activate/deactivate entry)",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native adapter drains pending edits before both Undo and Redo",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native adapter rejects a waiting resolve when shutdown starts",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ]
+        },
+        {
+          "name": "Native TextDocument undo/save/autosave and host change propagation",
+          "level": "live",
+          "cases": [],
+          "currentLiveQualification": [
+            {
+              "target": "floor",
+              "vscode": "1.141.0",
+              "suite": "native",
+              "coordinatorRun": "8a013082-c103-4e29-b7b7-e9ffaaf1a24d",
+              "evidence": "/tmp/.insrc/scratchpad-t21-floor-native.json",
+              "requiredScenarios": 1
+            },
+            {
+              "target": "current",
+              "vscode": "1.146.0",
+              "suite": "native",
+              "coordinatorRun": "026a2333-bb7c-4857-a45c-47e3ddf548de",
+              "evidence": "/tmp/.insrc/scratchpad-t21-current-native.json",
+              "requiredScenarios": 1
+            }
+          ],
+          "currentLiveResult": "pass",
+          "liveRequiredNoSkip": true
+        }
+      ]
+    },
+    {
+      "taskId": "t8",
+      "historicalCommit": "6aab1e3db",
+      "historicalRunAt": "2026-11-28T04:29:32.000Z",
+      "historicalRecordPreserved": true,
+      "currentRequalificationCommit": "356d0b423",
+      "currentTests": [
+        {
+          "name": "Exact captured selection, UTF-8 cap, stale source and chat readiness/disposal",
+          "level": "unit",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/chat/__tests__/scratch-host.test.ts",
+              "title": "scratch checked selection route preserves paragraphs caps UTF-8 and only inserts after exact chat readiness",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/chat/__tests__/scratch-host.test.ts",
+              "title": "scratch checked selection route refuses disposed replacement stale source and rejected delivery",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/chat/__tests__/scratch-host.test.ts",
+              "title": "scratch checked selection readiness timeout is bounded and disposed targets cannot post",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native selection Send drains its captured draft and inserts once despite duplicate messages",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native selection refuses external source changes before Send and during chat readiness",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native selection refuses newer typing or pane disposal during chat readiness",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native selection bounds concurrent requests and reports dropped confirmation without resending",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-queue.test.ts",
+              "title": "scratch selection source proof retains original base across promotion and refuses unrelated updates",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-protocol.test.ts",
+              "title": "scratch editor protocol accepts every declared variant and rejects extra keys across channels",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-protocol.test.ts",
+              "title": "scratch editor protocol rejects invalid sessions, ancestry, versions and malformed payloads",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-state.test.ts",
+              "title": "scratch synchronization modules pass host and browser production typechecks",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ]
+        },
+        {
+          "name": "Pointer/keyboard Send selection preservation and no submission",
+          "level": "integration",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-pane.test.ts",
+              "title": "scratch pane uses actual Crepe remembered locks and click-only locked selection Send with source-safe failures",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/chat/__tests__/scratch-host.test.ts",
+              "title": "scratch checked selection route preserves paragraphs caps UTF-8 and only inserts after exact chat readiness",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "t9",
+      "historicalCommit": "815e74875",
+      "historicalRunAt": "2026-11-28T04:59:29.246Z",
+      "historicalRecordPreserved": true,
+      "currentRequalificationCommit": "356d0b423",
+      "currentTests": [
+        {
+          "name": "Asset root/type/size/exclusive names and upload failures",
+          "level": "unit",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-assets.test.ts",
+              "title": "scratch assets validate image content size and exclusive portable names without overwriting",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-assets.test.ts",
+              "title": "scratch assets refuse symlink roots files traversal and outside-workspace picks",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native assets persist portable bytes correlate failure cancellation and forbid locked uploads",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-protocol.test.ts",
+              "title": "scratch editor assets have a separate decoded image bound and reject malformed upload actions",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ]
+        },
+        {
+          "name": "Crepe image callbacks preserve relative Markdown URLs",
+          "level": "integration",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-assets-browser.test.ts",
+              "title": "scratch actual Crepe upload display picker and URL paste callbacks preserve portable Markdown without failed references",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-markdown.test.ts",
+              "title": "scratch Markdown independently rejects a self-consistent codec that erases image alt semantics",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-markdown.test.ts",
+              "title": "scratch Markdown host and browser modules pass their production TypeScript configurations",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-markdown.test.ts",
+              "title": "scratch Markdown refuses transient image URLs from any authoring route without laundering the source",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-pane.test.ts",
+              "title": "scratch pane uses actual Crepe remembered locks and click-only locked selection Send with source-safe failures",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "t10",
+      "historicalCommit": "fdb61a41f",
+      "historicalRunAt": "2026-11-28T05:45:10.789Z",
+      "historicalRecordPreserved": true,
+      "currentRequalificationCommit": "356d0b423",
+      "currentTests": [
+        {
+          "name": "Exact-URI delete dirty/pending/cancel/close/unlink matrix and independent refresh failures",
+          "level": "unit",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native deletion closes only exact URI tabs across groups before guarded unlink and isolates refresh failure",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native deletion cancels dirty pending recovery unconfirmed panes and close cancellation without unlink",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native deletion excludes reopen until close settles and attempts reopen on unlink failure",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch save refresh admission is exact URI scoped and activation owns one disposable save listener",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-refresh.test.ts",
+              "title": "scratch refresh coalesces save bursts and independently catches browse and menu failures without opening UI",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-refresh.test.ts",
+              "title": "scratch refresh retains a save arriving during refresh and disposal stops the next consumer",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-refresh.test.ts",
+              "title": "scratch refresh does not lose a request queued at completion of the prior pass",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-pane.test.ts",
+              "title": "scratch pane uses actual Crepe remembered locks and click-only locked selection Send with source-safe failures",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-assets-browser.test.ts",
+              "title": "scratch actual Crepe upload display picker and URL paste callbacks preserve portable Markdown without failed references",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-state.test.ts",
+              "title": "scratch synchronization modules pass host and browser production typechecks",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/chat/__tests__/scratch-host.test.ts",
+              "title": "scratch creation uses the shared refresh boundary without suppressing opening when refresh fails",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native duplicate deletion requests share one close unlink and refresh operation",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
+              "title": "scratch browse surfaces deletion failure preserves file and catches row open rejection",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "t11",
+      "historicalCommit": "a7b2cf2e8",
+      "historicalRunAt": "2026-11-28T05:42:46.569Z",
+      "historicalRecordPreserved": true,
+      "currentRequalificationCommit": "356d0b423",
+      "currentTests": [
+        {
+          "name": "Atomic legacy channel removal and six chat intents",
+          "level": "integration",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-migration.test.ts",
+              "title": "scratch migration removes every legacy document channel consumer and retains six chat intents with rich default",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+              "title": "extension scratch wiring binds native editor browse host and one scoped save refresh",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+              "title": "extension-chat-wiring.test.ts: scratch-list error field renders the unavailable row and a later success recovers; host switch cases for all six webview->host messages and both host->webview pushes",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ]
+        },
+        {
+          "name": "Store/panel/host and creation/open error regressions",
+          "level": "unit",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/chat/__tests__/scratch-host.test.ts",
+              "title": "scratch host distinguishes created but open failed from create failure and catches all intent boundaries",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
+              "title": "scratch browse and chat document actions delegate to native lifecycle without reading or saving a second buffer",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-panel.test.ts",
+              "title": "scratch browse surfaces deletion failure preserves file and catches row open rejection",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native open awaits renderer initialization and reports failed or disposed initialization without changing the file",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch rich-editor off path explicitly opens the same native file in the text editor",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch initialization failure offers explicit same-file text fallback and never auto-opens it",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "t12",
+      "historicalCommit": "d38738c12",
+      "historicalRunAt": "2026-11-28T05:51:24.215Z",
+      "historicalRecordPreserved": true,
+      "currentRequalificationCommit": "356d0b423",
+      "currentTests": [
+        {
+          "name": "Packaged-browser Markdown corpus, lock/Send/assets and bridge race matrix",
+          "level": "integration",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-production-browser.test.ts",
+              "title": "scratch production browser bundle boots under local CSP with no initial write and locked explicit Send",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-markdown.test.ts",
+              "title": "scratch Markdown corpus uses real Milkdown in Chrome and preserves source on open, lock and selection",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-markdown.test.ts",
+              "title": "scratch Markdown host grammar independently admits supported edits and refuses unsupported base laundering",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-markdown.test.ts",
+              "title": "scratch Markdown keeps uniform CRLF proposals exact and refuses mixed EOL without changing source",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-markdown.test.ts",
+              "title": "scratch custom literal admission bounds unmatched delimiter scans at the full note limit",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-pane.test.ts",
+              "title": "scratch pane uses actual Crepe remembered locks and click-only locked selection Send with source-safe failures",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native locked panes refuse Undo Redo including a lock acquired during command drain",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-assets-browser.test.ts",
+              "title": "scratch actual Crepe upload display picker and URL paste callbacks preserve portable Markdown without failed references",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-state.test.ts",
+              "title": "scratch renderer preserves newer real Milkdown typing across older and duplicate acknowledgements",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-state.test.ts",
+              "title": "scratch synchronization modules pass host and browser production typechecks",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-migration.test.ts",
+              "title": "scratch migration removes every legacy document channel consumer and retains six chat intents with rich default",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "t13",
+      "historicalCommit": "161b38765",
+      "historicalRunAt": "2026-11-28T06:20:36.581Z",
+      "historicalRecordPreserved": true,
+      "currentRequalificationCommit": "356d0b423",
+      "currentTests": [
+        {
+          "name": "Supported-floor/current host save/revert/undo/autosave/external-edit multipane and cross-window matrix",
+          "level": "live",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-state.test.ts",
+              "title": "scratch synchronization modules pass host and browser production typechecks",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ],
+          "currentLiveQualification": [
+            {
+              "target": "floor",
+              "vscode": "1.141.0",
+              "suite": "lifecycle",
+              "coordinatorRun": "8a013082-c103-4e29-b7b7-e9ffaaf1a24d",
+              "evidence": "/tmp/.insrc/scratchpad-t21-floor-lifecycle.json",
+              "requiredScenarios": 15
+            },
+            {
+              "target": "current",
+              "vscode": "1.146.0",
+              "suite": "lifecycle",
+              "coordinatorRun": "026a2333-bb7c-4857-a45c-47e3ddf548de",
+              "evidence": "/tmp/.insrc/scratchpad-t21-current-lifecycle.json",
+              "requiredScenarios": 15
+            }
+          ],
+          "currentLiveResult": "pass",
+          "liveRequiredNoSkip": true
+        },
+        {
+          "name": "Close/reload with delayed receipt/apply/ack retains drafts",
+          "level": "live",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-recovery.test.ts",
+              "title": "scratch recovery remains durable throughout a delayed acknowledgement and survives pane disposal",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-recovery.test.ts",
+              "title": "scratch recovery rejects symlinks, corrupt and oversized records without deleting evidence",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ],
+          "currentLiveQualification": [
+            {
+              "target": "floor",
+              "vscode": "1.141.0",
+              "suite": "lifecycle",
+              "coordinatorRun": "8a013082-c103-4e29-b7b7-e9ffaaf1a24d",
+              "evidence": "/tmp/.insrc/scratchpad-t21-floor-lifecycle.json",
+              "requiredScenarios": 15
+            },
+            {
+              "target": "current",
+              "vscode": "1.146.0",
+              "suite": "lifecycle",
+              "coordinatorRun": "026a2333-bb7c-4857-a45c-47e3ddf548de",
+              "evidence": "/tmp/.insrc/scratchpad-t21-current-lifecycle.json",
+              "requiredScenarios": 15
+            }
+          ],
+          "currentLiveResult": "pass",
+          "liveRequiredNoSkip": true
+        }
+      ]
+    },
+    {
+      "taskId": "t14",
+      "historicalCommit": "2cc523828",
+      "historicalRunAt": "2026-11-28T06:37:49.319Z",
+      "historicalRecordPreserved": true,
+      "currentRequalificationCommit": "356d0b423",
+      "currentTests": [
+        {
+          "name": "Real paste/drop/pickers and locked/editable Send with closed/ready/disposed chat",
+          "level": "live",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-assets-browser.test.ts",
+              "title": "scratch actual Crepe upload display picker and URL paste callbacks preserve portable Markdown without failed references",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/chat/__tests__/scratch-host.test.ts",
+              "title": "scratch checked selection route preserves paragraphs caps UTF-8 and only inserts after exact chat readiness",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ],
+          "currentLiveQualification": [
+            {
+              "target": "floor",
+              "vscode": "1.141.0",
+              "suite": "authoring",
+              "coordinatorRun": "8a013082-c103-4e29-b7b7-e9ffaaf1a24d",
+              "evidence": "/tmp/.insrc/scratchpad-t21-floor-authoring.json",
+              "requiredScenarios": 1
+            },
+            {
+              "target": "current",
+              "vscode": "1.146.0",
+              "suite": "authoring",
+              "coordinatorRun": "026a2333-bb7c-4857-a45c-47e3ddf548de",
+              "evidence": "/tmp/.insrc/scratchpad-t21-current-authoring.json",
+              "requiredScenarios": 1
+            }
+          ],
+          "currentLiveResult": "pass",
+          "liveRequiredNoSkip": true
+        },
+        {
+          "name": "Deletion and menu/browse refresh across groups",
+          "level": "live",
+          "cases": [
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native deletion closes only exact URI tabs across groups before guarded unlink and isolates refresh failure",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-editor-native.test.ts",
+              "title": "scratch native deletion cancels dirty pending recovery unconfirmed panes and close cancellation without unlink",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            },
+            {
+              "file": "vscode-plugin/src/panels/__tests__/scratch-refresh.test.ts",
+              "title": "scratch refresh coalesces save bursts and independently catches browse and menu failures without opening UI",
+              "currentResult": "pass",
+              "currentRun": "3b3eb417-da79-4da1-b827-7286dc165689",
+              "gateRequalificationTask": "t21",
+              "gateRanAt": "2026-11-28T11:53:27.167Z"
+            }
+          ],
+          "currentLiveQualification": [
+            {
+              "target": "floor",
+              "vscode": "1.141.0",
+              "suite": "authoring",
+              "coordinatorRun": "8a013082-c103-4e29-b7b7-e9ffaaf1a24d",
+              "evidence": "/tmp/.insrc/scratchpad-t21-floor-authoring.json",
+              "requiredScenarios": 1
+            },
+            {
+              "target": "current",
+              "vscode": "1.146.0",
+              "suite": "authoring",
+              "coordinatorRun": "026a2333-bb7c-4857-a45c-47e3ddf548de",
+              "evidence": "/tmp/.insrc/scratchpad-t21-current-authoring.json",
+              "requiredScenarios": 1
+            }
+          ],
+          "currentLiveResult": "pass",
+          "liveRequiredNoSkip": true
+        }
+      ]
+    }
+  ],
+  "remaining": "t15 must qualify original full 1MiB latency and final acceptance; neither performance nor BUILD approval is claimed here."
+}

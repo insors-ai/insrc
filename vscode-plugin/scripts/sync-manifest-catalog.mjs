@@ -16,17 +16,23 @@
  *    per-role section is regenerated from buildPerRoleKeyMap() (created if
  *    missing; existing key order kept, new roles appended in taxonomy order).
  *  - Duplicate-titled sections consolidate losslessly: the FIRST keeps its title;
- *    section-level metadata merges losslessly for compatible fields (a field the
- *    first lacks is preserved; on conflict the first's value wins, as with
- *    properties); properties merge first-wins in section order, so distinct
- *    local keys of later duplicates survive. The SAME property key with
- *    CONFLICTING schemas in duplicate sections (compared key-order-
+ *    section-level metadata preserves every COMPATIBLE field (a field the first
+ *    lacks is taken from the duplicate); on a conflicting value the FIRST
+ *    section's value wins and the later value is intentionally discarded (the
+ *    one deliberate metadata loss — documented here, and the only refusal is
+ *    for properties, below). Properties merge first-wins in section order, so
+ *    distinct local keys of later duplicates survive. The SAME property key
+ *    with CONFLICTING schemas in duplicate sections (compared key-order-
  *    insensitively) is refused with a `sync-duplicate-conflict` diagnostic
  *    naming the key and the two sections that actually declare it — the only
  *    refusal besides a malformed configuration.
  *  - A catalog-backed key is owned by the section titled with its group: a copy
  *    in any other (differently titled) section is removed, so every catalog key
- *    is declared exactly once, manifest-wide.
+ *    is declared exactly once, manifest-wide. When the misplaced copy is the
+ *    key's ONLY declaration, its schema travels with the move — the insertion
+ *    rebuilds the catalog-owned fields on top of it, so supplemental fields
+ *    (e.g. markdownDeprecationMessage) survive. When the group section also
+ *    declares the key, the group section's declaration wins (canonical home).
  *  - Plugin-local keys are preserved everywhere, including inside the canonical
  *    per-role section. Stored setting VALUES are never rewritten — schemas and
  *    defaults only. The tier rows (models.tiers.<tier>.runner/.model/.effort)
@@ -172,6 +178,7 @@ export function syncManifest(pkg, catalog) {
 	// drives BOTH update and insertion.
 	const rows = new Map(catalog.filter((o) => !isLocal('insrc.' + o.path)).map((o) => ['insrc.' + o.path, o]));
 	const seen = new Set();
+	const moved = new Map(); // key -> schema of a misplaced declaration, to seed the insertion so supplemental fields survive the move
 	for (const section of sections) {
 		for (const key of Object.keys(section.properties ?? {})) {
 			if (isLocal(key)) continue; // plugin-local keys survive everywhere
@@ -182,7 +189,14 @@ export function syncManifest(pkg, catalog) {
 				if (key.startsWith('insrc.') && isRetiredPath(key.slice('insrc.'.length))) delete section.properties[key];
 				continue;
 			}
-			if (section.title !== row.group) { delete section.properties[key]; continue; } // the row's group section owns the key — a copy here is removed
+			if (section.title !== row.group) {
+				// The row's group section owns the key. If this copy is the only
+				// declaration, keep its schema so the insertion rebuilds on top of
+				// it; if the group section also declares the key, that one wins.
+				if (!moved.has(key)) moved.set(key, section.properties[key]);
+				delete section.properties[key];
+				continue;
+			}
 			seen.add(key);
 			section.properties[key] = schemaOf(section.properties[key], row);
 		}
@@ -191,7 +205,7 @@ export function syncManifest(pkg, catalog) {
 		if (seen.has(key)) continue;
 		let section = sections.find((s) => s.title === row.group);
 		if (section === undefined) { section = { title: row.group, properties: {} }; sections.push(section); } // missing group section created, never thrown
-		section.properties = { ...(section.properties ?? {}), [key]: schemaOf({}, row) };
+		section.properties = { ...(section.properties ?? {}), [key]: schemaOf(moved.get(key) ?? {}, row) };
 	}
 	// The taxonomy pass owns the ENTIRE per-role prefix.
 	syncPerRoleSections(sections);

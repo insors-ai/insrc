@@ -145,6 +145,13 @@ test('sync-manifest-catalog.test.ts: a misplaced or duplicated per-role key is r
     // A NON-insrc property whose tail matches a retired path must survive too
     // (the retirement lookup only applies to insrc.* keys).
     section(stale, 'General').properties['other.models.embedding'] = { type: 'string', default: 'x' };
+    // Sole misplaced declaration of a catalog-backed key, carrying a supplemental
+    // schema field: the move must preserve the field while regenerating the
+    // catalog-owned fields in the group section.
+    const tiers = section(stale, 'Models — tiers');
+    const tierSchema = tiers.properties['insrc.models.tiers.core.model']!;
+    delete tiers.properties['insrc.models.tiers.core.model'];
+    section(stale, 'General').properties['insrc.models.tiers.core.model'] = { ...tierSchema, markdownDeprecationMessage: 'use insrc.models.coreFloor' };
   });
   try {
     assert.equal(sync(copy).status, 0);
@@ -152,7 +159,8 @@ test('sync-manifest-catalog.test.ts: a misplaced or duplicated per-role key is r
     const expected = committed();
     section(expected, PER_ROLE_TITLE).properties['insrc.chat.testFlag'] = { type: 'boolean', default: false, scope: 'machine' };
     section(expected, 'General').properties['other.models.embedding'] = { type: 'string', default: 'x' };
-    assert.deepEqual(repaired, expected, 'the wrong-section copy is removed and the canonical section regenerated; the local keys survive');
+    section(expected, 'Models — tiers').properties['insrc.models.tiers.core.model']!.markdownDeprecationMessage = 'use insrc.models.coreFloor';
+    assert.deepEqual(repaired, expected, 'the wrong-section copies are removed, the canonical section regenerated, and the relocated key keeps its supplemental field; the local keys survive');
 
     const roleKey = Object.keys(section(expected, PER_ROLE_TITLE).properties).find((k) => k.startsWith('insrc.models.tasks.'))!;
     const wrong = section(repaired, 'General').properties;
@@ -160,6 +168,10 @@ test('sync-manifest-catalog.test.ts: a misplaced or duplicated per-role key is r
     assert.deepEqual(section(repaired, PER_ROLE_TITLE).properties[roleKey], section(expected, PER_ROLE_TITLE).properties[roleKey], 'regenerated canonically in its section');
     assert.deepEqual(section(repaired, PER_ROLE_TITLE).properties['insrc.chat.testFlag'], { type: 'boolean', default: false, scope: 'machine' }, 'the unrelated local key survives');
     assert.deepEqual(section(repaired, 'General').properties['other.models.embedding'], { type: 'string', default: 'x' }, 'a non-insrc key is never treated as a retired insrc path');
+    const movedTier = section(repaired, 'Models — tiers').properties['insrc.models.tiers.core.model']!;
+    assert.equal(movedTier.markdownDeprecationMessage, 'use insrc.models.coreFloor', 'the relocated sole declaration keeps its supplemental schema field');
+    assert.equal(movedTier.default, '', 'the catalog-owned fields are regenerated (tier row: default \'\')');
+    assert.ok(!('insrc.models.tiers.core.model' in section(repaired, 'General').properties), 'the key is declared exactly once, in its group section');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

@@ -7,9 +7,10 @@ import { createServer } from 'node:net';
 import { build } from 'esbuild';
 import { runInProcessGroup } from '../../../../../src/shared/process-group.js';
 
-export async function nativeScratchRun(fixture: string) {
+export async function nativeScratchRun(fixture: string, options: { workspace?: boolean } = {}) {
   const root = await mkdtemp(join(tmpdir(), 'insrc-scratch-host-')), extension = join(root, 'extension'), out = join(extension, 'out');
   await mkdir(out, { recursive: true });
+  if (options.workspace) await mkdir(join(root, 'workspace'), { recursive: true });
   await build({ entryPoints: [fileURLToPath(new URL(fixture, import.meta.url))], outfile: join(out, 'fixture.cjs'), bundle: true, platform: 'node', format: 'cjs', target: 'node22', external: ['vscode'], logLevel: 'silent' });
   const { bundleScratchEditor } = await import('../../../../esbuild.mjs'); await bundleScratchEditor(join(out, 'scratch-editor'));
   await writeFile(join(extension, 'package.json'), JSON.stringify({ name: 'scratch-lifecycle-fixture', publisher: 'insrc-test', version: '0.0.1', engines: { vscode: '^1.141.0' }, main: './out/fixture.cjs', activationEvents: ['*'], contributes: { customEditors: [{ viewType: 'insrc.scratchpad.editor', displayName: 'Scratchpad qualification', selector: [{ filenamePattern: '*.md' }], priority: 'option' }] } }));
@@ -33,7 +34,7 @@ export async function nativeScratchRun(fixture: string) {
         } catch { /* checkpoint is not ready */ } finally { checking = false; }
       })();
     }, 100) : undefined;
-    const result = await runInProcessGroup(process.env['INSRC_CODE_BIN'] ?? '/usr/share/code/code', ['--no-sandbox', '--ozone-platform=x11', '--force-device-scale-factor=1', '--log=trace', `--remote-debugging-port=${port}`, '--disable-gpu', '--new-window', '--skip-welcome', '--skip-release-notes', '--disable-extensions', `--user-data-dir=${data}`, `--extensions-dir=${join(root, role, 'extensions')}`, `--extensionDevelopmentPath=${extension}`, `--extensionTestsPath=${join(out, 'fixture.cjs')}`], { env, timeoutMs: 180_000, signal: abort.signal }).finally(() => { clearInterval(restart); });
+    const result = await runInProcessGroup(process.env['INSRC_CODE_BIN'] ?? '/usr/share/code/code', ['--no-sandbox', '--ozone-platform=x11', '--force-device-scale-factor=1', '--log=trace', `--remote-debugging-port=${port}`, '--disable-gpu', '--new-window', '--skip-welcome', '--skip-release-notes', '--disable-extensions', `--user-data-dir=${data}`, `--extensions-dir=${join(root, role, 'extensions')}`, `--extensionDevelopmentPath=${extension}`, `--extensionTestsPath=${join(out, 'fixture.cjs')}`, ...(options.workspace ? [join(root, 'workspace')] : [])], { env, timeoutMs: 180_000, signal: abort.signal }).finally(() => { clearInterval(restart); });
     const evidence = JSON.parse(await readFile(join(root, `${role}.json`), 'utf8').catch(() => JSON.stringify({ passed: false, error: 'No native evidence' })));
     const trace: string[] = [];
     for (const stamp of await readdir(join(data, 'logs')).catch(() => [])) { const text = await readFile(join(data, 'logs', stamp, 'window1', 'renderer.log'), 'utf8').catch(() => ''); trace.push(...text.split('\n').filter(line => /Command 'undo'|Command 'redo'/.test(line))); }

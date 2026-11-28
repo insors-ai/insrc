@@ -142,3 +142,10 @@ recovery check for each phase. The test retains its entire fixture root (source,
 recovery records, profiles and full failure snapshots) on success and failure;
 the evidence JSON records that path. A missing opt-in or TAP skip is unavailable
 required coverage and blocks build acceptance; it is never qualification success.
+
+The authoring probe uses `INSRC_NATIVE_AUTHORING_TESTS=1` and an explicit
+`INSRC_XCLIP_BIN` path on the private X11 display. It drives trusted clipboard
+paste/file-drop, native simple file dialogs, and the production editor/browse/
+chat UI; its provider stub rejects any submission. Run it serially with other
+native probes and retain the evidence JSON and fixture directory. This Linux
+qualification does not claim Windows or macOS input coverage.

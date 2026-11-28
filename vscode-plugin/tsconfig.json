@@ -22,6 +22,8 @@
     "**/__tests__/**",
     "**/*.test.ts",
     "src/panels/scratch-editor-webview.ts",
-    "src/panels/scratch-markdown-milkdown.ts"
+    "src/panels/scratch-markdown-milkdown.ts",
+    "src/panels/scratch-markdown-codec.ts",
+    "src/panels/scratch-validation-browser-worker.ts"
   ]
 }

@@ -1,5 +1,5 @@
 /** Browser-only adapter: the live editor's configured schema, not a lookalike. */
-import { editorViewCtx, parserCtx, serializerCtx, type Editor } from '@milkdown/kit/core';
+import { editorViewCtx, serializerCtx, type Editor } from '@milkdown/kit/core';
 import type { Ctx } from '@milkdown/kit/ctx';
 import type { Node as ProseNode } from '@milkdown/kit/prose/model';
 import type { ScratchMarkdownCodec } from './scratch-markdown.js';
@@ -7,27 +7,13 @@ import { prepareScratchMarkdownTransaction } from './scratch-markdown.js';
 import { $prose } from '@milkdown/kit/utils';
 import { Plugin } from '@milkdown/kit/prose/state';
 import { trailing } from '@milkdown/kit/plugin/trailing';
+import { scratchConfiguredCodec } from './scratch-markdown-codec.js';
 
 export const SCRATCH_HOST_TRANSACTION = 'insrcScratchHostSnapshot';
 export type ScratchObservedDraft = ReturnType<typeof prepareScratchMarkdownTransaction>;
 
-function sameMarkdownDocument(left: ProseNode, right: ProseNode): boolean {
-  const pending: [ProseNode, ProseNode][] = [[left, right]];
-  while (pending.length) {
-    const [a, b] = pending.pop()!;
-    if (a.type !== b.type || a.text !== b.text || a.childCount !== b.childCount) return false;
-    const aa = { ...a.attrs }, ba = { ...b.attrs };
-    // commonmark's heading-id plugin derives this DOM anchor from heading text
-    // after parsing. It is not serialized Markdown; no other attr is ignored.
-    if (a.type.name === 'heading') { delete aa['id']; delete ba['id']; }
-    if (JSON.stringify(aa) !== JSON.stringify(ba) || JSON.stringify(a.marks.map(m => m.toJSON())) !== JSON.stringify(b.marks.map(m => m.toJSON()))) return false;
-    for (let i = 0; i < a.childCount; i++) pending.push([a.child(i), b.child(i)]);
-  }
-  return true;
-}
-
 export function scratchMilkdownCodec(ctx: Ctx): ScratchMarkdownCodec<ProseNode> {
-  return { parse: ctx.get(parserCtx), serialize: ctx.get(serializerCtx), equivalent: (a, b) => a.eq(b) || sameMarkdownDocument(a, b) };
+  return scratchConfiguredCodec(ctx);
 }
 
 /** Install before create(), activate after it. Observe actual transactions;

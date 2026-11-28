@@ -7,7 +7,9 @@ import './scratch-editor.css';
 /** Do not expose library AI, even if another caller passes feature overrides.
  * Construction alone never creates an editor or starts a network operation. */
 export function createScratchCrepe(config: CrepeConfig): Crepe {
-  return new Crepe({ ...config, features: { ...config.features, [CrepeFeature.AI]: false } });
+  const crepe = new Crepe({ ...config, features: { ...config.features, [CrepeFeature.AI]: false } });
+  crepe.editor.config(configureScratchSchema);
+  return crepe;
 }
 
 import { editorViewCtx } from '@milkdown/kit/core';
@@ -24,6 +26,7 @@ import { parseScratchEditorMessage, parseScratchHostMessage, type ScratchEditorT
 import { ScratchRendererState } from './scratch-editor-state.js';
 import { checkScratchMarkdown } from './scratch-markdown.js';
 import { observeScratchMarkdown, scratchMilkdownCodec, SCRATCH_HOST_TRANSACTION } from './scratch-markdown-milkdown.js';
+import { configureScratchSchema } from './scratch-markdown-codec.js';
 
 export interface ScratchPaneOptions {
   readonly paneSessionId: string;
@@ -218,15 +221,6 @@ export class ScratchEditorPane {
       this.crepe = createScratchCrepe({ root: this.editorRoot, defaultValue: markdown, features: { [CrepeFeature.TopBar]: false }, featureConfigs: {
         [CrepeFeature.ImageBlock]: { onUpload: file => this.uploadImage(file), inlineOnUpload: file => this.uploadImage(file), blockOnUpload: file => this.uploadImage(file), proxyDomURL: href => this.imageDisplay(href) },
       } });
-      // Crepe serializes alt text as a numeric resize ratio by default. Keep
-      // standard Markdown alt/title independently from presentation-only size.
-      this.crepe.editor.config(ctx => ctx.update(imageBlockSchema.key, original => context => {
-        const schema = original(context);
-        return { ...schema, attrs: { ...schema.attrs, alt: { default: '', validate: 'string' } },
-          parseMarkdown: { ...schema.parseMarkdown, runner: (state, node, type) => { state.addNode(type, { src: node.url as string, alt: (node.alt as string | null) ?? '', caption: (node.title as string | null) ?? '', ratio: 1 }); } },
-          toMarkdown: { ...schema.toMarkdown, runner: (state, node) => { state.openNode('paragraph'); state.addNode('image', undefined, undefined, { url: node.attrs['src'], alt: node.attrs['alt'], title: node.attrs['caption'] || null }); state.closeNode(); } },
-        };
-      }));
       // Override Crepe's parallel/default uploader: every image goes through the
       // same bounded host-backed callbacks, with no blob/base64 source fallback.
       this.crepe.editor.config(ctx => ctx.update(uploadConfig.key, previous => ({ ...previous, enableHtmlFileUploader: true, uploader: async (files, schema) => {

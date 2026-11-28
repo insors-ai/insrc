@@ -6,6 +6,7 @@ export interface ScratchEditorAssets {
   readonly script: string;
   readonly style: string;
   readonly cspSource: string;
+  readonly workerSource?: string | undefined;
 }
 
 export function scratchEditorHtml(assets: ScratchEditorAssets, nonce: string, paneSessionId?: string): string {
@@ -25,7 +26,7 @@ export function scratchEditorHtml(assets: ScratchEditorAssets, nonce: string, pa
   return shellHtml('Scratchpad', `<main id="scratch-editor"${paneSessionId === undefined ? '' : ` data-pane-session="${paneSessionId}"`}></main>`, nonce, undefined, {
     hideTitle: true,
     resourceSource: source,
-    cspExtra: ` connect-src 'none'; img-src ${source} data:; font-src ${source} data:;`,
-    headExtra: `<link rel="stylesheet" href="${escapeHtml(assets.style)}"><script defer nonce="${nonce}" src="${escapeHtml(assets.script)}"></script>`,
+    cspExtra: ` connect-src 'none'; worker-src blob:; img-src ${source} data:; font-src ${source} data:;`,
+    headExtra: `<link rel="stylesheet" href="${escapeHtml(assets.style)}">${assets.workerSource === undefined ? '' : `<script type="application/json" id="scratch-validator-source" nonce="${nonce}">${JSON.stringify(assets.workerSource).replace(/</g, '\\u003c')}</script>`}<script defer nonce="${nonce}" src="${escapeHtml(assets.script)}"></script>`,
   });
 }

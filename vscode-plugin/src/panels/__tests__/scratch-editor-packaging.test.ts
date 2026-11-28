@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, existsSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, existsSync, rmSync, cpSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 import { createVSIX, listFiles, PackageManager } from '@vscode/vsce';
 import { scratchEditorHtml } from '../scratch-editor-html.js';
 import { shellCsp } from '../shell.js';
@@ -39,26 +40,50 @@ test('scratch editor emits local browser JS/CSS alongside CJS and includes them 
     assert.match(css, /\.milkdown/);
     assert.doesNotMatch(css, /@import\s|url\(\s*["']?https?:/);
     assert.equal(JSON.parse(readFileSync(join(out, 'package.json'), 'utf8')).type, 'commonjs');
-    for (const name of ['extension.js', 'uninstall.js', 'vibe-session-worker.js']) assert.ok(existsSync(join(out, name)));
+    for (const name of ['extension.js', 'uninstall.js', 'vibe-session-worker.js', 'scratch-validation-host-worker.js']) assert.ok(existsSync(join(out, name)));
+    assert.ok(existsSync(join(out, 'scratch-editor/validator.js')));
     const analysis = await mod.bundleScratchEditor(join(dir, 'inspect'));
     for (const [name, output] of Object.entries(analysis.metafile.outputs) as [string, { imports: { path: string; external?: boolean }[] }][]) {
       assert.equal(output.imports.filter(i => i.external).length, 0, name);
     }
     assert.ok(!Object.keys(analysis.metafile.inputs).some(path => path.includes('/llm-providers/')), 'no library cloud providers bundled');
-    // Package the REAL emitted runtime layout with no prepublish script (the
-    // fixture must not rebuild the canonical checkout while tests are readers).
-    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'insrc-milkdown-fixture', version: '1.0.0', publisher: 'insors', description: 'Packaging qualification fixture', license: 'MIT', engines: { vscode: '^1.141.0' }, main: './out/extension.js', activationEvents: ['onStartupFinished'], repository: { type: 'git', url: 'https://github.com/insors-ai/insrc.git' } }));
-    writeFileSync(join(dir, 'README.md'), '# Packaging fixture\n');
-    writeFileSync(join(dir, 'LICENSE'), 'MIT\n');
+    // Snapshot the actual production package and its selected runtime files.
+    // Omit only prepublish so packaging cannot mutate the canonical checkout;
+    // emitted binaries above, contribution metadata and uninstall stay real.
+    const productionFiles = await listFiles({ cwd: root, packageManager: PackageManager.None });
+    for (const file of productionFiles) if (!file.startsWith('out/') && file !== 'package.json') {
+      const destination = join(dir, file); mkdirSync(join(destination, '..'), { recursive: true });
+      cpSync(join(root, file), destination, { recursive: true });
+    }
+    const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+    delete manifest.scripts['vscode:prepublish'];
+    assert.equal(manifest.main, './out/extension.js');
+    assert.equal(manifest.scripts['vscode:uninstall'], 'node ./out/uninstall.js');
+    writeFileSync(join(dir, 'package.json'), JSON.stringify(manifest));
     writeFileSync(join(dir, '.vscodeignore'), readFileSync(join(root, '.vscodeignore')));
     mkdirSync(join(dir, 'node_modules/unshipped'), { recursive: true });
     writeFileSync(join(dir, 'node_modules/unshipped/index.js'), 'do not ship');
     const files = await listFiles({ cwd: dir, packageManager: PackageManager.None });
     assert.ok(files.includes('out/scratch-editor/editor.js'));
     assert.ok(files.includes('out/scratch-editor/editor.css'));
+    assert.ok(files.includes('out/scratch-editor/validator.js'));
+    assert.ok(files.includes('out/scratch-validation-host-worker.js'));
     assert.ok(!files.some(path => path.startsWith('node_modules/')));
     await createVSIX({ cwd: dir, packagePath: join(dir, 'fixture.vsix'), dependencies: false, allowUnusedFilesPattern: true });
-    assert.ok(existsSync(join(dir, 'fixture.vsix')));
+    const archive = join(dir, 'fixture.vsix'); assert.ok(existsSync(archive));
+    // Read the written archive, not only the pre-package file list. yauzl is
+    // already a dependency of the pinned VSCE package used to create it.
+    const yauzl = createRequire(import.meta.url)('yauzl');
+    const archived = await new Promise<string[]>((resolve, reject) => {
+      yauzl.open(archive, { lazyEntries: true }, (error: Error | null, zip: any) => {
+        if (error) { reject(error); return; }
+        const names: string[] = []; zip.on('error', reject); zip.on('end', () => resolve(names));
+        zip.on('entry', (entry: { fileName: string }) => { names.push(entry.fileName); zip.readEntry(); }); zip.readEntry();
+      });
+    });
+    for (const name of ['package.json', 'out/extension.js', 'out/uninstall.js', 'out/package.json', 'out/scratch-editor/editor.js', 'out/scratch-editor/editor.css', 'out/scratch-editor/validator.js', 'out/scratch-validation-host-worker.js']) assert.ok(archived.includes(`extension/${name}`), name);
+    assert.ok(!archived.some(path => path.includes('/node_modules/') || path.includes('/__tests__/') || path.endsWith('.ts')));
+    const retained = process.env['INSRC_SCRATCH_VSIX_PATH']; if (retained) cpSync(archive, retained);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -76,4 +101,15 @@ test('scratch editor HTML permits local assets while blocking connections and un
   assert.throws(() => scratchEditorHtml({ script: 'https://example.test/editor.js', style: 'vscode-webview://host/editor.css', cspSource: 'vscode-webview://host' }, 'N'));
   assert.throws(() => scratchEditorHtml({ script: 'javascript:alert(1)', style: 'vscode-webview://host/editor.css', cspSource: 'vscode-webview://host' }, 'N'));
   assert.ok(scratchEditorHtml({ script: 'https://file+.vscode-resource.vscode-cdn.net/editor.js', style: 'https://file+.vscode-resource.vscode-cdn.net/editor.css', cspSource: 'https://*.vscode-cdn.net' }, 'N'));
+});
+
+
+test('scratch production manifest keeps scratch-only opt-in association and native uninstall entry', () => {
+  const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+  const editor = manifest.contributes.customEditors.find((entry: { viewType: string }) => entry.viewType === 'insrc.scratchpad.editor');
+  assert.ok(editor); assert.equal(editor.priority, 'option');
+  assert.deepEqual(editor.selector, [{ filenamePattern: '**/.insrc/scratches/*.md' }]);
+  assert.equal(manifest.contributes.configurationDefaults?.['workbench.editorAssociations'], undefined);
+  assert.equal(manifest.main, './out/extension.js');
+  assert.equal(manifest.scripts['vscode:uninstall'], 'node ./out/uninstall.js');
 });

@@ -6,7 +6,8 @@
   },
   "include": [
     "src/panels/scratch-editor-webview.ts",
-    "src/panels/scratch-markdown-milkdown.ts"
+    "src/panels/scratch-markdown-milkdown.ts",
+    "src/panels/scratch-validation-browser-worker.ts"
   ],
   "exclude": ["**/__tests__/**", "**/*.test.ts"]
 }

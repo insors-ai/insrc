@@ -33,7 +33,11 @@ const here = dirname(fileURLToPath(import.meta.url));
 /** Bundle the entry points into `outdir` as self-contained CJS + the CJS marker. */
 export async function bundle(outdir) {
   await build({
-    entryPoints: [join(here, 'src/extension.ts'), join(here, 'src/uninstall.ts'), join(here, 'src/vibe-session-worker.ts')],
+    entryPoints: {
+      extension: join(here, 'src/extension.ts'), uninstall: join(here, 'src/uninstall.ts'),
+      'vibe-session-worker': join(here, 'src/vibe-session-worker.ts'),
+      'scratch-validation-host-worker': join(here, 'src/panels/scratch-validation-host-worker.ts'),
+    },
     bundle: true,
     platform: 'node',
     format: 'cjs',
@@ -57,6 +61,11 @@ export async function bundle(outdir) {
 
 /** An entirely local webview bundle, distinct from the Node/CJS host entries. */
 export async function bundleScratchEditor(outdir) {
+  await build({
+    entryPoints: { validator: join(here, 'src/panels/scratch-validation-browser-worker.ts') },
+    bundle: true, platform: 'browser', conditions: ['worker'], format: 'iife', target: 'chrome120',
+    outdir, minify: true, logLevel: 'silent',
+  });
   return build({
     entryPoints: { editor: join(here, 'src/panels/scratch-editor-webview.ts') },
     bundle: true,

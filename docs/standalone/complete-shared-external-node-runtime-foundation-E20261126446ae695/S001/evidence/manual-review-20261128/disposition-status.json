@@ -3,7 +3,7 @@
   "verdict": "changes-requested",
   "allFindingsResolved": false,
   "existingStory": "446ae69566d352dd/s1",
-  "reworkAdmission": "Prior T5 passed at2f6bcaea7 (BUILD22/TESTS22); current round is registered design.story revision7 only. No production implementation until LLD/PLAN approval; owner recovery/protection choices unresolved.",
+  "reworkAdmission": "Current round is registered design.story revision8 plus isolated native primitive validation only; no production code implementation. Prior T5 passed at2f6bcaea7/BUILD22/TESTS22. Owner choices and LLD/PLAN approval remain required.",
   "nativeEvidence": "Prior macOS/Linux source equivalence becomes historical after production edits; affected regression/native qualification required before final BUILD approval",
   "findings": [
     {
@@ -26,19 +26,19 @@
     },
     {
       "id": "4",
-      "status": "design-revision7-pending-owner-decision-and-human-approval",
+      "status": "design-revision8-pending-owner-decision-and-human-approval",
       "scope": "design/integrity",
       "evidence": "../../LLD.md"
     },
     {
       "id": "5",
-      "status": "design-revision7-pending-owner-decision-and-human-approval",
+      "status": "design-revision8-pending-owner-decision-and-human-approval",
       "scope": "design/integrity",
       "evidence": "../../LLD.md"
     },
     {
       "id": "6",
-      "status": "design-revision7-pending-owner-decision-and-human-approval",
+      "status": "design-revision8-pending-owner-decision-and-human-approval",
       "scope": "design/integrity",
       "evidence": "../../LLD.md"
     },
@@ -49,7 +49,7 @@
     },
     {
       "id": "8",
-      "status": "design-revision7-pending-owner-decision-and-human-approval",
+      "status": "design-revision8-pending-owner-decision-and-human-approval",
       "scope": "runtime/consumer",
       "evidence": "../../LLD.md"
     },
@@ -96,7 +96,7 @@
     },
     {
       "id": "17",
-      "status": "design-revision7-pending-owner-decision-and-human-approval",
+      "status": "design-revision8-pending-owner-decision-and-human-approval",
       "scope": "bootstrap",
       "evidence": "../../LLD.md"
     },
@@ -137,9 +137,9 @@
       "id": "R2-1",
       "severity": "MED",
       "kind": "design",
-      "status": "draft-correction-pending-owner-decision",
+      "status": "reviewer-accepted-design-pending-owner-choice",
       "scope": "manual recovery wording and exact diagnostic",
-      "evidence": "../../LLD.md"
+      "evidence": "REVIEW-FEEDBACK-ROUND3.md"
     },
     {
       "id": "R2-2",
@@ -153,9 +153,9 @@
       "id": "R2-3",
       "severity": "LOW",
       "kind": "documentation",
-      "status": "documented-in-draft-pending-human-approval",
+      "status": "reviewer-accepted-documentation-design",
       "scope": "Shell-only/pre-fork signal latency; no prompt-cancellation promise",
-      "evidence": "../../LLD.md"
+      "evidence": "REVIEW-FEEDBACK-ROUND3.md"
     },
     {
       "id": "R2-4",
@@ -170,6 +170,38 @@
       "kind": "nit",
       "status": "pending-existing-t5-plan-realignment",
       "scope": "Normalize work once and use canonical value downstream; no code change yet"
+    },
+    {
+      "id": "R3-1",
+      "severity": "MED",
+      "kind": "design",
+      "status": "corrected-in-lld8-pending-owner-choice-and-build",
+      "scope": "Root0700until native rename; root0500/fsync/strict check before success; native fixture/root-only crash tests planned",
+      "evidence": "../../LLD.md"
+    },
+    {
+      "id": "R3-2",
+      "severity": "LOW-MED",
+      "kind": "guidance",
+      "status": "corrected-in-lld8-pending-owner-choice-and-diagnostic-build",
+      "scope": "Exact root-only safely quoted chmod guidance before preservation/move; delete nothing; no product enforcement",
+      "evidence": "../../LLD.md"
+    },
+    {
+      "id": "R3-3",
+      "severity": "LOW",
+      "kind": "population-audit",
+      "status": "bounded-official-release-evidence-recorded-and-design-narrowed",
+      "scope": "One observed legacy release/defaultmain has no shared-store reader; rebuild known unpublished homes, unknowncustombuilds excluded",
+      "evidence": "round3/release-audit/summary.json"
+    },
+    {
+      "id": "R3-4",
+      "severity": "LOW",
+      "kind": "test-design",
+      "status": "shared-helper-planned-in-lld8-not-implemented",
+      "scope": "One owned-root async cleanup helper adopted/awaited by all runtime-publishing fixtures after positive closure",
+      "evidence": "../../LLD.md"
     }
   ],
   "round2": {
@@ -185,5 +217,20 @@
       "q3f4b548f"
     ],
     "nativeQualification": "Current macOS/Linux reruns still pending; Linux must include dash group cancellation."
+  },
+  "round3": {
+    "reviewedHead": "81dd67a04670989d83ae16f6181ca4dde1740fbf",
+    "feedback": "REVIEW-FEEDBACK-ROUND3.md",
+    "feedbackSha256": "ed421d0c735a00a94943a577b4ca67b45ddc9a42f408ef7f880c3c52e1631b72",
+    "lldRevision": 8,
+    "verdict": "R2-1/R2-3 design accepted; read-only publication order/guidance/population/test cleanup corrections requested",
+    "productionChangesThisRound": false,
+    "validation": "Small macOS actual native-binding publication probe passed and isolated root disposed after exact child exit; no full runtime, registered task, Linux or VM/full-suite execution",
+    "ownerChoicesAnswered": false,
+    "ownerQuestionIds": [
+      "q14408171",
+      "qccba6370"
+    ],
+    "deferredFollowup": "Record consideration of a control-owned recovery command in this existing issue before general release; no new implementation scope approved."
   }
 }

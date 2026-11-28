@@ -1,0 +1,55 @@
+{
+  "observedAt": "2026-11-28T09:16:55.022225+00:00",
+  "repository": "insors-ai/insrc",
+  "publishedReleaseCount": 1,
+  "releases": [
+    {
+      "tag": "daemon-v0.2.0",
+      "publishedAt": "2026-07-14T12:42:28Z",
+      "draft": false,
+      "assets": [
+        "insrc-daemon-install.sh"
+      ]
+    }
+  ],
+  "releaseCommit": {
+    "sha": "d1d35db6b3eeecac6639ef9b1c836f98037ef3e9",
+    "tree": "65a77a0b07e1714c92c3f1bd65e7599a931c2a11"
+  },
+  "releaseTreeTruncated": false,
+  "defaultSourceTree": "a6e201fd9858e9a8e39d883d90d170578f25df5e",
+  "defaultSourceTreeTruncated": false,
+  "sharedStoreReaderPathsFound": [],
+  "assetFacts": [
+    "Default repository insors-ai/insrc, branchmain, source checkout/npm build",
+    "Requires systemNode onPATH; no new shared-runtime store path/descriptor2/devreceipt2 in asset"
+  ],
+  "conclusion": "No officially published shared-store reader observed. Earlier writable rewrite homes are development/test/qualification artifacts for this unpublished Story; rebuild them. No general guarantee about unknown custom-branch/manual installs.",
+  "limits": [
+    "Observed current GitHubrelease inventory, not every past-deleted release or private deployment",
+    "Legacy installer allows custom branch; no claim that unknown users never ran an installer-branch checkout",
+    "No host daemon/installation changed"
+  ],
+  "rawFiles": {
+    "releases-response.json": {
+      "bytes": 6280,
+      "sha256": "0656cfd9a6b238a16d95d0b5168144cfe77f8febc4745ed71f84b98b481d0c1d"
+    },
+    "release-commit.json": {
+      "bytes": 101,
+      "sha256": "718af5f3ef67871348731e462fe06b7786670911e6615193820e7d5b7f4a33e2"
+    },
+    "release-tree.json": {
+      "bytes": 196238,
+      "sha256": "0487344a78e4ea9d603e567a7e14b7cf0406a76f0fb9cc54946502e72c13bf89"
+    },
+    "main-tree.json": {
+      "bytes": 3008663,
+      "sha256": "93c7e5ce2329db7dd0f02901984925fc3c05dea69012f958b55a5ace9936a043"
+    },
+    "insrc-daemon-install.sh": {
+      "bytes": 16284,
+      "sha256": "dba6dfb82313bec49b96bbf1e066ec39cab56cc330fee8149c825fc7a1800939"
+    }
+  }
+}

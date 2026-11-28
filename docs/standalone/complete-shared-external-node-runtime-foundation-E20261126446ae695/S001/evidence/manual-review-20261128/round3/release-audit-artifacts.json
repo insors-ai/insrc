@@ -1,0 +1,38 @@
+[
+  {
+    "originalName": "asset/insrc-daemon-install.sh",
+    "artifact": "release-audit/asset/insrc-daemon-install.sh",
+    "uncompressedSha256": "dba6dfb82313bec49b96bbf1e066ec39cab56cc330fee8149c825fc7a1800939",
+    "artifactSha256": "dba6dfb82313bec49b96bbf1e066ec39cab56cc330fee8149c825fc7a1800939"
+  },
+  {
+    "originalName": "main-tree.json",
+    "artifact": "release-audit/main-tree.json.gz",
+    "uncompressedSha256": "93c7e5ce2329db7dd0f02901984925fc3c05dea69012f958b55a5ace9936a043",
+    "artifactSha256": "adcbad2d4ec323965067be30a85673bbb86dcdfd7a8bd283dfb94d4fe881feb8"
+  },
+  {
+    "originalName": "release-commit.json",
+    "artifact": "release-audit/release-commit.json",
+    "uncompressedSha256": "718af5f3ef67871348731e462fe06b7786670911e6615193820e7d5b7f4a33e2",
+    "artifactSha256": "718af5f3ef67871348731e462fe06b7786670911e6615193820e7d5b7f4a33e2"
+  },
+  {
+    "originalName": "release-tree.json",
+    "artifact": "release-audit/release-tree.json.gz",
+    "uncompressedSha256": "0487344a78e4ea9d603e567a7e14b7cf0406a76f0fb9cc54946502e72c13bf89",
+    "artifactSha256": "d93719bbef617affc48e66f7da9297e0e996bff0ccf6aad794562699e26409c1"
+  },
+  {
+    "originalName": "releases-response.json",
+    "artifact": "release-audit/releases-response.json",
+    "uncompressedSha256": "0656cfd9a6b238a16d95d0b5168144cfe77f8febc4745ed71f84b98b481d0c1d",
+    "artifactSha256": "0656cfd9a6b238a16d95d0b5168144cfe77f8febc4745ed71f84b98b481d0c1d"
+  },
+  {
+    "originalName": "summary.json",
+    "artifact": "release-audit/summary.json",
+    "uncompressedSha256": "adcff8830fca6fbe16a6e1efc087d03dfffd30bd349678ffde14bc79ae6764ee",
+    "artifactSha256": "adcff8830fca6fbe16a6e1efc087d03dfffd30bd349678ffde14bc79ae6764ee"
+  }
+]

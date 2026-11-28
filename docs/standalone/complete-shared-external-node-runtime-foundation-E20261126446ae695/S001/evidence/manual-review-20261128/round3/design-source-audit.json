@@ -1,0 +1,25 @@
+{
+  "lldRevision": 8,
+  "status": "draft",
+  "strategySubjects": 32,
+  "diagramSourcesAndEndpointsChecked": true,
+  "pixelRenderingPerformed": false,
+  "productionChanged": false,
+  "fullOrRegisteredTestsRun": false,
+  "actualMacOSNativePrimitiveProbe": true,
+  "linuxOrVMProbe": false,
+  "ownerChoicesAnswered": false,
+  "questionIds": [
+    "q14408171",
+    "qccba6370"
+  ],
+  "priorCodeFindingsAccepted": [
+    "1",
+    "2",
+    "3",
+    "14",
+    "T2",
+    "T5"
+  ],
+  "feedbackCopyMatches": true
+}

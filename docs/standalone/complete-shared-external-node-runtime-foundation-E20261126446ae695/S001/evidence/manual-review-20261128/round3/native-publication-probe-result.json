@@ -1,0 +1,21 @@
+{
+  "platform": "darwin",
+  "arch": "arm64",
+  "node": "v22.22.1",
+  "actualNativeBinding": true,
+  "sealedRootRefusal": "candidate-publish-uncertain",
+  "writableRootCrossParentPublish": true,
+  "sameRootInode": true,
+  "descendantsStayedReadOnly": true,
+  "rootSealedAndSyncedAfterPublish": true,
+  "wholeRuntimeProfileTest": false,
+  "linuxTest": false,
+  "vmQualification": false,
+  "childExitCode": 0,
+  "childClosed": true,
+  "sourceCommit": "81dd67a04670989d83ae16f6181ca4dde1740fbf",
+  "probeSha256": "9fc4feb5c6b9a8e45fff483f2d1fade03db0a40597ff073234c9f83497f2bc20",
+  "nativeBindingSha256": "c58e229b0c814c70f93df637b44164485ef34ce644046e897ea0a8fda5b42207",
+  "ownedIsolatedRootRemoved": true,
+  "cleanupAfterChildExit": true
+}

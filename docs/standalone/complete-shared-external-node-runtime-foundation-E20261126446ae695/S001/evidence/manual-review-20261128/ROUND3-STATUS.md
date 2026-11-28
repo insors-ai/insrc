@@ -1,0 +1,13 @@
+# Round3 design checkpoint
+
+LLD8 draft corrects the proposed POSIX publication order: protect descendants but keep candidate root0700for the native cross-parent no-replace move; then root0500/fsync/strict verification under the same original lock before returning paths. The only resumable published transition has root0700and every descendant/file/metadata protected with exact pinned bytes. Arbitrary mixed modes and old unsealed development homes are not converted; known old unpublished homes are rebuilt.
+
+The exact manual guidance now says restore ownerwrite on the entry root only, using safely quoted chmod advice, before preservation/move, and delete nothing. It still has no product lock/all-consumer closure enforcement, so the owner must accept manual risk. A control-owned recovery-command follow-up is recorded here for consideration before general release, not implemented or separately approved.
+
+One proposed shared fixture-owned cleanup helper must cover/await all protected runtime fixture allocation-error/after/finally/wrapper paths. It waits for positive child/group/resource closure, restores directorywrite only inside the captured original isolated root without following links, then removes it. It refuses global/shared/foreign/uncertain roots. No helper implementation exists yet.
+
+A real hostmacOS ARM64 Node22.22.1 native-binding probe reproduced refusal of root0500cross-parent publication and successful root0700publication followed by root0500fsync, preserving inode/descendant protection/bytes. Its child exited0; the parent restored/removes only its owned isolated test root after child exit. Probe source/binary hashes and result are retained under round3. This is not the whole official runtime fixture, registered task gate, Linux test or VM qualification.
+
+Read-only GitHub audit observed one published daemon-v0.2.0release and a legacy systemNode/defaultmain source installer. Complete release/currentmain trees contain no shared-store reader paths. Raw responses/tree IDs/asset/hashable compressed inventories are retained. This supports no observed official shared-store reader population, not a universal claim about deleted releases or unknown custom-branch/manual installs. No hostv2 action was taken.
+
+Both owner choices remain unanswered:q14408171(manual guidance versus recovery command),qccba6370(corrected read-only+SDK versus SDK-only). LLD8/BUILD22 unapproved; PLAN3 is not realigned. Prior6code fixes remain accepted; prior and new open review work, R2-4/R2-5 code, full scoped regression and actual macOS/Linux qualification including Linuxdash cancellation remain outstanding. Windows stays deferred. No blocked isolate was modified. Diagrams checked at source/endpoints only, not pixel-rendered.

@@ -1,0 +1,211 @@
+{
+  "basis": "Original registered validation completed after the client300s timeout; no duplicate call was started. Values below are copied from canonical tool-written records.",
+  "buildRevision": 28,
+  "testsRevision": 28,
+  "commit": "50245f18a",
+  "buildTask": {
+    "id": "t4",
+    "passed": true
+  },
+  "testTask": {
+    "taskId": "t4",
+    "commit": "50245f18a",
+    "ranAt": "2026-11-28T11:55:19.408Z",
+    "testsPassed": true,
+    "tests": [
+      {
+        "name": "runtime-native-lock-exclusive-durable-no-replace-publication-and-offline-entry-reuse",
+        "level": "integration",
+        "source": "mapping",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime publication uses the native exclusive lock durable namespace and verified offline reuse",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime publication never overwrites an incomplete destination and retains its stage",
+            "result": "pass"
+          }
+        ],
+        "files": []
+      },
+      {
+        "name": "runtime-publication-rejects-stale-owner-and-conflicting-incomplete-entry",
+        "level": "integration",
+        "source": "mapping",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime install rejects old unsealed and mixed canonical layouts without repair or network",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime publication never overwrites an incomplete destination and retains its stage",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime publication rejects stale original owners and forged or tampered stages",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime publication verifies staged bytes and cannot publish a modified executable",
+            "result": "pass"
+          }
+        ],
+        "files": []
+      },
+      {
+        "name": "runtime-publication-stage-is-not-running-node-or-loaded-native-library",
+        "level": "integration",
+        "source": "mapping",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime publication stage is distinct from running Node and the loaded native library",
+            "result": "pass"
+          }
+        ],
+        "files": []
+      },
+      {
+        "name": "posix-runtime-root-only-interrupted-publication-recovery-and-closed-stage-discard",
+        "level": "integration",
+        "source": "mapping",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime root-only interrupted native publication is retained and finalized offline by a later controller",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime install rejects old unsealed and mixed canonical layouts without repair or network",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime publication never overwrites an incomplete destination and retains its stage",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime publication retains verifier close uncertainty and refuses later discard",
+            "result": "pass"
+          }
+        ],
+        "files": []
+      },
+      {
+        "name": "native-runtime-publication-keeps-root-writable-until-rename-and-finishes-root-seal",
+        "level": "integration",
+        "source": "mapping",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime publication uses the native exclusive lock durable namespace and verified offline reuse",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime root-only interrupted native publication is retained and finalized offline by a later controller",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime publication retains a root sealed before failing final durability and never reports success",
+            "result": "pass"
+          }
+        ],
+        "files": []
+      },
+      {
+        "name": "runtime-postpublication-uncertainty-and-canonical-stat-errors-are-coded-and-retained",
+        "level": "integration",
+        "source": "mapping",
+        "cases": [
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime publication retains a root sealed before failing final durability and never reports success",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime publication retains postpublication root close uncertainty until its captured descriptor closes",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime canonical stat failures are actionable coded errors and never trigger download or mutation",
+            "result": "pass"
+          },
+          {
+            "file": "src/installer/__tests__/runtime-install.test.ts",
+            "title": "runtime publication retains verifier close uncertainty and refuses later discard",
+            "result": "pass"
+          }
+        ],
+        "files": []
+      }
+    ],
+    "files": [
+      {
+        "file": "src/installer/__tests__/runtime-install.test.ts",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 481407,
+        "titles": [
+          {
+            "title": "runtime publication uses the native exclusive lock durable namespace and verified offline reuse",
+            "result": "pass"
+          },
+          {
+            "title": "runtime root-only interrupted native publication is retained and finalized offline by a later controller",
+            "result": "pass"
+          },
+          {
+            "title": "runtime publication retains a root sealed before failing final durability and never reports success",
+            "result": "pass"
+          },
+          {
+            "title": "runtime install rejects old unsealed and mixed canonical layouts without repair or network",
+            "result": "pass"
+          },
+          {
+            "title": "runtime publication retains postpublication root close uncertainty until its captured descriptor closes",
+            "result": "pass"
+          },
+          {
+            "title": "runtime canonical stat failures are actionable coded errors and never trigger download or mutation",
+            "result": "pass"
+          },
+          {
+            "title": "runtime publication never overwrites an incomplete destination and retains its stage",
+            "result": "pass"
+          },
+          {
+            "title": "runtime publication rejects stale original owners and forged or tampered stages",
+            "result": "pass"
+          },
+          {
+            "title": "runtime publication verifies staged bytes and cannot publish a modified executable",
+            "result": "pass"
+          },
+          {
+            "title": "runtime publication stage is distinct from running Node and the loaded native library",
+            "result": "pass"
+          },
+          {
+            "title": "runtime publication retains verifier close uncertainty and refuses later discard",
+            "result": "pass"
+          }
+        ],
+        "otherFailures": []
+      }
+    ]
+  }
+}

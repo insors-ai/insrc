@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 27,
-        "contentHash": "678328d32fed1f97216bc3815bceaab11d27fc31c8c2df9189d58e7c4325aafe",
-        "at": "2026-11-28T11:39:32.538Z",
+        "number": 28,
+        "contentHash": "d3e268b6808ae2e52119b2dd22d8fb6f319322eec72b3be1c2e9e23e0f177526",
+        "at": "2026-11-28T11:55:19.479Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "446ae69566d352dd",
     "storyId": "s1",
     "createdAt": "2026-11-26T07:40:02.075Z",
-    "updatedAt": "2026-11-28T11:39:32.514Z",
+    "updatedAt": "2026-11-28T11:55:19.408Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-26T06:29:10.586Z",
     "epicSlug": "complete-shared-external-node-runtime-foundation",
-    "revision": 27
+    "revision": 28
   },
   "body": {
     "tasks": [
@@ -748,8 +748,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "45152f3bb",
-        "ranAt": "2026-11-28T11:39:32.514Z",
+        "commit": "50245f18a",
+        "ranAt": "2026-11-28T11:55:19.408Z",
         "testsPassed": true,
         "tests": [
           {
@@ -896,7 +896,7 @@
             "file": "src/installer/__tests__/runtime-install.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 433139,
+            "durationMs": 481407,
             "titles": [
               {
                 "title": "runtime publication uses the native exclusive lock durable namespace and verified offline reuse",

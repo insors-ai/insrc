@@ -180,7 +180,7 @@ Run at 2026-11-28T11:16:33.816Z on commit `30ad3cc68`. Tests check: **passed**. 
 
 ## t4
 
-Run at 2026-11-28T11:39:32.514Z on commit `45152f3bb`. Tests check: **passed**. 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-28T11:55:19.408Z on commit `50245f18a`. Tests check: **passed**. 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: runtime-native-lock-exclusive-durable-no-replace-publication-and-offline-entry-reuse**
 
@@ -234,7 +234,7 @@ Run at 2026-11-28T11:39:32.514Z on commit `45152f3bb`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/installer/__tests__/runtime-install.test.ts` | 0 | 11 | 433.1 s |  |
+| `src/installer/__tests__/runtime-install.test.ts` | 0 | 11 | 481.4 s |  |
 
 ## t5
 

@@ -8,10 +8,10 @@
     "currentRegisteredTaskGatesPassed": [
       "t1",
       "t2",
-      "t3"
+      "t3",
+      "t4"
     ],
     "currentTasksPending": [
-      "t4",
       "t5",
       "t6",
       "t7",
@@ -20,7 +20,7 @@
       "t10"
     ],
     "finalStoryBuildApproved": false,
-    "note": "Earlier BUILD rows for later tasks are historical; current plan4 acceptance remains pending."
+    "note": "Current T4 passed at50245f18a. Earlier BUILD rows for later tasks are historical, not current PLAN4 completion."
   },
   "nativeEvidence": "Prior macOS/Linux source equivalence becomes historical after production edits; affected regression/native qualification required before final BUILD approval",
   "findings": [
@@ -119,11 +119,12 @@
     },
     {
       "id": "11",
-      "status": "pending",
+      "status": "resolved",
       "scope": "runtime/consumer",
       "plan4Owners": [
         "t4"
-      ]
+      ],
+      "evidence": "../plan4-build-t4/README.md"
     },
     {
       "id": "12",

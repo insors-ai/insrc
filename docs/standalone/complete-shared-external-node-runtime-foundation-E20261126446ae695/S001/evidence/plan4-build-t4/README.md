@@ -72,3 +72,10 @@ successful namespace durability retry without mode/inode/ctime changes. Current
 corrected-source full registered validation is the remaining T4 gate.
 The isolated copy-mode probe explains the first fixture failure: cpSync created
 root/distribution0755 rather than0700; production verification correctly refused.
+
+Final registered validation completed successfully at50245f18a: BUILD28/TESTS28
+record T4 passed, with all11 mapped runtime-install cases passing in481.41s and
+no skipped, timed-out or file-level failures. The300s client timeout did not stop
+the original run; its canonical persisted verdict is the acceptance evidence.
+Prior settings were restored and verified. T4 is complete under PLAN4. T5–T10
+and final human Story BUILD approval remain outstanding.

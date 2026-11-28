@@ -1346,16 +1346,25 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         yield { kind: 'error', turnId, message: spawnErr.code === 'ENOENT' ? `${BINARY[mapper.id]} CLI not found — install it or check your PATH` : failureMessage(mapper.id, spawnErr) };
         return;
       }
-      if (vibeCatalog !== undefined || (mapper.formatInput !== undefined && requestUuid !== undefined)) {
+      // s3/t3: the vibe direct-spawn route now reads its prompt from stdin (bare -p, no
+      // --prompt=), like the vibeCatalog job write below -- one write, then end input
+      // immediately (vibe's bare -p reads stdin to EOF as the whole prompt; it cannot
+      // start before that, unlike claude/codex's formatInput path, which stays open
+      // until the turn's terminal event for a possible later decision write). Classifying
+      // a write/end failure by dispatchState is a later Task in this Story (t5/t6); a
+      // failure here falls through to the same generic 'CLI stdin is closed' handling
+      // claude/codex already use.
+      const isVibeDirectSpawn = mapper.id === 'vibe' && vibeCatalog === undefined;
+      if (vibeCatalog !== undefined || (mapper.formatInput !== undefined && requestUuid !== undefined) || isVibeDirectSpawn) {
         if (proc.write === undefined) throw new Error('CLI stdin unavailable for correlated input');
         const job: VibeChatJob | undefined = vibeCatalog === undefined ? undefined : {
           command: deps.vibeBinPath ?? BINARY.vibe,
           request: effectiveReq,
           catalog: vibeCatalog,
         };
-        const input = job === undefined
-          ? mapper.formatInput!(effectiveReq, requestUuid!)
-          : JSON.stringify(job) + '\n';
+        const input = job !== undefined
+          ? JSON.stringify(job) + '\n'
+          : isVibeDirectSpawn ? effectiveReq.prompt : mapper.formatInput!(effectiveReq, requestUuid!);
         // The turn's one user message goes through the same seam as the approval decisions: false is a
         // dead or absent stdin, and an asynchronous failure arrives on onError. Either one fails the turn.
         let accepted = false;
@@ -1366,7 +1375,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
           });
         } catch { /* a seam that throws is a seam that did not deliver */ }
         if (!accepted) throw new Error('CLI stdin is closed');
-        if (job !== undefined) proc.endInput?.();
+        if (job !== undefined || isVibeDirectSpawn) proc.endInput?.();
       }
       opts?.onSpawn?.({
         pid: proc.pid,

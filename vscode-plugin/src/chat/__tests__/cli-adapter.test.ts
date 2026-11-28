@@ -967,6 +967,13 @@ test('vibe: s3/t3 — integration: the prompt travels via stdin, not argv (carri
   assert.ok(args.includes('-p'), 'the bare -p flag reads the prompt from stdin, per buildArgv (sc1\'s contract)');
   assert.ok(!args.some((a) => a.includes(prompt)), 'the prompt text never appears anywhere in argv');
   assert.ok(!('closeInput' in spawner.calls[0]!), 'inputIsPrompt=false: stdin is not closed by argv-building alone');
+  // The gap a prior validate round correctly caught: argv-absence alone doesn't prove
+  // delivery. Assert the actual write + immediate end, matching vibeCatalog's job-write
+  // precedent (bare -p reads stdin to EOF as the whole prompt -- it cannot start before
+  // that, unlike claude/codex's formatInput path, which stays open for a later decision).
+  const proc = spawner.procs[0]!;
+  assert.deepEqual(proc.writes(), [prompt], 'the exact prompt text, written once, verbatim');
+  assert.equal(proc.inputEnds(), 1, 'stdin is ended immediately after the write, not deferred to a terminal event');
 });
 
 test('ProviderRegistry.available lists vibe alongside claude/codex when installed', () => {

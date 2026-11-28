@@ -82,7 +82,7 @@ export type VibeTurnEvent =
 	| { readonly kind: 'status'; readonly phase: 'starting' | 'thinking' | 'refused' }
 	| { readonly kind: 'assistant-text'; readonly text: string }
 	| { readonly kind: 'tool-call'; readonly toolCallId: string; readonly toolName: string; readonly arguments: Readonly<Record<string, unknown>> }
-	| { readonly kind: 'tool-result'; readonly toolCallId: string; readonly ok: boolean; readonly output: string; readonly error?: string | undefined }
+	| { readonly kind: 'tool-result'; readonly toolCallId: string; readonly ok: boolean; readonly status: 'completed' | 'failed' | 'cancelled' | 'skipped'; readonly output: string; readonly error?: string | undefined }
 	| { readonly kind: 'error'; readonly message: string };
 
 export interface VibeExitEvidence {
@@ -321,7 +321,7 @@ function parseJournalLine(line: string): { readonly events: readonly VibeTurnEve
 			if (status === 'completed' || status === 'failed' || status === 'cancelled' || status === 'skipped') {
 				const ok = status === 'completed';
 				const output = normalizeToolResultOutput(state);
-				events.push({ kind: 'tool-result', toolCallId, ok, output, ...(ok ? {} : { error: output }) });
+				events.push({ kind: 'tool-result', toolCallId, ok, status, output, ...(ok ? {} : { error: output }) });
 			}
 		}
 	} else if (type === 'error') {
@@ -522,14 +522,33 @@ function observedDisallowedCompletedCall(events: readonly VibeTurnEvent[], allow
  *  hold at all. */
 const STRUCTURAL_DENIAL_PROBE_TOOL = 'file_system.read_file';
 
-/** True when the journal shows `toolName` was actually attempted and DENIED (a completed-but-
- *  failed, cancelled, or skipped result -- never a confirmed success). Absence of any attempt
- *  at all is NOT a pass: it proves nothing either way, so callers must treat "not confirmed
- *  denied" as "not yet proven", never as "presumed fine" (review finding 2). */
+/** Output/error text patterns that indicate an ORDINARY operational failure (a missing file,
+ *  a bad path, ...) rather than anything about the `--enabled-tools` restriction itself --
+ *  review r3 finding 1's own reproduction: changing ONLY the blocked-tool fixture's result
+ *  text to "file not found" still passed as a confirmed denial, because status `'failed'`
+ *  alone (cancelled/skipped collapse to the same `!ok`, with no discrimination of WHY) was
+ *  treated as sufficient. This sandbox cannot live-verify the installed CLI's own actual
+ *  wording for a genuine `--enabled-tools` denial (the same disclosed connector-registration
+ *  gap already in this packet), so this is a narrow, defensible exclusion -- a mundane
+ *  filesystem-shaped failure is excluded as evidence either way, rather than guessing what a
+ *  real policy-denial message says. A true fix needs a live-confirmed denial wording to
+ *  match against; flagged as a disclosed, narrowed-not-solved gap. */
+const ORDINARY_OPERATIONAL_FAILURE = /ENOENT|no such file|file not found|cannot find|does not exist|not a directory|is a directory/i;
+
+/** True when the journal shows `toolName` was actually attempted and FAILED in a way that
+ *  could plausibly be the `--enabled-tools` restriction itself, not a mundane operational
+ *  error (review r3 finding 1) -- only a `'failed'` status counts (never `'cancelled'`/
+ *  `'skipped'`, both more ambiguous about whether the restriction ever engaged at all), and
+ *  its own output/error text must not match a known ordinary-failure shape. Absence of any
+ *  attempt at all is STILL not a pass either: it proves nothing either way, so callers must
+ *  treat "not confirmed denied" as "not yet proven", never as "presumed fine" (review r2
+ *  finding 2). */
 function hasConfirmedDeniedCall(events: readonly VibeTurnEvent[], toolName: string): boolean {
 	const callNamesById = new Map<string, string>();
 	for (const event of events) if (event.kind === 'tool-call') callNamesById.set(event.toolCallId, event.toolName);
-	return events.some(event => event.kind === 'tool-result' && !event.ok && callNamesById.get(event.toolCallId) === toolName);
+	return events.some(event =>
+		event.kind === 'tool-result' && event.status === 'failed' && callNamesById.get(event.toolCallId) === toolName
+		&& !ORDINARY_OPERATIONAL_FAILURE.test(event.output));
 }
 
 /** Asks the probe for THREE things, not two (review finding 2): the config-reported
@@ -567,12 +586,27 @@ interface QualificationBudget {
  *  applies a caller's own signal/deadline, to ITS OWN wait on this shared run, never to the
  *  run itself, so one caller's short budget can never poison the descriptor for every other
  *  caller or for the daemon's own lifetime. */
+/** Whether a `runQualificationSuite` outcome is safe to cache DURABLY (review r3 finding 2):
+ *  a `'qualified'` result or a definitive structural finding (bypass-absence, a required
+ *  tool excluded from the catalog) are stable properties of this exact descriptor's launch
+ *  profile -- they will not change on retry, so caching them is correct and intended. An
+ *  outcome reached only by EXHAUSTING the retry loop without ever confirming one of those
+ *  (a probe that failed to run, a missing/unparsable export, a non-completion, a missing
+ *  denial observation) is NOT a structural finding about the descriptor -- it is evidence
+ *  this attempt's own run was unlucky, and caching it durably would disable a perfectly
+ *  qualifiable descriptor for the rest of the daemon's lifetime the moment one run hit any
+ *  transient hiccup. */
+interface QualificationOutcome {
+	readonly capability: ReadOnlyCapability;
+	readonly cacheable: boolean;
+}
+
 async function runQualificationSuite(
 	context: VibeAdapterContext,
 	deps: ResolvedVibeAdapterDeps,
 	descriptorKey: string,
 	maxAllowRetries: number,
-): Promise<ReadOnlyCapability> {
+): Promise<QualificationOutcome> {
 	const required = VIBE_INSRC_ANALYSIS_TOOL_IDS.map(id => `connector_insrc_${id}`);
 	const allowedNames = allowedCallNameForms();
 	const probeRequest: VibeTurnRequest = { prompt: QUALIFICATION_PROBE_PROMPT, outputMode: 'streaming', session: { kind: 'new' }, mode: 'read-only' };
@@ -593,18 +627,18 @@ async function runQualificationSuite(
 		// (execution evidence) -- either one alone would miss the other's failure mode.
 		const bypassing = enabledTools.filter(t => !required.includes(t));
 		if (bypassing.length > 0) {
-			return { status: 'unavailable', allowedTools: [], reason: `bypass-absence failure: tool(s) outside the allowlist are enabled: ${bypassing.join(', ')}`, provenAgainst: undefined };
+			return { capability: { status: 'unavailable', allowedTools: [], reason: `bypass-absence failure: tool(s) outside the allowlist are enabled: ${bypassing.join(', ')}`, provenAgainst: undefined }, cacheable: true };
 		}
 		const disallowedCall = observedDisallowedCompletedCall(probe.events, allowedNames);
 		if (disallowedCall !== undefined) {
-			return { status: 'unavailable', allowedTools: [], reason: `bypass-absence failure: an out-of-allowlist tool call completed: ${disallowedCall}`, provenAgainst: undefined };
+			return { capability: { status: 'unavailable', allowedTools: [], reason: `bypass-absence failure: an out-of-allowlist tool call completed: ${disallowedCall}`, provenAgainst: undefined }, cacheable: true };
 		}
 		// Required-tool-exclusion check (terminal for THIS descriptor's launch profile,
 		// not ambient flakiness -- the profile itself is not enabling what it claims to):
 		// the reconciled polarity (review r3 finding 3).
 		const missingRequired = required.filter(t => !enabledTools.includes(t));
 		if (missingRequired.length > 0) {
-			return { status: 'unavailable', allowedTools: [], reason: `required tool(s) excluded from the enabled-tool catalog: ${missingRequired.join(', ')}`, provenAgainst: undefined };
+			return { capability: { status: 'unavailable', allowedTools: [], reason: `required tool(s) excluded from the enabled-tool catalog: ${missingRequired.join(', ')}`, provenAgainst: undefined }, cacheable: true };
 		}
 
 		// Allow-side probe: both required tools must show an actual confirmed completed
@@ -626,9 +660,11 @@ async function runQualificationSuite(
 		const fingerprint = effectiveConfigFingerprintFrom(probe.exportObj);
 		if (fingerprint === undefined) { lastReason = "qualification probe's export.json carried no readable config to fingerprint"; continue; }
 
-		return { status: 'qualified', allowedTools: VIBE_INSRC_ANALYSIS_TOOL_IDS, provenAgainst: { stableDescriptorHash: descriptorKey, effectiveConfigFingerprint: fingerprint } };
+		return { capability: { status: 'qualified', allowedTools: VIBE_INSRC_ANALYSIS_TOOL_IDS, provenAgainst: { stableDescriptorHash: descriptorKey, effectiveConfigFingerprint: fingerprint } }, cacheable: true };
 	}
-	return { status: 'unavailable', allowedTools: [], reason: lastReason, provenAgainst: undefined };
+	// Exhausted every bound attempt without ever confirming a structural finding either way
+	// -- transient, NOT cached (review r3 finding 2): see QualificationOutcome's own comment.
+	return { capability: { status: 'unavailable', allowedTools: [], reason: lastReason, provenAgainst: undefined }, cacheable: false };
 }
 
 /** Lets a caller's own signal/deadline bound only its OWN wait on the shared `run` (review r2
@@ -694,14 +730,20 @@ export async function qualifyReadOnlyCapability(
 	// joins the SAME run, built once, regardless of any individual caller's own opts (review
 	// r2 finding 1). It caches its own result unconditionally once it completes (a genuine
 	// probe outcome, never shortened or cancelled by any one caller), so a later caller
-	// always sees that real outcome rather than one caller's own cancellation/deadline.
+	// always sees that real outcome rather than one caller's own cancellation/deadline --
+	// EXCEPT a transient/exhausted outcome (`cacheable: false`, review r3 finding 2), which
+	// is returned to this batch of waiters but deliberately never written to the durable
+	// cache, so a later, separate call starts a fresh run rather than being stuck forever.
 	let run = inFlightQualifications.get(descriptorKey);
 	if (run === undefined) {
 		// The probe dispatches with the SAME resolved path the hash above was computed
 		// against (review finding 3) -- never the bare command, which a concurrent PATH
 		// change could resolve to a different binary by the time of the actual spawn.
 		run = runQualificationSuite(context, { ...resolved, command: resolvedCommand }, descriptorKey, maxAllowRetries)
-			.then(capability => { readOnlyQualificationCache.set(descriptorKey, capability); return capability; })
+			.then(outcome => {
+				if (outcome.cacheable) readOnlyQualificationCache.set(descriptorKey, outcome.capability);
+				return outcome.capability;
+			})
 			.finally(() => { inFlightQualifications.delete(descriptorKey); });
 		inFlightQualifications.set(descriptorKey, run);
 	}
@@ -805,7 +847,14 @@ function resolveCommandOnPath(command: string, env: Readonly<Record<string, stri
 	if (command.includes('/')) return isAbsolute(command) ? command : resolvePathFrom(cwd, command);
 	const out = execFileSync('which', [command], { encoding: 'utf8', env: env as NodeJS.ProcessEnv | undefined, cwd }).trim().split('\n')[0];
 	if (out === undefined || out.length === 0) throw new Error(`could not resolve '${command}' to an executable path on PATH`);
-	return out;
+	// `which` was run with `cwd` above so a RELATIVE PATH entry searches the right
+	// directory, but many `which` implementations echo that PATH entry back verbatim
+	// (not absolutized) -- e.g. a PATH entry of `bin` can print `bin/<command>` as-is
+	// (review r3 finding 3). Node's own `statSync`/`spawn` always resolve a relative
+	// path against THIS process's cwd, not `cwd`, so the result must be absolutized
+	// here, against the SAME `cwd` `which` just searched, before it is ever stat'd or
+	// spawned.
+	return isAbsolute(out) ? out : resolvePathFrom(cwd, out);
 }
 
 interface StableDescriptorHashDeps {

@@ -14,7 +14,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
-import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -422,4 +422,75 @@ test('a missing, malformed, or config-less post-dispatch export invalidates the 
 	// No `tick()`/wait here at all -- the invalidation is awaited BEFORE resolveResult
 	// publishes, so it must already be visible the instant `turn.result` settles.
 	assert.equal(_readOnlyQualificationCacheForTests().has(key), false, 'an unreadable/unverifiable export invalidates the cache, never leaves it untouched');
+});
+
+// -- Review response round 2: code-review of 5cb577231, 3 findings ---------------------------
+
+test("an ordinary operational failure (e.g. a missing file) does NOT count as a confirmed policy denial, even with status 'failed' (review r3 finding 1)", async () => {
+	_readOnlyQualificationCacheForTests().clear();
+	const required = ['connector_insrc_insrc_analyze', 'connector_insrc_insrc_analyze_step'];
+	// Exactly the reviewer's own reproduction: only the denial-probe tool's own result
+	// TEXT changes, to a mundane "file not found" -- status is still 'failed', the OLD
+	// (insufficiently strict) check would have accepted this as a confirmed denial.
+	const mundaneFailureJournal = [
+		TOOL_CALL_LINE('c1', 'connector_insrc_insrc_analyze'),
+		TOOL_CALL_LINE('c2', 'connector_insrc_insrc_analyze_step'),
+		DENIED_TOOL_CALL_LINE('c3', 'file_system.read_file').replace('denied: tool not enabled', 'file not found'),
+	].join('\n') + '\n';
+	const deps = multiAttemptDeps('vibe-mundane-failure', [{ stdoutLines: mundaneFailureJournal, exportJsonText: exportJson(required) }]);
+	const result = await qualifyReadOnlyCapability(baseContext(realDir()), deps, 2);
+	assert.equal(result.status, 'unavailable', 'a mundane file-not-found failure must never count as confirmed structural denial evidence');
+	assert.match(result.reason ?? '', /structural denial probe: file_system\.read_file was not observed as a denied call/);
+	assert.equal(deps.spawnCount(), 2, "an ordinary-looking failure is ambient-flakiness-retried, same as never having attempted the probe at all");
+});
+
+test('a transient qualification failure (e.g. a missing export on one run) is never cached durably -- a LATER, separate call starts a fresh run and can still succeed (review r3 finding 2)', async () => {
+	_readOnlyQualificationCacheForTests().clear();
+	const required = ['connector_insrc_insrc_analyze', 'connector_insrc_insrc_analyze_step'];
+	const context = baseContext(realDir());
+	// maxAllowRetries=1: the FIRST call's own single attempt gets a missing export (a
+	// transient, non-structural failure) and exhausts immediately.
+	const firstCallDeps = multiAttemptDeps('vibe-transient-exhaustion', [{ stdoutLines: '', exportJsonText: undefined }]);
+	const firstResult = await qualifyReadOnlyCapability(context, firstCallDeps, 1);
+	assert.equal(firstResult.status, 'unavailable');
+	assert.equal(_readOnlyQualificationCacheForTests().size, 0, 'a transient exhaustion must never be written to the durable cache');
+
+	// A LATER, entirely separate qualifyReadOnlyCapability call (same descriptor) --
+	// since nothing was cached, this must run the suite fresh, not reuse the first
+	// call's own stale 'unavailable' outcome.
+	const secondCallDeps = multiAttemptDeps('vibe-transient-exhaustion', [{ stdoutLines: bothToolsCompletedJournal(), exportJsonText: exportJson(required) }]);
+	const secondResult = await qualifyReadOnlyCapability(context, secondCallDeps, 1);
+	assert.equal(secondResult.status, 'qualified', 'a later call must get a fresh run, not be stuck on the first run\'s own transient failure');
+	assert.equal(secondCallDeps.spawnCount(), 1, 'the second call actually spawned its own probe rather than hitting a poisoned cache');
+});
+
+test("a relative PATH entry whose own 'which' output comes back relative is still absolutized against the launch cwd before stat/spawn (review r3 finding 3)", async () => {
+	_readOnlyQualificationCacheForTests().clear();
+	const dir = realDir();
+	const scriptName = 'insrc-which-review';
+	const scriptPath = join(dir, 'bin', scriptName);
+	mkdirSync(join(dir, 'bin'), { recursive: true });
+	const script = `#!/usr/bin/env node
+const { mkdirSync, writeFileSync } = require('node:fs');
+const args = process.argv.slice(2);
+const outputDir = args[args.indexOf('--output-dir') + 1];
+mkdirSync(outputDir, { recursive: true });
+writeFileSync(outputDir + '/export.json', JSON.stringify({ vibe_version: '1.0', config: { enabled_tools: ['connector_insrc_insrc_analyze', 'connector_insrc_insrc_analyze_step'] } }));
+process.stdout.write(JSON.stringify({ type: 'effect', toolCallId: 'c1', detail: { toolName: 'connector_insrc_insrc_analyze', input: {} }, state: { status: 'completed', outputText: 'ok' } }) + '\\n');
+process.stdout.write(JSON.stringify({ type: 'effect', toolCallId: 'c2', detail: { toolName: 'connector_insrc_insrc_analyze_step', input: {} }, state: { status: 'completed', outputText: 'ok' } }) + '\\n');
+process.stdout.write(JSON.stringify({ type: 'effect', toolCallId: 'c3', detail: { toolName: 'file_system.read_file', input: {} }, state: { status: 'failed', outputText: 'denied: tool not enabled' } }) + '\\n');
+process.exit(0);
+`;
+	writeFileSync(scriptPath, script);
+	chmodSync(scriptPath, 0o755);
+	// PATH's own entry ("bin") is RELATIVE -- `which`, even run with `cwd: dir`, may
+	// echo back "bin/insrc-which-review" verbatim rather than absolutizing it itself
+	// (confirmed on this host). If resolveCommandOnPath ever stops absolutizing that
+	// result against `cwd`, the identity stat/spawn would resolve it against WHATEVER
+	// this test process's own cwd happens to be instead, which is never `dir`.
+	assert.notEqual(process.cwd(), dir);
+	const nodeDir = dirname(process.execPath);
+	const context: VibeAdapterContext = { cwd: dir, env: { PATH: `bin:${nodeDir}:/usr/bin:/bin` }, processGroup: 'adapter-owned' };
+	const result = await qualifyReadOnlyCapability(context, { command: scriptName }, 1);
+	assert.equal(result.status, 'qualified');
 });
